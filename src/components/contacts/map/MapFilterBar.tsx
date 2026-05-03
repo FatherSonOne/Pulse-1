@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Globe, Home, Search } from 'lucide-react';
+import { Briefcase, Globe, Home, Search, X } from 'lucide-react';
 import { ContactCircle } from '../../../types/contactCircleTypes';
 
 export interface MapFilter {
@@ -14,6 +14,8 @@ interface MapFilterBarProps {
   circles: ContactCircle[];
   isDarkMode: boolean;
   onFilterChange: (f: MapFilter) => void;
+  geoBlocked?: boolean;
+  onDismissGeoBanner?: () => void;
 }
 
 const STATUS_OPTIONS: { value: MapFilter['status'][number]; label: string; color: string }[] = [
@@ -29,7 +31,9 @@ const LOCATION_OPTIONS = [
   { value: 'work' as const, label: 'Work', Icon: Briefcase },
 ];
 
-const MapFilterBar: React.FC<MapFilterBarProps> = ({ filter, circles, isDarkMode, onFilterChange }) => {
+const MapFilterBar: React.FC<MapFilterBarProps> = ({
+  filter, circles, isDarkMode, onFilterChange, geoBlocked, onDismissGeoBanner,
+}) => {
   const bg = isDarkMode ? 'bg-black/75 border-white/10' : 'bg-white/90 border-gray-200';
   const text = isDarkMode ? 'text-white' : 'text-gray-900';
 
@@ -52,6 +56,37 @@ const MapFilterBar: React.FC<MapFilterBarProps> = ({ filter, circles, isDarkMode
 
   return (
     <div className={`absolute top-3 left-3 right-3 z-10 rounded-xl border backdrop-blur-2xl shadow-lg ${bg}`}>
+      {/* Geolocation-denied banner (A4). Status-color amber #f59e0b is paired
+          with a label so colour isn't the only signal. */}
+      {geoBlocked && (
+        <div
+          role="status"
+          className={`flex items-center justify-between gap-2 px-3 py-1.5 text-xs border-b ${
+            isDarkMode ? 'border-white/10' : 'border-gray-200'
+          }`}
+          style={{
+            backgroundColor: isDarkMode ? 'rgba(245,158,11,0.10)' : 'rgba(245,158,11,0.08)',
+            color: isDarkMode ? '#fcd34d' : '#b45309',
+          }}
+        >
+          <span className="flex items-center gap-1.5">
+            <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
+            Location blocked — enable to see distances.
+          </span>
+          {onDismissGeoBanner && (
+            <button
+              type="button"
+              onClick={onDismissGeoBanner}
+              aria-label="Dismiss location banner"
+              className={`p-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+                isDarkMode ? 'hover:bg-white/10' : 'hover:bg-amber-500/10'
+              }`}
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
+      )}
       <div className="flex items-center gap-2 p-2 flex-wrap">
         {/* Search */}
         <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
@@ -98,6 +133,7 @@ const MapFilterBar: React.FC<MapFilterBarProps> = ({ filter, circles, isDarkMode
                 key={s.value}
                 onClick={() => toggleStatus(s.value)}
                 title={s.label}
+                aria-label={`${s.label} status filter`}
                 aria-pressed={active}
                 className={`w-5 h-5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
                   active ? '' : 'opacity-30'

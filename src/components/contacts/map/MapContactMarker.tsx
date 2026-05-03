@@ -42,15 +42,26 @@ const MapContactMarker: React.FC<MapContactMarkerProps> = ({
     onClick();
   }, [onClick]);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  }, [onClick]);
+
   return (
     <OverlayView
       position={pos}
       mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
     >
       <div
-        className="relative cursor-pointer select-none"
+        className="relative cursor-pointer select-none rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
         style={{ transform: 'translate(-50%, -100%)' }}
         onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        role="button"
+        aria-label={`${contact.name}, ${locationType === 'home' ? 'home' : 'work'} location${isLive ? ', live' : ''}`}
       >
         {/* Live ring — solid stroke, no perpetual ping. The "Live · Nm ago"
             timestamp in the panel carries the dynamic signal; the ring

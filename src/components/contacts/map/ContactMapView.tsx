@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import { AlertTriangle, MapPin, MapPinned, Users } from 'lucide-react';
-import { Contact } from '../../../types';
+import { AppView, Contact } from '../../../types';
 import { ContactCircle } from '../../../types/contactCircleTypes';
 import { GOOGLE_MAPS_LIBRARIES, getMapOptions, computeBounds } from '../../../services/mapService';
 import {
@@ -59,15 +59,35 @@ const ContactMapView: React.FC<ContactMapViewProps> = ({
   });
   const [showAddLocationPicker, setShowAddLocationPicker] = useState(false);
   const [pickerContactId, setPickerContactId] = useState<string | null>(null);
+  const [geoBlocked, setGeoBlocked] = useState(false);
+  const [geoBannerDismissed, setGeoBannerDismissed] = useState<boolean>(() => {
+    if (typeof localStorage === 'undefined') return false;
+    return localStorage.getItem('pulse:map:geo-banner-dismissed') === '1';
+  });
+
+  const dismissGeoBanner = useCallback(() => {
+    setGeoBannerDismissed(true);
+    try { localStorage.setItem('pulse:map:geo-banner-dismissed', '1'); } catch {
+      // localStorage unavailable — banner stays dismissed for the session via state.
+    }
+  }, []);
 
   // Sync when parent contacts update
   useEffect(() => { setLocalContacts(contacts); }, [contacts]);
 
-  // Get user's position on mount
+  // Get user's position on mount. PERMISSION_DENIED (code 1) surfaces the
+  // banner; POSITION_UNAVAILABLE / TIMEOUT just leave userPosition null.
   useEffect(() => {
     getCurrentUserLocation()
       .then(pos => setUserPosition(pos))
-      .catch(() => {}); // silently ignore denied
+      .catch((err: unknown) => {
+        if (
+          err && typeof err === 'object' && 'code' in err &&
+          (err as GeolocationPositionError).code === 1
+        ) {
+          setGeoBlocked(true);
+        }
+      });
   }, []);
 
   // Batch geocode contacts that have address text but no lat/lng
@@ -164,9 +184,20 @@ const ContactMapView: React.FC<ContactMapViewProps> = ({
 
   if (loadError) {
     return (
-      <div className={`flex items-center justify-center h-full gap-2 text-sm ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>
-        <AlertTriangle size={16} />
-        Failed to load Google Maps. Check your API key.
+      <div className={`flex flex-col items-center justify-center h-full gap-3 text-sm ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>
+        <div className="flex items-center gap-2">
+          <AlertTriangle size={16} />
+          Failed to load Google Maps. Check your API key.
+        </div>
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('pulse:navigate', {
+            detail: { view: AppView.SETTINGS, section: 'integrations' },
+          }))}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 transition-colors"
+        >
+          Open Settings
+        </button>
       </div>
     );
   }
@@ -212,6 +243,8 @@ const ContactMapView: React.FC<ContactMapViewProps> = ({
         circles={circles}
         isDarkMode={isDarkMode}
         onFilterChange={setFilter}
+        geoBlocked={geoBlocked && !geoBannerDismissed}
+        onDismissGeoBanner={dismissGeoBanner}
       />
 
       {/* Google Map */}
@@ -389,13 +422,52 @@ const ContactLocationPickerOverlay: React.FC<ContactLocationPickerOverlayProps> 
     !query || c.name.toLowerCase().includes(query.toLowerCase())
   );
 
+  // Focus trap + escape-to-close. Captures Tab/Shift+Tab at the boundaries
+  // and cycles within the modal so keyboard users can't tab into the map
+  // behind the dialog.
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const root = containerRef.current;
+      if (!root) return;
+      const focusables = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'input, button, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter(el => !el.hasAttribute('disabled'));
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
   return (
     <div
       className="absolute inset-0 z-20 flex items-center justify-center p-6"
       style={{ background: 'rgba(0,0,0,0.45)' }}
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Pick a contact to locate"
     >
       <div
+        ref={containerRef}
         className={`w-full max-w-md rounded-2xl shadow-2xl border overflow-hidden ${
           isDarkMode ? 'bg-zinc-900 border-white/10' : 'bg-white border-gray-200'
         }`}

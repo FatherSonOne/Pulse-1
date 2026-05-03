@@ -9,12 +9,162 @@ import {
 
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
 
-// Module-level geocoding cache — prevents duplicate API calls for same address
-const geocodeCache = new Map<string, { lat: number; lng: number }>();
+// ============================================================
+// Geocoding — hardening (issue #35 / Stream A3)
+// ============================================================
 
-// ============================================================
-// Geocoding
-// ============================================================
+const GEOCODE_CACHE_KEY = 'pulse:geocode:v1';
+const GEOCODE_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const GEOCODE_TIMEOUT_MS = 8000;
+const GEOCODE_MAX_RETRIES = 3;
+const GEOCODE_QPS = 10;
+const GEOCODE_REFILL_MS = 1000 / GEOCODE_QPS;
+const GEOCODE_DAILY_WARN_THRESHOLD = 1000;
+const BATCH_CONSECUTIVE_FAILURE_LIMIT = 3;
+
+type CacheEntry = { lat: number; lng: number; ts: number };
+
+function loadCacheFromStorage(): Map<string, { lat: number; lng: number }> {
+  if (typeof localStorage === 'undefined') return new Map();
+  try {
+    const raw = localStorage.getItem(GEOCODE_CACHE_KEY);
+    if (!raw) return new Map();
+    const parsed = JSON.parse(raw) as { entries?: Record<string, CacheEntry> };
+    const cutoff = Date.now() - GEOCODE_CACHE_TTL_MS;
+    const fresh = new Map<string, { lat: number; lng: number }>();
+    for (const [k, v] of Object.entries(parsed.entries ?? {})) {
+      if (v && typeof v.ts === 'number' && v.ts >= cutoff) {
+        fresh.set(k, { lat: v.lat, lng: v.lng });
+      }
+    }
+    return fresh;
+  } catch {
+    return new Map();
+  }
+}
+
+function persistCacheEntry(key: string, value: { lat: number; lng: number }): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const raw = localStorage.getItem(GEOCODE_CACHE_KEY);
+    const parsed = raw
+      ? (JSON.parse(raw) as { entries?: Record<string, CacheEntry> })
+      : { entries: {} };
+    if (!parsed.entries) parsed.entries = {};
+    parsed.entries[key] = { ...value, ts: Date.now() };
+    localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(parsed));
+  } catch {
+    // Storage full / unavailable — silent. In-memory cache still serves the session.
+  }
+}
+
+const geocodeCache = loadCacheFromStorage();
+
+// Sequential token bucket: each call reserves a slot REFILL_MS after the
+// previous reservation, capping aggregate throughput at GEOCODE_QPS.
+let nextGeocodeAvailableAt = 0;
+async function acquireGeocodeToken(): Promise<void> {
+  const now = Date.now();
+  const wait = Math.max(0, nextGeocodeAvailableAt - now);
+  nextGeocodeAvailableAt = Math.max(now, nextGeocodeAvailableAt) + GEOCODE_REFILL_MS;
+  if (wait > 0) await new Promise(r => setTimeout(r, wait));
+}
+
+let geocodeDailyDate = '';
+let geocodeDailyCount = 0;
+function incrementGeocodeDailyCounter(): void {
+  const today = new Date().toISOString().slice(0, 10);
+  if (today !== geocodeDailyDate) {
+    geocodeDailyDate = today;
+    geocodeDailyCount = 0;
+  }
+  geocodeDailyCount++;
+  if (geocodeDailyCount === GEOCODE_DAILY_WARN_THRESHOLD) {
+    console.warn(
+      `[locationService] Geocode call count crossed ${GEOCODE_DAILY_WARN_THRESHOLD} on ${geocodeDailyDate} — approaching Google's free-tier daily limit.`
+    );
+  }
+}
+
+type GeocodeResponse = {
+  status: string;
+  results?: Array<{
+    geometry: { location: { lat: number; lng: number } };
+    formatted_address?: string;
+  }>;
+  error_message?: string;
+};
+
+async function fetchGoogleGeocode(params: string): Promise<GeocodeResponse> {
+  if (!API_KEY) throw new Error('VITE_GOOGLE_MAPS_API_KEY not set');
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?${params}&key=${API_KEY}`;
+
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= GEOCODE_MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      const base = Math.min(2000, 250 * Math.pow(2, attempt - 1));
+      const jitter = base * (Math.random() * 0.5 - 0.25);
+      await new Promise(r => setTimeout(r, base + jitter));
+    }
+    await acquireGeocodeToken();
+    incrementGeocodeDailyCounter();
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), GEOCODE_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (res.status === 429 || (res.status >= 500 && res.status < 600)) {
+        lastErr = new Error(`geocode http ${res.status}`);
+        continue;
+      }
+      const data = (await res.json()) as GeocodeResponse;
+      if (data.status === 'OVER_QUERY_LIMIT' || data.status === 'UNKNOWN_ERROR') {
+        lastErr = new Error(`geocode google ${data.status}`);
+        continue;
+      }
+      return data;
+    } catch (err) {
+      clearTimeout(timer);
+      lastErr = err;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('geocode failed after retries');
+}
+
+// Resolved variants the batch loop needs to distinguish:
+//   ok        → success (or cache hit), reset failure streak
+//   no-match  → ZERO_RESULTS, soft miss, do NOT count toward streak
+//   denied    → REQUEST_DENIED, almost always a misconfigured key — abort early
+//   error     → any other transient/persistent failure
+type GeocodeResult =
+  | { kind: 'ok'; coords: { lat: number; lng: number } }
+  | { kind: 'no-match' }
+  | { kind: 'denied'; message?: string }
+  | { kind: 'error'; error: unknown };
+
+async function resolveAddress(trimmed: string): Promise<GeocodeResult> {
+  if (geocodeCache.has(trimmed)) {
+    return { kind: 'ok', coords: geocodeCache.get(trimmed)! };
+  }
+  try {
+    const data = await fetchGoogleGeocode(`address=${encodeURIComponent(trimmed)}`);
+    if (data.status === 'OK' && data.results?.[0]) {
+      const loc = data.results[0].geometry.location;
+      const coords = { lat: loc.lat, lng: loc.lng };
+      geocodeCache.set(trimmed, coords);
+      persistCacheEntry(trimmed, coords);
+      return { kind: 'ok', coords };
+    }
+    if (data.status === 'ZERO_RESULTS') return { kind: 'no-match' };
+    if (data.status === 'REQUEST_DENIED') {
+      return { kind: 'denied', message: data.error_message };
+    }
+    return { kind: 'error', error: new Error(`geocode google ${data.status}`) };
+  } catch (err) {
+    return { kind: 'error', error: err };
+  }
+}
 
 export async function geocodeAddress(
   address: string
@@ -22,34 +172,21 @@ export async function geocodeAddress(
   const trimmed = address.trim();
   if (!trimmed) return null;
 
-  if (geocodeCache.has(trimmed)) {
-    return geocodeCache.get(trimmed)!;
+  const result = await resolveAddress(trimmed);
+  if (result.kind === 'ok') return result.coords;
+  if (result.kind === 'denied') {
+    console.error('[locationService] geocodeAddress denied:', result.message);
+  } else if (result.kind === 'error') {
+    console.error('[locationService] geocodeAddress error:', result.error);
   }
-
-  try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(trimmed)}&key=${API_KEY}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.status === 'OK' && data.results?.[0]) {
-      const loc = data.results[0].geometry.location;
-      const coords = { lat: loc.lat, lng: loc.lng };
-      geocodeCache.set(trimmed, coords);
-      return coords;
-    }
-    return null;
-  } catch (err) {
-    console.error('[locationService] geocodeAddress error:', err);
-    return null;
-  }
+  return null;
 }
 
 export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
   try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}`;
-    const res = await fetch(url);
-    const data = await res.json();
+    const data = await fetchGoogleGeocode(`latlng=${lat},${lng}`);
     if (data.status === 'OK' && data.results?.[0]) {
-      return data.results[0].formatted_address as string;
+      return data.results[0].formatted_address ?? null;
     }
     return null;
   } catch (err) {
@@ -58,19 +195,38 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string |
   }
 }
 
-// Bulk geocode contacts that have address text but no lat/lng.
-// Returns a map of contactId → {lat, lng}.
-// Respects a 50ms delay between calls to avoid hitting rate limits.
 export async function geocodeContactsBatch(
   contacts: Contact[]
 ): Promise<Map<string, { lat: number; lng: number }>> {
   const results = new Map<string, { lat: number; lng: number }>();
+  let consecutiveFailures = 0;
+
   for (const contact of contacts) {
-    const address = contact.address || contact.homeAddress;
+    const address = (contact.address || contact.homeAddress || '').trim();
     if (!address) continue;
-    const coords = await geocodeAddress(address);
-    if (coords) results.set(contact.id, coords);
-    await new Promise(r => setTimeout(r, 50));
+
+    const result = await resolveAddress(address);
+
+    if (result.kind === 'ok') {
+      results.set(contact.id, result.coords);
+      consecutiveFailures = 0;
+    } else if (result.kind === 'no-match') {
+      // Bad address text is not an API failure — don't count toward abort streak.
+      consecutiveFailures = 0;
+    } else {
+      consecutiveFailures++;
+      if (result.kind === 'denied') {
+        console.error('[locationService] batch geocode denied:', result.message);
+      } else {
+        console.error('[locationService] batch geocode error:', result.error);
+      }
+      if (consecutiveFailures >= BATCH_CONSECUTIVE_FAILURE_LIMIT) {
+        console.warn(
+          `[locationService] batch aborted after ${BATCH_CONSECUTIVE_FAILURE_LIMIT} consecutive failures — preserving daily quota.`
+        );
+        break;
+      }
+    }
   }
   return results;
 }

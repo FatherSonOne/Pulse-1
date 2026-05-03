@@ -12,8 +12,6 @@ interface LocationEditModalProps {
   onSave: (updated: Contact) => void;
 }
 
-type PlaceResult = google.maps.places.PlaceResult;
-
 const LocationEditModal: React.FC<LocationEditModalProps> = ({
   contact,
   isOpen,
@@ -130,7 +128,7 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
       )}
       <Autocomplete
         onLoad={a => { autocompleteRef.current = a; }}
-        onPlaceChanged={() => handlePlaceChanged(type, autocompleteRef as React.MutableRefObject<PlaceResult | null>)}
+        onPlaceChanged={() => handlePlaceChanged(type, autocompleteRef)}
         options={{ types: ['address'] }}
       >
         <input
