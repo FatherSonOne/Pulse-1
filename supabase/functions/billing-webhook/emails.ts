@@ -4,16 +4,15 @@
 // Uses Resend (https://resend.com/docs/api-reference/emails/send-email).
 // Requires `RESEND_API_KEY` as a Supabase secret.
 //
-// NOTE on sender: we default to `onboarding@resend.dev` because Resend requires a
-// verified domain before you can send `from: noreply@pulse.app`. Once the Pulse
-// project verifies `pulse.app` (or `pulse.logosvision.org`) in the Resend
-// dashboard, swap FROM_ADDRESS to `Pulse <noreply@pulse.app>`.
+// NOTE on sender: pulse.logosvision.org is verified in Resend (DKIM/SPF via
+// IONOS DNS). REPLY_TO points at a real inbox so recipients who hit "Reply"
+// reach a human instead of bouncing off the no-reply mailbox.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
-// TODO: swap to `Pulse <noreply@pulse.app>` after verifying the domain in Resend.
-const FROM_ADDRESS = 'Pulse <onboarding@resend.dev>';
+const FROM_ADDRESS = 'Pulse <noreply@pulse.logosvision.org>';
+const REPLY_TO = 'support@pulse.logosvision.org';
 
 const APP_URL = 'https://pulse.logosvision.org';
 const BILLING_URL = APP_URL + '/settings?tab=billing';
@@ -48,6 +47,7 @@ export async function sendEmail(params: {
       },
       body: JSON.stringify({
         from: FROM_ADDRESS,
+        reply_to: REPLY_TO,
         to: [params.to],
         subject: params.subject,
         html: params.html,
