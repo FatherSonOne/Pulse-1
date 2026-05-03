@@ -1,3 +1,9 @@
+<!--
+⚠ OPS TODO — production cron paths returning 401 until configured:
+  https://github.com/FatherSonOne/Pulse-1/issues/34
+  (5-min task — set ALTER DATABASE postgres SET app.cron_secret + Edge Functions CRON_SECRET env)
+-->
+
 # 🚀 Pulse - Next-Generation Unified Communication Platform
 
 [![Version](https://img.shields.io/badge/version-27.0.0-blue.svg)](https://github.com/FatherSonOne/Pulse-1)
