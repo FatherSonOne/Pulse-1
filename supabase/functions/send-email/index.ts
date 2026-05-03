@@ -22,10 +22,11 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 // pulse.logosvision.org is verified in Resend (DKIM/SPF via IONOS DNS).
-// REPLY_TO points at a real inbox (or IONOS forwarder) so recipients who
-// hit "Reply" reach a human instead of bouncing off the no-reply address.
+// REPLY_TO lives on the parent domain (logosvision.org) because IONOS only
+// exposes the parent for forwarders — the forwarder routes replies to a
+// real inbox so they don't bounce off the no-reply mailbox.
 const FROM_ADDRESS = 'Pulse <noreply@pulse.logosvision.org>';
-const REPLY_TO = 'support@pulse.logosvision.org';
+const REPLY_TO = 'support@logosvision.org';
 
 const MAX_HTML_BYTES = 256 * 1024;
 const MAX_SUBJECT_LEN = 500;

@@ -5,14 +5,15 @@
 // Requires `RESEND_API_KEY` as a Supabase secret.
 //
 // NOTE on sender: pulse.logosvision.org is verified in Resend (DKIM/SPF via
-// IONOS DNS). REPLY_TO points at a real inbox so recipients who hit "Reply"
-// reach a human instead of bouncing off the no-reply mailbox.
+// IONOS DNS). REPLY_TO lives on the parent domain (logosvision.org) because
+// IONOS only exposes the parent for forwarders — the forwarder routes
+// replies to a real inbox so they don't bounce off the no-reply mailbox.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
 const FROM_ADDRESS = 'Pulse <noreply@pulse.logosvision.org>';
-const REPLY_TO = 'support@pulse.logosvision.org';
+const REPLY_TO = 'support@logosvision.org';
 
 const APP_URL = 'https://pulse.logosvision.org';
 const BILLING_URL = APP_URL + '/settings?tab=billing';
