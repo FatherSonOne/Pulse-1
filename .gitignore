@@ -113,6 +113,9 @@ docs/archive/scripts/
 # /impeccable scan output (regenerated each run)
 .impeccable-scan.json
 .tmp-impeccable*.json
+
+# Supabase CLI runtime cache (auto-managed, version-tracking files)
+supabase/.temp/
 # .claude/commands/ is intentionally tracked — shared slash commands
 !.claude/commands/*.md
 # .claude/skills/ is intentionally tracked — shared skills (e.g. /impeccable)
