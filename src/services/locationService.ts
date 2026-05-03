@@ -1,5 +1,11 @@
 import { supabase } from './supabase';
 import { Contact } from '../types';
+import {
+  Place,
+  PlaceWithRole,
+  rowToPlace,
+  PlaceRole,
+} from '../types/placeTypes';
 
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
 
@@ -84,6 +90,10 @@ export async function saveContactLocation(
     ? { lat: 'home_lat', lng: 'home_lng', addr: 'home_address' }
     : { lat: 'work_lat', lng: 'work_lng', addr: 'work_address' };
 
+  // Dual-write during the Place-schema rollout: the new places table
+  // becomes source of truth, but the legacy contacts.{home,work}_lat
+  // columns stay in sync so any consumer that hasn't migrated yet
+  // continues to work. A future cleanup migration drops the columns.
   const { error } = await supabase
     .from('contacts')
     .update({
@@ -98,6 +108,14 @@ export async function saveContactLocation(
   if (error) {
     console.error('[locationService] saveContactLocation error:', error);
     throw error;
+  }
+
+  // Mirror to the universal Place schema. Failures here are logged but
+  // not thrown — the legacy columns remain authoritative until cutover.
+  try {
+    await upsertContactPlace(contactId, locationType, lat, lng, address);
+  } catch (placeErr) {
+    console.error('[locationService] upsertContactPlace mirror failed:', placeErr);
   }
 }
 
@@ -115,6 +133,139 @@ export async function clearContactLocation(
     .eq('id', contactId);
 
   if (error) throw error;
+
+  // Detach the entity_place link; the place row itself is left for now
+  // (a place may be referenced by other entities in the future).
+  try {
+    await supabase
+      .from('entity_places')
+      .delete()
+      .eq('entity_type', 'contact')
+      .eq('entity_id', contactId)
+      .eq('role', locationType);
+  } catch (placeErr) {
+    console.error('[locationService] clear entity_place link failed:', placeErr);
+  }
+}
+
+// ============================================================
+// Universal Place schema — read/write
+//
+// These are the forward-looking helpers. New consumers should use
+// these; legacy consumers will keep working via the dual-write in
+// saveContactLocation / clearContactLocation above.
+// ============================================================
+
+/**
+ * Fetch all places attached to an entity, with the role they play.
+ * Returns empty array if none — callers can fall back to legacy
+ * columns when needed.
+ */
+export async function getPlacesForEntity(
+  entityType: 'contact' | 'task' | 'decision' | 'event' | 'meeting',
+  entityId: string
+): Promise<PlaceWithRole[]> {
+  const { data, error } = await supabase
+    .from('entity_places')
+    .select('role, places(*)')
+    .eq('entity_type', entityType)
+    .eq('entity_id', entityId);
+
+  if (error) {
+    console.error('[locationService] getPlacesForEntity error:', error);
+    return [];
+  }
+  if (!data) return [];
+
+  return data
+    .filter(row => row.places)
+    .map(row => ({
+      ...rowToPlace(row.places as unknown as Record<string, unknown>),
+      role: row.role as PlaceRole,
+    }));
+}
+
+/** Fetch a single place by id. */
+export async function getPlace(placeId: string): Promise<Place | null> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('id', placeId)
+    .single();
+  if (error || !data) return null;
+  return rowToPlace(data as Record<string, unknown>);
+}
+
+/**
+ * Upsert a contact's home or work place + the entity_places link.
+ * Used by the dual-write path in saveContactLocation. Internal but
+ * exported for tests.
+ */
+export async function upsertContactPlace(
+  contactId: string,
+  role: 'home' | 'work',
+  lat: number,
+  lng: number,
+  address: string
+): Promise<Place> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Try to find an existing place attached to this contact in this role.
+  const { data: existingLinks } = await supabase
+    .from('entity_places')
+    .select('place_id')
+    .eq('entity_type', 'contact')
+    .eq('entity_id', contactId)
+    .eq('role', role)
+    .limit(1);
+
+  const existingPlaceId = existingLinks?.[0]?.place_id as string | undefined;
+
+  if (existingPlaceId) {
+    const { data, error } = await supabase
+      .from('places')
+      .update({
+        lat,
+        lng,
+        address,
+        name: role === 'home' ? 'Home' : 'Work',
+        type: role,
+      })
+      .eq('id', existingPlaceId)
+      .select('*')
+      .single();
+    if (error) throw error;
+    return rowToPlace(data as Record<string, unknown>);
+  }
+
+  // Insert new place + link in a single round-trip-pair.
+  const { data: placeRow, error: placeErr } = await supabase
+    .from('places')
+    .insert({
+      owner_user_id: user.id,
+      lat,
+      lng,
+      address,
+      name: role === 'home' ? 'Home' : 'Work',
+      type: role,
+      created_by: user.id,
+    })
+    .select('*')
+    .single();
+  if (placeErr) throw placeErr;
+
+  const { error: linkErr } = await supabase
+    .from('entity_places')
+    .insert({
+      entity_type: 'contact',
+      entity_id: contactId,
+      place_id: placeRow.id,
+      role,
+    });
+  if (linkErr) throw linkErr;
+
+  return rowToPlace(placeRow as Record<string, unknown>);
 }
 
 // ============================================================

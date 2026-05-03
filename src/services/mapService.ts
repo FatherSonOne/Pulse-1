@@ -5,44 +5,73 @@ import { Contact } from '../types';
 export const GOOGLE_MAPS_LIBRARIES: Libraries = ['places', 'geometry'];
 
 // ============================================================
-// Map Styling — Pulse-branded vibrant theme
+// Map Styling — Coral Cockpit
+// Tinted neutrals carry 90%+ of the surface. Rose appears only on
+// highways (the structural backbone of the city) — same role coral
+// plays everywhere else in Pulse: signal, not decoration.
 // ============================================================
 
 export const MAP_STYLE_LIGHT: google.maps.MapTypeStyle[] = [
-  { featureType: 'all', elementType: 'geometry', stylers: [{ saturation: 10 }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#38bdf8' }, { saturation: 40 }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#0e7490' }] },
-  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f0e8' }] },
-  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#e8f4f0' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#bbf7d0' }] },
-  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#166534' }] },
+  // Default geometry tone matches Pulse's --paper-warm canvas
+  { elementType: 'geometry', stylers: [{ color: '#f4f1ee' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#52525b' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#f4f1ee' }] },
+
+  // POI labels off — they clutter; we control places via our own pins
   { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#e6ece4' }] },
+
+  // Water — muted slate with a hint of warm grey, never disco-cyan
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#dfe3e0' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#78716c' }] },
+
+  // Landscape sits a half-step lighter than the canvas
+  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f4f1ee' }] },
+  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#ece8e3' }] },
+
+  // Roads — the city's structural lines. Local roads near-white, arterial
+  // a half-step darker, highways carry the rose accent.
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#52525b' }] },
+  { featureType: 'road', elementType: 'labels.text.stroke', stylers: [{ color: '#fafafa' }] },
+  { featureType: 'road.local', elementType: 'geometry.fill', stylers: [{ color: '#fafafa' }] },
+  { featureType: 'road.arterial', elementType: 'geometry.fill', stylers: [{ color: '#ebe7e3' }] },
+  { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#fecdd3' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#f43f5e' }, { weight: 0.6 }] },
+
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#fda4af' }] },
-  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#f43f5e' }, { weight: 1 }] },
-  { featureType: 'road.arterial', elementType: 'geometry.fill', stylers: [{ color: '#fde68a' }] },
-  { featureType: 'road.local', elementType: 'geometry.fill', stylers: [{ color: '#ffffff' }] },
-  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#374151' }] },
-  { featureType: 'administrative', elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
+  { featureType: 'administrative', elementType: 'labels.text.fill', stylers: [{ color: '#78716c' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#52525b' }] },
 ];
 
 export const MAP_STYLE_DARK: google.maps.MapTypeStyle[] = [
-  { elementType: 'geometry', stylers: [{ color: '#0f172a' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#0f172a' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#94a3b8' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e4166' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#38bdf8' }] },
-  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#1e293b' }] },
-  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#162032' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#0f2d1a' }] },
+  // True-black canvas (Pulse dark-mode root) with translucent layers above
+  { elementType: 'geometry', stylers: [{ color: '#0a0a0a' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#0a0a0a' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#b4b4b8' }] },
+
   { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#7f1d1d' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#0e1410' }] },
+
+  // Water reads as a slightly cooler shade than the canvas, never blue-disco
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#070a0d' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#52525b' }] },
+
+  // Landscape sits one shade above canvas — the translucent-stack feel
+  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#0f0f0f' }] },
+  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#0d0d0d' }] },
+
+  // Roads against true-black: local roads barely lift, highways glow rose
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#a1a1aa' }] },
+  { featureType: 'road', elementType: 'labels.text.stroke', stylers: [{ color: '#0a0a0a' }] },
+  { featureType: 'road.local', elementType: 'geometry', stylers: [{ color: '#171717' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#1f1f1f' }] },
+  { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#3f0d18' }] },
   { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#f43f5e' }, { weight: 0.5 }] },
-  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#1e2d45' }] },
-  { featureType: 'road.local', elementType: 'geometry', stylers: [{ color: '#172032' }] },
-  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#334155' }] },
-  { featureType: 'administrative', elementType: 'labels.text.fill', stylers: [{ color: '#64748b' }] },
+
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#27272a' }] },
+  { featureType: 'administrative', elementType: 'labels.text.fill', stylers: [{ color: '#71717a' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#a1a1aa' }] },
 ];
 
 // ============================================================
@@ -68,10 +97,10 @@ export function getMapOptions(isDarkMode: boolean): google.maps.MapOptions {
 }
 
 // ============================================================
-// Status Colors
+// Status Colors — shared by all map markers/panels
 // ============================================================
 
-const STATUS_COLORS: Record<Contact['status'], string> = {
+export const MAP_STATUS_COLORS: Record<Contact['status'], string> = {
   online: '#22c55e',
   busy: '#ef4444',
   away: '#f59e0b',
@@ -79,41 +108,14 @@ const STATUS_COLORS: Record<Contact['status'], string> = {
 };
 
 // ============================================================
-// Marker Icon Builder
+// Live-location color
+// Cyan, deliberately outside the task-status vocabulary so a "live"
+// teammate dot never reads as a "task in progress" pin once the Map
+// view starts hosting cross-section entities.
 // ============================================================
 
-export function buildMarkerDataUrl(
-  avatarColor: string,
-  status: Contact['status'],
-  isSelected: boolean,
-  locationType: 'home' | 'work',
-  initials: string
-): string {
-  const size = isSelected ? 52 : 44;
-  const r = size / 2;
-  const innerR = r - 4;
-  const statusColor = STATUS_COLORS[status];
-  const badge = locationType === 'home' ? '🏠' : '🏢';
-  // SVG — avatar circle with status ring and location badge
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size + 12}" height="${size + 12}" viewBox="0 0 ${size + 12} ${size + 12}">
-  <defs>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
-    </filter>
-  </defs>
-  <!-- Outer glow ring when selected -->
-  ${isSelected ? `<circle cx="${r + 6}" cy="${r + 6}" r="${r + 4}" fill="none" stroke="${avatarColor}" stroke-width="3" opacity="0.5"/>` : ''}
-  <!-- Status ring -->
-  <circle cx="${r + 6}" cy="${r + 6}" r="${r}" fill="${statusColor}" filter="url(#shadow)"/>
-  <!-- Avatar background -->
-  <circle cx="${r + 6}" cy="${r + 6}" r="${innerR}" fill="${avatarColor}"/>
-  <!-- Initials -->
-  <text x="${r + 6}" y="${r + 6 + 5}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="${innerR * 0.75}" font-weight="600" fill="white">${initials}</text>
-  <!-- Location badge -->
-  <text x="${size + 2}" y="${size + 8}" font-size="12">${badge}</text>
-</svg>`;
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-}
+export const LIVE_LOCATION_COLOR = '#06b6d4';
+export const LIVE_LOCATION_COLOR_SOFT = 'rgba(6, 182, 212, 0.30)';
 
 // ============================================================
 // Bounds Computation
@@ -139,10 +141,13 @@ export interface RadiusRing {
   fillColor: string;
 }
 
+// Single-hue rings; the inner ring sits closer to coral, outer rings fade
+// toward neutral. One color, varying weight — the eye reads concentric
+// distance, not three different "categories."
 export const RADIUS_RINGS: RadiusRing[] = [
   { radiusMiles: 0.5, label: '0.5 mi', strokeColor: '#f43f5e', fillColor: '#f43f5e' },
-  { radiusMiles: 1,   label: '1 mi',   strokeColor: '#fb923c', fillColor: '#fb923c' },
-  { radiusMiles: 5,   label: '5 mi',   strokeColor: '#facc15', fillColor: '#facc15' },
+  { radiusMiles: 1,   label: '1 mi',   strokeColor: '#fb7185', fillColor: '#fb7185' },
+  { radiusMiles: 5,   label: '5 mi',   strokeColor: '#fda4af', fillColor: '#fda4af' },
 ];
 
 export const MILES_TO_METERS = 1609.344;

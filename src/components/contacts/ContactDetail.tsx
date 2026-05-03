@@ -20,6 +20,7 @@ import { supabase } from '../../services/supabase';
 
 import toast from 'react-hot-toast';
 import { ArrowRight, Cake, Check, Clock, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Sparkles, Star, Target, Trash2, Video, X } from 'lucide-react';
+import MapPreview from '../map/MapPreview';
 
 // ==================== TYPES ====================
 
@@ -581,6 +582,29 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                 <span className="text-zinc-700 dark:text-zinc-300">{contact.address}</span>
               </div>
             )}
+
+            {/* Embedded map preview — shows when the contact has any geocoded
+                location. Tap routes back to the Map tab. First cross-section
+                consumer of <MapPreview> + the universal Place schema. */}
+            {(contact.homeLat != null && contact.homeLng != null) ? (
+              <MapPreview
+                lat={contact.homeLat}
+                lng={contact.homeLng}
+                addressOverride={contact.homeAddress ?? contact.address ?? undefined}
+                isDarkMode={typeof document !== 'undefined' && document.documentElement.classList.contains('dark')}
+                height={140}
+                className="mt-1"
+              />
+            ) : (contact.workLat != null && contact.workLng != null) ? (
+              <MapPreview
+                lat={contact.workLat}
+                lng={contact.workLng}
+                addressOverride={contact.workAddress ?? undefined}
+                isDarkMode={typeof document !== 'undefined' && document.documentElement.classList.contains('dark')}
+                height={140}
+                className="mt-1"
+              />
+            ) : null}
             {contact.website && (
               <div className="flex items-center gap-3 text-sm">
                 <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 flex-shrink-0">

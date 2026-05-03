@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
 import { Contact } from '../../../types';
 import {
   checkLocationConsent,
@@ -68,7 +69,12 @@ const LocationSharePanel: React.FC<LocationSharePanelProps> = ({ contact, myUser
   };
 
   if (loading) {
-    return <div className={`text-xs ${sub} py-2`}><i className="fa-solid fa-spinner fa-spin mr-1" />Loading...</div>;
+    return (
+      <div className={`text-xs ${sub} py-2 inline-flex items-center gap-1.5`}>
+        <Loader2 size={12} className="animate-spin" />
+        Loading...
+      </div>
+    );
   }
 
   if (!contact.pulseUserId) {

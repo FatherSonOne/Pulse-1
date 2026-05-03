@@ -1,6 +1,6 @@
 import React from 'react';
 import { Circle, OverlayView } from '@react-google-maps/api';
-import { RADIUS_RINGS, MILES_TO_METERS } from '../../../services/mapService';
+import { RADIUS_RINGS, MILES_TO_METERS, LIVE_LOCATION_COLOR } from '../../../services/mapService';
 
 interface MapRadiusRingsProps {
   center: { lat: number; lng: number };
@@ -47,20 +47,21 @@ const MapRadiusRings: React.FC<MapRadiusRingsProps> = ({ center, isDarkMode }) =
           </OverlayView>
         </React.Fragment>
       ))}
-      {/* User position dot */}
+      {/* User position dot — solid, no perpetual ping (motion is for state,
+          not decoration). Border picks up canvas color via box-shadow. */}
       <OverlayView
         position={center}
         mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
       >
         <div className="relative" style={{ transform: 'translate(-50%, -50%)' }}>
-          {/* Ping animation */}
           <div
-            className="absolute inset-0 rounded-full motion-safe:animate-ping opacity-40"
-            style={{ backgroundColor: '#3b82f6', width: 20, height: 20, margin: -4 }}
-          />
-          <div
-            className="relative rounded-full border-2 border-white shadow-lg"
-            style={{ width: 14, height: 14, backgroundColor: '#3b82f6' }}
+            className="rounded-full"
+            style={{
+              width: 14,
+              height: 14,
+              backgroundColor: LIVE_LOCATION_COLOR,
+              boxShadow: '0 0 0 2px #fafafa, 0 2px 6px rgba(0,0,0,0.30)',
+            }}
           />
         </div>
       </OverlayView>

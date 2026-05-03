@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { AlertTriangle, MapPin, MapPinned, Users } from 'lucide-react';
 import { Contact } from '../../../types';
 import { ContactCircle } from '../../../types/contactCircleTypes';
 import { GOOGLE_MAPS_LIBRARIES, getMapOptions, computeBounds } from '../../../services/mapService';
@@ -15,6 +16,7 @@ import MapContactMarker from './MapContactMarker';
 import MapRadiusRings from './MapRadiusRings';
 import MapContactPanel from './MapContactPanel';
 import MapCircleOverlay from './MapCircleOverlay';
+import LocationEditModal from './LocationEditModal';
 
 interface ContactMapViewProps {
   contacts: Contact[];
@@ -55,6 +57,8 @@ const ContactMapView: React.FC<ContactMapViewProps> = ({
     locationType: 'all',
     searchQuery: '',
   });
+  const [showAddLocationPicker, setShowAddLocationPicker] = useState(false);
+  const [pickerContactId, setPickerContactId] = useState<string | null>(null);
 
   // Sync when parent contacts update
   useEffect(() => { setLocalContacts(contacts); }, [contacts]);
@@ -160,8 +164,8 @@ const ContactMapView: React.FC<ContactMapViewProps> = ({
 
   if (loadError) {
     return (
-      <div className={`flex items-center justify-center h-full text-sm ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>
-        <i className="fa-solid fa-triangle-exclamation mr-2" />
+      <div className={`flex items-center justify-center h-full gap-2 text-sm ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>
+        <AlertTriangle size={16} />
         Failed to load Google Maps. Check your API key.
       </div>
     );
@@ -170,16 +174,38 @@ const ContactMapView: React.FC<ContactMapViewProps> = ({
   if (!isLoaded) {
     return (
       <div className={`flex flex-col items-center justify-center h-full gap-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-        <i className="fa-solid fa-map-location-dot text-3xl text-rose-400 motion-safe:animate-pulse" />
+        <MapPinned size={32} className="text-rose-500 motion-safe:animate-pulse" />
         <p className="text-sm">Loading map…</p>
       </div>
     );
   }
 
+  const pickerContact = pickerContactId
+    ? localContacts.find(c => c.id === pickerContactId) ?? null
+    : null;
+  const contactsWithoutLocations = localContacts.filter(
+    c => c.homeLat == null && c.workLat == null
+  );
+
   const hasNoLocations = visibleMarkers.length === 0;
 
   return (
     <div className="relative w-full h-full overflow-hidden rounded-xl">
+      {/* Single entrance animation for the side panel; the rest of the
+          map relies on motion-safe Tailwind utilities. */}
+      <style>{`
+        @keyframes contactsMapPanelEnter {
+          from { opacity: 0; transform: translateX(16px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+        .contacts-map-panel-enter {
+          animation: contactsMapPanelEnter 220ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .contacts-map-panel-enter { animation: none; }
+        }
+      `}</style>
+
       {/* Filter bar */}
       <MapFilterBar
         filter={filter}
@@ -238,17 +264,48 @@ const ContactMapView: React.FC<ContactMapViewProps> = ({
         })}
       </GoogleMap>
 
-      {/* Empty state overlay */}
+      {/* Empty state overlay — geocoding-in-progress shows quietly; the
+          true empty case offers an immediate path to add a location. */}
       {hasNoLocations && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <div className={`rounded-2xl px-6 py-5 text-center shadow-lg backdrop-blur-2xl border ${isDarkMode ? 'bg-black/85 border-white/10' : 'bg-white/85 border-gray-200'}`}>
-            <i className={`fa-solid fa-map-pin text-3xl mb-2 ${isDarkMode ? 'text-rose-500/60' : 'text-gray-300'}`} />
-            <p className={`text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No locations to show</p>
-            <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-              {localContacts.some(c => c.address)
-                ? 'Geocoding addresses…'
-                : 'Click a contact → "Set Location" to add them to the map'}
-            </p>
+          <div
+            className={`rounded-2xl px-6 py-5 text-center shadow-lg backdrop-blur-2xl border max-w-sm pointer-events-auto ${
+              isDarkMode ? 'bg-black/85 border-white/10' : 'bg-white/90 border-gray-200'
+            }`}
+          >
+            <MapPin
+              size={32}
+              className={`mx-auto mb-3 ${isDarkMode ? 'text-rose-500/70' : 'text-rose-500/60'}`}
+            />
+            {localContacts.some(c => c.address) ? (
+              <>
+                <p className={`text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Geocoding addresses…
+                </p>
+                <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  Pins will appear once Google resolves the addresses.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className={`text-sm font-semibold mb-1 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                  Pin your network to the map
+                </p>
+                <p className={`text-xs mb-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                  Add a home or work location to a contact to see them here.
+                  Distance, routes, and circles light up once you have a few pins.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowAddLocationPicker(true)}
+                  disabled={contactsWithoutLocations.length === 0}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <MapPin size={14} />
+                  Add a contact location
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -271,12 +328,130 @@ const ContactMapView: React.FC<ContactMapViewProps> = ({
 
       {/* Contact count badge */}
       <div
-        className={`absolute bottom-4 left-4 px-3 py-1.5 rounded-full text-xs font-semibold shadow backdrop-blur-sm ${
+        className={`absolute bottom-4 left-4 px-3 py-1.5 rounded-full text-xs font-semibold shadow backdrop-blur-sm flex items-center gap-1.5 ${
           isDarkMode ? 'bg-gray-900/80 text-gray-300' : 'bg-white/80 text-gray-600'
         }`}
       >
-        <i className="fa-solid fa-users mr-1.5 text-rose-400" />
+        <Users size={12} className="text-rose-500" />
         {visibleMarkers.length} location{visibleMarkers.length !== 1 ? 's' : ''}
+      </div>
+
+      {/* Pick-a-contact-to-locate dialog (empty-state CTA target) */}
+      {showAddLocationPicker && (
+        <ContactLocationPickerOverlay
+          contacts={contactsWithoutLocations}
+          isDarkMode={isDarkMode}
+          onClose={() => setShowAddLocationPicker(false)}
+          onPick={(id) => {
+            setShowAddLocationPicker(false);
+            setPickerContactId(id);
+          }}
+        />
+      )}
+
+      {pickerContact && (
+        <LocationEditModal
+          contact={pickerContact}
+          isOpen={true}
+          isDarkMode={isDarkMode}
+          onClose={() => setPickerContactId(null)}
+          onSave={(updated) => {
+            handleContactUpdated(updated);
+            setPickerContactId(null);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// ============================================================
+// Contact picker overlay (empty-state path)
+// Inline because it's tightly coupled to the empty state and not
+// reused elsewhere; modal feels heavy here.
+// ============================================================
+
+interface ContactLocationPickerOverlayProps {
+  contacts: Contact[];
+  isDarkMode: boolean;
+  onClose: () => void;
+  onPick: (contactId: string) => void;
+}
+
+const ContactLocationPickerOverlay: React.FC<ContactLocationPickerOverlayProps> = ({
+  contacts,
+  isDarkMode,
+  onClose,
+  onPick,
+}) => {
+  const [query, setQuery] = useState('');
+  const filtered = contacts.filter(c =>
+    !query || c.name.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <div
+      className="absolute inset-0 z-20 flex items-center justify-center p-6"
+      style={{ background: 'rgba(0,0,0,0.45)' }}
+      onClick={onClose}
+    >
+      <div
+        className={`w-full max-w-md rounded-2xl shadow-2xl border overflow-hidden ${
+          isDarkMode ? 'bg-zinc-900 border-white/10' : 'bg-white border-gray-200'
+        }`}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className={`px-5 py-4 border-b ${isDarkMode ? 'border-white/10' : 'border-gray-100'}`}>
+          <h3 className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            Pick a contact to locate
+          </h3>
+          <input
+            autoFocus
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name…"
+            className={`mt-3 w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors ${
+              isDarkMode
+                ? 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-rose-500'
+                : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-rose-500'
+            }`}
+          />
+        </div>
+        <div className="max-h-80 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <p className={`px-5 py-8 text-sm text-center ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              No contacts match your search.
+            </p>
+          ) : (
+            filtered.map(c => (
+              <button
+                key={c.id}
+                onClick={() => onPick(c.id)}
+                className={`w-full flex items-center gap-3 px-5 py-2.5 text-left transition-colors ${
+                  isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'
+                }`}
+              >
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+                  style={{ backgroundColor: c.avatarColor || '#f43f5e' }}
+                >
+                  {c.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {c.name}
+                  </p>
+                  {c.role && (
+                    <p className={`text-xs truncate ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                      {c.role}
+                    </p>
+                  )}
+                </div>
+              </button>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Autocomplete } from '@react-google-maps/api';
+import { Briefcase, Home, Loader2, X } from 'lucide-react';
 import { Contact } from '../../../types';
 import { saveContactLocation, clearContactLocation } from '../../../services/locationService';
 
@@ -96,22 +97,22 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
   const LocationField = ({
     type,
     label,
-    emoji,
     currentAddress,
     autocompleteRef,
     inputRef,
   }: {
     type: 'home' | 'work';
     label: string;
-    emoji: string;
     currentAddress?: string;
     autocompleteRef: React.MutableRefObject<google.maps.places.Autocomplete | null>;
     inputRef: React.RefObject<HTMLInputElement>;
-  }) => (
+  }) => {
+    const Icon = type === 'home' ? Home : Briefcase;
+    return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className={`text-sm font-semibold flex items-center gap-1.5 ${text}`}>
-          <span>{emoji}</span> {label}
+          <Icon size={14} className="text-rose-500" /> {label}
         </label>
         {currentAddress && (
           <button
@@ -140,7 +141,8 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
         />
       </Autocomplete>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
@@ -153,9 +155,10 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className={`p-1.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
           >
-            <i className="fa-solid fa-xmark" />
+            <X size={14} />
           </button>
         </div>
 
@@ -166,7 +169,6 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
           <LocationField
             type="home"
             label="Home"
-            emoji="🏠"
             currentAddress={contact.homeAddress}
             autocompleteRef={homeRef}
             inputRef={homeInputRef}
@@ -174,7 +176,6 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
           <LocationField
             type="work"
             label="Work"
-            emoji="🏢"
             currentAddress={contact.workAddress}
             autocompleteRef={workRef}
             inputRef={workInputRef}
@@ -198,9 +199,9 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
           <button
             onClick={handleSave}
             disabled={saving || (!homePending && !workPending)}
-            className="flex-1 py-2 rounded-xl text-sm font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1"
+            className="flex-1 py-2 rounded-xl text-sm font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 inline-flex items-center justify-center gap-1.5"
           >
-            {saving ? <i className="fa-solid fa-spinner fa-spin mr-1.5" /> : null}
+            {saving && <Loader2 size={12} className="animate-spin" />}
             Save Locations
           </button>
         </div>

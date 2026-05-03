@@ -1,4 +1,5 @@
 import React from 'react';
+import { Briefcase, Globe, Home, Search } from 'lucide-react';
 import { ContactCircle } from '../../../types/contactCircleTypes';
 
 export interface MapFilter {
@@ -22,10 +23,15 @@ const STATUS_OPTIONS: { value: MapFilter['status'][number]; label: string; color
   { value: 'offline', label: 'Offline', color: '#6b7280' },
 ];
 
+const LOCATION_OPTIONS = [
+  { value: 'all'  as const, label: 'All',  Icon: Globe },
+  { value: 'home' as const, label: 'Home', Icon: Home },
+  { value: 'work' as const, label: 'Work', Icon: Briefcase },
+];
+
 const MapFilterBar: React.FC<MapFilterBarProps> = ({ filter, circles, isDarkMode, onFilterChange }) => {
   const bg = isDarkMode ? 'bg-black/75 border-white/10' : 'bg-white/90 border-gray-200';
   const text = isDarkMode ? 'text-white' : 'text-gray-900';
-  const inputBg = isDarkMode ? 'bg-gray-800 text-white placeholder-gray-400' : 'bg-gray-100 text-gray-900 placeholder-gray-500';
 
   const toggleStatus = (s: MapFilter['status'][number]) => {
     const next = filter.status.includes(s)
@@ -41,12 +47,15 @@ const MapFilterBar: React.FC<MapFilterBarProps> = ({ filter, circles, isDarkMode
     onFilterChange({ ...filter, circles: next });
   };
 
+  // No status filter active = "show all" (matches the !active = full-list contract below)
+  const noStatusFilter = filter.status.length === 0;
+
   return (
     <div className={`absolute top-3 left-3 right-3 z-10 rounded-xl border backdrop-blur-2xl shadow-lg ${bg}`}>
       <div className="flex items-center gap-2 p-2 flex-wrap">
         {/* Search */}
         <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
-          <i className={`fa-solid fa-magnifying-glass text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+          <Search size={14} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} />
           <input
             type="text"
             placeholder="Search contacts..."
@@ -60,34 +69,43 @@ const MapFilterBar: React.FC<MapFilterBarProps> = ({ filter, circles, isDarkMode
 
         {/* Location type toggle */}
         <div className={`flex rounded-lg overflow-hidden text-xs ${isDarkMode ? 'bg-white/10' : 'bg-gray-100'}`}>
-          {(['all', 'home', 'work'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => onFilterChange({ ...filter, locationType: t })}
-              className={`px-2.5 py-1 capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-inset ${
-                filter.locationType === t
-                  ? 'bg-rose-500 text-white'
-                  : `${isDarkMode ? 'text-gray-300 hover:bg-white/10' : 'text-gray-600 hover:bg-gray-200'}`
-              }`}
-            >
-              {t === 'all' ? 'All' : t === 'home' ? '🏠 Home' : '🏢 Work'}
-            </button>
-          ))}
+          {LOCATION_OPTIONS.map(({ value, label, Icon }) => {
+            const active = filter.locationType === value;
+            return (
+              <button
+                key={value}
+                onClick={() => onFilterChange({ ...filter, locationType: value })}
+                className={`flex items-center gap-1.5 px-2.5 py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-inset ${
+                  active
+                    ? 'bg-rose-500 text-white'
+                    : `${isDarkMode ? 'text-gray-300 hover:bg-white/10' : 'text-gray-600 hover:bg-gray-200'}`
+                }`}
+              >
+                <Icon size={12} />
+                {label}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Status filters */}
+        {/* Status filters — muted at rest, color-on-active. Matches the
+            People sidebar tag-dot pattern: chroma earns its appearance. */}
         <div className="flex gap-1">
           {STATUS_OPTIONS.map(s => {
-            const active = filter.status.length === 0 || filter.status.includes(s.value);
+            const active = noStatusFilter || filter.status.includes(s.value);
             return (
               <button
                 key={s.value}
                 onClick={() => toggleStatus(s.value)}
                 title={s.label}
-                className={`w-6 h-6 rounded-full border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
-                  active ? 'border-transparent scale-110' : 'border-gray-400 opacity-40'
+                aria-pressed={active}
+                className={`w-5 h-5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
+                  active ? '' : 'opacity-30'
                 }`}
-                style={{ backgroundColor: s.color }}
+                style={{
+                  backgroundColor: active ? s.color : 'currentColor',
+                  color: isDarkMode ? '#52525b' : '#a1a1aa',
+                }}
               />
             );
           })}
