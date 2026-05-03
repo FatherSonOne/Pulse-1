@@ -46,10 +46,16 @@ serve(async (req) => {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'X-Ecosystem-Token': config.service_token,
+        // Receivers (entomate, logos_vision) require these on every event:
+        'X-Ecosystem-Source': 'pulse',
+        'X-Ecosystem-Event-Id': eventId,
       };
-      // Supabase edge functions require an anon key to pass the API gateway
+      // Supabase edge functions require an anon/publishable key to pass the
+      // API gateway. Send via both `Authorization: Bearer` and `apikey` to
+      // satisfy strict receivers that check the `apikey` header explicitly.
       if (config.features?.gateway_key) {
         headers['Authorization'] = `Bearer ${config.features.gateway_key}`;
+        headers['apikey'] = config.features.gateway_key;
       }
 
       const resp = await fetch(config.api_url, {
