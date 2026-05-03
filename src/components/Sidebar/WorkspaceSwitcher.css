@@ -488,6 +488,25 @@
 
 .ws-select {
   cursor: pointer;
+  /* color-scheme alone is unreliable for the native popup on Windows
+     Chromium — explicit option colors below are what actually fixes the
+     white-on-white text. Both are kept so the closed-state caret/scroll
+     also follow the theme. */
+  color-scheme: dark;
+}
+
+.ws-select option {
+  background-color: #1f1f23;
+  color: #f4f4f5;
+}
+
+[data-theme="light"] .ws-select {
+  color-scheme: light;
+}
+
+[data-theme="light"] .ws-select option {
+  background-color: #ffffff;
+  color: #18181b;
 }
 
 .ws-submit-btn {
