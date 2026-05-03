@@ -15,6 +15,10 @@ const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
 const APP_URL = Deno.env.get('APP_URL') ?? 'https://app.pulse.ai'
 const FROM_EMAIL = Deno.env.get('ALERT_FROM_EMAIL') ?? 'alerts@pulse.ai'
+// Required to invoke. Without it the function would iterate every saved
+// search, blast Resend emails to every user (cost + reputation), and
+// update last_alert_at — i.e. anyone with the URL could DoS / abuse it.
+const CRON_SECRET = Deno.env.get('CRON_SECRET')!
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -92,7 +96,23 @@ async function sendAlertEmail(
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-serve(async (_req) => {
+serve(async (req) => {
+  // Auth — require CRON_SECRET header. pg_cron and any legitimate
+  // invocation must pass it.
+  if (!CRON_SECRET) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'CRON_SECRET not configured' }),
+      { headers: { 'Content-Type': 'application/json' }, status: 500 }
+    )
+  }
+  const providedSecret = req.headers.get('x-cron-secret') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+  if (providedSecret !== CRON_SECRET) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Unauthorized' }),
+      { headers: { 'Content-Type': 'application/json' }, status: 401 }
+    )
+  }
+
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
   // 1. Fetch all alert-enabled saved searches

@@ -8,7 +8,25 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-serve(async () => {
+serve(async (req) => {
+  // Auth — require CRON_SECRET. Without this, anyone with the URL
+  // could trigger outbound POSTs that leak service_tokens in payloads
+  // to attacker-controlled webhook URLs from ecosystem_config rows.
+  const CRON_SECRET = Deno.env.get('CRON_SECRET');
+  if (!CRON_SECRET) {
+    return new Response(JSON.stringify({ error: 'CRON_SECRET not configured' }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500,
+    });
+  }
+  const provided = req.headers.get('x-cron-secret') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (provided !== CRON_SECRET) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 401,
+    });
+  }
+
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!

@@ -38,12 +38,12 @@ serve(async (req) => {
     .eq('enabled', true)
     .single();
 
-  // Also accept inbound tokens (for cross-app calls via ecosystem-inbound)
-  const { data: configByInbound } = !config
-    ? await supabase.from('ecosystem_config').select('*').eq('inbound_token', token).eq('enabled', true).single()
-    : { data: null };
-
-  if (!config && !configByInbound) {
+  // SECURITY: only service_token is accepted as bot caller. Previously
+  // an inbound_token fallback was honored — but inbound_token is the
+  // secret partners send TO us (read by ecosystem-inbound), so any
+  // partner that can webhook us could also impersonate the bot.
+  // Token confusion vector closed.
+  if (!config) {
     return json({ error: 'Unauthorized' }, 401);
   }
 

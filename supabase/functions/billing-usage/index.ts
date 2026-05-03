@@ -30,9 +30,15 @@ serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   try {
-    // Verify internal call via gateway secret
+    // Verify internal call via gateway secret. Fail closed when the
+    // secret is unset on the server — otherwise anyone could call this
+    // endpoint and burn any workspace's AI cap.
+    if (!GATEWAY_SECRET) {
+      console.error('[billing-usage] GATEWAY_SECRET not configured — refusing to process');
+      return json({ error: 'Server misconfiguration: GATEWAY_SECRET not set' }, 500);
+    }
     const gatewayHeader = req.headers.get('x-gateway-secret') || '';
-    if (GATEWAY_SECRET && gatewayHeader !== GATEWAY_SECRET) {
+    if (gatewayHeader !== GATEWAY_SECRET) {
       return json({ error: 'Unauthorized — internal use only' }, 401);
     }
 

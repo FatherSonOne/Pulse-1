@@ -37,7 +37,9 @@ interface ErrorResponse {
 
 // ==================== Rate Limiting (DB-backed) ====================
 // Uses a Supabase table so limits are enforced across all Deno isolates.
-// Falls open if the DB call fails to avoid blocking legitimate requests.
+// Fails CLOSED on DB error: a leaked JWT could otherwise drain the
+// GEMINI key by exploiting the rate-limit DB outage. Cost-safety
+// matters more than a brief availability hit.
 
 async function checkRateLimitDB(
   supabase: any,
@@ -46,7 +48,6 @@ async function checkRateLimitDB(
 ): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
   const limit = isAnonymous ? MAX_REQUESTS_PER_MINUTE_ANONYMOUS : MAX_REQUESTS_PER_MINUTE;
   const now = Date.now();
-  // Bucket = floor of current timestamp to the nearest window boundary
   const windowStart = new Date(Math.floor(now / RATE_LIMIT_WINDOW) * RATE_LIMIT_WINDOW).toISOString();
   const resetAt = Math.floor(now / RATE_LIMIT_WINDOW) * RATE_LIMIT_WINDOW + RATE_LIMIT_WINDOW;
 
@@ -57,9 +58,8 @@ async function checkRateLimitDB(
     );
 
     if (error) {
-      // Fail open — let the request through if DB is unavailable
-      console.warn('[GeminiProxy] Rate limit DB error (fail open):', error.message);
-      return { allowed: true, remaining: limit - 1, resetAt };
+      console.error('[GeminiProxy] Rate limit DB error (failing closed):', error.message);
+      return { allowed: false, remaining: 0, resetAt };
     }
 
     const requestCount = count as number;
@@ -69,8 +69,8 @@ async function checkRateLimitDB(
       resetAt,
     };
   } catch (err) {
-    console.warn('[GeminiProxy] Rate limit check threw (fail open):', err);
-    return { allowed: true, remaining: limit - 1, resetAt };
+    console.error('[GeminiProxy] Rate limit check threw (failing closed):', err);
+    return { allowed: false, remaining: 0, resetAt };
   }
 }
 
