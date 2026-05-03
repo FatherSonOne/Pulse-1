@@ -11,18 +11,20 @@ import './Dependencies.css';
 
 interface DependencySectionProps {
   taskId: string;
+  /** Workspace gate for the bulk task lookup (defense-in-depth, #33 PR-12). */
+  workspaceId: string;
   /** When the operator clicks a related task, open it in the same drawer. */
   onOpenTask?: (taskId: string, taskTitle: string) => void;
 }
 
-export const DependencySection: React.FC<DependencySectionProps> = ({ taskId, onOpenTask }) => {
+export const DependencySection: React.FC<DependencySectionProps> = ({ taskId, workspaceId, onOpenTask }) => {
   const [summary, setSummary] = useState<DependencySummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    dependenciesService.getDependencies(taskId).then((data) => {
+    dependenciesService.getDependencies(taskId, workspaceId).then((data) => {
       if (!cancelled) {
         setSummary(data);
         setLoading(false);
@@ -31,7 +33,7 @@ export const DependencySection: React.FC<DependencySectionProps> = ({ taskId, on
     return () => {
       cancelled = true;
     };
-  }, [taskId]);
+  }, [taskId, workspaceId]);
 
   if (loading) {
     return (

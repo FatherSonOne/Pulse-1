@@ -694,7 +694,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       // Phase 5: when a task moves to done, surface any newly unblocked
       // downstream tasks so the operator knows their queue just opened up.
       if (newStatus === 'done') {
-        const unblocked = await dependenciesService.getNewlyUnblockedTasks(taskId);
+        const unblocked = await dependenciesService.getNewlyUnblockedTasks(taskId, effectiveWorkspaceId);
         if (unblocked.length > 0) {
           const titles = unblocked.slice(0, 2).map((t) => t.title).join(', ');
           const more = unblocked.length > 2 ? `, +${unblocked.length - 2} more` : '';

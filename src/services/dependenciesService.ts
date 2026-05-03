@@ -28,8 +28,12 @@ export const dependenciesService = {
   /**
    * Load all task_dependencies edges for a given task in either direction.
    * Then resolve the related task rows from extracted_tasks.
+   *
+   * workspaceId is required as defense-in-depth (#33 PR-12) — without it,
+   * the bulk-by-IDs join on extracted_tasks could surface tasks from other
+   * workspaces if RLS regresses.
    */
-  async getDependencies(taskId: string): Promise<DependencySummary> {
+  async getDependencies(taskId: string, workspaceId: string): Promise<DependencySummary> {
     // Fetch both directions in parallel.
     const [upstreamResult, downstreamResult] = await Promise.all([
       // What blocks this task?
@@ -59,6 +63,7 @@ export const dependenciesService = {
     const { data: tasks, error } = await supabase
       .from('extracted_tasks')
       .select('*')
+      .eq('workspace_id', workspaceId)
       .in('id', allRelated);
 
     if (error) {
@@ -106,8 +111,11 @@ export const dependenciesService = {
    * When a task moves to done, find downstream tasks where THIS was the only
    * remaining blocker. Used to surface "Just unblocked" toasts and the auto-
    * promotion section in Active view.
+   *
+   * workspaceId is required as defense-in-depth (#33 PR-12) — gates every
+   * extracted_tasks lookup so tasks from other workspaces cannot leak.
    */
-  async getNewlyUnblockedTasks(completedTaskId: string): Promise<Task[]> {
+  async getNewlyUnblockedTasks(completedTaskId: string, workspaceId: string): Promise<Task[]> {
     // Find all tasks that depend on the completed task.
     const { data: dependents } = await supabase
       .from('task_dependencies')
@@ -135,6 +143,7 @@ export const dependenciesService = {
         const { data: stillOpen } = await supabase
           .from('extracted_tasks')
           .select('id, status')
+          .eq('workspace_id', workspaceId)
           .in('id', otherBlockerIds)
           .not('status', 'in', '(done,cancelled)');
         stillBlocked = (stillOpen ?? []).length > 0;
@@ -144,6 +153,7 @@ export const dependenciesService = {
         const { data: dependent } = await supabase
           .from('extracted_tasks')
           .select('*')
+          .eq('workspace_id', workspaceId)
           .eq('id', dependentId)
           .single();
         if (dependent) newlyUnblocked.push(dependent as Task);

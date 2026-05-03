@@ -110,7 +110,7 @@ export const ActivityDrawer: React.FC<ActivityDrawerProps> = ({
               <div className="da-section-divider">
                 <span className="dt-label">Dependencies</span>
               </div>
-              <DependencySection taskId={itemId} />
+              <DependencySection taskId={itemId} workspaceId={workspaceId} />
             </>
           )}
 

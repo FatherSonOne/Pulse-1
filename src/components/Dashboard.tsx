@@ -514,7 +514,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         setGoals(updatedGoals);
       } else {
         // Load outcomes/goals from database
-        const outcomes = await dataService.getOutcomes();
+        const outcomes = await dataService.getOutcomes(currentWorkspace?.id);
         const goalsFromOutcomes: GoalProgress[] = outcomes.slice(0, 4).map(o => ({
           id: o.id,
           title: o.title,
@@ -827,7 +827,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
 
     try {
       // Gather comprehensive context from all data sources
-      const context = await briefingService.gatherBriefingContext();
+      const context = await briefingService.gatherBriefingContext(currentWorkspace?.id);
       const contextString = briefingService.buildContextString(context);
 
       // Generate AI briefing with full context (router handles key server-side)

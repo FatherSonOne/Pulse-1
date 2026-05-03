@@ -277,10 +277,10 @@ export const taskService = {
       .eq('depends_on_task_id', taskId);
 
     const depIds = deps?.map(d => d.depends_on_task_id) || [];
-    const depTasks = depIds.length > 0 ? await this.getTasksByIds(depIds) : [];
+    const depTasks = depIds.length > 0 ? await this.getTasksByIds(depIds, task.workspace_id) : [];
 
     const dependentIds = dependents?.map(d => d.task_id) || [];
-    const dependentTasks = dependentIds.length > 0 ? await this.getTasksByIds(dependentIds) : [];
+    const dependentTasks = dependentIds.length > 0 ? await this.getTasksByIds(dependentIds, task.workspace_id) : [];
 
     return {
       ...task,
@@ -289,11 +289,15 @@ export const taskService = {
     };
   },
 
-  // Helper to get multiple tasks by IDs
-  async getTasksByIds(ids: string[]): Promise<Task[]> {
+  // Helper to get multiple tasks by IDs, scoped to a workspace.
+  // workspaceId is required as defense-in-depth (#33 PR-12) — without it
+  // a bulk-by-IDs call could surface tasks from other workspaces if RLS
+  // regresses.
+  async getTasksByIds(ids: string[], workspaceId: string): Promise<Task[]> {
     const { data: tasks, error } = await supabase
       .from('extracted_tasks')
       .select('*')
+      .eq('workspace_id', workspaceId)
       .in('id', ids);
 
     if (error) {

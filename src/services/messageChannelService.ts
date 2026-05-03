@@ -789,15 +789,19 @@ export const messageChannelService = {
     query: string,
     filters: MessageSearchFilters = {}
   ): Promise<SearchResult[]> {
+    // Defense-in-depth (#33 PR-12): !inner forces an inner-join filter on
+    // the parent table by the embedded resource's workspace_id, so
+    // cross-workspace channel_messages cannot leak even if RLS regresses.
     let dbQuery = supabase
       .from('channel_messages')
       .select(`
         *,
-        channels:channel_id (
+        channels:channel_id!inner (
           name,
           workspace_id
         )
       `)
+      .eq('channels.workspace_id', workspaceId)
       .ilike('content', `%${query}%`);
 
     // Apply filters

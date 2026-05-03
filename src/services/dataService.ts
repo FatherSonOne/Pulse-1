@@ -1557,11 +1557,21 @@ class DataService {
 
   // ============= OUTCOMES (GOALS) =============
 
-  async getOutcomes(): Promise<Outcome[]> {
-    const { data, error } = await supabase
+  async getOutcomes(workspaceId?: string): Promise<Outcome[]> {
+    // Defense-in-depth (#33 PR-12): when caller passes workspaceId, gate
+    // the query on it explicitly so cross-workspace outcomes cannot leak
+    // if RLS on the outcomes table regresses. Optional to keep legacy
+    // callers green; pass currentWorkspace.id everywhere new.
+    let query = supabase
       .from('outcomes')
       .select('*, key_results(*)')
-      .eq('user_id', this.getUserId())
+      .eq('user_id', this.getUserId());
+
+    if (workspaceId) {
+      query = query.eq('workspace_id', workspaceId);
+    }
+
+    const { data, error } = await query
       .order('created_at', { ascending: false });
 
     if (error) {

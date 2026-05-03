@@ -110,7 +110,7 @@ class BriefingService {
   /**
    * Gather comprehensive context from all data sources
    */
-  async gatherBriefingContext(): Promise<BriefingContext> {
+  async gatherBriefingContext(workspaceId?: string): Promise<BriefingContext> {
     const userId = this.getUserId();
     const now = new Date();
     const today = new Date(now);
@@ -141,7 +141,7 @@ class BriefingService {
       dataService.getContacts(),
       dataService.getVoxerRecordings(),
       dataService.getArchives(),
-      dataService.getOutcomes(),
+      dataService.getOutcomes(workspaceId),
       this.getRecentSearches(userId),
       this.getGmailSummary().catch(() => ({ unread: 0, emails: [] })),
       this.getGoogleCalendarEvents().catch(() => []),
