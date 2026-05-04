@@ -342,8 +342,20 @@ class DataService {
     // continue streaming into the new context — a cross-workspace data leak.
     // Callers that want fresh realtime subscriptions in the new workspace
     // re-subscribe via their normal mount path.
-    onWorkspaceChanged(() => this.cleanupAllSubscriptions());
-    onWorkspaceCleared(() => this.cleanupAllSubscriptions());
+    //
+    // queueMicrotask defers the listener registration until the current
+    // synchronous evaluation of the import graph drains. Without this,
+    // a cross-chunk import cycle (any svc-core file that statically
+    // imports `dataService`, e.g. briefingService / meetingService /
+    // authService) lands here while `onWorkspaceChanged` is still in
+    // TDZ within the half-initialized svc-core chunk — manifesting as
+    // "Cannot access 'Oe' before initialization" at production runtime.
+    // The microtask boundary is enough; the imported bindings are live
+    // by the time it fires.
+    queueMicrotask(() => {
+      onWorkspaceChanged(() => this.cleanupAllSubscriptions());
+      onWorkspaceCleared(() => this.cleanupAllSubscriptions());
+    });
   }
 
   private registerChannel(key: string, channel: RealtimeChannel): RealtimeChannel {
@@ -675,6 +687,39 @@ class DataService {
       const { messages: _, ...threadFields } = threadDb;
       return dbToThread(threadFields, messages);
     });
+  }
+
+  /**
+   * Lightweight summary of the most recently active threads for the Search
+   * section's working-memory empty state. Avoids the full message join — only
+   * what the Recent Threads row needs to render.
+   */
+  async getRecentThreads(limit: number = 10): Promise<Array<{
+    id: string;
+    counterpart: string;
+    avatarColor: string | null;
+    unread: boolean;
+    lastActivityAt: Date;
+  }>> {
+    const { data, error } = await supabase
+      .from('threads')
+      .select('id, contact_name, avatar_color, unread, updated_at')
+      .eq('user_id', this.getUserId())
+      .order('updated_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching recent threads:', error);
+      return [];
+    }
+
+    return (data || []).map((t: any) => ({
+      id: t.id,
+      counterpart: t.contact_name || 'Unknown',
+      avatarColor: t.avatar_color ?? null,
+      unread: Boolean(t.unread),
+      lastActivityAt: new Date(t.updated_at),
+    }));
   }
 
   async getThread(id: string): Promise<Thread | null> {
