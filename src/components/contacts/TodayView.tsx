@@ -24,6 +24,7 @@ import { getUpcomingActions } from '../../services/contactGoalService';
 import { TodayFeedCard } from './TodayFeedCard';
 import { TodayEmptyState } from './TodayEmptyState';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
+import TodayRouteStrip from './TodayRouteStrip';
 
 import { AlertCircle, Check, Clock } from 'lucide-react';
 
@@ -259,6 +260,16 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
 
       {/* Feed content */}
       <div className="flex-1 overflow-y-auto">
+
+        {/* B2: Today's geographic arc — events with locations + travel-time
+            hints between consecutive stops. Renders nothing when no events
+            with locations exist today, so it's invisible to operators who
+            don't keep calendar events with addresses. */}
+        <div className="px-4 pt-4">
+          <TodayRouteStrip
+            isDarkMode={typeof document !== 'undefined' && document.documentElement.classList.contains('dark')}
+          />
+        </div>
 
         {/* Loading skeleton */}
         {loading && (
