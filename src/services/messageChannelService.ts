@@ -28,6 +28,7 @@ import {
   ChannelMember,
 } from '../types/messages';
 import { generateSmartReply, analyzeDraftIntent } from './geminiService';
+import { ecosystemNotifyService } from './ecosystemNotifyService';
 
 // Types for enhanced features
 export interface TypingIndicator {
@@ -70,6 +71,26 @@ export interface DraftAnalysisResult {
 
 // Module-level timeout storage for typing indicators
 const typingTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+/**
+ * Resolve channel name + sender display name and forward any mapped contact
+ * mentions to the cross-app notify service. Always non-blocking.
+ */
+async function notifyMappedMentions(channelId: string, senderId: string, content: string): Promise<void> {
+  try {
+    const [channelRes, senderRes] = await Promise.all([
+      supabase.from('message_channels').select('name').eq('id', channelId).single(),
+      supabase.from('user_profiles').select('display_name, full_name, handle').eq('id', senderId).single(),
+    ]);
+    const channelName = channelRes.data?.name || 'channel';
+    const sender = senderRes.data as { display_name?: string; full_name?: string; handle?: string } | null;
+    const mentionedBy = sender?.display_name || sender?.full_name || sender?.handle || 'Someone';
+
+    await ecosystemNotifyService.notifyMessageMentions({ content, channelName, mentionedBy });
+  } catch (err) {
+    console.warn('[messageChannelService] notifyMappedMentions failed:', err);
+  }
+}
 
 export const messageChannelService = {
   // ==================== Channel Operations ====================
@@ -273,6 +294,13 @@ export const messageChannelService = {
       .single();
 
     if (error) throw error;
+
+    // Cross-app notification for @-mentioned contacts that are mapped to a CRM.
+    // Fire-and-forget — never block the message-send path on cross-app delivery.
+    if (messageType === 'text' && content) {
+      void notifyMappedMentions(channelId, senderId, content);
+    }
+
     return data as ChannelMessage;
   },
 

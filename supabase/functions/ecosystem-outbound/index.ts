@@ -6,8 +6,11 @@
 // then POSTs the event on behalf of the user.
 //
 // Supported event types:
-//   meeting.feedback — User rates a meeting summary (→ Entomate)
-//   meeting.export   — Export a Pulse recording to Entomate for AI processing
+//   meeting.feedback         — User rates a meeting summary (→ Entomate)
+//   meeting.export           — Export a Pulse recording to Entomate for AI processing
+//   meeting.export_request   — Ask Entomate to send a recording back to Pulse
+//   message.mention          — A Pulse message @-mentioned a synced contact (→ LV)
+//   channel.activity_summary — Periodic per-channel engagement digest (→ LV)
 // =====================================================
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -59,7 +62,13 @@ serve(async (req) => {
     }
 
     // Allowed outbound event types (whitelist to prevent abuse)
-    const ALLOWED_EVENTS = ['meeting.feedback', 'meeting.export', 'meeting.export_request'];
+    const ALLOWED_EVENTS = [
+      'meeting.feedback',
+      'meeting.export',
+      'meeting.export_request',
+      'message.mention',
+      'channel.activity_summary',
+    ];
     if (!ALLOWED_EVENTS.includes(eventType)) {
       return json({ error: `Event type '${eventType}' is not allowed for outbound` }, 403);
     }

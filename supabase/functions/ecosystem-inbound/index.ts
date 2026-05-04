@@ -31,8 +31,6 @@ Deno.serve(async (req) => {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  const startTime = Date.now();
-
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -73,10 +71,24 @@ Deno.serve(async (req) => {
 
     const event: EcosystemEvent = await req.json();
 
-    // Log the inbound event
-    await supabase.from('ecosystem_events').insert({
-      event_id: event.id,
-      source: event.source,
+    // Senders may use `id` or `correlationId`; fall back to a fresh UUID so the
+    // NOT NULL `event_id` constraint never silently drops the row.
+    const eventId =
+      event.id ||
+      (event as any).correlationId ||
+      crypto.randomUUID();
+
+    // Normalize source label — accept both `logos-vision` and `logos_vision`
+    // since LV's bridge has historically sent the hyphenated form.
+    const sourceLabel: EcosystemEvent['source'] =
+      (event.source as string) === 'logos-vision' ? 'logos_vision' : event.source;
+
+    // Log the inbound event. If this fails (constraint violation, etc.), surface
+    // it instead of silently dropping — earlier this caused 46 LV→Pulse contact
+    // events to be lost while still returning 200 to the sender.
+    const { error: logInsertError } = await supabase.from('ecosystem_events').insert({
+      event_id: eventId,
+      source: sourceLabel,
       event_type: event.eventType,
       entity_type: event.entityType,
       entity_id: event.entityId,
@@ -84,6 +96,18 @@ Deno.serve(async (req) => {
       status: 'received',
       payload: event.data,
     });
+
+    if (logInsertError) {
+      console.error('[ecosystem-inbound] Failed to log inbound event:', logInsertError, {
+        eventId,
+        source: sourceLabel,
+        eventType: event.eventType,
+      });
+      return new Response(
+        JSON.stringify({ error: 'Failed to log event', detail: logInsertError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Route to handler
     const processingStart = Date.now();
@@ -106,7 +130,7 @@ Deno.serve(async (req) => {
         error_message: errorMessage,
         processing_time_ms: Date.now() - processingStart,
       })
-      .eq('event_id', event.id)
+      .eq('event_id', eventId)
       .eq('direction', 'inbound');
 
     if (status === 'failed') {
@@ -117,7 +141,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ received: true, eventId: event.id }),
+      JSON.stringify({ received: true, eventId }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {
@@ -178,6 +202,12 @@ async function routeEvent(
     case 'meeting.export_request':
       return handleExportRequest(supabase, event);
 
+    case 'meeting.recording_request':
+      return handleRecordingRequest(supabase, event);
+
+    case 'donation.received':
+      return handleDonationReceived(supabase, event);
+
     case 'heartbeat':
       return handleHeartbeat(supabase, event);
 
@@ -192,6 +222,7 @@ async function routeEvent(
 // =====================================================
 
 const ENTOMATE_BOT_ID = 'e0000000-0000-0000-0000-e00000000001';
+const LOGOS_VISION_BOT_ID = '10905151-0000-0000-0000-100000000001';
 
 async function handleMeetingProcessed(supabase: any, event: EcosystemEvent): Promise<void> {
   const {
@@ -609,6 +640,42 @@ async function handleHeartbeat(supabase: any, event: EcosystemEvent): Promise<vo
   console.log(`[ecosystem-inbound] Heartbeat received from ${event.source}`);
 }
 
+async function handleDonationReceived(supabase: any, event: EcosystemEvent): Promise<void> {
+  const { workspaceId, donation, logos_url } = event.data;
+  if (!workspaceId) throw new Error('workspaceId required in event.data');
+  if (!donation) throw new Error('donation object required in event.data');
+
+  const channelId = await resolveOrCreateBotChannel(supabase, workspaceId, 'donations', 'logos_vision');
+
+  const amount = donation.amount != null ? `$${Number(donation.amount).toLocaleString()}` : 'Unknown amount';
+  const donor = donation.donor_name || donation.donorName || donation.client_name || donation.clientName || 'Anonymous donor';
+  const donorLine = donation.donor_email || donation.donorEmail
+    ? `\n*${donation.donor_email || donation.donorEmail}*`
+    : '';
+  const dateStr = donation.donation_date || donation.donationDate || donation.date;
+  const dateLine = dateStr ? `\n**Date:** ${new Date(dateStr).toLocaleDateString()}` : '';
+  const fundLine = donation.fund || donation.campaign ? `\n**Fund:** ${donation.fund || donation.campaign}` : '';
+  const noteLine = donation.notes || donation.message ? `\n\n> ${donation.notes || donation.message}` : '';
+
+  const content = `## 💚 New Donation Received\n\n**${donor}** — **${amount}**${donorLine}${dateLine}${fundLine}${noteLine}\n\n---\n*From Logos Vision${logos_url ? ` • [View in CRM](${logos_url})` : ''}*`;
+
+  await insertBotMessage(supabase, {
+    workspaceId,
+    channelId,
+    senderId: LOGOS_VISION_BOT_ID,
+    botApp: 'logos_vision',
+    content,
+    messageType: 'donation_alert',
+    metadata: {
+      donationId: donation.id || event.entityId,
+      amount: donation.amount,
+      donor,
+      sourceUrl: logos_url,
+    },
+    actions: logos_url ? [{ label: 'View in Logos Vision', action: 'open_url', url: logos_url }] : [],
+  });
+}
+
 // =====================================================
 // SERVICE-TO-SERVICE OUTBOUND
 // =====================================================
@@ -688,6 +755,114 @@ async function sendServiceEvent(
 // =====================================================
 // EXPORT REQUEST HANDLER
 // =====================================================
+
+/**
+ * Handle meeting.recording_request — search Pulse recordings by query/timeframe.
+ *
+ * Complements meeting.recordings_list (which returns recent unexported
+ * recordings) and meeting.export_request (which fetches a known recording by id).
+ * Posts matching recordings to the bot channel so users can pick one to export.
+ *
+ * Payload: { workspaceId, query?, since?, before?, limit? }
+ *   - query: substring match against recording title (case-insensitive)
+ *   - since / before: ISO timestamps bounding the search window
+ *   - limit: max results (default 10, max 50)
+ */
+async function handleRecordingRequest(supabase: any, event: EcosystemEvent): Promise<void> {
+  const { workspaceId, query, since, before, limit: reqLimit } = event.data;
+  if (!workspaceId) throw new Error('workspaceId required');
+
+  const max = Math.min(reqLimit || 10, 50);
+  const sinceIso = since ? new Date(since).toISOString() : null;
+  const beforeIso = before ? new Date(before).toISOString() : null;
+
+  // Build pulse_video_rooms query
+  let videoQuery = supabase
+    .from('pulse_video_rooms')
+    .select('id, title, created_at, duration_seconds, recording_url, transcript')
+    .eq('status', 'ended')
+    .not('recording_url', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(max);
+  if (sinceIso) videoQuery = videoQuery.gte('created_at', sinceIso);
+  if (beforeIso) videoQuery = videoQuery.lte('created_at', beforeIso);
+  if (query) videoQuery = videoQuery.ilike('title', `%${query}%`);
+  const { data: videoRooms } = await videoQuery;
+
+  // Build legacy meetings query
+  let legacyQuery = supabase
+    .from('meetings')
+    .select('id, title, start_time, duration_minutes, audio_file_url, transcript, attendees')
+    .not('audio_file_url', 'is', null)
+    .order('start_time', { ascending: false })
+    .limit(max);
+  if (sinceIso) legacyQuery = legacyQuery.gte('created_at', sinceIso);
+  if (beforeIso) legacyQuery = legacyQuery.lte('created_at', beforeIso);
+  if (query) legacyQuery = legacyQuery.ilike('title', `%${query}%`);
+  const { data: legacyMeetings } = await legacyQuery;
+
+  const matches = [
+    ...(videoRooms || []).map((r: any) => ({
+      id: r.id,
+      title: r.title || 'Pulse Meeting',
+      recordedAt: r.created_at,
+      durationMinutes: r.duration_seconds ? Math.round(r.duration_seconds / 60) : null,
+      hasAudio: !!r.recording_url,
+      hasTranscript: !!r.transcript,
+      source: 'pulse_video',
+    })),
+    ...(legacyMeetings || []).map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      recordedAt: r.start_time || r.created_at,
+      durationMinutes: r.duration_minutes,
+      hasAudio: !!r.audio_file_url,
+      hasTranscript: !!r.transcript,
+      attendeeCount: Array.isArray(r.attendees) ? r.attendees.length : 0,
+      source: 'ai_scribe',
+    })),
+  ].slice(0, max);
+
+  // Surface the result in the bot channel.
+  const channelId = await resolveOrCreateBotChannel(supabase, workspaceId, 'meetings');
+  const queryDesc = [
+    query ? `matching "${query}"` : null,
+    sinceIso ? `after ${new Date(sinceIso).toLocaleDateString()}` : null,
+    beforeIso ? `before ${new Date(beforeIso).toLocaleDateString()}` : null,
+  ].filter(Boolean).join(' ') || 'all available';
+
+  if (matches.length === 0) {
+    await insertBotMessage(supabase, {
+      workspaceId, channelId,
+      senderId: ENTOMATE_BOT_ID,
+      content: `## 🔍 No recordings found\n\nNo Pulse recordings matched the criteria: ${queryDesc}.`,
+      messageType: 'recordings_list',
+      metadata: { query, since: sinceIso, before: beforeIso, requestedBy: event.source },
+      actions: [],
+    });
+    return;
+  }
+
+  const listText = matches.map((r: any) =>
+    `• **${r.title}** — ${new Date(r.recordedAt).toLocaleDateString()}${r.durationMinutes ? ` (${r.durationMinutes} min)` : ''}`
+  ).join('\n');
+
+  await insertBotMessage(supabase, {
+    workspaceId, channelId,
+    senderId: ENTOMATE_BOT_ID,
+    content: `## 🎙️ Recordings Found (${matches.length})\n\nMatching: ${queryDesc}\n\n${listText}\n\n*Reply with the title or ID to export to ${event.source}.*`,
+    messageType: 'recordings_list',
+    metadata: {
+      recordings: matches,
+      totalCount: matches.length,
+      query, since: sinceIso, before: beforeIso,
+      requestedBy: event.source,
+    },
+    actions: matches.length === 1
+      ? [{ label: `Export to ${event.source}`, action: 'export_recording', url: undefined }]
+      : [{ label: 'Export All', action: 'export_all_recordings' }],
+  });
+}
 
 /**
  * Handle meeting.export_request — Entomate requests a specific recording.
@@ -778,28 +953,39 @@ async function handleExportRequest(supabase: any, event: EcosystemEvent): Promis
 async function resolveOrCreateBotChannel(
   supabase: any,
   workspaceId: string,
-  purpose: string
+  purpose: string,
+  botApp: string = 'entomate'
 ): Promise<string> {
   // Check existing registration
   const { data: existing } = await supabase
     .from('ecosystem_bot_channels')
     .select('channel_id')
     .eq('workspace_id', workspaceId)
-    .eq('bot_app', 'entomate')
+    .eq('bot_app', botApp)
     .eq('channel_purpose', purpose)
     .single();
 
   if (existing) return existing.channel_id;
 
   // Create the channel
-  const nameMap: Record<string, { name: string; description: string }> = {
-    meetings: { name: 'entomate-meetings', description: 'Meeting summaries and action items from Entomate' },
-    alerts: { name: 'entomate-alerts', description: 'Automation alerts and notifications from Entomate' },
-    action_items: { name: 'entomate-tasks', description: 'Task assignments and updates from Entomate' },
-    automations: { name: 'entomate-automations', description: 'Automation workflow updates from Entomate' },
+  const channelPrefix = botApp === 'logos_vision' ? 'logos' : botApp;
+  const nameMap: Record<string, Record<string, { name: string; description: string }>> = {
+    entomate: {
+      meetings: { name: 'entomate-meetings', description: 'Meeting summaries and action items from Entomate' },
+      alerts: { name: 'entomate-alerts', description: 'Automation alerts and notifications from Entomate' },
+      action_items: { name: 'entomate-tasks', description: 'Task assignments and updates from Entomate' },
+      automations: { name: 'entomate-automations', description: 'Automation workflow updates from Entomate' },
+    },
+    logos_vision: {
+      alerts: { name: 'logos-alerts', description: 'CRM alerts and notifications from Logos Vision' },
+      donations: { name: 'logos-donations', description: 'Donation activity from Logos Vision' },
+    },
   };
 
-  const channelInfo = nameMap[purpose] || { name: `entomate-${purpose}`, description: `Entomate ${purpose} feed` };
+  const channelInfo = nameMap[botApp]?.[purpose]
+    || { name: `${channelPrefix}-${purpose}`, description: `${botApp} ${purpose} feed` };
+
+  const senderId = botApp === 'logos_vision' ? LOGOS_VISION_BOT_ID : ENTOMATE_BOT_ID;
 
   const { data: channel, error } = await supabase
     .from('message_channels')
@@ -810,8 +996,8 @@ async function resolveOrCreateBotChannel(
       is_public: true,
       is_group: false,
       is_bot_channel: true,
-      bot_app: 'entomate',
-      created_by: ENTOMATE_BOT_ID,
+      bot_app: botApp,
+      created_by: senderId,
     })
     .select('id')
     .single();
@@ -820,7 +1006,7 @@ async function resolveOrCreateBotChannel(
 
   await supabase.from('ecosystem_bot_channels').insert({
     workspace_id: workspaceId,
-    bot_app: 'entomate',
+    bot_app: botApp,
     channel_id: channel.id,
     channel_purpose: purpose,
   });
@@ -836,6 +1022,7 @@ async function insertBotMessage(supabase: any, opts: {
   messageType: string;
   metadata: Record<string, any>;
   actions: Array<{ label: string; action: string; url?: string }>;
+  botApp?: string;
 }): Promise<string> {
   const { data, error } = await supabase
     .from('chat_messages')
@@ -845,7 +1032,7 @@ async function insertBotMessage(supabase: any, opts: {
       sender_id: opts.senderId,
       bot_content: opts.content,
       is_bot_message: true,
-      bot_app: 'entomate',
+      bot_app: opts.botApp || 'entomate',
       bot_message_type: opts.messageType,
       bot_metadata: opts.metadata,
       bot_actions: opts.actions,
