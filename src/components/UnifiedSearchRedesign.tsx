@@ -29,6 +29,7 @@ import {
   Maximize2,
   Minimize2,
   Command,
+  MapPin,
 } from 'lucide-react';
 import { SearchResult, SearchResultType, SearchFilters, SearchSortOptions, SearchSourceError } from '../services/unifiedSearchService';
 import { searchClipboardService, ClipboardItem } from '../services/searchClipboardService';
@@ -38,6 +39,8 @@ import { searchExport } from '../services/searchExport';
 import { savedSearchesService, SavedSearch } from '../services/savedSearches';
 import { voiceSearchService } from '../services/voiceSearch';
 import { searchAnalyticsService } from '../services/searchAnalyticsService';
+import { GeoFilter, parseGeoQuery, describeGeoFilter } from '../services/geoSearchParser';
+import { applyGeoFilter, resolveGeoCenter } from '../services/spatialSearchService';
 import toast from 'react-hot-toast';
 import './UnifiedSearchRedesign.css';
 import { SearchResultSkeleton } from './SearchResultSkeleton';
@@ -45,6 +48,7 @@ import { OperatorReferencePopover } from './OperatorReferencePopover';
 import { SaveSearchModal } from './SaveSearchModal';
 import { SearchDetailPanel } from './SearchDetailPanel';
 import { SearchResultCard } from './SearchResultCard';
+import SearchMapView from './SearchMapView';
 
 // ── Icon maps ─────────────────────────────────────────────────────────────────
 
@@ -87,7 +91,7 @@ const QUICK_CATEGORIES: {
 ];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type ViewMode      = 'list' | 'grid' | 'timeline';
+type ViewMode      = 'list' | 'grid' | 'timeline' | 'map';
 type ClipboardView = 'notes' | 'categories';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -163,6 +167,16 @@ export default function UnifiedSearchRedesign() {
 
   // ── Search errors ────────────────────────────────────────────────────────────
   const [searchErrors, setSearchErrors] = useState<SearchSourceError[]>([]);
+
+  // ── Geo modifier (B3) ────────────────────────────────────────────────────────
+  // The composer parses trailing "near me" / "near <place>" / "within N mi"
+  // off the query before search. activeGeoFilter is null when no modifier
+  // is active; geoCenter holds the resolved {lat,lng} for the spatial filter
+  // and the map view; geoFilterError surfaces "couldn't find that place"
+  // and "location blocked" cases inline below the search input.
+  const [activeGeoFilter, setActiveGeoFilter] = useState<GeoFilter | null>(null);
+  const [geoCenter, setGeoCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoFilterError, setGeoFilterError] = useState<string | null>(null);
 
   // ── Web search (Sonar) ───────────────────────────────────────────────────────
   const [useWebSearch,     setUseWebSearch]     = useState(
@@ -266,6 +280,9 @@ export default function UnifiedSearchRedesign() {
     if (!debouncedSearchQuery.trim()) {
       setSearchResults([]);
       setWebSearchResult(null);
+      setActiveGeoFilter(null);
+      setGeoCenter(null);
+      setGeoFilterError(null);
       return;
     }
 
@@ -275,11 +292,18 @@ export default function UnifiedSearchRedesign() {
     setSearchResults([]);
     setVisibleCount(20);
 
-    // Web search — fire and forget
+    // B3: parse trailing geo modifier off the query before sending to backend.
+    const { baseQuery, geoFilter } = parseGeoQuery(debouncedSearchQuery);
+    const queryForBackend = geoFilter ? baseQuery : debouncedSearchQuery;
+    setActiveGeoFilter(geoFilter);
+    setGeoFilterError(null);
+
+    // Web search — fire and forget. Use cleaned baseQuery so "near me" doesn't
+    // pollute the LLM web search.
     if (useWebSearch) {
       setWebSearchLoading(true);
       searchEnhancements
-        .sonarWebSearch(debouncedSearchQuery, { model: webSearchModel })
+        .sonarWebSearch(queryForBackend, { model: webSearchModel })
         .then(setWebSearchResult)
         .catch(() => setWebSearchResult(null))
         .finally(() => setWebSearchLoading(false));
@@ -295,18 +319,42 @@ export default function UnifiedSearchRedesign() {
       };
 
       const { results, errors } = await searchEnhancements.enhancedSearch(
-        debouncedSearchQuery, userId, activeFilters, useAISearch,
+        queryForBackend, userId, activeFilters, useAISearch,
         (partial) => {
           if (searchGeneration.current !== generation) return;
-          setSearchResults(partial);
+          // Don't show partial results while a geo filter is active —
+          // the spatial pass runs once on the final result set.
+          if (!geoFilter) setSearchResults(partial);
         }
       );
 
       if (searchGeneration.current !== generation) return;
-      setSearchResults(results);
+
+      let finalResults = results;
+      if (geoFilter) {
+        const center = await resolveGeoCenter(geoFilter);
+        if (searchGeneration.current !== generation) return;
+        if (!center) {
+          setGeoFilterError(
+            geoFilter.kind === 'near-me'
+              ? 'Location unavailable — enable location services to use "near me".'
+              : `Could not find "${geoFilter.placeQuery}".`
+          );
+          setGeoCenter(null);
+          finalResults = [];
+        } else {
+          setGeoCenter(center);
+          finalResults = await applyGeoFilter(results, geoFilter, center);
+          if (searchGeneration.current !== generation) return;
+        }
+      } else {
+        setGeoCenter(null);
+      }
+
+      setSearchResults(finalResults);
       setSearchErrors(errors);
       setShowSuggestions(false);
-      searchAnalyticsService.trackSearch(userId, debouncedSearchQuery, results.length);
+      searchAnalyticsService.trackSearch(userId, debouncedSearchQuery, finalResults.length);
     } catch {
       if (searchGeneration.current === generation) setSearchResults([]);
     } finally {
@@ -473,7 +521,7 @@ export default function UnifiedSearchRedesign() {
         <div className="search-header-controls">
           {/* View mode strip */}
           <div className="view-toggle-group" role="group" aria-label="View mode">
-            {([['list', List, 'List'], ['grid', Grid, 'Grid'], ['timeline', Clock, 'Timeline']] as const).map(
+            {([['list', List, 'List'], ['grid', Grid, 'Grid'], ['timeline', Clock, 'Timeline'], ['map', MapPin, 'Map']] as const).map(
               ([mode, Icon, label]) => (
                 <button
                   key={mode}
@@ -841,6 +889,21 @@ export default function UnifiedSearchRedesign() {
             </div>
           )}
 
+          {/* ── Geo modifier chip (B3) ──────────────────────────────────────── */}
+          {(activeGeoFilter || geoFilterError) && (
+            <div className="geo-filter-bar" role="status">
+              {activeGeoFilter && !geoFilterError && (
+                <span className="geo-filter-chip">
+                  <MapPin size={12} />
+                  {describeGeoFilter(activeGeoFilter)}
+                </span>
+              )}
+              {geoFilterError && (
+                <span className="geo-filter-error">{geoFilterError}</span>
+              )}
+            </div>
+          )}
+
           {/* ── Result count ─────────────────────────────────────────────────── */}
           {searchResults.length > 0 && (
             <p className="results-count-label">
@@ -865,26 +928,33 @@ export default function UnifiedSearchRedesign() {
           {/* ── Results feed ─────────────────────────────────────────────────── */}
           <div className={`results-feed ${viewMode}`} role="search"
             aria-label="Search results" onKeyDown={handleResultsKeyDown}>
-            {viewMode === 'timeline'
-              ? groupResultsByDate(searchResults.slice(0, visibleCount)).map(group => (
-                  <React.Fragment key={group.label}>
-                    {/* Large section header — clear temporal grouping */}
-                    <div className="timeline-date-header">
-                      <div className="timeline-date-line" />
-                      <span className="timeline-date-label">{group.label}</span>
-                      <div className="timeline-date-line" />
-                    </div>
-                    {group.items.map(result => <SearchResultCard key={result.id} result={result} isSelected={selectedResults.has(result.id)} onSelect={toggleResultSelect} onDetail={setDetailResult} />)}
-                  </React.Fragment>
-                ))
-              : searchResults.slice(0, visibleCount).map(result => (
-                  <SearchResultCard key={result.id} result={result} isSelected={selectedResults.has(result.id)} onSelect={toggleResultSelect} onDetail={setDetailResult} />
-                ))
-            }
+            {viewMode === 'map' ? (
+              <SearchMapView
+                results={searchResults}
+                center={geoCenter}
+                onSelect={setDetailResult}
+              />
+            ) : viewMode === 'timeline' ? (
+              groupResultsByDate(searchResults.slice(0, visibleCount)).map(group => (
+                <React.Fragment key={group.label}>
+                  {/* Large section header — clear temporal grouping */}
+                  <div className="timeline-date-header">
+                    <div className="timeline-date-line" />
+                    <span className="timeline-date-label">{group.label}</span>
+                    <div className="timeline-date-line" />
+                  </div>
+                  {group.items.map(result => <SearchResultCard key={result.id} result={result} isSelected={selectedResults.has(result.id)} onSelect={toggleResultSelect} onDetail={setDetailResult} />)}
+                </React.Fragment>
+              ))
+            ) : (
+              searchResults.slice(0, visibleCount).map(result => (
+                <SearchResultCard key={result.id} result={result} isSelected={selectedResults.has(result.id)} onSelect={toggleResultSelect} onDetail={setDetailResult} />
+              ))
+            )}
 
-            {loading && <SearchResultSkeleton count={6} />}
+            {loading && viewMode !== 'map' && <SearchResultSkeleton count={6} />}
 
-            {!loading && visibleCount < searchResults.length && (
+            {!loading && viewMode !== 'map' && visibleCount < searchResults.length && (
               <div ref={sentinelRef} className="scroll-sentinel" aria-hidden="true" />
             )}
           </div>
