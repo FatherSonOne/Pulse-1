@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { CalendarEvent } from '../types';
 import { getEventTypeMeta } from '../services/customEventTypesService';
+import { getTravelBuffersForEvents, type TravelBuffer } from '../services/travelBufferService';
 
-import { Calendar, ChevronRight, MapPin, Plus, Star, Users } from 'lucide-react';
+import { Calendar, Car, ChevronRight, MapPin, Plus, Star, Users } from 'lucide-react';
 
 interface AgendaViewProps {
   currentDate: Date;
@@ -77,6 +78,31 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
     return groups;
   }, [currentDate, events]);
 
+  // B4: travel buffers between consecutive events with locations.
+  // Computes for the first 7 days only — agenda spans 30 days but
+  // distance-matrix calls are billed; the cache hits subsequent days
+  // anyway once they get visited and re-rendered.
+  const [buffersByDay, setBuffersByDay] = useState<Map<string, Map<string, TravelBuffer>>>(new Map());
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const next = new Map<string, Map<string, TravelBuffer>>();
+      const dayKeys = Array.from(groupedEvents.keys()).slice(0, 7);
+      for (const dateKey of dayKeys) {
+        const dayEvents = groupedEvents.get(dateKey) ?? [];
+        const buffers = await getTravelBuffersForEvents(dayEvents);
+        if (cancelled) return;
+        if (buffers.length > 0) {
+          const m = new Map<string, TravelBuffer>();
+          for (const b of buffers) m.set(b.fromEventId, b);
+          next.set(dateKey, m);
+        }
+      }
+      if (!cancelled) setBuffersByDay(next);
+    })();
+    return () => { cancelled = true; };
+  }, [groupedEvents]);
+
   return (
     <div className="h-full overflow-y-auto bg-white dark:bg-zinc-950">
       {/* Header */}
@@ -129,76 +155,101 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
               {/* Events for this day */}
               {dayEvents.length > 0 ? (
                 <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                  {dayEvents.map(event => (
-                    <div
-                      key={event.id}
-                      className="px-4 py-4 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer active:bg-zinc-100 dark:active:bg-zinc-800"
-                      onClick={() => onEventClick?.(event)}
-                    >
-                      <div className="flex items-start gap-3">
-                        {/* Time */}
-                        <div className="flex-shrink-0 w-16 text-right">
-                          {event.allDay ? (
-                            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                              All day
-                            </span>
-                          ) : (
-                            <div className="text-xs font-medium text-zinc-900 dark:text-white">
-                              {formatTime(event.start)}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Color Bar (type-aware) */}
+                  {dayEvents.map(event => {
+                    const buffer = buffersByDay.get(dateKey)?.get(event.id);
+                    return (
+                      <React.Fragment key={event.id}>
                         <div
-                          className="flex-shrink-0 w-1 rounded-full self-stretch"
-                          style={{ backgroundColor: getEventTypeColor(event.type) }}
-                        />
+                          className="px-4 py-4 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer active:bg-zinc-100 dark:active:bg-zinc-800"
+                          onClick={() => onEventClick?.(event)}
+                        >
+                          <div className="flex items-start gap-3">
+                            {/* Time */}
+                            <div className="flex-shrink-0 w-16 text-right">
+                              {event.allDay ? (
+                                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                                  All day
+                                </span>
+                              ) : (
+                                <div className="text-xs font-medium text-zinc-900 dark:text-white">
+                                  {formatTime(event.start)}
+                                </div>
+                              )}
+                            </div>
 
-                        {/* Event Details */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <i
-                              className={`fa-solid ${getEventTypeIcon(event.type)} text-[10px] flex-shrink-0`}
-                              style={{ color: getEventTypeColor(event.type) }}
+                            {/* Color Bar (type-aware) */}
+                            <div
+                              className="flex-shrink-0 w-1 rounded-full self-stretch"
+                              style={{ backgroundColor: getEventTypeColor(event.type) }}
                             />
-                            <span
-                              className="text-[10px] font-semibold uppercase tracking-wide"
-                              style={{ color: getEventTypeColor(event.type) }}
-                            >
-                              {getEventTypeLabel(event.type)}
-                            </span>
+
+                            {/* Event Details */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                <i
+                                  className={`fa-solid ${getEventTypeIcon(event.type)} text-[10px] flex-shrink-0`}
+                                  style={{ color: getEventTypeColor(event.type) }}
+                                />
+                                <span
+                                  className="text-[10px] font-semibold uppercase tracking-wide"
+                                  style={{ color: getEventTypeColor(event.type) }}
+                                >
+                                  {getEventTypeLabel(event.type)}
+                                </span>
+                              </div>
+                              <h3 className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
+                                {event.title}
+                              </h3>
+
+                              {event.location && (
+                                <div className="flex items-center gap-1 mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                  <MapPin className="text-[10px]" />
+                                  <span className="truncate">{event.location}</span>
+                                </div>
+                              )}
+
+                              {event.attendees && event.attendees.length > 0 && (
+                                <div className="flex items-center gap-1 mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                  <Users className="text-[10px]" />
+                                  <span>{event.attendees.length} attendees</span>
+                                </div>
+                              )}
+
+                              {!event.allDay && (
+                                <div className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+                                  {Math.round((event.end.getTime() - event.start.getTime()) / (1000 * 60))} min
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Chevron */}
+                            <ChevronRight className="text-xs text-zinc-300 dark:text-zinc-700 flex-shrink-0 mt-1" />
                           </div>
-                          <h3 className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
-                            {event.title}
-                          </h3>
-
-                          {event.location && (
-                            <div className="flex items-center gap-1 mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                              <MapPin className="text-[10px]" />
-                              <span className="truncate">{event.location}</span>
-                            </div>
-                          )}
-
-                          {event.attendees && event.attendees.length > 0 && (
-                            <div className="flex items-center gap-1 mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                              <Users className="text-[10px]" />
-                              <span>{event.attendees.length} attendees</span>
-                            </div>
-                          )}
-
-                          {!event.allDay && (
-                            <div className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
-                              {Math.round((event.end.getTime() - event.start.getTime()) / (1000 * 60))} min
-                            </div>
-                          )}
                         </div>
 
-                        {/* Chevron */}
-                        <ChevronRight className="text-xs text-zinc-300 dark:text-zinc-700 flex-shrink-0 mt-1" />
-                      </div>
-                    </div>
-                  ))}
+                        {/* B4: travel buffer to the next event (when both have a non-virtual location) */}
+                        {buffer && (
+                          <div
+                            className={`px-4 py-2 flex items-center gap-2 text-xs ${
+                              buffer.isTight
+                                ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                                : 'bg-zinc-50 dark:bg-zinc-900/40 text-zinc-500 dark:text-zinc-400'
+                            }`}
+                          >
+                            <Car size={12} className="flex-shrink-0" />
+                            <span className="font-medium">
+                              Travel: {buffer.travelLabel} to next event
+                            </span>
+                            {buffer.isTight && (
+                              <span className="ml-auto font-semibold">
+                                Only {buffer.gapMinutes} min gap
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </div>
               ) : (
                 <button
