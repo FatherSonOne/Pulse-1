@@ -311,7 +311,22 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
       {/* Last Result */}
       {lastResult && (
         <div className={`voice-panel-result ${lastResult.success ? 'success' : 'error'}`}>
-          {lastResult.message}
+          <span className="voice-panel-result-message">{lastResult.message}</span>
+          {!lastResult.success && lastCommand?.rawTranscript && (
+            <button
+              type="button"
+              className="voice-panel-result-retry"
+              onClick={() => {
+                const transcript = lastCommand.rawTranscript;
+                setCommandInput(transcript);
+                inputRef.current?.focus();
+                inputRef.current?.select();
+              }}
+              aria-label="Edit and retry the failed command"
+            >
+              Retry
+            </button>
+          )}
         </div>
       )}
 
