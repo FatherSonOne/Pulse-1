@@ -343,3 +343,11 @@
   height: 1px;
   background: var(--dt-border);
 }
+
+.da-location {
+  margin-bottom: 12px;
+}
+
+.da-location-preview {
+  margin-top: 8px;
+}

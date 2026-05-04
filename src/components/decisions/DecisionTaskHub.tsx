@@ -39,6 +39,8 @@ import { ExtendDeadlineDialog } from './ExtendDeadlineDialog';
 import { User } from '../../types';
 import { supabase } from '../../services/supabase';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
+import { listUserPlaces, getEntityPlaceMap } from '../../services/locationService';
+import { Place } from '../../types/placeTypes';
 import {
   getDismissedNudges,
   dismissNudge,
@@ -197,7 +199,24 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     status: 'all',
     priority: undefined,
     dateRange: undefined,
+    placeId: undefined,
   });
+
+  // B1: place-aware filtering. The picker writes through entity_places;
+  // here we cache a flat taskId → placeId map so the FilterBar can offer
+  // a "Location" filter without N+1 fetches.
+  const [availablePlaces, setAvailablePlaces] = useState<Place[]>([]);
+  const [taskPlaceMap, setTaskPlaceMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([listUserPlaces(), getEntityPlaceMap('task')]).then(([places, map]) => {
+      if (cancelled) return;
+      setAvailablePlaces(places);
+      setTaskPlaceMap(map);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   // AI features state
   const [metrics, setMetrics] = useState<DecisionMetrics | null>(null);
@@ -1074,8 +1093,18 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       filtered = filtered.filter(t => t.priority === filters.priority);
     }
 
+    // Apply place filter — null asks for tasks without any place; a string
+    // asks for tasks attached to that exact place_id.
+    if (filters.placeId !== undefined) {
+      filtered = filtered.filter(t => {
+        const taskPlaceId = taskPlaceMap[t.id];
+        if (filters.placeId === null) return !taskPlaceId;
+        return taskPlaceId === filters.placeId;
+      });
+    }
+
     return filtered;
-  }, [tasks, filters]);
+  }, [tasks, filters, taskPlaceMap]);
 
   // Filter decisions based on FilterState
   const filteredDecisions = useMemo(() => {
@@ -1211,7 +1240,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       )}
 
       {/* Filter Bar */}
-      <FilterBar filters={filters} onChange={setFilters} />
+      <FilterBar filters={filters} onChange={setFilters} availablePlaces={availablePlaces} />
 
       {/* Bulk Action Toolbar */}
       {selectedTaskIds.size > 0 && (

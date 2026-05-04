@@ -11,7 +11,9 @@ import {
   X,
   Calendar,
   ChevronDown,
+  MapPin,
 } from 'lucide-react';
+import { Place } from '../../types/placeTypes';
 import './FilterBar.css';
 
 export interface FilterState {
@@ -19,11 +21,18 @@ export interface FilterState {
   status: 'all' | 'todo' | 'in_progress' | 'in_review' | 'blocked' | 'done' | 'cancelled';
   priority?: 'high' | 'medium' | 'low';
   dateRange?: { start: Date; end: Date };
+  /**
+   * Place filter: undefined = all, null = no place attached, string = a specific place_id.
+   * The "no place" option is helpful for finding tasks that haven't been geo-tagged yet.
+   */
+  placeId?: string | null;
 }
 
 interface FilterBarProps {
   filters: FilterState;
   onChange: (filters: FilterState) => void;
+  /** Optional list of places visible to the user. Hides the place filter when empty/undefined. */
+  availablePlaces?: Place[];
 }
 
 const TASK_STATUS_OPTIONS = [
@@ -43,7 +52,7 @@ const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Low Priority' },
 ] as const;
 
-export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
+export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, availablePlaces }) => {
   // Debounced search: local input state syncs to parent after 300ms idle
   const [localSearch, setLocalSearch] = useState(filters.search);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -69,7 +78,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
     filters.search !== '' ||
     filters.status !== 'all' ||
     filters.priority !== undefined ||
-    filters.dateRange !== undefined;
+    filters.dateRange !== undefined ||
+    filters.placeId !== undefined;
 
   const handleClearFilters = () => {
     onChange({
@@ -77,8 +87,23 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
       status: 'all',
       priority: undefined,
       dateRange: undefined,
+      placeId: undefined,
     });
   };
+
+  const handlePlaceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (value === '') onChange({ ...filters, placeId: undefined });
+    else if (value === '__none__') onChange({ ...filters, placeId: null });
+    else onChange({ ...filters, placeId: value });
+  };
+
+  const placeFilterValue =
+    filters.placeId === undefined ? '' : filters.placeId === null ? '__none__' : filters.placeId;
+  const selectedPlace =
+    filters.placeId && filters.placeId !== null
+      ? availablePlaces?.find(p => p.id === filters.placeId)
+      : undefined;
 
   // handleSearchChange is replaced by handleSearchInputChange with debounce above
 
@@ -184,6 +209,28 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
           <ChevronDown className="filter-bar__select-chevron" size={16} />
         </div>
 
+        {/* Place filter — hidden when the user has zero saved places. */}
+        {availablePlaces && availablePlaces.length > 0 && (
+          <div className="filter-bar__select-wrapper">
+            <MapPin className="filter-bar__select-icon" size={16} />
+            <select
+              className="filter-bar__select"
+              value={placeFilterValue}
+              onChange={handlePlaceChange}
+              aria-label="Filter by place"
+            >
+              <option value="">All Locations</option>
+              <option value="__none__">No location</option>
+              {availablePlaces.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name || p.address || 'Saved place'}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="filter-bar__select-chevron" size={16} />
+          </div>
+        )}
+
         {/* Clear Filters Button */}
         {hasActiveFilters && (
           <button
@@ -214,6 +261,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
           {filters.priority && (
             <span className="filter-bar__active-tag">
               Priority: {filters.priority}
+            </span>
+          )}
+          {filters.placeId !== undefined && (
+            <span className="filter-bar__active-tag">
+              Location: {filters.placeId === null
+                ? 'None'
+                : (selectedPlace?.name || selectedPlace?.address || 'Selected')}
             </span>
           )}
         </div>

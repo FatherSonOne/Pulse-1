@@ -11,6 +11,9 @@ import type { User } from '../../../types';
 import { ActivityEventRow } from './ActivityEventRow';
 import { CommentThread } from '../comments/CommentThread';
 import { DependencySection } from '../dependencies/DependencySection';
+import PlacePicker from '../../map/PlacePicker';
+import MapPreview from '../../map/MapPreview';
+import { Place, PlaceRole } from '../../../types/placeTypes';
 import './ActivityDrawer.css';
 
 interface ActivityDrawerProps {
@@ -34,6 +37,10 @@ export const ActivityDrawer: React.FC<ActivityDrawerProps> = ({
 }) => {
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [attachedPlace, setAttachedPlace] = useState<Place | null>(null);
+
+  // Tasks attach a single primary place; decisions attach a venue.
+  const placeRole: PlaceRole = source === 'decision' ? 'venue' : 'primary';
 
   useEffect(() => {
     let cancelled = false;
@@ -113,6 +120,27 @@ export const ActivityDrawer: React.FC<ActivityDrawerProps> = ({
               <DependencySection taskId={itemId} workspaceId={workspaceId} />
             </>
           )}
+
+          <div className="da-section-divider">
+            <span className="dt-label">Location</span>
+          </div>
+          <div className="da-location">
+            <PlacePicker
+              entityType={source}
+              entityId={itemId}
+              role={placeRole}
+              onChange={setAttachedPlace}
+            />
+            {attachedPlace && (
+              <div className="da-location-preview">
+                <MapPreview
+                  placeId={attachedPlace.id}
+                  height={140}
+                  addressOverride={attachedPlace.address ?? undefined}
+                />
+              </div>
+            )}
+          </div>
 
           <div className="da-section-divider">
             <span className="dt-label">Discussion</span>

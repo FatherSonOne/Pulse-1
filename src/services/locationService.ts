@@ -5,6 +5,7 @@ import {
   PlaceWithRole,
   rowToPlace,
   PlaceRole,
+  PlaceType,
 } from '../types/placeTypes';
 
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
@@ -350,6 +351,122 @@ export async function getPlace(placeId: string): Promise<Place | null> {
     .single();
   if (error || !data) return null;
   return rowToPlace(data as Record<string, unknown>);
+}
+
+/**
+ * List every place the current user can see — RLS enforces both
+ * personal-by-owner and workspace-by-membership boundaries, so no
+ * extra filtering is needed in TS. Sorted by created_at descending
+ * so the picker shows recent places first.
+ */
+export async function listUserPlaces(): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('[locationService] listUserPlaces error:', error);
+    return [];
+  }
+  return (data ?? []).map(row => rowToPlace(row as Record<string, unknown>));
+}
+
+/**
+ * Create a new personal place for the current user. Workspace places
+ * use a different flow (the picker can extend to that later).
+ */
+export async function createPlace(input: {
+  lat: number;
+  lng: number;
+  address?: string | null;
+  name?: string | null;
+  type?: PlaceType;
+}): Promise<Place> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('places')
+    .insert({
+      owner_user_id: user.id,
+      lat: input.lat,
+      lng: input.lng,
+      address: input.address ?? null,
+      name: input.name ?? null,
+      type: input.type ?? 'custom',
+      created_by: user.id,
+    })
+    .select('*')
+    .single();
+  if (error || !data) throw error ?? new Error('createPlace failed');
+  return rowToPlace(data as Record<string, unknown>);
+}
+
+/**
+ * Attach a place to an entity in a specific role. If a row with the
+ * same (entity_type, entity_id, place_id, role) already exists, the
+ * insert is a no-op (handled by the composite PK).
+ */
+export async function attachPlaceToEntity(
+  entityType: 'contact' | 'task' | 'decision' | 'event' | 'meeting',
+  entityId: string,
+  placeId: string,
+  role: PlaceRole,
+): Promise<void> {
+  const { error } = await supabase
+    .from('entity_places')
+    .upsert({
+      entity_type: entityType,
+      entity_id: entityId,
+      place_id: placeId,
+      role,
+    }, { onConflict: 'entity_type,entity_id,place_id,role' });
+  if (error) throw error;
+}
+
+/**
+ * Remove every place link for an entity in a given role. Used when
+ * the user clears or replaces the entity's location for that role.
+ */
+export async function detachPlaceFromEntity(
+  entityType: 'contact' | 'task' | 'decision' | 'event' | 'meeting',
+  entityId: string,
+  role: PlaceRole,
+): Promise<void> {
+  const { error } = await supabase
+    .from('entity_places')
+    .delete()
+    .eq('entity_type', entityType)
+    .eq('entity_id', entityId)
+    .eq('role', role);
+  if (error) throw error;
+}
+
+/**
+ * Build a `entityId → placeId` lookup for every entity of the given
+ * type that has a place attached and is visible to the user. The list
+ * view consumers (e.g. DecisionTaskHub) use this for one-shot place
+ * filtering without N+1 fetches. If an entity has multiple roles, the
+ * last row wins (callers that care about a specific role should
+ * filter the result themselves or call getPlacesForEntity).
+ */
+export async function getEntityPlaceMap(
+  entityType: 'contact' | 'task' | 'decision' | 'event' | 'meeting',
+): Promise<Record<string, string>> {
+  const { data, error } = await supabase
+    .from('entity_places')
+    .select('entity_id, place_id')
+    .eq('entity_type', entityType);
+  if (error) {
+    console.error('[locationService] getEntityPlaceMap error:', error);
+    return {};
+  }
+  const out: Record<string, string> = {};
+  for (const row of data ?? []) {
+    const r = row as { entity_id: string; place_id: string };
+    out[r.entity_id] = r.place_id;
+  }
+  return out;
 }
 
 /**

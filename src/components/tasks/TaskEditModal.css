@@ -145,6 +145,10 @@
   margin-bottom: 1.25rem;
 }
 
+.task-edit-map-preview {
+  margin-top: 0.5rem;
+}
+
 .task-edit-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

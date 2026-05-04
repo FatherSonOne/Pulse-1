@@ -8,6 +8,9 @@ import { SubtaskList } from '../decisions/SubtaskList';
 import TaskActivityFeed from '../decisions/TaskActivityFeed';
 import { taskIntelligenceService } from '../../services/taskIntelligenceService';
 import { fetchTasks } from '../../services/authService';
+import PlacePicker from '../map/PlacePicker';
+import MapPreview from '../map/MapPreview';
+import { Place } from '../../types/placeTypes';
 import './TaskEditModal.css';
 
 interface TaskEditModalProps {
@@ -58,6 +61,11 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
     mitigation: string;
   }>>([]);
   const [isLoadingBlockers, setIsLoadingBlockers] = useState(false);
+
+  // B1: place attached to this task (entity_places, role='primary').
+  // The picker writes through entity_places directly; we mirror it here
+  // only to drive the inline MapPreview without an extra fetch round-trip.
+  const [attachedPlace, setAttachedPlace] = useState<Place | null>(null);
 
   // Load blocker predictions on mount
   useEffect(() => {
@@ -355,6 +363,26 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
                 onChange={(e) => setDeadline(e.target.value)}
               />
             </div>
+          </div>
+
+          {/* B1: Place — attaches via entity_places (role='primary'). */}
+          <div className="task-edit-field">
+            <label className="task-edit-label">Location</label>
+            <PlacePicker
+              entityType="task"
+              entityId={task.id}
+              role="primary"
+              onChange={setAttachedPlace}
+            />
+            {attachedPlace && (
+              <div className="task-edit-map-preview">
+                <MapPreview
+                  placeId={attachedPlace.id}
+                  height={140}
+                  addressOverride={attachedPlace.address ?? undefined}
+                />
+              </div>
+            )}
           </div>
 
               <div className="task-edit-modal-footer">
