@@ -287,6 +287,7 @@ export const DecisionWizard: React.FC<DecisionWizardProps> = ({
         },
       },
       tasks: resolvedTasks,
+      venue: state.step4.venue ?? null,
       ...(saveAsTemplate ? {
         saveAsTemplate: {
           ...saveAsTemplate,

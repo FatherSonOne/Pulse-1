@@ -39,7 +39,7 @@ import { ExtendDeadlineDialog } from './ExtendDeadlineDialog';
 import { User } from '../../types';
 import { supabase } from '../../services/supabase';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
-import { listUserPlaces, getEntityPlaceMap } from '../../services/locationService';
+import { listUserPlaces, getEntityPlaceMap, createPlace, attachPlaceToEntity } from '../../services/locationService';
 import { Place } from '../../types/placeTypes';
 import {
   getDismissedNudges,
@@ -900,6 +900,25 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
               linked_decision: newDecision.id,
             },
           });
+        }
+      }
+
+      // Attach the wizard's optional venue to the new decision via the
+      // universal Place schema. Failure is logged but non-fatal: the
+      // decision and tasks already exist; the operator can pick a place
+      // later from the activity drawer.
+      if (output.venue && newDecision) {
+        try {
+          const place = await createPlace({
+            lat: output.venue.lat,
+            lng: output.venue.lng,
+            address: output.venue.address,
+            name: output.venue.name,
+            type: 'venue',
+          });
+          await attachPlaceToEntity('decision', newDecision.id, place.id, 'venue');
+        } catch (placeErr) {
+          console.error('Wizard venue attach failed:', placeErr);
         }
       }
 

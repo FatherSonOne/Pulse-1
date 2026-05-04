@@ -67,6 +67,20 @@ export interface Step4Output {
   checkInCadence: 'none' | 'daily' | 'twice_weekly' | 'weekly';
   remindBeforeDays: 0 | 1 | 3 | 7;
   retrospectiveDays: 0 | 30 | 60 | 90; // 0 = no retro
+  /**
+   * Optional venue captured via Google Places Autocomplete. Stored on
+   * the wizard's local state until the decision row exists; the host
+   * (DecisionTaskHub.handleWizardSubmit) creates the matching `place`
+   * + `entity_places` rows after createDecision returns an id.
+   */
+  venue?: WizardVenue | null;
+}
+
+export interface WizardVenue {
+  lat: number;
+  lng: number;
+  address: string | null;
+  name: string | null;
 }
 
 /** The contract every frame implements. */
@@ -115,6 +129,12 @@ export interface WizardOutput {
     metadata?: Record<string, unknown>;
   };
   tasks: Array<Pick<Task, 'workspace_id' | 'title' | 'description' | 'priority' | 'status' | 'assignee_id' | 'deadline'> & { metadata?: Record<string, unknown> }>;
+  /**
+   * Optional venue. When set, the host creates a `place` row and links
+   * it to the new decision via `entity_places` (role='venue') after
+   * createDecision returns an id.
+   */
+  venue?: WizardVenue | null;
   /** When set, a row is also written to decision_templates with the wizard config. */
   saveAsTemplate?: {
     name: string;

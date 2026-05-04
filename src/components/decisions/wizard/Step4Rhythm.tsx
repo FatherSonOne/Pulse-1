@@ -2,12 +2,16 @@
 //
 // Set the dates and cadences that drive the resulting decision and tasks:
 // when does this need to be decided by, when does the work need to ship,
-// how often should the operator check in, and when (if ever) should Pulse
-// prompt for a retrospective on the outcome.
+// how often should the operator check in, when (if ever) should Pulse
+// prompt for a retrospective on the outcome — and (B1.5) where, if it's
+// the kind of decision that needs to land in a place.
 
-import React from 'react';
+import React, { useRef } from 'react';
+import { Autocomplete, useJsApiLoader } from '@react-google-maps/api';
+import { MapPin, X } from 'lucide-react';
 import { DatePicker } from './primitives/DatePicker';
 import { RadioGroup } from './primitives/RadioGroup';
+import { GOOGLE_MAPS_LIBRARIES } from '../../../services/mapService';
 import type { Step4Output } from './types';
 
 interface Step4RhythmProps {
@@ -37,6 +41,32 @@ const RETRO_OPTIONS = [
 ] as const;
 
 export const Step4Rhythm: React.FC<Step4RhythmProps> = ({ value, onChange }) => {
+  const { isLoaded } = useJsApiLoader({
+    id: 'pulse-google-maps',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
+    libraries: GOOGLE_MAPS_LIBRARIES,
+  });
+
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  const handleVenueSelected = () => {
+    const ac = autocompleteRef.current;
+    if (!ac) return;
+    const result = ac.getPlace();
+    if (!result.geometry?.location) return;
+    onChange({
+      ...value,
+      venue: {
+        lat: result.geometry.location.lat(),
+        lng: result.geometry.location.lng(),
+        address: result.formatted_address ?? null,
+        name: result.name ?? null,
+      },
+    });
+  };
+
+  const handleClearVenue = () => onChange({ ...value, venue: null });
+
   return (
     <div className="dw-step4">
       <header className="dw-step4-header">
@@ -84,6 +114,43 @@ export const Step4Rhythm: React.FC<Step4RhythmProps> = ({ value, onChange }) => 
         options={[...RETRO_OPTIONS]}
         hint="Pulse asks how the decision turned out, this many days after it lands."
       />
+
+      <div className="dw-step4-venue">
+        <label className="dw-step4-venue-label">Venue (optional)</label>
+        {value.venue ? (
+          <div className="dw-step4-venue-pill">
+            <MapPin size={12} className="dw-step4-venue-pin" />
+            <span className="dw-step4-venue-text">
+              {value.venue.name || value.venue.address || 'Saved venue'}
+            </span>
+            <button
+              type="button"
+              className="dw-step4-venue-clear"
+              onClick={handleClearVenue}
+              aria-label="Remove venue"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        ) : isLoaded ? (
+          <Autocomplete
+            onLoad={a => { autocompleteRef.current = a; }}
+            onPlaceChanged={handleVenueSelected}
+            options={{ types: ['geocode', 'establishment'] }}
+          >
+            <input
+              type="text"
+              placeholder="Where will this happen…"
+              className="dw-step4-venue-input"
+            />
+          </Autocomplete>
+        ) : (
+          <p className="dw-step4-venue-loading">Loading geocoder…</p>
+        )}
+        <p className="dw-step4-venue-hint">
+          When this decision needs a place. Pulse pins it on the map and surfaces it in detail views.
+        </p>
+      </div>
     </div>
   );
 };
