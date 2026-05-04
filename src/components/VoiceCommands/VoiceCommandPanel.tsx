@@ -135,18 +135,23 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
   // get a brief abort handle; quiet utterances ship through.
   const [pendingSecondsLeft, setPendingSecondsLeft] = useState(0);
   const pendingTimerRef = useRef<number | null>(null);
+  const pendingPausedRef = useRef(false);
 
   useEffect(() => {
     if (!pendingCommand) {
       if (pendingTimerRef.current) window.clearInterval(pendingTimerRef.current);
       pendingTimerRef.current = null;
+      pendingPausedRef.current = false;
       setPendingSecondsLeft(0);
       return;
     }
 
     setPendingSecondsLeft(2);
+    pendingPausedRef.current = false;
     if (pendingTimerRef.current) window.clearInterval(pendingTimerRef.current);
     pendingTimerRef.current = window.setInterval(() => {
+      // Pause-on-hover/focus: hold the countdown while the user is reading the strip
+      if (pendingPausedRef.current) return;
       setPendingSecondsLeft(prev => {
         if (prev <= 1) {
           if (pendingTimerRef.current) window.clearInterval(pendingTimerRef.current);
@@ -282,10 +287,19 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
 
       {/* Pending-confirm strip — cancel window for destructive voice commands */}
       {pendingCommand && (
-        <div className="voice-pending-strip" role="alertdialog" aria-live="assertive" aria-label="Confirm destructive command">
+        <div
+          className="voice-pending-strip"
+          role="alertdialog"
+          aria-live="assertive"
+          aria-label="Confirm destructive command"
+          onMouseEnter={() => { pendingPausedRef.current = true; }}
+          onMouseLeave={() => { pendingPausedRef.current = false; }}
+          onFocusCapture={() => { pendingPausedRef.current = true; }}
+          onBlurCapture={() => { pendingPausedRef.current = false; }}
+        >
           <span className="voice-pending-label">
             <span className="voice-pending-tag">PENDING</span>
-            {pendingCommand.suggestedAction || pendingCommand.type.replace(/_/g, ' ')}
+            {pendingCommand.suggestedAction || pendingCommand.rawTranscript || pendingCommand.type.replace(/_/g, ' ')}
           </span>
           <span className="voice-pending-actions">
             <button
@@ -596,7 +610,7 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
             <label className="voice-setting-item">
               <span className="voice-setting-label">
                 <strong>Auto-Execute</strong>
-                <small>Run commands instantly. Undo navigation within 3 seconds.</small>
+                <small>Run commands instantly. Sends and tasks pause 2 seconds for confirmation. Undo navigation within 3 seconds.</small>
               </span>
               <input
                 type="checkbox"
