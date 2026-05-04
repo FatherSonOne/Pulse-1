@@ -1076,6 +1076,120 @@
   color: #fbbf24;
 }
 
+/* Pending-confirm strip — 2s cancel window for destructive voice commands.
+   Visually distinct from undo (amber, pre-execution warning) vs undo (coral, post-execution). */
+.voice-pending-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px 10px 20px;
+  background: rgba(245, 158, 11, 0.10);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.30);
+  animation: voice-undo-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dark .voice-pending-strip {
+  background: rgba(245, 158, 11, 0.12);
+  border-bottom-color: rgba(245, 158, 11, 0.35);
+}
+
+.voice-pending-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #b45309;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dark .voice-pending-label { color: #fbbf24; }
+
+.voice-pending-tag {
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(245, 158, 11, 0.18);
+  color: #b45309;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+.dark .voice-pending-tag { background: rgba(245, 158, 11, 0.24); color: #fbbf24; }
+
+.voice-pending-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.voice-pending-cancel,
+.voice-pending-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.voice-pending-cancel {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
+  color: #52525b;
+}
+.voice-pending-cancel:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.20);
+  color: #0f0f0f;
+}
+.dark .voice-pending-cancel { border-color: rgba(255, 255, 255, 0.12); color: #b4b4b8; }
+.dark .voice-pending-cancel:hover { background: rgba(255, 255, 255, 0.06); color: #fafafa; }
+
+.voice-pending-confirm {
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.10);
+  color: #b45309;
+}
+.voice-pending-confirm:hover {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.70);
+}
+.dark .voice-pending-confirm { color: #fbbf24; background: rgba(245, 158, 11, 0.14); }
+.dark .voice-pending-confirm:hover { background: rgba(245, 158, 11, 0.20); }
+
+.voice-pending-cancel:focus-visible,
+.voice-pending-confirm:focus-visible {
+  outline: 2px solid #f59e0b;
+  outline-offset: 2px;
+}
+
+.voice-pending-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  margin-left: 2px;
+  border-radius: 3px;
+  background: rgba(245, 158, 11, 0.20);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.dark .voice-pending-count { background: rgba(245, 158, 11, 0.28); }
+
 /* Undo strip — auto-execute safety net */
 .voice-undo-strip {
   display: flex;
@@ -1178,6 +1292,8 @@
 .dark .voice-panel-status-listening { background: rgba(16, 185, 129, 0.15); }
 .voice-panel-status-processing { background: rgba(245, 158, 11, 0.1); }
 .dark .voice-panel-status-processing { background: rgba(245, 158, 11, 0.15); }
+.voice-panel-status-pending { background: rgba(245, 158, 11, 0.1); }
+.dark .voice-panel-status-pending { background: rgba(245, 158, 11, 0.15); }
 .voice-panel-status-error { background: rgba(239, 68, 68, 0.1); }
 .dark .voice-panel-status-error { background: rgba(239, 68, 68, 0.15); }
 
@@ -1197,6 +1313,8 @@
 .dark .voice-panel-status-listening .voice-status-indicator { color: #10b981; }
 .voice-panel-status-processing .voice-status-indicator { color: #d97706; }
 .dark .voice-panel-status-processing .voice-status-indicator { color: #f59e0b; }
+.voice-panel-status-pending .voice-status-indicator { color: #b45309; }
+.dark .voice-panel-status-pending .voice-status-indicator { color: #fbbf24; }
 .voice-panel-status-error .voice-status-indicator { color: #dc2626; }
 .dark .voice-panel-status-error .voice-status-indicator { color: #ef4444; }
 

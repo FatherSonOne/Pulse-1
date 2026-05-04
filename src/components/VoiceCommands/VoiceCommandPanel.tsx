@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Mic, X, Send, Undo2 } from 'lucide-react';
+import { Mic, X, Send, Undo2, Check } from 'lucide-react';
 import { useVoiceCommands, VOICE_COMMAND_TEMPLATES } from '../../hooks/useVoiceCommands';
 import { VoiceCommand } from '../../services/voiceCommandService';
 import './VoiceCommands.css';
@@ -73,9 +73,12 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
     currentTranscript,
     lastCommand,
     lastResult,
+    pendingCommand,
     error,
     toggle,
     executeText,
+    confirmPending,
+    cancelPending,
     getCommands,
     getHistory,
     deactivate,
@@ -126,6 +129,41 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  // Pending-confirm strip: 2-second cancel window for destructive voice commands
+  // ("send sms", "create task", etc.) before they auto-execute. Misheard utterances
+  // get a brief abort handle; quiet utterances ship through.
+  const [pendingSecondsLeft, setPendingSecondsLeft] = useState(0);
+  const pendingTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!pendingCommand) {
+      if (pendingTimerRef.current) window.clearInterval(pendingTimerRef.current);
+      pendingTimerRef.current = null;
+      setPendingSecondsLeft(0);
+      return;
+    }
+
+    setPendingSecondsLeft(2);
+    if (pendingTimerRef.current) window.clearInterval(pendingTimerRef.current);
+    pendingTimerRef.current = window.setInterval(() => {
+      setPendingSecondsLeft(prev => {
+        if (prev <= 1) {
+          if (pendingTimerRef.current) window.clearInterval(pendingTimerRef.current);
+          pendingTimerRef.current = null;
+          // Auto-confirm at zero. confirmPending reads its own ref, so calling here is safe.
+          confirmPending();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (pendingTimerRef.current) window.clearInterval(pendingTimerRef.current);
+      pendingTimerRef.current = null;
+    };
+  }, [pendingCommand, confirmPending]);
 
   // Undo strip: appears for 3s after a successful auto-executed command.
   const [undoCommand, setUndoCommand] = useState<VoiceCommand | null>(null);
@@ -242,6 +280,37 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
         </div>
       )}
 
+      {/* Pending-confirm strip — cancel window for destructive voice commands */}
+      {pendingCommand && (
+        <div className="voice-pending-strip" role="alertdialog" aria-live="assertive" aria-label="Confirm destructive command">
+          <span className="voice-pending-label">
+            <span className="voice-pending-tag">PENDING</span>
+            {pendingCommand.suggestedAction || pendingCommand.type.replace(/_/g, ' ')}
+          </span>
+          <span className="voice-pending-actions">
+            <button
+              type="button"
+              className="voice-pending-cancel"
+              onClick={() => cancelPending()}
+              aria-label="Cancel pending command"
+            >
+              <X size={12} strokeWidth={2.5} />
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="voice-pending-confirm"
+              onClick={() => confirmPending()}
+              aria-label="Run pending command now"
+            >
+              <Check size={12} strokeWidth={2.5} />
+              Run
+              <span className="voice-pending-count">{pendingSecondsLeft}</span>
+            </button>
+          </span>
+        </div>
+      )}
+
       {/* Undo strip — auto-execute safety net */}
       {undoCommand && (
         <div className="voice-undo-strip" role="status" aria-live="polite">
@@ -274,6 +343,7 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
           )}
           {status === 'processing' && <span>Parsing</span>}
           {status === 'executing' && <span>Executing</span>}
+          {status === 'pending' && <span>Confirm</span>}
           {status === 'idle' && <span>Ready</span>}
           {status === 'error' && (
             <span className="voice-error">
@@ -288,11 +358,12 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
           type="button"
           className={`voice-panel-toggle ${isActive ? 'active' : ''}`}
           onClick={toggle}
-          disabled={status === 'processing' || status === 'executing'}
+          disabled={status === 'processing' || status === 'executing' || status === 'pending'}
         >
           {status === 'listening' && 'Stop'}
           {status === 'processing' && 'Parsing…'}
           {status === 'executing' && 'Running…'}
+          {status === 'pending' && 'Confirm'}
           {status === 'error' && 'Try again'}
           {status === 'idle' && 'Listen'}
         </button>

@@ -20,11 +20,13 @@ import { voiceCommandService, VoiceCommand, VoiceCommandResult, VoiceCommandType
 
 export interface VoiceCommandState {
   /** Current status of the voice command system */
-  status: 'idle' | 'listening' | 'processing' | 'executing' | 'error';
+  status: 'idle' | 'listening' | 'processing' | 'executing' | 'pending' | 'error';
   /** Last parsed command */
   lastCommand: VoiceCommand | null;
   /** Last execution result */
   lastResult: VoiceCommandResult | null;
+  /** Command parsed and waiting on user confirmation (destructive types under autoExecute) */
+  pendingCommand: VoiceCommand | null;
   /** Current transcript (while speaking) */
   currentTranscript: string;
   /** Interim transcript (partial) */
@@ -32,6 +34,21 @@ export interface VoiceCommandState {
   /** Error message if any */
   error: string | null;
 }
+
+/**
+ * Command types that ship destructive or irreversible side effects.
+ * Under autoExecute these are gated behind a short confirm window
+ * so a misheard utterance can't fire-and-forget an SMS or task.
+ */
+export const DESTRUCTIVE_COMMAND_TYPES: VoiceCommandType[] = [
+  'send_email',
+  'send_sms',
+  'create_task',
+  'create_decision',
+  'schedule_meeting',
+  'set_reminder',
+  'add_note',
+];
 
 export interface UseVoiceCommandsOptions {
   /** Enable spoken feedback for commands */
@@ -67,6 +84,10 @@ export interface UseVoiceCommandsReturn extends VoiceCommandState {
   toggle: () => void;
   /** Manually execute a command from text */
   executeText: (text: string) => Promise<VoiceCommandResult>;
+  /** Confirm and run the pendingCommand */
+  confirmPending: () => Promise<VoiceCommandResult | null>;
+  /** Cancel the pendingCommand without running it */
+  cancelPending: () => void;
   /** Get available commands */
   getCommands: () => Array<{ type: VoiceCommandType; description: string; examples: string[] }>;
   /** Get command history */
@@ -161,6 +182,7 @@ export function useVoiceCommands(options: UseVoiceCommandsOptions = {}): UseVoic
     status: 'idle',
     lastCommand: null,
     lastResult: null,
+    pendingCommand: null,
     currentTranscript: '',
     interimTranscript: '',
     error: null,
@@ -213,6 +235,44 @@ export function useVoiceCommands(options: UseVoiceCommandsOptions = {}): UseVoic
     clearTranscript: voiceClearTranscript,
   } = voiceToText;
 
+  // Closure-safe handle on the pending command (so confirmPending sees the latest value)
+  const pendingCommandRef = useRef<VoiceCommand | null>(null);
+
+  // Run an already-parsed command and propagate the result through state + side effects.
+  const runCommand = useCallback(async (command: VoiceCommand): Promise<VoiceCommandResult> => {
+    setState(prev => ({
+      ...prev,
+      lastCommand: command,
+      pendingCommand: null,
+      status: 'executing',
+    }));
+    pendingCommandRef.current = null;
+
+    const result = await voiceCommandService.executeCommand(command);
+
+    setState(prev => ({
+      ...prev,
+      lastResult: result,
+      status: result.success ? 'idle' : 'error',
+      error: result.success ? null : result.message,
+    }));
+
+    if (result.success && result.data?.view) {
+      onNavigate?.(result.data.view);
+    }
+    onCommand?.(result);
+
+    if (enableSpokenFeedback && result.success) {
+      try {
+        await voiceCommandService.speak(result.message);
+      } catch (e) {
+        console.warn('Speech synthesis failed:', e);
+      }
+    }
+
+    return result;
+  }, [enableSpokenFeedback, onNavigate, onCommand]);
+
   // Process a voice command
   const processCommand = useCallback(async (text: string) => {
     if (processingRef.current) return;
@@ -227,39 +287,22 @@ export function useVoiceCommands(options: UseVoiceCommandsOptions = {}): UseVoic
         command = voiceCommandService.parseCommand(text);
       }
 
-      setState(prev => ({
-        ...prev,
-        lastCommand: command,
-        status: 'executing',
-      }));
+      // Destructive types under autoExecute go into a pending-confirm window.
+      // Misheard "send SMS to Sarah" should never fire instantly.
+      if (autoExecute && DESTRUCTIVE_COMMAND_TYPES.includes(command.type)) {
+        pendingCommandRef.current = command;
+        setState(prev => ({
+          ...prev,
+          lastCommand: command,
+          pendingCommand: command,
+          status: 'pending',
+        }));
+        return;
+      }
 
       // Execute if auto-execute is enabled or confidence is high
       if (autoExecute || command.confidence > 0.85) {
-        const result = await voiceCommandService.executeCommand(command);
-
-        setState(prev => ({
-          ...prev,
-          lastResult: result,
-          status: result.success ? 'idle' : 'error',
-          error: result.success ? null : result.message,
-        }));
-
-        // Handle any command that provides a view to navigate to
-        if (result.success && result.data?.view) {
-          onNavigate?.(result.data.view);
-        }
-
-        // Notify callback
-        onCommand?.(result);
-
-        // Spoken feedback
-        if (enableSpokenFeedback && result.success) {
-          try {
-            await voiceCommandService.speak(result.message);
-          } catch (e) {
-            console.warn('Speech synthesis failed:', e);
-          }
-        }
+        await runCommand(command);
       } else {
         // Low confidence - need confirmation
         setState(prev => ({
@@ -282,7 +325,7 @@ export function useVoiceCommands(options: UseVoiceCommandsOptions = {}): UseVoic
     } finally {
       processingRef.current = false;
     }
-  }, [enableAIParsing, autoExecute, enableSpokenFeedback, onNavigate, onCommand, openaiApiKey]);
+  }, [enableAIParsing, autoExecute, enableSpokenFeedback, openaiApiKey, runCommand]);
 
   // Deactivate voice commands (defined first to avoid circular dependency)
   const deactivate = useCallback(() => {
@@ -381,13 +424,32 @@ export function useVoiceCommands(options: UseVoiceCommandsOptions = {}): UseVoic
     }
   }, [enableAIParsing, onNavigate, onCommand, openaiApiKey]);
 
+  // Confirm a pending destructive command and run it.
+  const confirmPending = useCallback(async (): Promise<VoiceCommandResult | null> => {
+    const pending = pendingCommandRef.current;
+    if (!pending) return null;
+    return runCommand(pending);
+  }, [runCommand]);
+
+  // Cancel a pending destructive command without running it.
+  const cancelPending = useCallback(() => {
+    pendingCommandRef.current = null;
+    setState(prev => ({
+      ...prev,
+      pendingCommand: null,
+      status: 'idle',
+    }));
+  }, []);
+
   // Clear state
   const clear = useCallback(() => {
     voiceClearTranscript();
+    pendingCommandRef.current = null;
     setState({
       status: 'idle',
       lastCommand: null,
       lastResult: null,
+      pendingCommand: null,
       currentTranscript: '',
       interimTranscript: '',
       error: null,
@@ -435,6 +497,8 @@ export function useVoiceCommands(options: UseVoiceCommandsOptions = {}): UseVoic
     deactivate,
     toggle,
     executeText,
+    confirmPending,
+    cancelPending,
     getCommands,
     getHistory,
     speak,
