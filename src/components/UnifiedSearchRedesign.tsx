@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -30,6 +30,8 @@ import {
   Minimize2,
   Command,
   MapPin,
+  History,
+  ChevronRight,
 } from 'lucide-react';
 import { SearchResult, SearchResultType, SearchFilters, SearchSortOptions, SearchSourceError } from '../services/unifiedSearchService';
 import { searchClipboardService, ClipboardItem } from '../services/searchClipboardService';
@@ -75,24 +77,38 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-// ── Quick-access category cards shown in welcome state ────────────────────────
-const QUICK_CATEGORIES: {
+// ── Recent thread summary shape (mirrors dataService.getRecentThreads) ───────
+interface RecentThread {
+  id: string;
+  counterpart: string;
+  avatarColor: string | null;
+  unread: boolean;
+  lastActivityAt: Date;
+}
+
+// ── Browse-by-type row shown in working-memory empty state ───────────────────
+const BROWSE_TYPES: {
   type: SearchResultType;
   label: string;
   icon: React.ElementType;
-  query: string;
 }[] = [
-  { type: 'email',   label: 'Emails',   icon: Mail,          query: 'type:email' },
-  { type: 'message', label: 'Messages', icon: MessageSquare, query: 'type:message' },
-  { type: 'task',    label: 'Tasks',    icon: CheckSquare,   query: 'type:task' },
-  { type: 'contact', label: 'People',   icon: Users,         query: 'type:contact' },
-  { type: 'vox',     label: 'Vox',      icon: Mic,           query: 'type:vox' },
-  { type: 'note',    label: 'Notes',    icon: StickyNote,    query: 'type:note' },
+  { type: 'email',   label: 'Emails',   icon: Mail },
+  { type: 'message', label: 'Messages', icon: MessageSquare },
+  { type: 'task',    label: 'Tasks',    icon: CheckSquare },
+  { type: 'contact', label: 'People',   icon: Users },
+  { type: 'vox',     label: 'Vox',      icon: Mic },
+  { type: 'note',    label: 'Notes',    icon: StickyNote },
+];
+
+// ── Types collapsed for the sidebar facet list (folds duplicates/unused) ──
+const FACET_TYPES: SearchResultType[] = [
+  'message', 'email', 'vox', 'note', 'task', 'event', 'contact', 'sms',
 ];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type ViewMode      = 'list' | 'grid' | 'timeline' | 'map';
 type ClipboardView = 'notes' | 'categories';
+type GroupMode     = 'none' | 'conversation';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatTimestamp(date: Date): string {
@@ -143,7 +159,12 @@ export default function UnifiedSearchRedesign() {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading,       setLoading]       = useState(false);
-  const [viewMode,      setViewMode]      = useState<ViewMode>('list');
+  const [viewMode,      setViewMode]      = useState<ViewMode>(
+    () => (localStorage.getItem('pulse:search:viewMode') as ViewMode) || 'timeline'
+  );
+  const [groupMode,     setGroupMode]     = useState<GroupMode>('conversation');
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [recentThreads,  setRecentThreads]  = useState<RecentThread[]>([]);
 
   // ── Panel visibility ─────────────────────────────────────────────────────────
   const [showFilters,   setShowFilters]   = useState(true);
@@ -164,6 +185,8 @@ export default function UnifiedSearchRedesign() {
   const [isListening,     setIsListening]     = useState(false);
   const [selectedResults, setSelectedResults] = useState<Set<string>>(new Set());
   const [savedSearches,   setSavedSearches]   = useState<SavedSearch[]>([]);
+  // Inline peek — ArrowRight expands the focused card, ArrowLeft / Escape collapses.
+  const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
 
   // ── Search errors ────────────────────────────────────────────────────────────
   const [searchErrors, setSearchErrors] = useState<SearchSourceError[]>([]);
@@ -202,6 +225,10 @@ export default function UnifiedSearchRedesign() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [clipboardExpanded, setClipboardExpanded] = useState(false);
 
+  // ── Operator date popover (after:/before: smart picker) ────────────────────
+  const [openOperator, setOpenOperator] = useState<'after' | 'before' | null>(null);
+  const operatorPopoverRef = useRef<HTMLDivElement>(null);
+
   // ── Pagination ───────────────────────────────────────────────────────────────
   const [visibleCount, setVisibleCount] = useState(20);
 
@@ -219,6 +246,35 @@ export default function UnifiedSearchRedesign() {
   // API key no longer needed client-side — Gemini calls proxied through gemini-proxy edge function
 
   const isEmptyState = !loading && searchResults.length === 0 && !webSearchResult && !searchQuery.trim();
+
+  // ── Live facet counts for the sidebar Content Type list ──────────────────
+  const facetCounts = useMemo(() => {
+    const m = new Map<SearchResultType, number>();
+    for (const r of searchResults) m.set(r.type, (m.get(r.type) || 0) + 1);
+    return m;
+  }, [searchResults]);
+
+  // ── Group results by counterpart/thread when groupMode === 'conversation'.
+  // Falls back to flat ordering for queries with explicit operators (the user
+  // already narrowed the field — don't re-group on top of their intent).
+  const queryHasOperator = /\b(from|type|after|before|tag):/i.test(searchQuery);
+  const shouldGroup = groupMode === 'conversation' && !queryHasOperator
+    && viewMode !== 'map' && viewMode !== 'timeline';
+
+  const groupedResults = useMemo(() => {
+    if (!shouldGroup) return null;
+    const buckets = new Map<string, { key: string; label: string; items: SearchResult[] }>();
+    for (const r of searchResults.slice(0, visibleCount)) {
+      const key = r.metadata?.threadId
+        || r.sender
+        || r.senderEmail
+        || `__${r.type}__${r.id}`;
+      const label = r.sender || r.metadata?.channelName || r.metadata?.subject || r.title;
+      if (!buckets.has(key)) buckets.set(key, { key, label, items: [] });
+      buckets.get(key)!.items.push(r);
+    }
+    return Array.from(buckets.values());
+  }, [searchResults, visibleCount, shouldGroup]);
 
   // ── Heartbeat focus handler — fires animation once per focus ─────────────────
   const handleSearchFocus = () => {
@@ -245,6 +301,18 @@ export default function UnifiedSearchRedesign() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showExportMenu]);
 
+  // ── Close operator date popover on outside click ─────────────────────────────
+  useEffect(() => {
+    if (!openOperator) return;
+    const handleClick = (e: MouseEvent) => {
+      if (operatorPopoverRef.current && !operatorPopoverRef.current.contains(e.target as Node)) {
+        setOpenOperator(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [openOperator]);
+
   // ── External event listeners ─────────────────────────────────────────────────
   useEffect(() => {
     const setQuery = (e: Event) => {
@@ -264,11 +332,18 @@ export default function UnifiedSearchRedesign() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tag = (document.activeElement as HTMLElement)?.tagName;
-      if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+      const inField = tag === 'INPUT' || tag === 'TEXTAREA';
+      if (e.key === '/' && !inField) {
         e.preventDefault(); searchInputRef.current?.focus();
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault(); searchInputRef.current?.focus();
+      }
+      // ? — open operator reference + keyboard map (universal convention).
+      // Skipped while typing so the literal '?' character still works.
+      if (e.key === '?' && !inField) {
+        e.preventDefault();
+        setShowOperatorPopover(v => !v);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -367,6 +442,14 @@ export default function UnifiedSearchRedesign() {
     if (debouncedSearchQuery.trim()) performSearch();
   }, [debouncedSearchQuery]);
 
+  // ── If Map view is active and the geo filter clears, fall back to Timeline ──
+  useEffect(() => {
+    if (viewMode === 'map' && !activeGeoFilter) {
+      setViewMode('timeline');
+      localStorage.setItem('pulse:search:viewMode', 'timeline');
+    }
+  }, [activeGeoFilter, viewMode]);
+
   // ── Operator hints ────────────────────────────────────────────────────────────
   useEffect(() => {
     const q = searchQuery;
@@ -406,6 +489,13 @@ export default function UnifiedSearchRedesign() {
   useEffect(() => {
     savedSearchesService.getSavedSearches(userId).then(setSavedSearches).catch(console.error);
     loadClipboardItems();
+    // Working-memory data: recent searches + recent threads
+    searchEnhancements.getSuggestions('', userId, 5)
+      .then(s => setRecentSearches(s.filter(x => x.type === 'recent').map(x => x.text)))
+      .catch(() => setRecentSearches([]));
+    dataService.getRecentThreads(8)
+      .then(setRecentThreads)
+      .catch(() => setRecentThreads([]));
   }, [userId]);
 
   useEffect(() => { loadClipboardItems(); }, [selectedClipboardCategory, loadClipboardItems]);
@@ -468,12 +558,53 @@ export default function UnifiedSearchRedesign() {
 
   const handleBatchClip = async () => {
     const items = searchResults.filter(r => selectedResults.has(r.id));
+    // Collect the inserted clipboard item ids so Undo can roll the batch back.
+    const insertedIds: string[] = [];
     for (const r of items) {
-      try { await searchClipboardService.clipSearchResult(userId, r); } catch { /* skip */ }
+      try {
+        const created = await searchClipboardService.clipSearchResult(userId, r);
+        if (created?.id) insertedIds.push(created.id);
+      } catch { /* skip */ }
     }
     await loadClipboardItems();
     setSelectedResults(new Set());
-    toast.success(`Clipped ${items.length} item${items.length !== 1 ? 's' : ''}`);
+
+    const count = insertedIds.length;
+    if (count === 0) return;
+    toast.success(
+      (t) => (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          Clipped {count} item{count !== 1 ? 's' : ''}
+          <button
+            type="button"
+            onClick={async () => {
+              toast.dismiss(t.id);
+              for (const id of insertedIds) {
+                try { await searchClipboardService.deleteClipboardItem(userId, id); } catch { /* skip */ }
+              }
+              await loadClipboardItems();
+              toast.success('Undone');
+            }}
+            style={{
+              background: 'transparent',
+              border: '1px solid currentColor',
+              color: 'inherit',
+              padding: '2px 10px',
+              borderRadius: 6,
+              fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+              fontSize: '0.6875rem',
+              fontWeight: 500,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
+          >
+            Undo
+          </button>
+        </span>
+      ),
+      { duration: 6000 }
+    );
   };
 
   const handleBatchExport = () => {
@@ -495,14 +626,31 @@ export default function UnifiedSearchRedesign() {
   };
 
   // ── Keyboard nav in results ────────────────────────────────────────────────────
+  // ArrowDown/Up move focus between cards. ArrowRight peeks the focused card
+  // (inline expansion, in-between affordance before the full detail panel).
+  // ArrowLeft / Escape collapses the peek; Escape on a non-expanded card still
+  // clears the query.
   const handleResultsKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const cards   = Array.from((e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('[role="article"]'));
     const focused = document.activeElement as HTMLElement;
     const idx     = cards.indexOf(focused);
+    const focusedId = idx >= 0 ? focused.getAttribute('data-result-id') : null;
 
-    if (e.key === 'ArrowDown')    { e.preventDefault(); (cards[idx + 1] ?? cards[0])?.focus(); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); idx <= 0 ? searchInputRef.current?.focus() : cards[idx - 1]?.focus(); }
-    else if (e.key === 'Escape')  { e.preventDefault(); setSearchQuery(''); searchInputRef.current?.focus(); }
+    if (e.key === 'ArrowDown')         { e.preventDefault(); (cards[idx + 1] ?? cards[0])?.focus(); }
+    else if (e.key === 'ArrowUp')      { e.preventDefault(); idx <= 0 ? searchInputRef.current?.focus() : cards[idx - 1]?.focus(); }
+    else if (e.key === 'ArrowRight' && focusedId) {
+      e.preventDefault();
+      setExpandedResultId(focusedId);
+    }
+    else if (e.key === 'ArrowLeft' && expandedResultId) {
+      e.preventDefault();
+      setExpandedResultId(null);
+    }
+    else if (e.key === 'Escape') {
+      e.preventDefault();
+      if (expandedResultId) setExpandedResultId(null);
+      else { setSearchQuery(''); searchInputRef.current?.focus(); }
+    }
   };
 
   // ResultCard is now extracted to SearchResultCard.tsx (React.memo'd)
@@ -514,27 +662,35 @@ export default function UnifiedSearchRedesign() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="search-redesign-header">
         <div className="search-title-section">
-          <Sparkles size={18} color="#f43f5e" />
           <h2>Search</h2>
         </div>
 
         <div className="search-header-controls">
-          {/* View mode strip */}
+          {/* View mode strip — Map appears contextually when a geo filter is active */}
           <div className="view-toggle-group" role="group" aria-label="View mode">
-            {([['list', List, 'List'], ['grid', Grid, 'Grid'], ['timeline', Clock, 'Timeline'], ['map', MapPin, 'Map']] as const).map(
-              ([mode, Icon, label]) => (
+            {(() => {
+              const modes: { id: ViewMode; Icon: React.ElementType; label: string }[] = [
+                { id: 'timeline', Icon: Clock, label: 'Timeline' },
+                { id: 'list',     Icon: List,  label: 'List' },
+                { id: 'grid',     Icon: Grid,  label: 'Grid' },
+              ];
+              if (activeGeoFilter) modes.push({ id: 'map', Icon: MapPin, label: 'Map' });
+              return modes.map(({ id, Icon, label }) => (
                 <button
-                  key={mode}
+                  key={id}
                   type="button"
-                  className={`view-toggle-item ${viewMode === mode ? 'active' : ''}`}
-                  onClick={() => setViewMode(mode as ViewMode)}
+                  className={`view-toggle-item ${viewMode === id ? 'active' : ''}`}
+                  onClick={() => {
+                    setViewMode(id);
+                    localStorage.setItem('pulse:search:viewMode', id);
+                  }}
                   title={`${label} view`}
-                  aria-pressed={viewMode === mode ? 'true' : 'false'}
+                  aria-pressed={viewMode === id ? 'true' : 'false'}
                 >
                   <Icon size={13} /><span>{label}</span>
                 </button>
-              )
-            )}
+              ));
+            })()}
           </div>
 
           <div className="search-header-divider" />
@@ -595,9 +751,50 @@ export default function UnifiedSearchRedesign() {
                     title="Delete saved search" aria-label={`Delete saved search "${s.name}"`}
                     onClick={async (e) => {
                       e.stopPropagation();
+                      // Capture the record before deletion so Undo can recreate it.
+                      const snapshot = s;
                       await savedSearchesService.deleteSavedSearch(userId, s.id);
                       const updated = await savedSearchesService.getSavedSearches(userId);
                       setSavedSearches(updated);
+                      toast.success(
+                        (t) => (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            Deleted "{snapshot.name}"
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                toast.dismiss(t.id);
+                                await savedSearchesService.createSavedSearch(userId, {
+                                  name: snapshot.name,
+                                  query: snapshot.query,
+                                  filters: snapshot.filters,
+                                  alertEnabled: snapshot.alertEnabled,
+                                  alertFrequency: snapshot.alertFrequency,
+                                });
+                                const refreshed = await savedSearchesService.getSavedSearches(userId);
+                                setSavedSearches(refreshed);
+                                toast.success('Restored');
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: '1px solid currentColor',
+                                color: 'inherit',
+                                padding: '2px 10px',
+                                borderRadius: 6,
+                                fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+                                fontSize: '0.6875rem',
+                                fontWeight: 500,
+                                letterSpacing: '0.05em',
+                                textTransform: 'uppercase',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Undo
+                            </button>
+                          </span>
+                        ),
+                        { duration: 6000 }
+                      );
                     }}>
                     <X size={11} />
                   </button>
@@ -612,15 +809,26 @@ export default function UnifiedSearchRedesign() {
           <div className="filter-group">
             <h3>Content Type</h3>
             <div className="filter-options">
-              {(Object.entries(resultTypeIcons) as [SearchResultType, React.ElementType][]).map(([type, Icon]) => (
-                <button type="button" key={type}
-                  className={`filter-option-btn ${selectedTypes.has(type) ? 'active' : ''}`}
-                  onClick={() => toggleTypeFilter(type)}
-                  aria-pressed={selectedTypes.has(type) ? 'true' : 'false'}>
-                  <Icon size={13} />
-                  <span className="filter-type-label">{type.replace('_', ' ')}</span>
-                </button>
-              ))}
+              {FACET_TYPES.map(type => {
+                const Icon = resultTypeIcons[type];
+                const count = facetCounts.get(type) || 0;
+                const hasResults = searchResults.length > 0;
+                // Hide zero-count facets only when a query is active — show all
+                // 8 types in the empty state so they're discoverable.
+                if (hasResults && count === 0 && !selectedTypes.has(type)) return null;
+                return (
+                  <button type="button" key={type}
+                    className={`filter-option-btn ${selectedTypes.has(type) ? 'active' : ''}`}
+                    onClick={() => toggleTypeFilter(type)}
+                    aria-pressed={selectedTypes.has(type) ? 'true' : 'false'}>
+                    <Icon size={13} />
+                    <span className="filter-type-label">{type}</span>
+                    {hasResults && count > 0 && (
+                      <span className="filter-type-count">{count}</span>
+                    )}
+                  </button>
+                );
+              })}
               {selectedTypes.size > 0 && (
                 <button type="button" className="filter-option-btn filter-clear-option" onClick={() => setSelectedTypes(new Set())}>
                   <X size={13} /><span>Clear filters</span>
@@ -639,13 +847,21 @@ export default function UnifiedSearchRedesign() {
                 <Globe size={13} /><span>Web search</span>
               </button>
               {useWebSearch && (
-                <select className="sonar-model-select" value={webSearchModel}
-                  onChange={e => setWebSearchModel(e.target.value as 'sonar' | 'sonar-pro' | 'sonar-reasoning')}
-                  aria-label="Web search model">
-                  <option value="sonar">Sonar (Fast)</option>
-                  <option value="sonar-pro">Sonar Pro (Deep)</option>
-                  <option value="sonar-reasoning">Sonar Reasoning</option>
-                </select>
+                <div className="sonar-model-segments" role="radiogroup" aria-label="Web search model">
+                  {([
+                    { id: 'sonar',           label: 'Fast' },
+                    { id: 'sonar-pro',       label: 'Pro' },
+                    { id: 'sonar-reasoning', label: 'Reasoning' },
+                  ] as const).map(({ id, label }) => (
+                    <button type="button" key={id}
+                      className={`sonar-model-segment ${webSearchModel === id ? 'active' : ''}`}
+                      role="radio"
+                      aria-checked={webSearchModel === id ? 'true' : 'false'}
+                      onClick={() => setWebSearchModel(id)}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -653,17 +869,49 @@ export default function UnifiedSearchRedesign() {
           <div className="filter-group">
             <h3>Operators</h3>
             <div className="filter-options">
-              {[
-                { op: 'from:name',   hint: 'Messages from a person' },
-                { op: 'after:date',  hint: 'After a specific date' },
-                { op: 'before:date', hint: 'Before a specific date' },
-                { op: 'type:email',  hint: 'Filter by content type' },
-              ].map(({ op, hint }) => (
-                <button type="button" key={op} className="filter-option-btn" title={hint}
-                  onClick={() => { setSearchQuery(op + ' '); searchInputRef.current?.focus(); }}>
-                  <Command size={13} />
-                  <code className="filter-operator-code">{op}</code>
-                </button>
+              {/* from: — opens contact autocomplete (existing /^from:/i effect fires on query change) */}
+              <button type="button" className="filter-option-btn" title="Messages from a person"
+                onClick={() => {
+                  setSearchQuery('from:');
+                  searchInputRef.current?.focus();
+                  setShowOperatorHints(true);
+                  setShowOperatorPopover(false);
+                }}>
+                <Command size={13} />
+                <code className="filter-operator-code">from:</code>
+              </button>
+
+              {/* after: / before: — open inline date popover */}
+              {(['after', 'before'] as const).map(op => (
+                <div key={op} className="filter-operator-row">
+                  <button type="button" className="filter-option-btn"
+                    title={op === 'after' ? 'After a specific date' : 'Before a specific date'}
+                    onClick={() => {
+                      setOpenOperator(prev => prev === op ? null : op);
+                      setShowOperatorPopover(false);
+                    }}>
+                    <Command size={13} />
+                    <code className="filter-operator-code">{op}:</code>
+                  </button>
+                  {openOperator === op && (
+                    <div className="operator-date-popover" ref={operatorPopoverRef}>
+                      <input
+                        type="date"
+                        autoFocus
+                        className="operator-date-input"
+                        onChange={e => {
+                          const d = e.target.value;
+                          if (!d) return;
+                          const insert = `${op}:${d} `;
+                          setSearchQuery(q => q + (q && !q.endsWith(' ') ? ' ' : '') + insert);
+                          setOpenOperator(null);
+                          searchInputRef.current?.focus();
+                        }}
+                        aria-label={`${op} date`}
+                      />
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -691,7 +939,7 @@ export default function UnifiedSearchRedesign() {
                 spellCheck={false}
                 aria-label="Search across everything"
                 aria-autocomplete="list"
-                onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
+                onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); setShowOperatorPopover(false); }}
                 onFocus={handleSearchFocus}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                 onKeyDown={e => {
@@ -775,65 +1023,149 @@ export default function UnifiedSearchRedesign() {
             </div>
           </div>
 
-          {/* ── Welcome / empty state ────────────────────────────────────────── */}
+          {/* ── Empty state: working memory ──────────────────────────────────
+              Resume (recent searches + saved) · Pinned clipboard · Browse by type.
+              No tagline, no card gallery — the section opens to the user's
+              actual recent activity, not a marketing hero. */}
           {isEmptyState && (
-            <div className="search-welcome-state">
+            <div className="search-working-memory">
 
-              {/* Zone A: Faint cardiogram SVG texture — BG spec: static, opacity 0.06, rose */}
-              <div className="search-welcome-cardiogram" aria-hidden="true">
-                <svg viewBox="0 0 800 56" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                  <polyline
-                    points="0,28 80,28 100,28 110,6 120,50 130,28 160,28 200,28 210,12 215,44 220,28 260,28 340,28 350,8 355,48 360,28 400,28 480,28 490,14 495,42 500,28 540,28 620,28 630,10 635,46 640,28 680,28 760,28 800,28"
-                    fill="none"
-                    stroke="rgba(244,63,94,0.06)"
-                    strokeWidth="1.5"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
+              {/* Resume: recent searches + saved searches as a single keyboard-numbered list */}
+              {(recentSearches.length > 0 || savedSearches.length > 0) && (
+                <section className="wm-section">
+                  <header className="wm-section-header">
+                    <History size={11} />
+                    <span>Resume</span>
+                  </header>
+                  <ul className="wm-resume-list">
+                    {recentSearches.slice(0, 5).map((q, i) => (
+                      <li key={`recent-${i}`}>
+                        <button type="button" className="wm-resume-row"
+                          onClick={() => { setSearchQuery(q); performSearch(); }}>
+                          <span className="wm-resume-key">{i + 1}</span>
+                          <span className="wm-resume-text">{q}</span>
+                          <ChevronRight size={13} className="wm-resume-arrow" />
+                        </button>
+                      </li>
+                    ))}
+                    {savedSearches.slice(0, 5 - Math.min(recentSearches.length, 5)).map(s => (
+                      <li key={s.id}>
+                        <button type="button" className="wm-resume-row"
+                          onClick={() => { setSearchQuery(s.query); setFilters(s.filters); }}>
+                          <Bookmark size={12} className="wm-resume-saved-icon" />
+                          <span className="wm-resume-text">{s.name}</span>
+                          <ChevronRight size={13} className="wm-resume-arrow" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
-              {/* Zone B: Brand-approved copy */}
-              <div className="search-welcome-heading search-welcome-zone-b">
-                <h1>Everything in one place.</h1>
-                <p>Ask anything.</p>
-              </div>
+              {/* Recent Threads — cross-source counterpart roll-up. Click sets a
+                  from:Counterpart query so the user lands in their full history
+                  with that person, regardless of channel. */}
+              {recentThreads.length > 0 && (
+                <section className="wm-section">
+                  <header className="wm-section-header">
+                    <MessageSquare size={11} />
+                    <span>Recent threads</span>
+                  </header>
+                  <ul className="wm-threads-list">
+                    {recentThreads.map(t => (
+                      <li key={t.id}>
+                        <button type="button" className="wm-thread-row"
+                          onClick={() => {
+                            setSearchQuery(`from:${t.counterpart}`);
+                            searchInputRef.current?.focus();
+                          }}>
+                          <span
+                            className="wm-thread-avatar"
+                            style={t.avatarColor ? { background: t.avatarColor } : undefined}
+                            aria-hidden="true">
+                            {t.counterpart.slice(0, 1).toUpperCase()}
+                          </span>
+                          <span className="wm-thread-name">{t.counterpart}</span>
+                          {t.unread && <span className="wm-thread-unread-dot" aria-label="Unread" />}
+                          <span className="wm-thread-time">{formatTimestamp(t.lastActivityAt)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
-              {/* Category cards — quick access */}
-              <div className="search-category-grid" role="list">
-                {QUICK_CATEGORIES.map(cat => {
-                  const CatIcon = cat.icon;
-                  return (
-                    <button type="button" key={cat.type} className="search-category-card" role="listitem"
-                      onClick={() => { setSelectedTypes(new Set([cat.type])); setSearchQuery(''); searchInputRef.current?.focus(); }}>
-                      <CatIcon size={22} className="category-icon" />
-                      <span>{cat.label}</span>
+              {/* Pinned: the user's curated working memory from the clipboard */}
+              {clipboardItems.some(i => i.pinned) && (
+                <section className="wm-section">
+                  <header className="wm-section-header">
+                    <Pin size={11} />
+                    <span>Pinned</span>
+                  </header>
+                  <ul className="wm-pinned-list">
+                    {clipboardItems.filter(i => i.pinned).slice(0, 6).map(item => (
+                      <li key={item.id}>
+                        <button type="button" className="wm-pinned-row"
+                          onClick={() => setSearchQuery(item.title)}>
+                          <span className="wm-pinned-title">{item.title}</span>
+                          <span className="wm-pinned-preview">{stripHtml(item.content).slice(0, 80)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* Browse by type — a single mono row, not a card grid */}
+              <section className="wm-section wm-browse">
+                <header className="wm-section-header">
+                  <span>Browse by type</span>
+                </header>
+                <div className="wm-browse-row">
+                  {BROWSE_TYPES.map(({ type, label, icon: Icon }) => (
+                    <button type="button" key={type} className="wm-browse-chip"
+                      onClick={() => {
+                        setSelectedTypes(new Set([type]));
+                        setSearchQuery(`type:${type}`);
+                      }}>
+                      <Icon size={12} />
+                      <span>{label}</span>
                     </button>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              </section>
 
-              {/* Suggestion chips — pre-populated queries (Brand Moment) */}
-              <div className="search-recent-chips">
-                <span className="search-recent-label">Try searching</span>
-                {[
-                  { label: 'Recent decisions', query: 'type:archive decided' },
-                  { label: 'Overdue tasks', query: 'type:task overdue' },
-                  { label: 'Unread messages', query: 'type:message unread' },
-                ].map(chip => (
-                  <button type="button" key={chip.label} className="search-recent-chip"
-                    onClick={() => { setSearchQuery(chip.query); performSearch(); }}>
-                    <Clock size={11} />{chip.label}
-                  </button>
-                ))}
-                {/* Also show user's saved searches */}
-                {savedSearches.slice(0, 3).map(s => (
-                  <button type="button" key={s.id} className="search-recent-chip"
-                    onClick={() => { setSearchQuery(s.query); setFilters(s.filters); }}>
-                    <Bookmark size={11} />{s.name}
-                  </button>
-                ))}
-              </div>
+              {/* Empty-empty state — first-time user with no history yet.
+                  Teaches the operator vocabulary via one-click examples. */}
+              {recentSearches.length === 0 && savedSearches.length === 0
+                && recentThreads.length === 0
+                && !clipboardItems.some(i => i.pinned) && (
+                <section className="wm-section wm-onboard">
+                  <p className="wm-empty-hint">
+                    Search across messages, transcripts, notes, tasks, decisions.
+                    Start typing, or try one of these.
+                  </p>
+                  <div className="wm-try-row">
+                    {[
+                      { query: 'from:',          caption: 'by person' },
+                      { query: 'type:vox',       caption: 'voice notes' },
+                      { query: 'after:2026-04-01', caption: 'by date' },
+                      { query: 'decided',        caption: 'keyword' },
+                    ].map(ex => (
+                      <button type="button" key={ex.query} className="wm-try-chip"
+                        onClick={() => {
+                          setSearchQuery(ex.query);
+                          searchInputRef.current?.focus();
+                          // If the example is the from: trigger, surface the contact picker.
+                          if (ex.query === 'from:') setShowOperatorHints(true);
+                        }}>
+                        <code className="wm-try-syntax">{ex.query}</code>
+                        <span className="wm-try-caption">{ex.caption}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           )}
 
@@ -852,9 +1184,11 @@ export default function UnifiedSearchRedesign() {
           {webSearchResult && (
             <div className="ai-answer-card">
               <div className="ai-answer-header">
-                <Sparkles size={15} color="#f43f5e" />
-                {/* Brand-approved label — signals intelligence origin */}
-                <span className="ai-answer-header-text">Pulse AI · Synthesized from your data</span>
+                {/* Provenance tag — DESIGN.md "Signature Component" pattern */}
+                <span className="ai-provenance-tag">
+                  <span className="ai-provenance-dot" />
+                  Pulse AI · Synthesis
+                </span>
                 {webSearchLoading && <Loader2 size={13} color="#f43f5e"
                   style={{ animation: 'spin 0.8s linear infinite', marginLeft: 'auto' }} />}
               </div>
@@ -904,11 +1238,26 @@ export default function UnifiedSearchRedesign() {
             </div>
           )}
 
-          {/* ── Result count ─────────────────────────────────────────────────── */}
+          {/* ── Result count + group-by control ──────────────────────────── */}
           {searchResults.length > 0 && (
-            <p className="results-count-label">
-              {Math.min(visibleCount, searchResults.length)} of {searchResults.length} results
-            </p>
+            <div className="results-meta-row">
+              <p className="results-count-label">
+                {Math.min(visibleCount, searchResults.length)} of {searchResults.length} results
+              </p>
+              {viewMode !== 'map' && viewMode !== 'timeline' && (
+                <div className="group-by-control" role="group" aria-label="Group results">
+                  <span className="group-by-label">Group</span>
+                  {(['none', 'conversation'] as const).map(mode => (
+                    <button type="button" key={mode}
+                      className={`group-by-btn ${groupMode === mode ? 'active' : ''}`}
+                      onClick={() => setGroupMode(mode)}
+                      aria-pressed={groupMode === mode ? 'true' : 'false'}>
+                      {mode === 'none' ? 'None' : 'Conversation'}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* ── Batch action toolbar ─────────────────────────────────────────── */}
@@ -943,12 +1292,23 @@ export default function UnifiedSearchRedesign() {
                     <span className="timeline-date-label">{group.label}</span>
                     <div className="timeline-date-line" />
                   </div>
-                  {group.items.map(result => <SearchResultCard key={result.id} result={result} isSelected={selectedResults.has(result.id)} onSelect={toggleResultSelect} onDetail={setDetailResult} />)}
+                  {group.items.map(result => <SearchResultCard key={result.id} result={result} isSelected={selectedResults.has(result.id)} isExpanded={expandedResultId === result.id} onSelect={toggleResultSelect} onDetail={setDetailResult} />)}
+                </React.Fragment>
+              ))
+            ) : groupedResults ? (
+              groupedResults.map(group => (
+                <React.Fragment key={group.key}>
+                  <div className="conversation-group-header">
+                    <span className="conversation-group-label">{group.label}</span>
+                    <span className="conversation-group-count">{group.items.length}</span>
+                    <div className="conversation-group-line" />
+                  </div>
+                  {group.items.map(result => <SearchResultCard key={result.id} result={result} isSelected={selectedResults.has(result.id)} isExpanded={expandedResultId === result.id} onSelect={toggleResultSelect} onDetail={setDetailResult} />)}
                 </React.Fragment>
               ))
             ) : (
               searchResults.slice(0, visibleCount).map(result => (
-                <SearchResultCard key={result.id} result={result} isSelected={selectedResults.has(result.id)} onSelect={toggleResultSelect} onDetail={setDetailResult} />
+                <SearchResultCard key={result.id} result={result} isSelected={selectedResults.has(result.id)} isExpanded={expandedResultId === result.id} onSelect={toggleResultSelect} onDetail={setDetailResult} />
               ))
             )}
 

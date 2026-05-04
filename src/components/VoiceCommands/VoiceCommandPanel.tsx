@@ -5,8 +5,9 @@
  * available commands list, and settings.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { Mic, X, Send, Undo2 } from 'lucide-react';
 import { useVoiceCommands, VOICE_COMMAND_TEMPLATES } from '../../hooks/useVoiceCommands';
 import { VoiceCommand } from '../../services/voiceCommandService';
 import './VoiceCommands.css';
@@ -22,7 +23,7 @@ interface VoiceCommandPanelProps {
   position?: 'right' | 'left' | 'center';
 }
 
-type TabType = 'commands' | 'history' | 'templates' | 'settings';
+type TabType = 'library' | 'history' | 'shortcuts' | 'settings';
 
 export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
   isOpen,
@@ -30,7 +31,7 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
   onNavigate,
   position = 'right',
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('commands');
+  const [activeTab, setActiveTab] = useState<TabType>('library');
   const [commandInput, setCommandInput] = useState('');
   const [settings, setSettings] = useState(() => {
     try {
@@ -84,15 +85,28 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
   const commands = getCommands();
   const history = getHistory();
 
-  // Close on Escape
+  // Close on Escape, switch tabs with digits
   useEffect(() => {
+    if (!isOpen) return;
+    const tabOrder: TabType[] = ['library', 'history', 'shortcuts', 'settings'];
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        if (isActive) {
-          deactivate();
-        } else {
-          onClose();
-        }
+      if (e.key === 'Escape') {
+        if (isActive) deactivate();
+        else onClose();
+        return;
+      }
+
+      // Don't hijack digits while the user is typing a command
+      const target = e.target as HTMLElement | null;
+      const isTextField = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+      if (isTextField) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const idx = ['1', '2', '3', '4'].indexOf(e.key);
+      if (idx >= 0) {
+        e.preventDefault();
+        setActiveTab(tabOrder[idx]);
       }
     };
 
@@ -100,13 +114,67 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, isActive, deactivate, onClose]);
 
-  // Reset error state when panel opens so stale errors don't persist
+  // Reset error state when panel opens so stale errors don't persist,
+  // and land focus on the command input so power users can type immediately.
+  const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (isOpen) {
       clear();
+      // Defer focus so the panel's enter-animation doesn't fight the focus call
+      const id = window.setTimeout(() => inputRef.current?.focus(), 50);
+      return () => window.clearTimeout(id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  // Undo strip: appears for 3s after a successful auto-executed command.
+  const [undoCommand, setUndoCommand] = useState<VoiceCommand | null>(null);
+  const [undoSecondsLeft, setUndoSecondsLeft] = useState(0);
+  const undoTimerRef = useRef<number | null>(null);
+  const seenCommandRef = useRef<VoiceCommand | null>(null);
+
+  useEffect(() => {
+    if (!settings.autoExecute) return;
+    if (!lastCommand || !lastResult || !lastResult.success) return;
+    if (lastCommand === seenCommandRef.current) return;
+    seenCommandRef.current = lastCommand;
+
+    setUndoCommand(lastCommand);
+    setUndoSecondsLeft(3);
+
+    if (undoTimerRef.current) window.clearInterval(undoTimerRef.current);
+    undoTimerRef.current = window.setInterval(() => {
+      setUndoSecondsLeft(prev => {
+        if (prev <= 1) {
+          if (undoTimerRef.current) window.clearInterval(undoTimerRef.current);
+          undoTimerRef.current = null;
+          setUndoCommand(null);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [lastCommand, lastResult, settings.autoExecute]);
+
+  useEffect(() => () => {
+    if (undoTimerRef.current) window.clearInterval(undoTimerRef.current);
+  }, []);
+
+  const dismissUndo = () => {
+    if (undoTimerRef.current) window.clearInterval(undoTimerRef.current);
+    undoTimerRef.current = null;
+    setUndoCommand(null);
+    setUndoSecondsLeft(0);
+  };
+
+  const handleUndo = () => {
+    if (undoCommand?.type === 'navigate' || undoCommand?.type === 'open_conversation' || undoCommand?.type === 'open_contact' || undoCommand?.type === 'open_project') {
+      try { window.history.back(); } catch { /* noop */ }
+    }
+    // Other types: no programmatic undo available; the strip dismisses and the
+    // user can re-issue the corrective command. Honesty > fake undo.
+    dismissUndo();
+  };
 
   // Handle manual command input
   const handleSubmitCommand = async (e: React.FormEvent) => {
@@ -147,10 +215,9 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
         {/* Header */}
         <div className="voice-panel-header">
           <div className="voice-panel-title">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-            </svg>
+            <span className="voice-panel-title-mark" aria-hidden="true">
+              <Mic size={16} strokeWidth={2.25} />
+            </span>
             <span>Voice Commands</span>
           </div>
           <button
@@ -164,51 +231,77 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
             }}
             aria-label="Close voice commands"
           >
-            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-            </svg>
+            <X size={18} strokeWidth={2} />
           </button>
         </div>
+
+      {/* Browser-support banner (hoisted from settings) */}
+      {!isSupported && (
+        <div className="voice-panel-banner" role="alert">
+          Voice recognition isn't available in this browser. Type commands instead, or open Pulse in Chrome or Edge.
+        </div>
+      )}
+
+      {/* Undo strip — auto-execute safety net */}
+      {undoCommand && (
+        <div className="voice-undo-strip" role="status" aria-live="polite">
+          <span className="voice-undo-label">
+            <span className="voice-undo-tag">RAN</span>
+            {undoCommand.type.replace(/_/g, ' ')}
+          </span>
+          <button className="voice-undo-action" onClick={handleUndo} type="button">
+            <Undo2 size={12} strokeWidth={2.25} />
+            Undo
+            <span className="voice-undo-count">{undoSecondsLeft}</span>
+          </button>
+        </div>
+      )}
 
       {/* Voice Status */}
       <div className={`voice-panel-status voice-panel-status-${status}`}>
         <div className="voice-status-indicator">
           {status === 'listening' && (
             <>
-              <div className="voice-waveform">
+              <div className="voice-waveform" aria-hidden="true">
                 <div className="voice-waveform-bar" />
                 <div className="voice-waveform-bar" />
                 <div className="voice-waveform-bar" />
                 <div className="voice-waveform-bar" />
                 <div className="voice-waveform-bar" />
               </div>
-              <span>Listening...</span>
+              <span>Listening</span>
             </>
           )}
-          {status === 'processing' && <span>Processing command...</span>}
-          {status === 'executing' && <span>Executing...</span>}
-          {status === 'idle' && <span>Ready for voice command</span>}
+          {status === 'processing' && <span>Parsing</span>}
+          {status === 'executing' && <span>Executing</span>}
+          {status === 'idle' && <span>Ready</span>}
           {status === 'error' && (
             <span className="voice-error">
               {error?.includes('network') || error?.includes('Network')
-                ? 'Voice recognition requires an internet connection. Use the text input below instead.'
+                ? 'Offline. Type instead.'
                 : error}
             </span>
           )}
         </div>
 
         <button
+          type="button"
           className={`voice-panel-toggle ${isActive ? 'active' : ''}`}
           onClick={toggle}
+          disabled={status === 'processing' || status === 'executing'}
         >
-          {isActive ? 'Stop' : 'Start Listening'}
+          {status === 'listening' && 'Stop'}
+          {status === 'processing' && 'Parsing…'}
+          {status === 'executing' && 'Running…'}
+          {status === 'error' && 'Try again'}
+          {status === 'idle' && 'Listen'}
         </button>
       </div>
 
       {/* Transcript */}
       {(interimTranscript || currentTranscript) && (
         <div className="voice-panel-transcript">
-          <span className="voice-transcript-label">Heard:</span>
+          <span className="voice-transcript-label">Heard</span>
           <span className="voice-transcript-value">
             {interimTranscript || currentTranscript}
           </span>
@@ -225,82 +318,125 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
       {/* Manual Input */}
       <form className="voice-panel-input" onSubmit={handleSubmitCommand}>
         <input
+          ref={inputRef}
           type="text"
           value={commandInput}
           onChange={(e) => setCommandInput(e.target.value)}
-          placeholder="Type a command or say it..."
+          placeholder="Tell Pulse what to do…"
+          aria-label="Command input"
         />
-        <button type="submit" disabled={!commandInput.trim()}>
-          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-          </svg>
+        <button type="submit" disabled={!commandInput.trim()} aria-label="Run command">
+          <Send size={16} strokeWidth={2.25} />
         </button>
       </form>
 
       {/* Tabs */}
-      <div className="voice-panel-tabs">
-        {(['commands', 'templates', 'history', 'settings'] as TabType[]).map((tab) => (
+      <div className="voice-panel-tabs" role="tablist">
+        {(['library', 'history', 'shortcuts', 'settings'] as TabType[]).map((tab, idx) => (
           <button
             key={tab}
+            role="tab"
+            aria-selected={activeTab === tab}
             className={`voice-panel-tab ${activeTab === tab ? 'active' : ''}`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            <span className="voice-panel-tab-label">{tab}</span>
+            <span className="voice-panel-tab-key" aria-hidden="true">{idx + 1}</span>
           </button>
         ))}
       </div>
 
       {/* Tab Content */}
       <div className="voice-panel-content">
-        {/* Commands Tab */}
-        {activeTab === 'commands' && (
-          <div className="voice-commands-list">
-            {commands.map((cmd, index) => (
-              <div key={index} className="voice-command-item">
-                <div className="voice-command-type">
-                  {cmd.type.replace(/_/g, ' ')}
+        {/* Library Tab — merged Commands + Templates */}
+        {activeTab === 'library' && (
+          <div className="voice-library">
+            <div className="voice-commands-list">
+              {commands.map((cmd, index) => (
+                <div key={index} className="voice-command-item">
+                  <div className="voice-command-type">
+                    {cmd.type.replace(/_/g, ' ')}
+                  </div>
+                  <div className="voice-command-description">
+                    {cmd.description}
+                  </div>
+                  <div className="voice-command-examples">
+                    {cmd.examples.map((example, i) => (
+                      <button
+                        key={i}
+                        className="voice-example-btn"
+                        onClick={() => handleTemplateClick(example)}
+                      >
+                        {example}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="voice-command-description">
-                  {cmd.description}
+              ))}
+            </div>
+
+            <div className="voice-library-divider">
+              <span>Quick fills</span>
+            </div>
+
+            <div className="voice-templates-list">
+              {Object.entries(VOICE_COMMAND_TEMPLATES).map(([category, items]) => (
+                <div key={category} className="voice-template-category">
+                  <div className="voice-template-category-title">
+                    {category.replace(/([A-Z])/g, ' $1').trim()}
+                  </div>
+                  <div className="voice-template-items">
+                    {items.map((item, index) => {
+                      const needsFill = item.command.includes('[');
+                      return (
+                        <button
+                          key={index}
+                          className="voice-template-btn"
+                          onClick={() => handleTemplateClick(item.command)}
+                        >
+                          <span className="voice-template-row">
+                            <span className="voice-template-label">{item.label}</span>
+                            {needsFill && <span className="voice-template-fill">FILL</span>}
+                          </span>
+                          <span className="voice-template-command">{item.command}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="voice-command-examples">
-                  {cmd.examples.map((example, i) => (
-                    <button
-                      key={i}
-                      className="voice-example-btn"
-                      onClick={() => handleTemplateClick(example)}
-                    >
-                      "{example}"
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Templates Tab */}
-        {activeTab === 'templates' && (
-          <div className="voice-templates-list">
-            {Object.entries(VOICE_COMMAND_TEMPLATES).map(([category, items]) => (
-              <div key={category} className="voice-template-category">
-                <div className="voice-template-category-title">
-                  {category.charAt(0).toUpperCase() + category.slice(1).replace(/([A-Z])/g, ' $1')}
-                </div>
-                <div className="voice-template-items">
-                  {items.map((item, index) => (
-                    <button
-                      key={index}
-                      className="voice-template-btn"
-                      onClick={() => handleTemplateClick(item.command)}
-                    >
-                      <span className="voice-template-label">{item.label}</span>
-                      <span className="voice-template-command">{item.command}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+        {/* Shortcuts Tab */}
+        {activeTab === 'shortcuts' && (
+          <div className="voice-shortcuts-list">
+            <div className="voice-shortcut-row">
+              <span className="voice-shortcut-label">Toggle voice panel</span>
+              <span className="voice-shortcut-keys">
+                <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>V</kbd>
+              </span>
+            </div>
+            <div className="voice-shortcut-row">
+              <span className="voice-shortcut-label">Run typed command</span>
+              <span className="voice-shortcut-keys"><kbd>Enter</kbd></span>
+            </div>
+            <div className="voice-shortcut-row">
+              <span className="voice-shortcut-label">Stop listening</span>
+              <span className="voice-shortcut-keys"><kbd>Esc</kbd></span>
+            </div>
+            <div className="voice-shortcut-row">
+              <span className="voice-shortcut-label">Close panel</span>
+              <span className="voice-shortcut-keys"><kbd>Esc</kbd> <span className="voice-shortcut-or">when not listening</span></span>
+            </div>
+            <div className="voice-shortcut-row">
+              <span className="voice-shortcut-label">Switch tabs</span>
+              <span className="voice-shortcut-keys"><kbd>1</kbd>–<kbd>4</kbd></span>
+            </div>
+            <div className="voice-shortcut-note">
+              Pulse listens for <em>hey pulse</em>, <em>ok pulse</em>, <em>pulse</em> globally. Say one to open this panel.
+            </div>
           </div>
         )}
 
@@ -309,20 +445,23 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
           <div className="voice-history-list">
             {history.length === 0 ? (
               <div className="voice-history-empty">
-                No command history yet. Try saying a command!
+                <div className="voice-history-empty-title">Nothing run yet</div>
+                <div className="voice-history-empty-hint">
+                  Try <button className="voice-empty-suggestion" onClick={() => handleTemplateClick("Open today's calendar")}>Open today's calendar</button> or hit <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd> and speak.
+                </div>
               </div>
             ) : (
               history.map((cmd, index) => (
                 <div key={index} className="voice-history-item">
                   <div className="voice-history-transcript">
-                    "{cmd.rawTranscript}"
+                    {cmd.rawTranscript}
                   </div>
                   <div className="voice-history-details">
                     <span className={`voice-history-type voice-type-${cmd.type}`}>
                       {cmd.type.replace(/_/g, ' ')}
                     </span>
-                    <span className="voice-history-confidence">
-                      {Math.round(cmd.confidence * 100)}% confidence
+                    <span className="voice-history-confidence" title={`${Math.round(cmd.confidence * 100)}% match confidence`}>
+                      CONF · {Math.round(cmd.confidence * 100)}%
                     </span>
                   </div>
                   {cmd.suggestedAction && (
@@ -371,7 +510,7 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
             <label className="voice-setting-item">
               <span className="voice-setting-label">
                 <strong>Auto-Execute</strong>
-                <small>Execute commands without confirmation</small>
+                <small>Run commands instantly. Undo navigation within 3 seconds.</small>
               </span>
               <input
                 type="checkbox"
@@ -401,12 +540,6 @@ export const VoiceCommandPanel: React.FC<VoiceCommandPanelProps> = ({
               </select>
             </label>
 
-            {!isSupported && (
-              <div className="voice-setting-warning">
-                Voice commands are not supported in this browser.
-                Try using Chrome or Edge for the best experience.
-              </div>
-            )}
           </div>
         )}
       </div>

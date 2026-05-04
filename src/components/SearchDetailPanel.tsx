@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Copy, ExternalLink, ArrowRight, Mail, MessageSquare, Mic, StickyNote, CheckSquare, Calendar, Users, Phone, Folder, FileText } from 'lucide-react';
 import { SearchResult, SearchResultType } from '../services/unifiedSearchService';
 import { AppView } from '../types';
@@ -30,14 +30,29 @@ function typeLabel(type: SearchResultType): string {
 function MetaRow({ label, value }: { label: string; value: string | undefined | null }) {
   if (!value) return null;
   return (
-    <div className="flex gap-2 text-sm py-1 border-b border-gray-100 dark:border-gray-800">
-      <span className="w-28 flex-shrink-0 text-gray-400 dark:text-gray-500 font-medium">{label}</span>
-      <span className="text-gray-700 dark:text-gray-300 break-all">{value}</span>
+    <div className="sdp-meta-row">
+      <span className="sdp-meta-label">{label}</span>
+      <span className="sdp-meta-value">{value}</span>
     </div>
   );
 }
 
 export const SearchDetailPanel: React.FC<SearchDetailPanelProps> = ({ result, onClose, onClip }) => {
+  // Escape-to-close while the panel is open. Hook runs unconditionally so the
+  // hook order stays stable across renders; the listener only attaches when a
+  // result is showing.
+  useEffect(() => {
+    if (!result) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [result, onClose]);
+
   if (!result) return null;
 
   const Icon = TYPE_ICONS[result.type] ?? FileText;
@@ -70,83 +85,51 @@ export const SearchDetailPanel: React.FC<SearchDetailPanelProps> = ({ result, on
   };
 
   return (
-    <div
-      className="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-white dark:bg-gray-900 shadow-2xl flex flex-col border-l border-gray-200 dark:border-gray-700"
-      role="complementary"
-      aria-label="Result details"
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex-shrink-0 w-9 h-9 rounded-full bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center text-pink-500">
-            <Icon size={18} />
+    <div className="sdp-panel" role="complementary" aria-label="Result details">
+      <header className="sdp-header">
+        <div className="sdp-header-info">
+          <div className="sdp-icon-wrap">
+            <Icon size={16} />
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-pink-500 mb-0.5">{typeLabel(result.type)}</p>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">{result.title}</h2>
+          <div className="sdp-header-text">
+            <span className="sdp-type-tag">{typeLabel(result.type)}</span>
+            <h2 className="sdp-title">{result.title}</h2>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          title="Close"
-          aria-label="Close detail panel"
-          className="flex-shrink-0 ml-2 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-        >
-          <X size={18} />
+        <button type="button" onClick={onClose} title="Close" aria-label="Close detail panel" className="sdp-close-btn">
+          <X size={16} />
         </button>
-      </div>
+      </header>
 
-      {/* Actions */}
-      <div className="flex gap-2 px-4 py-2 border-b border-gray-100 dark:border-gray-800">
-        <button
-          type="button"
-          onClick={() => onClip(result)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-pink-500 text-white hover:bg-pink-600 transition-colors"
-        >
+      <div className="sdp-actions">
+        <button type="button" onClick={() => onClip(result)} className="sdp-btn sdp-btn-primary">
           <Copy size={13} /> Clip to clipboard
         </button>
-        <button
-          type="button"
-          onClick={handleCopyContent}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-        >
+        <button type="button" onClick={handleCopyContent} className="sdp-btn sdp-btn-ghost">
           <Copy size={13} /> Copy text
         </button>
-        <button
-          type="button"
-          onClick={handleGoToSource}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          aria-label={`Go to ${typeLabel(result.type)}`}
-        >
+        <button type="button" onClick={handleGoToSource} className="sdp-btn sdp-btn-ghost"
+          aria-label={`Go to ${typeLabel(result.type)}`}>
           <ArrowRight size={13} /> Go to {typeLabel(result.type)}
         </button>
         {meta.url && (
-          <a
-            href={meta.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
+          <a href={meta.url} target="_blank" rel="noopener noreferrer" className="sdp-btn sdp-btn-ghost">
             <ExternalLink size={13} /> Open
           </a>
         )}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {/* Full content */}
+      <div className="sdp-body">
         <section>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">Content</h3>
-          <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-            {result.content || <span className="text-gray-400 italic">No content</span>}
+          <h3 className="sdp-section-label">Content</h3>
+          <div className="sdp-content">
+            {result.content || <span className="sdp-content-empty">No content</span>}
           </div>
         </section>
 
-        {/* Metadata */}
         <section>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">Details</h3>
-          <div className="rounded-lg overflow-hidden">
+          <h3 className="sdp-section-label">Details</h3>
+          <div className="sdp-meta-list">
             <MetaRow label="Date" value={result.timestamp.toLocaleString()} />
             <MetaRow label="Source" value={result.source} />
             <MetaRow label="From" value={result.sender} />
@@ -155,7 +138,6 @@ export const SearchDetailPanel: React.FC<SearchDetailPanelProps> = ({ result, on
               <MetaRow label="Relevance" value={`${Math.round((result.relevance ?? 0) * 100)}%`} />
             )}
 
-            {/* Type-specific metadata */}
             {result.type === 'email' && (
               <>
                 <MetaRow label="Subject" value={meta.subject} />
@@ -186,15 +168,12 @@ export const SearchDetailPanel: React.FC<SearchDetailPanelProps> = ({ result, on
           </div>
         </section>
 
-        {/* Tags */}
         {Array.isArray(meta.tags) && meta.tags.length > 0 && (
           <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">Tags</h3>
-            <div className="flex flex-wrap gap-1">
+            <h3 className="sdp-section-label">Tags</h3>
+            <div className="sdp-tags">
               {(meta.tags as string[]).map((tag, i) => (
-                <span key={i} className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400">
-                  {tag}
-                </span>
+                <span key={i} className="sdp-tag">{tag}</span>
               ))}
             </div>
           </section>

@@ -6,16 +6,27 @@ interface OperatorReferencePopoverProps {
   onInsert: (text: string) => void;
 }
 
-const OPERATORS = [
-  { operator: 'from:', example: 'from:alice',        description: 'Filter by sender' },
-  { operator: 'to:',   example: 'to:bob@co.com',     description: 'Filter by recipient' },
-  { operator: 'subject:', example: 'subject:invoice', description: 'Email subject' },
-  { operator: 'after:', example: 'after:2024-01-01',  description: 'After date' },
-  { operator: 'before:', example: 'before:last week', description: 'Before date' },
-  { operator: 'is:',   example: 'is:unread',          description: 'Message status' },
-  { operator: 'has:',  example: 'has:attachment',     description: 'Has attachment' },
-  { operator: 'label:', example: 'label:important',   description: 'Label/tag' },
-  { operator: '-',     example: '-from:spam',          description: 'Exclude operator' },
+const OPERATORS: { operator: string; example: string; description: string }[] = [
+  { operator: 'from:',    example: 'from:alice',         description: 'Filter by sender' },
+  { operator: 'to:',      example: 'to:bob@co.com',      description: 'Filter by recipient' },
+  { operator: 'subject:', example: 'subject:invoice',    description: 'Email subject' },
+  { operator: 'after:',   example: 'after:2024-01-01',   description: 'After date' },
+  { operator: 'before:',  example: 'before:last week',   description: 'Before date' },
+  { operator: 'is:',      example: 'is:unread',          description: 'Message status' },
+  { operator: 'has:',     example: 'has:attachment',     description: 'Has attachment' },
+  { operator: 'label:',   example: 'label:important',    description: 'Label/tag' },
+  { operator: '-',        example: '-from:spam',         description: 'Exclude operator' },
+];
+
+const KEYBOARD_SHORTCUTS: { keys: string; description: string }[] = [
+  { keys: 'Cmd+K · /', description: 'Focus search' },
+  { keys: '↓ ↑',       description: 'Move between results' },
+  { keys: '→',         description: 'Peek the focused result' },
+  { keys: '← · Esc',   description: 'Collapse peek' },
+  { keys: 'Enter',     description: 'Open full detail panel' },
+  { keys: '1 — 5',     description: 'Resume from list' },
+  { keys: 'Esc',       description: 'Clear search' },
+  { keys: '?',         description: 'Toggle this reference' },
 ];
 
 export const OperatorReferencePopover: React.FC<OperatorReferencePopoverProps> = ({
@@ -47,47 +58,49 @@ export const OperatorReferencePopover: React.FC<OperatorReferencePopoverProps> =
     <div
       ref={ref}
       role="dialog"
-      aria-label="Search operators reference"
-      className="operator-reference-popover absolute right-0 top-full mt-1 z-50 w-96 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3"
+      aria-label="Search operators and keyboard shortcuts"
+      className="op-ref-popover"
     >
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 px-1">
-        Search Operators
-      </h3>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs text-gray-400 dark:text-gray-500">
-            <th className="pb-1 px-1 font-medium">Operator</th>
-            <th className="pb-1 px-1 font-medium">Example</th>
-            <th className="pb-1 px-1 font-medium">Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          {OPERATORS.map(row => (
-            <tr
-              key={row.operator}
-              onClick={() => { onInsert(row.example); onClose(); }}
-              className="cursor-pointer rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <td className="py-1 px-1">
-                <code className="text-xs font-mono text-purple-600 dark:text-purple-400">
-                  {row.operator}
-                </code>
-              </td>
-              <td className="py-1 px-1">
-                <code className="text-xs font-mono text-gray-700 dark:text-gray-300">
-                  {row.example}
-                </code>
-              </td>
-              <td className="py-1 px-1 text-gray-500 dark:text-gray-400 text-xs">
-                {row.description}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="mt-2 text-xs text-gray-400 dark:text-gray-500 px-1">
-        Click any row to insert it into the search box.
-      </p>
+      <section className="op-ref-section">
+        <h3 className="op-ref-section-label">Search Operators</h3>
+        <table className="op-ref-table">
+          <tbody>
+            {OPERATORS.map(row => (
+              <tr
+                key={row.operator}
+                onClick={() => { onInsert(row.example); onClose(); }}
+                className="op-ref-row"
+              >
+                <td className="op-ref-cell-operator">
+                  <code className="op-ref-code op-ref-code-primary">{row.operator}</code>
+                </td>
+                <td className="op-ref-cell-example">
+                  <code className="op-ref-code">{row.example}</code>
+                </td>
+                <td className="op-ref-cell-desc">{row.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="op-ref-section">
+        <h3 className="op-ref-section-label">Keyboard</h3>
+        <table className="op-ref-table">
+          <tbody>
+            {KEYBOARD_SHORTCUTS.map(row => (
+              <tr key={row.keys} className="op-ref-row op-ref-row-static">
+                <td className="op-ref-cell-keys">
+                  <code className="op-ref-code op-ref-code-primary">{row.keys}</code>
+                </td>
+                <td className="op-ref-cell-desc">{row.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <p className="op-ref-footer">Click an operator to insert it · ? to toggle</p>
     </div>
   );
 };

@@ -43,6 +43,7 @@ function formatTimestamp(date: Date): string {
 interface SearchResultCardProps {
   result: SearchResult;
   isSelected: boolean;
+  isExpanded?: boolean;
   onSelect: (id: string, e: React.MouseEvent) => void;
   onDetail: (result: SearchResult) => void;
 }
@@ -50,16 +51,19 @@ interface SearchResultCardProps {
 export const SearchResultCard = React.memo(function SearchResultCard({
   result,
   isSelected,
+  isExpanded = false,
   onSelect,
   onDetail,
 }: SearchResultCardProps) {
   const Icon = getIcon(result.type);
+  const channelName = (result.metadata as any)?.channelName as string | undefined;
 
   return (
     <div
-      className={`result-card-modern group ${isSelected ? 'selected' : ''}`}
+      className={`result-card-modern group ${isSelected ? 'selected' : ''} ${isExpanded ? 'expanded' : ''}`}
       role="article"
       tabIndex={0}
+      data-result-id={result.id}
       onClick={() => onDetail(result)}
       onKeyDown={e => { if (e.key === 'Enter') onDetail(result); }}
     >
@@ -83,6 +87,30 @@ export const SearchResultCard = React.memo(function SearchResultCard({
 
       <h4 className="result-title-modern">{result.title}</h4>
       <p className="result-snippet">{result.content}</p>
+
+      {/* Inline peek — shown when ArrowRight expands this card. The fuller
+          snippet + sender/channel meta closes the gap between "scan" and "open
+          the full detail panel." Enter still opens the panel. */}
+      {isExpanded && (
+        <div className="result-peek">
+          <p className="result-peek-snippet">{result.content}</p>
+          <div className="result-peek-meta">
+            {result.sender && (
+              <span className="result-peek-meta-row">
+                <span className="result-peek-meta-label">From</span>
+                <span className="result-peek-meta-value">{result.sender}</span>
+              </span>
+            )}
+            {channelName && (
+              <span className="result-peek-meta-row">
+                <span className="result-peek-meta-label">Channel</span>
+                <span className="result-peek-meta-value">{channelName}</span>
+              </span>
+            )}
+            <span className="result-peek-hint">Enter to open · ← to collapse</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

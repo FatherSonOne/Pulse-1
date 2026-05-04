@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import ReactMarkdown from 'react-markdown';
+import toast from 'react-hot-toast';
 import { User, AppView, BatchedNotification, CalendarEvent, Task, Thread, Contact } from '../types';
 import { generateJournalInsight, generateSearchResponse, generateDailyBriefing, generateThinkingResponse } from '../services/geminiService';
 import { saveArchiveItem } from '../services/dbService';
@@ -20,7 +21,7 @@ import { AttentionDashboard } from './attention';
 import { attentionService } from '../services/attentionService';
 import { emailSyncService } from '../services/emailSyncService';
 
-import { Archive, ArrowRight, BookUser, Calendar, Check, CheckCircle, CheckCircle2, CheckSquare, ChevronRight, Clock, Copy, Flame, Heart, Lightbulb, List, Loader2, Mail, MessageSquare, MessagesSquare, Mic, Plus, Search, Send, Sparkles, Target, TrendingUp, UserCheck, UserPlus, Users, X, Zap } from 'lucide-react';
+import { Archive, ArrowRight, BookUser, Calendar, Check, CheckCircle2, CheckSquare, ChevronRight, Copy, Heart, List, Loader2, Mail, MessageSquare, MessagesSquare, Mic, Plus, Search, Send, Target, TrendingUp, UserCheck, UserPlus, Users, X } from 'lucide-react';
 
 // Auto-refresh interval in milliseconds (5 minutes)
 const BRIEFING_REFRESH_INTERVAL = 5 * 60 * 1000;
@@ -382,6 +383,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
   const [briefingStats, setBriefingStats] = useState<BriefingStats | null>(null);
   const [loadingBriefing, setLoadingBriefing] = useState(false);
   const [lastBriefingRefresh, setLastBriefingRefresh] = useState<Date | null>(null);
+  const [briefingError, setBriefingError] = useState<string | null>(null);
   const briefingRefreshRef = useRef<NodeJS.Timeout | null>(null);
 
   // Attention Budget State — attentionLoad derived from batchedNotifications
@@ -402,6 +404,25 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
   const [showGoalEditor, setShowGoalEditor] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [goalEditorTab, setGoalEditorTab] = useState<'productivity' | 'communication' | 'wellness' | 'all'>('all');
+
+  // Keyboard shortcut overlay
+  const [showKbdOverlay, setShowKbdOverlay] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Command palette (Cmd+K / Ctrl+K)
+  const [showCmdPalette, setShowCmdPalette] = useState(false);
+  const [cmdPaletteQuery, setCmdPaletteQuery] = useState('');
+  const [cmdPaletteIdx, setCmdPaletteIdx] = useState(0);
+  const cmdPaletteInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Persistent activity badge — shows "SAVED hh:mm" briefly after any save.
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const markSaved = useCallback(() => setLastSavedAt(new Date()), []);
+  useEffect(() => {
+    if (!lastSavedAt) return;
+    const t = setTimeout(() => setLastSavedAt(null), 4000);
+    return () => clearTimeout(t);
+  }, [lastSavedAt]);
 
   // ============= DATA LOADING =============
 
@@ -457,7 +478,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       const pulseUserTeamMembers: TeamMember[] = pulseUsersData.map(user => ({
         id: user.id,
         name: user.display_name || user.full_name || 'Pulse User',
-        avatarColor: 'bg-gradient-to-tr from-emerald-500 to-cyan-500',
+        avatarColor: 'bg-zinc-200 dark:bg-white/[0.08] text-zinc-700 dark:text-zinc-200',
         status: 'online' as const,
         unreadCount: 0,
       }));
@@ -561,6 +582,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
+      toast.error('Couldn\'t load dashboard. Check your connection.');
     } finally {
       setIsLoading(false);
     }
@@ -585,6 +607,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       }
     } catch (error) {
       console.error('Failed to load teams:', error);
+      toast.error('Couldn\'t load teams.');
     } finally {
       setLoadingTeams(false);
     }
@@ -673,6 +696,82 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
   useEffect(() => {
     loadRecentJournals();
   }, [loadRecentJournals]);
+
+  // Keyboard shortcuts: ESC closes overlays; J focuses #1; K focuses #2; R refreshes briefing; / focuses search; ? toggles overlay; Cmd+K toggles palette
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+
+      // Cmd+K / Ctrl+K toggles command palette — works while typing too.
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCmdPalette(prev => !prev);
+        return;
+      }
+
+      // ESC closes overlays in priority order
+      if (e.key === 'Escape') {
+        if (showCmdPalette) { setShowCmdPalette(false); return; }
+        if (showKbdOverlay) { setShowKbdOverlay(false); return; }
+        if (showQuickActions) { setShowQuickActions(false); return; }
+      }
+
+      // The rest only fire when the user isn't typing (and not when palette is open — palette has its own input)
+      if (isTyping || showCmdPalette) return;
+
+      // ? toggles the shortcut overlay
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        setShowKbdOverlay(prev => !prev);
+        return;
+      }
+
+      // / focuses the search input
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      if ((e.key === 'j' || e.key === 'k') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (priorities.length === 0) return;
+        e.preventDefault();
+        const idx = e.key === 'j' ? 0 : Math.min(priorities.length - 1, 1);
+        handlePriorityClick(priorities[idx]);
+      }
+      if (e.key === 'r' && !e.metaKey && !e.ctrlKey && !e.altKey && !loadingBriefing) {
+        e.preventDefault();
+        handleRefreshBriefing();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [showQuickActions, showKbdOverlay, showCmdPalette, priorities, loadingBriefing]);
+
+  // Reset palette state when it closes
+  useEffect(() => {
+    if (!showCmdPalette) {
+      setCmdPaletteQuery('');
+      setCmdPaletteIdx(0);
+    } else {
+      // Focus the input when opening
+      setTimeout(() => cmdPaletteInputRef.current?.focus(), 0);
+    }
+  }, [showCmdPalette]);
+
+  // Draft protection: warn before browser navigation when journal has unsaved text
+  useEffect(() => {
+    if (!journalText.trim()) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Required for legacy browsers; modern browsers ignore the string and show their own message.
+      e.returnValue = '';
+      return '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [journalText]);
 
   // Real-time subscriptions
   useEffect(() => {
@@ -824,6 +923,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
 
   const loadDailyBriefing = async (silent = false) => {
     if (!silent) setLoadingBriefing(true);
+    setBriefingError(null);
 
     try {
       // Gather comprehensive context from all data sources
@@ -834,10 +934,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       const data = await generateDailyBriefing(effectiveApiKey, contextString);
 
       if (data) {
-        setBriefing(data);
+        setBriefing(data as BriefingData);
         setLastBriefingRefresh(new Date());
+        markSaved();
       } else {
         console.warn('[Dashboard] Briefing generation returned no data');
+        setBriefingError('No briefing returned. Try again.');
       }
 
       // Also refresh stats
@@ -848,7 +950,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       // (a cap-exceeded toast is far more actionable than silently falling
       // back to generic text). We still drop into the fallback briefing below
       // so the dashboard keeps rendering usable content.
-      handleAIError(error);
+      const handled = handleAIError(error);
+      if (!handled) {
+        setBriefingError('Couldn\'t refresh briefing. Network or service issue.');
+      }
       // Set a fallback briefing with helpful message
       if (!briefing) {
         setBriefing({
@@ -903,6 +1008,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     });
 
     setLastSavedId(item.id);
+    markSaved();
 
     setTimeout(() => {
       setSaving(false);
@@ -928,8 +1034,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     try {
       const { text, groundingChunks } = await generateSearchResponse(effectiveApiKey, searchQuery);
       setSearchResult({ text, sources: groundingChunks });
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error('Search failed:', err);
+      if (!handleAIError(err)) {
+        toast.error('Search failed. Try again.');
+      }
     }
     setLoadingTools(false);
   };
@@ -1073,23 +1182,46 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       // Save to localStorage
       if (user?.id) {
         localStorage.setItem(`pulse_goals_${user.id}`, JSON.stringify(updated));
+        markSaved();
       }
       return updated;
     });
-  }, [user?.id]);
+  }, [user?.id, markSaved]);
+
+  // Pending-disable confirmation: clicking once to disable a previously-enabled goal
+  // sets a 3s window; clicking again within the window confirms. Prevents accidental disables.
+  const [pendingDisableId, setPendingDisableId] = useState<string | null>(null);
+  const pendingDisableTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleToggleGoal = useCallback((goalId: string) => {
+    const target = goals.find(g => g.id === goalId);
+    const isCurrentlyEnabled = target?.enabled !== false;
+
+    // Enabling: instant. Disabling a previously-enabled goal: require a confirm click.
+    if (isCurrentlyEnabled && pendingDisableId !== goalId) {
+      setPendingDisableId(goalId);
+      if (pendingDisableTimerRef.current) clearTimeout(pendingDisableTimerRef.current);
+      pendingDisableTimerRef.current = setTimeout(() => setPendingDisableId(null), 3000);
+      return;
+    }
+
+    if (pendingDisableTimerRef.current) {
+      clearTimeout(pendingDisableTimerRef.current);
+      pendingDisableTimerRef.current = null;
+    }
+    setPendingDisableId(null);
+
     setGoals(prev => {
       const updated = prev.map(g =>
         g.id === goalId ? { ...g, enabled: g.enabled === false ? true : false } : g
       );
-      // Save to localStorage
       if (user?.id) {
         localStorage.setItem(`pulse_goals_${user.id}`, JSON.stringify(updated));
+        markSaved();
       }
       return updated;
     });
-  }, [user?.id]);
+  }, [user?.id, goals, pendingDisableId, markSaved]);
 
   const getStatusColor = useCallback((status: TeamMember['status']) => {
     switch (status) {
@@ -1118,6 +1250,94 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     { id: 'search', label: 'Search', icon: 'fa-magnifying-glass', view: AppView.MULTI_MODAL },
   ], []);
 
+  // Build the command palette rows: actions (from quickActions) + nav destinations + help
+  const commandRows = useMemo(() => {
+    type Row = {
+      id: string;
+      label: string;
+      desc: string;
+      kind: 'action' | 'navigate' | 'help';
+      icon: string;
+      run: () => void;
+    };
+    const rows: Row[] = [];
+
+    const actionDescs: Record<string, string> = {
+      task: 'Open the task composer',
+      message: 'Compose a new message',
+      meeting: 'Schedule a video meeting',
+      email: 'Open the email composer',
+      vox: 'Record a quick voice message',
+      contact: 'Add a new contact',
+      warroom: 'Open the live war room',
+      search: 'Open multi-modal search',
+    };
+
+    quickActions.forEach(a => {
+      rows.push({
+        id: `action-${a.id}`,
+        label: a.label,
+        desc: actionDescs[a.id] || 'Run this action',
+        kind: 'action',
+        icon: a.icon,
+        run: () => {
+          const params: Record<string, boolean> = {};
+          if (a.openTaskPanel) params.openTaskPanel = true;
+          if (a.openAddContact) params.openAddContact = true;
+          setView(a.view, Object.keys(params).length > 0 ? params : undefined);
+          setShowCmdPalette(false);
+        },
+      });
+    });
+
+    const navDestinations: Array<{ id: string; label: string; desc: string; view: AppView; icon: string }> = [
+      { id: 'nav-messages', label: 'Messages', desc: 'Unified inbox', view: AppView.MESSAGES, icon: 'fa-message' },
+      { id: 'nav-email', label: 'Email', desc: 'Pulse email client', view: AppView.EMAIL, icon: 'fa-envelope' },
+      { id: 'nav-calendar', label: 'Calendar', desc: 'Schedule and tasks', view: AppView.CALENDAR, icon: 'fa-calendar' },
+      { id: 'nav-relay', label: 'Relay', desc: 'Voice messages and notes', view: AppView.RELAY, icon: 'fa-microphone' },
+      { id: 'nav-contacts', label: 'Contacts', desc: 'People and teams', view: AppView.CONTACTS, icon: 'fa-users' },
+      { id: 'nav-archives', label: 'Archives', desc: 'Saved items and journals', view: AppView.ARCHIVES, icon: 'fa-box-archive' },
+      { id: 'nav-settings', label: 'Settings', desc: 'Preferences and account', view: AppView.SETTINGS, icon: 'fa-gear' },
+      { id: 'nav-dashboard', label: 'Dashboard', desc: 'You are here', view: AppView.DASHBOARD, icon: 'fa-house' },
+    ];
+    navDestinations.forEach(n => {
+      rows.push({
+        id: n.id,
+        label: n.label,
+        desc: n.desc,
+        kind: 'navigate',
+        icon: n.icon,
+        run: () => { setView(n.view); setShowCmdPalette(false); },
+      });
+    });
+
+    // Help: opens the keyboard shortcuts overlay
+    rows.push({
+      id: 'help-shortcuts',
+      label: 'View keyboard shortcuts',
+      desc: 'See every binding in one list',
+      kind: 'help',
+      icon: 'fa-keyboard',
+      run: () => {
+        setShowCmdPalette(false);
+        setShowKbdOverlay(true);
+      },
+    });
+
+    return rows;
+  }, [quickActions, setView]);
+
+  const filteredCmdRows = useMemo(() => {
+    const q = cmdPaletteQuery.trim().toLowerCase();
+    if (!q) return commandRows;
+    return commandRows.filter(r => r.label.toLowerCase().includes(q));
+  }, [commandRows, cmdPaletteQuery]);
+
+  // Clamp idx into range when filter changes
+  useEffect(() => {
+    if (cmdPaletteIdx >= filteredCmdRows.length) setCmdPaletteIdx(Math.max(0, filteredCmdRows.length - 1));
+  }, [filteredCmdRows.length, cmdPaletteIdx]);
+
   // Derived: upcoming events (next 3 future events sorted by start time)
   const upcomingEvents = useMemo(() => {
     const now = new Date();
@@ -1129,6 +1349,42 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
 
   // Derived: message unread count from threads
   const messageUnreadCount = useMemo(() => threads.filter(t => t.unread).length, [threads]);
+
+  // Derived: threads awaiting the operator's reply.
+  // Last message is from someone else and there's no reply from "me" after it. Sorted newest-first.
+  const awaitingReply = useMemo(() => {
+    const items = threads
+      .map(thread => {
+        if (!thread.messages || thread.messages.length === 0) return null;
+        const sortedMsgs = [...thread.messages].sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        const lastMsg = sortedMsgs[0];
+        if (lastMsg.sender !== 'other') return null;
+        const ts = new Date(lastMsg.timestamp).getTime();
+        const ageMin = Math.max(0, Math.floor((Date.now() - ts) / 60_000));
+        return {
+          threadId: thread.id,
+          contactName: thread.contactName || 'Unknown',
+          preview: (lastMsg.text || '').replace(/\s+/g, ' ').trim(),
+          source: lastMsg.source,
+          receivedAt: ts,
+          ageMin,
+          unread: thread.unread,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+    return items.sort((a, b) => b.receivedAt - a.receivedAt).slice(0, 5);
+  }, [threads]);
+
+  const formatAwaitingAge = useCallback((ageMin: number) => {
+    if (ageMin < 1) return 'now';
+    if (ageMin < 60) return `${ageMin}m`;
+    const hours = Math.floor(ageMin / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `${days}d`;
+  }, []);
 
   const wordCount = journalText.trim().split(/\s+/).filter(Boolean).length;
   const charCount = journalText.length;
@@ -1149,12 +1405,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
           <div className="relative flex items-center">
             <Search className="absolute left-4 text-zinc-400 w-4 h-4 pointer-events-none" />
             <input
+              ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search the web"
-              className="w-full bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl pl-11 pr-24 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/60 dark:focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-colors duration-150"
+              className="w-full bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl pl-11 pr-32 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/60 dark:focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-colors duration-150"
             />
+            {!searchQuery && (
+              <span className="hidden sm:inline-flex absolute right-24 top-1/2 -translate-y-1/2 items-center gap-1 pointer-events-none">
+                <kbd className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.06]">/</kbd>
+                <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.06]">⌘K</kbd>
+              </span>
+            )}
             <button
               type="submit"
               disabled={loadingTools || !searchQuery.trim()}
@@ -1217,10 +1480,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2.5 flex-wrap">
                     <ProvenanceChip provider="claude" kind="BRIEFING" />
-                    {lastBriefingRefresh && (
+                    {lastBriefingRefresh && !briefingError && (
                       <span className="pulse-label text-zinc-400 dark:text-zinc-500">
                         UPDATED {lastBriefingRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
+                    )}
+                    {briefingError && (
+                      <button
+                        onClick={handleRefreshBriefing}
+                        disabled={loadingBriefing}
+                        className="pulse-label inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/15 transition-colors duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40"
+                        title={briefingError}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500" aria-hidden="true"></span>
+                        REFRESH FAILED · RETRY
+                      </button>
                     )}
                   </div>
                   <h1 className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
@@ -1355,24 +1629,25 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
               )}
             </div>
           ) : (
-            // Empty state: terse Pulse voice, single primary action
-            <div>
-              <div className="flex items-center gap-2 mb-3">
+            // Empty state — primary anchor for the dashboard. Bigger type, larger CTA, START HERE cue.
+            <div className="py-2 sm:py-4">
+              <div className="flex items-center gap-2 mb-4">
                 <ProvenanceChip provider="claude" kind="BRIEFING" />
+                <span className="pulse-label text-zinc-400 dark:text-zinc-500">START HERE</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight mb-2">
+              <h1 className="text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight mb-3">
                 {contextualGreeting.greeting}
               </h1>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-5 max-w-[65ch]">
-                Pulse hasn't drafted a briefing yet. Generate one when you're ready to see what needs you today.
+              <p className="text-[15px] text-zinc-600 dark:text-zinc-400 mb-6 max-w-[60ch] leading-relaxed">
+                No briefing yet. Generate one to see what needs you today, drafted from your inbox, calendar, and threads.
               </p>
               <button
                 onClick={handleRefreshBriefing}
                 disabled={loadingBriefing}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 shadow-sm shadow-rose-500/10"
               >
                 {loadingBriefing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
-                {loadingBriefing ? 'Generating' : 'Generate briefing'}
+                {loadingBriefing ? 'Generating briefing' : 'Generate briefing'}
               </button>
             </div>
           )}
@@ -1385,6 +1660,60 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         isLoading={isLoading}
         onItemClick={handlePriorityClick}
       />
+
+      {/* Awaiting You — threads where someone is waiting on a response. Deterministic, complements AI priorities. */}
+      {!isLoading && awaitingReply.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="pulse-label text-zinc-500 dark:text-zinc-400">
+              AWAITING YOU · {awaitingReply.length}
+            </h2>
+            <button
+              onClick={() => setView(AppView.MESSAGES)}
+              className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+            >
+              VIEW INBOX
+            </button>
+          </div>
+          <ul className="space-y-px">
+            {awaitingReply.map(item => (
+              <li key={item.threadId}>
+                <button
+                  onClick={() => {
+                    sessionStorage.setItem('pulse_focus_thread', item.threadId);
+                    setView(AppView.MESSAGES);
+                  }}
+                  className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      item.unread ? 'bg-rose-500' : 'bg-zinc-300 dark:bg-zinc-600'
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <span className="flex items-baseline gap-2 min-w-0 flex-1">
+                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 shrink-0">
+                      {item.contactName}
+                    </span>
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400 truncate min-w-0">
+                      {item.preview || 'sent a message'}
+                    </span>
+                  </span>
+                  {item.source && (
+                    <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 hidden sm:inline">
+                      {item.source.toUpperCase()}
+                    </span>
+                  )}
+                  <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0 min-w-[2.5rem] text-right">
+                    {formatAwaitingAge(item.ageMin)}
+                  </span>
+                  <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors shrink-0" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Attention & Focus Dashboard */}
       {user?.id && (
@@ -1458,16 +1787,56 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
               </div>
             )}
 
+            {/* Scaffolding: rotating greeting question + last-entry pulse-label cue */}
+            {!journalText && (
+              <div className="mb-4">
+                <div className="flex items-baseline justify-between gap-3 mb-3">
+                  <p className="text-base font-medium text-zinc-800 dark:text-zinc-200">
+                    {contextualGreeting.timeOfDay === 'morning' && "What's on your mind?"}
+                    {contextualGreeting.timeOfDay === 'afternoon' && "What's working today?"}
+                    {contextualGreeting.timeOfDay === 'evening' && "What did you learn?"}
+                    {contextualGreeting.timeOfDay === 'night' && "Anything left to capture?"}
+                  </p>
+                  <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0">
+                    {recentJournals.length > 0
+                      ? `LAST · ${(() => {
+                          const days = Math.floor((Date.now() - recentJournals[0].date.getTime()) / 86_400_000);
+                          if (days === 0) return 'TODAY';
+                          if (days === 1) return 'YESTERDAY';
+                          return `${days}D AGO`;
+                        })()}`
+                      : 'FIRST ENTRY'}
+                  </span>
+                </div>
+                {/* Starter prompt chips */}
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: 'Decision', seed: 'Decision: ' },
+                    { label: 'Learning', seed: 'Learning: ' },
+                    { label: 'Friction', seed: 'Friction: ' },
+                  ].map(chip => (
+                    <button
+                      key={chip.label}
+                      onClick={() => setJournalText(chip.seed)}
+                      className="text-xs px-2.5 py-1 rounded-full bg-zinc-50 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <textarea
-              className="w-full bg-transparent border-0 p-0 text-base focus:ring-0 resize-none mb-2 min-h-[200px] dark:text-zinc-200 text-zinc-800 placeholder-zinc-400 dark:placeholder-zinc-500 leading-relaxed font-light"
-              placeholder="Write your thoughts..."
+              className="w-full bg-transparent border-0 p-0 text-base focus:ring-0 resize-none mb-2 min-h-[180px] dark:text-zinc-200 text-zinc-800 placeholder-zinc-400 dark:placeholder-zinc-500 leading-relaxed font-light"
+              placeholder={journalText ? '' : 'Write here, or pick a starter above'}
               value={journalText}
               onChange={(e) => setJournalText(e.target.value)}
             />
 
-            <div className="flex justify-end gap-4 text-[10px] text-zinc-500 font-mono mb-4">
-              <span>{wordCount} words</span>
-              <span>{charCount} chars</span>
+            <div className="flex justify-end gap-4 pulse-label text-zinc-500 dark:text-zinc-400 mb-4">
+              <span>{wordCount} WORDS</span>
+              <span>{charCount} CHARS</span>
             </div>
 
             {journalInsight && (
@@ -1489,7 +1858,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
               <button
                 onClick={handleShare}
                 disabled={!journalText}
-                className={`w-9 h-9 rounded-lg transition-colors duration-150 flex items-center justify-center disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${journalCopied ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'hover:bg-zinc-100 dark:hover:bg-white/[0.05] text-zinc-400'}`}
+                className={`w-9 h-9 rounded-lg transition-colors duration-150 flex items-center justify-center disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${journalCopied ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' : 'hover:bg-zinc-100 dark:hover:bg-white/[0.05] text-zinc-500 dark:text-zinc-400'}`}
                 title={journalCopied ? 'Copied' : 'Copy to clipboard'}
               >
                 {journalCopied ? <Check /> : <Copy />}
@@ -1611,8 +1980,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
             {/* Quick chips */}
             <div className="flex flex-wrap gap-1.5 mb-3">
               {["Summarize my day", "What's urgent?", "Draft a reply"].map(chip => (
-                <button key={chip} onClick={() => handlePulseAiQuery(chip)}
-                  className="text-xs px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 border border-zinc-200 dark:border-zinc-700 transition-all">
+                <button
+                  key={chip}
+                  onClick={() => handlePulseAiQuery(chip)}
+                  className="text-xs px-3 py-1 rounded-full bg-zinc-50 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                >
                   {chip}
                 </button>
               ))}
@@ -1624,24 +1996,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                   type="text"
                   value={pulseAiQuery}
                   onChange={(e) => setPulseAiQuery(e.target.value)}
-                  placeholder="Ask anything..."
-                  className="w-full bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 focus:border-rose-500/40 focus:outline-none transition-all pr-8"
+                  placeholder="Ask anything"
+                  className="w-full bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-colors duration-150 pr-9"
                 />
-                <button type="submit" className="absolute right-2 top-2 text-zinc-400 hover:text-rose-400 transition">
+                <button type="submit" disabled={loadingPulseAi || !pulseAiQuery.trim()} className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 disabled:opacity-40 transition-colors">
                   {loadingPulseAi ? <Loader2 className="animate-spin w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                 </button>
               </div>
             </form>
             {/* Response */}
             {pulseAiResponse && (
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400 animate-fade-in">
-                <p className="line-clamp-4">{pulseAiResponse}</p>
-                <div className="flex items-center justify-between mt-2">
-                  <button onClick={() => setView(AppView.LIVE_AI)}
-                    className="text-xs text-rose-500 hover:text-rose-400 font-medium">
-                    Open Pulse AI →
+              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/[0.06] animate-fade-in">
+                <ProvenanceChip provider="pulse" kind="ANSWER" className="mb-2" />
+                <p className="text-xs leading-relaxed text-zinc-700 dark:text-zinc-300 line-clamp-4">{pulseAiResponse}</p>
+                <div className="flex items-center justify-between mt-2.5">
+                  <button onClick={() => setView(AppView.LIVE_AI)} className="pulse-label text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors">
+                    OPEN PULSE AI →
                   </button>
-                  <button onClick={() => setPulseAiResponse(null)} className="text-xs text-zinc-400 hover:text-zinc-500">Clear</button>
+                  <button onClick={() => setPulseAiResponse(null)} className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">CLEAR</button>
                 </div>
               </div>
             )}
@@ -1692,37 +2064,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
             )}
           </div>
 
-          {/* Unread */}
-          <div className="bg-white dark:bg-white/[0.03] rounded-xl p-5 border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150">
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">Unread</h3>
-            <ul className="space-y-px">
-              {[
-                { label: 'Messages', count: messageUnreadCount, icon: MessageSquare, view: AppView.MESSAGES },
-                { label: 'Email', count: emailUnreadCount, icon: Mail, view: AppView.EMAIL },
-                { label: 'Relay', count: voxUnreadCount, icon: Mic, view: AppView.RELAY },
-              ].map(({ label, count, icon: Icon, view }) => (
-                <li key={label}>
-                  <button
-                    onClick={() => setView(view)}
-                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-                      <span className="text-sm text-zinc-800 dark:text-zinc-200">{label}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {count > 0 ? (
-                        <span className="pulse-label inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded bg-rose-500 text-white">{count}</span>
-                      ) : (
-                        <span className="pulse-label text-zinc-400 dark:text-zinc-500">CLEAR</span>
-                      )}
-                      <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors" />
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Unread widget removed — replaced by the Awaiting You section above Priorities, which surfaces the actionable subset. */}
 
         </div>
       </div>
@@ -1757,18 +2099,191 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
               </ul>
             </div>
           )}
-          <button
-            onClick={() => setShowQuickActions(!showQuickActions)}
-            aria-expanded={showQuickActions}
-            aria-label={showQuickActions ? 'Close quick actions' : 'Open quick actions'}
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 ${
-              showQuickActions
-                ? 'bg-zinc-200 dark:bg-white/[0.08] text-zinc-700 dark:text-zinc-200 rotate-45'
-                : 'bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white shadow-md shadow-rose-500/20'
-            }`}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowKbdOverlay(true)}
+              aria-label="Keyboard shortcuts"
+              title="Keyboard shortcuts (?)"
+              className="hidden sm:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-white/[0.10] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 shadow-sm"
+            >
+              <span className="font-mono text-sm">?</span>
+            </button>
+            <button
+              onClick={() => setShowQuickActions(!showQuickActions)}
+              aria-expanded={showQuickActions}
+              aria-label={showQuickActions ? 'Close quick actions' : 'Open quick actions'}
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 ${
+                showQuickActions
+                  ? 'bg-zinc-200 dark:bg-white/[0.08] text-zinc-700 dark:text-zinc-200 rotate-45'
+                  : 'bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white shadow-md shadow-rose-500/20'
+              }`}
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Command Palette (Cmd+K / Ctrl+K) */}
+      {showCmdPalette && ReactDOM.createPortal(
+        <div
+          className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-start justify-center z-[10001] p-4 pt-[12vh] animate-fade-in"
+          onClick={() => setShowCmdPalette(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Command palette"
+        >
+          <div
+            className="bg-white dark:bg-zinc-950 rounded-xl w-full max-w-lg shadow-2xl border border-zinc-200 dark:border-white/[0.08] overflow-hidden animate-scale-in flex flex-col"
+            onClick={e => e.stopPropagation()}
           >
-            <Plus className="w-5 h-5" />
-          </button>
+            {/* Input */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-100 dark:border-white/[0.06]">
+              <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" />
+              <input
+                ref={cmdPaletteInputRef}
+                type="text"
+                value={cmdPaletteQuery}
+                onChange={e => { setCmdPaletteQuery(e.target.value); setCmdPaletteIdx(0); }}
+                onKeyDown={e => {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setCmdPaletteIdx(i => Math.min(i + 1, filteredCmdRows.length - 1));
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setCmdPaletteIdx(i => Math.max(i - 1, 0));
+                  } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const row = filteredCmdRows[cmdPaletteIdx];
+                    if (row) row.run();
+                  }
+                }}
+                placeholder="Type a command, jump to a section"
+                className="flex-1 bg-transparent border-0 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-0"
+                autoFocus
+              />
+              <kbd className="hidden sm:inline-flex pulse-label items-center justify-center min-w-[2rem] h-5 px-1.5 rounded text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.06] shrink-0">ESC</kbd>
+            </div>
+
+            {/* Rows */}
+            <div className="max-h-[50vh] overflow-y-auto py-1">
+              {filteredCmdRows.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">No commands match.</p>
+                  <p className="pulse-label text-zinc-400 dark:text-zinc-500 mt-1">TRY A SHORTER QUERY</p>
+                </div>
+              ) : (
+                <ul role="listbox">
+                  {filteredCmdRows.map((row, idx) => (
+                    <li key={row.id}>
+                      <button
+                        onClick={row.run}
+                        onMouseEnter={() => setCmdPaletteIdx(idx)}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors duration-100 ${
+                          idx === cmdPaletteIdx
+                            ? 'bg-rose-500/10'
+                            : 'hover:bg-zinc-50 dark:hover:bg-white/[0.04]'
+                        }`}
+                      >
+                        <i className={`fa-solid ${row.icon} w-4 text-center shrink-0 ${
+                          idx === cmdPaletteIdx ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-400 dark:text-zinc-500'
+                        }`}></i>
+                        <span className="flex-1 min-w-0">
+                          <span className={`block text-sm truncate ${
+                            idx === cmdPaletteIdx ? 'text-rose-700 dark:text-rose-300 font-medium' : 'text-zinc-800 dark:text-zinc-200'
+                          }`}>
+                            {row.label}
+                          </span>
+                          <span className="block text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                            {row.desc}
+                          </span>
+                        </span>
+                        <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0">
+                          {row.kind === 'action' ? 'ACTION' : row.kind === 'navigate' ? 'GO TO' : 'HELP'}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-zinc-100 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02]">
+              <div className="pulse-label inline-flex items-center gap-2 text-zinc-400 dark:text-zinc-500">
+                <kbd className="font-mono normal-case tracking-normal">↑↓</kbd> NAVIGATE
+                <kbd className="font-mono normal-case tracking-normal ml-2">↵</kbd> RUN
+              </div>
+              <span className="pulse-label text-zinc-400 dark:text-zinc-500">{filteredCmdRows.length} OF {commandRows.length}</span>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Persistent activity badge — bottom-left corner. Shows briefly after any save. */}
+      {lastSavedAt && ReactDOM.createPortal(
+        <div
+          className="fixed bottom-6 left-6 z-[9998] pulse-label inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 shadow-sm animate-fade-in pointer-events-none"
+          aria-live="polite"
+          role="status"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
+          SAVED {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </div>,
+        document.body
+      )}
+
+      {/* Keyboard Shortcuts Overlay */}
+      {showKbdOverlay && ReactDOM.createPortal(
+        <div
+          className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center z-[10000] p-4 animate-fade-in"
+          onClick={() => setShowKbdOverlay(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Keyboard shortcuts"
+        >
+          <div
+            className="bg-white dark:bg-zinc-950 rounded-xl w-full max-w-md shadow-2xl border border-zinc-200 dark:border-white/[0.08] overflow-hidden animate-scale-in"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-white/[0.06]">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Keyboard shortcuts</h3>
+              <button
+                onClick={() => setShowKbdOverlay(false)}
+                className="w-7 h-7 rounded flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                aria-label="Close shortcuts"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <dl className="px-5 py-4 space-y-2">
+              {[
+                { keys: ['⌘', 'K'], desc: 'Command palette' },
+                { keys: ['/'], desc: 'Focus search' },
+                { keys: ['J'], desc: 'Open top priority' },
+                { keys: ['K'], desc: 'Open second priority' },
+                { keys: ['R'], desc: 'Refresh briefing' },
+                { keys: ['?'], desc: 'Toggle this list' },
+                { keys: ['Esc'], desc: 'Close menus and overlays' },
+              ].map(({ keys, desc }) => (
+                <div key={desc} className="flex items-center justify-between gap-4 py-1">
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">{desc}</span>
+                  <span className="flex items-center gap-1">
+                    {keys.map(k => (
+                      <kbd key={k} className="inline-flex items-center justify-center min-w-[1.75rem] h-6 px-2 rounded text-xs font-mono text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.08]">
+                        {k}
+                      </kbd>
+                    ))}
+                  </span>
+                </div>
+              ))}
+            </dl>
+            <div className="px-5 py-3 border-t border-zinc-100 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02]">
+              <p className="pulse-label text-zinc-400 dark:text-zinc-500">PRESS <kbd className="font-mono normal-case tracking-normal">?</kbd> ANY TIME</p>
+            </div>
+          </div>
         </div>,
         document.body
       )}
@@ -1801,32 +2316,30 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
           </div>
         }
       >
-        {/* Metric row — single mono-tracked status line, not a 4-stat grid */}
-        <dl className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4 mb-6">
-          <div>
-            <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">TASKS DONE</dt>
-            <dd className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 leading-none">{productivityMetrics.tasksCompleted}<span className="text-sm font-normal text-zinc-400 dark:text-zinc-500 ml-1">/ {productivityMetrics.tasksTotal}</span></dd>
+        {/* Metric row — inline mono status line. The chart below is the visual anchor. */}
+        <dl className="flex flex-wrap items-baseline gap-x-7 gap-y-2 mb-6">
+          <div className="flex items-baseline gap-2">
+            <dt className="pulse-label text-zinc-500 dark:text-zinc-400">TASKS</dt>
+            <dd className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              {productivityMetrics.tasksCompleted}
+              <span className="text-zinc-400 dark:text-zinc-500 font-normal">/{productivityMetrics.tasksTotal}</span>
+            </dd>
           </div>
-          <div>
-            <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">MESSAGES</dt>
-            <dd className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 leading-none">{productivityMetrics.messagesSent + productivityMetrics.messagesReceived}</dd>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">{productivityMetrics.messagesSent} sent, {productivityMetrics.messagesReceived} in</p>
+          <div className="flex items-baseline gap-2">
+            <dt className="pulse-label text-zinc-500 dark:text-zinc-400">MESSAGES</dt>
+            <dd className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              {productivityMetrics.messagesSent + productivityMetrics.messagesReceived}
+            </dd>
           </div>
-          <div>
-            <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">FOCUS</dt>
-            <dd className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 leading-none">{formatFocusTime(productivityMetrics.focusTime)}</dd>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
-              {events.some(e => e.type === 'focus') ? 'Deep work today' : 'Estimated from tasks'}
-            </p>
+          <div className="flex items-baseline gap-2">
+            <dt className="pulse-label text-zinc-500 dark:text-zinc-400">FOCUS</dt>
+            <dd className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{formatFocusTime(productivityMetrics.focusTime)}</dd>
           </div>
-          <div>
-            <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">AVG REPLY</dt>
-            <dd className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 leading-none">
+          <div className="flex items-baseline gap-2">
+            <dt className="pulse-label text-zinc-500 dark:text-zinc-400">AVG REPLY</dt>
+            <dd className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
               {productivityMetrics.responseTime > 0 ? `${productivityMetrics.responseTime}m` : '–'}
             </dd>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
-              {productivityMetrics.responseTime > 0 ? 'Average response' : 'Not enough data'}
-            </p>
           </div>
         </dl>
 
@@ -1881,19 +2394,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
           id="goals"
           title="Weekly Goals"
           icon="fa-bullseye"
-          iconColor="text-rose-500"
+          iconColor=""
           isExpanded={expandedWidgets.has('goals')}
           onToggle={toggleWidget}
-          className="animate-spring-enter"
           headerAction={
             <button
               onClick={(e) => { e.stopPropagation(); setShowGoalEditor(true); }}
-              className="text-xs text-rose-500 hover:text-rose-600 font-semibold"
+              className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
             >
-              Edit Goals
+              EDIT GOALS
             </button>
           }
-          className="animate-slide-up"
         >
           <div className="space-y-4">
             {goals
@@ -1947,20 +2458,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
           id="team"
           title="Team Activity"
           icon="fa-users"
-          iconColor="text-rose-400"
+          iconColor=""
           isExpanded={expandedWidgets.has('team')}
           onToggle={toggleWidget}
-          className="animate-spring-enter"
           headerAction={
             <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
               {teams.length > 0 && (
                 <select
                   value={selectedTeamId || ''}
                   onChange={(e) => setSelectedTeamId(e.target.value || null)}
-                  className="text-xs bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                  className="pulse-label bg-transparent border border-zinc-200 dark:border-white/[0.08] rounded px-2 py-1 text-zinc-600 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-rose-500/40"
                   onClick={e => e.stopPropagation()}
                 >
-                  <option value="">All Contacts</option>
+                  <option value="">ALL CONTACTS</option>
                   {teams.map(team => (
                     <option key={team.id} value={team.id}>{team.name}</option>
                   ))}
@@ -1970,7 +2480,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                 onClick={(e) => {
                   e.stopPropagation();
                   if (selectedTeamId) {
-                    // Load selected team data into builder
                     const team = teams.find(t => t.id === selectedTeamId);
                     if (team) {
                       setTeamBuilderName(team.name);
@@ -1988,13 +2497,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                   }
                   setShowTeamBuilder(true);
                 }}
-                className="text-xs text-rose-500 hover:text-rose-600 font-semibold"
+                className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
               >
-                {selectedTeamId ? 'Edit Team' : teams.length > 0 ? 'New Team' : 'Build Team'}
+                {selectedTeamId ? 'EDIT TEAM' : teams.length > 0 ? 'NEW TEAM' : 'BUILD TEAM'}
               </button>
             </div>
           }
-          className="animate-slide-up"
         >
           {(() => {
             // Get members to display based on selected team
@@ -2006,7 +2514,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                 membersToDisplay = selectedTeam.members.map(m => ({
                   id: m.memberId,
                   name: m.name || 'Unknown',
-                  avatarColor: m.avatarColor || 'bg-gradient-to-tr from-emerald-500 to-cyan-500',
+                  avatarColor: m.avatarColor || 'bg-zinc-200 dark:bg-white/[0.08] text-zinc-700 dark:text-zinc-200',
                   status: m.status || 'offline',
                   unreadCount: 0,
                 }));
@@ -2205,7 +2713,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
 
       {/* Team Builder Modal */}
       {showTeamBuilder && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => {
+        <div className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => {
           setShowTeamBuilder(false);
           setTeamBuilderName('');
           setTeamBuilderDescription('');
@@ -2306,9 +2814,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
 
               {/* Selected Members */}
               {teamBuilderSelectedMembers.length > 0 && (
-                <div className="mb-4 p-3 bg-pink-50 dark:bg-pink-950/20 border border-pink-200 dark:border-pink-800 rounded-xl">
-                  <div className="text-xs font-medium text-pink-700 dark:text-pink-300 mb-2">
-                    Selected ({teamBuilderSelectedMembers.length})
+                <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800 rounded-xl">
+                  <div className="pulse-label text-rose-700 dark:text-rose-300 mb-2">
+                    SELECTED · {teamBuilderSelectedMembers.length}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {teamBuilderSelectedMembers.map((member, idx) => (
@@ -2361,11 +2869,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                           key={user.id}
                           className={`flex items-center gap-3 p-3 rounded-xl transition ${
                             isSelected
-                              ? 'bg-pink-100 dark:bg-pink-900/30 border border-pink-300 dark:border-pink-700'
+                              ? 'bg-rose-50 dark:bg-rose-900/20 border border-rose-300 dark:border-rose-800'
                               : 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
                           }`}
                         >
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-white/[0.08] text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-semibold text-sm flex-shrink-0">
                             {user.avatar_url ? (
                               <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                             ) : (
@@ -2417,7 +2925,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                     if (loadingTeamBuilderContacts) {
                       return (
                         <div className="text-center py-12">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500 mx-auto"></div>
+                          <Loader2 className="w-6 h-6 animate-spin text-zinc-400 dark:text-zinc-500 mx-auto" />
                         </div>
                       );
                     }
@@ -2441,7 +2949,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                           key={contact.id}
                           className={`flex items-center gap-3 p-3 rounded-xl transition ${
                             isSelected
-                              ? 'bg-pink-100 dark:bg-pink-900/30 border border-pink-300 dark:border-pink-700'
+                              ? 'bg-rose-50 dark:bg-rose-900/20 border border-rose-300 dark:border-rose-800'
                               : 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
                           }`}
                         >
@@ -2614,7 +3122,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
 
       {/* Goal Editor Modal */}
       {showGoalEditor && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => setShowGoalEditor(false)}>
+        <div className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => setShowGoalEditor(false)}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col animate-scale-in border border-zinc-200 dark:border-zinc-800" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-800">
@@ -2658,7 +3166,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                 onClick={() => setGoalEditorTab('communication')}
                 className={`px-4 py-3 text-sm font-medium transition border-b-2 ${
                   goalEditorTab === 'communication'
-                    ? 'border-green-500 text-green-600 dark:text-green-400'
+                    ? 'border-rose-500 text-rose-600 dark:text-rose-400'
                     : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                 }`}
               >
@@ -2669,7 +3177,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                 onClick={() => setGoalEditorTab('wellness')}
                 className={`px-4 py-3 text-sm font-medium transition border-b-2 ${
                   goalEditorTab === 'wellness'
-                    ? 'border-amber-500 text-amber-600 dark:text-amber-400'
+                    ? 'border-rose-500 text-rose-600 dark:text-rose-400'
                     : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                 }`}
               >
@@ -2683,34 +3191,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
               {goals
                 .filter(goal => goalEditorTab === 'all' || goal.category === goalEditorTab)
                 .map(goal => {
-                  const colorClasses = {
-                    blue: 'bg-blue-500',
-                    green: 'bg-green-500',
-                    purple: 'bg-purple-500',
-                    red: 'bg-red-500',
-                    indigo: 'bg-indigo-500',
-                    emerald: 'bg-emerald-500',
-                    cyan: 'bg-cyan-500',
-                    teal: 'bg-teal-500',
-                    amber: 'bg-amber-500',
-                    rose: 'bg-rose-500',
-                  };
-                  const iconColor = goal.color || 'rose';
-                  const progressPercent = Math.min((goal.progress / goal.target) * 100, 100);
+                  const progressPercent = Math.min((goal.progress / Math.max(goal.target, 1)) * 100, 100);
                   const isEnabled = goal.enabled !== false;
 
                   return (
                     <div
                       key={goal.id}
-                      className={`p-4 rounded-xl border-2 transition-all ${
+                      className={`p-4 rounded-xl border transition-colors duration-150 ${
                         isEnabled
-                          ? 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'
-                          : 'bg-zinc-100/50 dark:bg-zinc-900/50 border-zinc-300 dark:border-zinc-800 opacity-60'
+                          ? 'bg-zinc-50 dark:bg-white/[0.04] border-zinc-200 dark:border-white/[0.06]'
+                          : 'bg-zinc-50/60 dark:bg-white/[0.02] border-zinc-200 dark:border-white/[0.04] opacity-60'
                       }`}
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3 flex-1">
-                          <div className={`w-10 h-10 rounded-lg ${colorClasses[iconColor as keyof typeof colorClasses] || 'bg-rose-500'} flex items-center justify-center text-white`}>
+                          <div className="w-10 h-10 rounded-lg bg-zinc-200 dark:bg-white/[0.06] flex items-center justify-center text-zinc-600 dark:text-zinc-300">
                             <i className={`fa-solid ${goal.icon || 'fa-bullseye'} text-sm`}></i>
                           </div>
                           <div className="flex-1 min-w-0">
@@ -2729,14 +3224,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                         </div>
                         <button
                           onClick={() => handleToggleGoal(goal.id)}
-                          className={`w-10 h-10 rounded-lg flex items-center justify-center transition ${
-                            isEnabled
-                              ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-                              : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-400 dark:text-zinc-500'
+                          className={`h-10 rounded-lg flex items-center justify-center transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+                            pendingDisableId === goal.id
+                              ? 'px-3 bg-red-500/10 text-red-600 dark:text-red-400 pulse-label'
+                              : isEnabled
+                                ? 'w-10 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                                : 'w-10 bg-zinc-200 dark:bg-white/[0.06] text-zinc-400 dark:text-zinc-500'
                           }`}
-                          title={isEnabled ? 'Disable goal' : 'Enable goal'}
+                          title={
+                            pendingDisableId === goal.id
+                              ? 'Click again to disable'
+                              : isEnabled ? 'Disable goal' : 'Enable goal'
+                          }
                         >
-                          <i className={`fa-solid ${isEnabled ? 'fa-toggle-on' : 'fa-toggle-off'} text-lg`}></i>
+                          {pendingDisableId === goal.id ? (
+                            <span>CLICK TO CONFIRM</span>
+                          ) : (
+                            <i className={`fa-solid ${isEnabled ? 'fa-toggle-on' : 'fa-toggle-off'} text-lg`}></i>
+                          )}
                         </button>
                       </div>
 
@@ -2756,13 +3261,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                             </span>
                           </div>
                           <div className="space-y-2">
-                            <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                            <div className="h-1.5 bg-zinc-200 dark:bg-white/[0.06] rounded-full overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${
-                                  progressPercent >= 100 ? 'bg-emerald-500' :
-                                  progressPercent >= 70 ? colorClasses[iconColor as keyof typeof colorClasses] || 'bg-rose-500' :
-                                  progressPercent >= 40 ? 'bg-yellow-500' :
-                                  'bg-red-500'
+                                  progressPercent >= 100 ? 'bg-emerald-500' : 'bg-rose-500'
                                 }`}
                                 style={{ width: `${progressPercent}%` }}
                               ></div>

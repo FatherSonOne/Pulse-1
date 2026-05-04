@@ -96,16 +96,13 @@
   gap: 10px;
 }
 
-/* Large gradient header title */
+/* Header title — solid color, no gradient (DESIGN.md hard ban) */
 .search-title-section h2 {
   font-size: 1.35rem;
   font-weight: 700;
   margin: 0;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--search-primary) 0%, var(--search-primary-alt) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--search-text-main);
 }
 
 .search-header-controls {
@@ -120,7 +117,7 @@
   grid-template-columns: var(--search-sidebar-width) 1fr var(--search-clipboard-width);
   overflow: hidden;
   height: 100%;
-  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: grid-template-columns 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ── Left Filters Sidebar ───────────────────────────────────────── */
@@ -150,12 +147,13 @@
   background: var(--search-primary);
 }
 
-/* Filter group section header — small caps, spaced */
+/* Filter group section header — Mono uppercase per DESIGN.md Mono-Label Rule */
 .filter-group h3 {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   font-size: 0.6875rem;           /* 11px */
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--search-text-muted);
   margin: 0 0 0.625rem 0;
   padding: 0 0.25rem;
@@ -192,23 +190,31 @@
   transform: translateX(3px);
 }
 
+/* Active filter pill — neutral background with a leading coral dot.
+   Coral was overused as a full background fill (Coral-As-Signal Rule). */
 .filter-option-btn.active {
-  background: var(--search-primary-soft);
-  border-color: rgba(244, 63, 94, 0.3);
-  color: var(--search-primary);
+  background: var(--search-surface-raised);
+  border-color: var(--search-border);
+  color: var(--search-text-main);
   font-weight: 600;
+  padding-left: 1.25rem;
 }
 
-/* Active left bar accent */
+.dark .filter-option-btn.active {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 .filter-option-btn.active::before {
   content: '';
   position: absolute;
-  left: 0;
-  top: 20%;
-  height: 60%;
-  width: 2px;
+  left: 0.625rem;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   background: var(--search-primary);
-  border-radius: 0 2px 2px 0;
+  transform: translateY(-50%);
   box-shadow: 0 0 6px var(--search-primary-glow);
 }
 
@@ -246,10 +252,8 @@
   position: relative;
 }
 
-/* Welcome mode — more vertical space above bar */
-.search-results-area.empty-mode .hero-search-container {
-  margin-top: 3rem;
-}
+/* Empty state — no extra top margin. The 2rem canvas padding is enough,
+   and Resume should be visible without scrolling. */
 
 .search-input-wrapper {
   position: relative;
@@ -257,28 +261,30 @@
   align-items: center;
   background: var(--search-surface);
   border: 1.5px solid var(--search-border);
-  border-radius: 18px;
+  border-radius: 16px;            /* DESIGN.md scale: 16px (lg) for inputs */
   box-shadow: var(--search-shadow-md);
   padding: 0.375rem 0.75rem 0.375rem 1rem;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   gap: 8px;
 }
 
 .dark .search-input-wrapper {
-  background: #111111;
-  border-color: #2a2a2a;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
   box-shadow: var(--search-shadow-lg);
 }
 
-/* Activated search bar */
+/* Activated search bar — coral border + halo. The heartbeat pseudo-element
+   already provides the moment; no translateY lift (DESIGN.md 2px cap). */
 .search-input-wrapper:focus-within {
   border-color: var(--search-primary);
   box-shadow: var(--search-shadow-rose);
-  transform: translateY(-2px);
 }
 
 .dark .search-input-wrapper:focus-within {
-  background: #141414;
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: var(--search-shadow-rose), 0 0 0 4px rgba(244, 63, 94, 0.06);
 }
 
@@ -342,170 +348,498 @@
   outline-offset: 2px;
 }
 
-/* ── Welcome / Empty State ──────────────────────────────────────── */
-/* Children handle their own staggered entry (zones A/B/C per BG spec) */
-.search-welcome-state {
+/* ── Empty state: Working Memory ─────────────────────────────────────────
+   Three sections — Resume (recent searches + saved), Pinned (clipboard),
+   Browse by type. Replaces the marketing-style welcome hero with the
+   user's actual recent activity. */
+.search-working-memory {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 2rem;
-  padding: 1.5rem 0 3rem;
-}
-
-/* Large welcome heading */
-.search-welcome-heading {
-  text-align: center;
-}
-
-.search-welcome-heading h1 {
-  font-size: 1.75rem;             /* 28px — BG spec: commanding but not overwhelming */
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  margin: 0 0 0.5rem 0;
-  color: #ffffff;                 /* BG spec: pure white */
-  line-height: 1.2;
-}
-
-/* Light mode override */
-:not(.dark) .search-welcome-heading h1 {
-  color: var(--search-text-main);
-}
-
-.search-welcome-heading p {
-  font-size: 1.125rem;            /* 18px — BG spec */
-  color: #6b7280;                 /* BG spec: neutral-500 subdued */
-  margin: 0;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-}
-
-/* Zone A: Faint cardiogram SVG — BG spec: static, opacity 0.06, full-width texture */
-.search-welcome-cardiogram {
+  padding: 1.5rem 0 2rem;
+  max-width: 720px;
+  margin: 0 auto;
   width: 100%;
-  max-width: 760px;
-  height: 56px;
+  animation: searchFadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.wm-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+/* Section header — JetBrains Mono uppercase, the system signature */
+.wm-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0.25rem;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--search-text-muted);
+}
+
+.wm-section-header svg {
   flex-shrink: 0;
-  animation: searchFadeUp 0.4s ease-out both;  /* Zone A: 0ms delay */
+  color: var(--search-text-muted);
 }
 
-.search-welcome-cardiogram svg {
+/* Resume list — keyboard-numbered rows, scannable in one glance */
+.wm-resume-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wm-resume-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   width: 100%;
-  height: 100%;
-  display: block;
+  padding: 0.625rem 0.75rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--search-text-main);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-/* Zone B: copy block — 80ms delay per BG spec */
-.search-welcome-zone-b {
-  animation: searchFadeUp 0.4s 80ms ease-out both !important;
+.wm-resume-row:hover {
+  background: var(--search-surface);
+  border-color: var(--search-border);
 }
 
-/* Quick category cards grid */
-.search-category-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.dark .wm-resume-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.wm-resume-row:focus-visible {
+  outline: 2px solid var(--search-primary);
+  outline-offset: 2px;
+}
+
+.wm-resume-key {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--search-text-muted);
+  background: var(--search-surface-raised);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.dark .wm-resume-key {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.wm-resume-saved-icon {
+  width: 18px;
+  flex-shrink: 0;
+  color: var(--search-primary);
+}
+
+.wm-resume-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wm-resume-arrow {
+  color: var(--search-text-muted);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.wm-resume-row:hover .wm-resume-arrow {
+  opacity: 1;
+}
+
+/* Recent threads — cross-source counterpart roll-up */
+.wm-threads-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wm-thread-row {
+  display: flex;
+  align-items: center;
   gap: 10px;
   width: 100%;
-  max-width: 600px;
-  animation: searchFadeUp 0.4s 140ms ease-out both;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.search-category-card {
+.wm-thread-row:hover {
+  background: var(--search-surface);
+  border-color: var(--search-border);
+}
+
+.dark .wm-thread-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.wm-thread-row:focus-visible {
+  outline: 2px solid var(--search-primary);
+  outline-offset: 2px;
+}
+
+.wm-thread-avatar {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--search-primary-soft);
+  color: var(--search-text-main);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.wm-thread-name {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--search-text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Unread dot — coral signal, semantically "this needs your attention" */
+.wm-thread-unread-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--search-primary);
+  flex-shrink: 0;
+  box-shadow: 0 0 6px var(--search-primary-glow);
+}
+
+.wm-thread-time {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  color: var(--search-text-muted);
+  flex-shrink: 0;
+}
+
+/* Pinned list — compact rows with a one-line preview */
+.wm-pinned-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.wm-pinned-row {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 1.1rem 1rem;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
   background: var(--search-surface);
   border: 1px solid var(--search-border);
-  border-radius: 12px;
+  border-radius: 8px;
+  text-align: left;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  text-align: center;
-  box-shadow: var(--search-shadow-sm);
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.dark .search-category-card {
-  background: #111111;
-  border-color: #232323;
+.dark .wm-pinned-row {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
-.search-category-card:hover {
+.wm-pinned-row:hover {
+  border-color: var(--search-text-muted);
+  background: var(--search-surface-raised);
+}
+
+.dark .wm-pinned-row:hover {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+.wm-pinned-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--search-text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.wm-pinned-preview {
+  font-size: 0.75rem;
+  color: var(--search-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* Browse by type — single mono row, not a card grid */
+.wm-browse-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 0.25rem;
+}
+
+.wm-browse-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--search-border);
+  color: var(--search-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.dark .wm-browse-chip {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.wm-browse-chip:hover {
   border-color: var(--search-primary);
-  box-shadow: var(--search-shadow-rose);
-  transform: translateY(-3px) scale(1.02);
+  color: var(--search-primary);
   background: var(--search-primary-softer);
 }
 
-.search-category-card:hover .category-icon {
+/* ── Operator Reference Popover ──────────────────────────────────────────
+   Anchored under the search bar's `?` / Cmd icon. Lists operators (insert
+   on click) and keyboard shortcuts. Uses design tokens — no Tailwind
+   pink/gray/purple utilities. */
+.op-ref-popover {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 6px;
+  z-index: 100;
+  width: 380px;
+  background: var(--search-surface);
+  border: 1px solid var(--search-border);
+  border-radius: 12px;
+  box-shadow: var(--search-shadow-lg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: suggestionSlideDown 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .op-ref-popover {
+  background: rgba(20, 20, 20, 0.98);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+.op-ref-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.op-ref-section-label {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--search-text-muted);
+  margin: 0;
+  padding: 0 4px;
+}
+
+.op-ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.op-ref-row {
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.op-ref-row-static {
+  cursor: default;
+}
+
+.op-ref-row:not(.op-ref-row-static):hover td {
+  background: var(--search-primary-softer);
+}
+
+.op-ref-row td {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+.op-ref-row td:first-child  { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+.op-ref-row td:last-child   { border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+
+.op-ref-cell-operator,
+.op-ref-cell-keys {
+  width: 30%;
+  white-space: nowrap;
+}
+
+.op-ref-cell-example {
+  width: 35%;
+}
+
+.op-ref-cell-desc {
+  color: var(--search-text-muted);
+  font-size: 0.6875rem;
+}
+
+.op-ref-code {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  color: var(--search-text-secondary);
+  background: transparent;
+  padding: 0;
+}
+
+/* Primary code (operator name / key combo) — uses coral, the brand voice */
+.op-ref-code-primary {
   color: var(--search-primary);
-  transform: scale(1.15);
-}
-
-.category-icon {
-  color: var(--search-text-secondary);
-  transition: all 0.2s ease;
-}
-
-/* Category label — medium weight */
-.search-category-card span {
-  font-size: 0.8125rem;           /* 13px */
   font-weight: 600;
-  color: var(--search-text-secondary);
-  letter-spacing: 0.01em;
 }
 
-/* Zone C: chips row — 200ms delay per BG spec */
-.search-recent-chips {
+.dark .op-ref-code-primary {
+  color: #fb7185;
+}
+
+.op-ref-footer {
+  font-size: 0.625rem;
+  color: var(--search-text-muted);
+  margin: 0;
+  padding: 6px 4px 0;
+  border-top: 1px solid var(--search-border-subtle);
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dark .op-ref-footer {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+/* First-time-user hint when there's no recent activity to show */
+.wm-empty-hint {
+  font-size: 0.875rem;
+  color: var(--search-text-muted);
+  text-align: center;
+  margin: 0 auto;
+  max-width: 360px;
+  line-height: 1.6;
+}
+
+/* Onboarding section — empty-empty state wrapper for hint + Try-these row */
+.wm-onboard {
+  align-items: center;
+  gap: 1rem;
+  padding-top: 0.5rem;
+}
+
+/* Try these — example operator queries that teach the vocabulary on click.
+   Each chip shows the literal syntax (mono) plus a tiny caption of what it
+   does. Click inserts the query into the input and focuses it. */
+.wm-try-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
-  max-width: 600px;
-  animation: searchFadeUp 0.3s 200ms ease-out both;
+  max-width: 520px;
 }
 
-.search-recent-label {
-  font-size: 0.6875rem;           /* 11px */
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 700;
-  color: var(--search-text-muted);
-  width: 100%;
-  text-align: center;
-  margin-bottom: 4px;
-}
-
-.search-recent-chip {
-  display: flex;
+.wm-try-chip {
+  display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;              /* BG spec */
-  border-radius: 20px;            /* BG spec */
-  background: rgba(255, 255, 255, 0.04); /* BG spec */
-  border: 1px solid rgba(255, 255, 255, 0.08); /* BG spec */
-  font-size: 0.75rem;             /* 12px — BG spec */
-  font-weight: 500;
-  color: #9ca3af;                 /* BG spec: neutral-400 */
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--search-surface);
+  border: 1px solid var(--search-border);
   cursor: pointer;
-  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1); /* BG spec easing */
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  text-align: center;
 }
 
-:not(.dark) .search-recent-chip {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.08);
-  color: #6b7280;
+.dark .wm-try-chip {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
-.search-recent-chip:hover {
-  background: rgba(255, 255, 255, 0.07); /* BG spec */
-  border-color: rgba(244, 63, 94, 0.3);  /* BG spec */
-  color: #e5e7eb;                        /* BG spec */
+.wm-try-chip:hover {
+  border-color: var(--search-primary);
+  background: var(--search-primary-softer);
 }
 
-:not(.dark) .search-recent-chip:hover {
-  background: rgba(244, 63, 94, 0.04);
-  border-color: rgba(244, 63, 94, 0.3);
+.wm-try-chip:focus-visible {
+  outline: 2px solid var(--search-primary);
+  outline-offset: 2px;
+}
+
+.wm-try-syntax {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
   color: var(--search-text-main);
+  background: transparent;
+  padding: 0;
+}
+
+.wm-try-chip:hover .wm-try-syntax {
+  color: var(--search-primary);
+}
+
+.wm-try-caption {
+  font-size: 0.625rem;
+  color: var(--search-text-muted);
+  text-transform: lowercase;
+  letter-spacing: 0;
 }
 
 /* ── Empty "No Results" State ───────────────────────────────────── */
@@ -545,12 +879,126 @@
   line-height: 1.6;
 }
 
-/* ── Result Count Label ─────────────────────────────────────────── */
+/* ── Result count + group-by toolbar row ────────────────────────── */
+.results-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px;
+}
+
 .results-count-label {
   font-size: 0.75rem;             /* 12px */
   color: var(--search-text-muted);
   font-weight: 500;
-  padding: 0 2px;
+  margin: 0;
+}
+
+/* Group-by control — small mono cluster, not a primary control */
+.group-by-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.group-by-label {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--search-text-muted);
+  margin-right: 4px;
+}
+
+.group-by-btn {
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--search-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.group-by-btn:hover {
+  color: var(--search-text-secondary);
+  background: var(--search-surface-raised);
+}
+
+.group-by-btn.active {
+  color: var(--search-text-main);
+  background: var(--search-surface-raised);
+  border-color: var(--search-border);
+  font-weight: 600;
+}
+
+.dark .group-by-btn.active {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+/* Live facet count next to type filter — quiet mono number */
+.filter-type-count {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--search-text-muted);
+  letter-spacing: 0.05em;
+}
+
+/* Conversation group header — like timeline header but with sender label */
+.conversation-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 2px 4px;
+  margin-top: 8px;
+}
+
+.conversation-group-header:first-child {
+  margin-top: 0;
+}
+
+.conversation-group-label {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--search-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+.conversation-group-count {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--search-text-muted);
+  background: var(--search-surface-raised);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.dark .conversation-group-count {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.conversation-group-line {
+  flex: 1;
+  height: 1px;
+  background: var(--search-border);
+}
+
+.dark .conversation-group-line {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 /* ── Geo modifier chip (B3) ─────────────────────────────────────── */
@@ -628,13 +1076,14 @@
 }
 
 /* ── Result Card ────────────────────────────────────────────────── */
+/* Full 1px border, no side-stripe (DESIGN.md hard ban). Hover lifts via
+   shadow + background tint, never a colored side accent. */
 .result-card-modern {
   background: var(--search-surface);
   border: 1px solid var(--search-border);
-  border-left: 2px solid rgba(244, 63, 94, 0.25); /* Always-on rose accent */
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 1.125rem 1.25rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, background 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -642,38 +1091,36 @@
 }
 
 .dark .result-card-modern {
-  background: rgba(255, 255, 255, 0.03); /* BG spec: translucent on true black */
+  background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.06);
-  border-left-color: rgba(244, 63, 94, 0.25);
 }
 
-/* Hover: rose brightens + directional left glow */
 .result-card-modern:hover {
-  border-left-color: rgba(244, 63, 94, 0.8);
-  box-shadow: -4px 0 12px rgba(244, 63, 94, 0.12),
-              0 0 6px rgba(244, 63, 94, 0.06),
-              var(--search-shadow-md);
-  transform: translateX(2px);
-  background: var(--search-surface);
+  border-color: var(--search-border);
+  box-shadow: var(--search-shadow-md);
+  background: var(--search-surface-raised);
 }
 
 .dark .result-card-modern:hover {
-  background: rgba(255, 255, 255, 0.055); /* BG spec: slightly brighter on hover */
+  background: rgba(255, 255, 255, 0.055);
   border-color: rgba(255, 255, 255, 0.08);
-  border-left-color: rgba(244, 63, 94, 0.8);
 }
 
-/* Focus state for keyboard navigation */
+/* Focus — full coral border + halo, no side stripe */
 .result-card-modern:focus {
   outline: none;
-  border-left-color: var(--search-primary);
+  border-color: var(--search-primary);
   box-shadow: var(--search-shadow-rose);
 }
 
-/* Selected state */
+/* Selected — full border in coral + soft tint */
 .result-card-modern.selected {
-  border-left-color: var(--search-primary);
+  border-color: var(--search-primary);
   background: var(--search-primary-softer);
+}
+
+.dark .result-card-modern.selected {
+  background: rgba(244, 63, 94, 0.06);
 }
 
 /* ── Result Card: Header Row ────────────────────────────────────── */
@@ -739,6 +1186,84 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin: 0;
+}
+
+/* ── Inline peek (ArrowRight expansion) ─────────────────────────────────
+   Shown below the snippet when the card is expanded via keyboard. Closes
+   the gap between "scan the list" and "open the full detail panel." */
+.result-card-modern.expanded {
+  background: var(--search-surface-raised);
+  border-color: var(--search-text-muted);
+}
+
+.dark .result-card-modern.expanded {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+.result-card-modern.expanded .result-snippet {
+  /* Hide the 2-line snippet when the peek block shows the fuller version */
+  display: none;
+}
+
+.result-peek {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--search-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dark .result-peek {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+.result-peek-snippet {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--search-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+  max-width: 70ch;
+}
+
+.result-peek-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.6875rem;
+}
+
+.result-peek-meta-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.result-peek-meta-label {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--search-text-muted);
+}
+
+.result-peek-meta-value {
+  color: var(--search-text-secondary);
+  font-weight: 500;
+}
+
+.result-peek-hint {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.625rem;
+  color: var(--search-text-muted);
+  letter-spacing: 0.05em;
 }
 
 /* ── Highlighted search match text ─────────────────────────────── */
@@ -822,45 +1347,57 @@
   background: var(--search-border);
 }
 
-/* ── AI Answer Card ─────────────────────────────────────────────── */
+/* ── AI Answer Card ─────────────────────────────────────────────────────
+   Flat coral tint, full 1px border, no side-stripe (DESIGN.md hard ban).
+   No multi-color gradient (rose → pink → purple was the AI-startup template
+   DESIGN.md explicitly rejects). */
 .ai-answer-card {
-  background: linear-gradient(135deg,
-    rgba(244, 63, 94, 0.06) 0%,
-    rgba(236, 72, 153, 0.04) 50%,
-    rgba(168, 85, 247, 0.03) 100%
-  );
-  border: 1px solid rgba(244, 63, 94, 0.25);
-  border-left: 3px solid var(--search-primary);  /* Archives accent */
-  border-radius: 10px;
+  background: var(--search-primary-softer);
+  border: 1px solid rgba(244, 63, 94, 0.20);
+  border-radius: 12px;
   padding: 1.25rem 1.5rem;
-  box-shadow: 0 4px 20px rgba(244, 63, 94, 0.10);
-  animation: searchFadeUp 0.3s ease-out both;
+  animation: searchFadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .dark .ai-answer-card {
-  background: linear-gradient(135deg,
-    rgba(244, 63, 94, 0.08) 0%,
-    rgba(236, 72, 153, 0.05) 100%
-  );
-  border-color: rgba(244, 63, 94, 0.2);
-  border-left-color: var(--search-primary);
-  box-shadow: 0 4px 24px rgba(244, 63, 94, 0.15), 0 0 60px rgba(244, 63, 94, 0.05);
+  background: rgba(244, 63, 94, 0.06);
+  border-color: rgba(244, 63, 94, 0.20);
 }
 
-/* AI card header — label + icon */
 .ai-answer-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
-/* "Pulse AI" label — BG spec: 13px, weight 600, rose, not uppercase */
-.ai-answer-header-text {
-  font-size: 0.8125rem;           /* 13px — BG spec */
-  font-weight: 600;
-  letter-spacing: 0em;
-  color: #f43f5e;                 /* rose — one of its primary jobs */
+/* AI provenance tag — DESIGN.md "Signature Component" pattern.
+   JetBrains Mono, uppercase, tracked, coral text on soft coral chip. */
+.ai-provenance-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--search-primary-soft);
+  color: #e11d48;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;            /* 11px */
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dark .ai-provenance-tag {
+  color: #fb7185;
+}
+
+.ai-provenance-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--search-primary);
+  flex-shrink: 0;
 }
 
 /* AI answer body text — readable, spacious */
@@ -1000,7 +1537,7 @@
   overflow: hidden;
   max-height: 360px;
   overflow-y: auto;
-  animation: suggestionSlideDown 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: suggestionSlideDown 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dark .modern-suggestions {
@@ -1145,12 +1682,13 @@
   flex-shrink: 0;
 }
 
-/* Clipboard title — smaller, section-level */
+/* Clipboard title — Mono uppercase per DESIGN.md Mono-Label Rule */
 .clipboard-header h3 {
   margin: 0;
-  font-size: 0.8125rem;           /* 13px */
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;           /* 11px — match other section labels */
+  font-weight: 500;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--search-text-muted);
 }
@@ -1167,26 +1705,32 @@
   border-radius: 2px;
 }
 
+/* Clipboard item — full 1px border, no side stripe. Hover lifts via
+   background tint and shadow only. */
 .clipboard-item-card {
   background: var(--search-bg);
   border: 1px solid var(--search-border);
-  border-left: 3px solid transparent;   /* Archives-style */
   border-radius: 8px;
   padding: 0.875rem;
   margin-bottom: 8px;
-  transition: all 0.18s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   box-shadow: var(--search-shadow-sm);
 }
 
 .dark .clipboard-item-card {
-  background: #0f0f0f;
-  border-color: #232323;
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 .clipboard-item-card:hover {
-  border-left-color: var(--search-primary);
+  border-color: var(--search-border);
+  background: var(--search-surface);
   box-shadow: var(--search-shadow-md);
-  transform: translateX(2px);
+}
+
+.dark .clipboard-item-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Clipboard item title */
@@ -1449,19 +1993,272 @@
   color: var(--search-text-main);
 }
 
+/* Active view toggle — subtle background + coral text, not full coral fill */
 .view-toggle-item.active {
-  background: var(--search-primary);
-  color: white;
+  background: var(--search-surface);
+  color: var(--search-primary);
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.35);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
 }
 
-/* ── Text gradient utility ──────────────────────────────────────── */
-.text-gradient-rose {
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.dark .view-toggle-item.active {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+}
+
+/* ── Search Detail Panel ─────────────────────────────────────────────────
+   Right-side slide-in panel. Uses the same design tokens as the rest of
+   the section (DESIGN.md rose tokens, surface tokens, mono labels) — no
+   pink-500 / gray-100 utility classes that fracture the system. */
+.sdp-panel {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: 50;
+  width: 100%;
+  max-width: 36rem;
+  background: var(--search-surface);
+  border-left: 1px solid var(--search-border);
+  box-shadow: var(--search-shadow-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.dark .sdp-panel {
+  background: rgba(20, 20, 20, 0.98);
+  border-left-color: rgba(255, 255, 255, 0.08);
+}
+
+.sdp-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--search-border);
+}
+
+.dark .sdp-header {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.sdp-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sdp-icon-wrap {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--search-primary-soft);
+  color: var(--search-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sdp-header-text {
+  min-width: 0;
+}
+
+.sdp-type-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #e11d48;
+  margin-bottom: 4px;
+}
+
+.dark .sdp-type-tag {
+  color: #fb7185;
+}
+
+.sdp-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--search-text-main);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sdp-close-btn {
+  flex-shrink: 0;
+  margin-left: 8px;
+  padding: 6px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--search-text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sdp-close-btn:hover {
+  background: var(--search-surface-raised);
+  color: var(--search-text-main);
+}
+
+.dark .sdp-close-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sdp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0.625rem 1.25rem;
+  border-bottom: 1px solid var(--search-border-subtle);
+}
+
+.dark .sdp-actions {
+  border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+.sdp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.sdp-btn-primary {
+  background: var(--search-primary);
+  color: #ffffff;
+  border-color: var(--search-primary);
+}
+
+.sdp-btn-primary:hover {
+  background: #e11d48;
+  border-color: #e11d48;
+}
+
+.sdp-btn-ghost {
+  background: transparent;
+  border-color: var(--search-border);
+  color: var(--search-text-secondary);
+}
+
+.dark .sdp-btn-ghost {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.sdp-btn-ghost:hover {
+  background: var(--search-surface-raised);
+  color: var(--search-text-main);
+}
+
+.dark .sdp-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sdp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sdp-section-label {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--search-text-muted);
+  margin: 0 0 8px 0;
+}
+
+.sdp-content {
+  font-size: 0.875rem;
+  color: var(--search-text-main);
+  white-space: pre-wrap;
+  line-height: 1.6;
+  background: var(--search-bg);
+  border: 1px solid var(--search-border-subtle);
+  border-radius: 8px;
+  padding: 12px;
+  max-width: 70ch;
+}
+
+.dark .sdp-content {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+.sdp-content-empty {
+  color: var(--search-text-muted);
+  font-style: italic;
+}
+
+.sdp-meta-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.sdp-meta-row {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid var(--search-border-subtle);
+}
+
+.dark .sdp-meta-row {
+  border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+.sdp-meta-row:last-child {
+  border-bottom: none;
+}
+
+.sdp-meta-label {
+  width: 7rem;
+  flex-shrink: 0;
+  color: var(--search-text-muted);
+  font-weight: 500;
+}
+
+.sdp-meta-value {
+  color: var(--search-text-secondary);
+  word-break: break-all;
+}
+
+.sdp-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sdp-tag {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--search-surface-raised);
+  font-size: 0.75rem;
+  color: var(--search-text-secondary);
+}
+
+.dark .sdp-tag {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 /* ── Responsive breakpoints ─────────────────────────────────────── */
@@ -1473,14 +2270,6 @@
 
   .search-results-area {
     padding: 1.75rem 1.75rem;
-  }
-
-  .search-welcome-heading h1 {
-    font-size: 1.875rem;
-  }
-
-  .search-category-grid {
-    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -1516,12 +2305,8 @@
     max-width: 100%;
   }
 
-  .search-welcome-heading h1 {
-    font-size: 1.5rem;
-  }
-
-  .search-category-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .wm-pinned-list {
+    grid-template-columns: 1fr;
   }
 
   .results-feed.grid {
@@ -1581,6 +2366,54 @@
   font-size: 0.75rem;
 }
 
+/* ── Operator date popover (after:/before: smart picker) ──────────────── */
+.filter-operator-row {
+  position: relative;
+}
+
+.operator-date-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  padding: 8px;
+  background: var(--search-surface);
+  border: 1px solid var(--search-border);
+  border-radius: 8px;
+  box-shadow: var(--search-shadow-md);
+  z-index: 20;
+}
+
+.dark .operator-date-popover {
+  background: rgba(20, 20, 20, 0.98);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: var(--search-shadow-lg);
+}
+
+.operator-date-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--search-text-main);
+  background: var(--search-bg);
+  border: 1px solid var(--search-border);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.dark .operator-date-input {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  color-scheme: dark;
+}
+
+.operator-date-input:focus {
+  border-color: var(--search-primary);
+}
+
 /* ── Suggestion code ────────────────────────────────────────────── */
 .suggestion-code {
   font-family: 'JetBrains Mono', 'SF Mono', monospace;
@@ -1610,8 +2443,10 @@
   color: var(--search-text-muted);
 }
 
+/* Pinned uses coral (state signal), not amber (Voting status color).
+   DESIGN.md Status-Stays-Status Rule. */
 .clipboard-pin-icon.pinned {
-  color: #f59e0b;
+  color: var(--search-primary);
 }
 
 .clipboard-item-row {
@@ -1758,23 +2593,57 @@
   color: #ef4444;
 }
 
-/* ── Sonar model select ──────────────────────────────────────────────────── */
-.sonar-model-select {
-  width: 100%;
-  padding: 5px 8px;
-  margin-top: 4px;
-  font-size: 0.75rem;
+/* ── Sonar model segmented control ────────────────────────────────────────
+   Three exclusive segments matching the section's button vocabulary.
+   Replaces the native <select> chrome. */
+.sonar-model-segments {
+  display: flex;
+  gap: 2px;
+  margin: 6px 0 0 1.625rem;        /* aligned with filter-pill content */
+  padding: 2px;
+  background: var(--search-surface-raised);
   border: 1px solid var(--search-border);
-  border-radius: 6px;
-  background: var(--search-card-bg);
-  color: var(--search-text);
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.15s;
+  border-radius: 8px;
 }
 
-.sonar-model-select:focus {
-  border-color: var(--search-primary);
+.dark .sonar-model-segments {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.sonar-model-segment {
+  flex: 1;
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--search-text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sonar-model-segment:hover {
+  color: var(--search-text-secondary);
+}
+
+.sonar-model-segment.active {
+  background: var(--search-surface);
+  color: var(--search-primary);
+  font-weight: 600;
+}
+
+.dark .sonar-model-segment.active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sonar-model-segment:focus-visible {
+  outline: 2px solid var(--search-primary);
+  outline-offset: 2px;
 }
 
 /* ── Clipboard count badge ───────────────────────────────────────────────── */

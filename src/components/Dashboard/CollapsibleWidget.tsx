@@ -28,7 +28,7 @@ const CollapsibleWidget: React.FC<CollapsibleWidgetProps> = ({
   id,
   title,
   icon,
-  iconColor = 'text-rose-500',
+  iconColor,
   isExpanded,
   onToggle,
   headerAction,
@@ -36,17 +36,15 @@ const CollapsibleWidget: React.FC<CollapsibleWidgetProps> = ({
   className = '',
 }) => (
   <div
-    className={`dashboard-widget-surface backdrop-blur-xl border border-zinc-200 dark:border-zinc-800/80 rounded-2xl overflow-hidden transition-all duration-150 hover:border-rose-500/40 dark:hover:border-rose-500/30 card-elevated card-hover-lift ${className}`}
+    className={`bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl overflow-hidden transition-colors duration-150 ${className}`}
   >
     <div
-      className="flex items-center justify-between p-4 cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/30 transition-all duration-150"
+      className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150"
       onClick={() => onToggle(id)}
     >
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500/20 to-pink-500/20 flex items-center justify-center border border-rose-500/20 shadow-sm">
-          <i className={`fa-solid ${icon} ${iconColor}`}></i>
-        </div>
-        <h3 className="font-semibold text-zinc-900 dark:text-white">{title}</h3>
+        <i className={`fa-solid ${icon} text-zinc-400 dark:text-zinc-500 w-4 text-center ${iconColor || ''}`}></i>
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
       </div>
       <div className="flex items-center gap-2">
         {headerAction && <div onClick={(e) => e.stopPropagation()}>{headerAction}</div>}
@@ -57,7 +55,7 @@ const CollapsibleWidget: React.FC<CollapsibleWidgetProps> = ({
           tabIndex={-1}
         >
           <i
-            className={`fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200 widget-spring ${
+            className={`fa-solid fa-chevron-down text-xs text-zinc-400 dark:text-zinc-500 transition-transform duration-200 widget-spring ${
               isExpanded ? 'rotate-180' : ''
             }`}
           ></i>
@@ -71,7 +69,7 @@ const CollapsibleWidget: React.FC<CollapsibleWidgetProps> = ({
       style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
     >
       <div className="overflow-hidden">
-        <div className="p-4 pt-0 border-t border-zinc-100 dark:border-zinc-800/50">
+        <div className="p-4 pt-0 border-t border-zinc-100 dark:border-white/[0.06]">
           {children}
         </div>
       </div>
