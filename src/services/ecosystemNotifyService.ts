@@ -102,6 +102,68 @@ export const ecosystemNotifyService = {
   },
 
   /**
+   * Notify Entomate that a Pulse workspace logged a decision. Entomate
+   * caches it in intelligence_context_cache so the MIP context assembler
+   * can surface "the team decided X" when prepping a related meeting.
+   */
+  async notifyDecisionCreated(opts: {
+    decisionId: string;
+    workspaceId: string;
+    title: string;
+    description?: string | null;
+    decisionType?: string | null;
+    proposedBy: string;
+    targetApp?: TargetApp;
+  }): Promise<void> {
+    await invokeOutbound(
+      'decision.created',
+      opts.targetApp || 'entomate',
+      {
+        decisionId: opts.decisionId,
+        workspaceId: opts.workspaceId,
+        title: opts.title,
+        description: opts.description ?? null,
+        decisionType: opts.decisionType ?? 'general',
+        proposedBy: opts.proposedBy,
+      },
+      { entityType: 'decision', entityId: opts.decisionId },
+    );
+  },
+
+  /**
+   * Notify Entomate that a Pulse workspace extracted a task. Same MIP-cache
+   * intent as notifyDecisionCreated. Pulse tasks are not sync-mirrored as
+   * Entomate action_items — they're context only.
+   */
+  async notifyTaskCreated(opts: {
+    taskId: string;
+    workspaceId: string;
+    title: string;
+    description?: string | null;
+    assigneeId?: string | null;
+    deadline?: string | null;
+    priority?: string | null;
+    originMessageId?: string | null;
+    targetApp?: TargetApp;
+  }): Promise<void> {
+    await invokeOutbound(
+      'task.created',
+      opts.targetApp || 'entomate',
+      {
+        taskId: opts.taskId,
+        workspaceId: opts.workspaceId,
+        title: opts.title,
+        description: opts.description ?? null,
+        assigneeId: opts.assigneeId ?? null,
+        deadline: opts.deadline ?? null,
+        priority: opts.priority ?? 'medium',
+        originMessageId: opts.originMessageId ?? null,
+      },
+      { entityType: 'task', entityId: opts.taskId },
+    );
+  },
+
+  /**
    * Send a periodic engagement digest for a channel (intended for a cron or
    * admin trigger, not a per-message hot path). LV uses this to update
    * contact engagement scores.

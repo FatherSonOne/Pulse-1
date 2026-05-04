@@ -11,6 +11,8 @@
 //   meeting.export_request   — Ask Entomate to send a recording back to Pulse
 //   message.mention          — A Pulse message @-mentioned a synced contact (→ LV)
 //   channel.activity_summary — Periodic per-channel engagement digest (→ LV)
+//   decision.created         — A Pulse workspace logged a decision (→ Entomate, MIP context)
+//   task.created             — A Pulse workspace extracted a task (→ Entomate, MIP context)
 // =====================================================
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -68,6 +70,8 @@ serve(async (req) => {
       'meeting.export_request',
       'message.mention',
       'channel.activity_summary',
+      'decision.created',
+      'task.created',
     ];
     if (!ALLOWED_EVENTS.includes(eventType)) {
       return json({ error: `Event type '${eventType}' is not allowed for outbound` }, 403);

@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { ecosystemNotifyService } from './ecosystemNotifyService';
 
 export interface Decision {
   id: string;
@@ -72,6 +73,18 @@ export const decisionService = {
     if (error) {
       console.error('Error creating decision:', error);
       return null;
+    }
+
+    // Cross-app: cache decision in Entomate for MIP context. Fire-and-forget.
+    if (decision?.id) {
+      void ecosystemNotifyService.notifyDecisionCreated({
+        decisionId: decision.id,
+        workspaceId: data.workspace_id,
+        title: data.title,
+        description: data.description ?? null,
+        decisionType: data.decision_type ?? 'general',
+        proposedBy: data.proposed_by,
+      });
     }
 
     // Re-shape to match the Decision interface readers expect.

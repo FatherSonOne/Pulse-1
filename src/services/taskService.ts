@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { ecosystemNotifyService } from './ecosystemNotifyService';
 
 export interface Task {
   id: string;
@@ -81,6 +82,20 @@ export const taskService = {
     if (error) {
       console.error('Error creating task:', error);
       return null;
+    }
+
+    // Cross-app: cache task in Entomate for MIP context. Fire-and-forget.
+    if (task?.id) {
+      void ecosystemNotifyService.notifyTaskCreated({
+        taskId: task.id,
+        workspaceId: data.workspace_id,
+        title: data.title,
+        description: data.description ?? null,
+        assigneeId: data.assignee_id ?? null,
+        deadline: data.deadline ?? null,
+        priority: data.priority ?? 'medium',
+        originMessageId: data.origin_message_id ?? null,
+      });
     }
 
     return task;
