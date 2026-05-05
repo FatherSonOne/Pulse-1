@@ -224,7 +224,7 @@ async function sendContextResponse(
 ): Promise<void> {
   const { data: entomateConfig, error } = await supabase
     .from('ecosystem_config')
-    .select('api_url, service_token')
+    .select('api_url, service_token, features')
     .eq('app_name', 'entomate')
     .single();
 
@@ -247,13 +247,22 @@ async function sendContextResponse(
     },
   };
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Ecosystem-Token': entomateConfig.service_token,
+  };
+  // Supabase API gateway requires both Authorization and apikey on POSTs
+  // to edge functions. Without these the request 401s before reaching
+  // Entomate's ecosystem-inbound handler.
+  if (entomateConfig.features?.gateway_key) {
+    headers['Authorization'] = `Bearer ${entomateConfig.features.gateway_key}`;
+    headers['apikey'] = entomateConfig.features.gateway_key;
+  }
+
   try {
     const resp = await fetch(entomateConfig.api_url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Ecosystem-Token': entomateConfig.service_token,
-      },
+      headers,
       body: JSON.stringify(payload),
     });
 

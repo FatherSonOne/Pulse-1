@@ -83,6 +83,26 @@ Deno.serve(async (req) => {
     const sourceLabel: EcosystemEvent['source'] =
       (event.source as string) === 'logos-vision' ? 'logos_vision' : event.source;
 
+    // Idempotency: if this event_id has already been processed successfully
+    // in the inbound direction, return 200 immediately without re-running
+    // the handler. Bridge retries reuse the same event_id, so this turns
+    // every existing handler idempotent without per-handler work.
+    const { data: alreadyProcessed } = await supabase
+      .from('ecosystem_events')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('direction', 'inbound')
+      .eq('status', 'processed')
+      .maybeSingle();
+
+    if (alreadyProcessed) {
+      console.log(`[ecosystem-inbound] Event ${eventId} already processed — skipping handler (deduped)`);
+      return new Response(
+        JSON.stringify({ received: true, eventId, deduped: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Log the inbound event. If this fails (constraint violation, etc.), surface
     // it instead of silently dropping — earlier this caused 46 LV→Pulse contact
     // events to be lost while still returning 200 to the sender.
@@ -722,8 +742,12 @@ async function sendServiceEvent(
     'X-Ecosystem-Source': 'pulse',
     'X-Ecosystem-Event-Id': eventId,
   };
+  // Supabase API gateway requires both Authorization: Bearer AND apikey
+  // headers — strict receivers (Entomate) check the apikey explicitly,
+  // and 401 with "Missing authorization header" if either is missing.
   if (config.features?.gateway_key) {
     headers['Authorization'] = `Bearer ${config.features.gateway_key}`;
+    headers['apikey'] = config.features.gateway_key;
   }
 
   const resp = await fetch(config.api_url, {
