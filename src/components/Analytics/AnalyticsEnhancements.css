@@ -252,7 +252,7 @@
 
 .meter-score {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -641,8 +641,8 @@
   display: flex;
   gap: var(--space-sm);
   padding: var(--space-md);
-  background: rgba(6, 214, 160, 0.1);
-  border: 1px solid rgba(6, 214, 160, 0.3);
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.20);
   border-radius: var(--radius-md);
   margin-bottom: var(--space-md);
 }

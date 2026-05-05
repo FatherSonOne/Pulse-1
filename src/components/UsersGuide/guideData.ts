@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.3.0 · April 23, 2026
+// Version 25.4.0 · May 4, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -1158,6 +1158,20 @@ export const guideSections: GuideSection[] = [
           'Reminders appear as in-app notifications and as push notifications on mobile.',
         ],
       },
+      {
+        id: 'travel-buffers',
+        title: 'Travel Buffers in Agenda',
+        badge: 'New',
+        description: 'Pulse calculates real driving time between back-to-back events using the Google Distance Matrix API and surfaces tight transitions inline.',
+        steps: [
+          'Open Calendar in Day or Week view — travel rows appear automatically between events with physical addresses.',
+          'A grey "Travel: 22 min" row separates two events. Zoom, Meet, Teams, and other virtual links are skipped.',
+          'When the gap between two events is shorter than the drive time, the row turns red with a "Tight" label — you can\'t physically make it.',
+          'For pairs more than 4 hours apart, no buffer row appears (assumed already planned).',
+          'Click a tight row to see the route on a small map preview.',
+        ],
+        note: 'Add a postal address to a calendar event — not just "office" — so Pulse can geocode it and calculate driving time.',
+      },
     ],
     shortcuts: [
       { key: 'T', action: 'Jump to Today' },
@@ -1279,6 +1293,20 @@ export const guideSections: GuideSection[] = [
           'Follow-up reminders you\'ve set.',
           'Autopilot check-in suggestions.',
         ],
+      },
+      {
+        id: 'today-route-strip',
+        title: 'Today\'s Geographic Route Strip',
+        badge: 'New',
+        description: 'A horizontal strip at the top of the Today Feed showing your day\'s geographic arc — every event with a location and the travel time between consecutive stops.',
+        steps: [
+          'Open the Today Feed view in Contacts.',
+          'The route strip appears at the top — events with addresses laid out left-to-right in time order.',
+          'Driving time between consecutive stops is shown above the connector (e.g. "32 min by car").',
+          'Tap any dot to expand a small map preview underneath without leaving the Today tab.',
+          'Use it to spot 90-minute gaps on opposite sides of town BEFORE committing to the day.',
+        ],
+        note: 'Pairs naturally with Travel Buffers in calendar agenda view — Today shows the whole arc, while Calendar shows time-tight transitions inline.',
       },
       {
         id: 'contact-circles',
@@ -1434,6 +1462,21 @@ export const guideSections: GuideSection[] = [
           'Add Subtasks — the parent shows a completion progress bar.',
           'Comment in the thread with @mentions to notify specific people.',
         ],
+      },
+      {
+        id: 'attach-place',
+        title: 'Attaching a Place to a Task or Decision',
+        badge: 'New',
+        description: 'Attach a physical location to any task or decision — useful for site visits, venues, and location-specific work.',
+        steps: [
+          'On a task: open the task → scroll to the Place field → click the Place picker dropdown.',
+          'Pick from your saved places or type to search Google Places (e.g., "Blue Bottle Coffee Mission St").',
+          'A small MapPreview card appears on the task detail once attached.',
+          'On a decision: in the Decision Wizard, fill the Venue field on Step 4 — Rhythm.',
+          'The venue auto-attaches to the decision and a MapPreview appears on the decision detail.',
+          'Click Detach to remove a place without deleting the underlying place record.',
+        ],
+        note: 'Pulse uses one universal Place schema — a place attached anywhere (contact, event, task, decision) is searchable across the app and appears on the Contact Map and in geo-modified searches.',
       },
       {
         id: 'board-view',
@@ -1621,15 +1664,18 @@ export const guideSections: GuideSection[] = [
       {
         id: 'voice-commands',
         title: 'Voice Commands',
-        description: 'Control Pulse hands-free with natural-language voice commands.',
+        badge: 'Updated',
+        description: 'Control Pulse hands-free with natural-language voice commands. The full panel has Library, History (with retry), Shortcuts, and Settings tabs — and a 2-second cancel window protects you from accidental destructive commands.',
         steps: [
           'Click the microphone icon in the sidebar to open the Voice Command Modal.',
           'Hold the spacebar and speak your command naturally, then release.',
           'Visual feedback shows the current state: Listening, Processing, or Speaking.',
           'Say navigation commands: "Go to Meetings", "Show my tasks", "Open email".',
           'Say action commands: "Send a message to Sarah", "Create a new task".',
-          'Open the Voice Command Panel for browsing commands, templates, and history.',
-          'Configure in Settings: spoken feedback, AI-powered parsing, auto-execute, and language (9 languages supported).',
+          'Open the Voice Command Panel for the full experience. Switch tabs with 1–4: Library, History, Shortcuts, Settings.',
+          'In History, any command that failed shows a Retry button — re-run it with one click.',
+          'Configure in Settings: spoken feedback, AI-powered parsing, auto-execute, cancel window, and language (9 languages).',
+          'Cancel Window: when Auto-Execute is on, destructive commands (delete, archive, send) wait 2 seconds and surface a Cancel button. Hovering pauses the countdown so you can read what\'s about to happen.',
           'Choose from 8 AI voice characters: Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, Verse.',
           'Type commands in the text input field if you prefer not to speak.',
           'Automatic fallback: if Whisper is unavailable, browser speech recognition takes over.',
@@ -1822,6 +1868,23 @@ export const guideSections: GuideSection[] = [
       'Export any report as PDF, CSV, or Excel from the Export button.',
     ],
     subsections: [
+      {
+        id: 'weekly-briefing',
+        title: 'Weekly Briefing — Quiet Once-a-Week Read',
+        badge: 'New',
+        description: 'Pulse\'s calmest reading surface. Each Monday it drafts a single paragraph summarizing your week, followed by ranked signals worth your attention.',
+        steps: [
+          'Click Briefing in the sidebar (or the dedicated dashboard tile).',
+          'Read the lead paragraph — a 2–4 sentence narrative drafted by Pulse AI describing the shape of your week.',
+          'A provenance chip shows whether the lead came from Pulse AI or the deterministic template.',
+          'The signals list shows up to 8 ranked items: cooling/at-risk relationships, velocity shifts, conflicts, wins, and burnout flags.',
+          'Click any signal line to open a detail sheet — drill into the relationship, conflict, or burnout indicator.',
+          'Use the week stepper at the top, or press [ / ] to step backward and forward.',
+          'Press j / k to move between signals; Enter to open the focused signal; t to jump to the current week.',
+          'A wins strip below the signals shows kudos and praise you received that week.',
+        ],
+        note: 'Needs 10 messages over 3 days to draft a briefing — until then, Pulse explains what unlocks it. Replaces the older Observatory at /analytics.',
+      },
       {
         id: 'message-analytics',
         title: 'Message Analytics',
@@ -2028,12 +2091,15 @@ export const guideSections: GuideSection[] = [
     id: 'search',
     title: 'Search',
     icon: '🔍',
-    summary: 'Unified search across every channel — messages, email, contacts, tasks, decisions, calendar, and Relay transcripts — with natural language, filters, saved searches, and alerts.',
+    badge: 'Updated',
+    summary: 'Unified search across every channel with redesigned results, geo modifiers (near me / near place), Map view, natural language, filters, saved searches, and alerts.',
     steps: [
       'Press Ctrl+K (or Cmd+K on Mac) to open search from anywhere in Pulse.',
       'Type any keyword, name, or phrase — results appear from all sources simultaneously.',
       'Click Filter to narrow by: source, date range, sender, recipient.',
       'Use natural language: "emails from John last Tuesday about the proposal".',
+      'Append a geo modifier to filter by physical location: "coffee meeting near me", "client within 10 mi of Austin".',
+      'Switch result layout: List, Grid, Timeline, or Map view.',
       'Click Save Search to save a query — access saved searches from the search bar dropdown.',
       'Click Set Alert on any search to be notified when new results match it.',
     ],
@@ -2053,6 +2119,35 @@ export const guideSections: GuideSection[] = [
           '#tag — content with that label or tag.',
           'has:attachment — emails or messages with file attachments.',
         ],
+      },
+      {
+        id: 'geo-modifiers',
+        title: 'Geo Modifiers — Search Near a Place',
+        badge: 'New',
+        description: 'Append a geographic constraint to any search to filter results by physical location. The parser runs on every keystroke, so results narrow as you type.',
+        steps: [
+          '"coffee meeting near me" — within 25 miles of you (default radius).',
+          '"coffee meeting near me within 5 mi" — within 5 miles of you.',
+          '"event near Austin" — within 25 miles of Austin.',
+          '"client near San Francisco within 10 mi" — within 10 mi of San Francisco.',
+          '"vendor within 50 km of Berlin" — km is auto-converted to miles.',
+          '"dinner within 15 mi" — bare radius implies "near me".',
+          'When a geo modifier is active, an active filter chip appears (e.g. "Near Austin · 25 mi"). Click it to remove the filter.',
+          'Pulse geocodes the place via Google Places, then matches results that have a place attached (contact location, event venue, task location, decision venue).',
+        ],
+      },
+      {
+        id: 'map-view',
+        title: 'Map View — See Results on a Map',
+        badge: 'New',
+        description: 'Switch the search results layout to Map view to plot location-bearing results geographically.',
+        steps: [
+          'Run any search — with or without a geo modifier.',
+          'Click the Map button in the view-mode toggle (alongside List, Grid, and Timeline).',
+          'Each result with a place appears as a pin; click any pin to open the result inline.',
+          'Combine with a geo modifier (e.g. "client meetings near me within 25 mi") to see exactly what\'s nearby.',
+        ],
+        note: 'Map view shares Pulse\'s universal Place schema with the Coral Cockpit Contact Map — a place attached to one entity appears everywhere.',
       },
       {
         id: 'saved-searches',
@@ -2170,7 +2265,7 @@ export const guideSections: GuideSection[] = [
         id: 'ecosystem-bridge',
         title: 'Ecosystem Bridge',
         badge: 'Updated',
-        description: 'Connect Pulse to Entomate and Logos Vision — enabling bot messages, bot channels, auto-export, and cross-app event tracking.',
+        description: 'Connect Pulse to Entomate and Logos Vision — enabling bot messages, dedicated bot channels (including donation alerts), auto-export, cross-app mentions, and decision/task event emission.',
         steps: [
           'Go to Settings → Ecosystem Bridge.',
           'The visual dashboard shows connection status of all three apps (Logos Vision, Pulse, Entomate) at a glance.',
@@ -2180,7 +2275,10 @@ export const guideSections: GuideSection[] = [
           'Click Generate next to Inbound Token — copy this into the other app\'s service_token field.',
           'Click Save Connection, then click Test to verify the bridge is live.',
           'Connected app cards show status, a Tokens button, a Test button, and an on/off toggle.',
-          'Bot Channels: connecting Entomate creates dedicated channels (#entomate-meetings, #entomate-tasks, #entomate-alerts).',
+          'Bot Channels: Entomate creates #entomate-meetings, #entomate-tasks, #entomate-alerts. Logos Vision creates #logos-alerts and #logos-donations.',
+          'Donation Alerts: when Logos Vision records a donation, a 💚 alert card lands in #logos-donations with donor, amount, fund, optional note, and a "View in CRM" link.',
+          'Cross-app mentions: @mentions made in Entomate or Logos Vision are forwarded to Pulse and surfaced in your notifications.',
+          'Decision/task events out: creating a Decision or Task in Pulse emits decision.created / task.created events — connected apps can listen and react.',
           'Auto-Export: meeting feedback and full meeting data can be exported to connected apps automatically.',
           'Auto-Export on Meeting End: enable in Meeting Settings to send recordings to Entomate the moment a meeting ends.',
           'Recording Pull: Entomate can request your available recordings — a list appears in #entomate-meetings with an Export All button.',
@@ -2330,9 +2428,8 @@ export const guideSections: GuideSection[] = [
   {
     id: 'billing',
     title: 'Billing & Plans',
-    badge: 'Updated',
     icon: '💳',
-    badge: 'New',
+    badge: 'Updated',
     summary: 'One plan — Pulse Team at $100/mo or $1,000/yr. Every new workspace gets a 30-day free trial, no credit card required. Stripe-powered checkout and Customer Portal for self-serve changes.',
     steps: [
       'Every new workspace starts with a 30-day free trial of Pulse Team — all features unlocked.',
@@ -2712,5 +2809,5 @@ export const guideSections: GuideSection[] = [
   },
 ];
 
-export const guideVersion = '25.2.2';
-export const guideUpdated = 'April 12, 2026';
+export const guideVersion = '25.4.0';
+export const guideUpdated = 'May 4, 2026';

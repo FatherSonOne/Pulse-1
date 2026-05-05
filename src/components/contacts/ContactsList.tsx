@@ -10,6 +10,29 @@ import {
   LeadScore,
   getRelationshipHealthColor,
 } from '../../types/relationshipTypes';
+import { BriefingChip, BriefingDot, InsightTone } from '../Briefing/inline/InlineInsight';
+
+/** Map a relationship profile to an inline insight chip+dot, or null when below threshold. */
+function profileToInsight(profile: RelationshipProfile | undefined):
+  | { tone: InsightTone; chipLabel: string | null; dotTitle: string }
+  | null {
+  if (!profile) return null;
+  const score = profile.relationshipScore ?? 50;
+  const trend = profile.relationshipTrend;
+  if (trend === 'falling' && score < 40) {
+    return { tone: 'overdue', chipLabel: 'GONE QUIET', dotTitle: 'At risk — went quiet' };
+  }
+  if (trend === 'falling' && score < 60) {
+    return { tone: 'warning', chipLabel: 'COOLING', dotTitle: 'Cooling' };
+  }
+  if (trend === 'rising' && score >= 70) {
+    return { tone: 'positive', chipLabel: 'WARMING UP', dotTitle: 'Warming up' };
+  }
+  if (score >= 70) {
+    return { tone: 'positive', chipLabel: null, dotTitle: 'Active' };
+  }
+  return null;
+}
 
 interface ContactsListProps {
   contacts: Contact[];
@@ -104,6 +127,7 @@ export const ContactsList: React.FC<ContactsListProps> = ({
           {visibleContacts.map((contact) => {
             const profile = relationshipProfiles?.get(contact.email || '');
             const leadScore = leadScores?.get(contact.email || '');
+            const insight = profileToInsight(profile);
 
             return (
               <div
@@ -129,9 +153,23 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                         <Star className="text-[8px] text-white" />
                       </div>
                     )}
+                    {insight && (
+                      <div className="absolute -bottom-0.5 -right-0.5">
+                        <BriefingDot tone={insight.tone} title={insight.dotTitle} />
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <div className="font-medium text-zinc-900 dark:text-white text-sm">{contact.name}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium text-zinc-900 dark:text-white text-sm truncate">{contact.name}</div>
+                      {insight?.chipLabel && (
+                        <BriefingChip
+                          tone={insight.tone}
+                          label={insight.chipLabel}
+                          title={insight.dotTitle}
+                        />
+                      )}
+                    </div>
                     <div className="text-[10px] text-zinc-500">{contact.role}</div>
                   </div>
                 </div>

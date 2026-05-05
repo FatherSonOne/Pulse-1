@@ -17,8 +17,26 @@ import {
 } from '../../types/relationshipTypes';
 import { RelationshipHealthCard } from './RelationshipHealthCard';
 import { LeadScoreCard } from './LeadScoreIndicator';
+import { BriefingChip, InsightTone } from '../Briefing/inline/InlineInsight';
 
 import { ArrowRight, BarChart2, Globe, PieChart, RefreshCw, Wand2, Zap } from 'lucide-react';
+
+function profileTransitionInsight(profile: RelationshipProfile):
+  | { tone: InsightTone; label: string; title: string }
+  | null {
+  const score = profile.relationshipScore ?? 50;
+  const trend = profile.relationshipTrend;
+  if (trend === 'falling' && score < 40) {
+    return { tone: 'overdue', label: 'GONE QUIET', title: 'Reply pattern dropped below baseline' };
+  }
+  if (trend === 'falling' && score < 60) {
+    return { tone: 'warning', label: 'COOLING', title: 'Engagement trending down' };
+  }
+  if (trend === 'rising' && score >= 70) {
+    return { tone: 'positive', label: 'WARMING UP', title: 'Engagement climbing' };
+  }
+  return null;
+}
 
 interface ContactAIInsightsTabProps {
   profile: RelationshipProfile;
@@ -50,8 +68,22 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
     );
   }
 
+  const transitionChip = profileTransitionInsight(profile);
+
   return (
     <div className="space-y-6">
+      {/* Inline transition chip — appears only when state crossed a threshold */}
+      {transitionChip && (
+        <div className="flex items-center gap-2 -mt-2 mb-1">
+          <BriefingChip
+            tone={transitionChip.tone}
+            label={transitionChip.label}
+            title={transitionChip.title}
+          />
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">{transitionChip.title}</span>
+        </div>
+      )}
+
       {/* Section Tabs */}
       <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
         {(['overview', 'factors', 'leads'] as const).map((section) => (

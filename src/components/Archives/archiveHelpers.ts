@@ -1,34 +1,56 @@
 // src/components/Archives/archiveHelpers.ts
 // Shared helper utilities for Archive sub-components
 
+import type { LucideIcon } from 'lucide-react';
+import {
+  Box,
+  BookText,
+  File,
+  FileText,
+  Handshake,
+  Image as ImageIcon,
+  MessagesSquare,
+  Radio,
+  Scale,
+  ShieldCheck,
+  Sparkles,
+  Video,
+} from 'lucide-react';
 import type { ArchiveType } from '../../types';
 
-export const getTypeConfig = (type: ArchiveType) => {
+interface TypeConfig {
+  Icon: LucideIcon;
+  color: string;
+  bg: string;
+  border: string;
+}
+
+export const getTypeConfig = (type: ArchiveType): TypeConfig => {
   switch (type) {
     case 'transcript':
-      return { icon: 'fa-comments', color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/20' };
+      return { Icon: MessagesSquare, color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20' };
     case 'meeting_note':
-      return { icon: 'fa-handshake', color: 'text-zinc-500 dark:text-zinc-400', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20' };
+      return { Icon: Handshake, color: 'text-zinc-500 dark:text-zinc-400', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20' };
     case 'vox_transcript':
-      return { icon: 'fa-walkie-talkie', color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/20' };
+      return { Icon: Radio, color: 'text-rose-400', bg: 'bg-rose-400/10', border: 'border-rose-400/20' };
     case 'journal':
-      return { icon: 'fa-book', color: 'text-zinc-600 dark:text-zinc-500', bg: 'bg-zinc-400/10', border: 'border-zinc-400/20' };
+      return { Icon: BookText, color: 'text-zinc-600 dark:text-zinc-500', bg: 'bg-zinc-400/10', border: 'border-zinc-400/20' };
     case 'summary':
-      return { icon: 'fa-wand-magic-sparkles', color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/20' };
+      return { Icon: Sparkles, color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20' };
     case 'decision_log':
-      return { icon: 'fa-gavel', color: 'text-zinc-700 dark:text-zinc-300', bg: 'bg-zinc-300/10', border: 'border-zinc-300/20' };
+      return { Icon: Scale, color: 'text-zinc-700 dark:text-zinc-300', bg: 'bg-zinc-300/10', border: 'border-zinc-300/20' };
     case 'artifact':
-      return { icon: 'fa-cube', color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/20' };
+      return { Icon: Box, color: 'text-rose-400', bg: 'bg-rose-400/10', border: 'border-rose-400/20' };
     case 'image':
-      return { icon: 'fa-image', color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' };
+      return { Icon: ImageIcon, color: 'text-zinc-600 dark:text-zinc-400', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20' };
     case 'video':
-      return { icon: 'fa-video', color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/20' };
+      return { Icon: Video, color: 'text-zinc-600 dark:text-zinc-400', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20' };
     case 'document':
-      return { icon: 'fa-file-lines', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' };
+      return { Icon: FileText, color: 'text-zinc-600 dark:text-zinc-400', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20' };
     case 'war_room_session':
-      return { icon: 'fa-shield-halved', color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20' };
+      return { Icon: ShieldCheck, color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20' };
     default:
-      return { icon: 'fa-file', color: 'text-zinc-600 dark:text-zinc-500', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20' };
+      return { Icon: File, color: 'text-zinc-600 dark:text-zinc-500', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20' };
   }
 };
 

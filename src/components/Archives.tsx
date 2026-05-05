@@ -1,9 +1,10 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { useArchiveStore } from '../store/archiveStore';
 import { ArchiveSidebar } from './Archives/ArchiveSidebar';
 import { ArchiveDetailView } from './Archives/ArchiveDetailView';
-import { ArchiveStatsPanel } from './Archives/ArchiveStatsPanel';
+import { MemoryOverviewPanel } from './Archives/MemoryOverviewPanel';
 import { ArchiveModals } from './Archives/ArchiveModals';
+import { ShortcutOverlay } from './Archives/ShortcutOverlay';
 
 const Archives: React.FC = () => {
   const loading = useArchiveStore(s => s.loading);
@@ -25,6 +26,8 @@ const Archives: React.FC = () => {
   const modals = useArchiveStore(s => s.modals);
   const closeModal = useArchiveStore(s => s.closeModal);
   const handleStartEdit = useArchiveStore(s => s.handleStartEdit);
+
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   // Initial data load
   useEffect(() => {
@@ -56,9 +59,12 @@ const Archives: React.FC = () => {
     const tag = (e.target as HTMLElement).tagName;
     const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 
-    // Escape: close detail or modals
+    // Escape: close shortcut overlay → modal → detail
     if (e.key === 'Escape') {
-      // Close any open modal first
+      if (shortcutsOpen) {
+        setShortcutsOpen(false);
+        return;
+      }
       const openModalName = Object.entries(modals).find(([, v]) => v === true || (v !== null && v !== false))?.[0];
       if (openModalName) {
         closeModal(openModalName as keyof typeof modals);
@@ -72,6 +78,13 @@ const Archives: React.FC = () => {
 
     // Don't fire shortcuts when typing in inputs
     if (isInput) return;
+
+    // ? or Shift+/: open shortcut overlay
+    if (e.key === '?') {
+      e.preventDefault();
+      setShortcutsOpen(true);
+      return;
+    }
 
     // / or Ctrl+K: focus search
     if (e.key === '/' || (e.key === 'k' && (e.ctrlKey || e.metaKey))) {
@@ -111,7 +124,7 @@ const Archives: React.FC = () => {
       openModal('deleteConfirm', selectedItem.id);
       return;
     }
-  }, [items, selectedItem, modals]);
+  }, [items, selectedItem, modals, shortcutsOpen]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -119,21 +132,24 @@ const Archives: React.FC = () => {
   }, [handleKeyDown]);
 
   return (
-    <div className="h-full flex flex-col md:flex-row bg-white dark:bg-black rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-fade-in shadow-2xl">
+    <div className="h-full flex flex-col md:flex-row bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-fade-in shadow-2xl">
       {/* Sidebar with search, filters, and item views */}
-      <ArchiveSidebar />
+      <ArchiveSidebar onOpenShortcuts={() => setShortcutsOpen(true)} />
 
-      {/* Main content area: detail view or stats panel */}
+      {/* Main content area: detail view or memory overview */}
       <div className="flex-1 flex flex-col bg-zinc-50 dark:bg-zinc-950 relative">
         {selectedItem ? (
           <ArchiveDetailView />
         ) : (
-          <ArchiveStatsPanel />
+          <MemoryOverviewPanel />
         )}
       </div>
 
       {/* All modals rendered here */}
       <ArchiveModals />
+
+      {/* Keyboard shortcut overlay */}
+      <ShortcutOverlay open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
   );
 };

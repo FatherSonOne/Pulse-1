@@ -1,6 +1,9 @@
 /* Import UI Audit Fixes - WCAG AA Compliance */
 @import './styles/audit-fixes.css';
 
+/* Pulse design system tokens — canonical brand + status palette */
+@import './styles/pulse-tokens.css';
+
 /* Tailwind CSS */
 @tailwind base;
 @tailwind components;

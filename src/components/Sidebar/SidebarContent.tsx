@@ -12,7 +12,7 @@ import { AlertTriangle, Download, Inbox, MessagesSquare, Plus, Search, Settings,
 
 // Lazy load tab content components for better performance
 const CRMPanel = lazy(() => import('../crm/CRMSidepanel'));
-const AnalyticsPanel = lazy(() => import('../Analytics/AnalyticsDashboard'));
+const AnalyticsPanel = lazy(() => import('../Analytics'));
 
 export type SidebarTabType = 'messages' | 'tools' | 'crm' | 'analytics';
 
@@ -107,19 +107,19 @@ const CRMContent: React.FC = () => (
   </Suspense>
 );
 
-// Analytics tab content wrapper
+// Briefing tab content wrapper (route still named AppView.ANALYTICS for compatibility)
 const AnalyticsContent: React.FC = () => (
   <Suspense fallback={<LoadingSkeleton />}>
     <div className="sidebar-analytics-content">
       <div className="sidebar-section-header">
         <h3 className="sidebar-section-title">
           <TrendingUp className="text-orange-500" />
-          Analytics
+          Briefing
         </h3>
         <button
           className="sidebar-icon-button"
-          aria-label="Analytics settings"
-          title="Analytics settings"
+          aria-label="Briefing settings"
+          title="Briefing settings"
         >
           <Download />
         </button>

@@ -1036,7 +1036,6 @@ async function insertBotMessage(supabase: any, opts: {
       bot_message_type: opts.messageType,
       bot_metadata: opts.metadata,
       bot_actions: opts.actions,
-      // encrypted_content and nonce are NULL — bot messages are plaintext
     })
     .select('id')
     .single();

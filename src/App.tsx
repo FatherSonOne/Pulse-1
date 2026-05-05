@@ -796,7 +796,12 @@ const App: React.FC = () => {
             case AppView.TEST_MATRIX:
               return <TestMatrix />;
             case AppView.ANALYTICS:
-              return <AnalyticsDashboard onClose={() => setView(AppView.DASHBOARD)} />;
+              return <AnalyticsDashboard
+                onClose={() => setView(AppView.DASHBOARD)}
+                onOpenContact={() => setView(AppView.CONTACTS)}
+                onOpenMessages={() => setView(AppView.MESSAGES)}
+                onOpenCalendar={() => setView(AppView.CALENDAR)}
+              />;
             case AppView.LIVE_AI:
               return <LiveDashboard apiKey={apiKey} userId={user?.id || ''} />;
             case AppView.DECISIONS_TASKS:

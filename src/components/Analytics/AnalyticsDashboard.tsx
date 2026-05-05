@@ -98,19 +98,22 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
     return num.toString();
   };
 
-  const formatDuration = (minutes: number): string => {
+  const formatDuration = (minutes: number | null | undefined): string => {
+    if (minutes == null || minutes <= 0) return '—';
     if (minutes < 60) return `${Math.round(minutes)}m`;
     if (minutes < 1440) return `${Math.round(minutes / 60)}h`;
     return `${Math.round(minutes / 1440)}d`;
   };
 
-  const getSentimentGlow = (score: number): string => {
+  const getSentimentGlow = (score: number | null | undefined): string => {
+    if (score == null) return 'var(--glow-neutral)';
     if (score > 0.2) return 'var(--glow-positive)';
     if (score < -0.2) return 'var(--glow-negative)';
     return 'var(--glow-neutral)';
   };
 
-  const getSentimentLabel = (score: number): string => {
+  const getSentimentLabel = (score: number | null | undefined): string => {
+    if (score == null) return '—';
     if (score > 0.2) return 'Positive';
     if (score < -0.2) return 'Negative';
     return 'Neutral';
@@ -123,21 +126,18 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
     return { label: 'Low', class: 'tier-low' };
   };
 
-  // Calculate pulse rate (messages per day)
+  // Calculate pulse rate (messages per day) — only show when enough data
   const pulseRate = dashboardData
     ? (dashboardData.total_messages / daysFromRange(timeRange)).toFixed(1)
-    : '0';
+    : '—';
+
+  // Threshold: at least 10 messages and 3 distinct days of activity
+  const hasEnoughData = !!dashboardData
+    && dashboardData.total_messages >= 10
+    && dashboardData.daily_activity.length >= 3;
 
   return (
     <div className="pulse-observatory">
-      {/* Ambient Background */}
-      <div className="observatory-bg">
-        <div className="grid-overlay" />
-        <div className="ambient-orb orb-1" />
-        <div className="ambient-orb orb-2" />
-        <div className="scan-line" />
-      </div>
-
       {/* Header Command Bar */}
       <header className="command-bar">
         <div className="command-left">
@@ -148,7 +148,6 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
             </div>
             <div className="brand-text">
               <h1>Observatory</h1>
-              <span className="brand-sub">Communication Intelligence</span>
             </div>
           </div>
         </div>
@@ -166,14 +165,14 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
           </span>
           <span className="current-view-label">{
             [
-              { id: 'overview', label: 'Overview', icon: '◉' },
-              { id: 'velocity', label: 'Velocity', icon: '⚡' },
-              { id: 'sentiment', label: 'Sentiment', icon: '◐' },
-              { id: 'network', label: 'Network', icon: '⬡' },
-              { id: 'relationships', label: 'Relationships', icon: '♥' },
-              { id: 'conflicts', label: 'Conflicts', icon: '△' },
-              { id: 'kudos', label: 'Kudos', icon: '⭐' },
-              { id: 'predictions', label: 'Predictions', icon: '🔮' },
+              { id: 'overview', label: 'Overview' },
+              { id: 'velocity', label: 'Velocity' },
+              { id: 'sentiment', label: 'Sentiment' },
+              { id: 'network', label: 'Network' },
+              { id: 'relationships', label: 'Relationships' },
+              { id: 'conflicts', label: 'Conflicts' },
+              { id: 'kudos', label: 'Kudos' },
+              { id: 'predictions', label: 'Predictions' },
             ].find(v => v.id === viewMode)?.label
           }</span>
         </button>
@@ -232,13 +231,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
 
       {loading ? (
         <div className="observatory-loading">
-          <div className="loading-orb">
-            <div className="orb-core" />
-            <div className="orb-ring ring-1" />
-            <div className="orb-ring ring-2" />
-            <div className="orb-ring ring-3" />
-          </div>
-          <p className="loading-text">Scanning communication patterns...</p>
+          <p className="loading-text">Loading…</p>
         </div>
       ) : (
         <main className="observatory-main">
@@ -263,30 +256,42 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
           )}
 
           {/* Overview View */}
-          {viewMode === 'overview' && dashboardData && (
+          {viewMode === 'overview' && dashboardData && !hasEnoughData && (
             <div className="view-overview">
-              {/* Hero Metrics */}
-              <section className="hero-metrics">
-                <div
-                  className={`metric-orb primary ${hoveredMetric === 'pulse' ? 'hovered' : ''}`}
-                  onMouseEnter={() => setHoveredMetric('pulse')}
-                  onMouseLeave={() => setHoveredMetric(null)}
-                >
-                  <div className="orb-glow" />
-                  <div className="orb-content">
-                    <span className="metric-value">{pulseRate}</span>
-                    <span className="metric-unit">/ day</span>
-                  </div>
-                  <span className="metric-label">Pulse Rate</span>
-                </div>
+              <div className="empty-overview">
+                <h2 className="empty-title">Not enough data yet</h2>
+                <p className="empty-body">
+                  Pulse needs about a week of activity to show patterns. You have{' '}
+                  <strong>{dashboardData.total_messages}</strong>{' '}
+                  {dashboardData.total_messages === 1 ? 'message' : 'messages'} across{' '}
+                  <strong>{dashboardData.daily_activity.length}</strong>{' '}
+                  {dashboardData.daily_activity.length === 1 ? 'day' : 'days'} so far.
+                </p>
+                <p className="empty-hint">
+                  Connect another channel or send a few more from this one. Check back in a few days.
+                </p>
+              </div>
+            </div>
+          )}
 
+          {viewMode === 'overview' && dashboardData && hasEnoughData && (
+            <div className="view-overview">
+              <section className="hero-metrics">
                 <div className="metric-satellites">
                   <div
-                    className={`metric-card glass ${hoveredMetric === 'total' ? 'hovered' : ''}`}
+                    className={`metric-card ${hoveredMetric === 'pulse' ? 'hovered' : ''}`}
+                    onMouseEnter={() => setHoveredMetric('pulse')}
+                    onMouseLeave={() => setHoveredMetric(null)}
+                  >
+                    <span className="metric-value">{pulseRate}</span>
+                    <span className="metric-label">Messages / day</span>
+                  </div>
+
+                  <div
+                    className={`metric-card ${hoveredMetric === 'total' ? 'hovered' : ''}`}
                     onMouseEnter={() => setHoveredMetric('total')}
                     onMouseLeave={() => setHoveredMetric(null)}
                   >
-                    <div className="card-accent" />
                     <span className="metric-value">{formatNumber(dashboardData.total_messages)}</span>
                     <span className="metric-label">Total Messages</span>
                     <div className="metric-split">
@@ -297,40 +302,36 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                   </div>
 
                   <div
-                    className={`metric-card glass ${hoveredMetric === 'response' ? 'hovered' : ''}`}
+                    className={`metric-card ${hoveredMetric === 'response' ? 'hovered' : ''}`}
                     onMouseEnter={() => setHoveredMetric('response')}
                     onMouseLeave={() => setHoveredMetric(null)}
                   >
-                    <div className="card-accent accent-velocity" />
                     <span className="metric-value">{formatDuration(dashboardData.avg_response_time)}</span>
                     <span className="metric-label">Avg Response</span>
                   </div>
 
                   <div
-                    className={`metric-card glass ${hoveredMetric === 'sentiment' ? 'hovered' : ''}`}
+                    className={`metric-card ${hoveredMetric === 'sentiment' ? 'hovered' : ''}`}
                     onMouseEnter={() => setHoveredMetric('sentiment')}
                     onMouseLeave={() => setHoveredMetric(null)}
-                    style={{ '--glow-color': getSentimentGlow(dashboardData.avg_sentiment) } as React.CSSProperties}
                   >
-                    <div className="card-accent accent-sentiment" />
                     <span className="metric-value">{getSentimentLabel(dashboardData.avg_sentiment)}</span>
-                    <span className="metric-label">Mood Signal</span>
+                    <span className="metric-label">Sentiment</span>
                   </div>
 
                   <div
-                    className={`metric-card glass ${hoveredMetric === 'contacts' ? 'hovered' : ''}`}
+                    className={`metric-card ${hoveredMetric === 'contacts' ? 'hovered' : ''}`}
                     onMouseEnter={() => setHoveredMetric('contacts')}
                     onMouseLeave={() => setHoveredMetric(null)}
                   >
-                    <div className="card-accent accent-network" />
                     <span className="metric-value">{topContacts.length}</span>
-                    <span className="metric-label">Active Nodes</span>
+                    <span className="metric-label">Top Contacts</span>
                   </div>
                 </div>
               </section>
 
               {/* Channel Distribution */}
-              <section className="panel glass channel-panel">
+              <section className="panel channel-panel">
                 <h3 className="panel-title">
                   <span className="title-icon">◈</span>
                   Channel Flow
@@ -365,7 +366,6 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                               className="channel-bar-fill"
                               style={{ width: `${percent}%` }}
                             />
-                            <div className="channel-bar-glow" style={{ width: `${percent}%` }} />
                           </div>
                           <span className="channel-percent">{percent.toFixed(0)}%</span>
                         </div>
@@ -376,7 +376,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
 
               {/* Activity Waveform */}
               {dashboardData.daily_activity.length > 0 && (
-                <section className="panel glass activity-panel">
+                <section className="panel activity-panel">
                   <h3 className="panel-title">
                     <span className="title-icon">∿</span>
                     Activity Waveform
@@ -407,7 +407,6 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                               <div className="bar-sent" />
                               <div className="bar-received" />
                             </div>
-                            <div className="bar-glow" />
                           </div>
                         );
                       })}
@@ -460,12 +459,12 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                 </div>
 
                 <div className="velocity-stats">
-                  <div className="stat-card glass stat-fast">
+                  <div className="stat-card stat-fast">
                     <span className="stat-icon"><AnimatedIcon icon="lightning" size={16} /></span>
                     <span className="stat-value">{formatDuration(responseStats.fastestResponse)}</span>
                     <span className="stat-label">Fastest</span>
                   </div>
-                  <div className="stat-card glass stat-slow">
+                  <div className="stat-card stat-slow">
                     <span className="stat-icon">◔</span>
                     <span className="stat-value">{formatDuration(responseStats.slowestResponse)}</span>
                     <span className="stat-label">Slowest</span>
@@ -473,7 +472,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                 </div>
               </section>
 
-              <section className="panel glass distribution-panel">
+              <section className="panel distribution-panel">
                 <h3 className="panel-title">
                   <span className="title-icon">▦</span>
                   Response Distribution
@@ -503,7 +502,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
               </section>
 
               {Object.keys(responseStats.byChannel).length > 0 && (
-                <section className="panel glass channel-velocity-panel">
+                <section className="panel channel-velocity-panel">
                   <h3 className="panel-title">
                     <span className="title-icon">◫</span>
                     By Channel
@@ -539,7 +538,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                 </div>
               </section>
 
-              <section className="panel glass breakdown-panel">
+              <section className="panel breakdown-panel">
                 <h3 className="panel-title">
                   <span className="title-icon">◐</span>
                   Sentiment Spectrum
@@ -572,7 +571,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
               </section>
 
               {sentimentData.dailySentiment.length > 0 && (
-                <section className="panel glass timeline-panel">
+                <section className="panel timeline-panel">
                   <h3 className="panel-title">
                     <span className="title-icon">◦◦◦</span>
                     Mood Timeline
@@ -618,7 +617,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                     return (
                       <div
                         key={contact.id}
-                        className={`contact-node glass ${tier.class}`}
+                        className={`contact-node ${tier.class}`}
                         style={{ '--delay': `${i * 0.05}s` } as React.CSSProperties}
                       >
                         <div className="node-rank">#{i + 1}</div>

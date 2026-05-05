@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
-**Version**: 25.3.0
-**Last Updated**: April 23, 2026
+**Version**: 25.4.0
+**Last Updated**: May 4, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -1321,6 +1321,24 @@ When inviting someone to a meeting:
 
 **Tip:** You can add multiple reminders to the same event — useful for important meetings: one day before and 15 minutes before.
 
+### Travel Buffers in Agenda View
+
+Pulse calculates how long it will take to drive between back-to-back meetings with physical locations and surfaces those travel times directly in your agenda. Powered by the Google Distance Matrix API.
+
+**What you see:**
+
+- A grey **Travel: 22 min** row appears in agenda view between two consecutive events with real-world addresses (Zoom, Meet, Teams, and other virtual links are skipped automatically).
+- If the time gap between events is shorter than the drive time, the row turns red with a **Tight** label — you can't physically make it.
+- For pairs more than 4 hours apart, no buffer row appears (Pulse assumes you've already planned around that gap).
+
+**How to use it:**
+
+1. Open **Calendar → Day** or **Week** view.
+2. Travel rows appear automatically — no setup required, as long as your events have street addresses or place names.
+3. Click a tight (red) row to see the route on a small map preview and consider rescheduling.
+
+**Tip:** Add a postal address to a calendar event — not just "office" — so Pulse can geocode it and calculate driving time.
+
 ### Calendar Shortcuts
 
 | Shortcut | Action |
@@ -1435,6 +1453,20 @@ The **Today Feed** in Contacts shows you relationship maintenance actions for to
 - People celebrating work anniversaries or birthdays (if available in their profile)
 - Follow-up reminders on contacts you set reminders for
 - Suggestions from Relationship Autopilot
+
+### Today's Geographic Route Strip
+
+A horizontal strip at the top of the **Today Feed** shows your day's geographic arc — every calendar event with a physical location, in time order, with travel-time hints between consecutive stops.
+
+**What you see:**
+
+- Each event with an address appears as a dot on a left-to-right strip: `9:00 → coffee → 11:30 → office → 1pm doctor`.
+- Driving time between consecutive stops is shown above the connector: e.g., **32 min by car**.
+- Tap any dot to expand a small map preview underneath without leaving the Today tab.
+
+**Use it to:** scan your day before you commit — if you have a 90-minute gap on opposite sides of town, you'll see it instantly and can rearrange or reschedule.
+
+**Tip:** This pairs naturally with the Travel Buffers in calendar agenda view — Today shows the whole arc, while Calendar shows time-tight transitions inline.
 
 ### Contact Goals
 
@@ -1623,6 +1655,26 @@ Break complex tasks into smaller pieces:
 2. Click **Add Subtask**.
 3. Add subtasks with their own assignees and deadlines.
 4. The parent task shows a progress bar based on subtask completion.
+
+### Attaching a Place to a Task or Decision
+
+Any task or decision can be attached to a real-world location — useful for site visits, in-person meetings, or decisions about a specific venue.
+
+**On a Task:**
+
+1. Open a task and scroll to the **Place** field in the Task Edit panel.
+2. Click the **Place picker** dropdown.
+3. Pick from your saved places, or type to search Google Places (e.g., "Blue Bottle Coffee Mission St").
+4. Click **Save** — the place is attached to the task and appears as a small **MapPreview** card on the task detail.
+5. Click **Detach** to remove the place from the task without deleting the place itself.
+
+**On a Decision (via the Wizard):**
+
+1. Create a new decision using the Decision Wizard.
+2. On **Step 4 — Rhythm**, fill in the **Venue** field — search Google Places or pick a saved place.
+3. The venue is auto-attached to the decision when you finish the wizard. A MapPreview appears on the decision detail.
+
+**The universal Place schema** means a place attached anywhere (contact, event, task, decision) is searchable across Pulse — and shows up on the Contact Map and in geo-modified searches automatically.
 
 ### Task Comments & Activity
 
@@ -1870,16 +1922,17 @@ Control Pulse entirely with your voice — hands-free navigation, actions, and q
 
 **Voice Command Panel:**
 1. Click the **expand arrow** on the voice modal to open the full Voice Command Panel.
-2. Four tabs are available:
-   - **Commands** — browse all available voice commands
-   - **Templates** — pre-built command phrases you can use or customize
-   - **History** — review past voice commands with confidence scores
+2. Four tabs are available — switch between them with `1`, `2`, `3`, `4`:
+   - **Library** — browse the full catalog of available voice commands
+   - **History** — review past voice commands with confidence scores; failing commands show a **Retry** button so you can re-run them with one click
+   - **Shortcuts** — pre-built command phrases you can use or customize
    - **Settings** — configure voice behavior
 
 **Voice Command Settings:**
 - **Spoken Feedback** — toggle whether Pulse speaks responses back to you
 - **AI-Powered Parsing** — enable advanced AI interpretation of natural-language commands
 - **Auto-Execute** — when on, Pulse runs commands immediately; when off, it asks for confirmation first
+- **Cancel Window for Destructive Commands** — when Auto-Execute is on, destructive commands (delete, archive, send) wait 2 seconds before running and surface a visible **Cancel** button. Hovering the panel pauses the countdown so you have time to read what's about to happen.
 - **Language** — choose from 9 languages: English (US, UK, AU), Spanish, French, German, Italian, Portuguese, Japanese, and Chinese
 
 **Voice Agents:**
@@ -2147,9 +2200,37 @@ Control what syncs and what doesn't:
 
 Pulse tracks your communication activity and your team's patterns, then surfaces meaningful insights to help you communicate smarter and lead more effectively.
 
-### Accessing Analytics
+### Weekly Briefing — Your Quiet Once-a-Week Read
 
-Click **Analytics** in the sidebar.
+The **Weekly Briefing** is Pulse's calmest reading surface. Each Monday, Pulse reads your previous week of activity and drafts a single paragraph summarizing what happened, followed by a list of specific signals worth your attention.
+
+**What you see:**
+
+- **Lead paragraph** — a 2–4 sentence narrative drafted by Pulse AI describing the shape of your week (provenance chip shows whether the lead came from Pulse AI or the deterministic template).
+- **Signals list** — up to 8 ranked items, each one a specific, citation-grounded observation:
+  - **Cooling / At-risk relationships** — contacts who've gone quiet
+  - **Velocity shifts** — channels where your reply time has slowed (or sped up)
+  - **Conflicts** — tensions detected in recent threads
+  - **Wins** — kudos and recognition you received
+  - **Burnout** — flags rising response times, declining sentiment, or weekend activity
+- **Wins strip** — a compact celebration row of the kudos and praise you received that week.
+- **Footer** — totals and keyboard hints.
+
+**How to use it:**
+
+1. Click **Briefing** in the sidebar (or the dedicated dashboard tile).
+2. Read the lead paragraph for an instant picture of your week.
+3. Click any signal line to open a detail sheet — drill into the relationship, conflict, or burnout indicator.
+4. Use the **week stepper** at the top to step backward or forward; or press `[` / `]`.
+5. Press `j` and `k` to move between signals; press `Enter` to open the focused signal; press `t` to jump to the current week.
+
+**When it's quiet:** You need at least 10 messages over 3 days for Pulse to draft a briefing. Until then, Pulse shows your current count and explains what unlocks the briefing.
+
+**Tip:** The Weekly Briefing replaces the older Observatory at `/analytics`. Open it once a week — Monday morning is the default rhythm — and use it instead of grinding through every analytics tab.
+
+### Accessing the Full Analytics Dashboard
+
+Click **Analytics** in the sidebar for the deep-dive views (Overview, Velocity, Sentiment, Network, Relationships, Conflicts, Kudos, Predictions). The Weekly Briefing is the lightweight reading surface; Analytics is the data-deep layer.
 
 ### What You Can See
 
@@ -2501,6 +2582,40 @@ Save a search to run it again quickly:
 | `#tag` | Content with that label or tag |
 | `has:attachment` | Emails or messages with attachments |
 
+### Geo Modifiers — Search Near a Place
+
+Append a geographic constraint to any search to filter results by physical location. The parser runs on every keystroke, so you see results narrow as you type.
+
+**Recognized forms:**
+
+| Query example | What it finds |
+| ------------- | ------------- |
+| `coffee meeting near me` | Results within 25 miles of your current location (default radius) |
+| `coffee meeting near me within 5 mi` | Results within 5 miles of you |
+| `event near Austin` | Results near Austin (default 25 mi) |
+| `client near San Francisco within 10 mi` | Results within 10 mi of San Francisco |
+| `vendor within 50 km of Berlin` | Results within 50 km of Berlin (km auto-converted to miles) |
+| `dinner within 15 mi` | Results within 15 mi of you (bare radius implies "near me") |
+
+When a geo modifier is active, an **active filter chip** appears above the results showing the radius and place — e.g., **Near Austin · 25 mi**. Click the chip to remove the filter.
+
+**How it works:**
+
+- Pulse geocodes the place using Google Places.
+- Any result that has a place attached (contact location, event venue, task location, decision venue) is checked against the radius.
+- Results without a place are still shown unless you explicitly filter by location-having content.
+
+### Map View — See Search Results on a Map
+
+Switch the search results layout to **Map View** to plot location-bearing results geographically.
+
+1. Run any search — with or without a geo modifier.
+2. Click the **Map** button in the view-mode toggle (alongside List, Grid, and Timeline).
+3. Each result with a place appears as a pin; click any pin to open the result inline.
+4. Combine with a geo modifier (e.g., `client meetings near me within 25 mi`) to see exactly what's nearby.
+
+**Tip:** Map view pairs with the Coral Cockpit Contact Map — both share Pulse's universal Place schema, so a place attached to one entity appears everywhere.
+
 ### Search Alerts
 
 Set up alerts for specific search queries:
@@ -2689,13 +2804,34 @@ The **Ecosystem Bridge** connects Pulse with other apps in the QntmEcos suite �
 
 **Connection Dashboard:** The Ecosystem Bridge settings page shows a visual dashboard with the connection status of all three apps (Logos Vision, Pulse, and Entomate) at a glance. Each connected app card shows its status (active/inactive), a **Tokens** button to view or copy tokens, a **Test** button to ping the connection, and a toggle to enable or disable the connection.
 
-**Bot Channels:** When you connect Entomate, Pulse can automatically create dedicated bot channels for receiving Entomate messages:
+**Bot Channels:** When you connect an ecosystem app, Pulse automatically creates dedicated bot channels so cross-app messages stay organized:
 
-- **#entomate-meetings** — receives meeting-related updates from Entomate
-- **#entomate-tasks** — receives task assignments and updates
-- **#entomate-alerts** — receives alerts and notifications
+| Channel | Source | What lands here |
+| ------- | ------ | --------------- |
+| **#entomate-meetings** | Entomate | Meeting recaps, briefings, and recording exports |
+| **#entomate-tasks** | Entomate | Task assignments and status updates |
+| **#entomate-alerts** | Entomate | Generic alerts and notifications |
+| **#logos-alerts** | Logos Vision | CRM alerts and system notifications |
+| **#logos-donations** | Logos Vision | Donation activity (see below) |
 
-These channels keep ecosystem messages organized and separate from your regular conversations.
+These channels keep ecosystem messages separate from your regular conversations.
+
+**Donation Alerts (from Logos Vision):**
+
+When Logos Vision records a new donation, it pushes a **Donation Alert** card into your **#logos-donations** channel automatically. Each card shows:
+
+- 💚 **Donor name and amount** — large and at the top of the card
+- **Donor email** if available
+- **Date** of the donation
+- **Fund or campaign** if specified
+- A note or message from the donor (if included)
+- A **View in CRM** link that takes you straight to the donation record in Logos Vision
+
+No setup beyond the Ecosystem Bridge — once Logos Vision is connected and the channel is enabled, alerts flow in real time. Use these in team channels for transparency, or in private workspaces to track personal donations.
+
+**Cross-app mentions:** If someone @mentions you in Entomate or Logos Vision, the mention is forwarded to Pulse and surfaced in your notifications — you don't need to keep all three apps open to stay reachable.
+
+**Decision and task events out:** When you create a Decision or Task in Pulse, Pulse emits a `decision.created` or `task.created` event over the bridge. Connected apps can listen and react — for example, Entomate can auto-create a matching task in its own system.
 
 **Auto-Export:** Pulse can automatically export data to connected apps:
 
@@ -3207,5 +3343,5 @@ Use Settings → Data Management → Export My Data before initiating account de
 
 ---
 
-*Pulse User's Guide — Version 25.2.0 — Updated April 4, 2026*
+*Pulse User's Guide — Version 25.4.0 — Updated May 4, 2026*
 *This guide is updated regularly as new features are added. Run `/users-guide` in Claude Code to regenerate it.*

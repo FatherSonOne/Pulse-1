@@ -78,7 +78,7 @@ export const ArchiveModals: React.FC = () => {
     <>
       {/* Export Progress Modal */}
       {exportProgress && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-80">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
@@ -101,7 +101,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Share Modal */}
       {modals.share && selectedItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => closeModal('share')}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => closeModal('share')}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-96 max-w-[90vw] animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-zinc-900 dark:text-white text-lg">Share</h3>
@@ -224,7 +224,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Edit Modal */}
       {isEditing && selectedItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => useArchiveStore.setState({ isEditing: false })}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => useArchiveStore.setState({ isEditing: false })}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-[600px] max-w-[90vw] max-h-[80vh] overflow-hidden flex flex-col animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-zinc-900 dark:text-white text-lg">Edit Document</h3>
@@ -269,7 +269,7 @@ export const ArchiveModals: React.FC = () => {
               <button
                 type="button"
                 onClick={handleSaveEdit}
-                className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-400 transition"
+                className="px-4 py-2 bg-rose-500 text-white rounded-xl font-medium hover:bg-rose-600 transition"
               >
                 Save Changes
               </button>
@@ -280,7 +280,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Tags Modal */}
       {modals.tags && selectedItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => closeModal('tags')}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => closeModal('tags')}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-96 max-w-[90vw] animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-zinc-900 dark:text-white text-lg">Manage Tags</h3>
@@ -305,7 +305,7 @@ export const ArchiveModals: React.FC = () => {
               <button
                 type="button"
                 onClick={handleAddTag}
-                className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-400 transition"
+                className="px-4 py-2 bg-rose-500 text-white rounded-xl font-medium hover:bg-rose-600 transition"
               >
                 Add
               </button>
@@ -317,7 +317,7 @@ export const ArchiveModals: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleRemoveTag(tag)}
-                    className="text-zinc-400 hover:text-red-500 transition"
+                    className="text-zinc-400 hover:text-rose-500 transition"
                     title="Remove tag"
                   >
                     <X className="text-xs" />
@@ -334,7 +334,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Collection Picker Modal */}
       {modals.collectionPicker && selectedItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => closeModal('collectionPicker')}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => closeModal('collectionPicker')}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-96 max-w-[90vw] animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-zinc-900 dark:text-white text-lg">Add to Collection</h3>
@@ -371,7 +371,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Contact Picker Modal */}
       {modals.contactPicker && selectedItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => closeModal('contactPicker')}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => closeModal('contactPicker')}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-96 max-w-[90vw] animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-zinc-900 dark:text-white text-lg">Link to Contact</h3>
@@ -406,7 +406,7 @@ export const ArchiveModals: React.FC = () => {
                   {user.avatarUrl ? (
                     <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white text-xs font-bold">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center text-white text-xs font-bold">
                       {(user.displayName || user.fullName || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                     </div>
                   )}
@@ -423,7 +423,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Translate Modal */}
       {modals.translate && selectedItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => closeModal('translate')}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => closeModal('translate')}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-96 max-w-[90vw] animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-zinc-900 dark:text-white text-lg">Translate</h3>
@@ -465,7 +465,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Version History Modal */}
       {modals.history && selectedItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => closeModal('history')}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => closeModal('history')}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-[500px] max-w-[90vw] max-h-[80vh] overflow-hidden flex flex-col animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-zinc-900 dark:text-white text-lg">Version History</h3>
@@ -487,7 +487,7 @@ export const ArchiveModals: React.FC = () => {
               ) : (
                 versionHistory.map((version, i) => (
                   <div key={version.id} className="flex items-start gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800">
-                    <div className={`w-2 h-2 rounded-full mt-2 ${i === 0 ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                    <div className={`w-2 h-2 rounded-full mt-2 ${i === 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
                     <div className="flex-1">
                       <p className="text-sm text-zinc-900 dark:text-white">{version.action}</p>
                       <p className="text-xs text-zinc-500">
@@ -502,7 +502,7 @@ export const ArchiveModals: React.FC = () => {
                         type="button"
                         onClick={() => handleRestoreVersion(version)}
                         disabled={restoringVersion !== null}
-                        className="text-xs text-red-500 hover:text-red-400 transition disabled:opacity-50 flex items-center gap-1"
+                        className="text-xs text-rose-500 hover:text-rose-600 transition disabled:opacity-50 flex items-center gap-1"
                       >
                         {restoringVersion === version.id ? (
                           <>
@@ -524,13 +524,13 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {modals.deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => closeModal('deleteConfirm')}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => closeModal('deleteConfirm')}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-96 max-w-[90vw] animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-medium text-zinc-900 dark:text-white text-lg mb-2">Delete Archive Item</h3>
             <p className="text-sm text-zinc-500 mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => closeModal('deleteConfirm')} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">Cancel</button>
-              <button type="button" onClick={confirmDelete} className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-400 transition">Delete</button>
+              <button type="button" onClick={confirmDelete} className="px-4 py-2 bg-rose-500 text-white rounded-xl font-medium hover:bg-rose-600 transition">Delete</button>
             </div>
           </div>
         </div>
@@ -538,7 +538,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Action Items Result Modal */}
       {modals.actionItemsResult && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => closeModal('actionItemsResult')}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => closeModal('actionItemsResult')}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-[500px] max-w-[90vw] max-h-[80vh] overflow-hidden flex flex-col animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-zinc-900 dark:text-white text-lg">Extracted Action Items</h3>
@@ -549,7 +549,7 @@ export const ArchiveModals: React.FC = () => {
                 <p className="text-sm text-zinc-500 text-center py-4">No action items found in this content.</p>
               ) : modals.actionItemsResult.map((action, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800">
-                  <span className="w-6 h-6 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</span>
+                  <span className="w-6 h-6 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</span>
                   <p className="text-sm text-zinc-900 dark:text-white">{action}</p>
                 </div>
               ))}
@@ -560,7 +560,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Create Collection Modal */}
       {modals.createCollection && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => closeModal('createCollection')}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => closeModal('createCollection')}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-96 max-w-[90vw] animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-zinc-900 dark:text-white text-lg">New Collection</h3>
@@ -583,7 +583,7 @@ export const ArchiveModals: React.FC = () => {
                 <label className="block text-sm text-zinc-500 mb-1">Icon</label>
                 <div className="flex gap-2 flex-wrap">
                   {['fa-folder', 'fa-briefcase', 'fa-lightbulb', 'fa-book', 'fa-star', 'fa-heart', 'fa-bookmark', 'fa-tag'].map(icon => (
-                    <button type="button" key={icon} onClick={() => setNewCollectionIcon(icon)} className={`w-10 h-10 rounded-lg flex items-center justify-center transition border ${newCollectionIcon === icon ? 'bg-red-500/10 border-red-500 text-red-500' : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}>
+                    <button type="button" key={icon} onClick={() => setNewCollectionIcon(icon)} className={`w-10 h-10 rounded-lg flex items-center justify-center transition border ${newCollectionIcon === icon ? 'bg-rose-500/10 border-rose-500 text-rose-500' : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}>
                       <i className={`fa-solid ${icon}`}></i>
                     </button>
                   ))}
@@ -592,7 +592,7 @@ export const ArchiveModals: React.FC = () => {
             </div>
             <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800">
               <button type="button" onClick={() => closeModal('createCollection')} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">Cancel</button>
-              <button type="button" onClick={handleCreateCollection} disabled={!newCollectionName.trim()} className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed">Create Collection</button>
+              <button type="button" onClick={handleCreateCollection} disabled={!newCollectionName.trim()} className="px-4 py-2 bg-rose-500 text-white rounded-xl font-medium hover:bg-rose-600 transition disabled:opacity-50 disabled:cursor-not-allowed">Create Collection</button>
             </div>
           </div>
         </div>
@@ -600,7 +600,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Create Smart Folder Modal */}
       {modals.createSmartFolder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => closeModal('createSmartFolder')}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => closeModal('createSmartFolder')}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-[500px] max-w-[90vw] max-h-[80vh] overflow-hidden flex flex-col animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-zinc-900 dark:text-white text-lg">New Smart Folder</h3>
@@ -614,8 +614,8 @@ export const ArchiveModals: React.FC = () => {
               <div>
                 <label className="block text-sm text-zinc-500 mb-1">Match</label>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setNewFolderOperator('and')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${newFolderOperator === 'and' ? 'bg-red-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>ALL rules (AND)</button>
-                  <button type="button" onClick={() => setNewFolderOperator('or')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${newFolderOperator === 'or' ? 'bg-red-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>ANY rule (OR)</button>
+                  <button type="button" onClick={() => setNewFolderOperator('and')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${newFolderOperator === 'and' ? 'bg-rose-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>ALL rules (AND)</button>
+                  <button type="button" onClick={() => setNewFolderOperator('or')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${newFolderOperator === 'or' ? 'bg-rose-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>ANY rule (OR)</button>
                 </div>
               </div>
               <div>
@@ -665,19 +665,19 @@ export const ArchiveModals: React.FC = () => {
                         <input type="text" value={rule.value as string} onChange={(e) => { const updated = [...newFolderRules]; updated[i] = { ...rule, value: e.target.value }; setNewFolderRules(updated); }} className="flex-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white" placeholder="Value..." />
                       )}
                       {newFolderRules.length > 1 && (
-                        <button type="button" onClick={() => setNewFolderRules(newFolderRules.filter((_, idx) => idx !== i))} className="w-8 h-8 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-500/10 flex items-center justify-center transition"><X /></button>
+                        <button type="button" onClick={() => setNewFolderRules(newFolderRules.filter((_, idx) => idx !== i))} className="w-8 h-8 rounded-lg text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition"><X /></button>
                       )}
                     </div>
                   ))}
                 </div>
-                <button type="button" onClick={() => setNewFolderRules([...newFolderRules, { field: 'type', operator: 'equals', value: '' }])} className="mt-2 text-xs text-red-500 hover:text-red-400 flex items-center gap-1 transition">
+                <button type="button" onClick={() => setNewFolderRules([...newFolderRules, { field: 'type', operator: 'equals', value: '' }])} className="mt-2 text-xs text-rose-500 hover:text-rose-600 flex items-center gap-1 transition">
                   <Plus /> Add Rule
                 </button>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800">
               <button type="button" onClick={() => closeModal('createSmartFolder')} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">Cancel</button>
-              <button type="button" onClick={handleCreateSmartFolder} disabled={!newFolderName.trim() || newFolderRules.every(r => r.value === '')} className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed">Create Smart Folder</button>
+              <button type="button" onClick={handleCreateSmartFolder} disabled={!newFolderName.trim() || newFolderRules.every(r => r.value === '')} className="px-4 py-2 bg-rose-500 text-white rounded-xl font-medium hover:bg-rose-600 transition disabled:opacity-50 disabled:cursor-not-allowed">Create Smart Folder</button>
             </div>
           </div>
         </div>
@@ -685,7 +685,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Bulk Tag Modal */}
       {modals.bulkTag && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => closeModal('bulkTag')}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => closeModal('bulkTag')}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-96 max-w-[90vw] animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-zinc-900 dark:text-white text-lg">Tag {selectedItems.size} Items</h3>
@@ -693,7 +693,7 @@ export const ArchiveModals: React.FC = () => {
             </div>
             <div className="flex gap-2">
               <input type="text" value={bulkTagValue} onChange={(e) => setBulkTagValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleBulkTag()} className="flex-1 px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white text-sm" placeholder="Enter tag..." />
-              <button type="button" onClick={handleBulkTag} disabled={!bulkTagValue.trim()} className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-400 transition disabled:opacity-50">Add</button>
+              <button type="button" onClick={handleBulkTag} disabled={!bulkTagValue.trim()} className="px-4 py-2 bg-rose-500 text-white rounded-xl font-medium hover:bg-rose-600 transition disabled:opacity-50">Add</button>
             </div>
           </div>
         </div>
@@ -701,7 +701,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Bulk Collection Picker Modal */}
       {modals.bulkCollection && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => closeModal('bulkCollection')}>
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md flex items-center justify-center z-50" onClick={() => closeModal('bulkCollection')}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-96 max-w-[90vw] animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-zinc-900 dark:text-white text-lg">Add {selectedItems.size} Items to Collection</h3>

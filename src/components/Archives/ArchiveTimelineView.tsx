@@ -23,7 +23,7 @@ export const ArchiveTimelineView: React.FC = () => {
       {Object.entries(timelineByMonth).map(([month, events]) => (
         <div key={month} className="mb-6">
           <div className="relative pl-10 mb-3">
-            <div className="absolute left-2.5 w-3 h-3 rounded-full bg-red-500"></div>
+            <div className="absolute left-2.5 w-3 h-3 rounded-full bg-rose-500"></div>
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{month}</h3>
           </div>
           {events.map(event => {
@@ -34,10 +34,10 @@ export const ArchiveTimelineView: React.FC = () => {
                 onClick={() => archiveService.getArchive(event.archiveId).then(setSelectedItem)}
                 className="relative pl-10 mb-2 cursor-pointer group"
               >
-                <div className="absolute left-3 w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-700 group-hover:bg-red-500 transition"></div>
-                <div className="p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-red-500/30 transition">
+                <div className="absolute left-3 w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-700 group-hover:bg-rose-500 transition"></div>
+                <div className="p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-rose-500/30 transition">
                   <div className="flex items-center gap-2 mb-1">
-                    <i className={`fa-solid ${config.icon} ${config.color} text-xs`}></i>
+                    <config.Icon className={`${config.color} w-3 h-3`} />
                     <span className="text-[10px] text-zinc-500 font-mono">
                       {event.date.toLocaleDateString()} {event.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>

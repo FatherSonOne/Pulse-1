@@ -1,0 +1,576 @@
+/**
+ * Pulse Weekly Briefing — quiet reading column.
+ * Light + dark first-class. Inter for prose, JetBrains Mono for labels.
+ * Coral reserved for action; status colors carry signal kind.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/**
+ * Briefing surface tokens are aliased onto Pulse design system tokens.
+ * Component-local names stay for readability; values flow from --pulse-*.
+ */
+
+.pulse-briefing {
+  --briefing-bg: var(--pulse-canvas);
+  --briefing-surface: var(--pulse-surface);
+  --briefing-text: var(--pulse-ink);
+  --briefing-text-2: var(--pulse-ink-2);
+  --briefing-text-3: var(--pulse-ink-3);
+  --briefing-border: var(--pulse-border);
+  --briefing-border-strong: var(--pulse-border-strong);
+  --briefing-accent: var(--pulse-rose);
+  --briefing-accent-soft: var(--pulse-rose-soft);
+  --briefing-tone-positive: var(--pulse-tone-positive);
+  --briefing-tone-positive-soft: var(--pulse-tone-positive-soft);
+  --briefing-tone-warning: var(--pulse-tone-warning);
+  --briefing-tone-warning-soft: var(--pulse-tone-warning-soft);
+  --briefing-tone-overdue: var(--pulse-tone-overdue);
+  --briefing-tone-overdue-soft: var(--pulse-tone-overdue-soft);
+  --briefing-tone-info: var(--pulse-tone-info);
+  --briefing-tone-info-soft: var(--pulse-tone-info-soft);
+
+  --briefing-font: var(--pulse-font);
+  --briefing-mono: var(--pulse-font-mono);
+  --briefing-ease: var(--pulse-ease);
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--briefing-bg);
+  color: var(--briefing-text);
+  font-family: var(--briefing-font);
+  overflow-y: auto;
+}
+
+/* ─── Topbar ─── */
+
+.briefing-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--briefing-bg);
+  border-bottom: 1px solid var(--briefing-border);
+}
+
+.briefing-topbar-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  gap: 16px;
+}
+
+.briefing-header {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.briefing-title-block {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.briefing-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--briefing-text);
+}
+
+.briefing-week {
+  font-family: var(--briefing-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--briefing-text-3);
+}
+
+.briefing-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--briefing-border);
+  border-radius: 8px;
+  background: var(--briefing-surface);
+}
+
+.dark .briefing-nav {
+  background: var(--briefing-surface);
+}
+
+.briefing-nav-btn,
+.briefing-nav-today {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--briefing-text-2);
+  font-family: var(--briefing-font);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 6px 10px;
+  transition: background 0.22s var(--briefing-ease), color 0.22s var(--briefing-ease);
+}
+
+.briefing-nav-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
+
+.briefing-nav-btn:hover,
+.briefing-nav-today:hover {
+  background: var(--briefing-accent-soft);
+  color: var(--briefing-accent);
+}
+
+.briefing-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--briefing-border);
+  background: var(--briefing-surface);
+  color: var(--briefing-text-2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.22s var(--briefing-ease), border-color 0.22s var(--briefing-ease);
+}
+
+.briefing-close:hover {
+  color: var(--briefing-tone-overdue);
+  border-color: var(--briefing-tone-overdue);
+}
+
+/* ─── Main reading column ─── */
+
+.briefing-main {
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  flex: 1;
+}
+
+.briefing-loading {
+  margin: 48px 0;
+  font-size: 0.9375rem;
+  color: var(--briefing-text-3);
+}
+
+/* ─── Loading skeleton ─── */
+
+.briefing-skeleton {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.briefing-skel-lead,
+.briefing-skel-line {
+  height: 14px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.08) 50%,
+    rgba(0, 0, 0, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: briefingSkelShimmer 1.6s var(--briefing-ease) infinite;
+}
+
+.dark .briefing-skel-lead,
+.dark .briefing-skel-line {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 200% 100%;
+}
+
+.briefing-skel-lead {
+  height: 22px;
+  margin-bottom: 16px;
+  width: 70%;
+}
+
+.briefing-skel-line-short {
+  width: 55%;
+}
+
+@keyframes briefingSkelShimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .briefing-skel-lead,
+  .briefing-skel-line {
+    animation: none;
+  }
+}
+
+/* ─── Error state ─── */
+
+.briefing-error {
+  margin-top: 32px;
+  max-width: 540px;
+  padding: 20px 24px;
+  background: var(--briefing-tone-overdue-soft);
+  border: 1px solid var(--briefing-tone-overdue);
+  border-radius: 8px;
+}
+
+.briefing-error-title {
+  margin: 0 0 8px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--briefing-tone-overdue);
+  letter-spacing: -0.01em;
+}
+
+.briefing-error-body {
+  margin: 0 0 16px;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--briefing-text-2);
+  max-width: 65ch;
+}
+
+.briefing-error-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--briefing-accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-family: var(--briefing-font);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.22s var(--briefing-ease);
+}
+
+.briefing-error-retry:hover {
+  background: var(--briefing-accent);
+  filter: brightness(0.92);
+}
+
+/* ─── Footer kbd hints ─── */
+
+.briefing-footer kbd {
+  font-family: var(--briefing-mono);
+  font-size: 0.6875rem;
+  padding: 1px 5px;
+  border: 1px solid var(--briefing-border);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: var(--briefing-surface);
+  color: var(--briefing-text-2);
+  margin: 0 1px;
+}
+
+.dark .briefing-footer kbd {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ─── Empty state ─── */
+
+.briefing-empty {
+  margin-top: 32px;
+  max-width: 540px;
+}
+
+.briefing-empty-title {
+  margin: 0 0 16px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--briefing-text);
+}
+
+.briefing-empty-body {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--briefing-text-2);
+  max-width: 65ch;
+}
+
+.briefing-empty-body strong {
+  color: var(--briefing-text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.briefing-empty-hint {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--briefing-text-3);
+  max-width: 65ch;
+}
+
+/* ─── Article ─── */
+
+.briefing-article {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.briefing-lead {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: var(--briefing-text);
+  max-width: 70ch;
+}
+
+.briefing-lead-text {
+  font-weight: 400;
+}
+
+.briefing-provenance {
+  display: inline-block;
+  margin-right: 12px;
+  vertical-align: 2px;
+  padding: 3px 8px;
+  font-family: var(--briefing-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.briefing-provenance-ai {
+  background: var(--briefing-accent-soft);
+  color: var(--briefing-accent);
+}
+
+/* Template (deterministic) provenance — neutral, signals "not AI". */
+.briefing-provenance-template {
+  background: rgba(107, 114, 128, 0.10);
+  color: var(--briefing-text-3);
+}
+
+.dark .briefing-provenance-template {
+  background: rgba(107, 114, 128, 0.16);
+}
+
+.briefing-quiet {
+  margin: 0;
+  padding: 24px 0;
+  border-top: 1px solid var(--briefing-border);
+  border-bottom: 1px solid var(--briefing-border);
+  font-size: 0.9375rem;
+  color: var(--briefing-text-3);
+  text-align: center;
+  font-style: italic;
+}
+
+/* ─── Signal list ─── */
+
+.briefing-signals {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--briefing-border);
+}
+
+.briefing-signal {
+  border-bottom: 1px solid var(--briefing-border);
+}
+
+.briefing-signal-button {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: baseline;
+  gap: 16px;
+  width: 100%;
+  padding: 14px 0;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--briefing-text);
+  transition: background 0.22s var(--briefing-ease);
+  border-radius: 6px;
+}
+
+.briefing-signal-button:hover {
+  background: var(--briefing-accent-soft);
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.briefing-signal-button:focus-visible {
+  outline: 2px solid var(--briefing-accent);
+  outline-offset: 2px;
+}
+
+.briefing-signal-glyph {
+  font-size: 1rem;
+  line-height: 1;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.tone-positive .briefing-signal-glyph { color: var(--briefing-tone-positive); }
+.tone-warning  .briefing-signal-glyph { color: var(--briefing-tone-warning); }
+.tone-overdue  .briefing-signal-glyph { color: var(--briefing-tone-overdue); }
+.tone-info     .briefing-signal-glyph { color: var(--briefing-tone-info); }
+
+.briefing-signal-text {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--briefing-text);
+  max-width: 65ch;
+}
+
+.briefing-signal-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--briefing-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--briefing-text-3);
+  white-space: nowrap;
+}
+
+.briefing-signal-button:hover .briefing-signal-open {
+  color: var(--briefing-accent);
+}
+
+/* ─── Wins strip ─── */
+
+.briefing-wins {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.briefing-wins-label {
+  font-family: var(--briefing-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--briefing-text-3);
+}
+
+.briefing-wins-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.briefing-win-chip {
+  display: grid;
+  grid-template-columns: minmax(80px, auto) 1fr;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--briefing-tone-positive-soft);
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: border-color 0.22s var(--briefing-ease);
+}
+
+.briefing-win-chip:hover {
+  border-color: var(--briefing-tone-positive);
+}
+
+.briefing-win-from {
+  font-family: var(--briefing-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--briefing-tone-positive);
+  text-transform: uppercase;
+}
+
+.dark .briefing-win-from { color: var(--briefing-tone-positive); }
+
+.briefing-win-snippet {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--briefing-text-2);
+}
+
+/* ─── Footer ─── */
+
+.briefing-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--briefing-border);
+  font-family: var(--briefing-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--briefing-text-3);
+}
+
+/* ─── Reduced motion ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  .briefing-nav-btn,
+  .briefing-nav-today,
+  .briefing-close,
+  .briefing-signal-button,
+  .briefing-win-chip {
+    transition: none;
+  }
+}
+
+/* ─── Mobile ─── */
+
+@media (max-width: 640px) {
+  .briefing-topbar-inner,
+  .briefing-main {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .briefing-header {
+    gap: 12px;
+  }
+
+  .briefing-signal-button {
+    grid-template-columns: 20px 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 4px;
+  }
+
+  .briefing-signal-open {
+    grid-column: 2;
+  }
+}

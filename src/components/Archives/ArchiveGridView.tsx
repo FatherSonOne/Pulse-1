@@ -32,7 +32,7 @@ export const ArchiveGridView: React.FC<ArchiveGridViewProps> = ({ items }) => {
             onMouseLeave={() => setHoveredItem(null)}
             className={`p-4 rounded-xl cursor-pointer transition-all border group relative ${
               selectedItem?.id === item.id
-                ? 'bg-red-500/5 border-red-500/30'
+                ? 'bg-rose-500/5 border-rose-500/30'
                 : isSelected
                 ? 'bg-blue-500/5 border-blue-500/30'
                 : 'bg-white dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
@@ -42,7 +42,7 @@ export const ArchiveGridView: React.FC<ArchiveGridViewProps> = ({ items }) => {
               onClick={(e) => handleSelectItem(item.id, e)}
               className={`absolute top-2 left-2 w-5 h-5 rounded border flex items-center justify-center transition ${
                 isSelected
-                  ? 'bg-red-500 border-red-500 text-white'
+                  ? 'bg-rose-500 border-rose-500 text-white'
                   : 'border-zinc-300 dark:border-zinc-700 opacity-0 group-hover:opacity-100'
               }`}
             >
@@ -50,7 +50,7 @@ export const ArchiveGridView: React.FC<ArchiveGridViewProps> = ({ items }) => {
             </button>
             <div className="flex items-center justify-between mb-3">
               <div className={`w-10 h-10 rounded-xl ${config.bg} flex items-center justify-center`}>
-                <i className={`fa-solid ${config.icon} ${config.color}`}></i>
+                <config.Icon className={`${config.color} w-4 h-4`} />
               </div>
               {item.starred && <Star className="text-amber-500 text-xs" />}
             </div>

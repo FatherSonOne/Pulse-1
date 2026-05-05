@@ -8,18 +8,30 @@ import {
   CheckCircle2,
   Copy,
   FolderPlus,
+  Frown,
   HardDrive,
   History,
   Languages,
   Link,
+  Link2,
+  ListChecks,
   Loader2,
   Mail,
+  Maximize,
+  Meh,
+  Minimize,
+  Pin,
   Printer,
   Share2,
+  Smile,
+  Sparkles,
+  Square,
   SquarePen,
+  Star,
   Tags,
   Trash2,
   UserCog,
+  Volume2,
   Wand2,
 } from 'lucide-react';
 import { useArchiveStore } from '../../store/archiveStore';
@@ -159,7 +171,7 @@ export const ArchiveDetailView: React.FC = () => {
   return (
     <div className="flex flex-col h-full animate-fade-in">
       {/* Detail Header */}
-      <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black">
+      <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <button
@@ -175,7 +187,7 @@ export const ArchiveDetailView: React.FC = () => {
                 const config = getTypeConfig(selectedItem.type);
                 return (
                   <div className={`px-2.5 py-1 rounded-lg ${config.bg} ${config.border} border flex items-center gap-1.5`}>
-                    <i className={`fa-solid ${config.icon} ${config.color} text-xs`}></i>
+                    <config.Icon className={`${config.color} w-3 h-3`} />
                     <span className={`text-[10px] font-mono uppercase tracking-wider ${config.color}`}>
                       {getTypeLabel(selectedItem.type)}
                     </span>
@@ -185,10 +197,10 @@ export const ArchiveDetailView: React.FC = () => {
               {selectedItem.sentiment && (
                 <div className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 ${
                   selectedItem.sentiment === 'positive' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
-                  selectedItem.sentiment === 'negative' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
+                  selectedItem.sentiment === 'negative' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
                   'bg-zinc-500/10 border-zinc-500/20 text-zinc-500'
                 }`}>
-                  <i className={`fa-solid ${selectedItem.sentiment === 'positive' ? 'fa-face-smile' : selectedItem.sentiment === 'negative' ? 'fa-face-frown' : 'fa-face-meh'} text-xs`}></i>
+                  {selectedItem.sentiment === 'positive' ? <Smile className="w-3 h-3" /> : selectedItem.sentiment === 'negative' ? <Frown className="w-3 h-3" /> : <Meh className="w-3 h-3" />}
                   <span className="text-[10px] font-mono uppercase tracking-wider capitalize">{selectedItem.sentiment}</span>
                 </div>
               )}
@@ -212,7 +224,7 @@ export const ArchiveDetailView: React.FC = () => {
               className={`p-2 rounded-lg transition ${selectedItem.starred ? 'text-amber-500' : 'text-zinc-400 hover:text-amber-500'}`}
               title={selectedItem.starred ? 'Unstar' : 'Star'}
             >
-              <i className={`fa-${selectedItem.starred ? 'solid' : 'regular'} fa-star`}></i>
+              <Star className={`w-4 h-4 ${selectedItem.starred ? 'fill-current' : ''}`} />
             </button>
           </div>
         </div>
@@ -226,7 +238,7 @@ export const ArchiveDetailView: React.FC = () => {
               </span>
             ))}
             {selectedItem.aiTags?.map(tag => (
-              <span key={tag} className="px-2 py-1 bg-red-500/10 border border-red-500/20 rounded-lg text-[10px] text-red-500 font-mono">
+              <span key={tag} className="px-2 py-1 bg-rose-500/10 border border-rose-500/20 rounded-lg text-[10px] text-rose-500 font-mono">
                 <Wand2 className="mr-1" />{tag}
               </span>
             ))}
@@ -238,7 +250,7 @@ export const ArchiveDetailView: React.FC = () => {
           {/* Edit & Organize */}
           <button
             onClick={handleStartEdit}
-            className={`p-2 rounded-lg transition-all ${isEditing ? 'bg-red-500/10 text-red-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+            className={`p-2 rounded-lg transition-all ${isEditing ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
             title="Edit"
           >
             <SquarePen className="text-sm" />
@@ -248,7 +260,7 @@ export const ArchiveDetailView: React.FC = () => {
             className={`p-2 rounded-lg transition-all ${selectedItem.pinned ? 'bg-amber-500/10 text-amber-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
             title={selectedItem.pinned ? 'Unpin' : 'Pin'}
           >
-            <i className={`fa-solid fa-thumbtack text-sm ${selectedItem.pinned ? '' : 'rotate-45'}`}></i>
+            <Pin className={`w-4 h-4 ${selectedItem.pinned ? '' : 'rotate-45'}`} />
           </button>
           <button
             onClick={() => openModal('collectionPicker')}
@@ -271,33 +283,33 @@ export const ArchiveDetailView: React.FC = () => {
           <button
             onClick={handleSummarize}
             disabled={aiProcessing !== null}
-            className={`p-2 rounded-lg transition-all ${aiProcessing === 'summarize' ? 'bg-purple-500/10 text-purple-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-purple-500 hover:bg-purple-500/10'}`}
+            className={`p-2 rounded-lg transition-all ${aiProcessing === 'summarize' ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10'}`}
             title="AI Summarize"
           >
-            <i className={`fa-solid fa-wand-magic-sparkles text-sm ${aiProcessing === 'summarize' ? 'animate-pulse' : ''}`}></i>
+            <Sparkles className={`w-4 h-4 ${aiProcessing === 'summarize' ? 'animate-pulse' : ''}`} />
           </button>
           <button
             onClick={handleExtractActions}
             disabled={aiProcessing !== null}
-            className={`p-2 rounded-lg transition-all ${aiProcessing === 'extract' ? 'bg-green-500/10 text-green-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-green-500 hover:bg-green-500/10'}`}
+            className={`p-2 rounded-lg transition-all ${aiProcessing === 'extract' ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10'}`}
             title="Extract Action Items"
           >
-            <i className={`fa-solid fa-list-check text-sm ${aiProcessing === 'extract' ? 'animate-pulse' : ''}`}></i>
+            <ListChecks className={`w-4 h-4 ${aiProcessing === 'extract' ? 'animate-pulse' : ''}`} />
           </button>
           <button
             onClick={handleFindRelated}
             disabled={aiProcessing !== null}
-            className={`p-2 rounded-lg transition-all ${aiProcessing === 'related' ? 'bg-blue-500/10 text-blue-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10'}`}
+            className={`p-2 rounded-lg transition-all ${aiProcessing === 'related' ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10'}`}
             title="Find Related"
           >
-            <i className={`fa-solid fa-link text-sm ${aiProcessing === 'related' ? 'animate-pulse' : ''}`}></i>
+            <Link2 className={`w-4 h-4 ${aiProcessing === 'related' ? 'animate-pulse' : ''}`} />
           </button>
           <button
             onClick={() => openModal('translate')}
-            className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-cyan-500 hover:bg-cyan-500/10 transition-all"
+            className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all"
             title="Translate"
           >
-            <Languages className="text-sm" />
+            <Languages className="w-4 h-4" />
           </button>
 
           <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
@@ -347,7 +359,7 @@ export const ArchiveDetailView: React.FC = () => {
             className={`p-2 rounded-lg transition-all ${isFullscreen ? 'bg-zinc-800 text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
             title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           >
-            <i className={`fa-solid ${isFullscreen ? 'fa-compress' : 'fa-expand'} text-sm`}></i>
+            {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
           </button>
           <button
             onClick={handleTextToSpeech}
@@ -355,7 +367,7 @@ export const ArchiveDetailView: React.FC = () => {
             className={`p-2 rounded-lg transition-all ${ttsLoading ? 'bg-blue-500/10 text-blue-500' : isSpeaking ? 'bg-orange-500/10 text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'} disabled:opacity-50`}
             title={ttsLoading ? 'Loading audio...' : isSpeaking ? 'Stop Speaking' : 'Read Aloud'}
           >
-            <i className={`fa-solid ${ttsLoading ? 'fa-circle-notch fa-spin' : isSpeaking ? 'fa-stop' : 'fa-volume-high'} text-sm`}></i>
+            {ttsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isSpeaking ? <Square className="w-4 h-4 fill-current" /> : <Volume2 className="w-4 h-4" />}
           </button>
           <button
             onClick={handleShowHistory}
@@ -370,20 +382,21 @@ export const ArchiveDetailView: React.FC = () => {
       {/* Content */}
       <div className="flex-1 p-6 md:p-8 overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-6">
-          {/* AI Summary */}
+          {/* AI Summary — canonical PULSE AI · SUMMARY provenance pattern */}
           {selectedItem.aiSummary && (
-            <div className="bg-gradient-to-r from-red-500/5 to-transparent border-l-2 border-red-500 p-4 rounded-r-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <Wand2 className="text-red-500 text-xs" />
-                <span className="text-xs font-medium text-red-500">AI Summary</span>
+            <div className="bg-rose-500/[0.06] border border-rose-500/20 rounded-xl p-4">
+              <div className="inline-flex items-center gap-1.5 mb-2.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden />
+                <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-rose-600 dark:text-rose-400">
+                  Pulse AI · Summary
+                </span>
               </div>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">{selectedItem.aiSummary}</p>
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{selectedItem.aiSummary}</p>
             </div>
           )}
 
           {/* Main Content */}
-          <div className="bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 md:p-8 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-500 to-transparent"></div>
+          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 md:p-8">
             <div className="prose prose-zinc dark:prose-invert max-w-none">
               <pre className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap font-mono bg-transparent border-none p-0 m-0">
                 {selectedItem.content}
@@ -408,7 +421,7 @@ export const ArchiveDetailView: React.FC = () => {
                       className="flex items-center gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition text-left"
                     >
                       <div className={`w-8 h-8 rounded-lg ${config.bg} flex items-center justify-center`}>
-                        <i className={`fa-solid ${config.icon} ${config.color} text-xs`}></i>
+                        <config.Icon className={`${config.color} w-3 h-3`} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-medium text-zinc-900 dark:text-white truncate">{item.title}</h4>
@@ -424,11 +437,11 @@ export const ArchiveDetailView: React.FC = () => {
       </div>
 
       {/* Footer Actions */}
-      <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black flex items-center justify-between">
+      <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
             onClick={(e) => handleDelete(selectedItem.id, e)}
-            className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-xl text-xs font-medium hover:border-red-500/50 hover:text-red-500 transition flex items-center gap-2"
+            className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-xl text-xs font-medium hover:border-rose-500/50 hover:text-rose-500 transition flex items-center gap-2"
           >
             <Trash2 /> Delete
           </button>
@@ -463,7 +476,7 @@ export const ArchiveDetailView: React.FC = () => {
           )}
           <button
             onClick={() => handleShare(selectedItem)}
-            className="px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-bold hover:bg-red-400 transition flex items-center gap-2"
+            className="px-4 py-2 bg-rose-500 text-white rounded-xl text-xs font-bold hover:bg-rose-600 transition flex items-center gap-2"
           >
             <Share2 /> Share
           </button>

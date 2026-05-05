@@ -1296,7 +1296,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       { id: 'nav-calendar', label: 'Calendar', desc: 'Schedule and tasks', view: AppView.CALENDAR, icon: 'fa-calendar' },
       { id: 'nav-relay', label: 'Relay', desc: 'Voice messages and notes', view: AppView.RELAY, icon: 'fa-microphone' },
       { id: 'nav-contacts', label: 'Contacts', desc: 'People and teams', view: AppView.CONTACTS, icon: 'fa-users' },
-      { id: 'nav-archives', label: 'Archives', desc: 'Saved items and journals', view: AppView.ARCHIVES, icon: 'fa-box-archive' },
+      { id: 'nav-archives', label: 'Memory', desc: 'Every word, every voice — find any conversation', view: AppView.ARCHIVES, icon: 'fa-box-archive' },
       { id: 'nav-settings', label: 'Settings', desc: 'Preferences and account', view: AppView.SETTINGS, icon: 'fa-gear' },
       { id: 'nav-dashboard', label: 'Dashboard', desc: 'You are here', view: AppView.DASHBOARD, icon: 'fa-house' },
     ];

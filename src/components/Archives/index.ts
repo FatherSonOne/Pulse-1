@@ -6,5 +6,5 @@ export { ArchiveListView } from './ArchiveListView';
 export { ArchiveGridView } from './ArchiveGridView';
 export { ArchiveTimelineView } from './ArchiveTimelineView';
 export { ArchiveDetailView } from './ArchiveDetailView';
-export { ArchiveStatsPanel } from './ArchiveStatsPanel';
+export { MemoryOverviewPanel } from './MemoryOverviewPanel';
 export { getTypeConfig, getTypeLabel } from './archiveHelpers';

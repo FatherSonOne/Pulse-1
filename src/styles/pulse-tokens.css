@@ -1,0 +1,96 @@
+/**
+ * Pulse Design System Tokens
+ *
+ * Canonical brand + status palette per DESIGN.md.
+ * Components consume these via var(--pulse-*) — never redeclare locally.
+ *
+ * Light is the default; .dark on html overrides via the second :root block.
+ *
+ * Adoption: imported once at the app root via index.css. Components that
+ * still hardcode #f43f5e, #22c55e, etc. can migrate piecemeal — this file
+ * is the seed for that migration.
+ */
+
+:root {
+  /* ─── Brand: Rose Pulse heartbeat ─── */
+  --pulse-rose: #f43f5e;
+  --pulse-rose-deep: #e11d48;
+  --pulse-rose-bright: #fb7185;
+  --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+  --pulse-rose-glow: rgba(244, 63, 94, 0.25);
+
+  /* ─── Status vocabulary (Status-Stays-Status rule) ─── */
+  --pulse-tone-positive: #22c55e;
+  --pulse-tone-positive-soft: rgba(34, 197, 94, 0.10);
+  --pulse-tone-positive-glow: rgba(34, 197, 94, 0.30);
+  --pulse-tone-warning: #f97316;
+  --pulse-tone-warning-soft: rgba(249, 115, 22, 0.10);
+  --pulse-tone-warning-glow: rgba(249, 115, 22, 0.30);
+  --pulse-tone-overdue: #ef4444;
+  --pulse-tone-overdue-soft: rgba(239, 68, 68, 0.10);
+  --pulse-tone-overdue-glow: rgba(239, 68, 68, 0.30);
+  --pulse-tone-info: #3b82f6;
+  --pulse-tone-info-soft: rgba(59, 130, 246, 0.10);
+  --pulse-tone-info-glow: rgba(59, 130, 246, 0.30);
+  --pulse-tone-neutral: #6b7280;
+  --pulse-tone-neutral-soft: rgba(107, 114, 128, 0.10);
+  --pulse-tone-neutral-glow: rgba(107, 114, 128, 0.25);
+
+  /* ─── Surfaces — light ─── */
+  --pulse-canvas: #f8f8f8;          /* paper-warm */
+  --pulse-canvas-soft: #f2f2f2;
+  --pulse-surface: #ffffff;          /* card */
+  --pulse-border: rgba(0, 0, 0, 0.08);
+  --pulse-border-strong: rgba(0, 0, 0, 0.16);
+
+  /* ─── Ink — light ─── */
+  --pulse-ink: #0f0f0f;
+  --pulse-ink-2: #52525b;
+  --pulse-ink-3: #6b7280;
+
+  /* ─── Type ─── */
+  --pulse-font: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  --pulse-font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+  /* ─── Motion ─── */
+  --pulse-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --pulse-duration: 220ms;
+}
+
+.dark {
+  /* ─── Brand — dark variant ─── */
+  --pulse-rose: #fb7185;
+  --pulse-rose-deep: #e11d48;
+  --pulse-rose-bright: #fda4af;
+  --pulse-rose-soft: rgba(244, 63, 94, 0.12);
+  --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+
+  /* ─── Status — slightly lifted ─── */
+  --pulse-tone-positive: #4ade80;
+  --pulse-tone-positive-soft: rgba(74, 222, 128, 0.12);
+  --pulse-tone-positive-glow: rgba(74, 222, 128, 0.40);
+  --pulse-tone-warning: #fb923c;
+  --pulse-tone-warning-soft: rgba(251, 146, 60, 0.12);
+  --pulse-tone-warning-glow: rgba(251, 146, 60, 0.35);
+  --pulse-tone-overdue: #f87171;
+  --pulse-tone-overdue-soft: rgba(248, 113, 113, 0.12);
+  --pulse-tone-overdue-glow: rgba(248, 113, 113, 0.40);
+  --pulse-tone-info: #60a5fa;
+  --pulse-tone-info-soft: rgba(96, 165, 250, 0.12);
+  --pulse-tone-info-glow: rgba(96, 165, 250, 0.35);
+  --pulse-tone-neutral: #6b7280;
+  --pulse-tone-neutral-soft: rgba(107, 114, 128, 0.14);
+  --pulse-tone-neutral-glow: rgba(107, 114, 128, 0.30);
+
+  /* ─── Surfaces — dark (true black + translucent) ─── */
+  --pulse-canvas: #000000;
+  --pulse-canvas-soft: #080808;
+  --pulse-surface: rgba(255, 255, 255, 0.03);
+  --pulse-border: rgba(255, 255, 255, 0.06);
+  --pulse-border-strong: rgba(255, 255, 255, 0.10);
+
+  /* ─── Ink — dark ─── */
+  --pulse-ink: #fafafa;
+  --pulse-ink-2: #b4b4b8;
+  --pulse-ink-3: #6b7280;
+}
