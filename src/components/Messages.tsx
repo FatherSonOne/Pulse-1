@@ -1126,6 +1126,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         return;
       }
 
+      // Ctrl+N or Cmd+N — open new conversation modal
+      if (ctrl && !shift && key === 'n') {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowNewChatModal(true);
+        return;
+      }
+
       // Tool shortcuts (Ctrl+Shift+Key)
       if (ctrl && shift) {
         let toolId: string | null = null;
@@ -3002,7 +3010,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   }, []);
 
   // Phase III: J/K/Enter cursor navigation, R focus composer, ? shortcuts
-  // overlay. E (archive) deferred until Pulse archive backend exists.
   // MUST be before any early returns (Rules of Hooks).
   const keyboardDisabled =
     showFeatureSettings || showCommandPalette || showOutcomeSetup ||
@@ -3020,6 +3027,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     onFocusComposer: () => {
       const el = document.querySelector('[data-composer="pulse"]');
       if (el && 'focus' in el) (el as HTMLElement).focus();
+    },
+    onArchiveConversation: (id: string) => {
+      messageEnhancements.toggleThreadArchive(id);
     },
     onToggleShortcutsOverlay: () => setShowShortcuts(prev => !prev),
     disabled: keyboardDisabled,

@@ -153,6 +153,7 @@ browser-extension/src/config.js
 !.claude/commands/**/*.md
 !.claude/skills/**/*.md
 !.claude/prompts/**/*.md
+!docs/reports/*.md
 docs/*.md
 
 # Generated helper files
