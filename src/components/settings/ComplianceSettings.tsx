@@ -14,6 +14,8 @@ import {
 import toast from 'react-hot-toast';
 import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
 import { workspaceService, AuditLogEntry } from '../../services/workspaceService';
+import { SettingsCard } from './shared/SettingsCard';
+import { MonoLabel } from './shared/MonoLabel';
 
 const DPA_URL = '/legal/pulse-dpa.pdf';
 const DPA_REQUEST_EMAIL = 'legal@quantumecosystems.com';
@@ -162,10 +164,10 @@ export const ComplianceSettings: React.FC = () => {
       </div>
 
       {/* DPA */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+      <SettingsCard className="space-y-4">
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-zinc-500" />
-          <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Data Processing Agreement</h4>
+          <MonoLabel>Data Processing Agreement</MonoLabel>
         </div>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Our DPA describes how Quantum Ecosystems processes your organization's personal data under GDPR.
@@ -207,13 +209,13 @@ export const ComplianceSettings: React.FC = () => {
             </a>
           </div>
         )}
-      </div>
+      </SettingsCard>
 
       {/* Data residency */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+      <SettingsCard className="space-y-4">
         <div className="flex items-center gap-2">
           <MapPin className="w-4 h-4 text-zinc-500" />
-          <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Data residency</h4>
+          <MonoLabel>Data residency</MonoLabel>
         </div>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Where your organization's data is stored and processed. See the DPA Schedule 1 for the full subprocessor list.
@@ -232,14 +234,14 @@ export const ComplianceSettings: React.FC = () => {
           Cross-border transfers (e.g. to AI subprocessors in the United States) are governed by the
           EU Standard Contractual Clauses where applicable.
         </p>
-      </div>
+      </SettingsCard>
 
       {/* Audit log export */}
       {isAdmin && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+        <SettingsCard className="space-y-4">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-zinc-500" />
-            <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Audit log export</h4>
+            <MonoLabel>Audit log export</MonoLabel>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             Download up to the last 1,000 audit entries as CSV — useful for compliance reviews and
@@ -257,15 +259,15 @@ export const ComplianceSettings: React.FC = () => {
               <><Download className="w-4 h-4" /> Export Audit Log (CSV)</>
             )}
           </button>
-        </div>
+        </SettingsCard>
       )}
 
       {/* Legal hold — owner only */}
       {isOwner && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+        <SettingsCard className="space-y-4">
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-zinc-500" />
-            <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Legal hold</h4>
+            <MonoLabel>Legal hold</MonoLabel>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             When enabled, the organization cannot be permanently deleted — even by the owner.
@@ -299,7 +301,7 @@ export const ComplianceSettings: React.FC = () => {
               </p>
             </div>
           </label>
-        </div>
+        </SettingsCard>
       )}
 
       {/* Footer link to subprocessors */}

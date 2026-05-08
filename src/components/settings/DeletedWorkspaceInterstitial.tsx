@@ -67,7 +67,7 @@ export const DeletedWorkspaceInterstitial: React.FC<DeletedWorkspaceInterstitial
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-4">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-4">
       <div className="max-w-lg w-full space-y-6">
         {/* Header */}
         <div className="text-center space-y-3">

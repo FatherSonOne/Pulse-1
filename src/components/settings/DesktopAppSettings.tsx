@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Monitor } from 'lucide-react';
 import { settingsService } from '../../services/settingsService';
 import { ToggleItem } from './shared/ToggleItem';
+import { SettingsCard } from './shared/SettingsCard';
+import { MonoLabel } from './shared/MonoLabel';
 
 export const DesktopAppSettings: React.FC = () => {
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -34,7 +36,7 @@ export const DesktopAppSettings: React.FC = () => {
         <h3><Monitor /> Desktop App</h3>
         <p>Customize Pulse desktop app behavior on your system.</p>
       </div>
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-6">
+      <SettingsCard className="space-y-6">
         <ToggleItem
           label="Remember Window Position"
           desc="Restore the window to its last position and size on launch"
@@ -72,7 +74,7 @@ export const DesktopAppSettings: React.FC = () => {
         />
         <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
         <div>
-          <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">Notification Style</label>
+          <MonoLabel as="label" className="mb-3 block">Notification Style</MonoLabel>
           <div className="flex gap-3">
             {(['native', 'in-app'] as const).map((style) => (
               <button
@@ -84,7 +86,7 @@ export const DesktopAppSettings: React.FC = () => {
                 }}
                 className={`flex-1 py-2 border rounded-lg text-sm font-medium transition ${
                   desktopNotificationStyle === style
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                    ? 'border-rose-500 bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400'
                     : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300'
                 }`}
               >
@@ -93,7 +95,7 @@ export const DesktopAppSettings: React.FC = () => {
             ))}
           </div>
         </div>
-      </div>
+      </SettingsCard>
     </div>
   );
 };

@@ -5,6 +5,8 @@ import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '
 import { workspaceService, AuditLogEntry, OrgSizeBucket } from '../../services/workspaceService';
 import { DeleteWorkspaceDialog } from './DeleteWorkspaceDialog';
 import { supabase } from '../../services/supabase';
+import { SettingsCard } from './shared/SettingsCard';
+import { MonoLabel } from './shared/MonoLabel';
 
 const SIZE_OPTIONS: { value: OrgSizeBucket; label: string }[] = [
   { value: '1-10',   label: '1–10' },
@@ -252,11 +254,11 @@ export const WorkspaceSettings: React.FC = () => {
       </div>
 
       {/* Avatar + Edit fields */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+      <SettingsCard className="space-y-4">
         {/* Avatar */}
         <div className="flex items-center gap-4">
           <div className="relative group">
-            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
+            <div className="w-16 h-16 rounded-xl bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-rose-500 dark:text-rose-400 text-xl font-semibold overflow-hidden">
               {currentWorkspace.avatar_url ? (
                 <img src={currentWorkspace.avatar_url} alt={currentWorkspace.name} className="w-full h-full object-cover" />
               ) : (
@@ -268,7 +270,7 @@ export const WorkspaceSettings: React.FC = () => {
                 type="button"
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 rounded-xl transition"
+                className="absolute inset-0 flex items-center justify-center bg-zinc-950/60 opacity-0 group-hover:opacity-100 rounded-xl transition"
               >
                 {isUploadingAvatar ? (
                   <Loader2 className="w-5 h-5 text-white animate-spin" />
@@ -376,14 +378,14 @@ export const WorkspaceSettings: React.FC = () => {
             </button>
           </div>
         )}
-      </div>
+      </SettingsCard>
 
       {/* Membership policy — admin+ */}
       {isAdmin && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+        <SettingsCard className="space-y-4">
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-zinc-500" />
-            <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Membership policy</h4>
+            <MonoLabel>Membership policy</MonoLabel>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             When enabled, anyone signing up with this email domain automatically joins your organization as a Member.
@@ -425,15 +427,15 @@ export const WorkspaceSettings: React.FC = () => {
               {isSavingMembership ? 'Saving...' : 'Save Policy'}
             </button>
           </div>
-        </div>
+        </SettingsCard>
       )}
 
       {/* Billing contact — admin+ */}
       {isAdmin && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+        <SettingsCard className="space-y-4">
           <div className="flex items-center gap-2">
             <Mail className="w-4 h-4 text-zinc-500" />
-            <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Billing contact</h4>
+            <MonoLabel>Billing contact</MonoLabel>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             Where invoices, receipts, and payment notices are sent. Defaults to the owner's email if empty.
@@ -459,16 +461,16 @@ export const WorkspaceSettings: React.FC = () => {
               {isSavingBilling ? 'Saving...' : 'Save Contact'}
             </button>
           </div>
-        </div>
+        </SettingsCard>
       )}
 
       {/* Transfer Ownership — owner only */}
       {isOwner && nonOwnerMembers.length > 0 && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+        <SettingsCard className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ArrowRightLeft className="w-4 h-4 text-zinc-500" />
-              <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Transfer Ownership</h4>
+              <MonoLabel>Transfer Ownership</MonoLabel>
             </div>
             <button
               type="button"
@@ -506,12 +508,12 @@ export const WorkspaceSettings: React.FC = () => {
               </button>
             </div>
           )}
-        </div>
+        </SettingsCard>
       )}
 
       {/* Audit Log — admin+ */}
       {isAdmin && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+        <SettingsCard padded={false} className="overflow-hidden">
           <button
             type="button"
             onClick={() => setShowAuditLog(!showAuditLog)}
@@ -519,7 +521,7 @@ export const WorkspaceSettings: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <ScrollText className="w-4 h-4 text-zinc-500" />
-              <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Audit Log</h4>
+              <MonoLabel>Audit Log</MonoLabel>
             </div>
             <span className="text-xs text-zinc-400">{showAuditLog ? 'Hide' : 'Show'}</span>
           </button>
@@ -553,7 +555,7 @@ export const WorkspaceSettings: React.FC = () => {
               )}
             </div>
           )}
-        </div>
+        </SettingsCard>
       )}
 
       {/* Danger Zone — only for owner/admin */}

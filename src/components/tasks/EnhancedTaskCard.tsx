@@ -115,16 +115,6 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
     await onDelete(task.id);
   };
 
-  const getPriorityColor = (priority: Task['priority']) => {
-    switch (priority) {
-      case 'urgent': return '#ef4444';
-      case 'high': return '#f59e0b';
-      case 'medium': return '#10b981';
-      case 'low':
-      default: return '#6b7280';
-    }
-  };
-
   const isOverdue = (): boolean => {
     if (!task.deadline || task.status === 'done') return false;
     return new Date(task.deadline) < new Date();
@@ -206,16 +196,16 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
         <div className="task-header">
           <h4 className="task-title">{task.title}</h4>
           <div className="task-badges">
-            {/* Manual Priority Badge */}
-            <div
-              className="task-priority-badge"
-              style={{
-                backgroundColor: `${getPriorityColor(task.priority)}15`,
-                color: getPriorityColor(task.priority)
-              }}
-            >
-              {task.priority}
-            </div>
+            {/* Manual Priority Badge — driven by class, not inline color, so
+                priority intensity is decoupled from status colors and dark
+                mode is a clean override (DESIGN.md: Status-Stays-Status Rule).
+                Low priority hides the pill entirely; "low" is the default,
+                showing it for every untriaged card adds visual chatter. */}
+            {task.priority && task.priority !== 'low' && (
+              <div className={`task-priority-badge priority-${task.priority}`}>
+                {task.priority}
+              </div>
+            )}
 
             {/* AI Priority Score Badge */}
             {aiScore !== null && (

@@ -139,13 +139,13 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
       {/* Page header */}
       <div>
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600/20 to-purple-600/20 border border-violet-500/30 flex items-center justify-center">
-            <Zap className="w-5 h-5 text-violet-500 dark:text-violet-400" />
+          <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+            <Zap className="w-5 h-5 text-rose-500 dark:text-rose-400" />
           </div>
           <div>
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
               Ecosystem Bridge
-              <span className="text-[10px] font-bold uppercase tracking-widest text-violet-500 dark:text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-rose-500 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-full">
                 QNTMECOS
               </span>
             </h2>
@@ -153,12 +153,12 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
               Connect Logos Vision, Pulse &amp; Entomate
             </p>
           </div>
-          {ecosystemLoading && <Loader2 className="w-4 h-4 text-violet-500 dark:text-violet-400 animate-spin ml-auto" />}
+          {ecosystemLoading && <Loader2 className="w-4 h-4 text-rose-500 dark:text-rose-400 animate-spin ml-auto" />}
         </div>
       </div>
 
       {/* ── TRIFECTA OVERVIEW ── */}
-      <div className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.03] dark:bg-violet-500/5 p-5 space-y-4">
+      <div className="rounded-2xl border border-rose-500/20 bg-rose-500/[0.03] dark:bg-rose-500/5 p-5 space-y-4">
         <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           The QNTMECOS Trifecta
         </div>
@@ -180,7 +180,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
                   ? 'border-emerald-500/20 bg-emerald-500/5'
                   : isConnected
                   ? 'border-zinc-300/60 dark:border-zinc-600/50 bg-zinc-50 dark:bg-white/[0.02]'
-                  : 'border-zinc-200 dark:border-zinc-700/40 bg-zinc-50/50 dark:bg-black/10'
+                  : 'border-zinc-200 dark:border-zinc-700/40 bg-zinc-50/50 dark:bg-zinc-950/40'
               }`}>
                 <EcosystemAppLogo app={appKey} size={40} />
                 <div className="text-center">
@@ -217,12 +217,12 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
             const isActive = appKey === 'pulse' || !!config?.enabled;
             return (
               <React.Fragment key={appKey}>
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-violet-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-rose-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
                   style={isActive ? { boxShadow: '0 0 6px #8b5cf6' } : {}} />
                 {idx < ECOSYSTEM_APP_ORDER.length - 1 && (
                   <div className="flex-1 h-px relative overflow-hidden">
                     <div className={`h-full ${config?.enabled
-                      ? 'bg-gradient-to-r from-violet-500/60 to-violet-500/60'
+                      ? 'bg-gradient-to-r from-rose-500/60 to-rose-500/60'
                       : 'bg-zinc-200 dark:bg-zinc-700/50'
                     }`} />
                     {config?.enabled && (
@@ -262,10 +262,10 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
                         <span className={`w-2 h-2 rounded-full ${config.enabled ? 'bg-emerald-500' : 'bg-zinc-400 dark:bg-zinc-600'}`}
                           style={config.enabled ? { boxShadow: '0 0 4px #10b981' } : {}} />
                       </div>
-                      <div className="text-[10px] text-violet-600/70 dark:text-violet-300/60 font-mono mt-0.5 break-all leading-relaxed">Inbound: {config.api_url}</div>
+                      <div className="text-[10px] text-rose-600/70 dark:text-rose-300/60 font-mono mt-0.5 break-all leading-relaxed">Inbound: {config.api_url}</div>
                       <div className="text-[10px] font-mono mt-0.5 break-all leading-relaxed">
                         {config.bot_url ? (
-                          <span className="text-violet-600/70 dark:text-violet-300/60">Bot API: {config.bot_url}</span>
+                          <span className="text-rose-600/70 dark:text-rose-300/60">Bot API: {config.bot_url}</span>
                         ) : (
                           <span className="text-zinc-400 dark:text-zinc-600">Bot API: Not configured</span>
                         )}
@@ -309,10 +309,10 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
                   </div>
 
                   {expandedConfigTokens === config.id && (
-                    <div className="border-t border-zinc-200 dark:border-white/[0.06] px-4 py-3 bg-zinc-100/60 dark:bg-black/20 space-y-2">
+                    <div className="border-t border-zinc-200 dark:border-white/[0.06] px-4 py-3 bg-zinc-100/60 dark:bg-zinc-950/50 space-y-2">
                       <p className="text-[10px] text-zinc-500 mb-2">
                         Copy these into <span className="text-zinc-900 dark:text-white font-medium">{appMeta.name}</span>'s{' '}
-                        <code className="text-violet-600 dark:text-violet-300">ecosystem_config</code> table — values are <strong>swapped</strong>.
+                        <code className="text-rose-600 dark:text-rose-300">ecosystem_config</code> table — values are <strong>swapped</strong>.
                       </p>
                       {[
                         { label: `Pulse → ${appMeta.name}`, value: config.service_token, hint: `paste as inbound_token in ${appMeta.name}`, key: `svc-${config.id}` },
@@ -326,7 +326,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
                               {copiedToken === key ? '✓ Copied' : 'Copy'}
                             </button>
                           </div>
-                          <div className="font-mono text-[10px] text-zinc-600 dark:text-zinc-400 bg-white dark:bg-black/30 rounded px-2 py-1.5 truncate border border-zinc-200 dark:border-white/[0.04]">
+                          <div className="font-mono text-[10px] text-zinc-600 dark:text-zinc-400 bg-white dark:bg-zinc-950/60 rounded px-2 py-1.5 truncate border border-zinc-200 dark:border-white/[0.04]">
                             {value}
                           </div>
                           <p className="text-[9px] text-zinc-400 dark:text-zinc-600 mt-0.5">→ {hint}</p>
@@ -360,7 +360,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
             }}
             title="Select app to connect"
             aria-label="Select app to connect"
-            className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 transition"
+            className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-rose-500 transition"
           >
             <option value="entomate">Entomate</option>
             <option value="logos_vision">Logos Vision</option>
@@ -371,7 +371,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
         <div>
           <label className="block text-xs text-zinc-500 mb-1">
             Inbound URL
-            <span className="ml-1.5 text-violet-500 dark:text-violet-400 opacity-70">(auto-filled)</span>
+            <span className="ml-1.5 text-rose-500 dark:text-rose-400 opacity-70">(auto-filled)</span>
           </label>
           <input
             type="url"
@@ -380,7 +380,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
             title="Inbound URL for selected app"
             placeholder="Auto-filled from app selection"
             aria-label="Inbound URL for selected app"
-            className="w-full px-3 py-2 bg-zinc-100 dark:bg-zinc-900 border border-violet-500/20 rounded-lg text-xs text-violet-600 dark:text-violet-300 font-mono cursor-default select-all"
+            className="w-full px-3 py-2 bg-zinc-100 dark:bg-zinc-900 border border-rose-500/20 rounded-lg text-xs text-rose-600 dark:text-rose-300 font-mono cursor-default select-all"
           />
         </div>
 
@@ -397,17 +397,17 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
             placeholder="No bot API configured for this app"
             title="Bot API URL for selected app"
             aria-label="Bot API URL for selected app"
-            className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition"
+            className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-rose-500 transition"
           />
         </div>
 
         {/* Token how-it-works hint */}
-        <div className="rounded-lg bg-violet-500/[0.07] dark:bg-violet-500/10 border border-violet-500/20 p-3 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-          <span className="text-violet-600 dark:text-violet-300 font-semibold block mb-1">How tokens work:</span>
+        <div className="rounded-lg bg-rose-500/[0.07] dark:bg-rose-500/10 border border-rose-500/20 p-3 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+          <span className="text-rose-600 dark:text-rose-300 font-semibold block mb-1">How tokens work:</span>
           <span className="font-semibold text-zinc-800 dark:text-zinc-300">Service token</span> = what Pulse sends when calling <em>their</em> API.
-          Paste into the other app's <code className="text-violet-600 dark:text-violet-300">inbound_token</code>.<br />
+          Paste into the other app's <code className="text-rose-600 dark:text-rose-300">inbound_token</code>.<br />
           <span className="font-semibold text-zinc-800 dark:text-zinc-300">Inbound token</span> = what they send when calling Pulse.
-          Paste into the other app's <code className="text-violet-600 dark:text-violet-300">service_token</code>.
+          Paste into the other app's <code className="text-rose-600 dark:text-rose-300">service_token</code>.
         </div>
 
         {/* Service Token */}
@@ -416,7 +416,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
             <label className="text-xs text-zinc-500">Service Token — Pulse → {newAppName.replace('_', ' ')}</label>
             <div className="flex gap-1">
               <button type="button" onClick={() => setNewServiceToken(generateToken())}
-                className="text-[10px] px-2 py-0.5 rounded bg-violet-500/15 hover:bg-violet-500/25 text-violet-600 dark:text-violet-300 border border-violet-500/25 transition">
+                className="text-[10px] px-2 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-300 border border-rose-500/25 transition">
                 Generate
               </button>
               {newServiceToken && (
@@ -432,7 +432,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
             value={newServiceToken}
             onChange={(e) => setNewServiceToken(e.target.value)}
             placeholder="Click Generate or paste existing token"
-            className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition"
+            className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-rose-500 transition"
           />
           {newServiceToken && (
             <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">
@@ -447,7 +447,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
             <label className="text-xs text-zinc-500">Inbound Token — {newAppName.replace('_', ' ')} → Pulse</label>
             <div className="flex gap-1">
               <button type="button" onClick={() => setNewInboundToken(generateToken())}
-                className="text-[10px] px-2 py-0.5 rounded bg-violet-500/15 hover:bg-violet-500/25 text-violet-600 dark:text-violet-300 border border-violet-500/25 transition">
+                className="text-[10px] px-2 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-300 border border-rose-500/25 transition">
                 Generate
               </button>
               {newInboundToken && (
@@ -463,7 +463,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
             value={newInboundToken}
             onChange={(e) => setNewInboundToken(e.target.value)}
             placeholder="Click Generate or paste existing token"
-            className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition"
+            className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-rose-500 transition"
           />
           {newInboundToken && (
             <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">
@@ -476,7 +476,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
           type="button"
           onClick={saveEcosystemConfig}
           disabled={ecosystemSaving || !newApiUrl || !newServiceToken || !newInboundToken}
-          className="w-full py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white transition flex items-center justify-center gap-2"
+          className="w-full py-2 rounded-lg text-sm font-semibold bg-rose-500 hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white transition flex items-center justify-center gap-2"
         >
           {ecosystemSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
           {ecosystemSaving ? 'Saving...' : 'Save Connection'}
@@ -485,20 +485,20 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
 
       {/* ── BOT CHANNEL SETUP ── */}
       {ecosystemConfigs.some(c => c.app_name === 'entomate' && c.enabled) && (
-        <div className="rounded-xl bg-violet-500/[0.07] dark:bg-violet-500/10 border border-violet-500/20 p-4 space-y-3">
-          <div className="text-xs font-bold text-violet-600 dark:text-violet-300 uppercase tracking-wider flex items-center gap-1.5">
+        <div className="rounded-xl bg-rose-500/[0.07] dark:bg-rose-500/10 border border-rose-500/20 p-4 space-y-3">
+          <div className="text-xs font-bold text-rose-600 dark:text-rose-300 uppercase tracking-wider flex items-center gap-1.5">
             <Bot className="w-3 h-3" />
             Bot Channel Setup
           </div>
           <p className="text-xs text-zinc-600 dark:text-zinc-400">
-            Creates <code className="text-violet-600 dark:text-violet-300">#entomate-meetings</code>,{' '}
-            <code className="text-violet-600 dark:text-violet-300">#entomate-tasks</code>,{' '}
-            <code className="text-violet-600 dark:text-violet-300">#entomate-alerts</code> in the default workspace.
+            Creates <code className="text-rose-600 dark:text-rose-300">#entomate-meetings</code>,{' '}
+            <code className="text-rose-600 dark:text-rose-300">#entomate-tasks</code>,{' '}
+            <code className="text-rose-600 dark:text-rose-300">#entomate-alerts</code> in the default workspace.
           </p>
           <button
             type="button"
             onClick={() => setupWorkspaceBot(userId)}
-            className="px-4 py-2 rounded-lg text-xs font-semibold bg-violet-500/15 hover:bg-violet-500/25 text-violet-600 dark:text-violet-300 border border-violet-500/25 transition flex items-center gap-2"
+            className="px-4 py-2 rounded-lg text-xs font-semibold bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-300 border border-rose-500/25 transition flex items-center gap-2"
           >
             <Bot className="w-3 h-3" />
             Setup Entomate Channels
@@ -521,7 +521,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
         </button>
 
         {ecosystemEventsExpanded && (
-          <div className="rounded-xl bg-zinc-50 dark:bg-black/30 border border-zinc-200 dark:border-white/[0.06] overflow-hidden">
+          <div className="rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-white/[0.06] overflow-hidden">
             {ecosystemEvents.length === 0 ? (
               <div className="text-xs text-zinc-400 text-center py-4">No events yet</div>
             ) : (

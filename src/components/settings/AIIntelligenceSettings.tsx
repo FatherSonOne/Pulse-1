@@ -3,6 +3,8 @@ import { settingsService } from '../../services/settingsService';
 import AIHealthMonitor from '../AIHealthMonitor';
 import { Book, Brain, Headset, Mic, Play, Sliders, Volume2 } from 'lucide-react';
 import { ToggleItem } from './shared/ToggleItem';
+import { SettingsCard } from './shared/SettingsCard';
+import { MonoLabel } from './shared/MonoLabel';
 import { AIProvidersCard } from './ai/AIProvidersCard';
 import { AIDataPolicyCard } from './ai/AIDataPolicyCard';
 import { AIModelPreferencesCard } from './ai/AIModelPreferencesCard';
@@ -111,10 +113,10 @@ export const AIIntelligenceSettings: React.FC = () => {
       <AIDataPolicyCard />
 
       {/* Voice Agent */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-          <Headset /> Voice Agent
-        </h4>
+      <SettingsCard>
+        <MonoLabel className="mb-6 flex items-center gap-2">
+          <Headset className="w-3.5 h-3.5" /> Voice Agent
+        </MonoLabel>
 
         <div className="space-y-6">
           <div className="space-y-2">
@@ -128,7 +130,7 @@ export const AIIntelligenceSettings: React.FC = () => {
                   setAgentVoice(e.target.value);
                   settingsService.set('agentVoice', e.target.value);
                 }}
-                className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-blue-500 focus:outline-none"
+                className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-rose-500 focus:outline-none"
               >
                 <option value="alloy">Alloy (Neutral)</option>
                 <option value="echo">Echo (Male)</option>
@@ -163,7 +165,7 @@ export const AIIntelligenceSettings: React.FC = () => {
                 }}
                 className={`px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
                   turnDetectionMode === 'semantic'
-                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-600 dark:text-blue-400'
+                    ? 'bg-rose-500/5 dark:bg-rose-500/10 border-rose-500 text-rose-500 dark:text-rose-400'
                     : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'
                 }`}
               >
@@ -179,7 +181,7 @@ export const AIIntelligenceSettings: React.FC = () => {
                 }}
                 className={`px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
                   turnDetectionMode === 'server'
-                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-600 dark:text-blue-400'
+                    ? 'bg-rose-500/5 dark:bg-rose-500/10 border-rose-500 text-rose-500 dark:text-rose-400'
                     : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'
                 }`}
               >
@@ -192,7 +194,7 @@ export const AIIntelligenceSettings: React.FC = () => {
           </div>
 
           {turnDetectionMode === 'semantic' && (
-            <div className="space-y-2 pl-4 border-l-2 border-blue-100 dark:border-blue-900">
+            <div className="space-y-2 pl-4 border-l-2 border-rose-200 dark:border-rose-900/40">
               <label className="text-sm font-medium dark:text-white text-zinc-900">
                 Voice Activity Eagerness
               </label>
@@ -210,7 +212,7 @@ export const AIIntelligenceSettings: React.FC = () => {
                   setVoiceActivityEagerness(eagerness);
                   settingsService.set('voiceActivityEagerness', eagerness as 'low' | 'medium' | 'high');
                 }}
-                className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-rose-500"
               />
               <div className="flex justify-between text-xs text-zinc-500">
                 <span>Low (Patient)</span>
@@ -231,13 +233,13 @@ export const AIIntelligenceSettings: React.FC = () => {
             }}
           />
         </div>
-      </div>
+      </SettingsCard>
 
       {/* Knowledge Base */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-          <Book /> Knowledge Base (RAG)
-        </h4>
+      <SettingsCard>
+        <MonoLabel className="mb-6 flex items-center gap-2">
+          <Book className="w-3.5 h-3.5" /> Knowledge Base (RAG)
+        </MonoLabel>
 
         <div className="space-y-6">
           <div className="space-y-2">
@@ -250,7 +252,7 @@ export const AIIntelligenceSettings: React.FC = () => {
                 setDefaultSearchScope(e.target.value);
                 settingsService.set('defaultSearchScope', e.target.value);
               }}
-              className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-blue-500 focus:outline-none"
+              className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-rose-500 focus:outline-none"
             >
               <option value="current_project">Current Project Context</option>
               <option value="all_projects">All Projects & Knowledge</option>
@@ -269,13 +271,13 @@ export const AIIntelligenceSettings: React.FC = () => {
             }}
           />
         </div>
-      </div>
+      </SettingsCard>
 
       {/* Device Selection (Hardware) */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-          <Sliders /> Hardware Settings
-        </h4>
+      <SettingsCard>
+        <MonoLabel className="mb-6 flex items-center gap-2">
+          <Sliders className="w-3.5 h-3.5" /> Hardware Settings
+        </MonoLabel>
 
         <div className="space-y-4">
           {deviceError && (
@@ -286,9 +288,9 @@ export const AIIntelligenceSettings: React.FC = () => {
 
           {/* Audio Input */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-              <Mic /> Microphone
-            </label>
+            <MonoLabel as="label" className="flex items-center gap-2">
+              <Mic className="w-3.5 h-3.5" /> Microphone
+            </MonoLabel>
             <div className="relative">
               <select
                 value={selectedAudioInput}
@@ -296,7 +298,7 @@ export const AIIntelligenceSettings: React.FC = () => {
                   setSelectedAudioInput(e.target.value);
                   settingsService.set('voxMicrophoneDeviceId', e.target.value);
                 }}
-                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 pr-10 appearance-none text-sm dark:text-white text-zinc-900 focus:border-blue-500 focus:outline-none"
+                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 pr-10 appearance-none text-sm dark:text-white text-zinc-900 focus:border-rose-500 focus:outline-none"
               >
                 {audioInputs.map((device) => (
                   <option key={device.deviceId} value={device.deviceId}>
@@ -310,9 +312,9 @@ export const AIIntelligenceSettings: React.FC = () => {
 
           {/* Audio Output */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-              <Volume2 /> Speaker
-            </label>
+            <MonoLabel as="label" className="flex items-center gap-2">
+              <Volume2 className="w-3.5 h-3.5" /> Speaker
+            </MonoLabel>
             <div className="relative">
               <select
                 value={selectedAudioOutput}
@@ -320,7 +322,7 @@ export const AIIntelligenceSettings: React.FC = () => {
                   setSelectedAudioOutput(e.target.value);
                   settingsService.set('voxSpeakerDeviceId', e.target.value);
                 }}
-                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 pr-10 appearance-none text-sm dark:text-white text-zinc-900 focus:border-blue-500 focus:outline-none"
+                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 pr-10 appearance-none text-sm dark:text-white text-zinc-900 focus:border-rose-500 focus:outline-none"
               >
                 {audioOutputs.map((device) => (
                   <option key={device.deviceId} value={device.deviceId}>
@@ -352,16 +354,16 @@ export const AIIntelligenceSettings: React.FC = () => {
                 }
               }}
               disabled={isTestingDevices}
-              className="text-xs font-bold uppercase tracking-wider text-blue-500 hover:text-blue-600 transition"
+              className="text-xs font-bold uppercase tracking-wider text-rose-500 hover:text-rose-600 transition"
             >
               {isTestingDevices ? 'Testing...' : 'Test Devices'}
             </button>
           </div>
         </div>
-      </div>
+      </SettingsCard>
 
       {/* Relay Settings Deep-Link */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
+      <SettingsCard>
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-sm font-bold text-zinc-900 dark:text-white">
@@ -377,13 +379,13 @@ export const AIIntelligenceSettings: React.FC = () => {
               window.history.pushState({}, '', '?settings=voxer_audio');
               window.dispatchEvent(new CustomEvent('navigate-settings', { detail: 'voxer_audio' }));
             }}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2"
+            className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition flex items-center gap-2"
           >
             <Sliders />
             Open Relay Settings
           </button>
         </div>
-      </div>
+      </SettingsCard>
     </div>
   );
 };

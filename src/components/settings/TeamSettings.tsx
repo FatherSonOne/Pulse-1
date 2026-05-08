@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 import { BulkInviteCard } from './team/BulkInviteCard';
 import { GroupsManagementCard } from './team/GroupsManagementCard';
 import { RolePermissionsMatrixCard } from './team/RolePermissionsMatrixCard';
+import { SettingsCard } from './shared/SettingsCard';
+import { MonoLabel } from './shared/MonoLabel';
 
 interface TeamSettingsProps {
   userId: string;
@@ -124,7 +126,7 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
   const roleColors: Record<string, string> = {
     owner: 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400',
     admin: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
-    member: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+    member: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400',
     viewer: 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400',
   };
 
@@ -143,8 +145,8 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
 
       {/* Invite Form — admin+ only */}
       {canManageMembers && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-          <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6">Invite New Member</h4>
+        <SettingsCard>
+          <MonoLabel className="mb-6">Invite New Member</MonoLabel>
           <div className="flex gap-2">
             <input
               type="email"
@@ -174,7 +176,7 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
               Send
             </button>
           </div>
-        </div>
+        </SettingsCard>
       )}
 
       {/* Bulk invite — admin+ only */}
@@ -188,12 +190,12 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
 
       {/* Pending Invitations — admin+ only */}
       {canManageMembers && pendingInvites.length > 0 && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+        <SettingsCard padded={false} className="overflow-hidden">
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
-            <h4 className="text-sm font-bold dark:text-white text-zinc-900 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-zinc-400" />
+            <MonoLabel className="flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-zinc-400" />
               Pending Invitations ({pendingInvites.length})
-            </h4>
+            </MonoLabel>
           </div>
           <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
             {pendingInvites.map((invite) => (
@@ -219,15 +221,15 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
               </div>
             ))}
           </div>
-        </div>
+        </SettingsCard>
       )}
 
       {/* Current Members */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+      <SettingsCard padded={false} className="overflow-hidden">
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
-          <h4 className="text-sm font-bold dark:text-white text-zinc-900">
+          <MonoLabel>
             Workspace Members ({members.length})
-          </h4>
+          </MonoLabel>
         </div>
         <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
           {members.map((member) => {
@@ -238,7 +240,7 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
             return (
               <div key={member.user_id} className="p-4 flex items-center gap-3">
                 {/* Avatar */}
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-rose-500 dark:text-rose-400 font-semibold overflow-hidden flex-shrink-0">
                   {member.avatar_url ? (
                     <img src={member.avatar_url} alt={displayName} className="w-full h-full object-cover" />
                   ) : (
@@ -310,7 +312,7 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
             <div className="p-8 text-center text-zinc-500 text-sm">Loading members...</div>
           )}
         </div>
-      </div>
+      </SettingsCard>
 
       {/* Groups & departments */}
       {workspaceId && (

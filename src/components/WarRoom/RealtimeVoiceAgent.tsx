@@ -635,22 +635,30 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
   return (
     <div className={`realtime-voice-agent ${className}`}>
       {/* Connection Status Bar */}
-      <div className="flex items-center justify-between p-3 bg-gray-900/80 backdrop-blur-sm border-b border-cyan-500/30">
+      <div
+        className="flex items-center justify-between p-3 bg-gray-900/80 backdrop-blur-sm"
+        style={{ borderBottom: '1px solid var(--pulse-border)' }}
+      >
         <div className="flex items-center gap-3">
-          {/* Status Indicator */}
-          <div className={`w-3 h-3 rounded-full ${
-            isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
-          }`} />
-          
+          {/* Status indicator — tokenized: positive when connected, neutral when not. */}
+          <div
+            className={`w-2 h-2 rounded-full ${isConnected ? 'animate-pulse' : ''}`}
+            style={{
+              background: isConnected
+                ? 'var(--pulse-tone-positive)'
+                : 'var(--pulse-tone-neutral)',
+            }}
+          />
+
           <span className="text-sm text-gray-300">
-            {isConnecting ? 'Connecting...' : isConnected ? 'Voice Active' : 'Disconnected'}
+            {isConnecting ? 'Connecting…' : isConnected ? 'Voice active' : 'Disconnected'}
           </span>
 
           {/* Current Agent Badge */}
           {isConnected && (
             <button
               onClick={() => setShowAgentPicker(!showAgentPicker)}
-              className="px-2 py-1 text-xs bg-cyan-500/20 text-cyan-400 rounded-full border border-cyan-500/30 hover:bg-cyan-500/30 transition-colors"
+              className="px-2 py-1 text-xs bg-rose-500/15 text-rose-400 rounded-full border border-rose-500/25 hover:bg-rose-500/20 transition-colors"
             >
               {WAR_ROOM_AGENTS[currentAgent]?.name || currentAgent}
               <ChevronDown className="fa ml-1 text-[10px]" />
@@ -697,17 +705,21 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
             <button
               onClick={connect}
               disabled={isConnecting}
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:from-cyan-400 hover:to-blue-400 disabled:opacity-50 transition-all"
+              className="px-4 py-2 rounded-lg text-white font-medium disabled:opacity-50 transition-all"
+              style={{
+                background: 'linear-gradient(135deg, var(--pulse-rose) 0%, var(--pulse-pink) 100%)',
+                boxShadow: '0 4px 12px var(--pulse-rose-glow)',
+              }}
             >
               {isConnecting ? (
                 <>
                   <Loader2 className="fa mr-2 animate-spin" />
-                  Connecting...
+                  Connecting…
                 </>
               ) : (
                 <>
                   <Mic className="fa mr-2" />
-                  Start Voice
+                  Start voice
                 </>
               )}
             </button>
@@ -717,14 +729,14 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
 
       {/* Agent Picker Dropdown */}
       {showAgentPicker && (
-        <div className="absolute z-50 mt-1 p-2 bg-gray-900 border border-cyan-500/30 rounded-lg shadow-xl">
+        <div className="absolute z-50 mt-1 p-2 bg-gray-900 border border-rose-500/25 rounded-lg shadow-xl">
           {Object.entries(WAR_ROOM_AGENTS).map(([key, agent]) => (
             <button
               key={key}
               onClick={() => handleAgentSwitch(key)}
               className={`w-full px-3 py-2 text-left rounded-lg transition-colors ${
                 currentAgent === key
-                  ? 'bg-cyan-500/20 text-cyan-400'
+                  ? 'bg-rose-500/15 text-rose-400'
                   : 'text-gray-300 hover:bg-gray-800'
               }`}
             >
@@ -751,7 +763,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
                 key={i}
                 className={`w-1 rounded-full transition-all duration-75 ${
                   isListening
-                    ? 'bg-gradient-to-t from-cyan-500 to-blue-500'
+                    ? 'bg-gradient-to-t from-rose-500 to-pink-500'
                     : isSpeaking
                     ? 'bg-gradient-to-t from-purple-500 to-pink-500'
                     : 'bg-gray-700'
@@ -767,7 +779,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
       {isConnected && (
         <div className="flex justify-center gap-4 pb-4">
           {isListening && (
-            <div className="flex items-center gap-2 text-cyan-400 text-sm">
+            <div className="flex items-center gap-2 text-rose-400 text-sm">
               <Mic className="fa animate-pulse" />
               Listening...
             </div>
@@ -791,14 +803,14 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
             <div
               className={`max-w-[85%] rounded-2xl ${
                 line.role === 'user'
-                  ? 'bg-cyan-500/15 border border-cyan-500/20 text-cyan-100 rounded-br-md px-4 py-3'
+                  ? 'bg-rose-500/10 border border-rose-500/20 text-rose-100 rounded-br-md px-4 py-3'
                   : 'bg-zinc-900/80 border border-zinc-800 text-zinc-200 rounded-bl-md px-5 py-4'
               }`}
             >
               {/* Label - Archives mono style */}
               <div className="font-mono text-[10px] uppercase tracking-widest mb-2 flex items-center gap-2">
                 {line.role === 'user' ? (
-                  <span className="text-cyan-400">You</span>
+                  <span className="text-rose-400">You</span>
                 ) : (
                   <>
                     <span className="text-red-400">{WAR_ROOM_AGENTS[currentAgent]?.name || 'AI'}</span>
@@ -823,7 +835,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
             <div
               className={`max-w-[85%] rounded-2xl opacity-70 ${
                 interimTranscript.role === 'user'
-                  ? 'bg-cyan-500/10 border border-cyan-500/10 text-cyan-200 rounded-br-md px-4 py-3'
+                  ? 'bg-rose-500/8 border border-rose-500/10 text-rose-200 rounded-br-md px-4 py-3'
                   : 'bg-zinc-900/50 border border-zinc-800/50 text-zinc-300 rounded-bl-md px-5 py-4'
               }`}
             >
@@ -842,7 +854,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
       {/* Tool Approval Modal */}
       {pendingApproval && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-gray-900 border border-cyan-500/30 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <div className="bg-gray-900 border border-rose-500/25 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
                 <AlertTriangle className="fa text-yellow-500" />
@@ -858,7 +870,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
               <div className="text-white font-medium">{pendingApproval.toolName}</div>
               
               <div className="text-sm text-gray-400 mt-3 mb-1">Parameters</div>
-              <pre className="text-cyan-400 text-sm overflow-x-auto">
+              <pre className="text-rose-400 text-sm overflow-x-auto">
                 {JSON.stringify(pendingApproval.arguments, null, 2)}
               </pre>
             </div>
@@ -909,7 +921,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
               type="text"
               name="textInput"
               placeholder="Type a message (or just speak)..."
-              className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+              className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-rose-500"
             />
             {/* Voice-to-Text Button for text input */}
             <VoiceTextButton
@@ -925,7 +937,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
             />
             <button
               type="submit"
-              className="px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors"
+              className="px-4 py-2 bg-rose-500/15 text-rose-400 rounded-lg hover:bg-rose-500/20 transition-colors"
             >
               <Send className="fa" />
             </button>

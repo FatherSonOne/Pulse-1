@@ -253,7 +253,7 @@ export const BillingSettings: React.FC = () => {
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ color: 'var(--set-primary)' }}
+          style={{ color: 'var(--pulse-rose)' }}
         >
           <path d="M4 2h16a1 1 0 0 1 1 1v18l-3-2-2 2-2-2-2 2-2-2-3 2V3a1 1 0 0 1 1-1z" />
           <line x1="8" y1="9" x2="16" y2="9" />
@@ -272,7 +272,7 @@ export const BillingSettings: React.FC = () => {
         {header}
         <div
           className="flex items-center justify-center py-12"
-          style={{ color: 'var(--set-text-muted)' }}
+          style={{ color: 'var(--pulse-ink-3)' }}
         >
           Loading billing information...
         </div>
@@ -288,11 +288,11 @@ export const BillingSettings: React.FC = () => {
         <div
           className="rounded-xl p-6 text-center"
           style={{
-            background: 'var(--set-surface)',
-            border: '1px solid var(--set-border)',
+            background: 'var(--pulse-surface)',
+            border: '1px solid var(--pulse-border)',
           }}
         >
-          <p className="text-sm" style={{ color: 'var(--set-text-secondary)' }}>
+          <p className="text-sm" style={{ color: 'var(--pulse-ink-2)' }}>
             Your Pulse trial has expired. See the upgrade prompt to restore access.
           </p>
         </div>
@@ -330,9 +330,9 @@ export const BillingSettings: React.FC = () => {
         <div
           className="rounded-xl p-4 flex items-center justify-between"
           style={{
-            background: checkoutMessage.type === 'success' ? '#10b98110' : 'var(--set-surface)',
+            background: checkoutMessage.type === 'success' ? '#10b98110' : 'var(--pulse-surface)',
             border: `1px solid ${
-              checkoutMessage.type === 'success' ? '#10b98130' : 'var(--set-border)'
+              checkoutMessage.type === 'success' ? '#10b98130' : 'var(--pulse-border)'
             }`,
           }}
         >
@@ -346,7 +346,7 @@ export const BillingSettings: React.FC = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
               style={{
-                stroke: checkoutMessage.type === 'success' ? '#10b981' : 'var(--set-text-muted)',
+                stroke: checkoutMessage.type === 'success' ? '#10b981' : 'var(--pulse-ink-3)',
               }}
             >
               {checkoutMessage.type === 'success' ? (
@@ -366,7 +366,7 @@ export const BillingSettings: React.FC = () => {
               className="text-sm"
               style={{
                 color:
-                  checkoutMessage.type === 'success' ? '#10b981' : 'var(--set-text-secondary)',
+                  checkoutMessage.type === 'success' ? '#10b981' : 'var(--pulse-ink-2)',
               }}
             >
               {checkoutMessage.text}
@@ -376,7 +376,7 @@ export const BillingSettings: React.FC = () => {
             type="button"
             onClick={() => setCheckoutMessage(null)}
             className="text-xs"
-            style={{ color: 'var(--set-text-muted)' }}
+            style={{ color: 'var(--pulse-ink-3)' }}
           >
             Dismiss
           </button>
@@ -414,8 +414,7 @@ export const BillingSettings: React.FC = () => {
         className="rounded-2xl p-6"
         style={{
           background: `linear-gradient(135deg, ${TEAM_COLORS.badge}08, ${TEAM_COLORS.badge}04)`,
-          border: `1px solid ${TEAM_COLORS.badge}20`,
-          borderLeft: `3px solid ${TEAM_COLORS.badge}`,
+          border: `1px solid ${TEAM_COLORS.badge}30`,
         }}
       >
         <div className="flex items-center gap-4 mb-5">
@@ -454,11 +453,11 @@ export const BillingSettings: React.FC = () => {
                 {statusBadge}
               </span>
             </div>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--set-text-muted)' }}>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--pulse-ink-3)' }}>
               {isTrialing ? (
                 <>
                   30-day trial ·{' '}
-                  <span style={{ color: 'var(--set-text-main)', fontWeight: 500 }}>
+                  <span style={{ color: 'var(--pulse-ink)', fontWeight: 500 }}>
                     {trialDaysLeft} {trialDaysLeft === 1 ? 'day' : 'days'} remaining
                   </span>
                   {subscription?.trial_end && ` · Ends ${formatDate(subscription.trial_end)}`}
@@ -485,9 +484,9 @@ export const BillingSettings: React.FC = () => {
               disabled={actionLoading === 'portal'}
               className="px-4 py-2 text-sm font-medium rounded-lg transition-all"
               style={{
-                background: 'var(--set-surface)',
-                border: '1px solid var(--set-border)',
-                color: 'var(--set-text-main)',
+                background: 'var(--pulse-surface)',
+                border: '1px solid var(--pulse-border)',
+                color: 'var(--pulse-ink)',
               }}
             >
               {actionLoading === 'portal' ? 'Opening...' : 'Manage Subscription'}
@@ -501,8 +500,8 @@ export const BillingSettings: React.FC = () => {
         <div
           className="rounded-2xl p-5"
           style={{
-            background: 'var(--set-surface)',
-            border: '1px solid var(--set-border)',
+            background: 'var(--pulse-surface)',
+            border: '1px solid var(--pulse-border)',
           }}
         >
           <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -516,7 +515,7 @@ export const BillingSettings: React.FC = () => {
                 </svg>
                 Seats
               </h5>
-              <p className="text-xs mt-1" style={{ color: 'var(--set-text-muted)' }}>
+              <p className="text-xs mt-1" style={{ color: 'var(--pulse-ink-3)' }}>
                 {members.length} active {members.length === 1 ? 'member' : 'members'} ·
                 ${activeMonthlyEquivalent} per seat / month
               </p>
@@ -525,12 +524,12 @@ export const BillingSettings: React.FC = () => {
               <div className="text-2xl font-bold dark:text-white text-zinc-900">
                 ${(members.length * activeMonthlyEquivalent).toLocaleString()}
               </div>
-              <div className="text-[11px]" style={{ color: 'var(--set-text-muted)' }}>
+              <div className="text-[11px]" style={{ color: 'var(--pulse-ink-3)' }}>
                 est. next invoice
               </div>
             </div>
           </div>
-          <p className="text-[11px] mt-3 pt-3 border-t" style={{ color: 'var(--set-text-muted)', borderColor: 'var(--set-border)' }}>
+          <p className="text-[11px] mt-3 pt-3 border-t" style={{ color: 'var(--pulse-ink-3)', borderColor: 'var(--pulse-border)' }}>
             Your plan scales with your team — you're charged for each active member.
             Adding or removing members updates Stripe automatically and prorates the next invoice.
             {currentWorkspace?.auto_join_enabled && currentWorkspace?.auto_join_domain && (
@@ -546,7 +545,7 @@ export const BillingSettings: React.FC = () => {
         <div
           className="rounded-2xl p-6"
           style={{
-            background: 'var(--set-surface)',
+            background: 'var(--pulse-surface)',
             border: `2px solid ${TEAM_COLORS.badge}40`,
           }}
         >
@@ -554,29 +553,29 @@ export const BillingSettings: React.FC = () => {
             <div>
               <h4
                 className="text-lg font-bold"
-                style={{ color: 'var(--set-text-main)' }}
+                style={{ color: 'var(--pulse-ink)' }}
               >
                 Upgrade to Pulse Team
               </h4>
-              <p className="text-sm mt-1" style={{ color: 'var(--set-text-muted)' }}>
+              <p className="text-sm mt-1" style={{ color: 'var(--pulse-ink-3)' }}>
                 Keep your team connected after your trial ends.
               </p>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold" style={{ color: 'var(--set-text-main)' }}>
+              <div className="text-3xl font-bold" style={{ color: 'var(--pulse-ink)' }}>
                 $
                 {selectedCycle === 'monthly'
                   ? PULSE_TEAM_PRICING.monthly
                   : Math.round(PULSE_TEAM_PRICING.yearly / 12)}
                 <span
                   className="text-sm font-normal"
-                  style={{ color: 'var(--set-text-muted)' }}
+                  style={{ color: 'var(--pulse-ink-3)' }}
                 >
                   /mo
                 </span>
               </div>
               {selectedCycle === 'yearly' && (
-                <div className="text-xs" style={{ color: 'var(--set-text-muted)' }}>
+                <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
                   ${PULSE_TEAM_PRICING.yearly.toLocaleString()} billed yearly · 2 months free
                 </div>
               )}
@@ -586,7 +585,7 @@ export const BillingSettings: React.FC = () => {
           {/* Billing cycle toggle */}
           <div
             className="flex items-center gap-2 rounded-xl p-1 mb-5"
-            style={{ background: 'var(--set-surface-raised)', border: '1px solid var(--set-border)' }}
+            style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}
           >
             <button
               type="button"
@@ -597,7 +596,7 @@ export const BillingSettings: React.FC = () => {
                 color:
                   selectedCycle === 'monthly'
                     ? 'white'
-                    : 'var(--set-text-muted)',
+                    : 'var(--pulse-ink-3)',
                 boxShadow:
                   selectedCycle === 'monthly' ? `0 2px 8px ${TEAM_COLORS.shadow}` : 'none',
               }}
@@ -613,7 +612,7 @@ export const BillingSettings: React.FC = () => {
                 color:
                   selectedCycle === 'yearly'
                     ? 'white'
-                    : 'var(--set-text-muted)',
+                    : 'var(--pulse-ink-3)',
                 boxShadow:
                   selectedCycle === 'yearly' ? `0 2px 8px ${TEAM_COLORS.shadow}` : 'none',
               }}
@@ -631,7 +630,7 @@ export const BillingSettings: React.FC = () => {
               <li
                 key={feat}
                 className="flex items-start gap-2 text-sm"
-                style={{ color: 'var(--set-text-secondary)' }}
+                style={{ color: 'var(--pulse-ink-2)' }}
               >
                 <svg
                   width="14"
@@ -670,7 +669,7 @@ export const BillingSettings: React.FC = () => {
         <div
           className="rounded-2xl p-6"
           style={{
-            background: 'var(--set-surface)',
+            background: 'var(--pulse-surface)',
             border: `2px solid ${GROWTH_COLORS.badge}40`,
           }}
         >
@@ -679,7 +678,7 @@ export const BillingSettings: React.FC = () => {
               <div className="flex items-center gap-2 mb-1">
                 <h4
                   className="text-lg font-bold"
-                  style={{ color: 'var(--set-text-main)' }}
+                  style={{ color: 'var(--pulse-ink)' }}
                 >
                   Outgrew Pulse Team?
                 </h4>
@@ -694,26 +693,26 @@ export const BillingSettings: React.FC = () => {
                   GROWTH
                 </span>
               </div>
-              <p className="text-sm" style={{ color: 'var(--set-text-muted)' }}>
+              <p className="text-sm" style={{ color: 'var(--pulse-ink-3)' }}>
                 5× metered capacity, 10× storage, plus SSO, API access, audit retention,
                 custom branding, and priority support.
               </p>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold" style={{ color: 'var(--set-text-main)' }}>
+              <div className="text-3xl font-bold" style={{ color: 'var(--pulse-ink)' }}>
                 $
                 {growthCycle === 'monthly'
                   ? PULSE_GROWTH_PRICING.monthly
                   : Math.round(PULSE_GROWTH_PRICING.yearly / 12)}
                 <span
                   className="text-sm font-normal"
-                  style={{ color: 'var(--set-text-muted)' }}
+                  style={{ color: 'var(--pulse-ink-3)' }}
                 >
                   /mo
                 </span>
               </div>
               {growthCycle === 'yearly' && (
-                <div className="text-xs" style={{ color: 'var(--set-text-muted)' }}>
+                <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
                   ${PULSE_GROWTH_PRICING.yearly.toLocaleString()} billed yearly · 2 months free
                 </div>
               )}
@@ -722,7 +721,7 @@ export const BillingSettings: React.FC = () => {
 
           <div
             className="flex items-center gap-2 rounded-xl p-1 mb-5"
-            style={{ background: 'var(--set-surface-raised)', border: '1px solid var(--set-border)' }}
+            style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}
           >
             <button
               type="button"
@@ -730,7 +729,7 @@ export const BillingSettings: React.FC = () => {
               className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all"
               style={{
                 background: growthCycle === 'monthly' ? GROWTH_COLORS.gradient : 'transparent',
-                color: growthCycle === 'monthly' ? 'white' : 'var(--set-text-muted)',
+                color: growthCycle === 'monthly' ? 'white' : 'var(--pulse-ink-3)',
                 boxShadow: growthCycle === 'monthly' ? `0 2px 8px ${GROWTH_COLORS.shadow}` : 'none',
               }}
             >
@@ -742,7 +741,7 @@ export const BillingSettings: React.FC = () => {
               className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all"
               style={{
                 background: growthCycle === 'yearly' ? GROWTH_COLORS.gradient : 'transparent',
-                color: growthCycle === 'yearly' ? 'white' : 'var(--set-text-muted)',
+                color: growthCycle === 'yearly' ? 'white' : 'var(--pulse-ink-3)',
                 boxShadow: growthCycle === 'yearly' ? `0 2px 8px ${GROWTH_COLORS.shadow}` : 'none',
               }}
             >
@@ -758,7 +757,7 @@ export const BillingSettings: React.FC = () => {
               <li
                 key={feat}
                 className="flex items-start gap-2 text-sm"
-                style={{ color: 'var(--set-text-secondary)' }}
+                style={{ color: 'var(--pulse-ink-2)' }}
               >
                 <svg
                   width="14"
@@ -796,7 +795,7 @@ export const BillingSettings: React.FC = () => {
       {entitlements && (
         <div
           className="rounded-xl p-6"
-          style={{ background: 'var(--set-surface)', border: '1px solid var(--set-border)' }}
+          style={{ background: 'var(--pulse-surface)', border: '1px solid var(--pulse-border)' }}
         >
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <h4
@@ -805,12 +804,12 @@ export const BillingSettings: React.FC = () => {
                 fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.12em',
-                color: 'var(--set-text-muted)',
+                color: 'var(--pulse-ink-3)',
               }}
             >
               Current Usage
             </h4>
-            <span className="text-xs" style={{ color: 'var(--set-text-muted)' }}>
+            <span className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
               Monthly reset on {nextMonthlyReset()}
             </span>
           </div>
@@ -891,9 +890,9 @@ export const BillingSettings: React.FC = () => {
         <div
           className="rounded-xl p-4 text-center text-sm"
           style={{
-            background: 'var(--set-surface)',
-            border: '1px solid var(--set-border)',
-            color: 'var(--set-text-muted)',
+            background: 'var(--pulse-surface)',
+            border: '1px solid var(--pulse-border)',
+            color: 'var(--pulse-ink-3)',
           }}
         >
           Contact your workspace owner to manage billing.
@@ -917,20 +916,20 @@ const UsageMeter: React.FC<UsageMeterProps> = ({ label, current, limit, formatFn
   const percentage = limit ? Math.min(100, (current / limit) * 100) : 0;
   const isNear = limit ? percentage >= 80 && percentage < 100 : false;
   const isAt = limit ? percentage >= 100 : false;
-  const barColor = isAt ? '#ef4444' : isNear ? '#f59e0b' : 'var(--set-primary)';
+  const barColor = isAt ? '#ef4444' : isNear ? '#f59e0b' : 'var(--pulse-rose)';
 
   return (
     <div
       className="p-3 rounded-lg"
-      style={{ background: 'var(--set-surface-raised)', border: '1px solid var(--set-border)' }}
+      style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium" style={{ color: 'var(--set-text-secondary)' }}>
+        <span className="text-xs font-medium" style={{ color: 'var(--pulse-ink-2)' }}>
           {label}
         </span>
         <span
           className="text-xs"
-          style={{ color: isAt ? '#ef4444' : 'var(--set-text-muted)' }}
+          style={{ color: isAt ? '#ef4444' : 'var(--pulse-ink-3)' }}
         >
           {format(current)} / {format(limit)}
         </span>
@@ -939,7 +938,7 @@ const UsageMeter: React.FC<UsageMeterProps> = ({ label, current, limit, formatFn
         <>
           <div
             className="w-full h-1.5 rounded-full overflow-hidden"
-            style={{ background: 'var(--set-border)' }}
+            style={{ background: 'var(--pulse-border)' }}
           >
             <div
               className="h-full rounded-full transition-all"

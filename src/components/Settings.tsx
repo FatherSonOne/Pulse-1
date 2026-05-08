@@ -19,7 +19,6 @@ import { DesktopAppSettings } from './settings/DesktopAppSettings';
 import { AboutSettings } from './settings/AboutSettings';
 import { BillingSettings } from './settings/BillingSettings';
 import { DeveloperSettings } from './settings/DeveloperSettings';
-import { AdminSettings } from './settings/AdminSettings';
 import { EcosystemSettings } from './settings/EcosystemSettings';
 import { WorkspaceSettings } from './settings/WorkspaceSettings';
 import { SecuritySettings } from './settings/SecuritySettings';
@@ -33,29 +32,55 @@ interface SettingsProps {
   onClose?: () => void;
 }
 
-const SECTIONS = [
-  { id: 'account', icon: 'fa-user', label: 'My Account' },
-  { id: 'ai_intelligence', icon: 'fa-brain', label: 'AI & Intelligence' },
-  { id: 'integrations', icon: 'fa-plug', label: 'Integrations' },
-  { id: 'ecosystem', icon: 'fa-circle-nodes', label: 'Ecosystem Bridge' },
-  { id: 'notifications', icon: 'fa-bell', label: 'Notifications' },
-  { id: 'features_labs', icon: 'fa-flask', label: 'Features & Labs' },
-  { id: 'war_room', icon: 'fa-shield', label: 'War Room' },
-  { id: 'activity_monitor', icon: 'fa-chart-line', label: 'Activity Monitor' },
-  { id: 'workspace', icon: 'fa-building', label: 'Organization' },
-  { id: 'team', icon: 'fa-users', label: 'Team Management' },
-  { id: 'security', icon: 'fa-lock', label: 'Security' },
-  { id: 'compliance', icon: 'fa-scale-balanced', label: 'Compliance' },
-  { id: 'accessibility', icon: 'fa-universal-access', label: 'Accessibility' },
-  { id: 'privacy_data', icon: 'fa-shield-halved', label: 'Privacy & Data' },
-  { id: 'about', icon: 'fa-circle-info', label: 'About Pulse' },
-  { id: 'billing', icon: 'fa-receipt', label: 'Plan & Billing' },
-  { id: 'developer', icon: 'fa-code', label: 'Developer Tools' },
+type SectionItem = { id: string; icon: string; label: string };
+type SectionGroup = { label: string; items: SectionItem[] };
+
+const SECTION_GROUPS: SectionGroup[] = [
+  {
+    label: 'Personal',
+    items: [
+      { id: 'account', icon: 'fa-user', label: 'My Account' },
+      { id: 'notifications', icon: 'fa-bell', label: 'Notifications' },
+      { id: 'accessibility', icon: 'fa-universal-access', label: 'Accessibility' },
+    ],
+  },
+  {
+    label: 'Workspace',
+    items: [
+      { id: 'workspace', icon: 'fa-building', label: 'Organization' },
+      { id: 'team', icon: 'fa-users', label: 'Team Management' },
+      { id: 'integrations', icon: 'fa-plug', label: 'Integrations' },
+      { id: 'ecosystem', icon: 'fa-circle-nodes', label: 'Ecosystem Bridge' },
+    ],
+  },
+  {
+    label: 'Intelligence',
+    items: [
+      { id: 'ai_intelligence', icon: 'fa-brain', label: 'AI & Intelligence' },
+      { id: 'war_room', icon: 'fa-shield', label: 'War Room' },
+      { id: 'features_labs', icon: 'fa-flask', label: 'Features & Labs' },
+    ],
+  },
+  {
+    label: 'Trust',
+    items: [
+      { id: 'security', icon: 'fa-lock', label: 'Security' },
+      { id: 'compliance', icon: 'fa-scale-balanced', label: 'Compliance' },
+      { id: 'privacy_data', icon: 'fa-shield-halved', label: 'Privacy & Data' },
+    ],
+  },
+  {
+    label: 'Admin',
+    items: [
+      { id: 'activity_monitor', icon: 'fa-chart-line', label: 'Activity Monitor' },
+      { id: 'billing', icon: 'fa-receipt', label: 'Plan & Billing' },
+      { id: 'developer', icon: 'fa-code', label: 'Developer Tools' },
+      { id: 'about', icon: 'fa-circle-info', label: 'About Pulse' },
+    ],
+  },
 ];
 
-const ADMIN_SECTIONS = [
-  { id: 'admin', icon: 'fa-shield-halved', label: 'Admin Dashboard' },
-];
+const SECTIONS: SectionItem[] = SECTION_GROUPS.flatMap((g) => g.items);
 
 const SECTION_KEYWORDS: Record<string, string[]> = {
   account: ['profile', 'avatar', 'name', 'email', 'theme', 'dark', 'light', 'appearance', 'logout', 'sign out', 'password'],
@@ -99,19 +124,55 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sectionParam = params.get('settings');
-    const validIds = [...SECTIONS.map(s => s.id), 'desktop_app', 'ecosystem', 'admin'];
+    const validIds = [...SECTIONS.map(s => s.id), 'desktop_app', 'ecosystem'];
     if (sectionParam && validIds.includes(sectionParam)) {
       setActiveSection(sectionParam);
     }
   }, []);
 
-  const filteredSections = searchQuery.trim() === '' ? null : [
+  const desktopAppItem: SectionItem = { id: 'desktop_app', icon: 'fa-desktop', label: 'Desktop App' };
+
+  const allSections: SectionItem[] = [
     ...SECTIONS,
-    ...(isElectron ? [{ id: 'desktop_app', icon: 'fa-desktop', label: 'Desktop App' }] : []),
-  ].filter((s) => {
+    ...(isElectron ? [desktopAppItem] : []),
+  ];
+
+  const groupedSections: SectionGroup[] = isElectron
+    ? SECTION_GROUPS.map((g) =>
+        g.label === 'Admin' ? { ...g, items: [...g.items, desktopAppItem] } : g
+      )
+    : SECTION_GROUPS;
+
+  const filteredSections = searchQuery.trim() === '' ? null : allSections.filter((s) => {
     const q = searchQuery.toLowerCase();
     return s.label.toLowerCase().includes(q) || (SECTION_KEYWORDS[s.id] || []).some((kw) => kw.includes(q));
   });
+
+  const renderNavButton = (section: SectionItem) => (
+    <button
+      key={section.id}
+      tabIndex={0}
+      onClick={() => {
+        setActiveSection(section.id);
+        setSearchQuery('');
+        setIsMobileMenuOpen(false);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); (e.currentTarget.nextElementSibling as HTMLElement)?.focus(); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); (e.currentTarget.previousElementSibling as HTMLElement)?.focus(); }
+        if (e.key === 'Escape') { onClose?.(); }
+      }}
+      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200 ${
+        activeSection === section.id
+          ? 'bg-rose-500/10 text-rose-500 dark:text-rose-400 font-semibold'
+          : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60'
+      }`}
+    >
+      <i className={`fa-solid ${section.icon} w-5 text-center text-xs`}></i>
+      <span className="text-sm">{section.label}</span>
+      {activeSection === section.id && <ChevronRight className="ml-auto text-xs opacity-50" />}
+    </button>
+  );
 
   const renderContent = () => {
     switch (activeSection) {
@@ -133,7 +194,6 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
       case 'about':            return <AboutSettings />;
       case 'billing':          return <BillingSettings />;
       case 'developer':        return <DeveloperSettings />;
-      case 'admin':            return <AdminSettings userId={user?.id || ''} />;
       default:                 return <div className="text-zinc-500">Section under construction.</div>;
     }
   };
@@ -167,11 +227,11 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
     <div data-settings className="h-full bg-white dark:bg-zinc-950 flex flex-col">
       <MobileHeader />
 
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
 
         {isMobileMenuOpen && (
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+            className="fixed inset-0 bg-zinc-950/70 backdrop-blur-sm z-40 md:hidden"
             onClick={() => setIsMobileMenuOpen(false)}
             aria-hidden="true"
           />
@@ -188,8 +248,8 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           shadow-2xl md:shadow-none
         `}>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold dark:text-white text-zinc-900 px-2 animate-fade-in">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold tracking-tight dark:text-white text-zinc-900 px-2">
               Settings
             </h2>
             <button
@@ -202,79 +262,61 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
           </div>
 
           {/* Search bar */}
-          <div className="mb-3 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs pointer-events-none" />
+          <div className="mb-4 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search settings..."
-              className="w-full pl-8 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Search settings"
+              className="w-full pl-8 pr-12 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
               aria-label="Search settings"
             />
-            {searchQuery && (
+            {searchQuery ? (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                 aria-label="Clear search"
               >
-                <X className="text-xs" />
+                <X className="w-3.5 h-3.5" />
               </button>
+            ) : (
+              <kbd
+                aria-hidden="true"
+                className="hidden md:inline-flex items-center absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 text-[10px] text-zinc-400 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-900/50"
+                style={{ fontFamily: 'var(--pulse-font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)' }}
+              >
+                /
+              </kbd>
             )}
           </div>
 
-          <nav className="space-y-1 flex-1">
-            {(filteredSections ?? [...SECTIONS, ...(isElectron ? [{ id: 'desktop_app', icon: 'fa-desktop', label: 'Desktop App' }] : [])]).map((section, idx) => (
-              <button
-                key={section.id}
-                tabIndex={0}
-                onClick={() => {
-                  setActiveSection(section.id);
-                  setSearchQuery('');
-                  setIsMobileMenuOpen(false);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'ArrowDown') { e.preventDefault(); (e.currentTarget.nextElementSibling as HTMLElement)?.focus(); }
-                  if (e.key === 'ArrowUp') { e.preventDefault(); (e.currentTarget.previousElementSibling as HTMLElement)?.focus(); }
-                  if (e.key === 'Escape') { onClose?.(); }
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group animate-slide-in-right ${activeSection === section.id ? 'bg-blue-600/10 text-blue-600 dark:text-blue-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-                style={{ animationDelay: `${Math.min(idx, 4) * 40}ms` }}
-              >
-                <i className={`fa-solid ${section.icon} w-5 text-center transition-transform group-hover:scale-110`}></i>
-                <span className="text-sm">{section.label}</span>
-                {activeSection === section.id && <ChevronRight className="ml-auto text-xs opacity-50" />}
-              </button>
-            ))}
-
-            {filteredSections !== null && filteredSections.length === 0 && (
-              <div className="px-4 py-6 text-center text-sm text-zinc-400">
+          <nav className="flex-1 overflow-y-auto -mx-1 px-1">
+            {filteredSections === null ? (
+              <div className="space-y-6">
+                {groupedSections.map((group) => (
+                  <div key={group.label}>
+                    <div
+                      className="px-3 mb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-500"
+                      style={{ fontFamily: 'var(--pulse-font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)' }}
+                    >
+                      {group.label}
+                    </div>
+                    <div className="space-y-0.5">
+                      {group.items.map(renderNavButton)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredSections.length === 0 ? (
+              <div className="px-3 py-6 text-center text-sm text-zinc-400">
                 No settings matching <em>"{searchQuery}"</em>
               </div>
-            )}
-
-            {(user?.role === 'admin' || (user as any)?.isAdmin) && (
-              <>
-                <div className="border-t border-zinc-200 dark:border-zinc-800 my-4 pt-4">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-4">Admin</span>
-                </div>
-                {ADMIN_SECTIONS.map((section, idx) => (
-                  <button
-                    key={section.id}
-                    onClick={() => {
-                      setActiveSection(section.id);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group animate-slide-in-right ${activeSection === section.id ? 'bg-purple-600/10 text-purple-600 dark:text-purple-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-                    style={{ animationDelay: `${(SECTIONS.length + idx) * 50}ms` }}
-                  >
-                    <i className={`fa-solid ${section.icon} w-5 text-center transition-transform group-hover:scale-110`}></i>
-                    <span className="text-sm">{section.label}</span>
-                    {activeSection === section.id && <ChevronRight className="ml-auto text-xs opacity-50" />}
-                  </button>
-                ))}
-              </>
+            ) : (
+              <div className="space-y-0.5">
+                {filteredSections.map(renderNavButton)}
+              </div>
             )}
           </nav>
         </div>

@@ -13,7 +13,6 @@ import useSwipeGesture from '../hooks/useSwipeGesture';
 import usePullToRefresh from '../hooks/usePullToRefresh';
 import BottomSheet from './BottomSheet';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
-import NaturalLanguageEventInput from './NaturalLanguageEventInput';
 import SuggestedEventsPanel from './SuggestedEventsPanel';
 import PostMeetingPrompt from './PostMeetingPrompt';
 import { postMeetingService, MeetingFollowUp as PostMeetingFollowUp } from '../services/postMeetingService';
@@ -237,7 +236,21 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
   // Upcoming Events Panel
   const [showUpcoming, setShowUpcoming] = useState(false);
-  const [showNLInput, setShowNLInput] = useState(false);
+
+  // Hero motion: directional grid slide on prev/next navigation. Today gets its own
+  // arrival ripple (one-shot ring expansion on the today day-number) instead of a slide
+  // — confirms "you arrived" without re-orienting the grid the user just chose to revisit.
+  const gridContainerRef = useRef<HTMLDivElement | null>(null);
+  const [navAnim, setNavAnim] = useState<{ direction: 'forward' | 'backward'; tick: number } | null>(null);
+  const [todayArrivalTick, setTodayArrivalTick] = useState(0);
+
+  // Initial-fetch skeleton state — flips false once events array first populates or
+  // the load resolves with zero events.
+  const [eventsLoading, setEventsLoading] = useState(true);
+
+  // +N more origin-aware reveal: capture click coordinates so DayDetailModal
+  // scales in from the cell that triggered it.
+  const [dayDetailOrigin, setDayDetailOrigin] = useState<{ x: number; y: number } | null>(null);
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{
@@ -271,10 +284,16 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   useEffect(() => {
     const loadData = async () => {
       // Load local events
-      const e = await fetchCalendarEvents();
-      const t = await fetchTasks();
-      setEvents(e);
-      setTasks(t);
+      try {
+        const e = await fetchCalendarEvents();
+        const t = await fetchTasks();
+        setEvents(e);
+        setTasks(t);
+      } finally {
+        // Skeleton goes away once the local fetch resolves, even if it returns
+        // zero events. Remote sync below populates incrementally.
+        setEventsLoading(false);
+      }
 
       // Check Google Calendar connection
       try {
@@ -553,6 +572,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
   // Navigation handlers — defined here so keyboard shortcut useEffect can reference them
   const handlePrev = useCallback(() => {
+    setNavAnim({ direction: 'backward', tick: Date.now() });
     const newDate = new Date(currentDate);
     if (viewMode === 'year') newDate.setFullYear(newDate.getFullYear() - 1);
     else if (viewMode === 'month' || viewMode === 'agenda') newDate.setMonth(newDate.getMonth() - 1);
@@ -562,6 +582,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   }, [currentDate, viewMode]);
 
   const handleNext = useCallback(() => {
+    setNavAnim({ direction: 'forward', tick: Date.now() });
     const newDate = new Date(currentDate);
     if (viewMode === 'year') newDate.setFullYear(newDate.getFullYear() + 1);
     else if (viewMode === 'month' || viewMode === 'agenda') newDate.setMonth(newDate.getMonth() + 1);
@@ -569,6 +590,39 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     else newDate.setDate(newDate.getDate() + 1);
     setCurrentDate(newDate);
   }, [currentDate, viewMode]);
+
+  // Apply directional slide class to the grid wrapper. Force reflow so consecutive
+  // clicks restart the animation cleanly.
+  useEffect(() => {
+    if (!navAnim) return;
+    const el = gridContainerRef.current;
+    if (!el) return;
+    el.classList.remove('cal-grid-nav-forward', 'cal-grid-nav-backward');
+    // Trigger reflow — dot-access on offsetWidth is enough.
+    void el.offsetWidth;
+    el.classList.add(`cal-grid-nav-${navAnim.direction}`);
+  }, [navAnim]);
+
+  // Today arrival ripple — adds .cal-today-arrival to the grid wrapper for 700ms.
+  // CSS attaches a one-shot ring expansion to .cal-day-cell.today .cal-day-number::after.
+  // No-op when reduced-motion is set (the descendant ::after animation is gated globally).
+  const handleToday = useCallback(() => {
+    setCurrentDate(new Date());
+    setTodayArrivalTick(Date.now());
+  }, []);
+
+  useEffect(() => {
+    if (!todayArrivalTick) return;
+    const el = gridContainerRef.current;
+    if (!el) return;
+    el.classList.remove('cal-today-arrival');
+    void el.offsetWidth;
+    el.classList.add('cal-today-arrival');
+    const t = window.setTimeout(() => {
+      el.classList.remove('cal-today-arrival');
+    }, 750);
+    return () => window.clearTimeout(t);
+  }, [todayArrivalTick]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -609,7 +663,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         case 'y': case 'Y': setViewMode('year'); break;
         case 'a': case 'A': setViewMode('agenda'); break;
         // Navigation
-        case 't': case 'T': setCurrentDate(new Date()); break;
+        case 't': case 'T': handleToday(); break;
         case 'ArrowLeft':  if (!meta) { e.preventDefault(); handlePrev(); } break;
         case 'ArrowRight': if (!meta) { e.preventDefault(); handleNext(); } break;
         // New event
@@ -657,7 +711,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showEventModal, showDayDetail, showShortcutsHelp, showJumpToDate, focusMode, selectedEvent, handlePrev, handleNext]);
+  }, [showEventModal, showDayDetail, showShortcutsHelp, showJumpToDate, focusMode, selectedEvent, handlePrev, handleNext, handleToday]);
 
   // Swipe gesture navigation
   const navigateNext = useCallback(() => {
@@ -1947,7 +2001,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             {allDayEvents.slice(0, 3).map(ev => (
                 <div
                   key={ev.id}
-                  className={`text-[8px] sm:text-[9px] lg:text-[10px] px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-sm truncate cursor-pointer transition ${ev.color} text-white hover:opacity-90 border-l-2 border-white/50`}
+                  className={`text-[8px] sm:text-[9px] lg:text-[10px] px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-sm truncate cursor-pointer transition ${ev.color} text-white hover:opacity-90 ring-1 ring-white/40`}
                   onClick={(e) => { e.stopPropagation(); openEventDetail(ev); }}
                   onContextMenu={(e) => handleContextMenu(e, 'event', date, ev.id)}
                   title="All-day event"
@@ -2105,7 +2159,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
       {/* Event Detail Modal - Enhanced with Google Calendar fields */}
       {showEventDetail && selectedEvent && (
-          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+          <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
               <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in overflow-hidden max-h-[90vh] overflow-y-auto">
                   <div className={`${selectedEvent.color} p-6`}>
                     <div className="flex items-start justify-between">
@@ -2496,7 +2550,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         viewMode={viewMode}
         onPrev={handlePrev}
         onNext={handleNext}
-        onToday={() => setCurrentDate(new Date())}
+        onToday={handleToday}
         onViewChange={(view) => setViewMode(view)}
       />
 
@@ -2510,15 +2564,19 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           <div className="relative flex-1 min-w-0 max-w-[220px]">
             <input
               type="text"
-              placeholder="Search events..."
+              placeholder="Search events…"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-1.5 text-xs pl-8 outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+              className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-1.5 text-xs pl-8 outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent dark:text-white"
             />
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-[10px]" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 w-3 h-3" />
             {searchInput && (
-              <button onClick={() => { setSearchInput(''); setSearchQuery(''); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">
-                <X className="text-[10px]" />
+              <button
+                onClick={() => { setSearchInput(''); setSearchQuery(''); }}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+              >
+                <X className="w-3 h-3" />
               </button>
             )}
           </div>
@@ -2527,7 +2585,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           <select
             value={filterEventType}
             onChange={(e) => setFilterEventType(e.target.value)}
-            className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2 py-1.5 text-xs outline-none dark:text-white hidden sm:block"
+            className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2 py-1.5 text-xs outline-none dark:text-white hidden sm:block focus:ring-2 focus:ring-rose-500 focus:border-transparent"
           >
             <option value="all">All Types</option>
             {EVENT_TYPES.map(type => (
@@ -2538,178 +2596,144 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           {/* Spacer */}
           <div className="flex-1" />
 
-          {/* AI Quick Add (NL input toggle) */}
-          {!isMobile && (
-            <button
-              onClick={() => setShowNLInput(prev => !prev)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition ${showNLInput ? 'bg-violet-500 border-violet-500 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 hover:border-violet-300'}`}
-              title="AI quick-add (type naturally)"
-            >
-              <Wand2 className="text-[10px]" />
-              <span className="hidden lg:inline">Quick Add</span>
-            </button>
-          )}
-
-          {/* Divider */}
-          <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-800 hidden sm:block" />
-
-          {/* New Event */}
+          {/* New Event — primary CTA, the only solid coral at rest */}
           <button
             onClick={() => setShowEventModal(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold hover:opacity-90 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-mono text-[11px] tracking-[0.1em] uppercase font-semibold transition shadow-[0_2px_8px_rgba(244,63,94,0.20)]"
           >
-            <Plus className="text-[10px]" />
-            <span className="hidden sm:inline">New</span>
+            <Plus className="w-3 h-3" />
+            <span className="hidden sm:inline">New Event</span>
           </button>
 
-          {/* Icon buttons */}
-          <div className="flex items-center gap-1">
-            {/* Upcoming */}
-            <button
-              onClick={() => setShowUpcoming(!showUpcoming)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showUpcoming ? 'bg-blue-500 border-blue-500 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
-              title="Upcoming Events"
-            >
-              <Clock className="text-xs" />
-            </button>
-            {/* Tasks */}
-            <button
-              onClick={() => setShowTaskPanel(!showTaskPanel)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showTaskPanel ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
-              title="Tasks"
-            >
-              <ListChecks className="text-xs" />
-            </button>
-            {/* Sync status indicator */}
-            {(googleConnected || outlookConnected) && (
-              <div className="relative group hidden md:flex">
-                <button
-                  onClick={() => { if (googleConnected) syncGoogleCalendar(); if (outlookConnected) syncOutlookCalendar(); }}
-                  disabled={syncingGoogle || syncingOutlook}
-                  aria-label={`Sync calendars${lastSynced ? ` — last synced ${lastSynced.toLocaleTimeString()}` : ''}`}
-                  title={`Sync now${lastSynced ? ` · Last synced ${lastSynced.toLocaleTimeString()}` : ''}`}
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg border transition relative
-                    ${(syncingGoogle || syncingOutlook)
-                      ? 'border-blue-300 dark:border-blue-700 text-blue-500'
-                      : 'border-green-300 dark:border-green-700 text-green-500 hover:text-green-600'
-                    }`}
-                >
-                  <i className={`fa-solid fa-rotate text-xs ${(syncingGoogle || syncingOutlook) ? 'animate-spin' : ''}`} aria-hidden="true" />
-                  {/* Live dot */}
-                  <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white dark:border-zinc-950
-                    ${(syncingGoogle || syncingOutlook) ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}
-                    aria-hidden="true"
-                  />
-                </button>
-                {/* Hover tooltip */}
-                <div className="absolute right-0 top-full mt-2 w-52 bg-zinc-900 text-white rounded-xl shadow-2xl p-3 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-xs">
-                  <p className="font-semibold mb-1 text-zinc-200">Calendar Sync</p>
-                  {googleConnected && (
-                    <div className="flex items-center gap-1.5 text-zinc-400">
-                      <ExternalLink className="text-[10px]" />
-                      Google {syncingGoogle ? '· syncing…' : '· connected'}
-                    </div>
-                  )}
-                  {outlookConnected && (
-                    <div className="flex items-center gap-1.5 text-zinc-400 mt-0.5">
-                      <Grid3X3 className="text-[10px]" />
-                      Outlook {syncingOutlook ? '· syncing…' : '· connected'}
-                    </div>
-                  )}
-                  {lastSynced && (
-                    <p className="text-zinc-500 mt-1.5 border-t border-zinc-800 pt-1.5">
-                      Last synced {lastSynced.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                      <br />Auto-syncs every 5 min
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-            {/* Google icon fallback when not connected (for discoverability) */}
-            {!googleConnected && !outlookConnected && (
-              <button
-                onClick={syncGoogleCalendar}
-                aria-label="Google Calendar not connected"
-                title="Google Calendar not connected — connect in Settings"
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-300 dark:text-zinc-600 cursor-default"
-              >
-                <ExternalLink className="text-xs" />
-              </button>
-            )}
-            {/* Settings */}
-            <button
-              onClick={() => setShowCalendarSettings(!showCalendarSettings)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showCalendarSettings ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
-              title="Calendar Settings"
-            >
-              <Settings className="text-xs" />
-            </button>
-            {/* AI Panel */}
+          {/* Distilled icon cluster — AI · Settings · Ellipsis */}
+          <div className="flex items-center gap-1 ml-1">
+            {/* AI Panel (⌘I) */}
             <button
               onClick={() => {
                 setShowAIPanel(!showAIPanel);
                 if (!showAIPanel && !analytics) handleRunAllAnalyses();
               }}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showAIPanel ? 'bg-gradient-to-r from-purple-500 to-pink-500 border-purple-500 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-purple-500 hover:border-purple-300'}`}
+              aria-label="AI Calendar Assistant (⌘I)"
               title="AI Calendar Assistant (⌘I)"
+              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showAIPanel ? 'bg-rose-500 border-rose-500 text-white shadow-[0_0_0_4px_rgba(244,63,94,0.12)]' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-rose-500 hover:border-rose-300 dark:hover:border-rose-400/40'}`}
             >
-              <i className={`fa-solid fa-wand-magic-sparkles text-xs ${aiLoading ? 'animate-pulse' : ''}`}></i>
-            </button>
-            {/* Keyboard shortcuts */}
-            <button
-              onClick={() => setShowShortcutsHelp(true)}
-              aria-label="Keyboard shortcuts (?)"
-              title="Keyboard shortcuts (?)"
-              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition text-[11px] font-bold hidden md:flex ${showShortcutsHelp ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white'}`}
-            >?</button>
-
-            {/* Jump to date */}
-            <button
-              onClick={() => setShowJumpToDate(prev => !prev)}
-              aria-label="Jump to date (⌘J)"
-              title="Jump to date (⌘J)"
-              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition hidden md:flex ${showJumpToDate ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white'}`}
-            >
-              <CalendarDays className="text-xs" />
+              <Wand2 className={`w-3.5 h-3.5 ${aiLoading ? 'animate-pulse' : ''}`} />
             </button>
 
-            {/* Focus mode */}
+            {/* Settings */}
             <button
-              onClick={() => setFocusMode(prev => !prev)}
-              aria-label={focusMode ? 'Exit focus mode (⌘F)' : 'Focus mode (⌘F)'}
-              title={focusMode ? 'Exit focus mode (⌘F)' : 'Focus mode (⌘F)'}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition hidden md:flex ${focusMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-indigo-600 hover:border-indigo-300'}`}
+              onClick={() => setShowCalendarSettings(!showCalendarSettings)}
+              aria-label="Calendar Settings"
+              title="Calendar Settings"
+              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition relative ${showCalendarSettings ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
             >
-              <Maximize2 className="text-xs" />
+              <Settings className="w-3.5 h-3.5" />
+              {/* Live sync dot — visible only when syncing or in error */}
+              {(syncingGoogle || syncingOutlook || syncError) && (
+                <span
+                  className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white dark:border-zinc-950 ${
+                    syncError ? 'bg-red-500' : 'bg-blue-500 animate-pulse'
+                  }`}
+                  aria-hidden="true"
+                />
+              )}
             </button>
 
-            {/* ⋯ More / Export menu */}
-            <div className="relative hidden md:block">
+            {/* ⋯ More menu — everything else, with text labels and shortcut hints */}
+            <div className="relative">
               <button
                 onClick={(e) => { e.stopPropagation(); setShowExportMenu(prev => !prev); }}
                 aria-label="More options"
                 title="More options"
                 className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showExportMenu ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white'}`}
               >
-                <Ellipsis className="text-xs" />
+                <Ellipsis className="w-3.5 h-3.5" />
               </button>
               {showExportMenu && (
                 <div
-                  className="absolute right-0 top-10 z-30 w-52 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden"
+                  className="absolute right-0 top-10 z-30 w-64 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden"
                   onMouseDown={e => e.stopPropagation()}
                 >
                   <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Export</span>
+                    <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-400">Panels</span>
                   </div>
                   <button
-                    onClick={exportAsICS}
+                    onClick={() => { setShowUpcoming(!showUpcoming); setShowExportMenu(false); }}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition text-left"
+                  >
+                    <span className="flex items-center gap-2.5"><Clock className="w-3.5 h-3.5 text-zinc-400" /> Upcoming events</span>
+                  </button>
+                  <button
+                    onClick={() => { setShowTaskPanel(!showTaskPanel); setShowExportMenu(false); }}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition text-left"
+                  >
+                    <span className="flex items-center gap-2.5"><ListChecks className="w-3.5 h-3.5 text-zinc-400" /> Tasks</span>
+                  </button>
+
+                  <div className="px-3 py-2 border-y border-zinc-100 dark:border-zinc-800 mt-1">
+                    <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-400">Navigate</span>
+                  </div>
+                  <button
+                    onClick={() => { setShowJumpToDate(prev => !prev); setShowExportMenu(false); }}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition text-left"
+                  >
+                    <span className="flex items-center gap-2.5"><CalendarDays className="w-3.5 h-3.5 text-zinc-400" /> Jump to date</span>
+                    <kbd className="font-mono text-[10px] tracking-wider text-zinc-400">⌘J</kbd>
+                  </button>
+                  <button
+                    onClick={() => { setFocusMode(prev => !prev); setShowExportMenu(false); }}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition text-left"
+                  >
+                    <span className="flex items-center gap-2.5"><Maximize2 className="w-3.5 h-3.5 text-zinc-400" /> {focusMode ? 'Exit focus mode' : 'Focus mode'}</span>
+                    <kbd className="font-mono text-[10px] tracking-wider text-zinc-400">⌘F</kbd>
+                  </button>
+                  <button
+                    onClick={() => { setShowShortcutsHelp(true); setShowExportMenu(false); }}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition text-left"
+                  >
+                    <span className="flex items-center gap-2.5"><HelpCircle className="w-3.5 h-3.5 text-zinc-400" /> Keyboard shortcuts</span>
+                    <kbd className="font-mono text-[10px] tracking-wider text-zinc-400">?</kbd>
+                  </button>
+
+                  {(googleConnected || outlookConnected) && (
+                    <>
+                      <div className="px-3 py-2 border-y border-zinc-100 dark:border-zinc-800 mt-1">
+                        <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-400">Sync</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (googleConnected) syncGoogleCalendar();
+                          if (outlookConnected) syncOutlookCalendar();
+                          setShowExportMenu(false);
+                        }}
+                        disabled={syncingGoogle || syncingOutlook}
+                        className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition text-left disabled:opacity-50"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <RefreshCw className={`w-3.5 h-3.5 text-zinc-400 ${(syncingGoogle || syncingOutlook) ? 'animate-spin' : ''}`} />
+                          {(syncingGoogle || syncingOutlook) ? 'Syncing…' : 'Sync now'}
+                        </span>
+                        {lastSynced && !(syncingGoogle || syncingOutlook) && (
+                          <span className="font-mono text-[10px] tracking-wider text-zinc-400" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            {lastSynced.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </button>
+                    </>
+                  )}
+
+                  <div className="px-3 py-2 border-y border-zinc-100 dark:border-zinc-800 mt-1">
+                    <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-400">Export</span>
+                  </div>
+                  <button
+                    onClick={() => { exportAsICS(); setShowExportMenu(false); }}
                     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition text-left"
                   >
-                    <FileDown className="text-indigo-500 w-4" />
-                    <div>
+                    <FileDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                    <div className="min-w-0">
                       <div className="font-medium">Export as .ics</div>
-                      <div className="text-[10px] text-zinc-400 capitalize">
-                        Current {viewMode} view ({filteredEvents.filter(e => {
+                      <div className="font-mono text-[10px] tracking-wider text-zinc-400 capitalize" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        Current {viewMode} · {filteredEvents.filter(e => {
                           const ws = new Date(currentDate);
                           const we = new Date(currentDate);
                           if (viewMode === 'week') { ws.setDate(ws.getDate() - ws.getDay()); ws.setHours(0,0,0,0); we.setDate(ws.getDate()+7); }
@@ -2717,7 +2741,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                           else if (viewMode === 'month') { ws.setDate(1); ws.setHours(0,0,0,0); we.setMonth(we.getMonth()+1); we.setDate(0); }
                           else { ws.setFullYear(ws.getFullYear(),0,1); we.setFullYear(we.getFullYear(),11,31); }
                           return e.start >= ws && e.start <= we;
-                        }).length} events)
+                        }).length} events
                       </div>
                     </div>
                   </button>
@@ -2726,26 +2750,6 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             </div>
           </div>
         </div>
-
-        {/* NL Quick-Add panel — slides in below toolbar when active */}
-        {showNLInput && !isMobile && (
-          <div className="px-3 pb-2 border-t border-zinc-100 dark:border-zinc-800/60 animate-fade-in">
-            <NaturalLanguageEventInput
-              contacts={contacts}
-              onEventCreated={(eventData) => {
-                setNewEventTitle(eventData.title || '');
-                setNewEventDate(eventData.start ? eventData.start.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
-                setNewEventTime(eventData.start ? `${eventData.start.getHours().toString().padStart(2, '0')}:${eventData.start.getMinutes().toString().padStart(2, '0')}` : '09:00');
-                setNewEventEndTime(eventData.end ? `${eventData.end.getHours().toString().padStart(2, '0')}:${eventData.end.getMinutes().toString().padStart(2, '0')}` : '10:00');
-                setNewEventDesc(eventData.description || '');
-                setNewEventLocation(eventData.location || '');
-                setNewEventType(eventData.type || 'event');
-                setShowEventModal(true);
-                setShowNLInput(false);
-              }}
-            />
-          </div>
-        )}
       </div>
 
       {/* Sync conflict resolution banner */}
@@ -2803,6 +2807,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
            onTouchMove={handleTouchMove}
            onTouchEnd={handleTouchEnd}
            ref={(el) => {
+             gridContainerRef.current = el;
              if (isMobile && el) {
                pullToRefresh.bindToElement(el);
              }
@@ -2836,14 +2841,16 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                <MonthView
                  currentDate={currentDate}
                  events={filteredEvents}
+                 loading={eventsLoading}
                  onDateClick={(date) => {
                    setNewEventDate(date.toISOString().split('T')[0]);
                    setShowEventModal(true);
                  }}
                  onEventClick={openEventDetail}
-                 onShowMoreEvents={(date, events) => {
+                 onShowMoreEvents={(date, events, origin) => {
                    setDayDetailDate(date);
                    setDayDetailEvents(events);
+                   setDayDetailOrigin(origin ?? null);
                    setShowDayDetail(true);
                  }}
                  onEventReschedule={handleEventReschedule}
@@ -2857,7 +2864,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                  aria-live="polite"
                >
                  <div className="flex items-center gap-2.5 px-4 py-2.5 bg-zinc-900/90 dark:bg-zinc-100/90 text-white dark:text-zinc-900 text-sm font-medium rounded-full shadow-xl backdrop-blur-sm animate-fade-in">
-                   <ArrowLeftRight className="text-indigo-400 dark:text-indigo-600 text-xs" />
+                   <ArrowLeftRight className="text-zinc-400 dark:text-zinc-500 w-3.5 h-3.5" />
                    Swipe left or right to navigate weeks
                  </div>
                </div>
@@ -3092,7 +3099,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           setViewMode(view);
           if (date) setCurrentDate(date);
         }}
-        onGoToToday={() => setCurrentDate(new Date())}
+        onGoToToday={handleToday}
         onCreateEvent={(date) => {
           if (date) {
             setNewEventDate(date.toISOString().split('T')[0]);
@@ -3120,23 +3127,44 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         }}
       />
 
-      {/* Focus mode banner — visible only while focusMode is active */}
+      {/* Day detail modal — opened by +N more in Month view. Origin-aware entry. */}
+      <DayDetailModal
+        show={showDayDetail}
+        date={dayDetailDate}
+        events={dayDetailEvents}
+        origin={dayDetailOrigin}
+        onClose={() => setShowDayDetail(false)}
+        onEventClick={(event) => {
+          setShowDayDetail(false);
+          openEventDetail(event);
+        }}
+        onCreateEvent={() => {
+          if (dayDetailDate) {
+            setNewEventDate(dayDetailDate.toISOString().split('T')[0]);
+            setShowDayDetail(false);
+            setShowEventModal(true);
+          }
+        }}
+      />
+
+      {/* Focus mode banner — visible only while focusMode is active.
+          Coral signal: focus mode IS active state, matches the cal-focus-mode top stripe. */}
       {focusMode && (
         <div
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9996] flex items-center gap-3 px-4 py-2 rounded-full bg-indigo-600 text-white text-xs font-semibold shadow-xl"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9996] flex items-center gap-3 px-4 py-2 rounded-full bg-rose-500 text-white font-mono text-[11px] tracking-[0.1em] uppercase font-semibold shadow-[0_4px_24px_rgba(244,63,94,0.30)]"
           role="status"
           aria-live="polite"
         >
-          <Maximize2 className="text-xs" />
-          Focus mode — sidebars hidden
+          <Maximize2 className="w-3.5 h-3.5" />
+          Focus mode · sidebars hidden
           <button
             onClick={() => setFocusMode(false)}
             aria-label="Exit focus mode"
             className="ml-1 opacity-70 hover:opacity-100 transition-opacity"
           >
-            <X className="text-xs" />
+            <X className="w-3.5 h-3.5" />
           </button>
-          <span className="opacity-50 ml-1">⌘F or Esc</span>
+          <span className="opacity-60 ml-1 normal-case tracking-wider">⌘F or Esc</span>
         </div>
       )}
     </div>

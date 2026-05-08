@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 import {
   Inbox,
   AtSign,
@@ -99,10 +101,10 @@ export const NotificationRoutingCard: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center gap-2">
         <Inbox className="w-4 h-4 text-zinc-500" />
-        <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Channel routing</h4>
+        <MonoLabel>Channel routing</MonoLabel>
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
         Choose where each type of notification is delivered. Multiple modes can be active per channel.
@@ -178,6 +180,6 @@ export const NotificationRoutingCard: React.FC = () => {
           {isSaving ? 'Saving...' : 'Save Routing'}
         </button>
       </div>
-    </div>
+    </SettingsCard>
   );
 };

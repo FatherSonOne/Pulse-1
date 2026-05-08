@@ -79,7 +79,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
   if (!props.isOpen) return null;
 
   return (
-    <div className="absolute inset-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4 overflow-y-auto">
+    <div className="absolute inset-0 z-50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4 overflow-y-auto">
       <form
         onSubmit={props.onSubmit}
         className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-scale-in my-8"

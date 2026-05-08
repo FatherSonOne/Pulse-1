@@ -21,7 +21,7 @@ import {
 import { FeatureSettingsPanel } from '../components/Messages/FeatureSettingsPanel';
 import { useFeatures } from '../contexts/FeatureContext';
 
-import { Bold, Mic, Send, Sliders, Wand2 } from 'lucide-react';
+import { Mic, Send, Sliders, Wand2 } from 'lucide-react';
 
 /**
  * Example 1: Message with RadialMenu for reactions
@@ -181,7 +181,7 @@ export const MessageWithContextMenu: React.FC<{ message: any }> = ({ message }) 
       onClick: () => {
         console.log('Toggle pin:', message.id);
       },
-      disabled: !isFeatureEnabled('pinning')
+      disabled: false
     },
     {
       id: 'edit',
@@ -384,12 +384,6 @@ export const MessagesWithSettings: React.FC = () => {
           {isFeatureEnabled('aiComposer') && (
             <button aria-label="AI Composer">
               <Wand2 />
-            </button>
-          )}
-
-          {isFeatureEnabled('formatting') && (
-            <button aria-label="Text formatting">
-              <Bold />
             </button>
           )}
 

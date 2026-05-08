@@ -1,15 +1,10 @@
 /**
- * IntelDesk — Phase 2: Source Library Panel
+ * IntelDesk — Source library panel.
  *
- * The left panel of WarRoomLayout. Shows all ingested documents as "Intel Assets"
- * with toggle switches to control which sources are active in the AI context.
- *
- * Features:
- *  - Source cards: type icon, title, status beacon, toggle, summary
- *  - In-progress upload progress bars
- *  - Filter/search bar
- *  - Add-all / clear-all context shortcuts
- *  - Notebook Guide section (AI question generation — Phase 4)
+ * Left panel of WarRoomLayout. Lists each uploaded source with a toggle that
+ * controls whether it participates in the AI context. Voice: warm, not tactical
+ * (PRODUCT.md). The "Intel" file/component name is internal; user-facing copy
+ * uses "Sources" / "Add" / "Library".
  */
 
 import React, { useState, useRef } from 'react';
@@ -18,6 +13,7 @@ import { WarRoomMode } from './ModeSwitcher';
 
 import { Database, Eye, Plus, Satellite, Trash2, Upload } from 'lucide-react';
 import { MarkdownContent } from './MarkdownContent';
+import { ProvenanceTag } from './ProvenanceTag';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -80,9 +76,9 @@ const SourceCard: React.FC<{
     <div
       style={{
         padding: '9px 12px',
-        borderBottom: '1px solid var(--wr-border)',
+        borderBottom: '1px solid var(--pulse-border)',
         backgroundColor: isActive ? 'rgba(6,182,212,0.05)' : 'transparent',
-        transition: 'background var(--wr-transition-fast)',
+        transition: 'background var(--pulse-duration) var(--pulse-ease)',
       }}
     >
       {/* Row 1: icon · title · actions */}
@@ -101,7 +97,7 @@ const SourceCard: React.FC<{
             style={{
               fontSize: 12,
               fontWeight: 500,
-              color: 'var(--wr-text-primary)',
+              color: 'var(--pulse-ink)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -116,7 +112,7 @@ const SourceCard: React.FC<{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 3,
-                fontFamily: 'var(--wr-font-mono)',
+                fontFamily: 'var(--pulse-font-mono)',
                 fontSize: 9,
                 color: sColor,
                 letterSpacing: '0.06em',
@@ -140,8 +136,8 @@ const SourceCard: React.FC<{
               <span
                 style={{
                   fontSize: 9,
-                  color: 'var(--wr-text-muted)',
-                  fontFamily: 'var(--wr-font-mono)',
+                  color: 'var(--pulse-ink-3)',
+                  fontFamily: 'var(--pulse-font-mono)',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -164,11 +160,11 @@ const SourceCard: React.FC<{
             width: 28,
             height: 16,
             borderRadius: 8,
-            backgroundColor: isActive ? 'var(--wr-accent-secondary)' : 'var(--wr-bg-surface)',
-            border: `1px solid ${isActive ? 'var(--wr-accent-secondary)' : 'var(--wr-border-active)'}`,
+            backgroundColor: isActive ? 'var(--pulse-tone-info)' : 'var(--ps-bg-surface, rgba(0,0,0,0.04))',
+            border: `1px solid ${isActive ? 'var(--pulse-tone-info)' : 'var(--pulse-border-strong)'}`,
             cursor: isReady ? 'pointer' : 'not-allowed',
             position: 'relative',
-            transition: 'all var(--wr-transition-fast)',
+            transition: 'all var(--pulse-duration) var(--pulse-ease)',
             flexShrink: 0,
             opacity: isReady ? 1 : 0.4,
           }}
@@ -182,7 +178,7 @@ const SourceCard: React.FC<{
               height: 10,
               borderRadius: '50%',
               backgroundColor: 'white',
-              transition: 'left var(--wr-transition-fast)',
+              transition: 'left var(--pulse-duration) var(--pulse-ease)',
             }}
           />
         </button>
@@ -198,7 +194,7 @@ const SourceCard: React.FC<{
               border: 'none',
               cursor: 'pointer',
               padding: '2px 3px',
-              color: 'var(--wr-text-muted)',
+              color: 'var(--pulse-ink-3)',
               fontSize: 11,
               flexShrink: 0,
             }}
@@ -217,7 +213,7 @@ const SourceCard: React.FC<{
             border: 'none',
             cursor: 'pointer',
             padding: '2px 3px',
-            color: 'var(--wr-text-muted)',
+            color: 'var(--pulse-ink-3)',
             fontSize: 11,
             flexShrink: 0,
           }}
@@ -231,16 +227,19 @@ const SourceCard: React.FC<{
         <div
           style={{
             marginTop: 8,
-            padding: '7px 9px',
-            backgroundColor: 'var(--wr-bg-elevated)',
-            borderRadius: 'var(--wr-radius-sm)',
-            border: '1px solid var(--wr-border)',
-            fontSize: 11,
-            color: 'var(--wr-text-secondary)',
-            lineHeight: 1.65,
+            padding: '8px 10px',
+            background: 'var(--pulse-surface)',
+            borderRadius: 'var(--ps-radius-sm, 8px)',
+            border: '1px solid var(--pulse-border)',
+            color: 'var(--pulse-ink-2)',
           }}
         >
-          <MarkdownContent content={summary} />
+          <div style={{ marginBottom: 6 }}>
+            <ProvenanceTag kind="summary" />
+          </div>
+          <div className="ps-md-compact">
+            <MarkdownContent content={summary} />
+          </div>
         </div>
       )}
     </div>
@@ -253,7 +252,7 @@ const UploadCard: React.FC<{ fileName: string; progress: number }> = ({ fileName
   <div
     style={{
       padding: '9px 12px',
-      borderBottom: '1px solid var(--wr-border)',
+      borderBottom: '1px solid var(--pulse-border)',
       backgroundColor: 'rgba(244,63,94,0.04)',
     }}
   >
@@ -263,7 +262,7 @@ const UploadCard: React.FC<{ fileName: string; progress: number }> = ({ fileName
         <div
           style={{
             fontSize: 11,
-            color: 'var(--wr-text-secondary)',
+            color: 'var(--pulse-ink-2)',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -275,7 +274,7 @@ const UploadCard: React.FC<{ fileName: string; progress: number }> = ({ fileName
           style={{
             marginTop: 4,
             height: 2,
-            backgroundColor: 'var(--wr-bg-elevated)',
+            backgroundColor: 'var(--pulse-surface)',
             borderRadius: 1,
             overflow: 'hidden',
           }}
@@ -284,7 +283,7 @@ const UploadCard: React.FC<{ fileName: string; progress: number }> = ({ fileName
             style={{
               height: '100%',
               width: `${progress}%`,
-              backgroundColor: 'var(--wr-accent-primary)',
+              backgroundColor: 'var(--pulse-rose)',
               transition: 'width 0.3s ease',
             }}
           />
@@ -292,9 +291,9 @@ const UploadCard: React.FC<{ fileName: string; progress: number }> = ({ fileName
       </div>
       <span
         style={{
-          fontFamily: 'var(--wr-font-mono)',
+          fontFamily: 'var(--pulse-font-mono)',
           fontSize: 9,
-          color: 'var(--wr-accent-primary)',
+          color: 'var(--pulse-rose)',
           flexShrink: 0,
         }}
       >
@@ -337,7 +336,7 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
       <div
         style={{
           padding: '7px 12px',
-          borderBottom: '1px solid var(--wr-border)',
+          borderBottom: '1px solid var(--pulse-border)',
           display: 'flex',
           alignItems: 'center',
           gap: 6,
@@ -346,39 +345,29 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
       >
         <span
           style={{
-            fontFamily: 'var(--wr-font-mono)',
+            fontFamily: 'var(--pulse-font-mono)',
             fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '0.12em',
+            fontWeight: 500,
+            letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: 'var(--wr-text-secondary)',
+            color: 'var(--pulse-ink-2)',
             flex: 1,
           }}
         >
-          Assets
-          {completedDocs.length > 0 && (
-            <span
-              style={{
-                marginLeft: 6,
-                fontSize: 9,
-                fontWeight: 400,
-                color: 'var(--wr-accent-secondary)',
-              }}
-            >
-              {activeCount}/{completedDocs.length} active
-            </span>
-          )}
+          {completedDocs.length > 0
+            ? `${activeCount} / ${completedDocs.length} active`
+            : 'Library'}
         </span>
 
         <button
           onClick={() => fileInputRef.current?.click()}
-          title="Ingest new source"
-          aria-label="Ingest new source"
+          title="Add a source"
+          aria-label="Add a source"
           style={{
             padding: '4px 9px',
-            backgroundColor: 'var(--wr-accent-primary)',
+            backgroundColor: 'var(--pulse-rose)',
             border: 'none',
-            borderRadius: 'var(--wr-radius-sm)',
+            borderRadius: '8px',
             color: 'white',
             cursor: 'pointer',
             display: 'flex',
@@ -390,13 +379,13 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
           <Plus className="fa" />
           <span
             style={{
-              fontFamily: 'var(--wr-font-mono)',
-              fontSize: 9,
-              letterSpacing: '0.08em',
-              fontWeight: 700,
+              fontFamily: 'var(--pulse-font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.1em',
+              fontWeight: 500,
             }}
           >
-            INGEST
+            ADD
           </span>
         </button>
 
@@ -416,7 +405,7 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
         <div
           style={{
             padding: '5px 12px',
-            borderBottom: '1px solid var(--wr-border)',
+            borderBottom: '1px solid var(--pulse-border)',
             display: 'flex',
             alignItems: 'center',
             gap: 5,
@@ -430,11 +419,11 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
               fontSize: 9,
               padding: '2px 7px',
               borderRadius: 4,
-              border: '1px solid var(--wr-border-active)',
+              border: '1px solid var(--pulse-border-strong)',
               background: 'transparent',
-              color: 'var(--wr-accent-secondary)',
+              color: 'var(--pulse-tone-info)',
               cursor: 'pointer',
-              fontFamily: 'var(--wr-font-mono)',
+              fontFamily: 'var(--pulse-font-mono)',
               letterSpacing: '0.06em',
               fontWeight: 700,
             }}
@@ -448,11 +437,11 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
               fontSize: 9,
               padding: '2px 7px',
               borderRadius: 4,
-              border: '1px solid var(--wr-border)',
+              border: '1px solid var(--pulse-border)',
               background: 'transparent',
-              color: 'var(--wr-text-muted)',
+              color: 'var(--pulse-ink-3)',
               cursor: 'pointer',
-              fontFamily: 'var(--wr-font-mono)',
+              fontFamily: 'var(--pulse-font-mono)',
               letterSpacing: '0.06em',
             }}
           >
@@ -467,10 +456,10 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
               fontSize: 10,
               padding: '3px 7px',
               borderRadius: 4,
-              border: '1px solid var(--wr-border)',
-              background: 'var(--wr-bg-surface)',
-              color: 'var(--wr-text-primary)',
-              fontFamily: 'var(--wr-font-mono)',
+              border: '1px solid var(--pulse-border)',
+              background: 'var(--ps-bg-surface, rgba(0,0,0,0.04))',
+              color: 'var(--pulse-ink)',
+              fontFamily: 'var(--pulse-font-mono)',
               outline: 'none',
               minWidth: 0,
             }}
@@ -483,7 +472,7 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
         <div style={{
           margin: '8px',
           padding: '8px 12px',
-          borderRadius: 'var(--wr-radius-sm)',
+          borderRadius: '8px',
           backgroundColor: activeCount === 0
             ? 'rgba(239, 68, 68, 0.08)' : 'rgba(6, 182, 212, 0.08)',
           border: `1px solid ${activeCount === 0
@@ -495,7 +484,7 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
         }}>
           <Satellite className="fa" />
           <span style={{
-            fontFamily: 'var(--wr-font-mono)',
+            fontFamily: 'var(--pulse-font-mono)',
             fontSize: 10,
             fontWeight: 700,
             letterSpacing: '0.06em',
@@ -539,13 +528,13 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
             <div>
               <div
                 style={{
-                  fontFamily: 'var(--wr-font-mono)',
+                  fontFamily: 'var(--pulse-font-mono)',
                   fontSize: 11,
-                  color: 'var(--wr-text-secondary)',
+                  color: 'var(--pulse-ink-2)',
                   marginBottom: 8,
                 }}
               >
-                No intel ingested yet
+                No sources yet
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -553,15 +542,16 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
                   fontSize: 10,
                   padding: '4px 12px',
                   borderRadius: 4,
-                  border: '1px solid var(--wr-accent-primary)',
+                  border: '1px solid var(--pulse-rose)',
                   background: 'transparent',
-                  color: 'var(--wr-accent-primary)',
+                  color: 'var(--pulse-rose)',
                   cursor: 'pointer',
-                  fontFamily: 'var(--wr-font-mono)',
-                  letterSpacing: '0.06em',
+                  fontFamily: 'var(--pulse-font-mono)',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
                 }}
               >
-                + INGEST FIRST SOURCE
+                + Add your first source
               </button>
             </div>
           </div>

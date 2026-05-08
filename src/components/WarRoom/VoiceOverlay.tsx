@@ -122,13 +122,13 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onSendMessage, onClo
     }
   };
 
-  const micColor = isListening ? '#f43f5e' : 'var(--wr-accent-secondary)';
+  const micColor = isListening ? 'var(--pulse-rose)' : 'var(--pulse-tone-info)';
 
   return (
     <div
       style={{
-        borderTop: '1px solid var(--wr-border)',
-        backgroundColor: 'var(--wr-bg-secondary)',
+        borderTop: '1px solid var(--pulse-border)',
+        backgroundColor: 'var(--pulse-canvas-soft)',
         padding: '8px 14px',
         display: 'flex',
         alignItems: 'center',
@@ -154,7 +154,7 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onSendMessage, onClo
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          transition: 'all var(--wr-transition-fast)',
+          transition: 'all var(--pulse-duration) var(--pulse-ease)',
           boxShadow: isListening ? `0 0 12px ${micColor}60` : 'none',
         }}
       >
@@ -181,8 +181,8 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onSendMessage, onClo
               border: 'none',
               outline: 'none',
               resize: 'none',
-              color: interimTranscript ? 'var(--wr-text-muted)' : 'var(--wr-text-primary)',
-              fontFamily: 'var(--wr-font-sans)',
+              color: interimTranscript ? 'var(--pulse-ink-3)' : 'var(--pulse-ink)',
+              fontFamily: 'var(--pulse-font)',
               fontSize: 13,
               lineHeight: 1.5,
               padding: 0,
@@ -193,9 +193,9 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onSendMessage, onClo
         ) : (
           <div
             style={{
-              fontFamily: 'var(--wr-font-mono)',
+              fontFamily: 'var(--pulse-font-mono)',
               fontSize: 11,
-              color: 'var(--wr-text-muted)',
+              color: 'var(--pulse-ink-3)',
               userSelect: 'none',
             }}
           >
@@ -215,11 +215,11 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onSendMessage, onClo
           title="Send (Enter)"
           style={{
             padding: '6px 14px',
-            borderRadius: 'var(--wr-radius-sm)',
-            border: '1px solid var(--wr-accent-primary)',
-            backgroundColor: 'var(--wr-accent-primary)',
+            borderRadius: '8px',
+            border: '1px solid var(--pulse-rose)',
+            backgroundColor: 'var(--pulse-rose)',
             color: 'white',
-            fontFamily: 'var(--wr-font-mono)',
+            fontFamily: 'var(--pulse-font-mono)',
             fontSize: 11,
             fontWeight: 700,
             letterSpacing: '0.06em',
@@ -239,7 +239,7 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onSendMessage, onClo
       {isListening && (
         <span
           style={{
-            fontFamily: 'var(--wr-font-mono)',
+            fontFamily: 'var(--pulse-font-mono)',
             fontSize: 9,
             color: micColor,
             fontWeight: 700,
@@ -261,7 +261,7 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onSendMessage, onClo
           background: 'none',
           border: 'none',
           cursor: 'pointer',
-          color: 'var(--wr-text-muted)',
+          color: 'var(--pulse-ink-3)',
           fontSize: 14,
           padding: '4px 6px',
           flexShrink: 0,

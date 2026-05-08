@@ -85,7 +85,7 @@ const NoteCard: React.FC<{
     <div
       style={{
         padding: '9px 12px',
-        borderBottom: '1px solid var(--wr-border)',
+        borderBottom: '1px solid var(--pulse-border)',
         backgroundColor: `${cfg.color}08`,
       }}
     >
@@ -97,7 +97,7 @@ const NoteCard: React.FC<{
         />
         <span
           style={{
-            fontFamily: 'var(--wr-font-mono)',
+            fontFamily: 'var(--pulse-font-mono)',
             fontSize: 9,
             fontWeight: 700,
             letterSpacing: '0.1em',
@@ -110,9 +110,9 @@ const NoteCard: React.FC<{
         </span>
         <span
           style={{
-            fontFamily: 'var(--wr-font-mono)',
+            fontFamily: 'var(--pulse-font-mono)',
             fontSize: 9,
-            color: 'var(--wr-text-muted)',
+            color: 'var(--pulse-ink-3)',
           }}
         >
           {formatTime(note.createdAt)}
@@ -126,7 +126,7 @@ const NoteCard: React.FC<{
             border: 'none',
             cursor: 'pointer',
             padding: '1px 3px',
-            color: 'var(--wr-text-muted)',
+            color: 'var(--pulse-ink-3)',
             fontSize: 10,
             flexShrink: 0,
           }}
@@ -139,7 +139,7 @@ const NoteCard: React.FC<{
       <div
         style={{
           fontSize: 12,
-          color: 'var(--wr-text-primary)',
+          color: 'var(--pulse-ink)',
           lineHeight: 1.55,
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
@@ -154,8 +154,8 @@ const NoteCard: React.FC<{
           style={{
             marginTop: 5,
             fontSize: 10,
-            color: 'var(--wr-text-muted)',
-            fontFamily: 'var(--wr-font-mono)',
+            color: 'var(--pulse-ink-3)',
+            fontFamily: 'var(--pulse-font-mono)',
             display: 'flex',
             alignItems: 'center',
             gap: 4,
@@ -213,7 +213,7 @@ export const TheBoard: React.FC<TheBoardProps> = ({
       <div
         style={{
           padding: '8px 12px',
-          borderBottom: '1px solid var(--wr-border)',
+          borderBottom: '1px solid var(--pulse-border)',
           flexShrink: 0,
         }}
       >
@@ -229,18 +229,18 @@ export const TheBoard: React.FC<TheBoardProps> = ({
                 style={{
                   padding: '3px 8px',
                   borderRadius: 12,
-                  border: `1px solid ${active ? c.color : 'var(--wr-border)'}`,
+                  border: `1px solid ${active ? c.color : 'var(--pulse-border)'}`,
                   backgroundColor: active ? `${c.color}22` : 'transparent',
-                  color: active ? c.color : 'var(--wr-text-muted)',
+                  color: active ? c.color : 'var(--pulse-ink-3)',
                   fontSize: 9,
-                  fontFamily: 'var(--wr-font-mono)',
+                  fontFamily: 'var(--pulse-font-mono)',
                   fontWeight: active ? 700 : 400,
                   letterSpacing: '0.06em',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 4,
-                  transition: 'all var(--wr-transition-fast)',
+                  transition: 'all var(--pulse-duration) var(--pulse-ease)',
                 }}
               >
                 <i className={`fa ${c.icon}`} style={{ fontSize: 9 }} />
@@ -262,16 +262,16 @@ export const TheBoard: React.FC<TheBoardProps> = ({
             width: '100%',
             resize: 'none',
             padding: '7px 9px',
-            borderRadius: 'var(--wr-radius-sm)',
-            border: `1px solid ${noteText ? cfg.color + '60' : 'var(--wr-border)'}`,
-            backgroundColor: 'var(--wr-bg-surface)',
-            color: 'var(--wr-text-primary)',
+            borderRadius: '8px',
+            border: `1px solid ${noteText ? cfg.color + '60' : 'var(--pulse-border)'}`,
+            backgroundColor: 'var(--ps-bg-surface, rgba(0,0,0,0.04))',
+            color: 'var(--pulse-ink)',
             fontSize: 12,
-            fontFamily: 'var(--wr-font-sans)',
+            fontFamily: 'var(--pulse-font)',
             outline: 'none',
             lineHeight: 1.5,
             boxSizing: 'border-box',
-            transition: 'border-color var(--wr-transition-fast)',
+            transition: 'border-color var(--pulse-duration) var(--pulse-ease)',
           }}
         />
 
@@ -282,20 +282,20 @@ export const TheBoard: React.FC<TheBoardProps> = ({
             marginTop: 6,
             width: '100%',
             padding: '6px',
-            backgroundColor: noteText.trim() ? cfg.color : 'var(--wr-bg-elevated)',
+            backgroundColor: noteText.trim() ? cfg.color : 'var(--pulse-surface)',
             border: 'none',
-            borderRadius: 'var(--wr-radius-sm)',
-            color: noteText.trim() ? 'white' : 'var(--wr-text-muted)',
+            borderRadius: '8px',
+            color: noteText.trim() ? 'white' : 'var(--pulse-ink-3)',
             fontSize: 11,
-            fontFamily: 'var(--wr-font-mono)',
+            fontFamily: 'var(--pulse-font-mono)',
             fontWeight: 700,
             letterSpacing: '0.08em',
             cursor: noteText.trim() ? 'pointer' : 'not-allowed',
-            transition: 'all var(--wr-transition-fast)',
+            transition: 'all var(--pulse-duration) var(--pulse-ease)',
           }}
         >
           <i className={`fa ${cfg.icon}`} style={{ marginRight: 6 }} />
-          PIN {cfg.label.toUpperCase()}
+          Pin {cfg.label.toLowerCase()}
         </button>
       </div>
 
@@ -304,7 +304,7 @@ export const TheBoard: React.FC<TheBoardProps> = ({
         <div
           style={{
             padding: '5px 12px',
-            borderBottom: '1px solid var(--wr-border)',
+            borderBottom: '1px solid var(--pulse-border)',
             display: 'flex',
             alignItems: 'center',
             gap: 4,
@@ -318,11 +318,11 @@ export const TheBoard: React.FC<TheBoardProps> = ({
               fontSize: 9,
               padding: '2px 7px',
               borderRadius: 4,
-              border: `1px solid ${filter === TYPE_FILTER_ALL ? 'var(--wr-border-active)' : 'var(--wr-border)'}`,
-              background: filter === TYPE_FILTER_ALL ? 'var(--wr-bg-elevated)' : 'transparent',
-              color: filter === TYPE_FILTER_ALL ? 'var(--wr-text-primary)' : 'var(--wr-text-muted)',
+              border: `1px solid ${filter === TYPE_FILTER_ALL ? 'var(--pulse-border-strong)' : 'var(--pulse-border)'}`,
+              background: filter === TYPE_FILTER_ALL ? 'var(--pulse-surface)' : 'transparent',
+              color: filter === TYPE_FILTER_ALL ? 'var(--pulse-ink)' : 'var(--pulse-ink-3)',
               cursor: 'pointer',
-              fontFamily: 'var(--wr-font-mono)',
+              fontFamily: 'var(--pulse-font-mono)',
               letterSpacing: '0.06em',
             }}
           >
@@ -341,11 +341,11 @@ export const TheBoard: React.FC<TheBoardProps> = ({
                   fontSize: 9,
                   padding: '2px 7px',
                   borderRadius: 4,
-                  border: `1px solid ${active ? c.color : 'var(--wr-border)'}`,
+                  border: `1px solid ${active ? c.color : 'var(--pulse-border)'}`,
                   background: active ? `${c.color}22` : 'transparent',
-                  color: active ? c.color : 'var(--wr-text-muted)',
+                  color: active ? c.color : 'var(--pulse-ink-3)',
                   cursor: 'pointer',
-                  fontFamily: 'var(--wr-font-mono)',
+                  fontFamily: 'var(--pulse-font-mono)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 3,
@@ -378,12 +378,12 @@ export const TheBoard: React.FC<TheBoardProps> = ({
             <Pin className="fa" />
             <div
               style={{
-                fontFamily: 'var(--wr-font-mono)',
+                fontFamily: 'var(--pulse-font-mono)',
                 fontSize: 11,
-                color: 'var(--wr-text-secondary)',
+                color: 'var(--pulse-ink-2)',
               }}
             >
-              {filter === TYPE_FILTER_ALL ? 'No intel pinned yet' : `No ${NOTE_TYPE_CONFIG[filter].label.toLowerCase()}s`}
+              {filter === TYPE_FILTER_ALL ? 'No artifacts pinned yet' : `No ${NOTE_TYPE_CONFIG[filter].label.toLowerCase()}s`}
             </div>
           </div>
         ) : (
@@ -398,7 +398,7 @@ export const TheBoard: React.FC<TheBoardProps> = ({
         <div
           style={{
             padding: '7px 12px',
-            borderTop: '1px solid var(--wr-border)',
+            borderTop: '1px solid var(--pulse-border)',
             display: 'flex',
             alignItems: 'center',
             gap: 6,
@@ -412,12 +412,12 @@ export const TheBoard: React.FC<TheBoardProps> = ({
             style={{
               flex: 1,
               padding: '5px',
-              borderRadius: 'var(--wr-radius-sm)',
-              border: '1px solid var(--wr-border)',
+              borderRadius: '8px',
+              border: '1px solid var(--pulse-border)',
               background: 'transparent',
-              color: 'var(--wr-text-secondary)',
+              color: 'var(--pulse-ink-2)',
               fontSize: 10,
-              fontFamily: 'var(--wr-font-mono)',
+              fontFamily: 'var(--pulse-font-mono)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -436,12 +436,12 @@ export const TheBoard: React.FC<TheBoardProps> = ({
                 onClick={() => { onClearNotes(); setShowConfirmClear(false); }}
                 style={{
                   padding: '5px 10px',
-                  borderRadius: 'var(--wr-radius-sm)',
-                  border: '1px solid var(--wr-accent-danger)',
+                  borderRadius: '8px',
+                  border: '1px solid var(--pulse-tone-overdue)',
                   background: 'transparent',
-                  color: 'var(--wr-accent-danger)',
+                  color: 'var(--pulse-tone-overdue)',
                   fontSize: 10,
-                  fontFamily: 'var(--wr-font-mono)',
+                  fontFamily: 'var(--pulse-font-mono)',
                   cursor: 'pointer',
                   letterSpacing: '0.06em',
                 }}
@@ -453,10 +453,10 @@ export const TheBoard: React.FC<TheBoardProps> = ({
                 aria-label="Cancel clear"
                 style={{
                   padding: '5px 8px',
-                  borderRadius: 'var(--wr-radius-sm)',
-                  border: '1px solid var(--wr-border)',
+                  borderRadius: '8px',
+                  border: '1px solid var(--pulse-border)',
                   background: 'transparent',
-                  color: 'var(--wr-text-muted)',
+                  color: 'var(--pulse-ink-3)',
                   fontSize: 10,
                   cursor: 'pointer',
                 }}
@@ -471,10 +471,10 @@ export const TheBoard: React.FC<TheBoardProps> = ({
               aria-label="Clear all notes"
               style={{
                 padding: '5px 8px',
-                borderRadius: 'var(--wr-radius-sm)',
-                border: '1px solid var(--wr-border)',
+                borderRadius: '8px',
+                border: '1px solid var(--pulse-border)',
                 background: 'transparent',
-                color: 'var(--wr-text-muted)',
+                color: 'var(--pulse-ink-3)',
                 fontSize: 10,
                 cursor: 'pointer',
               }}

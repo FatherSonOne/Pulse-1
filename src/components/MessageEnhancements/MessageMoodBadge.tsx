@@ -1,6 +1,7 @@
 // Message Mood Badge Component
 import React from 'react';
 import type { MessageMood } from '../../types/messageEnhancements';
+import { useFeatures } from '../../contexts/FeatureContext';
 
 interface MessageMoodBadgeProps {
   mood: MessageMood;
@@ -8,12 +9,15 @@ interface MessageMoodBadgeProps {
 }
 
 const MessageMoodBadgeBase: React.FC<MessageMoodBadgeProps> = ({ mood, size = 'small' }) => {
+  const { isFeatureEnabled } = useFeatures();
+  if (!isFeatureEnabled('moodBadges')) return null;
+
   const sizeClasses = {
     small: 'text-[10px] px-1.5 py-0.5',
     medium: 'text-xs px-2 py-1',
     large: 'text-sm px-3 py-1.5'
   };
-  
+
   return (
     <div
       className={`inline-flex items-center gap-1 rounded-full font-medium ${sizeClasses[size]}`}

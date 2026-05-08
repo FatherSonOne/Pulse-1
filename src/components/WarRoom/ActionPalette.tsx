@@ -39,7 +39,7 @@ export interface ActionPaletteProps {
 
 const CATEGORY_CONFIG: Record<PaletteCategory, { label: string; icon: string; color: string }> = {
   generate:  { label: 'Generate',   icon: 'fa-wand-magic-sparkles', color: '#f59e0b' },
-  navigate:  { label: 'Navigate',   icon: 'fa-compass',             color: '#06b6d4' },
+  navigate:  { label: 'Navigate',   icon: 'fa-compass',             color: '#3b82f6' },
   board:     { label: 'Board',      icon: 'fa-thumbtack',           color: '#8b5cf6' },
 };
 
@@ -136,9 +136,9 @@ export const ActionPalette: React.FC<ActionPaletteProps> = ({ isOpen, onClose, a
         style={{
           width: 580,
           maxWidth: '92vw',
-          backgroundColor: 'var(--wr-bg-elevated)',
-          border: '1px solid var(--wr-border-active)',
-          borderRadius: 'var(--wr-radius-md)',
+          backgroundColor: 'var(--pulse-surface)',
+          border: '1px solid var(--pulse-border-strong)',
+          borderRadius: '12px',
           boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
           overflow: 'hidden',
           display: 'flex',
@@ -155,7 +155,7 @@ export const ActionPalette: React.FC<ActionPaletteProps> = ({ isOpen, onClose, a
             alignItems: 'center',
             gap: 10,
             padding: '12px 16px',
-            borderBottom: '1px solid var(--wr-border)',
+            borderBottom: '1px solid var(--pulse-border)',
           }}
         >
           <Search className="fa" />
@@ -169,17 +169,17 @@ export const ActionPalette: React.FC<ActionPaletteProps> = ({ isOpen, onClose, a
               background: 'transparent',
               border: 'none',
               outline: 'none',
-              color: 'var(--wr-text-primary)',
-              fontFamily: 'var(--wr-font-sans)',
+              color: 'var(--pulse-ink)',
+              fontFamily: 'var(--pulse-font)',
               fontSize: 15,
             }}
           />
           <kbd
             style={{
-              fontFamily: 'var(--wr-font-mono)',
+              fontFamily: 'var(--pulse-font-mono)',
               fontSize: 10,
-              color: 'var(--wr-text-muted)',
-              border: '1px solid var(--wr-border)',
+              color: 'var(--pulse-ink-3)',
+              border: '1px solid var(--pulse-border)',
               borderRadius: 4,
               padding: '2px 6px',
             }}
@@ -195,8 +195,8 @@ export const ActionPalette: React.FC<ActionPaletteProps> = ({ isOpen, onClose, a
               style={{
                 padding: 32,
                 textAlign: 'center',
-                color: 'var(--wr-text-muted)',
-                fontFamily: 'var(--wr-font-mono)',
+                color: 'var(--pulse-ink-3)',
+                fontFamily: 'var(--pulse-font-mono)',
                 fontSize: 12,
               }}
             >
@@ -222,7 +222,7 @@ export const ActionPalette: React.FC<ActionPaletteProps> = ({ isOpen, onClose, a
                     />
                     <span
                       style={{
-                        fontFamily: 'var(--wr-font-mono)',
+                        fontFamily: 'var(--pulse-font-mono)',
                         fontSize: 9,
                         fontWeight: 700,
                         letterSpacing: '0.12em',
@@ -253,16 +253,16 @@ export const ActionPalette: React.FC<ActionPaletteProps> = ({ isOpen, onClose, a
                           cursor: 'pointer',
                           backgroundColor: isSelected ? `${accent}14` : 'transparent',
                           borderLeft: isSelected ? `2px solid ${accent}` : '2px solid transparent',
-                          transition: 'background var(--wr-transition-fast)',
+                          transition: 'background var(--pulse-duration) var(--pulse-ease)',
                         }}
                       >
                         <div
                           style={{
                             width: 30,
                             height: 30,
-                            borderRadius: 'var(--wr-radius-sm)',
-                            backgroundColor: isSelected ? `${accent}22` : 'var(--wr-bg-surface)',
-                            border: `1px solid ${isSelected ? accent + '60' : 'var(--wr-border)'}`,
+                            borderRadius: '8px',
+                            backgroundColor: isSelected ? `${accent}22` : 'var(--ps-bg-surface, rgba(0,0,0,0.04))',
+                            border: `1px solid ${isSelected ? accent + '60' : 'var(--pulse-border)'}`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -271,16 +271,16 @@ export const ActionPalette: React.FC<ActionPaletteProps> = ({ isOpen, onClose, a
                         >
                           <i
                             className={`fa ${action.icon}`}
-                            style={{ fontSize: 13, color: isSelected ? accent : 'var(--wr-text-secondary)' }}
+                            style={{ fontSize: 13, color: isSelected ? accent : 'var(--pulse-ink-2)' }}
                           />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{
                               fontSize: 13,
-                              color: isSelected ? 'var(--wr-text-primary)' : 'var(--wr-text-secondary)',
+                              color: isSelected ? 'var(--pulse-ink)' : 'var(--pulse-ink-2)',
                               fontWeight: isSelected ? 600 : 400,
-                              fontFamily: 'var(--wr-font-sans)',
+                              fontFamily: 'var(--pulse-font)',
                             }}
                           >
                             {action.label}
@@ -289,8 +289,8 @@ export const ActionPalette: React.FC<ActionPaletteProps> = ({ isOpen, onClose, a
                             <div
                               style={{
                                 fontSize: 11,
-                                color: 'var(--wr-text-muted)',
-                                fontFamily: 'var(--wr-font-mono)',
+                                color: 'var(--pulse-ink-3)',
+                                fontFamily: 'var(--pulse-font-mono)',
                                 marginTop: 1,
                               }}
                             >
@@ -311,7 +311,7 @@ export const ActionPalette: React.FC<ActionPaletteProps> = ({ isOpen, onClose, a
         <div
           style={{
             padding: '7px 16px',
-            borderTop: '1px solid var(--wr-border)',
+            borderTop: '1px solid var(--pulse-border)',
             display: 'flex',
             alignItems: 'center',
             gap: 12,
@@ -322,17 +322,17 @@ export const ActionPalette: React.FC<ActionPaletteProps> = ({ isOpen, onClose, a
             <span key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <kbd
                 style={{
-                  fontFamily: 'var(--wr-font-mono)',
+                  fontFamily: 'var(--pulse-font-mono)',
                   fontSize: 9,
-                  color: 'var(--wr-text-muted)',
-                  border: '1px solid var(--wr-border)',
+                  color: 'var(--pulse-ink-3)',
+                  border: '1px solid var(--pulse-border)',
                   borderRadius: 4,
                   padding: '1px 5px',
                 }}
               >
                 {key}
               </kbd>
-              <span style={{ fontSize: 10, color: 'var(--wr-text-muted)', fontFamily: 'var(--wr-font-mono)' }}>
+              <span style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)' }}>
                 {label}
               </span>
             </span>
@@ -359,11 +359,11 @@ const MODE_ICONS: Record<string, string> = {
 
 const MODE_ACCENTS: Record<string, string> = {
   'command-center': '#f43f5e',
-  intel:            '#06b6d4',
+  intel:            '#3b82f6',
   analyst:          '#3b82f6',
   strategist:       '#8b5cf6',
   brainstorm:       '#f59e0b',
-  focus:            '#6366f1',
+  focus:            '#fb7185',
   debrief:          '#10b981',
 };
 

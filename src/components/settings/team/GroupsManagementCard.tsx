@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 import {
   FolderTree,
   Plus,
@@ -177,11 +179,11 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
   const memberById = (id: string): WorkspaceMember | undefined => members.find(m => m.user_id === id);
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FolderTree className="w-4 h-4 text-zinc-500" />
-          <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Groups &amp; departments</h4>
+          <MonoLabel>Groups &amp; departments</MonoLabel>
         </div>
         {isAdmin && !creating && (
           <button
@@ -461,6 +463,6 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
           );
         })}
       </div>
-    </div>
+    </SettingsCard>
   );
 };

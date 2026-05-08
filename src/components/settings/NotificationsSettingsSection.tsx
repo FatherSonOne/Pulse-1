@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NotificationSettings } from '../NotificationSettings';
 import { settingsService } from '../../services/settingsService';
 import { ToggleItem } from './shared/ToggleItem';
+import { SettingsCard } from './shared/SettingsCard';
 import { QuietHoursCard } from './notifications/QuietHoursCard';
 import { DigestScheduleCard } from './notifications/DigestScheduleCard';
 import { NotificationRoutingCard } from './notifications/NotificationRoutingCard';
@@ -32,7 +33,7 @@ export const NotificationsSettingsSection: React.FC = () => {
 
   return (
     <div className="space-y-4 animate-slide-up">
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex items-center justify-between">
+      <SettingsCard padded={false} className="p-4 flex items-center justify-between">
         <div>
           <h4 className="text-sm font-bold dark:text-white text-zinc-900">
             Enable All Notifications
@@ -49,7 +50,7 @@ export const NotificationsSettingsSection: React.FC = () => {
             settingsService.set('enableAllNotifications', v);
           }}
         />
-      </div>
+      </SettingsCard>
 
       {enableAllNotifications && (
         <>

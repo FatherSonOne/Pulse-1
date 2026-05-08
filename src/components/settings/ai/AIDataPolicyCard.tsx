@@ -3,6 +3,8 @@ import { ShieldAlert, Loader2, Eye, Clock, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '../../../contexts/WorkspaceContext';
 import { settingsService } from '../../../services/settingsService';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 type Retention = 0 | 7 | 30 | 90 | 365;
 
@@ -88,10 +90,10 @@ export const AIDataPolicyCard: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-5">
+    <SettingsCard className="space-y-5">
       <div className="flex items-center gap-2">
         <ShieldAlert className="w-4 h-4 text-zinc-500" />
-        <h4 className="text-sm font-bold text-zinc-900 dark:text-white">AI data policy</h4>
+        <MonoLabel>AI data policy</MonoLabel>
       </div>
 
       {/* Effective state badge */}
@@ -201,6 +203,6 @@ export const AIDataPolicyCard: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </SettingsCard>
   );
 };

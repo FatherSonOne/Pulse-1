@@ -11,10 +11,10 @@ import { BriefingSheet } from './BriefingSheet';
 import type { ArchiveItem, ArchiveType } from '../../types';
 
 const CHANNEL_GROUPS: Record<string, ArchiveType[]> = {
-  voice: ['vox_transcript', 'transcript'],
+  voice: ['vox_transcript', 'transcript', 'relay_message', 'relay_note', 'relay_live'],
   meeting: ['meeting_note', 'war_room_session'],
-  text: ['journal', 'summary', 'document', 'decision_log', 'artifact'],
-  media: ['image', 'video'],
+  text: ['message', 'email', 'journal', 'summary', 'document', 'decision_log', 'artifact', 'research'],
+  media: ['image', 'video', 'glimpse'],
 };
 
 const channelOf = (type: ArchiveType): keyof typeof CHANNEL_GROUPS => {

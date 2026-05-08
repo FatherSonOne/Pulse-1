@@ -67,29 +67,49 @@ export function PulseAIProactiveChecker({
       const hasIssues = overdueTasks.length > 0 || pendingVoteDecisions.length > 0 || staleDecisions.length > 0;
 
       if (hasIssues) {
-        // Build a descriptive findings message
+        // Pulse voice: terse, specific, never hedging. Lead with the count,
+        // name the items, point at the action. No "would you like me to…".
         const parts: string[] = [];
-        parts.push('Hey! I noticed a few things that need your attention:\n');
+        const totals: number[] = [overdueTasks.length, pendingVoteDecisions.length, staleDecisions.length];
+        const total = totals.reduce((a, b) => a + b, 0);
+        const categoryCount = totals.filter(n => n > 0).length;
+
+        parts.push(`**${total} ${total === 1 ? 'item needs' : 'items need'} attention.**`);
 
         if (overdueTasks.length > 0) {
           const taskList = overdueTasks.slice(0, 5).map(t => {
             const deadline = t.deadline ? new Date(t.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
             return `- **${t.title}**${deadline ? ` (due ${deadline})` : ''}`;
           }).join('\n');
-          parts.push(`**${overdueTasks.length} overdue task${overdueTasks.length > 1 ? 's' : ''}:**\n${taskList}`);
+          const heading = categoryCount > 1
+            ? `**Overdue (${overdueTasks.length}):**`
+            : `**${overdueTasks.length} ${overdueTasks.length === 1 ? 'task is overdue' : 'tasks are overdue'}.**`;
+          parts.push(`${heading}\n${taskList}`);
         }
 
         if (pendingVoteDecisions.length > 0) {
           const decList = pendingVoteDecisions.slice(0, 5).map(d => `- **${d.title}**`).join('\n');
-          parts.push(`**${pendingVoteDecisions.length} decision${pendingVoteDecisions.length > 1 ? 's' : ''} waiting for your vote:**\n${decList}`);
+          const heading = categoryCount > 1
+            ? `**Awaiting your vote (${pendingVoteDecisions.length}):**`
+            : `**${pendingVoteDecisions.length} ${pendingVoteDecisions.length === 1 ? 'decision is waiting' : 'decisions are waiting'} for your vote.**`;
+          parts.push(`${heading}\n${decList}`);
         }
 
         if (staleDecisions.length > 0) {
           const staleList = staleDecisions.slice(0, 3).map(d => `- **${d.title}**`).join('\n');
-          parts.push(`**${staleDecisions.length} stale decision${staleDecisions.length > 1 ? 's' : ''}** (no activity in 24h+):\n${staleList}`);
+          const heading = categoryCount > 1
+            ? `**Stalled, 24h+ (${staleDecisions.length}):**`
+            : `**${staleDecisions.length} ${staleDecisions.length === 1 ? 'decision has stalled' : 'decisions have stalled'} (24h+ no activity).**`;
+          parts.push(`${heading}\n${staleList}`);
         }
 
-        parts.push('\nWould you like me to help you prioritize or take action on any of these?');
+        // Closing: action affordance, not a question. Suggested-action chips
+        // (Open Tasks / View Decisions) render right after this message.
+        const closer = total === 1
+          ? 'Open it now, or snooze.'
+          : 'Pick one to start, or ask me to triage.';
+        parts.push(closer);
+
         onProactiveChange(true, parts.join('\n\n'));
       } else {
         onProactiveChange(false);

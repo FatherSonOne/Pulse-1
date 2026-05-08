@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Plus, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useWorkspaceData, useWorkspaceActions } from '../../../contexts/WorkspaceContext';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_CONTACTS = 10;
@@ -66,10 +68,10 @@ export const BillingContactsCard: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center gap-2">
         <Mail className="w-4 h-4 text-zinc-500" />
-        <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Billing contacts</h4>
+        <MonoLabel>Billing contacts</MonoLabel>
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
         Additional email addresses that receive invoices and billing notices alongside the primary contact.
@@ -141,6 +143,6 @@ export const BillingContactsCard: React.FC = () => {
           {isSaving ? 'Saving...' : 'Save Contacts'}
         </button>
       </div>
-    </div>
+    </SettingsCard>
   );
 };

@@ -3,69 +3,62 @@
    Replaces war-room-tokens.css tactical aesthetic with clean, approachable design
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Design Tokens ──────────────────────────────────────────────────────── */
+/* ── Design Tokens — derived from canonical --pulse-* (src/styles/pulse-tokens.css) ── */
+/* Light is the default; .dark on html flips canvas/ink/border via the canonical layer. */
 
 .pulse-studio {
-  --ps-bg-primary: #09090b;
-  --ps-bg-secondary: #111113;
-  --ps-bg-elevated: #1a1a1e;
-  --ps-bg-surface: #222226;
-  --ps-bg-hover: #2a2a2f;
+  /* Surfaces — canvas / panel / card */
+  --ps-bg-primary: var(--pulse-canvas);              /* #f8f8f8 light, #000 dark */
+  --ps-bg-secondary: var(--pulse-canvas-soft);       /* #f2f2f2 light, #080808 dark */
+  --ps-bg-elevated: var(--pulse-surface);            /* #fff light, rgba(255,255,255,0.03) dark */
 
-  --ps-border: rgba(255, 255, 255, 0.06);
-  --ps-border-active: rgba(255, 255, 255, 0.12);
+  /* Translucent layers — follow Translucency-Over-Tinting Rule (DESIGN.md §4) */
+  --ps-bg-surface: rgba(0, 0, 0, 0.04);              /* recessed tint; .dark overrides below */
+  --ps-bg-hover: rgba(0, 0, 0, 0.06);                /* hover tint; .dark overrides below */
 
-  --ps-text-primary: #fafafa;
-  --ps-text-secondary: #a1a1aa;
-  --ps-text-muted: #71717a;
+  --ps-border: var(--pulse-border);
+  --ps-border-active: var(--pulse-border-strong);
 
-  --ps-accent: #f43f5e;
-  --ps-accent-soft: rgba(244, 63, 94, 0.12);
-  --ps-accent-hover: rgba(244, 63, 94, 0.18);
+  --ps-text-primary: var(--pulse-ink);
+  --ps-text-secondary: var(--pulse-ink-2);
+  --ps-text-muted: var(--pulse-ink-3);
 
-  --ps-success: #10b981;
-  --ps-warning: #f59e0b;
-  --ps-danger: #ef4444;
-  --ps-info: #3b82f6;
+  --ps-accent: var(--pulse-rose);
+  --ps-accent-soft: var(--pulse-rose-soft);
+  --ps-accent-hover: var(--pulse-rose-glow);
+
+  --ps-success: var(--pulse-tone-positive);
+  --ps-warning: var(--pulse-tone-warning);
+  --ps-danger: var(--pulse-tone-overdue);
+  --ps-info: var(--pulse-tone-info);
 
   --ps-radius-sm: 8px;
   --ps-radius-md: 12px;
   --ps-radius-lg: 16px;
   --ps-radius-full: 9999px;
 
-  --ps-font: 'Inter', system-ui, -apple-system, sans-serif;
-  --ps-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --ps-font: var(--pulse-font);
+  --ps-font-mono: var(--pulse-font-mono);
 
-  --ps-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --ps-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
-  --ps-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
-
-  --ps-transition: 150ms ease;
-}
-
-/* ── Light Mode ─────────────────────────────────────────────────────────── */
-
-:root:not(.dark) .pulse-studio,
-html:not(.dark) .pulse-studio {
-  --ps-bg-primary: #fafafa;
-  --ps-bg-secondary: #f4f4f5;
-  --ps-bg-elevated: #ffffff;
-  --ps-bg-surface: #e4e4e7;
-  --ps-bg-hover: #e8e8ec;
-
-  --ps-border: rgba(0, 0, 0, 0.08);
-  --ps-border-active: rgba(0, 0, 0, 0.15);
-
-  --ps-text-primary: #09090b;
-  --ps-text-secondary: #52525b;
-  --ps-text-muted: #a1a1aa;
-
-  --ps-accent-soft: rgba(244, 63, 94, 0.08);
-  --ps-accent-hover: rgba(244, 63, 94, 0.12);
-
+  /* Flat-by-default ambient shadows; dark overrides below */
   --ps-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
   --ps-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --ps-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --ps-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.10);
+
+  --ps-transition: var(--pulse-duration) var(--pulse-ease);
+}
+
+/* ── Dark mode — translucent surfaces over true-black canvas ────────────── */
+
+:root.dark .pulse-studio,
+html.dark .pulse-studio,
+.dark .pulse-studio {
+  --ps-bg-surface: rgba(255, 255, 255, 0.05);
+  --ps-bg-hover: rgba(255, 255, 255, 0.07);
+
+  --ps-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ps-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.40);
+  --ps-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.50);
 }
 
 /* ── Layout ─────────────────────────────────────────────────────────────── */
@@ -106,11 +99,11 @@ html:not(.dark) .pulse-studio {
   width: 28px;
   height: 28px;
   border-radius: var(--ps-radius-sm);
-  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  background: var(--ps-accent-soft);
+  color: var(--ps-accent);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
   font-size: 13px;
   flex-shrink: 0;
 }
@@ -162,10 +155,13 @@ html:not(.dark) .pulse-studio {
 }
 
 .ps-panel-header h3 {
-  font-size: 12px;
-  font-weight: 600;
+  font-family: var(--ps-font-mono);
+  font-feature-settings: "zero" 0;
+  font-variant-numeric: var(--pulse-mono-numeric);
+  font-size: 11px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   color: var(--ps-text-secondary);
   margin: 0;
   display: flex;
@@ -230,8 +226,8 @@ html:not(.dark) .pulse-studio {
 }
 
 .ps-message--user .ps-message-avatar {
-  background: var(--ps-accent);
-  color: white;
+  background: var(--ps-accent-soft);
+  color: var(--ps-accent);
 }
 
 .ps-message--assistant .ps-message-avatar {
@@ -249,16 +245,22 @@ html:not(.dark) .pulse-studio {
   word-wrap: break-word;
 }
 
+/* User bubble: soft-coral tint + ink text + symmetric corners.            */
+/* No iMessage cliche; coral still owns user identity through tint + dot. */
 .ps-message--user .ps-message-content {
-  background: var(--ps-accent);
-  color: white;
-  border-bottom-right-radius: 4px;
+  background: var(--ps-accent-soft);
+  color: var(--ps-text-primary);
+  border: 1px solid var(--pulse-rose-soft);
+}
+
+.dark .ps-message--user .ps-message-content,
+:root.dark .ps-message--user .ps-message-content {
+  color: var(--pulse-rose-bright);
 }
 
 .ps-message--assistant .ps-message-content {
   background: var(--ps-bg-elevated);
   border: 1px solid var(--ps-border);
-  border-bottom-left-radius: 4px;
 }
 
 .ps-message-citations {
@@ -270,16 +272,24 @@ html:not(.dark) .pulse-studio {
   border-top: 1px solid var(--ps-border);
 }
 
+/* Citation chip — mono provenance style per DESIGN.md §3 (Mono-Label Rule). */
 .ps-citation {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: var(--ps-radius-full);
+  border-radius: var(--ps-radius-sm);
   background: var(--ps-accent-soft);
   color: var(--ps-accent);
-  font-size: 11px;
+  font-family: var(--ps-font-mono);
+  font-size: 10px;
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Input Area ─────────────────────────────────────────────────────────── */
@@ -328,18 +338,29 @@ html:not(.dark) .pulse-studio {
   border-radius: var(--ps-radius-md);
   border: none;
   background: var(--ps-accent);
-  color: white;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: opacity var(--ps-transition), transform var(--ps-transition);
+  transition: transform var(--ps-transition), box-shadow var(--ps-transition), background var(--ps-transition);
   flex-shrink: 0;
 }
 
+/* Hover earns the coral halo per DESIGN.md §4 (primary-CTA hover). */
 .ps-send-btn:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: scale(1.02);
+  transform: translateY(-1px);
+  background: var(--pulse-rose-deep);
+  box-shadow: 0 6px 20px var(--pulse-rose-glow);
+}
+
+.ps-send-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ps-send-btn:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
 }
 
 .ps-send-btn:disabled {
@@ -499,10 +520,11 @@ html:not(.dark) .pulse-studio {
 }
 
 .ps-artifact-type {
+  font-family: var(--ps-font-mono);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   padding: 2px 6px;
   border-radius: var(--ps-radius-sm);
 }
@@ -564,6 +586,8 @@ html:not(.dark) .pulse-studio {
 }
 
 /* ── Welcome State ──────────────────────────────────────────────────────── */
+/* Sources-aware opinionated empty state. The CTA is the only place that      */
+/* earns the gradient + halo per the Coral-As-Signal Rule (DESIGN.md §2).     */
 
 .ps-welcome {
   display: flex;
@@ -573,70 +597,118 @@ html:not(.dark) .pulse-studio {
   flex: 1;
   padding: 40px 24px;
   text-align: center;
-  gap: 24px;
+  gap: 14px;
 }
 
+/* Quiet logo — flat coral chip, no gradient, no halo. */
 .ps-welcome-logo {
-  width: 64px;
-  height: 64px;
-  border-radius: var(--ps-radius-lg);
-  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ps-radius-md);
+  background: var(--ps-accent-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 28px;
-  box-shadow: 0 8px 32px rgba(244, 63, 94, 0.3);
+  color: var(--ps-accent);
+  margin-bottom: 2px;
 }
 
+/* Display weight per Light-Display Rule (DESIGN.md §3): 30px / 300 / -0.025em. */
 .ps-welcome h2 {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 1.875rem;
+  font-weight: 300;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
   color: var(--ps-text-primary);
   margin: 0;
 }
 
-.ps-welcome p {
-  font-size: 14px;
+/* Mono label naming the surface state. */
+.ps-welcome-label {
+  font-family: var(--ps-font-mono);
+  font-feature-settings: "zero" 0;
+  font-variant-numeric: var(--pulse-mono-numeric);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   color: var(--ps-text-muted);
-  max-width: 400px;
-  line-height: 1.6;
+  margin-top: 4px;
+}
+
+/* Source preview / context line. Cap line length per the 65-Ch Rule. */
+.ps-welcome-list {
+  font-size: 14px;
+  color: var(--ps-text-secondary);
+  max-width: 65ch;
+  line-height: 1.5;
   margin: 0;
 }
 
-.ps-welcome-actions {
-  display: flex;
-  flex-wrap: wrap;
+/* Primary CTA — the empty state's single coral action. */
+.ps-welcome-cta {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
-  justify-content: center;
-  max-width: 500px;
+  padding: 12px 20px;
+  margin-top: 6px;
+  border-radius: var(--ps-radius-md);
+  border: none;
+  background: linear-gradient(135deg, var(--pulse-rose) 0%, var(--pulse-pink) 100%);
+  color: #ffffff;
+  font-family: var(--ps-font);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 12px var(--pulse-rose-glow);
+  transition: transform var(--ps-transition), box-shadow var(--ps-transition);
 }
 
-.ps-welcome-chip {
+.ps-welcome-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--pulse-rose-glow);
+}
+
+.ps-welcome-cta:active {
+  transform: translateY(0);
+}
+
+.ps-welcome-cta:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 3px;
+}
+
+.ps-welcome-cta svg {
+  flex-shrink: 0;
+}
+
+/* Mono command hint row — surfaces /, @, ⌘K without burning chip space. */
+.ps-welcome-hint {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
-  border-radius: var(--ps-radius-full);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+  font-family: var(--ps-font-mono);
+  font-size: 11px;
+  color: var(--ps-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.ps-welcome-hint kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 3px;
   border: 1px solid var(--ps-border-active);
   background: var(--ps-bg-elevated);
+  font-family: var(--ps-font-mono);
+  font-size: 10px;
   color: var(--ps-text-secondary);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all var(--ps-transition);
-}
-
-.ps-welcome-chip:hover {
-  border-color: var(--ps-accent);
-  color: var(--ps-accent);
-  background: var(--ps-accent-soft);
-}
-
-.ps-welcome-chip i,
-.ps-welcome-chip svg {
-  font-size: 12px;
-  width: 14px;
-  height: 14px;
 }
 
 /* ── Suggestions ────────────────────────────────────────────────────────── */
@@ -679,11 +751,12 @@ html:not(.dark) .pulse-studio {
   padding: 4px 0;
 }
 
+/* Loading dots — neutral, position itself signals AI is responding. */
 .ps-typing-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--ps-accent);
+  background: var(--ps-text-muted);
   animation: ps-bounce 1.2s ease-in-out infinite;
 }
 
@@ -944,6 +1017,21 @@ html:not(.dark) .pulse-studio {
   color: var(--ps-text-secondary);
 }
 
+/* Compact variant for source-card summaries, panel previews, etc. */
+.ps-md-compact .ps-md           { font-size: 12px; line-height: 1.55; }
+.ps-md-compact .ps-md-p         { margin: 0 0 6px; }
+.ps-md-compact .ps-md-p:last-child { margin-bottom: 0; }
+.ps-md-compact .ps-md-h2 {
+  font-size: 12px; margin: 8px 0 4px; padding-bottom: 2px;
+}
+.ps-md-compact .ps-md-h3        { font-size: 12px; margin: 6px 0 3px; }
+.ps-md-compact .ps-md-h4        { font-size: 11px; margin: 6px 0 3px; }
+.ps-md-compact .ps-md-ul,
+.ps-md-compact .ps-md-ol        { margin: 4px 0 6px; padding-left: 16px; }
+.ps-md-compact .ps-md-ul li,
+.ps-md-compact .ps-md-ol li     { margin-bottom: 2px; line-height: 1.45; }
+.ps-md-compact .ps-md-code      { font-size: 11px; }
+
 /* ═══════════════════════════════════════════════════════════════════════════
    Phase 2 — Inline Artifact Cards
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -968,21 +1056,25 @@ html:not(.dark) .pulse-studio {
   background: var(--ps-bg-surface);
 }
 
-.ps-artifact-card-badge {
+/* Heading row: type icon (per-tone color) + provenance tag (rose). */
+.ps-artifact-card-heading {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 3px 8px;
-  border-radius: var(--ps-radius-sm);
+  gap: 8px;
+  min-width: 0;
+}
+
+.ps-artifact-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ps-tone, var(--ps-accent));
+  flex-shrink: 0;
 }
 
 .ps-artifact-pin-btn {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--ps-radius-sm);
   border: none;
   background: transparent;
@@ -991,12 +1083,18 @@ html:not(.dark) .pulse-studio {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all var(--ps-transition);
+  transition: background var(--ps-transition), color var(--ps-transition);
+  flex-shrink: 0;
 }
 
 .ps-artifact-pin-btn:hover {
   background: var(--ps-accent-soft);
   color: var(--ps-accent);
+}
+
+.ps-artifact-pin-btn:focus-visible {
+  outline: 2px solid var(--ps-accent);
+  outline-offset: 2px;
 }
 
 /* ── Generic list (Summary, etc.) ───────────────────────────────────────── */
@@ -1043,10 +1141,13 @@ html:not(.dark) .pulse-studio {
   display: flex;
   align-items: center;
   gap: 4px;
+  font-family: var(--ps-font-mono);
+  font-feature-settings: "zero" 0;
+  font-variant-numeric: var(--pulse-mono-numeric);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.1em;
   margin-bottom: 8px;
 }
 
@@ -1118,10 +1219,11 @@ html:not(.dark) .pulse-studio {
 .ps-artifact-table th {
   padding: 8px 12px;
   text-align: left;
-  font-weight: 600;
+  font-family: var(--ps-font-mono);
+  font-weight: 500;
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.1em;
   color: var(--ps-text-secondary);
   background: var(--ps-bg-surface);
   border-bottom: 1px solid var(--ps-border-active);
@@ -1187,9 +1289,9 @@ html:not(.dark) .pulse-studio {
 }
 
 .ps-artifact-idea-vote:hover {
-  border-color: #f59e0b;
-  color: #f59e0b;
-  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--ps-tone, var(--pulse-tone-warning));
+  color: var(--ps-tone, var(--pulse-tone-warning));
+  background: var(--ps-tone-soft, var(--pulse-tone-warning-soft));
 }
 
 /* ── Timeline ───────────────────────────────────────────────────────────── */
@@ -1216,9 +1318,9 @@ html:not(.dark) .pulse-studio {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #6366f1;
+  background: var(--ps-tone, var(--pulse-tone-info));
   border: 2px solid var(--ps-bg-elevated);
-  box-shadow: 0 0 0 2px #6366f140;
+  box-shadow: 0 0 0 2px var(--ps-tone-soft, var(--pulse-tone-info-soft));
   flex-shrink: 0;
 }
 
@@ -1235,9 +1337,14 @@ html:not(.dark) .pulse-studio {
 }
 
 .ps-artifact-timeline-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6366f1;
+  font-family: var(--ps-font-mono);
+  font-feature-settings: "zero" 0;
+  font-variant-numeric: var(--pulse-mono-numeric);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ps-tone, var(--pulse-tone-info));
   margin-bottom: 2px;
 }
 
@@ -1281,22 +1388,23 @@ html:not(.dark) .pulse-studio {
 }
 
 .ps-artifact-risk-badge {
+  font-family: var(--ps-font-mono);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   padding: 1px 6px;
   border-radius: var(--ps-radius-sm);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.1em;
 }
 
 .ps-artifact-risk-badge--likelihood {
-  background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  background: var(--pulse-tone-warning-soft);
+  color: var(--pulse-tone-warning);
 }
 
 .ps-artifact-risk-badge--impact {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  background: var(--pulse-tone-overdue-soft);
+  color: var(--pulse-tone-overdue);
 }
 
 .ps-artifact-risk-mitigation {
@@ -1324,8 +1432,8 @@ html:not(.dark) .pulse-studio {
 }
 
 .ps-message-action-btn {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--ps-radius-sm);
   border: none;
   background: transparent;
@@ -1335,12 +1443,17 @@ html:not(.dark) .pulse-studio {
   justify-content: center;
   cursor: pointer;
   font-size: 12px;
-  transition: all var(--ps-transition);
+  transition: background var(--ps-transition), color var(--ps-transition);
 }
 
 .ps-message-action-btn:hover {
   background: var(--ps-accent-soft);
   color: var(--ps-accent);
+}
+
+.ps-message-action-btn:focus-visible {
+  outline: 2px solid var(--ps-accent);
+  outline-offset: 2px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1499,13 +1612,12 @@ html:not(.dark) .pulse-studio {
   width: 52px;
   height: 52px;
   border-radius: var(--ps-radius-md);
-  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  background: var(--ps-accent-soft);
+  color: var(--ps-accent);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
   margin: 0 auto 16px;
-  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.3);
 }
 
 .ps-onboarding-title {
@@ -1661,8 +1773,13 @@ html:not(.dark) .pulse-studio {
   }
 
   .ps-message-action-btn {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .ps-artifact-pin-btn {
+    width: 40px;
+    height: 40px;
   }
 
   /* Stack pros/cons vertically */
@@ -1694,20 +1811,20 @@ html:not(.dark) .pulse-studio {
   /* Welcome screen adjustments */
   .ps-welcome {
     padding: 24px 16px;
-    gap: 16px;
+    gap: 12px;
   }
 
   .ps-welcome h2 {
-    font-size: 18px;
+    font-size: 1.5rem;
   }
 
-  .ps-welcome-actions {
-    gap: 6px;
+  .ps-welcome-cta {
+    padding: 11px 18px;
+    font-size: 13px;
   }
 
-  .ps-welcome-chip {
-    padding: 6px 10px;
-    font-size: 12px;
+  .ps-welcome-hint {
+    font-size: 10px;
   }
 
   /* Header compact */
@@ -1764,4 +1881,120 @@ html:not(.dark) .pulse-studio {
     flex-wrap: wrap;
     gap: 4px;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI Provenance Tag — Pulse's signature attribution chip (DESIGN.md §5).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ps-provenance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--ps-radius-sm);
+  background: var(--pulse-rose-soft);
+  color: var(--pulse-rose-deep);
+  font-family: var(--ps-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* In dark mode rose-deep dims; lift to rose-bright for AA contrast on rose-soft. */
+.dark .ps-provenance,
+:root.dark .ps-provenance {
+  color: var(--pulse-rose-bright);
+}
+
+.ps-provenance-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pulse-rose);
+  flex-shrink: 0;
+}
+
+.ps-provenance-sep {
+  opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Per-artifact tone classes — drive accent + soft via CSS vars.
+   Replaces inline hex literals in ArtifactRenderers.tsx.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ps-tone-rose      { --ps-tone: var(--pulse-rose);          --ps-tone-soft: var(--pulse-rose-soft); }
+.ps-tone-positive  { --ps-tone: var(--pulse-tone-positive); --ps-tone-soft: var(--pulse-tone-positive-soft); }
+.ps-tone-info      { --ps-tone: var(--pulse-tone-info);     --ps-tone-soft: var(--pulse-tone-info-soft); }
+.ps-tone-warning   { --ps-tone: var(--pulse-tone-warning);  --ps-tone-soft: var(--pulse-tone-warning-soft); }
+.ps-tone-overdue   { --ps-tone: var(--pulse-tone-overdue);  --ps-tone-soft: var(--pulse-tone-overdue-soft); }
+
+/* Tone-driven inline icon (pros side, cons side, summary chevron, etc). */
+.ps-tone-icon { color: var(--ps-tone); flex-shrink: 0; }
+.ps-tone-icon--positive { color: var(--pulse-tone-positive); flex-shrink: 0; }
+.ps-tone-icon--overdue  { color: var(--pulse-tone-overdue);  flex-shrink: 0; }
+.ps-tone-icon--warning  { color: var(--pulse-tone-warning);  flex-shrink: 0; }
+.ps-tone-icon--info     { color: var(--pulse-tone-info);     flex-shrink: 0; }
+
+/* Message-level provenance — sits above the bubble, mono caption-style. */
+.ps-message-provenance {
+  margin-bottom: 6px;
+  margin-left: 4px;
+  padding: 2px 6px;
+  font-size: 9px;
+}
+
+.ps-message--user .ps-message-provenance {
+  display: none; /* user messages don't carry AI provenance */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Thinking toggle + panel — extracted from inline styles.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ps-thinking-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  margin-bottom: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--ps-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ps-text-muted);
+  transition: color var(--ps-transition);
+}
+
+.ps-thinking-toggle:hover {
+  color: var(--ps-text-secondary);
+}
+
+.ps-thinking-panel {
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border-radius: var(--ps-radius-sm);
+  background: var(--ps-bg-surface);
+  border: 1px solid var(--ps-border);
+  font-size: 12px;
+  color: var(--ps-text-secondary);
+  line-height: 1.5;
+}
+
+.ps-thinking-step + .ps-thinking-step {
+  margin-top: 6px;
+}
+
+.ps-thinking-step-time {
+  margin-right: 6px;
+  color: var(--ps-text-muted);
+  font-family: var(--ps-font-mono);
+  font-size: 10px;
 }

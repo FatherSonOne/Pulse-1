@@ -1,13 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { pulseService, UserProfile } from '../../services/pulseService';
 import { supabase } from '../../services/supabase';
 import { logoutUser } from '../../services/authService';
 import { settingsService } from '../../services/settingsService';
-import { Camera, Check, Loader2, LogOut, User as UserIcon } from 'lucide-react';
+import { Camera, Check, Loader2, LogOut, Monitor, Moon, Sun, User as UserIcon } from 'lucide-react';
 import { ToggleItem } from './shared/ToggleItem';
+import { SettingsCard } from './shared/SettingsCard';
+import { MonoLabel } from './shared/MonoLabel';
 import { TwoFactorAuthCard } from './account/TwoFactorAuthCard';
 import { DevicesSessionsCard } from './account/DevicesSessionsCard';
 import { LocaleSettingsCard } from './account/LocaleSettingsCard';
+
+type ThemeMode = 'system' | 'light' | 'dark';
 
 interface AccountSettingsProps {
   user?: { id: string; name?: string; email?: string; connectedProviders?: any } | null;
@@ -31,6 +36,32 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const stored = localStorage.getItem('pulse_theme_mode');
+    if (stored === 'system' || stored === 'light' || stored === 'dark') return stored;
+    return isDarkMode ? 'dark' : 'light';
+  });
+
+  // Keep the actual theme in sync with the chosen mode. System mode follows OS.
+  useEffect(() => {
+    if (themeMode === 'system') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      const sync = () => {
+        if (mq.matches !== isDarkMode) toggleTheme();
+      };
+      sync();
+      mq.addEventListener('change', sync);
+      return () => mq.removeEventListener('change', sync);
+    }
+    const wantDark = themeMode === 'dark';
+    if (wantDark !== isDarkMode) toggleTheme();
+  }, [themeMode, isDarkMode, toggleTheme]);
+
+  const handleThemeChange = (mode: ThemeMode) => {
+    setThemeMode(mode);
+    localStorage.setItem('pulse_theme_mode', mode);
+  };
 
   // Load Pulse profile on mount
   useEffect(() => {
@@ -110,15 +141,13 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      toast.error('Please select an image file');
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
+      toast.error('Image must be under 5MB');
       return;
     }
 
@@ -183,7 +212,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
       setPulseProfile(prev => prev ? { ...prev, avatar_url: dataUrl } : null);
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
+      toast.error('Could not upload image. Try again.');
     } finally {
       setIsUploadingImage(false);
       // Reset file input
@@ -244,13 +273,13 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
       </div>
 
       {/* Profile Section */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6">Profile</h4>
+      <SettingsCard>
+        <MonoLabel className="mb-6">Profile</MonoLabel>
 
         <div className="flex flex-col md:flex-row gap-6 items-start">
           <div className="relative group mx-auto md:mx-0">
             <div
-              className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl overflow-hidden cursor-pointer"
+              className="relative w-24 h-24 rounded-full bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-3xl font-semibold text-rose-500 dark:text-rose-400 overflow-hidden cursor-pointer transition-colors hover:bg-rose-500/15 dark:hover:bg-rose-500/20"
               onClick={() => fileInputRef.current?.click()}
               title="Click to edit profile image"
             >
@@ -261,10 +290,10 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
                   className="w-full h-full object-cover"
                 />
               ) : (
-                name.charAt(0)
+                name.charAt(0).toUpperCase()
               )}
             </div>
-            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none">
+            <div className="absolute inset-0 bg-zinc-950/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none">
               {isUploadingImage ? (
                 <Loader2 className="text-white animate-spin" />
               ) : (
@@ -283,16 +312,16 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
           <div className="flex-1 space-y-4 w-full">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Display Name</label>
+                <MonoLabel as="label">Display Name</MonoLabel>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-blue-500 focus:outline-none transition"
+                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-rose-500 focus:outline-none transition"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Pulse Handle</label>
+                <MonoLabel as="label">Pulse Handle</MonoLabel>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">@</span>
                   <input
@@ -302,7 +331,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
                     className={`w-full bg-zinc-50 dark:bg-zinc-800 border rounded-lg pl-7 pr-10 py-2.5 dark:text-white text-zinc-900 focus:outline-none transition ${
                       handleError ? 'border-red-400 focus:border-red-500' :
                       handleAvailable ? 'border-emerald-400 focus:border-emerald-500' :
-                      'border-zinc-200 dark:border-zinc-700 focus:border-blue-500'
+                      'border-zinc-200 dark:border-zinc-700 focus:border-rose-500'
                     }`}
                   />
                   {handleAvailable && !handleError && <Check className="text-emerald-500 absolute right-3 top-1/2 -translate-y-1/2" />}
@@ -312,13 +341,13 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Bio</label>
+              <MonoLabel as="label">Bio</MonoLabel>
               <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Tell us about yourself..."
                 rows={2}
-                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-blue-500 focus:outline-none transition resize-none"
+                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-rose-500 focus:outline-none transition resize-none"
               />
             </div>
 
@@ -326,7 +355,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
               <button
                 onClick={handleSaveProfile}
                 disabled={isSavingProfile || (handle !== pulseProfile?.handle && !handleAvailable && handle !== '')}
-                className="px-6 py-2 bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-2 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"
               >
                 {isSavingProfile ? <Loader2 className="animate-spin" /> : <Check />}
                 Save Changes
@@ -334,29 +363,53 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
             </div>
           </div>
         </div>
-      </div>
+      </SettingsCard>
 
       {/* Appearance Section */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6">Appearance</h4>
+      <SettingsCard>
+        <MonoLabel className="mb-4">Appearance</MonoLabel>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <button
-            onClick={() => !isDarkMode && toggleTheme()}
-            className={`h-20 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${isDarkMode ? 'border-blue-500 bg-blue-500/10' : 'border-zinc-200 bg-zinc-50 hover:border-zinc-300'}`}
-          >
-            <i className={`fa-solid fa-moon ${isDarkMode ? 'text-blue-500' : 'text-zinc-400'}`}></i>
-            <span className="text-xs font-medium dark:text-zinc-300 text-zinc-600">Dark Mode</span>
-          </button>
-          <button
-            onClick={() => isDarkMode && toggleTheme()}
-            className={`h-20 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${!isDarkMode ? 'border-blue-500 bg-blue-500/10' : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'}`}
-          >
-            <i className={`fa-solid fa-sun ${!isDarkMode ? 'text-blue-500' : 'text-zinc-400'}`}></i>
-            <span className="text-xs font-medium dark:text-zinc-300 text-zinc-600">Light Mode</span>
-          </button>
+        <div
+          role="radiogroup"
+          aria-label="Theme mode"
+          className="inline-flex p-1 rounded-lg border"
+          style={{
+            backgroundColor: 'var(--pulse-canvas-soft)',
+            borderColor: 'var(--pulse-border)',
+          }}
+        >
+          {([
+            { id: 'system', label: 'System', Icon: Monitor },
+            { id: 'light', label: 'Light', Icon: Sun },
+            { id: 'dark', label: 'Dark', Icon: Moon },
+          ] as const).map(({ id, label, Icon }) => {
+            const isActive = themeMode === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={isActive}
+                onClick={() => handleThemeChange(id)}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-sm font-medium transition ${
+                  isActive
+                    ? 'text-zinc-900 dark:text-white shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                }`}
+                style={isActive ? { backgroundColor: 'var(--pulse-surface)' } : undefined}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </button>
+            );
+          })}
         </div>
-      </div>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2.5">
+          {themeMode === 'system'
+            ? 'Following your operating system. Changes when your OS does.'
+            : `Always ${themeMode === 'dark' ? 'dark' : 'light'}, regardless of OS preference.`}
+        </p>
+      </SettingsCard>
 
       {/* Language & Timezone */}
       <LocaleSettingsCard
@@ -371,8 +424,8 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
       <DevicesSessionsCard />
 
       {/* Session Management */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6">Session Management</h4>
+      <SettingsCard>
+        <MonoLabel className="mb-6">Session Management</MonoLabel>
         <div className="space-y-4">
           <ToggleItem
             label="Keep me logged in"
@@ -387,10 +440,34 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
 
           <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
             <button
-              onClick={async () => {
-                if (confirm('Are you sure you want to log out?')) {
-                  await logoutUser();
-                }
+              onClick={() => {
+                toast(
+                  (t) => (
+                    <div className="flex flex-col gap-3">
+                      <span className="text-sm text-zinc-900 dark:text-white">Log out of Pulse?</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            toast.dismiss(t.id);
+                            await logoutUser();
+                          }}
+                          className="px-3 py-1 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded transition"
+                        >
+                          Log out
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toast.dismiss(t.id)}
+                          className="px-3 py-1 text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ),
+                  { duration: 6000 }
+                );
               }}
               className="text-red-500 hover:text-red-600 font-medium text-sm flex items-center gap-2"
             >
@@ -399,7 +476,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
             </button>
           </div>
         </div>
-      </div>
+      </SettingsCard>
     </div>
   );
 };

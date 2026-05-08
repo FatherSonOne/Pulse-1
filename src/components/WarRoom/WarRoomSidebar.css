@@ -5,41 +5,38 @@
  */
 
 /* ============================================
-   CSS Variables
+   CSS Variables — derived from canonical --pulse-* (src/styles/pulse-tokens.css)
+   Light is the default; .dark on html flips canvas/ink/border via the canonical layer.
    ============================================ */
 .wrs-container {
   /* Sizing */
   --wrs-width-collapsed: 56px;
   --wrs-width-expanded: 280px;
 
-  /* Dark mode (default) */
-  --wrs-bg: #0f0f12;
-  --wrs-bg-secondary: #18181b;
-  --wrs-bg-hover: #27272a;
-  --wrs-bg-active: rgba(244, 63, 94, 0.15);
-  --wrs-border: #27272a;
-  --wrs-text: #fafafa;
-  --wrs-text-secondary: #a1a1aa;
-  --wrs-text-muted: #71717a;
-  --wrs-accent: #f43f5e;
-  --wrs-accent-hover: #e11d48;
-  --wrs-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  /* Surfaces */
+  --wrs-bg: var(--pulse-canvas);                     /* #f8f8f8 light, #000 dark */
+  --wrs-bg-secondary: var(--pulse-canvas-soft);      /* #f2f2f2 light, #080808 dark */
+  --wrs-bg-hover: rgba(0, 0, 0, 0.06);               /* hover tint; .dark overrides below */
+  --wrs-bg-active: var(--pulse-rose-soft);
+  --wrs-border: var(--pulse-border);
+
+  /* Ink */
+  --wrs-text: var(--pulse-ink);
+  --wrs-text-secondary: var(--pulse-ink-2);
+  --wrs-text-muted: var(--pulse-ink-3);
+
+  /* Accent */
+  --wrs-accent: var(--pulse-rose);
+  --wrs-accent-hover: var(--pulse-rose-deep);
+
+  --wrs-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
 }
 
-/* Light mode */
-:root:not(.dark) .wrs-container,
-.light .wrs-container {
-  --wrs-bg: #ffffff;
-  --wrs-bg-secondary: #f4f4f5;
-  --wrs-bg-hover: #e4e4e7;
-  --wrs-bg-active: rgba(244, 63, 94, 0.1);
-  --wrs-border: #e4e4e7;
-  --wrs-text: #18181b;
-  --wrs-text-secondary: #52525b;
-  --wrs-text-muted: #a1a1aa;
-  --wrs-accent: #e11d48;
-  --wrs-accent-hover: #be123c;
-  --wrs-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+/* Dark mode — translucent hover, deeper shadow */
+:root.dark .wrs-container,
+.dark .wrs-container {
+  --wrs-bg-hover: rgba(255, 255, 255, 0.07);
+  --wrs-shadow: 0 4px 24px rgba(0, 0, 0, 0.40);
 }
 
 /* ============================================
@@ -202,7 +199,7 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  background: var(--pulse-rose-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -210,7 +207,7 @@
 }
 
 .wrs-rail-logo i {
-  color: white;
+  color: var(--pulse-rose);
   font-size: 14px;
 }
 
@@ -283,7 +280,7 @@
 
 .wrs-rail-project:hover {
   border-color: var(--project-color, var(--wrs-accent));
-  transform: scale(1.1);
+  transform: translateY(-1px);
 }
 
 .wrs-rail-project.active {
@@ -332,22 +329,23 @@
   gap: 2px;
 }
 
+/* Solid coral wordmark, not gradient text (absolute design ban). */
 .wrs-brand-text {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-family: var(--pulse-font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pulse-rose);
 }
 
 .wrs-brand-sub {
+  font-family: var(--pulse-font-mono);
   font-size: 10px;
   font-weight: 500;
   color: var(--wrs-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
 }
 
 /* New War Room Button */
@@ -358,13 +356,14 @@
   width: 100%;
   padding: 10px 12px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  background: linear-gradient(135deg, var(--pulse-rose) 0%, var(--pulse-pink) 100%);
   border: none;
-  color: white;
+  color: #ffffff;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform var(--pulse-duration) var(--pulse-ease),
+              box-shadow var(--pulse-duration) var(--pulse-ease);
   margin-bottom: 12px;
 }
 
@@ -415,11 +414,12 @@
 
 .wrs-picker-label {
   display: block;
+  font-family: var(--pulse-font-mono);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--wrs-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   margin: 10px 0 6px;
 }
 
@@ -473,12 +473,12 @@
 }
 
 .wrs-color-option:hover {
-  transform: scale(1.2);
+  transform: translateY(-1px);
 }
 
 .wrs-color-option.selected {
   border-color: var(--wrs-text);
-  transform: scale(1.2);
+  transform: translateY(-1px);
 }
 
 .wrs-form-actions {
@@ -586,11 +586,12 @@
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
+  font-family: var(--pulse-font-mono);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--wrs-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
 }
 
 .wrs-section-header i {

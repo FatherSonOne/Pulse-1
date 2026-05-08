@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { settingsService } from '../../../services/settingsService';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 type Schedule = 'off' | 'daily' | 'weekly';
 
@@ -57,10 +59,10 @@ export const DigestScheduleCard: React.FC = () => {
   const showDay  = schedule === 'weekly';
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center gap-2">
         <Mail className="w-4 h-4 text-zinc-500" />
-        <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Digest schedule</h4>
+        <MonoLabel>Digest schedule</MonoLabel>
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
         Receive a periodic summary email of unread messages, mentions, and other activity.
@@ -136,6 +138,6 @@ export const DigestScheduleCard: React.FC = () => {
           {isSaving ? 'Saving...' : 'Save Digest'}
         </button>
       </div>
-    </div>
+    </SettingsCard>
   );
 };

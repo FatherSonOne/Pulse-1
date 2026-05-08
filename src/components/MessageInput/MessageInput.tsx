@@ -12,6 +12,7 @@ import SlashCommandDropdown from './SlashCommandDropdown';
 import InlineToolsMenu from './InlineToolsMenu';
 import { useSlashCommands } from '../../hooks/useSlashCommands';
 import { getToolOverlayType, saveRecentTool } from '../../services/toolRegistry';
+import { useFeatures } from '../../contexts/FeatureContext';
 import './MessageInput.css';
 import {
   ArrowUp,
@@ -97,6 +98,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
       return '';
     }
   }, [draftStorageKey, initialValue]);
+
+  const { isFeatureEnabled } = useFeatures();
+  const aiComposerEnabled = isFeatureEnabled('aiComposer');
+  const toneAnalysisEnabled = isFeatureEnabled('toneAnalysis');
+  const voiceInputEnabled = isFeatureEnabled('voiceInput');
 
   const [content, setContent] = useState(initialContent);
   const [advancedMode, setAdvancedMode] = useState(false);
@@ -518,7 +524,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     <div className="message-input-wrapper">
       {/* AI Suggestions Overlay */}
       <AnimatePresence>
-        {showAI && aiEnabled && aiSuggestions.length > 0 && (
+        {showAI && aiEnabled && aiComposerEnabled && aiSuggestions.length > 0 && (
           <Suspense
             fallback={<div className="ai-loading">{tr('messages.input.aiLoading', 'Loading AI...')}</div>}
           >
@@ -597,7 +603,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           />
         )}
 
-        {advancedMode && aiEnabled && toneAnalysis && (
+        {advancedMode && aiEnabled && toneAnalysisEnabled && toneAnalysis && (
           <ToneAnalyzer analysis={toneAnalysis} isAnalyzing={isAnalyzingTone} />
         )}
 
@@ -686,7 +692,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 >
                   <Smile size={16} />
                 </button>
-                {voiceEnabled && (
+                {voiceEnabled && voiceInputEnabled && (
                   <button
                     type="button"
                     className={`simple-action-button ${isRecording ? 'recording' : ''}`}
@@ -707,7 +713,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
             {advancedMode && (
               <>
-                {voiceEnabled && (
+                {voiceEnabled && voiceInputEnabled && (
                   <button
                     type="button"
                     className={`voice-input-button ${isRecording ? 'recording' : ''}`}

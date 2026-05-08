@@ -12,7 +12,6 @@
   padding: 0.75rem 1rem;
   background: transparent;
   border: 1px solid var(--dt-border, rgba(0, 0, 0, 0.08));
-  border-left: 2px solid transparent;
   border-radius: 8px;
   cursor: pointer;
   transition:
@@ -22,19 +21,20 @@
 
 .task-section-header:hover {
   background: var(--dt-bg-card-hover, rgba(0, 0, 0, 0.03));
-  border-left-color: rgba(244, 63, 94, 0.25);
+  border-color: var(--dt-border-hover, rgba(0, 0, 0, 0.12));
 }
 
 .task-section-header:focus-visible {
-  outline: 2px solid #f43f5e;
+  outline: 2px solid var(--dt-accent);
   outline-offset: 2px;
   border-radius: 8px;
 }
 
-/* Active/expanded */
+/* Expanded affordance is the chevron orientation alone. No coral wash, no
+   side-stripe — DESIGN.md's Coral-As-Signal Rule reserves the accent for
+   counts and state worth signalling, not for "this section is open." */
 .task-section-header[aria-expanded="true"] {
-  border-left-color: #f43f5e;
-  background: var(--dt-accent-softer, rgba(244, 63, 94, 0.05));
+  background: transparent;
 }
 
 .task-section-header-left {
@@ -73,8 +73,10 @@
   letter-spacing: 0.05em;
   color: white;
   border-radius: var(--dt-radius-sm);
-  background: var(--dt-accent);
   font-feature-settings: "tnum" 1;
+  /* Background is set inline per-section via `accentColor` so each header's
+     count badge matches its icon (red for Overdue, purple for In Review,
+     etc.). No `--dt-accent` fallback here on purpose — fall through to inline. */
 }
 
 .task-section-header-right {
@@ -122,12 +124,11 @@
 
 .dark .task-section-header:hover {
   background: rgba(255, 255, 255, 0.055);
-  border-left-color: rgba(244, 63, 94, 0.25);
+  border-color: rgba(255, 255, 255, 0.10);
 }
 
 .dark .task-section-header[aria-expanded="true"] {
-  border-left-color: #f43f5e;
-  background: rgba(244, 63, 94, 0.06);
+  background: transparent;
 }
 
 /* Bulk selection */
@@ -138,7 +139,7 @@
 }
 
 .task-section-card-wrapper.selected {
-  background: var(--dt-accent-softer, rgba(102, 126, 234, 0.06));
+  background: var(--dt-accent-softer, rgba(244, 63, 94, 0.05));
   border-radius: 8px;
   padding: 2px;
 }
@@ -168,12 +169,12 @@
 }
 
 .task-select-checkbox.checked {
-  background: var(--dt-accent, #667eea);
-  border-color: var(--dt-accent, #667eea);
+  background: var(--dt-accent, #f43f5e);
+  border-color: var(--dt-accent, #f43f5e);
 }
 
 .task-select-checkbox:hover {
-  border-color: var(--dt-accent, #667eea);
+  border-color: var(--dt-accent, #f43f5e);
 }
 
 /* Mobile responsive */

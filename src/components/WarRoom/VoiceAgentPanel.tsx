@@ -17,6 +17,7 @@ import { AudioAutoplayPrompt } from './AudioAutoplayPrompt';
 import toast from 'react-hot-toast';
 
 import { BookOpen, History, MessagesSquare, Mic, Minus, Settings, X } from 'lucide-react';
+import { ProvenanceTag } from './ProvenanceTag';
 
 interface ContextDocument {
   id: string;
@@ -170,11 +171,14 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
     return (
       <button
         onClick={() => setIsMinimized(false)}
-        className="fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center"
+        className="fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(135deg, var(--pulse-rose) 0%, var(--pulse-pink) 100%)',
+          boxShadow: '0 4px 16px var(--pulse-rose-glow)',
+        }}
         title="Open Voice Agent"
       >
         <Mic className="fa text-xl" />
-        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
       </button>
     );
   }
@@ -182,26 +186,30 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
   return (
     <div
       ref={panelRef}
-      className={`voice-agent-panel bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-xl shadow-2xl overflow-hidden flex flex-col ${
+      className={`voice-agent-panel bg-gray-900/95 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden flex flex-col ${
         isExpanded ? 'fixed inset-4 z-50' : 'w-full max-w-md'
       } ${className}`}
+      style={{ border: '1px solid var(--pulse-border)' }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-900 to-gray-800 border-b border-cyan-500/30">
+      <div
+        className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-900 to-gray-800"
+        style={{ borderBottom: '1px solid var(--pulse-border)' }}
+      >
         <div className="flex items-center gap-3">
-          {/* Voice Icon with Animation */}
-          <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-              <Mic className="fa text-white" />
-            </div>
-            <div className="absolute inset-0 rounded-full bg-cyan-500/30 animate-ping" />
+          {/* Voice avatar — flat coral chip (Coral-As-Signal Rule). */}
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' }}
+          >
+            <Mic className="fa" />
           </div>
 
           <div>
             <h2 className="text-lg font-bold text-white">Voice Agent</h2>
             <div className="flex items-center gap-2 text-xs text-gray-400">
               <span className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-cyan-500" />
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--pulse-rose)' }} />
                 {WAR_ROOM_AGENTS[currentAgent]?.name || currentAgent}
               </span>
               {contextFiles.length > 0 && (
@@ -220,7 +228,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
           <button
             onClick={() => setShowHistory(!showHistory)}
             className={`p-2 rounded-lg transition-colors ${
-              showHistory ? 'bg-cyan-500/20 text-cyan-400' : 'text-gray-400 hover:text-white'
+              showHistory ? 'bg-rose-500/15 text-rose-400' : 'text-gray-400 hover:text-white'
             }`}
             title="Toggle History (Ctrl+H)"
           >
@@ -231,7 +239,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
           <button
             onClick={() => setShowSettings(!showSettings)}
             className={`p-2 rounded-lg transition-colors ${
-              showSettings ? 'bg-cyan-500/20 text-cyan-400' : 'text-gray-400 hover:text-white'
+              showSettings ? 'bg-rose-500/15 text-rose-400' : 'text-gray-400 hover:text-white'
             }`}
             title="Settings"
           >
@@ -282,7 +290,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
             <select
               value={voiceSettings.voice}
               onChange={(e) => setVoiceSettings(prev => ({ ...prev, voice: e.target.value as any }))}
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-rose-500"
             >
               <option value="alloy">Alloy (Neutral)</option>
               <option value="ash">Ash (Neutral)</option>
@@ -308,7 +316,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
             <select
               value={voiceSettings.turnDetection}
               onChange={(e) => setVoiceSettings(prev => ({ ...prev, turnDetection: e.target.value as any }))}
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-rose-500"
             >
               <option value="semantic_vad">Semantic VAD (Smart)</option>
               <option value="server_vad">Server VAD (Fast)</option>
@@ -321,7 +329,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
             <select
               value={voiceSettings.noiseReduction}
               onChange={(e) => setVoiceSettings(prev => ({ ...prev, noiseReduction: e.target.value as any }))}
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-rose-500"
             >
               <option value="near_field">Near Field (Close Mic)</option>
               <option value="far_field">Far Field (Room Mic)</option>
@@ -375,20 +383,16 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
       {/* Footer */}
       <div className="p-2 bg-gray-900 border-t border-gray-800 flex items-center justify-between text-xs text-gray-500">
         <div className="flex items-center gap-4">
-          <span>
-            <MessagesSquare className="fa mr-1" />
+          <span className="flex items-center gap-1">
+            <MessagesSquare className="fa" />
             {history.filter(h => h.type === 'message').length} messages
           </span>
-          <span>
-            <Settings className="fa mr-1" />
+          <span className="flex items-center gap-1">
+            <Settings className="fa" />
             {history.filter(h => h.type === 'function_call').length} tool calls
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-cyan-500">OpenAI Realtime</span>
-          <span>•</span>
-          <span>gpt-realtime</span>
-        </div>
+        <ProvenanceTag model="OPENAI" kind="GPT-REALTIME" showDot={false} />
       </div>
     </div>
   );

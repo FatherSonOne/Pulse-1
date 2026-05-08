@@ -5,6 +5,7 @@ import React from 'react';
 import { MessageCircle } from 'lucide-react';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import { SmartReply } from '../../services/relay/relayAIService';
+import { useFeatures } from '../../contexts/FeatureContext';
 
 interface VoxSmartRepliesProps {
   replies: SmartReply[];
@@ -33,6 +34,9 @@ export const VoxSmartReplies: React.FC<VoxSmartRepliesProps> = ({
   isDarkMode = false,
   accentColor = '#f43f5e',
 }) => {
+  const { isFeatureEnabled } = useFeatures();
+  if (!isFeatureEnabled('smartReplies')) return null;
+
   const tc = {
     bg: isDarkMode ? 'bg-zinc-900' : 'bg-white',
     border: isDarkMode ? 'border-zinc-700' : 'border-zinc-200',

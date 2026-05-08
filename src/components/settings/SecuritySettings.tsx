@@ -16,6 +16,8 @@ import {
 import toast from 'react-hot-toast';
 import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
 import { workspaceService, SessionTimeoutMinutes, SignInActivityEntry } from '../../services/workspaceService';
+import { SettingsCard } from './shared/SettingsCard';
+import { MonoLabel } from './shared/MonoLabel';
 
 const SESSION_TIMEOUT_OPTIONS: { value: SessionTimeoutMinutes; label: string }[] = [
   { value: 0,     label: 'Never' },
@@ -110,11 +112,11 @@ export const SecuritySettings: React.FC = () => {
           <Lock className="w-5 h-5 text-rose-500" />
           <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Security</h3>
         </div>
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
+        <SettingsCard>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Security policy is managed by organization owners and admins.
           </p>
-        </div>
+        </SettingsCard>
       </div>
     );
   }
@@ -177,10 +179,10 @@ export const SecuritySettings: React.FC = () => {
       </div>
 
       {/* Enforce 2FA + Session timeout */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-5">
+      <SettingsCard className="space-y-5">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-zinc-500" />
-          <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Access policy</h4>
+          <MonoLabel>Access policy</MonoLabel>
         </div>
 
         <label className="flex items-start gap-3 cursor-pointer select-none">
@@ -240,13 +242,13 @@ export const SecuritySettings: React.FC = () => {
             {isSavingPolicy ? 'Saving...' : 'Save Policy'}
           </button>
         </div>
-      </div>
+      </SettingsCard>
 
       {/* IP Allowlist */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+      <SettingsCard className="space-y-4">
         <div className="flex items-center gap-2">
           <Globe2 className="w-4 h-4 text-zinc-500" />
-          <h4 className="text-sm font-bold text-zinc-900 dark:text-white">IP allowlist</h4>
+          <MonoLabel>IP allowlist</MonoLabel>
         </div>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Restrict organization access to specific networks. One CIDR block per line.
@@ -281,10 +283,10 @@ export const SecuritySettings: React.FC = () => {
             {isSavingAllowlist ? 'Saving...' : 'Save Allowlist'}
           </button>
         </div>
-      </div>
+      </SettingsCard>
 
       {/* Sign-in activity */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+      <SettingsCard padded={false} className="overflow-hidden">
         <button
           type="button"
           onClick={() => setShowActivity(!showActivity)}
@@ -292,7 +294,7 @@ export const SecuritySettings: React.FC = () => {
         >
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-zinc-500" />
-            <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Recent sign-in activity</h4>
+            <MonoLabel>Recent sign-in activity</MonoLabel>
           </div>
           <span className="text-xs text-zinc-400">{showActivity ? 'Hide' : 'Show'}</span>
         </button>
@@ -348,7 +350,7 @@ export const SecuritySettings: React.FC = () => {
             )}
           </div>
         )}
-      </div>
+      </SettingsCard>
     </div>
   );
 };

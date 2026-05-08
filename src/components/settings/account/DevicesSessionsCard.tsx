@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 import {
   Laptop,
   Smartphone,
@@ -96,11 +98,11 @@ export const DevicesSessionsCard: React.FC = () => {
   const hasOthers = active.some(s => !s.is_current);
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <History className="w-4 h-4 text-zinc-500" />
-          <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Devices &amp; sessions</h4>
+          <MonoLabel>Devices &amp; sessions</MonoLabel>
         </div>
         <button
           type="button"
@@ -148,7 +150,7 @@ export const DevicesSessionsCard: React.FC = () => {
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 font-medium">this device</span>
                     )}
                     {s.mfa_verified && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 font-medium">2FA</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">2FA</span>
                     )}
                   </div>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
@@ -208,6 +210,6 @@ export const DevicesSessionsCard: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </SettingsCard>
   );
 };

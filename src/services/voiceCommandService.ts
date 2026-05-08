@@ -435,8 +435,6 @@ const NAVIGATION_MAP: Record<string, string> = {
   'task panel': 'CALENDAR',
   'notifications': 'DASHBOARD',
   'notification center': 'DASHBOARD',
-  'admin': 'MESSAGE_ADMIN',
-  'message admin': 'MESSAGE_ADMIN',
   'message analytics': 'MESSAGE_ANALYTICS',
 };
 

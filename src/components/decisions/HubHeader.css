@@ -123,12 +123,11 @@
 .hub-refresh-btn:hover {
   background: var(--dt-bg-card-hover);
   color: var(--dt-text-primary);
-  border-color: var(--dt-border-focus);
-  transform: rotate(90deg);
+  border-color: var(--dt-border-hover);
 }
 
 .hub-refresh-btn:active {
-  transform: rotate(180deg);
+  background: var(--dt-bg-card-active);
 }
 
 .hub-actions {
@@ -138,13 +137,38 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   RESPONSIVE DESIGN - Mobile
+   RESPONSIVE DESIGN — container queries, not viewport queries.
+
+   The hub may render inside a narrower wrapper (sidebar docked, dev tools
+   panel, split-screen workspace) where the viewport stays wide but the
+   hub shrinks. `@container hub (...)` reacts to the hub's own width — see
+   DecisionTaskHub.css `container: hub / inline-size`.
+
+   Three tiers, escalating compression as the hub narrows:
+
+   ≤1024px  — mode switcher goes icon-only (saves ~150px). Header stays
+              single-row; action buttons stay in place.
+   ≤880px   — header wraps: title+actions on row 1, mode switcher full-width
+              on row 2. Action-button gap tightens.
+   ≤480px   — mode buttons collapse to pure icons even when active.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-@media (max-width: 768px) {
+/* Tier 1 — icon-only mode switcher to keep the row single-line longer. */
+@container hub (max-width: 1024px) {
+  .hub-mode-label {
+    display: none;
+  }
+
+  .hub-mode-btn {
+    padding: 8px 12px;
+  }
+}
+
+/* Tier 2 — wrap the row before the action cluster overflows the chrome. */
+@container hub (max-width: 880px) {
   .hub-header {
     flex-wrap: wrap;
-    padding: var(--dt-spacing-md) var(--dt-spacing-md);
+    padding: var(--dt-spacing-md);
     gap: var(--dt-spacing-md);
   }
 
@@ -156,6 +180,12 @@
 
   .hub-header-right {
     order: 2;
+    /* Tighter gap so the 7-button cluster has more headroom on narrow rows. */
+    gap: var(--dt-spacing-xs);
+  }
+
+  .hub-actions {
+    gap: var(--dt-spacing-xs);
   }
 
   /* Mode switcher on bottom row, full width */
@@ -181,17 +211,16 @@
     font-size: var(--dt-font-lg);
   }
 
-  .hub-mode-label {
-    display: none;
-  }
-
+  /* Surface the active mode's label on the wrapped row, since the
+     full-width segmented control has the room and the label tells the
+     operator which view they're in at a glance. */
   .hub-mode-btn[aria-selected="true"] .hub-mode-label {
     display: inline;
   }
 }
 
-/* Extra small screens - icon only buttons */
-@media (max-width: 480px) {
+/* Tier 3 — extra small. Mode buttons stay icon-only even when active. */
+@container hub (max-width: 480px) {
   .hub-mode-label {
     display: none !important;
   }
@@ -209,8 +238,11 @@
    DARK MODE ADJUSTMENTS
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Dark-mode header is translucent over the true-black canvas, not an opaque
+   grey panel (DESIGN.md: Translucency-Over-Tinting Rule). The backdrop-filter
+   blur on the parent stacks against whatever scrolls underneath. */
 .dark .hub-header {
-  background: rgba(28, 28, 28, 0.8);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .dark .hub-mode-switcher {

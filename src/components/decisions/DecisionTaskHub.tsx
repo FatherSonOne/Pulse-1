@@ -330,9 +330,19 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   // handleVoteChange) — declared via useCallback so referential identity is
   // stable and the hook's useEffect doesn't tear down on every render.
 
-  // Modal Escape key handling
+  // Modal Escape key + global shortcuts.
+  // `c` opens the Create Task modal — the primary action on this surface,
+  // mirroring Linear/Raycast convention. Bails when the user is typing in
+  // an input/textarea/contenteditable so it doesn't fire mid-search.
   useEffect(() => {
-    const handleEscapeKey = (event: KeyboardEvent) => {
+    const isTypingTarget = (target: EventTarget | null): boolean => {
+      if (!(target instanceof HTMLElement)) return false;
+      const tag = target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+      return target.isContentEditable;
+    };
+
+    const handleKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         if (showDecisionMission) {
           setShowDecisionMission(false);
@@ -345,14 +355,27 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         } else if (taskToExtend) {
           setTaskToExtend(null);
         }
+        return;
+      }
+
+      if (isTypingTarget(event.target)) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+      if (event.key === 'c' || event.key === 'C') {
+        const anyOverlay = showDecisionMission || showAssistant || showPrioritizer ||
+          taskToReassign !== null || taskToExtend !== null || taskToEdit !== null ||
+          showCreateTask || decisionToDecompose !== null || wizardOpen !== null;
+        if (anyOverlay) return;
+        event.preventDefault();
+        setShowCreateTask(true);
       }
     };
 
-    document.addEventListener('keydown', handleEscapeKey);
+    document.addEventListener('keydown', handleKey);
     return () => {
-      document.removeEventListener('keydown', handleEscapeKey);
+      document.removeEventListener('keydown', handleKey);
     };
-  }, [showDecisionMission, showAssistant, showPrioritizer, taskToReassign, taskToExtend]);
+  }, [showDecisionMission, showAssistant, showPrioritizer, taskToReassign, taskToExtend, taskToEdit, showCreateTask, decisionToDecompose, wizardOpen]);
 
   // Prevent background scroll
   useEffect(() => {
@@ -1217,27 +1240,24 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
               title="AI Assistant"
             >
               <Bot size={18} aria-hidden="true" />
-              <span className="action-label">AI</span>
             </button>
             <button
               type="button"
               className="hub-action-button"
               onClick={() => setWizardOpen({})}
               aria-label="Open decision wizard"
-              title="New decision"
+              title="New decision (templates)"
             >
               <LayoutTemplate size={18} aria-hidden="true" />
-              <span className="action-label">Templates</span>
             </button>
             <button
               type="button"
               className="hub-action-button primary"
               onClick={() => setShowCreateTask(true)}
               aria-label="Create new task"
-              title="Create Task"
+              title="Create task (C)"
             >
               <Plus size={18} aria-hidden="true" />
-              <span className="action-label">Create</span>
             </button>
           </>
         }

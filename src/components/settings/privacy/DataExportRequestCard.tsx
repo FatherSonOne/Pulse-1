@@ -3,6 +3,8 @@ import { FileDown, Loader2, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../services/supabase';
 import { settingsService } from '../../../services/settingsService';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 // Tables we attempt to read for the export. RLS handles the per-user filtering;
 // any 4xx/5xx (table missing, no permission) is swallowed and recorded in the
@@ -118,10 +120,10 @@ export const DataExportRequestCard: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center gap-2">
         <FileDown className="w-4 h-4 text-zinc-500" />
-        <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Export my data</h4>
+        <MonoLabel>Export my data</MonoLabel>
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
         Download a complete JSON copy of every record we hold for your account — profile, settings, messages,
@@ -156,6 +158,6 @@ export const DataExportRequestCard: React.FC = () => {
           {isExporting ? 'Preparing export...' : 'Download my data'}
         </button>
       </div>
-    </div>
+    </SettingsCard>
   );
 };

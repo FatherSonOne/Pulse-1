@@ -127,9 +127,9 @@ export async function getLatestBurnoutIndicator(): Promise<{
       .eq('user_id', user.id)
       .order('assessed_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error) throw error;
 
     return { success: true, data: data || undefined };
   } catch (err: any) {

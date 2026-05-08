@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Shield } from 'lucide-react';
 import { settingsService } from '../../services/settingsService';
 import i18n from '../../i18n';
+import { SettingsCard } from './shared/SettingsCard';
+import { MonoLabel } from './shared/MonoLabel';
 
 const ToggleItem = ({ label, desc, active, onToggle }: { label: string; desc: string; active: boolean; onToggle: () => void }) => (
   <div className="flex justify-between items-center group cursor-pointer" onClick={onToggle}>
@@ -10,7 +12,7 @@ const ToggleItem = ({ label, desc, active, onToggle }: { label: string; desc: st
       <div className="text-zinc-500 text-xs">{desc}</div>
     </div>
     <button
-      className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${active ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+      className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${active ? 'bg-rose-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
     >
       <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${active ? 'translate-x-6' : 'translate-x-0'}`} />
     </button>
@@ -70,10 +72,10 @@ export const StudioSettings: React.FC = () => {
         <p>Configure default behavior for the War Room.</p>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-6">
+      <SettingsCard className="space-y-6">
         {/* AI Depth */}
         <div>
-          <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">AI Reasoning Depth</label>
+          <MonoLabel as="label" className="mb-3 block">AI Reasoning Depth</MonoLabel>
           <div className="flex gap-3">
             {(['fast', 'balanced', 'deep'] as const).map((depth) => (
               <button
@@ -85,7 +87,7 @@ export const StudioSettings: React.FC = () => {
                 }}
                 className={`flex-1 py-2 border rounded-lg text-sm font-medium capitalize transition ${
                   warRoomAIDepth === depth
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                    ? 'border-rose-500 bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400'
                     : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600'
                 }`}
               >
@@ -133,7 +135,7 @@ export const StudioSettings: React.FC = () => {
 
         {/* Default Agent */}
         <div>
-          <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">Default Agent</label>
+          <MonoLabel as="label" className="mb-3 block">Default Agent</MonoLabel>
           <select
             value={warRoomDefaultAgent}
             onChange={(e) => {
@@ -141,7 +143,7 @@ export const StudioSettings: React.FC = () => {
               settingsService.set('warRoomDefaultAgent', e.target.value);
             }}
             title="Default War Room agent"
-            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
           >
             <option value="general">General</option>
             <option value="skeptic">Skeptic</option>
@@ -154,7 +156,7 @@ export const StudioSettings: React.FC = () => {
 
         {/* Voice Settings */}
         <div>
-          <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">Voice Mode</label>
+          <MonoLabel as="label" className="mb-3 block">Voice Mode</MonoLabel>
           <select
             value={warRoomVoiceMode}
             onChange={(e) => {
@@ -162,7 +164,7 @@ export const StudioSettings: React.FC = () => {
               settingsService.set('warRoomVoiceMode', e.target.value);
             }}
             title="Voice interaction mode"
-            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
           >
             <option value="push-to-talk">Push-to-Talk</option>
             <option value="always-on">Always On</option>
@@ -171,7 +173,7 @@ export const StudioSettings: React.FC = () => {
         </div>
 
         <div>
-          <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">Voice Gender</label>
+          <MonoLabel as="label" className="mb-3 block">Voice Gender</MonoLabel>
           <div className="flex gap-3">
             {(['male', 'female', 'neutral'] as const).map((gender) => (
               <button
@@ -183,7 +185,7 @@ export const StudioSettings: React.FC = () => {
                 }}
                 className={`flex-1 py-2 border rounded-lg text-sm font-medium capitalize transition ${
                   warRoomVoiceGender === gender
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                    ? 'border-rose-500 bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400'
                     : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600'
                 }`}
               >
@@ -197,7 +199,7 @@ export const StudioSettings: React.FC = () => {
 
         {/* Guardrails */}
         <div>
-          <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">Guardrails</label>
+          <MonoLabel as="label" className="mb-3 block">Guardrails</MonoLabel>
         </div>
         <ToggleItem
           label="Content Safety"
@@ -234,7 +236,7 @@ export const StudioSettings: React.FC = () => {
 
         {/* Advanced */}
         <div>
-          <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">Advanced</label>
+          <MonoLabel as="label" className="mb-3 block">Advanced</MonoLabel>
           <select
             value={warRoomLanguage}
             onChange={(e) => {
@@ -243,7 +245,7 @@ export const StudioSettings: React.FC = () => {
               i18n.changeLanguage(e.target.value);
             }}
             title="Language preference"
-            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
           >
             <option value="en">English</option>
             <option value="es">Spanish</option>
@@ -257,7 +259,7 @@ export const StudioSettings: React.FC = () => {
             <option value="ko">Korean</option>
           </select>
         </div>
-      </div>
+      </SettingsCard>
     </div>
   );
 };

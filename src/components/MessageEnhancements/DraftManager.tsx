@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 import { AtSign, Check, Clock, FilePen, Loader2, Paperclip, Reply, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { useFeatures } from '../../contexts/FeatureContext';
 
 // Types
 interface MessageDraft {
@@ -276,7 +277,13 @@ const formatFileSize = (bytes: number): string => {
 };
 
 // Main Draft Manager Component
-export const DraftManager: React.FC<DraftManagerProps> = ({
+export const DraftManager: React.FC<DraftManagerProps> = (props) => {
+  const { isFeatureEnabled } = useFeatures();
+  if (!isFeatureEnabled('draftManager')) return null;
+  return <DraftManagerInner {...props} />;
+};
+
+const DraftManagerInner: React.FC<DraftManagerProps> = ({
   conversationId,
   onDraftLoad,
   onDraftDelete

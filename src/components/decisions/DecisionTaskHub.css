@@ -16,6 +16,12 @@
   padding: var(--dt-spacing-lg);
   background: var(--dt-bg-primary);
   min-height: 100vh;
+  /* Establish a size container so the header's responsive rules can react
+     to the hub's actual width — not the viewport. This matters when Pulse
+     is rendered inside a narrower wrapper (sidebar docked, dev tools panel,
+     split-screen workspace) where the viewport stays wide but the hub
+     shrinks. Named so the queries are unambiguous. */
+  container: hub / inline-size;
 }
 
 .hub-content {
@@ -114,16 +120,21 @@
   color: var(--dt-text-primary);
 }
 
+/* Header action buttons are icon-square at all breakpoints, addressed via
+   aria-label + title only. The previous mix of labeled (AI / Templates /
+   Create) and icon-only (bell / activity / export) was a Recognition-vs-Recall
+   inconsistency — see DESIGN.md §6 ("consistent affordances across the
+   surface"). */
 .hub-action-button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--dt-spacing-xs);
-  padding: var(--dt-spacing-sm) var(--dt-spacing-md);
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   background: var(--dt-bg-card);
   border: 1px solid var(--dt-border);
   border-radius: var(--dt-radius-sm);
-  font-size: var(--dt-font-sm);
-  font-weight: var(--dt-font-weight-medium);
   color: var(--dt-text-primary);
   cursor: pointer;
   transition: all var(--dt-transition-fast);
@@ -170,35 +181,11 @@
   font-feature-settings: "tnum" 1;
 }
 
-.action-label {
-  font-size: var(--dt-font-sm);
-}
-
-/* ─────────────────────────────────────────────────────────────────────────
-   NARROW-DESKTOP RESPONSIVE: collapse text labels on AI / Templates / Create
-   below 1440px so the 5-button cluster fits without wrapping or cramming.
-   The buttons stay full-strength via aria-label + title (set in TSX) and
-   the primary "+ Create" keeps its coral gradient so it remains the visual
-   anchor when it's icon-only.
-   ───────────────────────────────────────────────────────────────────────── */
-@media (max-width: 1440px) {
-  .action-label {
-    display: none;
-  }
-
-  /* Icon-only buttons want roughly square padding instead of the 8/16px
-     pill geometry that the label variant uses. */
-  .hub-action-button {
-    padding: var(--dt-spacing-sm);
-    gap: 0;
-  }
-
-  /* The notification badge needs slightly tighter offsets when its host
-     button shrinks to a square. */
-  .hub-action-button.notification-badge .badge-count {
-    top: -5px;
-    right: -5px;
-  }
+/* The notification badge needs slightly tighter offsets on the 36px square
+   geometry. */
+.hub-action-button.notification-badge .badge-count {
+  top: -5px;
+  right: -5px;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -311,10 +298,6 @@
 }
 
 @media (max-width: 480px) {
-  .hub-action-button {
-    padding: var(--dt-spacing-sm);
-  }
-
   .metric-value {
     font-size: var(--dt-font-xl);
   }
@@ -340,8 +323,8 @@
 }
 
 .hub-load-more-button:hover:not(:disabled) {
-  background: var(--dt-hover-bg, #f3f4f6);
-  border-color: var(--dt-accent, #667eea);
+  background: var(--dt-bg-card-hover, #f3f4f6);
+  border-color: var(--dt-accent, #f43f5e);
 }
 
 .hub-load-more-button:disabled {

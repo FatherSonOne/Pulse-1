@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldCheck, Check, Minus, ChevronDown, ChevronRight } from 'lucide-react';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 type RoleKey = 'owner' | 'admin' | 'member';
 
@@ -21,7 +23,7 @@ const ROLE_LABELS: Record<RoleKey, string> = {
 const ROLE_COLORS: Record<RoleKey, string> = {
   owner:  'text-rose-500',
   admin:  'text-amber-500',
-  member: 'text-indigo-500',
+  member: 'text-zinc-500',
 };
 
 // Truth table — what each role can do today.
@@ -80,7 +82,7 @@ export const RolePermissionsMatrixCard: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+    <SettingsCard padded={false} className="overflow-hidden">
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
@@ -88,7 +90,7 @@ export const RolePermissionsMatrixCard: React.FC = () => {
       >
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-zinc-500" />
-          <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Role permissions</h4>
+          <MonoLabel>Role permissions</MonoLabel>
         </div>
         <span className="flex items-center gap-1 text-xs text-zinc-400">
           {expanded ? 'Hide' : 'Show'}
@@ -144,6 +146,6 @@ export const RolePermissionsMatrixCard: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </SettingsCard>
   );
 };

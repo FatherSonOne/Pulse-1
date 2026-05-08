@@ -149,6 +149,10 @@ export interface PulseSettings {
   // Accessibility
   highContrast: boolean;
   reducedMotion: boolean;
+  colorBlindMode: 'off' | 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia';
+  alwaysFocusRings: boolean;
+  underlineLinks: boolean;
+  largeTouchTargets: boolean;
 
   // Analytics
   analyticsTracking: boolean;
@@ -334,6 +338,10 @@ const DEFAULT_SETTINGS: PulseSettings = {
   // Accessibility
   highContrast: false,
   reducedMotion: false,
+  colorBlindMode: 'off',
+  alwaysFocusRings: false,
+  underlineLinks: false,
+  largeTouchTargets: false,
 
   // Analytics
   analyticsTracking: true,

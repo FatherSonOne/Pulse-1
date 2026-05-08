@@ -3,7 +3,7 @@ import { CalendarEvent } from '../types';
 import { getEventTypeMeta } from '../services/customEventTypesService';
 import { getTravelBuffersForEvents, type TravelBuffer } from '../services/travelBufferService';
 
-import { Calendar, Car, ChevronRight, MapPin, Plus, Star, Users } from 'lucide-react';
+import { Calendar, Car, ChevronRight, MapPin, Plus, Users } from 'lucide-react';
 
 interface AgendaViewProps {
   currentDate: Date;
@@ -15,17 +15,6 @@ interface AgendaViewProps {
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
                      'July', 'August', 'September', 'October', 'November', 'December'];
-
-const getEventColorClass = (color: string): string => {
-  if (color.includes('red') || color.includes('rose')) return 'bg-red-600';
-  if (color.includes('amber') || color.includes('yellow') || color.includes('orange')) return 'bg-amber-600';
-  if (color.includes('emerald') || color.includes('green')) return 'bg-emerald-600';
-  if (color.includes('sky') || color.includes('cyan') || color.includes('blue')) return 'bg-blue-600';
-  if (color.includes('violet') || color.includes('purple')) return 'bg-purple-600';
-  if (color.includes('pink') || color.includes('fuchsia')) return 'bg-pink-600';
-  if (color.includes('indigo')) return 'bg-indigo-600';
-  return 'bg-zinc-600';
-};
 
 const getEventTypeColor = (type?: string): string => getEventTypeMeta(type).color;
 const getEventTypeIcon  = (type?: string): string => getEventTypeMeta(type).icon;
@@ -107,11 +96,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
     <div className="h-full overflow-y-auto bg-white dark:bg-zinc-950">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
+        <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">
           {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
         </h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          {groupedEvents.size} days with events
+        <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400 mt-0.5" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {groupedEvents.size} days · with events
         </p>
       </div>
 
@@ -123,32 +112,37 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
           const isPast = date < today && !isToday;
 
           return (
-            <div key={dateKey} className={`${isToday ? 'bg-red-50 dark:bg-red-950/20' : ''}`}>
-              {/* Date Header */}
+            <div key={dateKey} className={isToday ? 'bg-rose-500/[0.04] dark:bg-rose-500/[0.06]' : ''}>
+              {/* Date Header — today is signaled by the rose pill on the date number, not a side-stripe. */}
               <div
-                className={`sticky top-[57px] z-[9] px-4 py-3 bg-zinc-50 dark:bg-zinc-900/95 border-b border-zinc-200 dark:border-zinc-800 backdrop-blur-sm cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ${isToday ? 'border-l-4 border-l-red-600' : ''}`}
+                className="sticky top-[57px] z-[9] px-4 py-3 bg-zinc-50 dark:bg-zinc-900/95 border-b border-zinc-200 dark:border-zinc-800 backdrop-blur-sm cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 onClick={() => onDateClick?.(date)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`text-center ${isToday ? 'text-red-600' : isPast ? 'text-zinc-400' : 'text-zinc-900 dark:text-white'}`}>
-                      <div className="text-xs font-semibold uppercase tracking-wide">
+                    <div className={`text-center ${isPast ? 'text-zinc-400' : 'text-zinc-900 dark:text-white'}`}>
+                      <div className={`font-mono text-[10px] tracking-[0.1em] uppercase font-semibold ${isToday ? 'text-rose-600 dark:text-rose-400' : ''}`}>
                         {WEEKDAYS[date.getDay()].slice(0, 3)}
                       </div>
-                      <div className={`text-2xl font-bold ${isToday ? 'bg-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center' : ''}`}>
+                      <div
+                        className={isToday
+                          ? 'text-2xl font-semibold bg-rose-500 text-white rounded-full w-10 h-10 flex items-center justify-center mt-0.5'
+                          : 'text-2xl font-semibold mt-0.5'}
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
+                      >
                         {date.getDate()}
                       </div>
                     </div>
                     <div>
-                      <div className={`text-sm font-medium ${isToday ? 'text-red-600' : 'text-zinc-900 dark:text-white'}`}>
+                      <div className={`text-sm font-semibold ${isToday ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-900 dark:text-white'}`}>
                         {isToday ? 'Today' : WEEKDAYS[date.getDay()]}
                       </div>
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      <div className="font-mono text-[10px] tracking-[0.05em] uppercase text-zinc-500 dark:text-zinc-400" style={{ fontVariantNumeric: 'tabular-nums' }}>
                         {dayEvents.length} {dayEvents.length === 1 ? 'event' : 'events'}
                       </div>
                     </div>
                   </div>
-                  <ChevronRight className="text-xs text-zinc-400" />
+                  <ChevronRight className="w-4 h-4 text-zinc-400" />
                 </div>
               </div>
 
@@ -191,7 +185,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                                   style={{ color: getEventTypeColor(event.type) }}
                                 />
                                 <span
-                                  className="text-[10px] font-semibold uppercase tracking-wide"
+                                  className="font-mono text-[10px] font-semibold tracking-[0.1em] uppercase"
                                   style={{ color: getEventTypeColor(event.type) }}
                                 >
                                   {getEventTypeLabel(event.type)}
@@ -256,11 +250,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                   onClick={() => onDateClick?.(date)}
                   className="w-full px-4 py-5 flex items-center gap-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition group"
                 >
-                  <div className="w-8 h-8 rounded-full border-2 border-dashed border-zinc-200 dark:border-zinc-700 flex items-center justify-center group-hover:border-indigo-300 dark:group-hover:border-indigo-600 transition">
-                    <Plus className="text-[10px] text-zinc-300 dark:text-zinc-600 group-hover:text-indigo-400 transition" />
+                  <div className="w-8 h-8 rounded-full border-2 border-dashed border-zinc-200 dark:border-zinc-700 flex items-center justify-center group-hover:border-rose-400 dark:group-hover:border-rose-400/60 transition">
+                    <Plus className="w-3 h-3 text-zinc-300 dark:text-zinc-600 group-hover:text-rose-500 transition" />
                   </div>
-                  <span className="text-sm text-zinc-400 dark:text-zinc-600 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition">
-                    No events — tap to add one
+                  <span className="text-sm text-zinc-400 dark:text-zinc-600 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition">
+                    No events. Tap to add one.
                   </span>
                 </button>
               )}
@@ -272,36 +266,30 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
       {/* Global empty state — no events in the next 30 days */}
       {groupedEvents.size === 0 && (
         <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center select-none">
-          {/* Illustration */}
-          <div className="relative mb-6">
-            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-indigo-100 to-blue-50 dark:from-indigo-900/40 dark:to-blue-900/20 flex items-center justify-center shadow-inner">
-              <Calendar className="text-4xl text-indigo-400 dark:text-indigo-500" />
-            </div>
-            {/* Floating sparkle */}
-            <div className="absolute -top-1 -right-1 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center shadow-md">
-              <Star className="text-[9px] text-white" />
-            </div>
+          {/* Illustration — neutral tinted surface, no gradient. */}
+          <div className="w-24 h-24 rounded-3xl bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center mb-6">
+            <Calendar className="w-9 h-9 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
           </div>
 
-          <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
+          <h3 className="text-xl font-light tracking-tight text-zinc-900 dark:text-white mb-2">
             All clear ahead
           </h3>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs leading-relaxed mb-6">
-            No events in the next 30 days. A great time to plan something — or enjoy the calm.
+            No events in the next 30 days. A great time to plan something, or enjoy the calm.
           </p>
 
-          {/* Quick-add CTA */}
+          {/* Primary CTA — coral, the only solid signal at rest */}
           <button
             onClick={() => onDateClick?.(new Date())}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition active:scale-95"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-mono text-[11px] tracking-[0.1em] uppercase font-semibold rounded-xl shadow-[0_2px_12px_rgba(244,63,94,0.25)] transition active:scale-95"
           >
-            <Plus className="text-xs" />
+            <Plus className="w-3.5 h-3.5" />
             Add first event
           </button>
 
           {/* Tip */}
           <p className="mt-4 text-xs text-zinc-400 dark:text-zinc-600">
-            Tip: type naturally — "Lunch with Sarah tomorrow at noon"
+            Tip: type naturally. Try &ldquo;Lunch with Sarah tomorrow at noon.&rdquo;
           </p>
         </div>
       )}

@@ -108,6 +108,8 @@ function dbToArchive(db: DBArchive): ArchiveItem {
     sharedWith: db.shared_with,
     createdBy: db.created_by,
     updatedAt: db.updated_at ? new Date(db.updated_at) : undefined,
+    sourceTable: (db as any).source_table || undefined,
+    sourceId: (db as any).source_id || undefined,
   };
 }
 
@@ -280,6 +282,8 @@ class ArchiveService {
         starred: archive.starred || false,
         view_count: 0,
         created_by: userId,
+        source_table: archive.sourceTable || null,
+        source_id: archive.sourceId || null,
       }])
       .select()
       .single();

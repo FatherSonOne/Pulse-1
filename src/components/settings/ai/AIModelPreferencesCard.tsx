@@ -29,6 +29,8 @@ import {
   type AIQualityTier,
   type AIModelInfo,
 } from '../../../lib/aiModelCatalog';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 // Type-guard to keep the icon map exhaustive at compile time without a
 // runtime assertion.
@@ -85,9 +87,9 @@ export const AIModelPreferencesCard: React.FC = () => {
 
   if (!prefs) {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
+      <SettingsCard>
         <Loader2 className="w-4 h-4 text-zinc-400 animate-spin" />
-      </div>
+      </SettingsCard>
     );
   }
 
@@ -135,11 +137,11 @@ export const AIModelPreferencesCard: React.FC = () => {
     : null;
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-5">
+    <SettingsCard className="space-y-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-rose-500" />
-          <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Model preferences</h4>
+          <MonoLabel>Model preferences</MonoLabel>
         </div>
         {isDirty && (
           <button
@@ -240,7 +242,7 @@ export const AIModelPreferencesCard: React.FC = () => {
           ))}
         </div>
       </details>
-    </div>
+    </SettingsCard>
   );
 };
 

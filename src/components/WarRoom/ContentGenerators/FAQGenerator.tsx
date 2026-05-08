@@ -259,7 +259,7 @@ Requirements:
                   </p>
                   <div className="w-48 mx-auto war-room-progress">
                     <div
-                      className="war-room-progress-bar bg-gradient-to-r from-blue-500 to-cyan-500"
+                      className="war-room-progress-bar bg-gradient-to-r from-rose-500 to-pink-500"
                       style={{ width: `${progress}%` }}
                     ></div>
                   </div>

@@ -13,40 +13,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export interface FeatureFlags {
-  // Priority Features (always visible)
+  // Priority — wired in MessageInput + MessageEnhancements
   voiceInput: boolean;
-  analytics: boolean;
   moodBadges: boolean;
-  reactions: boolean;
 
-  // Advanced Features (progressive disclosure)
+  // Advanced — wired in MessageInput / Relay / MessageEnhancements
   aiComposer: boolean;
-  slashCommands: boolean;
-  formatting: boolean;
-  attachments: boolean;
   smartReplies: boolean;
   toneAnalysis: boolean;
-  templates: boolean;
   scheduledMessages: boolean;
   draftManager: boolean;
-  searchFilter: boolean;
-  pinning: boolean;
-  threading: boolean;
-  readReceipts: boolean;
-  translation: boolean;
-  codeStudio: boolean;
-  videoAnalyst: boolean;
-  visionLab: boolean;
-  deepSearch: boolean;
-  meetingIntel: boolean;
-  videoStudio: boolean;
-  voiceStudio: boolean;
-  routePlanner: boolean;
-
-  // Experimental Features (hidden by default)
-  experimentalAI: boolean;
-  experimentalCollaboration: boolean;
-  experimentalMedia: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -69,40 +45,16 @@ interface FeatureContextValue {
 const FeatureContext = createContext<FeatureContextValue | null>(null);
 
 const DEFAULT_FEATURES: FeatureFlags = {
-  // Priority features (enabled by default)
+  // Priority — visible by default
   voiceInput: true,
-  analytics: true,
   moodBadges: true,
-  reactions: true,
 
-  // Advanced features (disabled by default for progressive disclosure)
+  // Advanced — opt-in
   aiComposer: false,
-  slashCommands: true, // Keep this enabled as it's core functionality
-  formatting: true, // Basic formatting should be available
-  attachments: true, // Core feature
   smartReplies: false,
   toneAnalysis: false,
-  templates: false,
   scheduledMessages: false,
   draftManager: false,
-  searchFilter: true, // Core feature
-  pinning: false,
-  threading: false,
-  readReceipts: true, // Core feature
-  translation: false,
-  codeStudio: false,
-  videoAnalyst: false,
-  visionLab: false,
-  deepSearch: false,
-  meetingIntel: false,
-  videoStudio: false,
-  voiceStudio: false,
-  routePlanner: false,
-
-  // Experimental (disabled by default)
-  experimentalAI: false,
-  experimentalCollaboration: false,
-  experimentalMedia: false
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -236,63 +188,27 @@ export const useFeatures = () => {
 };
 
 /**
- * Feature categories for settings panel
+ * Feature categories for settings panel.
+ *
+ * Only includes features with real consumer code (a useFeatures()/isFeatureEnabled()
+ * gate at the render site). Adding a flag here without a consumer creates a
+ * dead toggle — re-add when the feature ships its gate.
  */
 export const FEATURE_CATEGORIES = {
   priority: {
     name: 'Priority Features',
-    description: 'Always accessible core features',
-    features: ['voiceInput', 'analytics', 'moodBadges', 'reactions'] as (keyof FeatureFlags)[]
+    description: 'Always-on by default. Toggle off to hide the affordance.',
+    features: ['voiceInput', 'moodBadges'] as (keyof FeatureFlags)[]
   },
   advanced: {
     name: 'Advanced Features',
-    description: 'Powerful tools for enhanced productivity',
+    description: 'Opt-in productivity tools across MessageInput and Relay.',
     features: [
       'aiComposer',
       'smartReplies',
       'toneAnalysis',
-      'templates',
       'scheduledMessages',
       'draftManager'
-    ] as (keyof FeatureFlags)[]
-  },
-  collaboration: {
-    name: 'Collaboration Tools',
-    description: 'Features for team communication',
-    features: [
-      'pinning',
-      'threading',
-      'readReceipts',
-      'translation'
-    ] as (keyof FeatureFlags)[]
-  },
-  media: {
-    name: 'Media & Creation',
-    description: 'Content creation and analysis tools',
-    features: [
-      'codeStudio',
-      'videoAnalyst',
-      'visionLab',
-      'videoStudio',
-      'voiceStudio'
-    ] as (keyof FeatureFlags)[]
-  },
-  intelligence: {
-    name: 'Intelligence & Research',
-    description: 'AI-powered analysis and search',
-    features: [
-      'deepSearch',
-      'meetingIntel',
-      'routePlanner'
-    ] as (keyof FeatureFlags)[]
-  },
-  experimental: {
-    name: 'Experimental',
-    description: 'Beta features in development',
-    features: [
-      'experimentalAI',
-      'experimentalCollaboration',
-      'experimentalMedia'
     ] as (keyof FeatureFlags)[]
   }
 };
@@ -302,32 +218,10 @@ export const FEATURE_CATEGORIES = {
  */
 export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   voiceInput: 'Voice Input',
-  analytics: 'Analytics Dashboard',
   moodBadges: 'Mood Badges',
-  reactions: 'Message Reactions',
   aiComposer: 'AI Composer',
-  slashCommands: 'Slash Commands',
-  formatting: 'Text Formatting',
-  attachments: 'File Attachments',
   smartReplies: 'Smart Replies',
   toneAnalysis: 'Tone Analysis',
-  templates: 'Message Templates',
   scheduledMessages: 'Scheduled Messages',
   draftManager: 'Draft Manager',
-  searchFilter: 'Search & Filter',
-  pinning: 'Message Pinning',
-  threading: 'Message Threading',
-  readReceipts: 'Read Receipts',
-  translation: 'Translation',
-  codeStudio: 'Code Studio',
-  videoAnalyst: 'Video Analyst',
-  visionLab: 'Vision Lab',
-  deepSearch: 'Deep Search',
-  meetingIntel: 'Meeting Intel',
-  videoStudio: 'Video Studio',
-  voiceStudio: 'Voice Studio',
-  routePlanner: 'Route Planner',
-  experimentalAI: 'Experimental AI',
-  experimentalCollaboration: 'Experimental Collaboration',
-  experimentalMedia: 'Experimental Media'
 };

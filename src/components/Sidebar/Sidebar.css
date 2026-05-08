@@ -1,87 +1,46 @@
-/* ============================================
-   PULSE SIDEBAR - Refined Industrial Design
-   ============================================
-   Premium navigation with glass morphism,
-   subtle metallic accents, and polished micro-interactions
-*/
+/* ═══════════════════════════════════════════════════════════════════════════
+   PULSE SIDEBAR — Instrument-grade chrome
+   Tokenized to --pulse-*. Flat by default; coral earns its appearance.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ============================================
-   CSS VARIABLES
-   ============================================ */
+/* ── Tokens — derived from canonical --pulse-* ──────────────────────────── */
+
 .pulse-sidebar {
-  --sidebar-bg: rgba(255, 255, 255, 0.95);
-  --sidebar-bg-solid: #ffffff;
-  --sidebar-border: rgba(0, 0, 0, 0.06);
-  --sidebar-shadow: 0 0 40px rgba(0, 0, 0, 0.03);
-  --nav-item-bg: transparent;
-  --nav-item-bg-hover: rgba(0, 0, 0, 0.03);
-  --nav-item-bg-active: rgba(244, 63, 94, 0.06);
-  --nav-item-text: #52525b;
-  --nav-item-text-hover: #18181b;
-  --nav-item-text-active: #18181b;
-  --nav-icon-bg: linear-gradient(135deg, #f4f4f5 0%, #e4e4e7 100%);
-  --nav-icon-bg-active: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(236, 72, 153, 0.1) 100%);
-  --nav-icon-border: rgba(0, 0, 0, 0.04);
-  --nav-icon-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  --section-dot-glow: 0 0 6px;
-  --divider-color: rgba(0, 0, 0, 0.04);
-  --metallic-shine: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 50%, rgba(255,255,255,0.2) 100%);
-  --glass-blur: 12px;
+  --sidebar-bg: var(--pulse-canvas);
+  --sidebar-bg-secondary: var(--pulse-canvas-soft);
+  --sidebar-border: var(--pulse-border);
+  --sidebar-border-strong: var(--pulse-border-strong);
+  --nav-item-bg-hover: rgba(0, 0, 0, 0.04);
+  --nav-item-bg-active: var(--pulse-rose-soft);
+  --nav-item-text: var(--pulse-ink-2);
+  --nav-item-text-hover: var(--pulse-ink);
+  --nav-item-text-active: var(--pulse-rose-deep);
+  --nav-item-icon-active: var(--pulse-rose);
+  --divider-color: var(--pulse-border);
+
+  --sidebar-transition: var(--pulse-duration) var(--pulse-ease);
 }
 
 .dark .pulse-sidebar {
-  --sidebar-bg: rgba(9, 9, 11, 0.95);
-  --sidebar-bg-solid: #09090b;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
-  --nav-item-bg: transparent;
-  --nav-item-bg-hover: rgba(255, 255, 255, 0.03);
-  --nav-item-bg-active: rgba(244, 63, 94, 0.08);
-  --nav-item-text: #71717a;
-  --nav-item-text-hover: #fafafa;
-  --nav-item-text-active: #fafafa;
-  --nav-icon-bg: linear-gradient(135deg, #27272a 0%, #18181b 100%);
-  --nav-icon-bg-active: linear-gradient(135deg, rgba(244, 63, 94, 0.2) 0%, rgba(236, 72, 153, 0.15) 100%);
-  --nav-icon-border: rgba(255, 255, 255, 0.06);
-  --nav-icon-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --divider-color: rgba(255, 255, 255, 0.04);
-  --metallic-shine: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, rgba(255,255,255,0.03) 100%);
+  --nav-item-bg-hover: rgba(255, 255, 255, 0.05);
+  --nav-item-text-active: var(--pulse-rose-bright);
 }
 
-/* ============================================
-   SIDEBAR CONTAINER
-   ============================================ */
+/* ── Container ─────────────────────────────────────────────────────────── */
+
 .pulse-sidebar {
   background: var(--sidebar-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
   border-right: 1px solid var(--sidebar-border);
-  box-shadow: var(--sidebar-shadow);
   display: flex;
   flex-direction: column;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width var(--sidebar-transition);
   position: relative;
   overflow: hidden;
   contain: layout style;
 }
 
-/* Subtle gradient overlay for depth */
-.pulse-sidebar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 120px;
-  background: linear-gradient(180deg, var(--sidebar-bg-solid) 0%, transparent 100%);
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0.5;
-}
+/* ── Brand ─────────────────────────────────────────────────────────────── */
 
-/* ============================================
-   LOGO/BRAND SECTION
-   ============================================ */
 .sidebar-brand {
   position: relative;
   z-index: 2;
@@ -98,51 +57,33 @@
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--sidebar-transition);
   flex-shrink: 0;
 }
 
 .sidebar-brand-logo:hover {
-  opacity: 0.9;
-}
-
-.sidebar-brand-logo:active {
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .sidebar-logo-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--pulse-rose-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow:
-    0 3px 8px rgba(15, 23, 42, 0.3),
-    0 1px 2px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  position: relative;
-  overflow: hidden;
+  flex-shrink: 0;
 }
 
-.sidebar-logo-icon::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--metallic-shine);
-  border-radius: inherit;
-  pointer-events: none;
-}
-
+/* Pulse wordmark — JetBrains Mono signature, not bold-Inter SaaS reflex. */
 .sidebar-brand-text {
-  font-size: 1.125rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  color: #f43f5e;
+  font-family: var(--pulse-font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pulse-rose);
 }
 
 .sidebar-brand-controls {
@@ -156,9 +97,8 @@
   flex-shrink: 0;
 }
 
-/* ============================================
-   DEDICATED COLLAPSE BUTTON SECTION
-   ============================================ */
+/* ── Collapse button ───────────────────────────────────────────────────── */
+
 .sidebar-collapse-section {
   position: relative;
   padding: 0 12px 12px;
@@ -183,28 +123,24 @@
   align-items: center;
   justify-content: center;
   color: var(--nav-item-text);
-  background: var(--nav-item-bg-hover);
-  border: 1px solid var(--nav-icon-border);
+  background: transparent;
+  border: 1px solid var(--sidebar-border);
   cursor: pointer;
   flex-shrink: 0;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   outline: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: background var(--sidebar-transition), color var(--sidebar-transition), border-color var(--sidebar-transition);
 }
 
 .sidebar-collapse-btn:hover {
-  background: var(--nav-item-bg-active);
+  background: var(--nav-item-bg-hover);
   color: var(--nav-item-text-hover);
-  border-color: rgba(244, 63, 94, 0.2);
-}
-
-.sidebar-collapse-btn:active {
-  background: var(--nav-item-bg-active);
+  border-color: var(--sidebar-border-strong);
 }
 
 .sidebar-collapse-btn:focus-visible {
-  outline: 2px solid var(--nav-item-text-hover);
+  outline: 2px solid var(--pulse-rose);
   outline-offset: 2px;
 }
 
@@ -214,14 +150,8 @@
   font-size: 0.875rem;
 }
 
-.pulse-sidebar.collapsed .sidebar-collapse-btn {
-  position: relative;
-  z-index: 200;
-}
+/* ── Notification center collapsed ─────────────────────────────────────── */
 
-/* ============================================
-   NOTIFICATION CENTER COLLAPSED STATE
-   ============================================ */
 .sidebar-notification-collapsed {
   display: flex;
   justify-content: center;
@@ -229,9 +159,8 @@
   flex-shrink: 0;
 }
 
-/* ============================================
-   COLLAPSED STATE
-   ============================================ */
+/* ── Collapsed state ───────────────────────────────────────────────────── */
+
 .pulse-sidebar.collapsed {
   width: 72px !important;
 }
@@ -271,9 +200,8 @@
   margin: 0;
 }
 
-/* ============================================
-   NAVIGATION SECTIONS
-   ============================================ */
+/* ── Nav scroll area ───────────────────────────────────────────────────── */
+
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
@@ -296,6 +224,8 @@
   border-radius: 2px;
 }
 
+/* ── Section headers ───────────────────────────────────────────────────── */
+
 .sidebar-section {
   display: flex;
   align-items: center;
@@ -303,50 +233,44 @@
   padding: 12px 12px 4px;
 }
 
+/* Section dot — flat, no blur halo. */
 .sidebar-section-dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
   flex-shrink: 0;
-  position: relative;
 }
 
-.sidebar-section-dot::after {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 50%;
-  background: inherit;
-  opacity: 0.3;
-  filter: blur(4px);
-}
-
-.sidebar-section-dot.rose { background: #f43f5e; }
-.sidebar-section-dot.pink { background: #ec4899; }
-.sidebar-section-dot.coral { background: #fb7185; }
-.sidebar-section-dot.rose-light { background: #fda4af; }
-.sidebar-section-dot.red { background: #ef4444; }
-.sidebar-section-dot.amber { background: #f59e0b; }
+.sidebar-section-dot.rose       { background: var(--pulse-rose); }
+.sidebar-section-dot.pink       { background: var(--pulse-pink); }
+.sidebar-section-dot.coral      { background: var(--pulse-rose-bright); }
+.sidebar-section-dot.rose-light { background: var(--pulse-rose-bright); opacity: 0.6; }
+.sidebar-section-dot.red        { background: var(--pulse-tone-overdue); }
+.sidebar-section-dot.amber      { background: var(--pulse-tone-warning); }
 
 .sidebar-section-label {
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
-  font-size: 0.5625rem;
-  font-weight: 600;
+  font-family: var(--pulse-font-mono);
+  font-feature-settings: "zero" 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   color: var(--nav-item-text);
-  opacity: 0.6;
+  opacity: 0.85;
 }
 
-/* Collapsible Section Header */
+/* Collapsible section header */
 .sidebar-section-collapsible {
   width: 100%;
   border: none;
   background: transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background var(--sidebar-transition);
   border-radius: 8px;
   padding: 12px 12px 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .sidebar-section-collapsible:hover {
@@ -354,7 +278,7 @@
 }
 
 .sidebar-section-collapsible:hover .sidebar-section-label {
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .sidebar-section-chevron {
@@ -362,162 +286,116 @@
   font-size: 0.625rem;
   color: var(--nav-item-text);
   opacity: 0.5;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity var(--sidebar-transition);
 }
 
 .sidebar-section-collapsible:hover .sidebar-section-chevron {
-  opacity: 0.8;
-  color: var(--nav-item-text-hover);
+  opacity: 0.9;
 }
 
-/* ============================================
-   NAVIGATION ITEMS
-   ============================================ */
+/* ── Nav items ─────────────────────────────────────────────────────────── */
+
 .sidebar-nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
   padding: 6px 10px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: none;
-  background: var(--nav-item-bg);
+  background: transparent;
   color: var(--nav-item-text);
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background var(--sidebar-transition), color var(--sidebar-transition);
   position: relative;
-  overflow: hidden;
   text-align: left;
   margin-bottom: 1px;
 }
 
-/* Hover state */
+/* Hover — color change only, no transform. */
 .sidebar-nav-item:hover {
   background: var(--nav-item-bg-hover);
   color: var(--nav-item-text-hover);
-  transform: translateX(4px);
 }
 
-/* Active state */
+.sidebar-nav-item:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: -2px;
+}
+
+/* Active — single 2px leading coral edge per DESIGN.md component spec. */
 .sidebar-nav-item.active {
-  background: var(--nav-item-bg-active);
   color: var(--nav-item-text-active);
-  box-shadow: inset 0 0 20px rgba(244, 63, 94, 0.08);
+  background: transparent;
 }
 
 .sidebar-nav-item.active::before {
   content: '';
   position: absolute;
-  left: 0;
+  left: -12px;
   top: 50%;
   transform: translateY(-50%);
   width: 2px;
-  height: 16px;
-  background: linear-gradient(180deg, #f43f5e 0%, #ec4899 100%);
+  height: 18px;
+  background: var(--pulse-rose);
   border-radius: 0 2px 2px 0;
-  box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
 }
 
-/* Icon container */
+/* Icon container — flat tinted neutral, no metallic shine. */
 .sidebar-nav-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: var(--nav-icon-bg);
-  border: 1px solid var(--nav-icon-border);
-  box-shadow: var(--nav-icon-shadow);
-  transition: all 0.25s ease;
-  position: relative;
-  overflow: hidden;
+  background: transparent;
+  color: var(--nav-item-text);
+  transition: color var(--sidebar-transition);
 }
 
-.sidebar-nav-icon::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--metallic-shine);
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: 0.8;
-}
-
-.sidebar-nav-icon i {
-  font-size: 0.8125rem;
-  position: relative;
-  z-index: 1;
-  transition: all 0.25s ease;
+.sidebar-nav-icon i,
+.sidebar-nav-icon svg {
+  font-size: 0.875rem;
+  width: 16px;
+  height: 16px;
 }
 
 .sidebar-nav-item:hover .sidebar-nav-icon {
-  transform: scale(1.05);
-  border-color: rgba(244, 63, 94, 0.2);
-}
-
-.sidebar-nav-item:hover .sidebar-nav-icon i {
-  color: var(--accent-primary);
+  color: var(--nav-item-text-hover);
 }
 
 .sidebar-nav-item.active .sidebar-nav-icon {
-  background: var(--nav-icon-bg-active);
-  border-color: rgba(244, 63, 94, 0.3);
-  box-shadow:
-    0 2px 8px rgba(244, 63, 94, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.sidebar-nav-item.active .sidebar-nav-icon i {
-  color: var(--accent-primary);
+  color: var(--nav-item-icon-active);
 }
 
 /* Label */
 .sidebar-nav-label {
+  font-family: var(--pulse-font);
   font-size: 0.8125rem;
   font-weight: 500;
-  letter-spacing: -0.01em;
   white-space: nowrap;
-  transition: all 0.2s ease;
 }
 
 .sidebar-nav-item.active .sidebar-nav-label {
-  font-weight: 600;
+  font-weight: 500;
 }
 
-/* Active indicator dot */
+/* Trailing indicator removed — single leading-edge marker only. */
 .sidebar-nav-indicator {
-  margin-left: auto;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
-  box-shadow: 0 0 10px rgba(244, 63, 94, 0.6);
-  opacity: 0;
-  transform: scale(0);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: none;
 }
 
-.sidebar-nav-item.active .sidebar-nav-indicator {
-  opacity: 1;
-  transform: scale(1);
-}
+/* ── Pulse AI button section ───────────────────────────────────────────── */
 
-/* ============================================
-   PULSE AI BUTTON SECTION
-   ============================================ */
 .sidebar-ai-section {
   padding: 6px 12px 4px;
   border-top: 1px solid var(--divider-color);
 }
 
-/* ============================================
-   FOOTER SECTION
-   ============================================ */
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
 .sidebar-footer {
   padding: 8px 12px;
   border-top: 1px solid var(--divider-color);
@@ -534,12 +412,12 @@
   gap: 10px;
   width: 100%;
   padding: 6px 10px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: none;
   background: transparent;
   color: var(--nav-item-text);
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: background var(--sidebar-transition), color var(--sidebar-transition);
   text-align: left;
 }
 
@@ -548,85 +426,72 @@
   color: var(--nav-item-text-hover);
 }
 
+.sidebar-footer-item:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: -2px;
+}
+
 .sidebar-footer-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: var(--nav-icon-bg);
-  border: 1px solid var(--nav-icon-border);
-  box-shadow: var(--nav-icon-shadow);
-  transition: all 0.25s ease;
-  position: relative;
-  overflow: hidden;
+  background: transparent;
+  color: var(--nav-item-text);
+  transition: color var(--sidebar-transition);
 }
 
-.sidebar-footer-icon::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--metallic-shine);
-  border-radius: inherit;
-  pointer-events: none;
+.sidebar-footer-icon i,
+.sidebar-footer-icon svg {
+  font-size: 0.875rem;
+  width: 16px;
+  height: 16px;
 }
 
-.sidebar-footer-icon i {
-  font-size: 0.8125rem;
-  position: relative;
-  z-index: 1;
-  transition: all 0.4s ease;
+.sidebar-footer-item:hover .sidebar-footer-icon {
+  color: var(--nav-item-text-hover);
 }
 
 .sidebar-footer-text {
+  font-family: var(--pulse-font);
   font-size: 0.8125rem;
   font-weight: 500;
-  letter-spacing: -0.01em;
 }
 
-/* Theme toggle special styling */
-.sidebar-footer-item.theme-toggle .sidebar-footer-icon {
-  position: relative;
-}
-
-.sidebar-footer-item.theme-toggle:hover .sidebar-footer-icon i {
-  transform: rotate(30deg);
-}
-
-/* Settings rotation on hover */
-.sidebar-footer-item.settings:hover .sidebar-footer-icon i {
-  transform: rotate(90deg);
-}
-
+/* Settings active marker — same single leading edge as nav items. */
 .sidebar-footer-item.settings.active {
-  background: var(--nav-item-bg-active);
+  color: var(--nav-item-text-active);
+}
+
+.sidebar-footer-item.settings.active::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 18px;
+  background: var(--pulse-rose);
+  border-radius: 0 2px 2px 0;
 }
 
 .sidebar-footer-item.settings.active .sidebar-footer-icon {
-  background: var(--nav-icon-bg-active);
-  border-color: rgba(244, 63, 94, 0.3);
+  color: var(--nav-item-icon-active);
 }
 
-.sidebar-footer-item.settings.active .sidebar-footer-icon i {
-  color: var(--accent-primary);
-}
+/* ── User profile ──────────────────────────────────────────────────────── */
 
-/* ============================================
-   USER PROFILE SECTION
-   ============================================ */
 .sidebar-profile {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: background var(--sidebar-transition);
 }
 
 .sidebar-profile:hover {
@@ -634,12 +499,11 @@
 }
 
 .sidebar-profile-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   object-fit: cover;
-  border: 2px solid var(--nav-icon-border);
-  box-shadow: var(--nav-icon-shadow);
+  border: 1px solid var(--sidebar-border);
 }
 
 .sidebar-profile-info {
@@ -650,7 +514,7 @@
 .sidebar-profile-name {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--nav-item-text-active);
+  color: var(--pulse-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -664,9 +528,8 @@
   text-overflow: ellipsis;
 }
 
-/* ============================================
-   MOBILE STYLES
-   ============================================ */
+/* ── Mobile ────────────────────────────────────────────────────────────── */
+
 @media (max-width: 768px) {
   .pulse-sidebar {
     position: fixed;
@@ -683,68 +546,4 @@
   .pulse-sidebar.mobile-open {
     transform: translateX(0);
   }
-
-  .sidebar-nav-item:hover {
-    transform: none;
-  }
-}
-
-/* ============================================
-   ANIMATIONS
-   ============================================ */
-@keyframes sidebar-fade-in {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.sidebar-nav-item {
-  animation: sidebar-fade-in 0.3s ease backwards;
-}
-
-.sidebar-nav-item:nth-child(1) { animation-delay: 0.02s; }
-.sidebar-nav-item:nth-child(2) { animation-delay: 0.04s; }
-.sidebar-nav-item:nth-child(3) { animation-delay: 0.06s; }
-.sidebar-nav-item:nth-child(4) { animation-delay: 0.08s; }
-.sidebar-nav-item:nth-child(5) { animation-delay: 0.10s; }
-.sidebar-nav-item:nth-child(6) { animation-delay: 0.12s; }
-.sidebar-nav-item:nth-child(7) { animation-delay: 0.14s; }
-.sidebar-nav-item:nth-child(8) { animation-delay: 0.16s; }
-.sidebar-nav-item:nth-child(9) { animation-delay: 0.18s; }
-.sidebar-nav-item:nth-child(10) { animation-delay: 0.20s; }
-.sidebar-nav-item:nth-child(11) { animation-delay: 0.22s; }
-.sidebar-nav-item:nth-child(12) { animation-delay: 0.24s; }
-.sidebar-nav-item:nth-child(13) { animation-delay: 0.26s; }
-.sidebar-nav-item:nth-child(14) { animation-delay: 0.28s; }
-
-/* ============================================
-   LIGHT MODE ENHANCEMENTS
-   ============================================ */
-
-.light .pulse-sidebar {
-  background: linear-gradient(to bottom,
-    #fafaf9 0%,    /* stone-50 */
-    #f5f4f1 50%,   /* Warm off-white */
-    #fef7f4 100%   /* Rose-tinted */
-  );
-  border-right: 1px solid #e7e5e4; /* stone-200 */
-}
-
-.light .sidebar-nav-item:hover {
-  background: linear-gradient(to right, #fef2f2, transparent); /* red-50 gradient */
-  color: #1c1917; /* stone-900 */
-}
-
-.light .sidebar-nav-item.active {
-  background: rgba(244, 63, 94, 0.08); /* tinted active surface, no gradient */
-  color: #be123c; /* rose-700 */
-}
-
-.light .sidebar-section-label {
-  color: #78716c; /* stone-500 */
 }

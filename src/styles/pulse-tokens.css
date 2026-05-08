@@ -16,8 +16,11 @@
   --pulse-rose: #f43f5e;
   --pulse-rose-deep: #e11d48;
   --pulse-rose-bright: #fb7185;
+  --pulse-rose-softer: rgba(244, 63, 94, 0.05);
   --pulse-rose-soft: rgba(244, 63, 94, 0.10);
   --pulse-rose-glow: rgba(244, 63, 94, 0.25);
+  /* Pink companion — second color in the brand gradient pair (DESIGN.md §2). */
+  --pulse-pink: #ec4899;
 
   /* ─── Status vocabulary (Status-Stays-Status rule) ─── */
   --pulse-tone-positive: #22c55e;
@@ -40,8 +43,14 @@
   --pulse-canvas: #f8f8f8;          /* paper-warm */
   --pulse-canvas-soft: #f2f2f2;
   --pulse-surface: #ffffff;          /* card */
+  --pulse-surface-raised: #f2f2f2;   /* hover/raised card layer */
   --pulse-border: rgba(0, 0, 0, 0.08);
   --pulse-border-strong: rgba(0, 0, 0, 0.16);
+
+  /* ─── Elevation — light ─── */
+  --pulse-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --pulse-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --pulse-shadow-rose: 0 0 0 1px var(--pulse-rose), 0 4px 24px var(--pulse-rose-glow);
 
   /* ─── Ink — light ─── */
   --pulse-ink: #0f0f0f;
@@ -51,6 +60,8 @@
   /* ─── Type ─── */
   --pulse-font: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
   --pulse-font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  /* Disable slashed zero in count labels — Ø is too close to 8 at small sizes. */
+  --pulse-mono-numeric: lining-nums tabular-nums;
 
   /* ─── Motion ─── */
   --pulse-ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -62,8 +73,10 @@
   --pulse-rose: #fb7185;
   --pulse-rose-deep: #e11d48;
   --pulse-rose-bright: #fda4af;
+  --pulse-rose-softer: rgba(244, 63, 94, 0.06);
   --pulse-rose-soft: rgba(244, 63, 94, 0.12);
   --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+  --pulse-pink: #f472b6;
 
   /* ─── Status — slightly lifted ─── */
   --pulse-tone-positive: #4ade80;
@@ -86,11 +99,54 @@
   --pulse-canvas: #000000;
   --pulse-canvas-soft: #080808;
   --pulse-surface: rgba(255, 255, 255, 0.03);
+  --pulse-surface-raised: rgba(255, 255, 255, 0.055);
   --pulse-border: rgba(255, 255, 255, 0.06);
   --pulse-border-strong: rgba(255, 255, 255, 0.10);
+
+  /* ─── Elevation — dark (deeper, translucency carries weight) ─── */
+  --pulse-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.50);
+  --pulse-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.60);
+  --pulse-shadow-rose: 0 0 0 1px var(--pulse-rose), 0 4px 24px var(--pulse-rose-glow);
 
   /* ─── Ink — dark ─── */
   --pulse-ink: #fafafa;
   --pulse-ink-2: #b4b4b8;
   --pulse-ink-3: #6b7280;
+}
+
+/* ============================================================
+   Accessibility data-attribute hooks.
+   AccessibilitySettings sets these on <html>; they're consumed below.
+   ============================================================ */
+
+/* Color blindness — references the SVG filters defined in AccessibilitySettings. */
+html[data-color-blind="protanopia"]    { filter: url('#pulse-cb-protanopia'); }
+html[data-color-blind="deuteranopia"]  { filter: url('#pulse-cb-deuteranopia'); }
+html[data-color-blind="tritanopia"]    { filter: url('#pulse-cb-tritanopia'); }
+html[data-color-blind="achromatopsia"] { filter: url('#pulse-cb-achromatopsia'); }
+
+/* Always show focus rings — visible on click as well as keyboard. */
+html[data-always-focus-rings="true"] *:focus {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Underline links by default (WCAG AAA — non-color link distinction).
+   Excludes anchors that already act as buttons or pills (we look for
+   common button-like classes so we don't underline coral CTAs). */
+html[data-underline-links="true"] a:not([class*="btn"]):not([class*="rounded-full"]):not([class*="rounded-lg"]) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Larger touch targets — bumps every interactive element to 48 px min.
+   Helpful on Capacitor Android where finger taps want a bigger hit area. */
+html[data-large-touch-targets="true"] button,
+html[data-large-touch-targets="true"] a[role="button"],
+html[data-large-touch-targets="true"] [role="button"],
+html[data-large-touch-targets="true"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html[data-large-touch-targets="true"] select,
+html[data-large-touch-targets="true"] textarea {
+  min-height: 48px;
 }

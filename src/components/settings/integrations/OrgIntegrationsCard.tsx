@@ -8,6 +8,8 @@ import {
   IntegrationKey,
   IntegrationScope,
 } from '../../../services/workspaceService';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 interface IntegrationDef {
   key:         IntegrationKey;
@@ -75,10 +77,10 @@ export const OrgIntegrationsCard: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center gap-2">
         <Building2 className="w-4 h-4 text-zinc-500" />
-        <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Org-managed integrations</h4>
+        <MonoLabel>Org-managed integrations</MonoLabel>
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
         Choose how each integration is wired up: members connect their own accounts, or an admin connects once
@@ -168,6 +170,6 @@ export const OrgIntegrationsCard: React.FC = () => {
           Contact an admin to change how integrations are scoped for this organization.
         </p>
       )}
-    </div>
+    </SettingsCard>
   );
 };

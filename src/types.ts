@@ -20,7 +20,6 @@ export enum AppView {
   LIVE_AI = 'LIVE_AI',
   ARCHIVES = 'ARCHIVES',
   SETTINGS = 'SETTINGS',
-  MESSAGE_ADMIN = 'MESSAGE_ADMIN',
   MESSAGE_ANALYTICS = 'MESSAGE_ANALYTICS',
   MULTI_MODAL = 'MULTI_MODAL',
   TEST_MATRIX = 'TEST_MATRIX',
@@ -173,7 +172,26 @@ export interface Email {
   labels?: string[];
 }
 
-export type ArchiveType = 'transcript' | 'meeting_note' | 'journal' | 'summary' | 'vox_transcript' | 'decision_log' | 'artifact' | 'research' | 'image' | 'video' | 'document' | 'war_room_session';
+export type ArchiveType =
+  | 'transcript'
+  | 'meeting_note'
+  | 'journal'
+  | 'summary'
+  | 'vox_transcript'
+  | 'decision_log'
+  | 'artifact'
+  | 'research'
+  | 'image'
+  | 'video'
+  | 'document'
+  | 'war_room_session'
+  // Conversation streams — the "every word, every voice, every pulse" surfaces
+  | 'message'         // SMS / chat thread snippet
+  | 'email'           // Email thread snippet
+  | 'relay_message'   // Relay (voice messaging) — async voice message
+  | 'relay_note'      // Relay voice note (single-author memo)
+  | 'relay_live'      // Relay live conversation transcript
+  | 'glimpse';        // Video glimpse
 
 export interface ArchiveItem {
   id: string;
@@ -210,6 +228,11 @@ export interface ArchiveItem {
   updatedAt?: Date;
   // Flexible metadata for storing structured data (e.g., Relay audio URLs, custom fields)
   metadata?: Record<string, any>;
+  // Auto-ingest source tracking — when this archive was minted from another Pulse
+  // surface (a message thread, an email, a Relay item, a Glimpse), these point back
+  // to the canonical row. Together they form the idempotency key for ingest re-runs.
+  sourceTable?: string;
+  sourceId?: string;
 }
 
 // Archive Collections

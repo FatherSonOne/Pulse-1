@@ -3,7 +3,7 @@
 // Trigger: filtered Memory view with 2+ items, or per-contact CTA.
 
 import React, { useEffect, useState } from 'react';
-import { Check, Copy, Loader2, Mail, Sparkles, X } from 'lucide-react';
+import { Check, Copy, Loader2, Mail, RotateCcw, Sparkles, X } from 'lucide-react';
 import type { ArchiveItem } from '../../types';
 import {
   buildMemoryBriefing,
@@ -29,7 +29,9 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const setSelectedItem = useArchiveStore(s => s.setSelectedItem);
+  const demoMode = useArchiveStore(s => s.demoMode);
 
   // Build briefing when sheet opens with items
   useEffect(() => {
@@ -56,7 +58,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
     return () => {
       cancelled = true;
     };
-  }, [open, items, subject]);
+  }, [open, items, subject, retryKey]);
 
   // Esc to close
   useEffect(() => {
@@ -157,8 +159,17 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
           )}
 
           {error && !loading && (
-            <div className="px-6 py-5">
-              <p className="text-sm text-zinc-700 dark:text-zinc-300">{error}</p>
+            <div className="px-6 py-5 space-y-3">
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{error}</p>
+              {items.length >= 2 && (
+                <button
+                  onClick={() => setRetryKey(k => k + 1)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/[0.08] hover:bg-rose-500/[0.14] border border-rose-500/30 text-[11px] font-mono uppercase tracking-[0.12em] text-rose-600 dark:text-rose-400 transition-colors"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Retry synthesis
+                </button>
+              )}
             </div>
           )}
 
@@ -302,7 +313,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
         {briefing && !loading && (
           <footer className="px-6 py-3 border-t border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] flex items-center justify-between gap-3">
             <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-500">
-              Esc to close
+              {demoMode ? 'Demo synthesis · counted toward AI usage' : 'Esc to close'}
             </span>
             <div className="flex items-center gap-1.5">
               <button

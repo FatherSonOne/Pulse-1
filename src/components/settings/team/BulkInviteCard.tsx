@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Upload, Loader2, AlertCircle, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { workspaceService } from '../../../services/workspaceService';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 const VALID_ROLES = new Set(['admin', 'member', 'viewer']);
 type InviteRole = 'admin' | 'member' | 'viewer';
@@ -111,10 +113,10 @@ export const BulkInviteCard: React.FC<Props> = ({ workspaceId, workspaceName, on
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center gap-2">
         <Upload className="w-4 h-4 text-zinc-500" />
-        <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Bulk invite</h4>
+        <MonoLabel>Bulk invite</MonoLabel>
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
         Paste one entry per line: <code className="text-zinc-600 dark:text-zinc-400">email,role</code>.
@@ -198,6 +200,6 @@ export const BulkInviteCard: React.FC<Props> = ({ workspaceId, workspaceName, on
           )}
         </div>
       )}
-    </div>
+    </SettingsCard>
   );
 };

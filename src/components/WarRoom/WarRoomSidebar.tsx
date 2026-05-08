@@ -200,7 +200,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
             type="button"
             className="wrs-rail-action wrs-rail-add"
             onClick={() => { onToggle(); setIsCreatingWarRoom(true); }}
-            title="New Workspace"
+            title="New project"
           >
             <Plus className="fa" />
           </button>
@@ -242,18 +242,18 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
           <div className="wrs-header">
             <div className="wrs-brand">
               <span className="wrs-brand-text">STUDIO</span>
-              <span className="wrs-brand-sub">Workspaces</span>
+              <span className="wrs-brand-sub">Projects</span>
             </div>
           </div>
 
-          {/* New Workspace Button */}
+          {/* New Project Button */}
           <button
             type="button"
             className="wrs-new-warroom-btn"
             onClick={() => setIsCreatingWarRoom(true)}
           >
             <Plus className="fa" />
-            <span>New Workspace</span>
+            <span>New project</span>
           </button>
 
           {/* War Room Creation Form */}
@@ -263,7 +263,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                 type="text"
                 value={newWarRoomName}
                 onChange={(e) => setNewWarRoomName(e.target.value)}
-                placeholder="Workspace name..."
+                placeholder="Project name..."
                 className="wrs-input"
                 autoFocus
                 onKeyDown={(e) => {
@@ -400,7 +400,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                         type="button"
                         className="wrs-action-btn wrs-action-delete"
                         onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }}
-                        title="Delete Workspace"
+                        title="Delete project"
                       >
                         <Trash2 className="fa" />
                       </button>
@@ -510,8 +510,8 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
             {projects.length === 0 && orphanSessions.length === 0 && !isCreatingWarRoom && (
               <div className="wrs-empty-state">
                 <FolderOpen className="fa" />
-                <p>No workspaces yet</p>
-                <span>Create your first workspace to organize your AI sessions</span>
+                <p>No projects yet</p>
+                <span>Create your first project to organize your AI sessions</span>
               </div>
             )}
           </div>

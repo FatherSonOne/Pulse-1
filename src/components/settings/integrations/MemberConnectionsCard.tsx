@@ -3,6 +3,8 @@ import { Eye, Loader2, RefreshCw, MailWarning } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useWorkspaceData, useWorkspacePermissions } from '../../../contexts/WorkspaceContext';
 import { workspaceService, MemberConnectionRow } from '../../../services/workspaceService';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 const PROVIDER_LABEL: Record<string, string> = {
   google:    'Google',
@@ -56,11 +58,11 @@ export const MemberConnectionsCard: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Eye className="w-4 h-4 text-zinc-500" />
-          <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Member connections</h4>
+          <MonoLabel>Member connections</MonoLabel>
         </div>
         <button
           type="button"
@@ -114,7 +116,7 @@ export const MemberConnectionsCard: React.FC = () => {
               const hasNone = m.providers.length === 0;
               return (
                 <div key={m.user_id} className="py-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden">
+                  <div className="w-8 h-8 rounded-full bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-rose-500 dark:text-rose-400 text-xs font-semibold flex-shrink-0 overflow-hidden">
                     {m.user_avatar_url
                       ? <img src={m.user_avatar_url} alt="" className="w-full h-full object-cover" />
                       : (m.user_name || m.user_email || '?').charAt(0).toUpperCase()}
@@ -161,6 +163,6 @@ export const MemberConnectionsCard: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </SettingsCard>
   );
 };

@@ -24,7 +24,7 @@ export function useAssistantContext(
   isOpen: boolean,
   user: User,
   workspaceId: string,
-): { context: AssistantContext; sectionSummary: string; isLoading: boolean } {
+): { context: AssistantContext; sectionSummary: string; isLoading: boolean; refreshSummary: () => void } {
   const [context, setContext] = useState<AssistantContext>({
     section: activeView,
     user,

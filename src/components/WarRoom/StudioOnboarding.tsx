@@ -64,7 +64,7 @@ export const StudioOnboarding: React.FC<StudioOnboardingProps> = ({ onComplete }
         </div>
 
         <h2 className="ps-onboarding-title">Welcome to the War Room</h2>
-        <p className="ps-onboarding-subtitle">Your AI-powered research workspace</p>
+        <p className="ps-onboarding-subtitle">Source-grounded AI research</p>
 
         {/* Step content */}
         <div className="ps-onboarding-step">

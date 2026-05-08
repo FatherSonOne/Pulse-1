@@ -17,7 +17,10 @@
   background: var(--dt-bg-card);
   border: 1px solid var(--dt-border);
   border-radius: var(--dt-radius);
-  box-shadow: var(--dt-shadow-card);
+  /* No box-shadow here. The hub-header above is already sticky + elevated;
+     stacking another shadowed surface immediately under it makes the page
+     read as fussy. Hairline border alone is enough separation from the
+     scrolling list below. */
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -88,10 +91,10 @@
   min-width: 150px;
 }
 
-.filter-bar__select-wrapper--date {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+/* The .filter-bar__select-wrapper--date modifier previously dimmed the date
+   filter to 0.5 opacity while leaving the underlying <select> functional —
+   a "looks broken" trap. Removed; the date filter is wired and reads as
+   active. The class is no longer applied in the JSX. */
 
 .filter-bar__select-icon {
   position: absolute;

@@ -8,6 +8,9 @@ interface DayDetailModalProps {
   show: boolean;
   date: Date | null;
   events: CalendarEvent[];
+  /** Click coordinates from the +N more button — drives the entrance transform-origin
+   *  so the modal scales out of the cell that opened it, not from a generic centre. */
+  origin?: { x: number; y: number } | null;
   onClose: () => void;
   onEventClick: (event: CalendarEvent) => void;
   onCreateEvent?: () => void;
@@ -17,29 +20,15 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
                      'July', 'August', 'September', 'October', 'November', 'December'];
 
-const getEventColorClass = (color: string): string => {
-  if (color.includes('red') || color.includes('rose')) return 'cal-event-red';
-  if (color.includes('amber') || color.includes('yellow') || color.includes('orange')) return 'cal-event-amber';
-  if (color.includes('emerald') || color.includes('green')) return 'cal-event-emerald';
-  if (color.includes('sky') || color.includes('cyan') || color.includes('blue')) return 'cal-event-sky';
-  if (color.includes('violet') || color.includes('purple')) return 'cal-event-violet';
-  if (color.includes('pink') || color.includes('fuchsia')) return 'cal-event-pink';
-  if (color.includes('indigo')) return 'cal-event-indigo';
-  return 'cal-event-zinc';
-};
-
 const formatTime = (date: Date): string => {
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-};
-
-const formatTimeRange = (start: Date, end: Date): string => {
-  return `${formatTime(start)} - ${formatTime(end)}`;
 };
 
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({
   show,
   date,
   events,
+  origin,
   onClose,
   onEventClick,
   onCreateEvent
@@ -49,50 +38,58 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
   const allDayEvents = events.filter(e => e.allDay);
   const timedEvents = events.filter(e => !e.allDay).sort((a, b) => a.start.getTime() - b.start.getTime());
 
+  // Convert viewport-space click coordinates to a transform-origin for the dialog.
+  // The dialog is centred via flex; transform-origin is relative to its own box. We map
+  // click coords into "% of viewport" so the dialog appears to scale from that point.
+  const transformOrigin = origin
+    ? `${(origin.x / window.innerWidth) * 100}% ${(origin.y / window.innerHeight) * 100}%`
+    : '50% 50%';
+
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/70 backdrop-blur-sm p-4 cal-day-detail-backdrop-enter"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={`Events for ${WEEKDAYS[date.getDay()]}, ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`}
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-2xl"
+        className="cal-day-detail-enter relative w-full max-w-2xl max-h-[90vh] overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl"
+        style={{ transformOrigin }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+        <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-zinc-500 mb-1">
                 {WEEKDAYS[date.getDay()]}
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {MONTH_NAMES[date.getMonth()]} {date.getDate()}, {date.getFullYear()}
               </p>
+              <h2 className="text-2xl font-light tracking-tight text-zinc-900 dark:text-white" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {MONTH_NAMES[date.getMonth()]} {date.getDate()}
+              </h2>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               aria-label="Close"
+              className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition"
             >
-              <X className="text-xl text-gray-500 dark:text-gray-400" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Event count */}
-          <div className="mt-3 flex items-center gap-2 text-sm">
-            <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-medium">
+          {/* Event count + Add */}
+          <div className="mt-3 flex items-center gap-2">
+            <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {events.length} {events.length === 1 ? 'event' : 'events'}
             </span>
             {onCreateEvent && (
               <button
                 onClick={onCreateEvent}
-                className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 font-medium transition-colors"
+                className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white font-mono text-[11px] tracking-[0.1em] uppercase font-semibold rounded-lg transition"
               >
-                <Plus className="mr-1" />
-                Add Event
+                <Plus className="w-3 h-3" />
+                Add
               </button>
             )}
           </div>
@@ -102,51 +99,56 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
         <div className="overflow-y-auto max-h-[calc(90vh-140px)] px-6 py-4">
           {events.length === 0 ? (
             <div className="text-center py-12">
-              <CalendarX className="text-4xl text-gray-300 dark:text-gray-600 mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">No events scheduled for this day</p>
+              <CalendarX className="w-10 h-10 text-zinc-300 dark:text-zinc-600 mx-auto mb-3" strokeWidth={1.5} />
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm">No events scheduled for this day.</p>
               {onCreateEvent && (
                 <button
                   onClick={onCreateEvent}
-                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-mono text-[11px] tracking-[0.1em] uppercase font-semibold rounded-lg transition"
                 >
-                  Create Event
+                  <Plus className="w-3 h-3" />
+                  Create event
                 </button>
               )}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {/* All-Day Events */}
               {allDayEvents.length > 0 && (
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                  <h3 className="font-mono text-[10px] font-semibold tracking-[0.1em] uppercase text-zinc-500 mb-2">
                     All Day
                   </h3>
                   <div className="space-y-2">
                     {allDayEvents.map(event => (
-                      <div
+                      <button
+                        type="button"
                         key={event.id}
-                        className={`${getEventColorClass(event.color)} p-4 rounded-lg cursor-pointer hover:opacity-90 transition-opacity`}
                         onClick={() => onEventClick(event)}
+                        className="w-full text-left p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] hover:bg-zinc-100 dark:hover:bg-white/[0.055] transition flex items-start gap-3"
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-white truncate">{event.title}</h4>
-                            {event.location && (
-                              <p className="text-sm text-white/80 mt-1 truncate">
-                                <MapPin className="mr-1" />
-                                {event.location}
-                              </p>
-                            )}
-                            {event.attendees && event.attendees.length > 0 && (
-                              <p className="text-sm text-white/80 mt-1">
-                                <Users className="mr-1" />
-                                {event.attendees.length} {event.attendees.length === 1 ? 'attendee' : 'attendees'}
-                              </p>
-                            )}
-                          </div>
-                          <ChevronRight className="text-white/60 ml-2" />
+                        <span
+                          className="w-1 self-stretch rounded-full shrink-0"
+                          style={{ backgroundColor: 'var(--cal-accent)' }}
+                          aria-hidden="true"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{event.title}</h4>
+                          {event.location && (
+                            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 truncate flex items-center gap-1.5">
+                              <MapPin className="w-3 h-3 shrink-0" />
+                              {event.location}
+                            </p>
+                          )}
+                          {event.attendees && event.attendees.length > 0 && (
+                            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                              <Users className="w-3 h-3 shrink-0" />
+                              {event.attendees.length} {event.attendees.length === 1 ? 'attendee' : 'attendees'}
+                            </p>
+                          )}
                         </div>
-                      </div>
+                        <ChevronRight className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -156,45 +158,48 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               {timedEvents.length > 0 && (
                 <div>
                   {allDayEvents.length > 0 && (
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 mt-6">
+                    <h3 className="font-mono text-[10px] font-semibold tracking-[0.1em] uppercase text-zinc-500 mb-2">
                       Scheduled
                     </h3>
                   )}
                   <div className="space-y-2">
                     {timedEvents.map(event => (
-                      <div
+                      <button
+                        type="button"
                         key={event.id}
-                        className={`${getEventColorClass(event.color)} p-4 rounded-lg cursor-pointer hover:opacity-90 transition-opacity`}
                         onClick={() => onEventClick(event)}
+                        className="w-full text-left p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] hover:bg-zinc-100 dark:hover:bg-white/[0.055] transition flex items-start gap-3"
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-mono text-white/90">
-                                {formatTime(event.start)}
-                              </span>
-                              <span className="text-white/60">•</span>
-                              <span className="text-sm text-white/70">
-                                {Math.round((event.end.getTime() - event.start.getTime()) / (1000 * 60))} min
-                              </span>
-                            </div>
-                            <h4 className="font-semibold text-white truncate">{event.title}</h4>
-                            {event.location && (
-                              <p className="text-sm text-white/80 mt-1 truncate">
-                                <MapPin className="mr-1" />
-                                {event.location}
-                              </p>
-                            )}
-                            {event.attendees && event.attendees.length > 0 && (
-                              <p className="text-sm text-white/80 mt-1">
-                                <Users className="mr-1" />
-                                {event.attendees.length} {event.attendees.length === 1 ? 'attendee' : 'attendees'}
-                              </p>
-                            )}
-                          </div>
-                          <ChevronRight className="text-white/60 ml-2" />
+                        <div className="shrink-0 w-16 text-right">
+                          <span className="font-mono text-[11px] tracking-wide text-zinc-700 dark:text-zinc-300" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            {formatTime(event.start)}
+                          </span>
+                          <p className="font-mono text-[10px] tracking-wide text-zinc-400 mt-0.5" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            {Math.round((event.end.getTime() - event.start.getTime()) / (1000 * 60))} min
+                          </p>
                         </div>
-                      </div>
+                        <span
+                          className="w-1 self-stretch rounded-full shrink-0"
+                          style={{ backgroundColor: 'var(--cal-accent)' }}
+                          aria-hidden="true"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{event.title}</h4>
+                          {event.location && (
+                            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 truncate flex items-center gap-1.5">
+                              <MapPin className="w-3 h-3 shrink-0" />
+                              {event.location}
+                            </p>
+                          )}
+                          {event.attendees && event.attendees.length > 0 && (
+                            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                              <Users className="w-3 h-3 shrink-0" />
+                              {event.attendees.length} {event.attendees.length === 1 ? 'attendee' : 'attendees'}
+                            </p>
+                          )}
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
+                      </button>
                     ))}
                   </div>
                 </div>

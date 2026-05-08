@@ -31,7 +31,6 @@
   padding: 1.125rem;
   background: var(--task-card-bg);
   border: 1px solid var(--task-card-border);
-  border-left: 2px solid transparent;
   border-radius: 12px;
   transition:
     background 150ms cubic-bezier(0.4, 0, 0.2, 1),
@@ -81,7 +80,7 @@
 
 .enhanced-task-card:hover {
   background: var(--task-card-hover);
-  border-left-color: rgba(244, 63, 94, 0.25);
+  border-color: var(--dt-border-hover, rgba(0, 0, 0, 0.12));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transform: translateY(-1px);
 }
@@ -241,7 +240,11 @@
   margin-bottom: 0.25rem;
 }
 
-/* Priority Badge */
+/* Priority Badge.
+   Intensity ramp via tokens (see design-tokens.css → "PRIORITY VOCABULARY").
+   Decoupled from status colors so green never means "medium priority" the
+   way it means "done"; coral is reserved for urgent because urgent IS the
+   brand voice. Low isn't rendered at all. */
 .task-priority-badge {
   padding: 0.25rem 0.625rem;
   border-radius: 6px;
@@ -251,6 +254,28 @@
   text-transform: uppercase;
   letter-spacing: var(--dt-label-tracking);
   white-space: nowrap;
+  background: var(--dt-priority-medium-bg);
+  color: var(--dt-priority-medium-fg);
+  box-shadow: inset 0 0 0 1px var(--dt-priority-medium-ring);
+}
+
+.task-priority-badge.priority-urgent {
+  background: var(--dt-priority-urgent-bg);
+  color: var(--dt-priority-urgent-fg);
+  box-shadow: 0 0 0 1px var(--dt-priority-urgent-ring),
+              0 2px 8px var(--dt-priority-urgent-ring);
+}
+
+.task-priority-badge.priority-high {
+  background: var(--dt-priority-high-bg);
+  color: var(--dt-priority-high-fg);
+  box-shadow: inset 0 0 0 1px var(--dt-priority-high-ring);
+}
+
+.task-priority-badge.priority-medium {
+  background: var(--dt-priority-medium-bg);
+  color: var(--dt-priority-medium-fg);
+  box-shadow: inset 0 0 0 1px var(--dt-priority-medium-ring);
 }
 
 /* AI Score Badge — purple for AI, preserved per design spec */
@@ -598,15 +623,14 @@
 }
 
 .dark .enhanced-task-card.overdue {
-  border-left-color: #ef4444;
-  background: rgba(239, 68, 68, 0.08);
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.30);
 }
 
-.dark .task-priority-badge {
-  background: rgba(244, 63, 94, 0.12);
-  border: 1px solid rgba(244, 63, 94, 0.25);
-  color: #fca5a5;
-}
+/* Priority pill in dark mode is fully driven by tokens (see design-tokens.css
+   → dark-mode "PRIORITY VOCABULARY"); no overrides needed here. The previous
+   blanket `rgba(244,63,94,...)` for every priority was the coral-as-decoration
+   tell DESIGN.md flags as the absolute ban. */
 
 .dark .ai-score-badge {
   background: rgba(139, 92, 246, 0.15);
@@ -673,9 +697,7 @@
   color: white;
 }
 
-/* Dark mode status borders */
-.dark .enhanced-task-card.status-todo        { border-left-color: #64748b; }
-.dark .enhanced-task-card.status-in_progress { border-left-color: #60a5fa; }
-.dark .enhanced-task-card.status-done        { border-left-color: #34d399; }
-.dark .enhanced-task-card.status-cancelled   { border-left-color: #9ca3af; }
-.dark .enhanced-task-card.status-blocked     { border-left-color: #f87171; }
+/* Status identity in dark mode rides on the full-card tinted background
+   above (`.enhanced-task-card.status-*`). Side-stripes are the absolute ban
+   DESIGN.md migrated away from (see design-tokens.css comment block); keeping
+   the cards stripeless preserves the migration. */

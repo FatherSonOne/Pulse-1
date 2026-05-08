@@ -11,91 +11,101 @@ import { getCurrentWorkspaceId } from "./ai/getWorkspaceId";
 const PULSE_APP_KNOWLEDGE = `
 ## ABOUT PULSE
 
-Pulse is a unified communication and productivity platform that combines email, messaging, SMS, async voice (Relay), video meetings, calendar, task management, team decisions, CRM integrations, analytics, and AI — all in a single app. It runs on web and Android.
+Pulse is the unified communication and intelligence layer for solo operators and small teams. It pulls email, messaging, async voice (Relay), video glimpses, video meetings, calendar, contacts, decisions, tasks, analytics, and AI into one app. It runs on web and on Android via Capacitor.
 
-## APP SECTIONS
+## SIDEBAR & SECTIONS
+
+The left sidebar groups sections into five categories. Use these exact labels when guiding the user.
 
 ### Overview
-- **Dashboard** — Your home screen. Shows a daily AI briefing with greeting, summary, and focus recommendation. Includes upcoming events with live countdowns, unread message count, quick scheduler, and AI nudges for overdue tasks, stalled decisions, and follow-ups. Also has an AI web search bar.
+
+- **Dashboard.** Home screen. Daily AI briefing (greeting, focus recommendation, what changed overnight), upcoming events with live countdowns, unread counts, AI nudges for overdue tasks and stalled decisions, weekly briefing surface, and an AI web search bar. The first place to land each morning.
 
 ### Communication
-- **Messages** — Unified messaging inbox. Supports threads, pinned messages, smart folders (Priority, Team, Follow-ups, Archived), inline tools (type / to access: /gif, /file, /task, /poll, /reminder), conversation highlights (decisions, action items), bulk actions, and ecosystem bot messages from connected apps.
-- **Email** — Full email client (Gmail/Outlook). Features include AI daily briefing with top 5 priority emails, email templates with variables ({{first_name}}, {{company}}, {{date}}), scheduling (Tomorrow, Monday 9 AM, etc.), follow-up reminders, email campaigns (3-step builder: Setup, Compose, Review & Send), audience segments (All, Recent, VIP, Important), and filters with auto-actions.
-- **SMS** — Text messaging. Send and receive SMS/text messages directly within Pulse.
-- **Relay** — Async voice messaging with 8 modes: Pulse Radio (broadcast), Voice Threads (threaded conversations), Team Vox (team channels with @mentions), Vox Notes (personal recordings), Quick Vox (fast send), Vox Drop (scheduled delivery), Classic (walkie-talkie style), and AI transcription.
+
+- **Messages.** Unified messaging inbox with threaded conversations, pinned messages, smart folders (Priority, Team, Follow-ups, Archived), reactions, conversation highlights (extracted decisions and action items), and bulk actions. The compose box accepts inline tools via "/" (/gif, /file, /task, /poll, /reminder). Bot messages from connected ecosystem apps appear inline.
+- **Email.** Full email client over Gmail/Outlook. AI daily briefing with top priority emails, templates with variables ({{first_name}}, {{company}}, {{date}}), send-later scheduling, follow-up reminders, and a 3-step campaign builder (Setup, Compose, Review & Send) with audience segments and auto-action filters.
+- **Relay.** Async voice and live audio. Six peer views in a single horizontal nav: **Triage** (AI-sorted inbox of all incoming voice across the other peers, the default landing tab), **Direct** (one-to-one DMs), **Channel** (team/workspace channels with @mentions), **Broadcast** (one-to-many publish, formerly Pulse Radio), **Notes** (personal voice memos), **Live** (real-time voice rooms). One unified Composer is reused across all peers; settings are reached from the gear icon in the nav.
+- **Glimpse.** Standalone video messaging (split out from Relay). Record, reply, and thread short video glimpses with AI transcripts, reactions, search, playback speed, and bulk selection. AI reply-draft panel suggests responses.
 
 ### Work & People
-- **Calendar** — Calendar management with Google Calendar sync. View events, create new ones, set reminders, and find free time. AI helps identify scheduling conflicts and suggest optimal meeting times.
-- **Meetings** — Pulse Video Room for virtual meetings. Start or join meetings, view upcoming meetings, get AI-generated agendas, and track meeting action items.
-- **Contacts** — Contact management with groups, relationship tracking, and CRM integration. View contact details, communication history, and relationship health. Filter by status, company, or last interaction.
-- **Decisions & Tasks** — Team decision-making and task management. Create decisions with voting (approve/reject/abstain), set deadlines, and track outcomes. Create tasks, assign to team members, set priorities (urgent/high/medium/low), set deadlines, and track progress. Filter by status (todo/in-progress/done/cancelled).
+
+- **Calendar.** Google + Outlook sync. Year, Month, Week, Day, Agenda, and Timeline views. Create events, set reminders, find free time, manage RSVPs and color overrides. The Calendar AI panel surfaces conflicts, prep briefings, and relationship insights.
+- **Meetings.** Pulse Video Room. Start or join meetings, manage upcoming sessions, generate agendas, capture action items, and review post-meeting summaries. Includes templates, bulk invite, device test, recording, breakout rooms, and a meeting analytics dashboard.
+- **Contacts.** Contact and CRM hub. Modes: Today (recent activity), People (full list), Circles (groups), Map (location). Sync with HubSpot, Salesforce, Pipedrive, and Zoho. Surfaces relationship health, last interaction, communication history, and AI contact search.
+- **Decisions & Tasks.** Unified hub. Decisions support voting (approve/reject/abstain), deadlines, sub-decision decomposition, and a structured Decision Wizard. Tasks have priorities (urgent/high/medium/low), deadlines, statuses (todo, in-progress, done, cancelled), assignees, and dependencies. Includes an AI task prioritizer, retrospective banner for due decisions, and Board / Archive views.
 
 ### Intelligence
-- **Search** — Unified search across all sections. Search messages, emails, contacts, tasks, decisions, calendar events, and archives from one search bar. Supports natural language queries.
-- **Analytics** — Communication and productivity analytics. View message volume, response times, task completion rates, team health scores, and AI-generated insights. Export reports.
-- **Archives** — Archive collections with smart folders, timeline view, and export to Google Drive. Archive old messages, emails, decisions, and tasks for reference.
-- **User Guide** — In-app help documentation covering all features, workflows, tips, keyboard shortcuts, and troubleshooting. Searchable and organized by category.
 
-### Experimental
-- **War Room** (AI Lab) — Live collaborative sessions with real-time AI assistance. Start sessions, invite team members, and work together with AI support.
-- **Pulse Chat** — Voice-first AI chat experience with real-time visualization. Connect via voice, take auto-notes, export transcripts, and add context files for RAG.
+- **Search.** Unified search across Messages, Emails, Vox, Notes, Tasks, Events, Contacts, and Archives. Natural-language queries, operator syntax (from:, in:, before:), saved searches, geo filters, and detail panels.
+- **Analytics.** Observatory-edition dashboard. Time range selector (7d, 30d, 90d, 365d) with views: Overview, Velocity, Sentiment, Network, Relationships, Conflicts, Kudos, and Predictions. Top contacts, AI-generated insights, exportable reports.
+- **War Room.** The unified AI workspace (also called Pulse Studio internally). One conversation canvas with inline citations from RAG sources, an agent selector (General, Skeptic, Scribe, Deep Diver), voice and extended-thinking toggles, file context upload, smart suggestions, command autocomplete, and an artifact board ("The Board") to pin outputs. This is where deep AI work happens. The legacy "AI Lab" is gone; its functionality lives here now.
+- **Archives.** Archive collections with smart folders, timeline, and Google Drive export. Includes the Memory Overview panel (workspace memory summary), Briefing Sheet, related items, search, and a shortcut overlay (?).
+- **User Guide.** In-app docs. Searchable, organized by category, covers features, workflows, tips, shortcuts, and troubleshooting.
 
-### Settings & Admin
-- **Settings** — Personal profile (display name, handle, bio, avatar), appearance (dark/light mode), session management, AI & Intelligence configuration (model selection, voice agent settings, knowledge base), integrations (Google, CRM), ecosystem bridge, notifications, workspace management, team management, accessibility, privacy & data, plan & billing, and developer tools.
-- **Admin Dashboard** — Admin-only user and workspace management tools.
-- **Test Matrix** — Developer testing and debugging dashboard.
+### Experimental (collapsed by default in the sidebar)
 
-## WORKSPACES & TEAMS
+- **Pulse Chat.** Voice-first AI chat using Gemini Live. Bidirectional realtime voice with optional camera input, audio visualizers, auto-transcription, and session logging to Archives.
 
-- **Workspace** — An isolated environment in Pulse. All data, contacts, settings, and billing belong to a workspace. Users can create multiple workspaces and switch between them.
-- **Creating a workspace:** Go to Settings → Workspace, or use the workspace switcher in the sidebar header.
-- **Roles:** Owner (full control, can transfer ownership or delete), Admin (elevated permissions), Moderator (content moderation), Member (standard access), Guest (limited access), Bot (automated integrations).
-- **Inviting members:** Go to Settings → Team Management → Invite. Send invites by email or share an invite link.
-- **Transferring ownership:** Settings → Workspace → Transfer Ownership. Select a team member to transfer to.
-- **Deleting a workspace:** Settings → Workspace → Danger Zone. Soft-deletes (recoverable for 30 days), then permanent.
+### Footer (always visible)
+
+- **Theme toggle** (light/dark, both first-class).
+- **Settings.** Reached from the footer gear, not from the main nav.
+- **User profile.**
+
+## SETTINGS
+
+Settings is a single screen with these categories: My Account (profile, handle, bio, avatar), Appearance, Sessions, AI & Intelligence (model selection, voice agent, knowledge base, audio hardware, quota), Integrations (Google, Outlook, CRM), Ecosystem Bridge (QntmEcos bots: Entomate for tasks, Logos Vision for CRM), Notifications, Features & Labs, War Room settings, Activity Monitor, Organization (legal name, logo, industry, domain, auto-join, archive, delete, transfer), Team Management (invites, roles), Security (2FA, session timeouts, IP allowlist), Compliance (GDPR, audit logs, legal hold), Accessibility (font, contrast, motion), Privacy & Data (analytics opt-out, export, cache), About, Plan & Billing, Developer Tools (API keys, webhooks).
+
+## WORKSPACES & ROLES
+
+A workspace owns all data, contacts, settings, and billing. Users can have multiple and switch via the workspace switcher in the sidebar header. Roles: Owner (full control, can transfer or delete), Admin, Moderator, Member, Guest, Bot. Invites are sent from Settings → Team Management. Transfers and deletion live under Settings → Organization. Deleted workspaces are recoverable for 30 days.
 
 ## KEY WORKFLOWS
 
-1. **Task management:** Create a task (Decisions & Tasks → New Task) → Assign to a team member → Set priority and deadline → Track progress on Dashboard → Mark complete when done.
-2. **Decision voting:** Create a decision (Decisions & Tasks → New Decision) → Team members vote (approve/reject/abstain) → View results → Record outcome. Stale decisions (no activity in 24h) trigger AI nudges.
-3. **Email triage:** Open Email → Review AI Daily Briefing (top 5 priorities) → Read and reply to important emails → Use templates for common responses → Schedule follow-ups → Archive processed emails.
-4. **Contact follow-up:** Check Contacts → Sort by "last interaction" → Identify contacts you haven't reached out to → Send a message or email → Log the interaction.
-5. **Meeting preparation:** Check Calendar or Meetings → Review upcoming meetings → Ask Pulse AI "Help me prepare for my next meeting" → Review attendee info from Contacts → Take notes during the meeting.
+1. **Morning triage.** Open **Dashboard**, read the daily briefing, then open **Email** for the priority briefing and **Relay → Triage** for incoming voice. Anything that needs a reply gets handled inline; anything that needs deeper thought goes to **War Room**.
+2. **Task management.** Decisions & Tasks → New Task. Assign, set priority and deadline. Track on Dashboard. Mark done when complete.
+3. **Decision voting.** Decisions & Tasks → New Decision. Team votes approve/reject/abstain. Stale decisions (no activity in 24h) trigger AI nudges. Record the outcome when resolved.
+4. **Contact follow-up.** Contacts → sort by last interaction, find lapsed contacts, message via Messages or Email, log the interaction.
+5. **Meeting prep.** Open **Meetings** or **Calendar**, ask Pulse AI to prep the next meeting. The AI pulls attendee info from Contacts, recent threads, and action items.
+6. **Deep work / research.** Open **War Room**, upload context files, pick an agent, and use extended thinking. Pin outputs to The Board.
 
 ## INTEGRATIONS
 
-- **Google:** Gmail (email sync), Google Calendar (event sync), Google Contacts, Google Drive (archive export).
-- **CRM:** HubSpot, Salesforce, Pipedrive, Zoho — sync contacts, deals, and activity.
-- **Ecosystem Bridge:** Receive bot messages from connected QntmEcos apps (Entomate for task management, Logos Vision for CRM). Configure in Settings → Ecosystem Bridge.
+- **Google:** Gmail, Calendar, Contacts, Drive (archive export).
+- **Microsoft:** Outlook mail and calendar.
+- **CRM:** HubSpot, Salesforce, Pipedrive, Zoho.
+- **Ecosystem Bridge:** QntmEcos apps post bot messages into Pulse. Entomate (tasks/meetings), Logos Vision (CRM). Configure in Settings → Ecosystem Bridge.
 
 ## KEYBOARD SHORTCUTS
 
-- **Ctrl+/** (or Cmd+/) — Open/close Pulse AI assistant
-- **G then D** — Go to Dashboard
-- **G then M** — Go to Messages
-- **G then E** — Go to Email
-- **G then V** — Go to Relay
-- **G then C** — Go to Calendar
-- **G then N** — Go to Meetings
-- **G then P** — Go to Contacts
-- **G then T** — Go to Decisions & Tasks
-- **G then A** — Go to Analytics
-- **?** — Open User Guide
-- **Ctrl+Shift+P** — Open Command Palette
-- **/** — Open inline tools menu (while composing a message)
-- **Shift+Enter** — New line in message input
-- **Escape** — Close current panel or modal
+- **Ctrl+/ or Cmd+/** — Open or close Pulse AI assistant.
+- **G then D / M / E / V / C / N / P / T / A** — Navigate (Dashboard, Messages, Email, Relay, Calendar, Meetings, Contacts, Decisions & Tasks, Analytics).
+- **T / D / C / B / N / L** — Switch Relay views (Triage, Direct, Channel, Broadcast, Notes, Live) when Relay is open.
+- **?** — User Guide / shortcut overlay.
+- **Ctrl+Shift+P** — Command palette.
+- **/** — Inline tools menu in message compose.
+- **Shift+Enter** — New line in inputs.
+- **Escape** — Close panel or modal.
 
 ## TIPS
 
-- Use the Daily Briefing on the Dashboard every morning — it summarizes overnight activity and recommends focus areas.
-- Pin important message threads to keep them at the top of your inbox.
-- Use smart folders in Messages to automatically organize by priority, team, or follow-up status.
-- Set up email templates for common responses to save time.
-- Use the / command in message compose to quickly insert GIFs, files, tasks, polls, or reminders.
-- Archive completed decisions and tasks to keep your workspace clean.
-- Check Analytics weekly to spot communication patterns and team health trends.
-- Use Relay Quick Vox for fast voice messages when typing is inconvenient.
+- The Daily Briefing on Dashboard is the recommended first stop each morning.
+- Pin important message threads to keep them at the top of the inbox.
+- Use smart folders in Messages to auto-organize by priority, team, or follow-up.
+- Save email templates for repeated replies. Variables ({{first_name}} etc.) personalize sends.
+- "/" in any compose box inserts gifs, files, tasks, polls, or reminders.
+- Archive completed decisions and tasks to keep the workspace clean.
+- Analytics weekly check spots communication and team-health trends.
+- Relay Triage is the fastest way to clear voice; Live is for active rooms; Notes is for personal memos.
+- Glimpse is for short video updates that are too rich for voice but too small for a meeting.
+- War Room is the right surface when a question needs more than a one-shot reply.
+
+## NOT IN PULSE (do not suggest)
+
+- A standalone "AI Lab" or "Tools" section. Removed; functionality is in War Room.
+- A standalone "SMS" section in the sidebar. SMS routing exists internally but is not a top-level destination.
+- A separate "Admin Dashboard" page. Admin controls live inside Settings (Organization, Team, Security, Compliance).
 `.trim();
 
 // ─── 5-minute in-memory cache (same pattern as conversationalAIService) ──────
@@ -249,6 +259,7 @@ export const SECTION_LABELS: Partial<Record<AppView, string>> = {
   [AppView.EMAIL]: 'Email',
   [AppView.SMS]: 'SMS',
   [AppView.RELAY]: 'Relay',
+  [AppView.GLIMPSE]: 'Glimpse',
   [AppView.CALENDAR]: 'Calendar',
   [AppView.MEETINGS]: 'Meetings',
   [AppView.CONTACTS]: 'Contacts',
@@ -263,7 +274,6 @@ export const SECTION_LABELS: Partial<Record<AppView, string>> = {
   [AppView.LIVE]: 'Pulse Chat',
   [AppView.CONTACT_MAP]: 'Contacts',
   [AppView.TEST_MATRIX]: 'Test Matrix',
-  [AppView.MESSAGE_ADMIN]: 'Admin Dashboard',
   [AppView.MESSAGE_ANALYTICS]: 'Message Analytics',
 };
 
@@ -304,8 +314,13 @@ const SECTION_QUICK_ACTIONS: Partial<Record<AppView, PulseQuickAction[]>> = {
     { id: 'relationship-health', label: 'Relationship health check', query: 'Which contact relationships might need attention or re-engagement?' },
   ],
   [AppView.RELAY]: [
+    { id: 'triage-voice', label: 'Catch me up on Triage', query: 'Summarise what is in my Relay Triage stream and what needs a reply.' },
     { id: 'urgent-voxes', label: 'Any urgent voxes?', query: 'Are there any urgent vox messages I should listen to right away?' },
-    { id: 'summarise-threads', label: 'Summarise threads', query: 'Summarise the activity in my vox message threads.' },
+    { id: 'pick-mode', label: 'Which Relay mode should I use?', query: 'Help me pick the right Relay view (Triage, Direct, Channel, Broadcast, Notes, or Live) for what I want to do.' },
+  ],
+  [AppView.GLIMPSE]: [
+    { id: 'unwatched-glimpses', label: 'Any unwatched glimpses?', query: 'Are there any unwatched video glimpses I should review?' },
+    { id: 'glimpse-vs-meeting', label: 'Glimpse or schedule a meeting?', query: 'Help me decide whether to send a quick Glimpse video or schedule a meeting.' },
   ],
   [AppView.ANALYTICS]: [
     { id: 'analyse-week', label: 'Analyse my week', query: 'Analyse my communication and productivity patterns this week.' },
@@ -389,6 +404,12 @@ const SECTION_SUGGESTED_ACTIONS: Partial<Record<AppView, SuggestedAction[]>> = {
     { id: 'go-tasks', label: 'Open Tasks', targetView: AppView.DECISIONS_TASKS },
   ],
   [AppView.RELAY]: [
+    { id: 'go-messages', label: 'Open Messages', targetView: AppView.MESSAGES },
+    { id: 'go-glimpse', label: 'Open Glimpse', targetView: AppView.GLIMPSE },
+    { id: 'go-contacts', label: 'View Contacts', targetView: AppView.CONTACTS },
+  ],
+  [AppView.GLIMPSE]: [
+    { id: 'go-relay', label: 'Open Relay', targetView: AppView.RELAY },
     { id: 'go-messages', label: 'Open Messages', targetView: AppView.MESSAGES },
     { id: 'go-contacts', label: 'View Contacts', targetView: AppView.CONTACTS },
   ],

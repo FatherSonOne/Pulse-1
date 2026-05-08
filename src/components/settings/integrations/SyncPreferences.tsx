@@ -1,5 +1,7 @@
 import React from 'react';
 import { RefreshCw } from 'lucide-react';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 interface SyncPreferencesProps {
   slackChannels: Array<{ id: string; name: string }>;
@@ -7,10 +9,10 @@ interface SyncPreferencesProps {
 
 export const SyncPreferences: React.FC<SyncPreferencesProps> = ({ slackChannels }) => {
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-4 flex items-center gap-2">
-            <RefreshCw /> Sync Preferences
-        </h4>
+    <SettingsCard>
+        <MonoLabel className="mb-4 flex items-center gap-2">
+            <RefreshCw className="w-3.5 h-3.5" /> Sync Preferences
+        </MonoLabel>
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div>
@@ -44,10 +46,10 @@ export const SyncPreferences: React.FC<SyncPreferencesProps> = ({ slackChannels 
                         alert('Connect Slack first to manage channels.');
                       }
                     }}
-                    className="text-sm text-blue-500 hover:underline"
+                    className="text-sm text-rose-500 hover:text-rose-600 hover:underline"
                 >Manage ({slackChannels.length || 'All'})</button>
             </div>
         </div>
-    </div>
+    </SettingsCard>
   );
 };

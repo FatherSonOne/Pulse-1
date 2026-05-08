@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ShieldCheck, Loader2, KeyRound, Copy, Check, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { mfaService, MFAStatus, MFAEnrollment } from '../../../services/mfaService';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 type Stage = 'idle' | 'enrolling' | 'verifying' | 'enrolled';
 
@@ -53,15 +55,42 @@ export const TwoFactorAuthCard: React.FC = () => {
     }
   };
 
-  const handleDisable = async () => {
-    if (!confirm('Disable two-factor authentication? Your account will rely on password only.')) return;
-    setBusy(true);
-    try {
-      const ok = await mfaService.disableAllMFA();
-      if (ok) await refresh();
-    } finally {
-      setBusy(false);
-    }
+  const handleDisable = () => {
+    toast(
+      (t) => (
+        <div className="flex flex-col gap-3">
+          <span className="text-sm text-zinc-900 dark:text-white">
+            Disable 2FA? Your account will rely on password only.
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                toast.dismiss(t.id);
+                setBusy(true);
+                try {
+                  const ok = await mfaService.disableAllMFA();
+                  if (ok) await refresh();
+                } finally {
+                  setBusy(false);
+                }
+              }}
+              className="px-3 py-1 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded transition"
+            >
+              Disable 2FA
+            </button>
+            <button
+              type="button"
+              onClick={() => toast.dismiss(t.id)}
+              className="px-3 py-1 text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { duration: 8000 }
+    );
   };
 
   const handleCancelEnroll = async () => {
@@ -86,14 +115,14 @@ export const TwoFactorAuthCard: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-zinc-500" />
-          <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Two-factor authentication</h4>
+          <MonoLabel>Two-factor authentication</MonoLabel>
         </div>
         {status?.enabled && (
-          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide">
+          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium uppercase tracking-wide">
             <Check className="w-3 h-3" /> Enabled
           </span>
         )}
@@ -116,17 +145,17 @@ export const TwoFactorAuthCard: React.FC = () => {
       )}
 
       {stage === 'verifying' && enrollment && (
-        <div className="space-y-4">
-          <div className="bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 space-y-3">
-            <p className="text-xs text-zinc-600 dark:text-zinc-300 font-medium">
+        <div className="space-y-5 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="space-y-3">
+            <p className="text-xs text-zinc-600 dark:text-zinc-300 font-medium pt-3">
               1. Scan this QR code with your authenticator app
             </p>
             {enrollment.qrCode && (
-              <div className="flex justify-center bg-white p-3 rounded-lg">
+              <div className="flex justify-center py-2">
                 <img
                   src={enrollment.qrCode}
                   alt="2FA QR code"
-                  className="w-44 h-44"
+                  className="w-44 h-44 border border-zinc-200 dark:border-zinc-800 rounded"
                 />
               </div>
             )}
@@ -134,13 +163,13 @@ export const TwoFactorAuthCard: React.FC = () => {
               Or enter this secret manually:
             </p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 text-xs font-mono break-all px-2 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-700 dark:text-zinc-300">
+              <code className="flex-1 text-xs font-mono break-all px-2 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded text-zinc-700 dark:text-zinc-300">
                 {enrollment.secret}
               </code>
               <button
                 type="button"
                 onClick={copySecret}
-                className="p-1.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                className="p-1.5 rounded border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition"
                 title="Copy secret"
               >
                 {secretCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-zinc-500" />}
@@ -149,7 +178,7 @@ export const TwoFactorAuthCard: React.FC = () => {
           </div>
 
           <div>
-            <label htmlFor="totp-code" className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-1">
+            <label htmlFor="totp-code" className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-1.5">
               2. Enter the 6-digit code
             </label>
             <input
@@ -161,7 +190,7 @@ export const TwoFactorAuthCard: React.FC = () => {
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               placeholder="000000"
-              className="w-full px-3 py-2 text-lg font-mono tracking-widest text-center border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+              className="w-full px-3 py-2 text-lg font-mono tracking-widest text-center border border-zinc-200 dark:border-zinc-800 rounded-lg bg-transparent text-zinc-900 dark:text-white focus:outline-none focus:border-rose-500"
             />
           </div>
 
@@ -188,22 +217,23 @@ export const TwoFactorAuthCard: React.FC = () => {
       )}
 
       {stage === 'enrolled' && status && (
-        <div className="space-y-3">
-          {status.factors.map((f) => (
-            <div key={f.id} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-lg">
-              <div>
-                <p className="text-sm font-medium text-zinc-900 dark:text-white">{f.friendlyName}</p>
-                <p className="text-[11px] text-zinc-400">Enrolled {new Date(f.createdAt).toLocaleDateString()}</p>
+        <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {status.factors.map((f) => (
+              <div key={f.id} className="flex items-center justify-between py-3">
+                <div>
+                  <p className="text-sm font-medium text-zinc-900 dark:text-white">{f.friendlyName}</p>
+                  <p className="text-[11px] text-zinc-400">Enrolled {new Date(f.createdAt).toLocaleDateString()}</p>
+                </div>
+                <span className="text-[10px] uppercase tracking-wide font-semibold text-zinc-400">{f.type}</span>
               </div>
-              <span className="text-[10px] uppercase tracking-wide font-semibold text-zinc-400">{f.type}</span>
-            </div>
-          ))}
+            ))}
+          </div>
 
-          <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-lg">
+          <div className="flex items-start gap-2 pt-4 mt-1 border-t border-zinc-100 dark:border-zinc-800">
             <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-700 dark:text-amber-300">
-              Disabling 2FA reduces account security. Only do this if you've lost access to your authenticator
-              and need to re-enroll, or if your organization no longer requires it.
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              Disabling 2FA reduces account security. Only do this if you've lost access to your authenticator and need to re-enroll, or if your organization no longer requires it.
             </p>
           </div>
 
@@ -211,12 +241,12 @@ export const TwoFactorAuthCard: React.FC = () => {
             type="button"
             onClick={handleDisable}
             disabled={busy}
-            className="text-sm font-medium text-red-500 hover:text-red-600 disabled:opacity-40"
+            className="mt-4 text-sm font-medium text-red-500 hover:text-red-600 disabled:opacity-40"
           >
             {busy ? 'Disabling...' : 'Disable 2FA'}
           </button>
         </div>
       )}
-    </div>
+    </SettingsCard>
   );
 };

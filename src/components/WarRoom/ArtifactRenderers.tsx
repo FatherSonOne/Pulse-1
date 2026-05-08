@@ -1,8 +1,12 @@
 /**
  * ArtifactRenderers.tsx — Rich inline renderers for each artifact type.
  *
- * These replace raw markdown with interactive, on-brand UI cards that render
- * inside the chat canvas. Each renderer is self-contained and uses PS design tokens.
+ * Each renderer wraps content in an ArtifactCard that carries:
+ *  1. AI Provenance Tag (DESIGN.md §5 signature) — `MODEL · KIND` mono chip.
+ *  2. Per-type tone class (.ps-tone-*) driving --ps-tone / --ps-tone-soft vars
+ *     so accents respect light/dark mode tokens.
+ *
+ * No hardcoded hex literals. All colors flow from pulse-tokens.css.
  */
 
 import React, { useState } from 'react';
@@ -21,14 +25,18 @@ import {
   Circle, Lightbulb, ListChecks, Minus, Pin, Plus, Sparkles,
   ThumbsUp, X,
 } from 'lucide-react';
-import type { NoteType, BoardNoteMeta } from './useBoardNotes';
+import { ProvenanceTag } from './ProvenanceTag';
+import type { NoteType } from './useBoardNotes';
+
+type Tone = 'rose' | 'positive' | 'info' | 'warning' | 'overdue';
 
 // ── Shared ─────────────────────────────────────────────────────────────────────
 
 interface ArtifactCardProps {
   icon: React.ReactNode;
   label: string;
-  accent: string;
+  tone: Tone;
+  model?: string;
   onPin?: (content: string, type: NoteType) => void;
   pinContent?: string;
   pinType?: NoteType;
@@ -36,21 +44,22 @@ interface ArtifactCardProps {
 }
 
 const ArtifactCard: React.FC<ArtifactCardProps> = ({
-  icon, label, accent, onPin, pinContent, pinType = 'finding', children,
+  icon, label, tone, model, onPin, pinContent, pinType = 'finding', children,
 }) => (
-  <div className="ps-artifact-card" style={{ '--artifact-accent': accent } as React.CSSProperties}>
+  <div className={`ps-artifact-card ps-tone-${tone}`}>
     <div className="ps-artifact-card-header">
-      <div className="ps-artifact-card-badge" style={{ background: `${accent}18`, color: accent }}>
-        {icon}
-        <span>{label}</span>
+      <div className="ps-artifact-card-heading">
+        <span className="ps-artifact-card-icon">{icon}</span>
+        <ProvenanceTag model={model} kind={label} showDot={!model} />
       </div>
       {onPin && pinContent && (
         <button
           className="ps-artifact-pin-btn"
           onClick={() => onPin(pinContent, pinType)}
           title="Pin to Artifacts"
+          aria-label="Pin to Artifacts"
         >
-          <Pin size={12} />
+          <Pin size={14} />
         </button>
       )}
     </div>
@@ -60,11 +69,12 @@ const ArtifactCard: React.FC<ArtifactCardProps> = ({
 
 // ── Summary ────────────────────────────────────────────────────────────────────
 
-const SummaryRenderer: React.FC<{ data: ArtifactSummary; onPin?: (c: string, t: NoteType) => void }> = ({ data, onPin }) => (
+const SummaryRenderer: React.FC<{ data: ArtifactSummary; model?: string; onPin?: (c: string, t: NoteType) => void }> = ({ data, model, onPin }) => (
   <ArtifactCard
     icon={<Sparkles size={13} />}
     label={data.title}
-    accent="#f43f5e"
+    tone="rose"
+    model={model}
     onPin={onPin}
     pinContent={data.points.map((p, i) => `${i + 1}. ${p}`).join('\n')}
     pinType="insight"
@@ -72,7 +82,7 @@ const SummaryRenderer: React.FC<{ data: ArtifactSummary; onPin?: (c: string, t: 
     <ul className="ps-artifact-list">
       {data.points.map((point, i) => (
         <li key={i}>
-          <ChevronRight size={12} className="ps-artifact-list-icon" style={{ color: '#f43f5e' }} />
+          <ChevronRight size={12} className="ps-artifact-list-icon ps-tone-icon" />
           <span>{point}</span>
         </li>
       ))}
@@ -82,35 +92,36 @@ const SummaryRenderer: React.FC<{ data: ArtifactSummary; onPin?: (c: string, t: 
 
 // ── Pros & Cons ────────────────────────────────────────────────────────────────
 
-const ProsConsRenderer: React.FC<{ data: ArtifactProsCons; onPin?: (c: string, t: NoteType) => void }> = ({ data, onPin }) => (
+const ProsConsRenderer: React.FC<{ data: ArtifactProsCons; model?: string; onPin?: (c: string, t: NoteType) => void }> = ({ data, model, onPin }) => (
   <ArtifactCard
     icon={<Minus size={13} />}
     label={data.title}
-    accent="#8b5cf6"
+    tone="rose"
+    model={model}
     onPin={onPin}
     pinContent={`Pros:\n${data.pros.map(p => `+ ${p}`).join('\n')}\n\nCons:\n${data.cons.map(c => `- ${c}`).join('\n')}`}
     pinType="finding"
   >
     <div className="ps-artifact-proscons">
       <div className="ps-artifact-proscons-col ps-artifact-proscons-col--pro">
-        <div className="ps-artifact-proscons-label" style={{ color: '#10b981' }}>
+        <div className="ps-artifact-proscons-label ps-tone-icon--positive">
           <Plus size={12} /> Pros
         </div>
         {data.pros.map((p, i) => (
           <div key={i} className="ps-artifact-proscons-item">
-            <Check size={12} style={{ color: '#10b981', flexShrink: 0 }} />
+            <Check size={12} className="ps-tone-icon--positive" />
             <span>{p}</span>
           </div>
         ))}
       </div>
       <div className="ps-artifact-proscons-divider" />
       <div className="ps-artifact-proscons-col ps-artifact-proscons-col--con">
-        <div className="ps-artifact-proscons-label" style={{ color: '#ef4444' }}>
+        <div className="ps-artifact-proscons-label ps-tone-icon--overdue">
           <X size={12} /> Cons
         </div>
         {data.cons.map((c, i) => (
           <div key={i} className="ps-artifact-proscons-item">
-            <X size={12} style={{ color: '#ef4444', flexShrink: 0 }} />
+            <X size={12} className="ps-tone-icon--overdue" />
             <span>{c}</span>
           </div>
         ))}
@@ -121,7 +132,7 @@ const ProsConsRenderer: React.FC<{ data: ArtifactProsCons; onPin?: (c: string, t
 
 // ── Action Items ───────────────────────────────────────────────────────────────
 
-const ActionItemsRenderer: React.FC<{ data: ArtifactActionItems; onPin?: (c: string, t: NoteType) => void }> = ({ data, onPin }) => {
+const ActionItemsRenderer: React.FC<{ data: ArtifactActionItems; model?: string; onPin?: (c: string, t: NoteType) => void }> = ({ data, model, onPin }) => {
   const [items, setItems] = useState(data.items);
 
   const toggleItem = (idx: number) => {
@@ -132,7 +143,8 @@ const ActionItemsRenderer: React.FC<{ data: ArtifactActionItems; onPin?: (c: str
     <ArtifactCard
       icon={<ListChecks size={13} />}
       label={data.title}
-      accent="#10b981"
+      tone="positive"
+      model={model}
       onPin={onPin}
       pinContent={items.map(i => `${i.done ? '[x]' : '[ ]'} ${i.text}`).join('\n')}
       pinType="action"
@@ -157,11 +169,12 @@ const ActionItemsRenderer: React.FC<{ data: ArtifactActionItems; onPin?: (c: str
 
 // ── Decision Matrix ────────────────────────────────────────────────────────────
 
-const DecisionMatrixRenderer: React.FC<{ data: ArtifactDecisionMatrix; onPin?: (c: string, t: NoteType) => void }> = ({ data, onPin }) => (
+const DecisionMatrixRenderer: React.FC<{ data: ArtifactDecisionMatrix; model?: string; onPin?: (c: string, t: NoteType) => void }> = ({ data, model, onPin }) => (
   <ArtifactCard
     icon={<ListChecks size={13} />}
     label={data.title}
-    accent="#3b82f6"
+    tone="info"
+    model={model}
     onPin={onPin}
     pinContent={`${data.headers.join(' | ')}\n${data.rows.map(r => r.join(' | ')).join('\n')}`}
     pinType="decision"
@@ -191,7 +204,7 @@ const DecisionMatrixRenderer: React.FC<{ data: ArtifactDecisionMatrix; onPin?: (
 
 // ── Ideas ──────────────────────────────────────────────────────────────────────
 
-const IdeasRenderer: React.FC<{ data: ArtifactIdeas; onPin?: (c: string, t: NoteType) => void }> = ({ data, onPin }) => {
+const IdeasRenderer: React.FC<{ data: ArtifactIdeas; model?: string; onPin?: (c: string, t: NoteType) => void }> = ({ data, model, onPin }) => {
   const [ideas, setIdeas] = useState(data.ideas);
 
   const upvote = (idx: number) => {
@@ -202,7 +215,8 @@ const IdeasRenderer: React.FC<{ data: ArtifactIdeas; onPin?: (c: string, t: Note
     <ArtifactCard
       icon={<Lightbulb size={13} />}
       label={data.title}
-      accent="#f59e0b"
+      tone="warning"
+      model={model}
       onPin={onPin}
       pinContent={ideas.map(i => `- ${i.text}`).join('\n')}
       pinType="insight"
@@ -211,7 +225,7 @@ const IdeasRenderer: React.FC<{ data: ArtifactIdeas; onPin?: (c: string, t: Note
         {ideas.map((idea, i) => (
           <div key={i} className="ps-artifact-idea">
             <div className="ps-artifact-idea-text">
-              <Lightbulb size={12} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 2 }} />
+              <Lightbulb size={12} className="ps-tone-icon--warning" style={{ marginTop: 2 }} />
               <span>{idea.text}</span>
             </div>
             <button className="ps-artifact-idea-vote" onClick={() => upvote(i)}>
@@ -227,11 +241,12 @@ const IdeasRenderer: React.FC<{ data: ArtifactIdeas; onPin?: (c: string, t: Note
 
 // ── Timeline ───────────────────────────────────────────────────────────────────
 
-const TimelineRenderer: React.FC<{ data: ArtifactTimeline; onPin?: (c: string, t: NoteType) => void }> = ({ data, onPin }) => (
+const TimelineRenderer: React.FC<{ data: ArtifactTimeline; model?: string; onPin?: (c: string, t: NoteType) => void }> = ({ data, model, onPin }) => (
   <ArtifactCard
     icon={<ArrowRight size={13} />}
     label={data.title}
-    accent="#6366f1"
+    tone="info"
+    model={model}
     onPin={onPin}
     pinContent={data.events.map(e => `${e.label}: ${e.description}`).join('\n')}
     pinType="finding"
@@ -255,11 +270,12 @@ const TimelineRenderer: React.FC<{ data: ArtifactTimeline; onPin?: (c: string, t
 
 // ── Risk Assessment ────────────────────────────────────────────────────────────
 
-const RiskRenderer: React.FC<{ data: ArtifactRiskAssessment; onPin?: (c: string, t: NoteType) => void }> = ({ data, onPin }) => (
+const RiskRenderer: React.FC<{ data: ArtifactRiskAssessment; model?: string; onPin?: (c: string, t: NoteType) => void }> = ({ data, model, onPin }) => (
   <ArtifactCard
     icon={<AlertTriangle size={13} />}
     label={data.title}
-    accent="#ef4444"
+    tone="overdue"
+    model={model}
     onPin={onPin}
     pinContent={data.risks.map(r => `⚠ ${r.risk}${r.mitigation ? ` → ${r.mitigation}` : ''}`).join('\n')}
     pinType="finding"
@@ -268,7 +284,7 @@ const RiskRenderer: React.FC<{ data: ArtifactRiskAssessment; onPin?: (c: string,
       {data.risks.map((risk, i) => (
         <div key={i} className="ps-artifact-risk-row">
           <div className="ps-artifact-risk-name">
-            <AlertTriangle size={12} style={{ color: '#ef4444', flexShrink: 0 }} />
+            <AlertTriangle size={12} className="ps-tone-icon--overdue" />
             <span>{risk.risk}</span>
           </div>
           {(risk.likelihood || risk.impact) && (
@@ -292,16 +308,17 @@ const RiskRenderer: React.FC<{ data: ArtifactRiskAssessment; onPin?: (c: string,
 
 export const InlineArtifact: React.FC<{
   artifact: Artifact;
+  model?: string;
   onPin?: (content: string, type: NoteType) => void;
-}> = ({ artifact, onPin }) => {
+}> = ({ artifact, model, onPin }) => {
   switch (artifact.type) {
-    case 'summary':          return <SummaryRenderer data={artifact} onPin={onPin} />;
-    case 'pros-cons':        return <ProsConsRenderer data={artifact} onPin={onPin} />;
-    case 'action-items':     return <ActionItemsRenderer data={artifact} onPin={onPin} />;
-    case 'decision-matrix':  return <DecisionMatrixRenderer data={artifact} onPin={onPin} />;
-    case 'ideas':            return <IdeasRenderer data={artifact} onPin={onPin} />;
-    case 'timeline':         return <TimelineRenderer data={artifact} onPin={onPin} />;
-    case 'risk-assessment':  return <RiskRenderer data={artifact} onPin={onPin} />;
+    case 'summary':          return <SummaryRenderer data={artifact} model={model} onPin={onPin} />;
+    case 'pros-cons':        return <ProsConsRenderer data={artifact} model={model} onPin={onPin} />;
+    case 'action-items':     return <ActionItemsRenderer data={artifact} model={model} onPin={onPin} />;
+    case 'decision-matrix':  return <DecisionMatrixRenderer data={artifact} model={model} onPin={onPin} />;
+    case 'ideas':            return <IdeasRenderer data={artifact} model={model} onPin={onPin} />;
+    case 'timeline':         return <TimelineRenderer data={artifact} model={model} onPin={onPin} />;
+    case 'risk-assessment':  return <RiskRenderer data={artifact} model={model} onPin={onPin} />;
     default:                 return null;
   }
 };

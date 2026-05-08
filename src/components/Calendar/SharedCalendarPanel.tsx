@@ -52,7 +52,7 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
   }
 
   return (
-    <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+    <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-sm shadow-2xl animate-scale-in">
         <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
           <h3 className="text-base font-bold dark:text-white">New Team Calendar</h3>

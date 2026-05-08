@@ -3,6 +3,8 @@ import { TrendingUp } from 'lucide-react';
 import { settingsService } from '../../services/settingsService';
 import { supabase } from '../../services/supabase';
 import { ToggleItem } from './shared/ToggleItem';
+import { SettingsCard } from './shared/SettingsCard';
+import { MonoLabel } from './shared/MonoLabel';
 
 export const ActivityMonitorSettings: React.FC = () => {
   const [activityPresenceVisible, setActivityPresenceVisible] = useState(true);
@@ -30,7 +32,7 @@ export const ActivityMonitorSettings: React.FC = () => {
         <p>Control how your presence and activity data is shared and retained.</p>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-6">
+      <SettingsCard className="space-y-6">
         <ToggleItem
           label="Live Presence"
           desc="Let others see when you are online"
@@ -65,7 +67,7 @@ export const ActivityMonitorSettings: React.FC = () => {
         />
         <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
         <div>
-          <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">Activity Data Retention</label>
+          <MonoLabel as="label" className="mb-3 block">Activity Data Retention</MonoLabel>
           <select
             value={activityRetentionDays}
             onChange={(e) => {
@@ -74,7 +76,7 @@ export const ActivityMonitorSettings: React.FC = () => {
               settingsService.set('activityMonitorRetentionDays', v);
             }}
             title="Activity data retention period"
-            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
           >
             <option value={30}>30 days</option>
             <option value={90}>90 days</option>
@@ -82,7 +84,7 @@ export const ActivityMonitorSettings: React.FC = () => {
             <option value={-1}>Keep forever</option>
           </select>
         </div>
-      </div>
+      </SettingsCard>
     </div>
   );
 };

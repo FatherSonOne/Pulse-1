@@ -27,24 +27,13 @@ import { MarkdownContent } from './MarkdownContent';
 import type { NoteType } from './useBoardNotes';
 
 import {
-  BookOpen, Brain, Check, ChevronDown, Copy, FileText, Layers,
+  ArrowRight, BookOpen, Brain, Check, ChevronDown, Copy, FileText, Layers,
   Loader2, Mic, MicOff, Paperclip, Pin, Send, Sparkles, Timer,
-  Wand2, X, Search, BarChart3, Lightbulb, ListChecks,
-  MessageSquare, Zap,
+  User as UserIcon, Wand2, X,
 } from 'lucide-react';
+import { ProvenanceTag } from './ProvenanceTag';
 
 const VoiceControl = lazy(() => import('./VoiceControl').then(m => ({ default: m.VoiceControl })));
-
-// ── Quick-start actions for the welcome screen ────────────────────────────
-
-const QUICK_ACTIONS = [
-  { icon: Search, label: 'Research a topic', prompt: '/analyze ', sendNow: false },
-  { icon: BarChart3, label: 'Analyze data', prompt: '/analyze ', sendNow: false },
-  { icon: Lightbulb, label: 'Brainstorm ideas', prompt: '/brainstorm ', sendNow: false },
-  { icon: ListChecks, label: 'Make a decision', prompt: '/decide ', sendNow: false },
-  { icon: MessageSquare, label: 'Summarize sources', prompt: '/summarize Summarize the key points from my sources', sendNow: true },
-  { icon: Zap, label: 'Quick question', prompt: '', sendNow: false },
-];
 
 // ── Props ─────────────────────────────────────────────────────────────────
 
@@ -247,39 +236,74 @@ export const PulseStudio: React.FC<PulseStudioProps> = ({
 
   // ── Welcome Screen ───────────────────────────────────────────────────────
 
-  const renderWelcome = () => (
-    <div className="ps-welcome">
-      <div className="ps-welcome-logo">
-        <BookOpen size={28} />
+  const renderWelcome = () => {
+    const previewNames = documents.slice(0, 3).map(d => d.title);
+    const overflow = documents.length - previewNames.length;
+
+    return (
+      <div className="ps-welcome">
+        <div className="ps-welcome-logo">
+          <BookOpen size={20} />
+        </div>
+
+        <h2>War Room</h2>
+
+        {hasDocuments ? (
+          <>
+            <div className="ps-welcome-label">
+              {documents.length} source{documents.length !== 1 ? 's' : ''} ready
+              {activeDocCount > 0 && ` · ${activeDocCount} active`}
+            </div>
+            <div className="ps-welcome-list">
+              {previewNames.join(' · ')}
+              {overflow > 0 && ` · +${overflow} more`}
+            </div>
+            <button
+              className="ps-welcome-cta"
+              onClick={() => onSendDirect('/summarize Summarize the key points from my sources')}
+            >
+              {documents.length === 1 ? 'Summarize this source' : 'Summarize all sources'}
+              <ArrowRight size={14} />
+            </button>
+            <div className="ps-welcome-hint">
+              <span>/summarize</span>
+              <span aria-hidden>·</span>
+              <span>/analyze</span>
+              <span aria-hidden>·</span>
+              <span>/brainstorm</span>
+              <span aria-hidden>·</span>
+              <kbd>⌘K</kbd>
+              <span>for more</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="ps-welcome-label">No sources yet</div>
+            <div className="ps-welcome-list">
+              Add a document, or start a conversation on any topic.
+            </div>
+            {onUploadClick && (
+              <button
+                className="ps-welcome-cta"
+                onClick={onUploadClick}
+              >
+                Add a source
+                <ArrowRight size={14} />
+              </button>
+            )}
+            <div className="ps-welcome-hint">
+              <span>type</span>
+              <kbd>/</kbd>
+              <span>for commands</span>
+              <span aria-hidden>·</span>
+              <kbd>⌘K</kbd>
+              <span>for the palette</span>
+            </div>
+          </>
+        )}
       </div>
-      <h2>War Room</h2>
-      <p>
-        {hasDocuments
-          ? `You have ${documents.length} source${documents.length !== 1 ? 's' : ''} loaded${activeDocCount > 0 ? ` (${activeDocCount} active)` : ''}. Ask anything about your documents or start a new conversation.`
-          : 'Upload sources to get AI-powered insights, or start a conversation on any topic.'
-        }
-      </p>
-      <div className="ps-welcome-actions">
-        {QUICK_ACTIONS.map((action) => (
-          <button
-            key={action.label}
-            className="ps-welcome-chip"
-            onClick={() => {
-              if (action.sendNow && action.prompt) {
-                onSendDirect(action.prompt);
-              } else {
-                setInput(action.prompt);
-                setTimeout(() => inputRef.current?.focus(), 50);
-              }
-            }}
-          >
-            <action.icon size={14} />
-            {action.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+    );
+  };
 
   // ── Artifact parsing cache (memoized per message content) ────────────────
 
@@ -312,29 +336,27 @@ export const PulseStudio: React.FC<PulseStudioProps> = ({
       <div key={msg.id || idx} className={`ps-message ps-message--${msg.role}`}>
         <div className="ps-message-avatar">
           {isUser ? (
-            <i className="fa fa-user" style={{ fontSize: 13 }} />
+            <UserIcon size={15} />
           ) : (
             <Sparkles size={15} />
           )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
+          {/* AI provenance — Pulse signature (DESIGN.md §5). */}
+          {!isUser && (
+            <ProvenanceTag
+              model={selectedAgent.name}
+              kind={hasArtifacts ? undefined : 'response'}
+              className="ps-message-provenance"
+            />
+          )}
+
           <div className="ps-message-content">
             {/* Thinking toggle */}
             {thinking && thinking.length > 0 && (
               <button
+                className="ps-thinking-toggle"
                 onClick={() => toggleThinking(msg.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  fontSize: 11,
-                  color: 'var(--ps-text-muted)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '2px 0',
-                  marginBottom: 6,
-                }}
               >
                 <Brain size={12} />
                 {isThinkingExpanded ? 'Hide' : 'Show'} thinking ({thinking.length} steps)
@@ -343,19 +365,10 @@ export const PulseStudio: React.FC<PulseStudioProps> = ({
 
             {/* Thinking steps */}
             {thinking && isThinkingExpanded && (
-              <div style={{
-                padding: '8px 10px',
-                marginBottom: 8,
-                borderRadius: 'var(--ps-radius-sm)',
-                background: 'var(--ps-bg-surface)',
-                border: '1px solid var(--ps-border)',
-                fontSize: 12,
-                color: 'var(--ps-text-secondary)',
-                lineHeight: 1.5,
-              }}>
+              <div className="ps-thinking-panel">
                 {thinking.map((step, i) => (
-                  <div key={i} style={{ marginBottom: i < thinking.length - 1 ? 6 : 0 }}>
-                    <span style={{ color: 'var(--ps-text-muted)', marginRight: 6, fontFamily: 'var(--ps-font-mono)', fontSize: 10 }}>
+                  <div key={i} className="ps-thinking-step">
+                    <span className="ps-thinking-step-time">
                       [{step.duration_ms}ms]
                     </span>
                     {step.thought}
@@ -374,6 +387,7 @@ export const PulseStudio: React.FC<PulseStudioProps> = ({
                   <InlineArtifact
                     key={si}
                     artifact={seg.artifact}
+                    model={selectedAgent.name}
                     onPin={onPinArtifact}
                   />
                 )

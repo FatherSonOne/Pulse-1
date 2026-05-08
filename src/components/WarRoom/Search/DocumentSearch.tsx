@@ -161,7 +161,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
       {/* Search Input */}
       <div className="p-3 war-room-divider">
         <div className="relative">
-          <Search className="fa absolute left-3 top-1/2 -translate-y-1/2 war-room-text-secondary text-sm" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 war-room-text-secondary pointer-events-none" />
           <input
             ref={inputRef}
             type="text"
@@ -183,7 +183,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 war-room-text-secondary hover:text-rose-400 transition-colors"
             >
-              <X className="fa text-xs" />
+              <X size={14} />
             </button>
           )}
         </div>
@@ -199,7 +199,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
                   : 'war-room-panel-inset war-room-text-secondary hover:text-rose-400'
               }`}
             >
-              <Globe className="fa mr-1" />
+              <Globe size={12} className="inline mr-1" />
               All ({documents.length})
             </button>
             <button
@@ -211,7 +211,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
                   : 'war-room-panel-inset war-room-text-secondary hover:text-rose-400 disabled:opacity-50 disabled:cursor-not-allowed'
               }`}
             >
-              <CheckCircle className="fa mr-1" />
+              <CheckCircle size={12} className="inline mr-1" />
               Active ({activeContextIds.size})
             </button>
           </div>
@@ -272,7 +272,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
         <div className="max-h-64 overflow-y-auto war-room-scrollbar">
           {results.length === 0 ? (
             <div className="p-4 text-center">
-              <ZoomOut className="fa text-2xl war-room-text-secondary mb-2" />
+              <ZoomOut size={28} className="war-room-text-secondary mb-2 mx-auto" />
               <p className="text-sm war-room-text-secondary">
                 No results for "{query}"
               </p>
@@ -293,7 +293,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
                 >
                   <div className="flex items-start gap-2">
                     <div className="shrink-0 mt-0.5">
-                      <i className={`fa ${getMatchIcon(result.matchType)} text-xs war-room-text-secondary group-hover:text-rose-400`}></i>
+                      <i className={`fa-solid ${getMatchIcon(result.matchType)} text-xs war-room-text-secondary group-hover:text-rose-400`}></i>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-medium truncate group-hover:text-rose-400">
@@ -309,15 +309,15 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
                           {result.doc.file_type || 'text'}
                         </span>
                         {activeContextIds.has(result.doc.id) && (
-                          <span className="text-xs text-emerald-400">
-                            <CheckCircle className="fa mr-0.5" />
+                          <span className="text-xs text-emerald-400 inline-flex items-center gap-1">
+                            <CheckCircle size={11} />
                             Active
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="shrink-0">
-                      <ArrowRight className="fa text-xs war-room-text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ArrowRight size={12} className="war-room-text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
                 </button>
@@ -331,13 +331,13 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
       {isExpanded && query.length < 2 && (
         <div className="p-3 text-xs war-room-text-secondary">
           <div className="flex items-center justify-between">
-            <span>
-              <FileText className="fa mr-1" />
+            <span className="inline-flex items-center gap-1">
+              <FileText size={12} />
               {filteredDocuments.length} documents
             </span>
             {activeContextIds.size > 0 && (
-              <span className="text-emerald-400">
-                <CheckCircle className="fa mr-1" />
+              <span className="text-emerald-400 inline-flex items-center gap-1">
+                <CheckCircle size={12} />
                 {activeContextIds.size} in context
               </span>
             )}

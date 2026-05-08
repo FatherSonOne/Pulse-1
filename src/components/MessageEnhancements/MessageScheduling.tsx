@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 
 import { AlarmClock, Bell, Clock, MessageSquare, Pen, Repeat, Send, Trash2, X } from 'lucide-react';
+import { useFeatures } from '../../contexts/FeatureContext';
 
 interface ScheduledMessage {
   id: string;
@@ -82,7 +83,13 @@ const quickScheduleOptions = [
   }}
 ];
 
-export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
+export const MessageScheduling: React.FC<MessageSchedulingProps> = (props) => {
+  const { isFeatureEnabled } = useFeatures();
+  if (!isFeatureEnabled('scheduledMessages')) return null;
+  return <MessageSchedulingInner {...props} />;
+};
+
+const MessageSchedulingInner: React.FC<MessageSchedulingProps> = ({
   scheduledMessages,
   reminders,
   onScheduleMessage,

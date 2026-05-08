@@ -32,6 +32,28 @@ import {
   X,
 } from 'lucide-react';
 
+/**
+ * Strip markdown syntax for compact card previews. Headings, bold/italic
+ * markers, code spans, and link wrappers collapse to plain text so a
+ * line-clamp doesn't show literal `**` and `#` characters.
+ */
+function stripMarkdownForPreview(input: string): string {
+  return input
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/(\*\*|__)(.*?)\1/g, '$2')
+    .replace(/(\*|_)(.*?)\1/g, '$2')
+    .replace(/^>\s+/gm, '')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    .replace(/\n{2,}/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 // Lazy-loaded heavy components
 const VoiceAgentPanel = lazy(() =>
   import('./VoiceAgentPanel').then(m => ({ default: m.VoiceAgentPanel }))
@@ -45,7 +67,7 @@ const isMobilePlatform =
 const LoadingFallback: React.FC<{ message?: string }> = ({ message = 'Loading...' }) => (
   <div className="h-full w-full flex items-center justify-center bg-gray-900/50">
     <div className="text-center">
-      <Loader2 className="fa text-2xl text-rose-500 mb-2 animate-spin" />
+      <Loader2 size={32} className="text-rose-500 mb-2 animate-spin" />
       <p className="text-sm text-gray-400">{message}</p>
     </div>
   </div>
@@ -161,14 +183,14 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
           <div className="w-full max-w-2xl war-room-modal rounded-3xl shadow-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-2xl font-bold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">
-                <Share2 className="fa mr-2" />
+                <Share2 size={14} className="inline mr-2" />
                 Export Session
               </h3>
               <button
                 onClick={() => setShowExportModal(false)}
                 className="px-3 py-2 hover:bg-gray-200 dark:hover:bg-gray-800/50 rounded-full transition-colors text-gray-600 dark:text-gray-400"
               >
-                <X className="fa text-xl" />
+                <X size={20} />
               </button>
             </div>
 
@@ -183,13 +205,13 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-blue-100 dark:bg-blue-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition text-blue-600 dark:text-white">
-                    <FileText className="fa" />
+                    <FileText size={16} />
                   </div>
                   <div className="flex-1">
                     <div className="font-medium text-lg text-gray-900 dark:text-white">Export as Markdown</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">Download full conversation as .md file</div>
                   </div>
-                  <Download className="fa text-blue-400" />
+                  <Download size={16} className="text-blue-400" />
                 </div>
               </button>
 
@@ -203,13 +225,13 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-purple-100 dark:bg-purple-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition text-purple-600 dark:text-white">
-                    <Code className="fa" />
+                    <Code size={16} />
                   </div>
                   <div className="flex-1">
                     <div className="font-medium text-lg text-gray-900 dark:text-white">Export as JSON</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">Structured data for integrations</div>
                   </div>
-                  <Download className="fa text-purple-400" />
+                  <Download size={16} className="text-purple-400" />
                 </div>
               </button>
 
@@ -223,13 +245,13 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-rose-100 dark:bg-rose-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition text-rose-600 dark:text-white">
-                    <Sparkles className="fa" />
+                    <Sparkles size={16} />
                   </div>
                   <div className="flex-1">
                     <div className="font-medium text-lg text-gray-900 dark:text-white">Generate AI Summary</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">Key points & action items (copies to clipboard)</div>
                   </div>
-                  <Clipboard className="fa text-rose-400" />
+                  <Clipboard size={16} className="text-rose-400" />
                 </div>
               </button>
 
@@ -246,7 +268,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                     }}
                     className="px-4 py-3 bg-green-50 dark:bg-green-600/20 border border-green-200 dark:border-green-500/30 rounded-xl hover:bg-green-100 dark:hover:bg-green-600/30 text-sm flex items-center justify-center text-gray-700 dark:text-white transition-colors"
                   >
-                    <MessageSquare className="fa mr-2 text-green-600 dark:text-green-400" />
+                    <MessageSquare size={14} className="inline mr-2 text-green-600 dark:text-green-400" />
                     Messages
                   </button>
 
@@ -259,7 +281,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                     }}
                     className="px-4 py-3 bg-blue-50 dark:bg-blue-600/20 border border-blue-200 dark:border-blue-500/30 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-600/30 text-sm flex items-center justify-center text-gray-700 dark:text-white transition-colors"
                   >
-                    <Mail className="fa mr-2 text-blue-600 dark:text-blue-400" />
+                    <Mail size={14} className="inline mr-2 text-blue-600 dark:text-blue-400" />
                     Email
                   </button>
                 </div>
@@ -282,7 +304,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
             componentName="Voice Agent"
             fallback={
               <div className="bg-gray-900/95 backdrop-blur-xl border border-red-500/30 rounded-xl p-6 text-center">
-                <MicOff className="fa text-3xl text-red-500 mb-3" />
+                <MicOff size={36} className="text-red-500 mb-3 mx-auto" />
                 <p className="text-white font-medium mb-2">Voice Agent Unavailable</p>
                 <p className="text-gray-400 text-sm mb-4">
                   {isMobilePlatform
@@ -421,8 +443,11 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
             {/* Header */}
             <div className="p-4 border-b border-zinc-700 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                  <BookOpen className="fa text-white" />
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' }}
+                >
+                  <BookOpen size={20} />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white">Knowledge Bank</h2>
@@ -433,7 +458,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
               </div>
               <div className="flex items-center gap-2">
                 <label className="flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg cursor-pointer transition-colors">
-                  <Plus className="fa" />
+                  <Plus size={16} />
                   <span>Upload</span>
                   <input
                     type="file"
@@ -447,7 +472,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                   onClick={() => setShowKnowledgeBank(false)}
                   className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                 >
-                  <X className="fa text-lg" />
+                  <X size={18} />
                 </button>
               </div>
             </div>
@@ -469,8 +494,8 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
             <div className="flex-1 overflow-y-auto p-4">
               {documents.length === 0 ? (
                 <div className="text-center py-16 text-zinc-500">
-                  <FolderOpen className="fa text-5xl mb-4 block" />
-                  <h3 className="text-lg font-medium text-white mb-2">No Documents Yet</h3>
+                  <FolderOpen size={48} className="mb-4 mx-auto" />
+                  <h3 className="text-lg font-medium text-white mb-2">No documents yet</h3>
                   <p className="text-sm">
                     Upload PDFs, Word docs, images, or text files to build your knowledge base.
                   </p>
@@ -527,9 +552,9 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                             </div>
                           </div>
                           {doc.processing_status === 'processing' ? (
-                            <Loader2 className="fa text-yellow-400 animate-spin" />
+                            <Loader2 size={16} className="text-yellow-400 animate-spin" />
                           ) : doc.processing_status === 'failed' ? (
-                            <AlertTriangle className="fa text-red-400" />
+                            <AlertTriangle size={16} className="text-red-400" />
                           ) : (
                             <button
                               onClick={() => toggleDocInContext(doc.id)}
@@ -545,21 +570,32 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                         </div>
 
                         {doc.ai_summary && (
-                          <p className="text-xs text-zinc-400 line-clamp-2 mb-3">{doc.ai_summary}</p>
+                          <p className="text-xs text-zinc-400 line-clamp-2 mb-3">
+                            {stripMarkdownForPreview(doc.ai_summary)}
+                          </p>
                         )}
 
-                        {doc.ai_keywords && doc.ai_keywords.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-3">
-                            {doc.ai_keywords.slice(0, 4).map((keyword, i) => (
-                              <span
-                                key={i}
-                                className="text-[10px] px-2 py-0.5 bg-zinc-700/50 text-zinc-400 rounded-full"
-                              >
-                                {keyword}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                        {doc.ai_keywords && doc.ai_keywords.length > 0 && (() => {
+                          // Strip markdown, filter out malformed entries (the AI sometimes
+                          // emits whole sentences instead of keywords).
+                          const cleaned = doc.ai_keywords
+                            .map((k) => stripMarkdownForPreview(k))
+                            .filter((k) => k.length > 0 && k.length <= 40 && !/\s{2,}|[.!?]/.test(k))
+                            .slice(0, 4);
+                          if (cleaned.length === 0) return null;
+                          return (
+                            <div className="flex flex-wrap gap-1 mb-3">
+                              {cleaned.map((keyword, i) => (
+                                <span
+                                  key={i}
+                                  className="text-[10px] px-2 py-0.5 bg-zinc-700/50 text-zinc-400 rounded-full"
+                                >
+                                  {keyword}
+                                </span>
+                              ))}
+                            </div>
+                          );
+                        })()}
 
                         <div className="flex items-center gap-2 pt-2 border-t border-zinc-700/50">
                           <button
@@ -570,7 +606,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                             }}
                             className="flex-1 text-xs py-1.5 text-zinc-400 hover:text-white hover:bg-white/5 rounded transition-colors"
                           >
-                            <Eye className="fa mr-1" /> View
+                            <Eye size={12} className="inline mr-1" /> View
                           </button>
                           <button
                             onClick={() => {
@@ -579,13 +615,13 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                             }}
                             className="flex-1 text-xs py-1.5 text-zinc-400 hover:text-white hover:bg-white/5 rounded transition-colors"
                           >
-                            <Tags className="fa mr-1" /> Organize
+                            <Tags size={12} className="inline mr-1" /> Organize
                           </button>
                           <button
                             onClick={() => handleDeleteDoc(doc.id)}
                             className="text-xs py-1.5 px-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
                           >
-                            <Trash2 className="fa" />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
@@ -597,9 +633,11 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
 
             {/* Footer */}
             <div className="p-4 border-t border-zinc-700 flex items-center justify-between shrink-0">
-              <div className="text-sm text-zinc-400">
-                <Info className="fa mr-1" />
-                Click <Plus className="fa mx-1" /> to add documents to context
+              <div className="text-sm text-zinc-400 inline-flex items-center gap-1.5">
+                <Info size={14} />
+                <span>Click</span>
+                <Plus size={14} className="inline-block" />
+                <span>to add documents to context</span>
               </div>
               <button
                 onClick={() => setShowKnowledgeBank(false)}

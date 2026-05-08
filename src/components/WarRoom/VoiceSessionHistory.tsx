@@ -142,7 +142,7 @@ export const VoiceSessionHistory: React.FC<VoiceSessionHistoryProps> = ({
       {/* Header - Archives-style */}
       <div className="flex items-center justify-between p-3 border-b border-zinc-800">
         <div className="flex items-center gap-2">
-          <div className="w-1 h-1 bg-cyan-500 rounded-full"></div>
+          <div className="w-1 h-1 bg-rose-500 rounded-full"></div>
           <h3 className="font-mono text-[10px] uppercase tracking-widest text-zinc-500">
             Session History
           </h3>
@@ -212,7 +212,7 @@ export const VoiceSessionHistory: React.FC<VoiceSessionHistoryProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search history..."
-            className="w-full pl-9 pr-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+            className="w-full pl-9 pr-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-rose-500"
           />
         </div>
 
@@ -224,7 +224,7 @@ export const VoiceSessionHistory: React.FC<VoiceSessionHistoryProps> = ({
               onClick={() => setFilter(type)}
               className={`px-3 py-1 text-xs rounded-full transition-colors ${
                 filter === type
-                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                  ? 'bg-rose-500/20 text-rose-400 border border-rose-500/25'
                   : 'bg-gray-800 text-gray-400 hover:text-white'
               }`}
             >
@@ -252,7 +252,7 @@ export const VoiceSessionHistory: React.FC<VoiceSessionHistoryProps> = ({
               className={`rounded-lg border transition-colors ${
                 item.type === 'message'
                   ? item.role === 'user'
-                    ? 'bg-cyan-500/5 border-cyan-500/20'
+                    ? 'bg-rose-500/5 border-rose-500/20'
                     : 'bg-gray-800/50 border-gray-700'
                   : 'bg-purple-500/5 border-purple-500/20'
               }`}
@@ -267,7 +267,7 @@ export const VoiceSessionHistory: React.FC<VoiceSessionHistoryProps> = ({
                   {item.type === 'message' ? (
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
                       item.role === 'user'
-                        ? 'bg-cyan-500/20 text-cyan-400'
+                        ? 'bg-rose-500/20 text-rose-400'
                         : 'bg-purple-500/20 text-purple-400'
                     }`}>
                       <i className={`fa ${item.role === 'user' ? 'fa-user' : 'fa-robot'}`} />
@@ -312,7 +312,7 @@ export const VoiceSessionHistory: React.FC<VoiceSessionHistoryProps> = ({
                   {item.type === 'function_call' && (
                     <div className="space-y-2">
                       <div className="font-mono text-[10px] uppercase tracking-widest text-yellow-400">Arguments</div>
-                      <pre className="text-xs text-cyan-400 bg-black/40 p-3 rounded-lg overflow-x-auto border border-cyan-500/20">
+                      <pre className="text-xs text-rose-400 bg-black/40 p-3 rounded-lg overflow-x-auto border border-rose-500/20">
                         {item.arguments ? JSON.stringify(JSON.parse(item.arguments), null, 2) : '{}'}
                       </pre>
                     </div>

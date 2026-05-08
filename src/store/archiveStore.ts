@@ -47,6 +47,10 @@ interface ArchiveState {
   contacts: any[];
   versionHistory: VersionHistoryItem[];
 
+  // Demo mode (in-memory seed; never written to DB)
+  demoMode: boolean;
+  demoItems: ArchiveItem[] | null;
+
   // Loading & Pagination
   loading: boolean;
   loadingMore: boolean;
@@ -103,6 +107,8 @@ interface ArchiveState {
   // Data loading
   loadData: () => Promise<void>;
   refreshData: () => Promise<void>;
+  seedDemoData: () => Promise<void>;
+  clearDemoData: () => Promise<void>;
   loadMore: () => Promise<void>;
   loadTimelineEvents: () => Promise<void>;
   loadRelatedItems: (archiveId: string) => Promise<void>;
@@ -209,6 +215,8 @@ export const useArchiveStore = create<ArchiveState>()(
     relatedItems: [],
     contacts: [],
     versionHistory: [],
+    demoMode: false,
+    demoItems: null,
 
     loading: true,
     loadingMore: false,
@@ -271,7 +279,35 @@ export const useArchiveStore = create<ArchiveState>()(
 
     refreshData: async () => {
       const PAGE_SIZE = 50;
-      const { activeSmartFolderId, activeCollectionId, activeFilter, query } = get();
+      const { activeSmartFolderId, activeCollectionId, activeFilter, query, demoMode, demoItems } = get();
+
+      // Demo mode: filter the in-memory seed locally without touching the DB.
+      if (demoMode && demoItems) {
+        let data = demoItems;
+        if (activeFilter === 'starred') {
+          data = data.filter(i => i.starred);
+        } else if (activeFilter !== 'all') {
+          data = data.filter(i => i.type === activeFilter);
+        }
+        if (query) {
+          const q = query.toLowerCase();
+          data = data.filter(i =>
+            i.title.toLowerCase().includes(q) ||
+            i.content.toLowerCase().includes(q) ||
+            (i.tags || []).some(t => t.toLowerCase().includes(q)) ||
+            (i.aiTags || []).some(t => t.toLowerCase().includes(q))
+          );
+        }
+        // Sort newest first
+        data = [...data].sort((a, b) => {
+          const da = a.date instanceof Date ? a.date.getTime() : new Date(a.date).getTime();
+          const db = b.date instanceof Date ? b.date.getTime() : new Date(b.date).getTime();
+          return db - da;
+        });
+        set({ items: data, page: 0, hasMore: false });
+        return;
+      }
+
       let data: ArchiveItem[] = [];
 
       if (activeSmartFolderId) {
@@ -290,6 +326,31 @@ export const useArchiveStore = create<ArchiveState>()(
       }
 
       set({ items: data, page: 0, hasMore: data.length >= PAGE_SIZE });
+    },
+
+    seedDemoData: async () => {
+      const { generateDemoMemoryItems, generateDemoContacts } = await import('../components/Archives/memoryDemoSeed');
+      const items = generateDemoMemoryItems();
+      const demoContacts = generateDemoContacts();
+      set({
+        demoMode: true,
+        demoItems: items,
+        items,
+        contacts: demoContacts,
+        loading: false,
+        hasMore: false,
+        page: 0,
+        // Reset filters so the seed shows up immediately
+        activeFilter: 'all',
+        activeCollectionId: null,
+        activeSmartFolderId: null,
+        query: '',
+      });
+    },
+
+    clearDemoData: async () => {
+      set({ demoMode: false, demoItems: null, items: [], loading: true });
+      await get().loadData();
     },
 
     loadMore: async () => {
@@ -959,13 +1020,59 @@ export const useArchiveStore = create<ArchiveState>()(
       });
     },
 
+    /**
+     * Bulk-delete with deferred commit: optimistically remove the items, return a
+     * snapshot + commit/undo handles. The UI layer renders a toast with "Undo"
+     * and decides when to commit. After 5s of no undo, the UI calls commit.
+     */
     handleBulkDelete: async () => {
-      const { selectedItems } = get();
+      const { selectedItems, items, demoMode, demoItems } = get();
       if (selectedItems.size === 0) return;
-      if (!confirm(`Delete ${selectedItems.size} items?`)) return;
-      await archiveService.bulkDelete(Array.from(selectedItems));
-      set({ selectedItems: new Set() });
-      await get().refreshData();
+      const ids = Array.from(selectedItems);
+
+      const snapshotItems = items.filter(i => ids.includes(i.id));
+      const snapshotDemo = demoMode && demoItems ? demoItems.filter(i => ids.includes(i.id)) : null;
+      const remainingItems = items.filter(i => !ids.includes(i.id));
+      const remainingDemo = demoMode && demoItems ? demoItems.filter(i => !ids.includes(i.id)) : null;
+
+      // Optimistic removal
+      set({
+        items: remainingItems,
+        ...(remainingDemo !== null ? { demoItems: remainingDemo } : {}),
+        selectedItems: new Set(),
+      });
+
+      let committed = false;
+      const undo = () => {
+        if (committed) return false;
+        committed = true;
+        const sortByDate = (a: ArchiveItem, b: ArchiveItem) => {
+          const da = a.date instanceof Date ? a.date.getTime() : new Date(a.date).getTime();
+          const db = b.date instanceof Date ? b.date.getTime() : new Date(b.date).getTime();
+          return db - da;
+        };
+        set({
+          items: [...remainingItems, ...snapshotItems].sort(sortByDate),
+          ...(snapshotDemo ? { demoItems: [...(remainingDemo || []), ...snapshotDemo].sort(sortByDate) } : {}),
+        });
+        return true;
+      };
+
+      const commit = async () => {
+        if (committed) return;
+        committed = true;
+        if (demoMode) return;
+        try {
+          await archiveService.bulkDelete(ids);
+        } catch (err) {
+          // Restore on failure
+          set({ items: [...remainingItems, ...snapshotItems] });
+          throw err;
+        }
+      };
+
+      // Stash on a global so the UI layer can pick them up. Cleared on next bulk delete.
+      (window as any).__pulseMemoryBulkDelete = { count: ids.length, undo, commit };
     },
 
     handleBulkTag: async () => {

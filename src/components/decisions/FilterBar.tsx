@@ -52,10 +52,23 @@ const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Low Priority' },
 ] as const;
 
+type DateRangePreset = '' | '7d' | '30d' | '90d';
+
 export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, availablePlaces }) => {
   // Debounced search: local input state syncs to parent after 300ms idle
   const [localSearch, setLocalSearch] = useState(filters.search);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Track which preset is active locally so the <select>'s displayed label
+  // reflects the user's choice. FilterState only stores the resolved
+  // {start, end} window — preserving the preset key here avoids reverse-
+  // deriving "7d/30d/90d" from a date diff (brittle around DST + month edges).
+  const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('');
+
+  // Reset preset when an external clear wipes filters.dateRange.
+  useEffect(() => {
+    if (!filters.dateRange) setDateRangePreset('');
+  }, [filters.dateRange]);
 
   useEffect(() => {
     // Sync external changes back (e.g. clear filters)
@@ -82,6 +95,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, availab
     filters.placeId !== undefined;
 
   const handleClearFilters = () => {
+    setDateRangePreset('');
     onChange({
       search: '',
       status: 'all',
@@ -120,7 +134,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, availab
   };
 
   const handleDateRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
+    const value = e.target.value as DateRangePreset;
+    setDateRangePreset(value);
     if (value === '') {
       onChange({ ...filters, dateRange: undefined });
       return;
@@ -194,12 +209,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, availab
         </div>
 
         {/* Date Range */}
-        <div className="filter-bar__select-wrapper filter-bar__select-wrapper--date">
+        <div className="filter-bar__select-wrapper">
           <Calendar className="filter-bar__select-icon" size={16} />
           <select
             className="filter-bar__select"
-            value={filters.dateRange ? '' : ''}
+            value={dateRangePreset}
             onChange={handleDateRangeChange}
+            aria-label="Filter by date range"
           >
             <option value="">All Dates</option>
             <option value="7d">Last 7 days</option>
@@ -261,6 +277,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, availab
           {filters.priority && (
             <span className="filter-bar__active-tag">
               Priority: {filters.priority}
+            </span>
+          )}
+          {filters.dateRange && dateRangePreset && (
+            <span className="filter-bar__active-tag">
+              Dates: {dateRangePreset === '7d' ? 'Last 7 days' : dateRangePreset === '30d' ? 'Last 30 days' : 'Last 90 days'}
             </span>
           )}
           {filters.placeId !== undefined && (

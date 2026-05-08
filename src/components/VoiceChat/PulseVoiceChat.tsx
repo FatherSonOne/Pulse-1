@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo, Suspense, lazy } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import {
@@ -19,9 +19,7 @@ import {
   ChevronDown,
   Volume2,
   VolumeX,
-  Sparkles,
   Brain,
-  Waves,
   Clock,
   Check,
   Edit3,
@@ -31,7 +29,8 @@ import {
   Paperclip,
   CloudUpload,
   FolderOpen,
-  Inbox
+  Inbox,
+  RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePulseAI } from '../../contexts/PulseAIContext';
@@ -40,18 +39,26 @@ import {
   RealtimeVoiceAgentRef,
   VoiceSettings,
   ContextFile,
-  AIParticipantMode
+  AIParticipantMode,
 } from '../WarRoom/RealtimeVoiceAgent';
 import { RealtimeHistoryItem } from '../../services/realtimeAgentService';
-import VoiceChatVisualizer from './VoiceChatVisualizer';
+import TranscriptBreathing, { type RailLine, type VoiceState } from './TranscriptBreathing';
+import SessionsCanvas, { type LiveSessionView } from './SessionsCanvas';
+import {
+  loadVoiceSessions,
+  saveVoiceSession,
+  deleteVoiceSession,
+  summarizeForTakeaway,
+  formatDuration,
+  type VoiceSessionRecord,
+  type StoredVoiceNote,
+} from './voiceSessionStore';
 import './PulseVoiceChat.css';
 
-// Lazy load the voice agent
 const RealtimeVoiceAgent = lazy(() =>
-  import('../WarRoom/RealtimeVoiceAgent').then(m => ({ default: m.RealtimeVoiceAgent }))
+  import('../WarRoom/RealtimeVoiceAgent').then((m) => ({ default: m.RealtimeVoiceAgent }))
 );
 
-// Types
 export interface VoiceNote {
   id: string;
   content: string;
@@ -78,24 +85,35 @@ interface PulseVoiceChatProps {
   onSendToEmail?: (notes: VoiceNote[]) => void;
 }
 
-// Voice state types
-type VoiceState = 'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking';
+const isMobilePlatform =
+  Capacitor.isNativePlatform() || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-// Check if mobile
-const isMobilePlatform = Capacitor.isNativePlatform() || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const EXAMPLE_PROMPTS = [
+  'Summarize my unread Pulse messages',
+  'Review my next 3 meetings',
+  'Draft replies to overdue threads',
+];
+
+const RAIL_LINE_MAX = 60;
+
+const truncateForRail = (text: string): string => {
+  const trimmed = text.trim();
+  if (trimmed.length <= RAIL_LINE_MAX) return trimmed;
+  return trimmed.slice(0, RAIL_LINE_MAX - 1) + '…';
+};
 
 const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
   apiKey,
   userId = 'anonymous',
   onClose,
   onSendToArchive,
-  onSendToEmail
+  onSendToEmail,
 }) => {
-  // Ephemeral token fetched from the openai-realtime-token edge function.
-  // Platform-managed keys only — never reads env/localStorage for the OpenAI key.
+  /* ── Token resolution ─────────────────────────────────────── */
   const [openaiApiKey, setOpenaiApiKey] = useState<string>('');
   const [isResolvingToken, setIsResolvingToken] = useState<boolean>(true);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const [tokenAttempt, setTokenAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,7 +121,6 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
       setIsResolvingToken(true);
       setTokenError(null);
       try {
-        // If a key was passed in as a prop (pre-fetched ephemeral token), prefer it
         if (apiKey) {
           if (!cancelled) {
             setOpenaiApiKey(apiKey);
@@ -111,35 +128,52 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
           }
           return;
         }
-
         const { supabase } = await import('../../services/supabase');
         const { data, error } = await supabase.functions.invoke('openai-realtime-token', {
           body: { model: 'gpt-4o-realtime-preview', voice: 'alloy' },
         });
-
         if (cancelled) return;
 
+        // Distinguish auth (401) failures from upstream/runtime failures so the
+        // recovery path can be specific. Supabase's FunctionsHttpError surfaces
+        // the status either on `error.context.status` or in the message.
+        const status =
+          (error as any)?.context?.status ??
+          (error as any)?.status ??
+          (typeof error?.message === 'string' && /401|unauthorized/i.test(error.message)
+            ? 401
+            : undefined);
+
         if (error || !data?.token) {
-          setTokenError('OpenAI Realtime unavailable. Please try again later.');
+          if (status === 401) {
+            setTokenError('Your sign-in expired. Reload Pulse or sign in again to reconnect voice.');
+          } else {
+            setTokenError('OpenAI Realtime is temporarily unavailable. Try again in a moment.');
+          }
           setOpenaiApiKey('');
         } else {
           setOpenaiApiKey(data.token);
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
-          setTokenError('OpenAI Realtime unavailable. Please try again later.');
+          setTokenError('OpenAI Realtime is temporarily unavailable. Try again in a moment.');
           setOpenaiApiKey('');
         }
       } finally {
         if (!cancelled) setIsResolvingToken(false);
       }
     };
-
     resolveToken();
-    return () => { cancelled = true; };
-  }, [apiKey]);
+    return () => {
+      cancelled = true;
+    };
+  }, [apiKey, tokenAttempt]);
 
-  // Voice states
+  const retryToken = useCallback(() => {
+    setTokenAttempt((n) => n + 1);
+  }, []);
+
+  /* ── Voice + session state ────────────────────────────────── */
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -148,13 +182,13 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [sessionElapsed, setSessionElapsed] = useState(0);
+  const sessionIdRef = useRef<string | null>(null);
 
-  // Conversation
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [currentTranscript, setCurrentTranscript] = useState('');
   const [history, setHistory] = useState<RealtimeHistoryItem[]>([]);
+  const [recentSessions, setRecentSessions] = useState<VoiceSessionRecord[]>([]);
 
-  // Notes
   const [notes, setNotes] = useState<VoiceNote[]>([]);
   const [showNotes, setShowNotes] = useState(false);
   const [autoNotes, setAutoNotes] = useState(true);
@@ -163,42 +197,36 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingNoteContent, setEditingNoteContent] = useState('');
 
-  // Settings
   const [showSettings, setShowSettings] = useState(false);
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
     voice: 'alloy',
     turnDetection: 'semantic_vad',
     noiseReduction: 'near_field',
-    language: 'en'
+    language: 'en',
   });
   const [aiMode, setAiMode] = useState<AIParticipantMode>('active');
 
-  // Context files for RAG
   const [contextFiles, setContextFiles] = useState<ContextFile[]>([]);
   const [showContextDrawer, setShowContextDrawer] = useState(false);
   const [contextText, setContextText] = useState('');
 
-  // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
   const agentRef = useRef<RealtimeVoiceAgentRef>(null);
   const notesContainerRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
 
-  // Detect if native platform
   const isNative = Capacitor.isNativePlatform();
 
-  // Bridge: inject Pulse data context from the shared provider
+  /* ── Pulse AI bridge ──────────────────────────────────────── */
   const pulseAI = usePulseAI();
   const pulseDataPrompt = pulseAI.buildPulseDataPrompt();
 
-  // Notify shared context that voice is active
   useEffect(() => {
     pulseAI.setIsVoiceActive(true);
     return () => pulseAI.setIsVoiceActive(false);
   }, [pulseAI]);
 
-  // Merge Pulse data context into context files for the voice agent
-  const effectiveContextFiles = React.useMemo<ContextFile[]>(() => {
+  const effectiveContextFiles = useMemo<ContextFile[]>(() => {
     if (!pulseDataPrompt || pulseDataPrompt === 'No Pulse data context available.') {
       return contextFiles;
     }
@@ -211,104 +239,24 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
     return [pulseContextFile, ...contextFiles];
   }, [contextFiles, pulseDataPrompt]);
 
-  // Generate unique ID
-  const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-  // ============= VOICE AGENT CALLBACKS =============
-
-  // Handle connection state changes
-  const handleConnectionChange = useCallback((connected: boolean, connecting: boolean) => {
-    console.log('[PulseVoiceChat] Connection change:', { connected, connecting });
-    setIsConnected(connected);
-    setIsConnecting(connecting);
-
-    if (connected) {
-      setVoiceState('listening');
-      toast.success('Connected to voice AI');
-    } else if (!connecting) {
-      setVoiceState('idle');
-    } else {
-      setVoiceState('connecting');
-    }
+  /* ── Past sessions hydration ──────────────────────────────── */
+  useEffect(() => {
+    setRecentSessions(loadVoiceSessions());
   }, []);
 
-  // Handle transcript updates
-  const handleTranscript = useCallback((text: string, role: 'user' | 'assistant', isFinal: boolean) => {
-    setCurrentTranscript(text);
+  /* ── Helpers ──────────────────────────────────────────────── */
+  const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
-    if (role === 'user') {
-      setVoiceState(isFinal ? 'thinking' : 'listening');
-    } else {
-      setVoiceState(isFinal ? 'listening' : 'speaking');
-    }
-
-    // Add to messages when final
-    if (isFinal && text.trim()) {
-      const newMessage: ConversationMessage = {
-        id: generateId(),
-        role,
-        content: text,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, newMessage]);
-
-      // Auto-capture notes from assistant responses
-      if (role === 'assistant' && autoNotes) {
-        const keyPhrase = extractKeyPhrases(text);
-        if (keyPhrase) {
-          addNote({
-            id: generateId(),
-            content: keyPhrase,
-            timestamp: new Date(),
-            type: 'auto',
-            speaker: 'assistant'
-          });
-        }
-      }
-    }
-  }, [autoNotes]);
-
-  // Handle audio level updates
-  const handleAudioLevel = useCallback((level: number, isListening: boolean, isSpeaking: boolean) => {
-    setAudioLevel(level);
-
-    if (isConnected && !isPaused) {
-      if (isSpeaking) {
-        setVoiceState('speaking');
-      } else if (isListening) {
-        setVoiceState('listening');
-      }
-    }
-  }, [isConnected, isPaused]);
-
-  // Handle history updates
-  const handleHistoryUpdate = useCallback((newHistory: RealtimeHistoryItem[]) => {
-    setHistory(newHistory);
-
-    // Check for thinking state
-    const lastItem = newHistory[newHistory.length - 1];
-    if (lastItem?.type === 'function_call') {
-      setVoiceState('thinking');
-    }
-  }, []);
-
-  // ============= NOTES FUNCTIONS =============
-
-  // Extract key phrases (simplified - in real app this would use AI)
   const extractKeyPhrases = (text: string): string | null => {
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 20);
-    const importantPatterns = /\b(should|must|important|key|note|remember|action|todo|deadline|decision|agreed|confirmed|next steps?|follow[- ]?up)\b/i;
-
-    const importantSentences = sentences.filter(s => importantPatterns.test(s));
-    if (importantSentences.length > 0) {
-      return importantSentences[0].trim();
-    }
-    return null;
+    const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 20);
+    const importantPatterns =
+      /\b(should|must|important|key|note|remember|action|todo|deadline|decision|agreed|confirmed|next steps?|follow[- ]?up)\b/i;
+    const importantSentences = sentences.filter((s) => importantPatterns.test(s));
+    return importantSentences[0]?.trim() ?? null;
   };
 
-  // Add a note
   const addNote = useCallback((note: VoiceNote) => {
-    setNotes(prev => [...prev, note]);
+    setNotes((prev) => [...prev, note]);
     setTimeout(() => {
       if (notesContainerRef.current) {
         notesContainerRef.current.scrollTop = notesContainerRef.current.scrollHeight;
@@ -316,103 +264,151 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
     }, 100);
   }, []);
 
-  // Add manual note
-  const handleAddManualNote = () => {
-    if (!newNoteText.trim()) return;
+  const handleQuickCapture = useCallback(() => {
     addNote({
       id: generateId(),
-      content: newNoteText.trim(),
+      content: `Capture at ${new Date().toLocaleTimeString()}`,
       timestamp: new Date(),
-      type: 'manual'
+      type: 'highlight',
     });
-    setNewNoteText('');
-    toast.success('Note added');
-  };
+    toast.success('Pinned to session', { duration: 1400 });
+  }, [addNote]);
 
-  // Delete note
-  const handleDeleteNote = (id: string) => {
-    setNotes(prev => prev.filter(n => n.id !== id));
-    toast.success('Note deleted');
-  };
-
-  // Edit note
-  const handleStartEditNote = (note: VoiceNote) => {
-    setEditingNoteId(note.id);
-    setEditingNoteContent(note.content);
-  };
-
-  const handleSaveEditNote = () => {
-    if (!editingNoteId || !editingNoteContent.trim()) return;
-    setNotes(prev => prev.map(n =>
-      n.id === editingNoteId ? { ...n, content: editingNoteContent.trim() } : n
-    ));
-    setEditingNoteId(null);
-    setEditingNoteContent('');
-    toast.success('Note updated');
-  };
-
-  // Format notes for export
-  const formatNotesForExport = useCallback((format: 'text' | 'markdown' | 'json'): string => {
-    const header = `Pulse Voice Chat Notes\nSession: ${new Date().toLocaleString()}\n`;
-
-    switch (format) {
-      case 'markdown':
-        return `# ${header}\n\n${notes.map(n =>
-          `- **[${n.type.toUpperCase()}]** ${n.content}\n  *${n.timestamp.toLocaleTimeString()}*`
-        ).join('\n\n')}`;
-
-      case 'json':
-        return JSON.stringify({
-          exportedAt: new Date().toISOString(),
-          sessionId: userId,
-          notes: notes.map(n => ({
-            content: n.content,
-            type: n.type,
-            timestamp: n.timestamp.toISOString(),
-            speaker: n.speaker
-          }))
-        }, null, 2);
-
-      default:
-        return `${header}${'='.repeat(40)}\n\n${notes.map(n =>
-          `[${n.type.toUpperCase()}] ${n.content}\n  - ${n.timestamp.toLocaleTimeString()}`
-        ).join('\n\n')}`;
+  /* ── Voice agent callbacks ────────────────────────────────── */
+  const handleConnectionChange = useCallback((connected: boolean, connecting: boolean) => {
+    setIsConnected(connected);
+    setIsConnecting(connecting);
+    if (connected) {
+      setVoiceState('listening');
+      if (!sessionIdRef.current) sessionIdRef.current = generateId();
+      toast.success('Connected', { duration: 1400 });
+    } else if (!connecting) {
+      setVoiceState('idle');
+    } else {
+      setVoiceState('connecting');
     }
-  }, [notes, userId]);
+  }, []);
 
-  // Native share
+  const handleTranscript = useCallback(
+    (text: string, role: 'user' | 'assistant', isFinal: boolean) => {
+      setCurrentTranscript(text);
+
+      if (role === 'user') {
+        setVoiceState(isFinal ? 'thinking' : 'listening');
+      } else {
+        setVoiceState(isFinal ? 'listening' : 'speaking');
+      }
+
+      if (isFinal && text.trim()) {
+        const newMessage: ConversationMessage = {
+          id: generateId(),
+          role,
+          content: text,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, newMessage]);
+
+        if (role === 'assistant' && autoNotes) {
+          const keyPhrase = extractKeyPhrases(text);
+          if (keyPhrase) {
+            addNote({
+              id: generateId(),
+              content: keyPhrase,
+              timestamp: new Date(),
+              type: 'auto',
+              speaker: 'assistant',
+            });
+          }
+        }
+      }
+    },
+    [autoNotes, addNote]
+  );
+
+  const handleAudioLevel = useCallback(
+    (level: number, isListening: boolean, isSpeaking: boolean) => {
+      setAudioLevel(level);
+      if (isConnected && !isPaused) {
+        if (isSpeaking) setVoiceState('speaking');
+        else if (isListening) setVoiceState('listening');
+      }
+    },
+    [isConnected, isPaused]
+  );
+
+  const handleHistoryUpdate = useCallback((newHistory: RealtimeHistoryItem[]) => {
+    setHistory(newHistory);
+    const lastItem = newHistory[newHistory.length - 1];
+    if (lastItem?.type === 'function_call') setVoiceState('thinking');
+  }, []);
+
+  /* ── Notes export ─────────────────────────────────────────── */
+  const formatNotesForExport = useCallback(
+    (format: 'text' | 'markdown' | 'json'): string => {
+      const header = `Pulse Chat Notes\nSession: ${new Date().toLocaleString()}\n`;
+      switch (format) {
+        case 'markdown':
+          return `# ${header}\n\n${notes
+            .map(
+              (n) =>
+                `- **[${n.type.toUpperCase()}]** ${n.content}\n  *${n.timestamp.toLocaleTimeString()}*`
+            )
+            .join('\n\n')}`;
+        case 'json':
+          return JSON.stringify(
+            {
+              exportedAt: new Date().toISOString(),
+              sessionId: userId,
+              notes: notes.map((n) => ({
+                content: n.content,
+                type: n.type,
+                timestamp: n.timestamp.toISOString(),
+                speaker: n.speaker,
+              })),
+            },
+            null,
+            2
+          );
+        default:
+          return `${header}${'='.repeat(40)}\n\n${notes
+            .map(
+              (n) =>
+                `[${n.type.toUpperCase()}] ${n.content}\n  - ${n.timestamp.toLocaleTimeString()}`
+            )
+            .join('\n\n')}`;
+      }
+    },
+    [notes, userId]
+  );
+
   const handleNativeShare = async () => {
     const content = formatNotesForExport('text');
-
     if (isNative) {
       try {
         await Share.share({
-          title: 'Pulse Voice Chat Notes',
+          title: 'Pulse Chat Notes',
           text: content,
-          dialogTitle: 'Share your notes'
+          dialogTitle: 'Share your notes',
         });
         toast.success('Shared successfully');
-      } catch (error) {
-        console.error('Share failed:', error);
+      } catch {
         toast.error('Share failed');
       }
     } else {
       try {
         await navigator.clipboard.writeText(content);
         toast.success('Notes copied to clipboard');
-      } catch (error) {
+      } catch {
         toast.error('Failed to copy notes');
       }
     }
     setShowExportMenu(false);
   };
 
-  // Download notes
   const handleDownloadNotes = (format: 'text' | 'markdown' | 'json') => {
     const content = formatNotesForExport(format);
     const extensions = { text: 'txt', markdown: 'md', json: 'json' };
     const mimeTypes = { text: 'text/plain', markdown: 'text/markdown', json: 'application/json' };
-
     const blob = new Blob([content], { type: mimeTypes[format] });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -420,13 +416,11 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
     a.download = `pulse-notes-${new Date().toISOString().slice(0, 10)}.${extensions[format]}`;
     a.click();
     URL.revokeObjectURL(url);
-
     toast.success(`Notes downloaded as ${format.toUpperCase()}`);
     setShowExportMenu(false);
   };
 
-  // Send to archives
-  const handleSendToArchive = () => {
+  const handleSendToArchiveLocal = () => {
     if (onSendToArchive) {
       onSendToArchive(notes);
       toast.success('Notes sent to Archives');
@@ -435,7 +429,7 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
       existingArchives.push({
         id: generateId(),
         notes,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
       localStorage.setItem('pulse_voice_archives', JSON.stringify(existingArchives));
       toast.success('Notes archived locally');
@@ -443,12 +437,11 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
     setShowExportMenu(false);
   };
 
-  // Send to email
   const handleSendToEmail = () => {
     if (onSendToEmail) {
       onSendToEmail(notes);
     } else {
-      const subject = encodeURIComponent('Pulse Voice Chat Notes');
+      const subject = encodeURIComponent('Pulse Chat Notes');
       const body = encodeURIComponent(formatNotesForExport('text'));
       window.open(`mailto:?subject=${subject}&body=${body}`);
       toast.success('Email client opened');
@@ -456,111 +449,174 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
     setShowExportMenu(false);
   };
 
-  // Copy to clipboard
   const handleCopyNotes = async () => {
     try {
       await navigator.clipboard.writeText(formatNotesForExport('text'));
       toast.success('Notes copied to clipboard');
-    } catch (error) {
+    } catch {
       toast.error('Failed to copy notes');
     }
     setShowExportMenu(false);
   };
 
-  // ============= VOICE CONNECTION =============
+  const handleAddManualNote = () => {
+    if (!newNoteText.trim()) return;
+    addNote({
+      id: generateId(),
+      content: newNoteText.trim(),
+      timestamp: new Date(),
+      type: 'manual',
+    });
+    setNewNoteText('');
+    toast.success('Note added');
+  };
 
-  // Connect to voice
+  const handleDeleteNote = (id: string) => {
+    setNotes((prev) => prev.filter((n) => n.id !== id));
+    toast.success('Note deleted');
+  };
+
+  const handleStartEditNote = (note: VoiceNote) => {
+    setEditingNoteId(note.id);
+    setEditingNoteContent(note.content);
+  };
+
+  const handleSaveEditNote = () => {
+    if (!editingNoteId || !editingNoteContent.trim()) return;
+    setNotes((prev) =>
+      prev.map((n) => (n.id === editingNoteId ? { ...n, content: editingNoteContent.trim() } : n))
+    );
+    setEditingNoteId(null);
+    setEditingNoteContent('');
+    toast.success('Note updated');
+  };
+
+  /* ── Voice connection ─────────────────────────────────────── */
+  const connectInFlightRef = useRef(false);
+
   const handleConnect = useCallback(async () => {
-    console.log('[PulseVoiceChat] Connecting...');
-
-    // Set connecting state immediately for UI feedback
+    // Guard against double-firing from rapid Space presses or click+kbd races.
+    if (connectInFlightRef.current) return;
+    connectInFlightRef.current = true;
     setIsConnecting(true);
 
-    // Wait for the lazy-loaded component to be ready (up to 3 seconds)
+    // Wait for the lazy-loaded agent to mount. We poll the ref instead of using
+    // a promise because the lazy boundary doesn't expose a ready signal — but
+    // we cap to 3s and surface a clear retry path instead of hanging forever.
     let attempts = 0;
     const maxAttempts = 30;
     while (!agentRef.current && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       attempts++;
     }
-
     if (!agentRef.current) {
-      console.error('[PulseVoiceChat] Voice agent not ready after waiting');
-      toast.error('Voice agent not ready. Please try again.');
+      toast.error('Voice agent did not load. Reload Pulse to retry.');
       setIsConnecting(false);
+      connectInFlightRef.current = false;
       return;
     }
-
     try {
       await agentRef.current.connect();
     } catch (error) {
-      console.error('[PulseVoiceChat] Connection failed:', error);
-      
-      let errorMessage = 'Failed to connect. Check your API key.';
+      let errorMessage = 'Failed to connect. Try again or check your sign-in.';
       if (error instanceof Error) {
-        if (error.message.includes('Microphone not found') || error.message.includes('NotFoundError')) {
-          errorMessage = 'Microphone not available. Please check that your microphone is connected and enabled.';
-        } else if (error.message.includes('not accessible') || error.message.includes('NotReadableError')) {
-          errorMessage = 'Microphone is not accessible. It may be in use by another application.';
-        } else if (error.message.includes('Permission denied') || error.message.includes('NotAllowedError')) {
-          errorMessage = 'Microphone permission denied. Please allow microphone access in your browser settings.';
+        const msg = error.message;
+        if (msg.includes('Microphone not found') || msg.includes('NotFoundError')) {
+          errorMessage = 'Microphone not found. Connect a mic and try again.';
+        } else if (msg.includes('not accessible') || msg.includes('NotReadableError')) {
+          errorMessage = 'Microphone is in use by another app. Close it and retry.';
+        } else if (msg.includes('Permission denied') || msg.includes('NotAllowedError')) {
+          errorMessage = 'Microphone access blocked. Allow it in browser settings, then retry.';
+        } else if (/401|unauthorized|invalid.*token|expired/i.test(msg)) {
+          errorMessage = 'Sign-in expired. Reload Pulse or sign in again to reconnect.';
+          // Surface the warning banner so the user has a recovery path.
+          setOpenaiApiKey('');
+          setTokenError('Sign-in expired. Reload Pulse or sign in again to reconnect voice.');
         } else {
-          errorMessage = error.message || errorMessage;
+          errorMessage = msg || errorMessage;
         }
       }
-      
       toast.error(errorMessage, { duration: 5000 });
       setVoiceState('idle');
       setIsConnecting(false);
+    } finally {
+      connectInFlightRef.current = false;
     }
   }, []);
 
-  // Disconnect from voice
+  /* ── Persist session on disconnect / unmount ─────────────── */
+  const persistSession = useCallback(() => {
+    if (!sessionIdRef.current) return;
+    if (notes.length === 0 && messages.length === 0) {
+      sessionIdRef.current = null;
+      return;
+    }
+    const startedAt = sessionStartTime ?? Date.now() - sessionElapsed * 1000;
+    const endedAt = Date.now();
+    const storedNotes: StoredVoiceNote[] = notes.map((n) => ({
+      id: n.id,
+      content: n.content,
+      timestamp: n.timestamp.getTime(),
+      type: n.type,
+      speaker: n.speaker,
+    }));
+    const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
+    const record: VoiceSessionRecord = {
+      id: sessionIdRef.current,
+      startedAt,
+      endedAt,
+      durationSec: Math.max(1, sessionElapsed),
+      captureCount: notes.length,
+      takeaway: summarizeForTakeaway(storedNotes),
+      lastLine: lastAssistant
+        ? lastAssistant.content.length > 200
+          ? lastAssistant.content.slice(0, 197) + '…'
+          : lastAssistant.content
+        : undefined,
+      notes: storedNotes,
+    };
+    const next = saveVoiceSession(record);
+    setRecentSessions(next);
+    sessionIdRef.current = null;
+  }, [notes, messages, sessionElapsed, sessionStartTime]);
+
   const handleDisconnect = useCallback(async () => {
-    console.log('[PulseVoiceChat] Disconnecting...');
     if (agentRef.current) {
       await agentRef.current.disconnect();
     }
+    persistSession();
     setVoiceState('idle');
     setAudioLevel(0);
     setIsPaused(false);
     setCurrentTranscript('');
-  }, []);
+  }, [persistSession]);
 
-  // Toggle pause — mutes mic AND mutes remote audio playback
   const handleTogglePause = () => {
     const newPaused = !isPaused;
     setIsPaused(newPaused);
     if (agentRef.current) {
-      if (newPaused) {
-        agentRef.current.pauseSession();
-      } else {
-        agentRef.current.resumeSession();
-      }
+      if (newPaused) agentRef.current.pauseSession();
+      else agentRef.current.resumeSession();
     }
-    toast.success(newPaused ? 'Paused' : 'Resumed');
+    toast.success(newPaused ? 'Paused' : 'Resumed', { duration: 1200 });
   };
 
-  // Toggle mute — actually disables the microphone audio track
-  const handleToggleMute = () => {
-    const newMuted = !isMuted;
-    setIsMuted(newMuted);
-    if (agentRef.current) {
-      if (newMuted) {
-        agentRef.current.muteAudio();
-      } else {
-        agentRef.current.unmuteAudio();
+  const handleToggleMute = useCallback(() => {
+    setIsMuted((prev) => {
+      const next = !prev;
+      if (agentRef.current) {
+        if (next) agentRef.current.muteAudio();
+        else agentRef.current.unmuteAudio();
       }
-    }
-  };
+      return next;
+    });
+  }, []);
 
-  // ============= CONTEXT FILE MANAGEMENT =============
-
+  /* ── Context file management ─────────────────────────────── */
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-
-    Array.from(files).forEach(file => {
+    Array.from(files).forEach((file) => {
       const reader = new FileReader();
       reader.onload = (event) => {
         const content = event.target?.result as string;
@@ -569,53 +625,53 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
           name: file.name,
           type: 'file',
           content,
-          size: file.size
+          size: file.size,
         };
-        setContextFiles(prev => [...prev, newFile]);
+        setContextFiles((prev) => [...prev, newFile]);
         toast.success(`Added: ${file.name}`);
       };
       reader.readAsText(file);
     });
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
 
   const handleAddTextContext = useCallback(() => {
     if (!contextText.trim()) return;
     const newContext: ContextFile = {
       id: generateId(),
-      name: `Note ${contextFiles.filter(f => f.type === 'text').length + 1}`,
+      name: `Note ${contextFiles.filter((f) => f.type === 'text').length + 1}`,
       type: 'text',
-      content: contextText.trim()
+      content: contextText.trim(),
     };
-    setContextFiles(prev => [...prev, newContext]);
+    setContextFiles((prev) => [...prev, newContext]);
     setContextText('');
     toast.success('Context added');
   }, [contextText, contextFiles]);
 
   const removeContextFile = useCallback((id: string) => {
-    setContextFiles(prev => prev.filter(f => f.id !== id));
+    setContextFiles((prev) => prev.filter((f) => f.id !== id));
   }, []);
 
-  // Export conversation transcript
   const handleExportTranscript = useCallback(() => {
     if (messages.length === 0) {
       toast.error('No conversation to export');
       return;
     }
-    const header = `# Pulse Voice Chat Transcript\n\n**Exported:** ${new Date().toLocaleString()}\n\n---\n\n`;
-    const content = messages.map(msg => {
-      const speaker = msg.role === 'user' ? '**You**' : '**Pulse AI**';
-      return `${speaker} *(${msg.timestamp.toLocaleTimeString()})*:\n> ${msg.content.replace(/\n/g, '\n> ')}\n`;
-    }).join('\n');
-
+    const header = `# Pulse Chat Transcript\n\n**Exported:** ${new Date().toLocaleString()}\n\n---\n\n`;
+    const content = messages
+      .map((msg) => {
+        const speaker = msg.role === 'user' ? '**You**' : '**Pulse AI**';
+        return `${speaker} *(${msg.timestamp.toLocaleTimeString()})*:\n> ${msg.content.replace(
+          /\n/g,
+          '\n> '
+        )}\n`;
+      })
+      .join('\n');
     const blob = new Blob([header + content], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `pulse-voice-chat-${new Date().toISOString().slice(0, 10)}.md`;
+    a.download = `pulse-chat-${new Date().toISOString().slice(0, 10)}.md`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Transcript exported');
@@ -628,30 +684,25 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  // ============= CLEANUP ON UNMOUNT =============
-
-  // CRITICAL: Disconnect when component unmounts (user navigates away)
+  /* ── Cleanup on unmount ──────────────────────────────────── */
   useEffect(() => {
     return () => {
-      console.log('[PulseVoiceChat] Component unmounting - disconnecting voice...');
       if (agentRef.current) {
-        agentRef.current.disconnect().catch((err) => {
-          console.error('[PulseVoiceChat] Error during cleanup disconnect:', err);
-        });
+        agentRef.current.disconnect().catch(() => {});
       }
+      persistSession();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-scroll conversation history
+  /* ── Auto-scroll history (notes panel) ───────────────────── */
   useEffect(() => {
     if (historyRef.current) {
       historyRef.current.scrollTop = historyRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // Canvas visualization extracted to VoiceChatVisualizer component
-
-  // Session timer
+  /* ── Session timer ───────────────────────────────────────── */
   useEffect(() => {
     if (isConnected && !sessionStartTime) {
       setSessionStartTime(Date.now());
@@ -670,222 +721,373 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
     return () => clearInterval(interval);
   }, [sessionStartTime]);
 
-  const formatElapsed = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
+  /* ── Reset captures when session ends ─────────────────────── */
+  useEffect(() => {
+    if (!isConnected && !isConnecting) {
+      // After persistSession runs and disconnect propagates, clear in-memory captures
+      // so the next session starts fresh. Recent sessions list now holds the prior data.
+      setNotes([]);
+      setMessages([]);
+    }
+    // intentional: only reset when transitioning away from connected
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, isConnecting]);
 
-  // Simple state label for header
-  const stateLabel = voiceState === 'connecting' ? 'Connecting...'
-    : voiceState === 'listening' ? (isPaused ? 'Paused' : 'Listening...')
-    : voiceState === 'thinking' ? 'Thinking...'
-    : voiceState === 'speaking' ? 'Speaking...'
-    : 'Ready to connect';
+  /* ── Keyboard shortcuts ──────────────────────────────────── */
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+      // Ignore meta-modified shortcuts so we don't shadow browser ones
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
 
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        if (!openaiApiKey || isResolvingToken) return;
+        if (isConnecting) return;
+        if (!isConnected) handleConnect();
+        else handleTogglePause();
+      } else if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        handleQuickCapture();
+      } else if (e.key === 'm' || e.key === 'M') {
+        if (!isConnected) return;
+        e.preventDefault();
+        handleToggleMute();
+      } else if (e.key === 'Escape') {
+        if (showExportMenu) setShowExportMenu(false);
+        else if (showSettings) setShowSettings(false);
+        else if (showContextDrawer) setShowContextDrawer(false);
+        else if (showNotes) setShowNotes(false);
+        else onClose();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [
+    openaiApiKey,
+    isResolvingToken,
+    isConnecting,
+    isConnected,
+    handleConnect,
+    handleQuickCapture,
+    handleToggleMute,
+    showExportMenu,
+    showSettings,
+    showContextDrawer,
+    showNotes,
+    onClose,
+  ]);
+
+  /* ── Derived view models ─────────────────────────────────── */
+  const railLines: RailLine[] = useMemo(() => {
+    return messages.slice(-5).map((m) => ({
+      id: m.id,
+      text: truncateForRail(m.content),
+      role: m.role,
+    }));
+  }, [messages]);
+
+  const modelLabel = useMemo(() => {
+    const v = (voiceSettings.voice ?? 'alloy').toUpperCase();
+    const lang = (voiceSettings.language ?? 'en').toUpperCase();
+    return `GPT-4O · ${v} · ${lang}`;
+  }, [voiceSettings.voice, voiceSettings.language]);
+
+  const liveSession: LiveSessionView | undefined = useMemo(() => {
+    if (!isConnected && !isConnecting) return undefined;
+    return {
+      startedAt: sessionStartTime ?? Date.now(),
+      durationSec: sessionElapsed,
+      captures: notes.map((n) => ({
+        id: n.id,
+        content: n.content,
+        type: n.type,
+        speaker: n.speaker,
+      })),
+      takeawayDraft:
+        notes.find((n) => n.type === 'highlight')?.content ??
+        notes.find((n) => n.type === 'auto')?.content,
+      currentTranscript,
+    };
+  }, [isConnected, isConnecting, sessionStartTime, sessionElapsed, notes, currentTranscript]);
+
+  const stateLabel =
+    voiceState === 'connecting'
+      ? 'Connecting'
+      : voiceState === 'listening'
+      ? isPaused
+        ? 'Paused'
+        : 'Listening'
+      : voiceState === 'thinking'
+      ? 'Thinking'
+      : voiceState === 'speaking'
+      ? 'Speaking'
+      : isConnected
+      ? 'Connected'
+      : 'Disconnected';
+
+  const sessionTimerText = sessionStartTime ? formatDuration(sessionElapsed) : undefined;
+
+  /* ── Prompt selection: stash as text context, then connect ── */
+  const handlePromptSelect = useCallback(
+    (prompt: string) => {
+      const promptContext: ContextFile = {
+        id: generateId(),
+        name: 'Opening prompt',
+        type: 'text',
+        content: `Opening prompt the user wants you to start with:\n\n"${prompt}"`,
+      };
+      setContextFiles((prev) => [promptContext, ...prev]);
+      toast(`Try asking: "${prompt}"`, { duration: 3500 });
+      handleConnect();
+    },
+    [handleConnect]
+  );
+
+  const handleSessionDelete = useCallback((id: string) => {
+    const next = deleteVoiceSession(id);
+    setRecentSessions(next);
+    toast.success('Session removed');
+  }, []);
+
+  const handleSessionView = useCallback(
+    (session: VoiceSessionRecord) => {
+      setNotes(
+        session.notes.map((n) => ({
+          id: n.id,
+          content: n.content,
+          timestamp: new Date(n.timestamp),
+          type: n.type,
+          speaker: n.speaker,
+        }))
+      );
+      setShowNotes(true);
+      toast.success('Loaded notes from session');
+    },
+    []
+  );
+
+  /* ── Render ───────────────────────────────────────────────── */
   return (
     <div className="pulse-voice-chat">
-      {/* Header */}
+      {/* HEADER */}
       <header className="pvc-header">
         <div className="pvc-header-left">
-          <div className="pvc-logo">
-            <Waves className="pvc-logo-icon" />
-          </div>
+          <span className="pvc-brand" aria-hidden="true" />
           <div className="pvc-header-text">
-            <h1>Voice Chat</h1>
-            <span className={`pvc-status pvc-status--${voiceState}`}>
-              {isConnected ? stateLabel : 'Disconnected'}
-              {isConnected && sessionElapsed > 0 && (
-                <span className="pvc-timer"> {formatElapsed(sessionElapsed)}</span>
-              )}
+            <h1>Pulse Chat</h1>
+            <span className={`pvc-status pvc-status--${isPaused ? 'paused' : voiceState}`}>
+              {stateLabel}
+              {sessionTimerText && <span className="pvc-timer">{sessionTimerText}</span>}
             </span>
           </div>
         </div>
 
         <div className="pvc-header-right">
-          {/* Export transcript */}
           <button
             type="button"
             className="pvc-icon-btn"
             onClick={handleExportTranscript}
             disabled={messages.length === 0}
-            title="Export Transcript"
+            title="Export transcript"
           >
-            <Download size={20} />
+            <Download size={18} />
           </button>
 
-          {/* Notes toggle */}
           <button
             type="button"
             className={`pvc-icon-btn ${showNotes ? 'pvc-icon-btn--active' : ''}`}
-            onClick={() => setShowNotes(!showNotes)}
-            title="Toggle Notes"
+            onClick={() => setShowNotes((s) => !s)}
+            title="Toggle notes"
           >
-            <FileText size={20} />
-            {notes.length > 0 && (
-              <span className="pvc-badge">{notes.length}</span>
-            )}
+            <FileText size={18} />
+            {notes.length > 0 && <span className="pvc-badge">{notes.length}</span>}
           </button>
 
-          {/* Settings */}
           <button
             type="button"
             className={`pvc-icon-btn ${showSettings ? 'pvc-icon-btn--active' : ''}`}
-            onClick={() => setShowSettings(!showSettings)}
+            onClick={() => setShowSettings((s) => !s)}
             title="Settings"
           >
-            <Settings size={20} />
+            <Settings size={18} />
           </button>
 
-          {/* Close */}
-          <button type="button" className="pvc-icon-btn pvc-icon-btn--close" onClick={onClose} title="Close">
-            <X size={20} />
+          <button
+            type="button"
+            className="pvc-icon-btn pvc-icon-btn--close"
+            onClick={onClose}
+            title="Close (Esc)"
+          >
+            <X size={18} />
           </button>
         </div>
       </header>
 
-      {/* Main content */}
-      <div className="pvc-content">
-        {/* Token resolution loading */}
-        {isResolvingToken && (
-          <div className="pvc-api-warning">
-            <Loader2 size={20} className="animate-spin" />
-            <div>
-              <strong>Preparing voice session...</strong>
-              <p>Fetching a secure session token.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Token resolution error */}
-        {!isResolvingToken && !openaiApiKey && (
-          <div className="pvc-api-warning">
-            <AlertCircle size={20} />
-            <div>
-              <strong>Voice chat unavailable</strong>
-              <p>{tokenError || 'OpenAI Realtime is temporarily unavailable. Please try again later.'}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Visualizer */}
-        <VoiceChatVisualizer
+      {/* MAIN GRID */}
+      <div className="pvc-main">
+        <TranscriptBreathing
           voiceState={voiceState}
           audioLevel={audioLevel}
           isPaused={isPaused}
-          currentTranscript={currentTranscript}
-          openaiApiKey={openaiApiKey}
+          recentLines={railLines}
+          modelLabel={modelLabel}
+          sessionTimer={sessionTimerText}
         />
 
-        {/* Controls */}
-        <div className="pvc-controls">
-          {/* Secondary controls */}
-          <div className="pvc-controls-secondary">
-            <button
-              type="button"
-              className={`pvc-control-btn pvc-control-btn--secondary ${isMuted ? 'pvc-control-btn--muted' : ''}`}
-              onClick={handleToggleMute}
-              disabled={!isConnected}
-              title={isMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-            </button>
-          </div>
-
-          {/* Main control */}
-          <button
-            type="button"
-            className={`pvc-main-btn pvc-main-btn--${voiceState} ${isPaused ? 'pvc-main-btn--paused' : ''}`}
-            onClick={isConnected ? handleTogglePause : handleConnect}
-            disabled={!openaiApiKey || isConnecting}
-          >
-            <div className="pvc-main-btn-inner">
-              {isConnecting ? (
-                <Loader2 size={32} className="animate-spin" />
-              ) : !isConnected ? (
-                <Mic size={32} />
-              ) : isPaused ? (
-                <Play size={32} />
-              ) : (
-                <Pause size={32} />
+        <div className="pvc-canvas">
+          {/* Token resolution feedback */}
+          {(isResolvingToken || (!isResolvingToken && !openaiApiKey)) && (
+            <div style={{ padding: '0.75rem 2rem 0' }}>
+              {isResolvingToken && (
+                <div className="pvc-api-warning">
+                  <Loader2 size={18} className="animate-spin" />
+                  <div>
+                    <strong>Preparing voice session</strong>
+                    <p>Fetching a secure session token.</p>
+                  </div>
+                </div>
+              )}
+              {!isResolvingToken && !openaiApiKey && (
+                <div className="pvc-api-warning" role="alert">
+                  <AlertCircle size={18} />
+                  <div>
+                    <strong>Voice chat unavailable</strong>
+                    <p>
+                      {tokenError ?? 'OpenAI Realtime is temporarily unavailable. Try again in a moment.'}
+                    </p>
+                    <button type="button" className="pvc-api-warning-retry" onClick={retryToken}>
+                      <RefreshCw size={13} aria-hidden="true" />
+                      Retry
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
-            <div className="pvc-main-btn-ring" />
-            <div className="pvc-main-btn-ring pvc-main-btn-ring--delayed" />
-          </button>
+          )}
 
-          {/* Secondary controls */}
-          <div className="pvc-controls-secondary">
+          <SessionsCanvas
+            isConnected={isConnected}
+            isConnecting={isConnecting}
+            liveSession={liveSession}
+            recentSessions={recentSessions}
+            examplePrompts={EXAMPLE_PROMPTS}
+            onConnect={handleConnect}
+            onPromptSelect={handlePromptSelect}
+            onSessionView={handleSessionView}
+            onSessionDelete={handleSessionDelete}
+          />
+
+          {/* Controls row */}
+          <div className="pvc-controls">
             <button
               type="button"
-              className="pvc-control-btn pvc-control-btn--secondary pvc-control-btn--stop"
+              className={`pvc-control-btn ${isMuted ? 'pvc-control-btn--muted' : ''}`}
+              onClick={handleToggleMute}
+              disabled={!isConnected}
+              title={isMuted ? 'Unmute (M)' : 'Mute (M)'}
+            >
+              {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            </button>
+
+            <button
+              type="button"
+              className={`pvc-main-btn pvc-main-btn--${voiceState} ${
+                isPaused ? 'pvc-main-btn--paused' : ''
+              }`}
+              onClick={isConnected ? handleTogglePause : handleConnect}
+              disabled={!openaiApiKey || isConnecting}
+            >
+              {isConnecting ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Connecting</span>
+                </>
+              ) : !isConnected ? (
+                <>
+                  <Mic size={14} />
+                  <span>Connect</span>
+                  <span className="pvc-main-btn-key">SPACE</span>
+                </>
+              ) : isPaused ? (
+                <>
+                  <Play size={14} />
+                  <span>Resume</span>
+                </>
+              ) : (
+                <>
+                  <Pause size={14} />
+                  <span>Pause</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className="pvc-control-btn pvc-control-btn--stop"
               onClick={handleDisconnect}
               disabled={!isConnected}
-              title="End Session"
+              title="End session"
             >
-              <MicOff size={20} />
+              <MicOff size={16} />
             </button>
+
             <button
               type="button"
-              className={`pvc-control-btn pvc-control-btn--secondary ${contextFiles.length > 0 ? 'pvc-control-btn--has-context' : ''}`}
+              className={`pvc-control-btn ${
+                contextFiles.length > 0 ? 'pvc-control-btn--has-context' : ''
+              }`}
               onClick={() => setShowContextDrawer(true)}
-              title="Add Context"
+              title="Add context"
             >
-              <Paperclip size={20} />
-              {contextFiles.length > 0 && (
-                <span className="pvc-badge">{contextFiles.length}</span>
-              )}
+              <Paperclip size={16} />
+              {contextFiles.length > 0 && <span className="pvc-badge">{contextFiles.length}</span>}
             </button>
           </div>
         </div>
-
-        {/* Conversation history */}
-        {messages.length > 0 && (
-          <div className="pvc-history">
-            <div className="pvc-history-inner" ref={historyRef}>
-              {messages.slice(-6).map(msg => (
-                <div key={msg.id} className={`pvc-history-msg pvc-history-msg--${msg.role}`}>
-                  <div className={`pvc-history-bubble pvc-history-bubble--${msg.role}`}>
-                    {msg.content}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Quick note button */}
-        <button
-          type="button"
-          className="pvc-quick-note-btn"
-          onClick={() => {
-            addNote({
-              id: generateId(),
-              content: `Quick note at ${new Date().toLocaleTimeString()}`,
-              timestamp: new Date(),
-              type: 'highlight'
-            });
-            toast.success('Quick note added');
-          }}
-        >
-          <Sparkles size={16} />
-          Quick Note
-        </button>
       </div>
 
-      {/* Hidden RealtimeVoiceAgent - handles actual connection */}
+      {/* LEGEND */}
+      <nav className="pvc-legend" aria-label="Pulse Chat keyboard shortcuts">
+        <span className="pvc-legend-item">
+          <kbd className="pvc-legend-key">SPACE</kbd>
+          <span>Connect</span>
+        </span>
+        <span className="pvc-legend-item">
+          <kbd className="pvc-legend-key">N</kbd>
+          <span>Capture</span>
+        </span>
+        <span className="pvc-legend-item">
+          <kbd className="pvc-legend-key">M</kbd>
+          <span>Mute</span>
+        </span>
+        <span className="pvc-legend-item">
+          <kbd className="pvc-legend-key">ESC</kbd>
+          <span>Close</span>
+        </span>
+      </nav>
+
+      {/* Hidden RealtimeVoiceAgent — handles actual connection */}
       {openaiApiKey && (
         <div className="hidden">
           <ErrorBoundary
             componentName="Voice Connection"
-            onError={(error) => {
-              console.error('[PulseVoiceChat] Voice agent error:', error);
+            onError={() => {
               setIsConnected(false);
               setIsConnecting(false);
               setVoiceState('idle');
-              toast.error(isMobilePlatform
-                ? 'Voice features may be limited on mobile devices'
-                : 'Voice connection failed. Please try again.');
+              toast.error(
+                isMobilePlatform
+                  ? 'Voice features may be limited on mobile devices'
+                  : 'Voice connection failed. Please try again.'
+              );
             }}
           >
             <Suspense fallback={null}>
@@ -907,63 +1109,58 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
         </div>
       )}
 
-      {/* Notes Panel */}
+      {/* NOTES PANEL */}
       <div className={`pvc-notes-panel ${showNotes ? 'pvc-notes-panel--open' : ''}`}>
         <div className="pvc-notes-header">
           <h2>
-            <FileText size={18} />
+            <FileText size={16} />
             Session Notes
           </h2>
           <div className="pvc-notes-header-actions">
-            {/* Export menu toggle */}
             <div className="pvc-export-menu-container">
               <button
                 type="button"
                 className={`pvc-icon-btn ${showExportMenu ? 'pvc-icon-btn--active' : ''}`}
-                onClick={() => setShowExportMenu(!showExportMenu)}
+                onClick={() => setShowExportMenu((s) => !s)}
                 disabled={notes.length === 0}
-                title="Export Notes"
+                title="Export notes"
               >
-                <Share2 size={18} />
+                <Share2 size={16} />
               </button>
-
               {showExportMenu && (
                 <div className="pvc-export-menu">
                   <button type="button" onClick={handleNativeShare}>
-                    <ExternalLink size={16} />
-                    Share
+                    <ExternalLink size={14} /> Share
                   </button>
                   <button type="button" onClick={handleCopyNotes}>
-                    <Copy size={16} />
-                    Copy
+                    <Copy size={14} /> Copy
                   </button>
                   <button type="button" onClick={() => handleDownloadNotes('text')}>
-                    <Download size={16} />
-                    Download TXT
+                    <Download size={14} /> Download TXT
                   </button>
                   <button type="button" onClick={() => handleDownloadNotes('markdown')}>
-                    <Download size={16} />
-                    Download MD
+                    <Download size={14} /> Download MD
                   </button>
-                  <button type="button" onClick={handleSendToArchive}>
-                    <Archive size={16} />
-                    Send to Archives
+                  <button type="button" onClick={handleSendToArchiveLocal}>
+                    <Archive size={14} /> Send to Archives
                   </button>
                   <button type="button" onClick={handleSendToEmail}>
-                    <Mail size={16} />
-                    Send to Email
+                    <Mail size={14} /> Send to Email
                   </button>
                 </div>
               )}
             </div>
-
-            <button type="button" className="pvc-icon-btn" onClick={() => setShowNotes(false)} title="Close Notes">
-              <ChevronDown size={18} />
+            <button
+              type="button"
+              className="pvc-icon-btn"
+              onClick={() => setShowNotes(false)}
+              title="Close notes"
+            >
+              <ChevronDown size={16} />
             </button>
           </div>
         </div>
 
-        {/* Auto-notes toggle */}
         <div className="pvc-notes-settings">
           <label className="pvc-toggle">
             <input
@@ -973,29 +1170,28 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
             />
             <span className="pvc-toggle-slider" />
             <span className="pvc-toggle-label">
-              <Brain size={14} />
+              <Brain size={13} />
               Auto-capture key points
             </span>
           </label>
         </div>
 
-        {/* Notes list */}
         <div className="pvc-notes-list" ref={notesContainerRef}>
           {notes.length === 0 ? (
             <div className="pvc-notes-empty">
-              <FileText size={32} />
+              <FileText size={28} />
               <p>No notes yet</p>
-              <span>Notes will appear here as you chat</span>
+              <span>Press N to capture</span>
             </div>
           ) : (
-            notes.map(note => (
+            notes.map((note) => (
               <div key={note.id} className={`pvc-note pvc-note--${note.type}`}>
                 <div className="pvc-note-header">
                   <span className={`pvc-note-type pvc-note-type--${note.type}`}>
-                    {note.type === 'auto' ? 'Auto' : note.type === 'highlight' ? 'Highlight' : 'Manual'}
+                    {note.type === 'auto' ? 'Auto' : note.type === 'highlight' ? 'Pin' : 'Manual'}
                   </span>
                   <span className="pvc-note-time">
-                    <Clock size={12} />
+                    <Clock size={11} />
                     {note.timestamp.toLocaleTimeString()}
                   </span>
                 </div>
@@ -1010,8 +1206,7 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
                     />
                     <div className="pvc-note-edit-actions">
                       <button type="button" onClick={handleSaveEditNote}>
-                        <Check size={14} />
-                        Save
+                        <Check size={13} /> Save
                       </button>
                       <button type="button" onClick={() => setEditingNoteId(null)}>
                         Cancel
@@ -1022,11 +1217,19 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
                   <>
                     <p className="pvc-note-content">{note.content}</p>
                     <div className="pvc-note-actions">
-                      <button type="button" onClick={() => handleStartEditNote(note)} title="Edit">
-                        <Edit3 size={14} />
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditNote(note)}
+                        title="Edit"
+                      >
+                        <Edit3 size={13} />
                       </button>
-                      <button type="button" onClick={() => handleDeleteNote(note.id)} title="Delete">
-                        <Trash2 size={14} />
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteNote(note.id)}
+                        title="Delete"
+                      >
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </>
@@ -1036,11 +1239,10 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
           )}
         </div>
 
-        {/* Add manual note */}
         <div className="pvc-notes-add">
           <input
             type="text"
-            placeholder="Add a note..."
+            placeholder="Add a note…"
             value={newNoteText}
             onChange={(e) => setNewNoteText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddManualNote()}
@@ -1049,23 +1251,28 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
             type="button"
             onClick={handleAddManualNote}
             disabled={!newNoteText.trim()}
-            title="Add Note"
+            title="Add note"
           >
-            <Plus size={18} />
+            <Plus size={16} />
           </button>
         </div>
       </div>
 
-      {/* Settings Panel */}
+      {/* SETTINGS PANEL */}
       {showSettings && (
         <div className="pvc-settings-panel">
           <div className="pvc-settings-header">
             <h2>
-              <Settings size={18} />
+              <Settings size={16} />
               Voice Settings
             </h2>
-            <button type="button" className="pvc-icon-btn" onClick={() => setShowSettings(false)} title="Close Settings">
-              <X size={18} />
+            <button
+              type="button"
+              className="pvc-icon-btn"
+              onClick={() => setShowSettings(false)}
+              title="Close settings"
+            >
+              <X size={16} />
             </button>
           </div>
 
@@ -1075,8 +1282,10 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
               <select
                 id="voice-select"
                 value={voiceSettings.voice}
-                onChange={(e) => setVoiceSettings(prev => ({ ...prev, voice: e.target.value as any }))}
-                title="Select AI Voice"
+                onChange={(e) =>
+                  setVoiceSettings((prev) => ({ ...prev, voice: e.target.value as any }))
+                }
+                title="Select AI voice"
               >
                 <option value="alloy">Alloy (Neutral)</option>
                 <option value="ash">Ash (Neutral)</option>
@@ -1096,17 +1305,19 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
               <select
                 id="language-select"
                 value={voiceSettings.language || 'en'}
-                onChange={(e) => setVoiceSettings(prev => ({ ...prev, language: e.target.value as any }))}
+                onChange={(e) =>
+                  setVoiceSettings((prev) => ({ ...prev, language: e.target.value as any }))
+                }
                 title="Select conversation language"
               >
                 <option value="en">English</option>
-                <option value="es">Spanish (Espanol)</option>
-                <option value="fr">French (Francais)</option>
-                <option value="de">German (Deutsch)</option>
-                <option value="it">Italian (Italiano)</option>
-                <option value="pt">Portuguese (Portugues)</option>
-                <option value="nl">Dutch (Nederlands)</option>
-                <option value="pl">Polish (Polski)</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="it">Italian</option>
+                <option value="pt">Portuguese</option>
+                <option value="nl">Dutch</option>
+                <option value="pl">Polish</option>
                 <option value="ru">Russian</option>
                 <option value="ja">Japanese</option>
                 <option value="ko">Korean</option>
@@ -1119,8 +1330,10 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
               <select
                 id="turn-detection"
                 value={voiceSettings.turnDetection}
-                onChange={(e) => setVoiceSettings(prev => ({ ...prev, turnDetection: e.target.value as any }))}
-                title="Select Turn Detection Mode"
+                onChange={(e) =>
+                  setVoiceSettings((prev) => ({ ...prev, turnDetection: e.target.value as any }))
+                }
+                title="Select turn detection mode"
               >
                 <option value="semantic_vad">Semantic VAD (Smart)</option>
                 <option value="server_vad">Server VAD (Fast)</option>
@@ -1132,7 +1345,9 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
               <select
                 id="noise-reduction"
                 value={voiceSettings.noiseReduction || 'near_field'}
-                onChange={(e) => setVoiceSettings(prev => ({ ...prev, noiseReduction: e.target.value as any }))}
+                onChange={(e) =>
+                  setVoiceSettings((prev) => ({ ...prev, noiseReduction: e.target.value as any }))
+                }
                 title="Select noise reduction mode"
               >
                 <option value="near_field">Near Field (Close Mic)</option>
@@ -1163,39 +1378,50 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
                 <span className="pvc-toggle-label">Active AI Mode</span>
               </label>
               <p className="pvc-setting-hint">
-                {aiMode === 'active' ? 'AI actively participates' : 'AI only responds when prompted'}
+                {aiMode === 'active'
+                  ? 'AI actively participates'
+                  : 'AI only responds when prompted'}
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Context Drawer */}
+      {/* CONTEXT DRAWER */}
       {showContextDrawer && (
         <div className="pvc-backdrop" onClick={() => setShowContextDrawer(false)} />
       )}
       <div className={`pvc-context-drawer ${showContextDrawer ? 'pvc-context-drawer--open' : ''}`}>
-        <div className="pvc-context-drawer-handle" onClick={() => setShowContextDrawer(false)}>
+        <div
+          className="pvc-context-drawer-handle"
+          onClick={() => setShowContextDrawer(false)}
+        >
           <div className="pvc-context-drawer-handle-bar" />
         </div>
         <div className="pvc-context-drawer-content">
           <div className="pvc-context-drawer-header">
             <h2>
-              <FolderOpen size={18} />
+              <FolderOpen size={16} />
               Conversation Context
             </h2>
-            <button type="button" className="pvc-icon-btn" onClick={() => setShowContextDrawer(false)} title="Close context drawer">
-              <ChevronDown size={18} />
+            <button
+              type="button"
+              className="pvc-icon-btn"
+              onClick={() => setShowContextDrawer(false)}
+              title="Close context drawer"
+            >
+              <ChevronDown size={16} />
             </button>
           </div>
-          <p className="pvc-context-drawer-hint">Add documents or notes to provide context for your conversation.</p>
+          <p className="pvc-context-drawer-hint">
+            Add documents or notes to ground the conversation.
+          </p>
 
-          {/* File upload */}
           <input
             ref={fileInputRef}
             type="file"
             multiple
-            accept=".txt,.md,.json,.csv,.pdf,.doc,.docx"
+            accept=".txt,.md,.json,.csv"
             onChange={handleFileUpload}
             className="hidden"
             aria-label="Upload context files"
@@ -1205,57 +1431,53 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
             className="pvc-context-upload-btn"
             onClick={() => fileInputRef.current?.click()}
           >
-            <CloudUpload size={18} />
+            <CloudUpload size={16} />
             Upload Files
           </button>
 
-          {/* Text input */}
           <div className="pvc-context-text-input">
             <textarea
               value={contextText}
               onChange={(e) => setContextText(e.target.value)}
-              placeholder="Or paste text, notes, or URLs here..."
+              placeholder="Or paste text, notes, or URLs here…"
               aria-label="Context text input"
             />
-            <button
-              type="button"
-              onClick={handleAddTextContext}
-              disabled={!contextText.trim()}
-            >
-              <Plus size={16} />
+            <button type="button" onClick={handleAddTextContext} disabled={!contextText.trim()}>
+              <Plus size={14} />
               Add Context
             </button>
           </div>
 
-          {/* File list */}
           {contextFiles.length > 0 ? (
             <div className="pvc-context-file-list">
               <h4>Added Context ({contextFiles.length})</h4>
-              {contextFiles.map(file => (
+              {contextFiles.map((file) => (
                 <div key={file.id} className="pvc-context-file-item">
                   <div className="pvc-context-file-info">
-                    <Paperclip size={14} />
+                    <Paperclip size={13} />
                     <span className="pvc-context-file-name">{file.name}</span>
                     <span className="pvc-context-file-size">
-                      {file.type === 'file' ? formatFileSize(file.size) : `${file.content.length} chars`}
+                      {file.type === 'file'
+                        ? formatFileSize(file.size)
+                        : `${file.content.length} chars`}
                     </span>
                   </div>
                   <button type="button" onClick={() => removeContextFile(file.id)} title="Remove">
-                    <X size={14} />
+                    <X size={12} />
                   </button>
                 </div>
               ))}
             </div>
           ) : (
             <div className="pvc-context-empty">
-              <Inbox size={28} />
+              <Inbox size={24} />
               <p>No context files added yet</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Backdrop for panels */}
+      {/* Backdrop for popovers */}
       {(showExportMenu || showSettings) && (
         <div
           className="pvc-backdrop"

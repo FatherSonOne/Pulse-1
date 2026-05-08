@@ -59,7 +59,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
     <>
       {/* Team Management Modal */}
       {showTeamModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="text-lg font-bold dark:text-white">
@@ -150,7 +150,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
 
       {/* Calendar Invite Modal */}
       {showInviteModal && inviteContact && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
               <div className="flex items-center justify-between mb-4">
@@ -253,7 +253,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
 
       {/* Create New Google Calendar Modal */}
       {showCreateCalendarModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">

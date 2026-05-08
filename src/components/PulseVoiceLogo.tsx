@@ -248,7 +248,7 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
                   Say "Hey Pulse"
                 </span>
               ) : (
-                'Click for AI'
+                <kbd className="pulse-voice-hint-kbd">⌘K</kbd>
               )}
             </span>
           </div>

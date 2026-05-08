@@ -3,6 +3,8 @@ import { settingsService } from '../../services/settingsService';
 import { ShieldHalf, RefreshCw, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ToggleItem } from './shared/ToggleItem';
+import { SettingsCard } from './shared/SettingsCard';
+import { MonoLabel } from './shared/MonoLabel';
 import { DataRetentionCard } from './privacy/DataRetentionCard';
 import { DataExportRequestCard } from './privacy/DataExportRequestCard';
 import { DataErasureCard } from './privacy/DataErasureCard';
@@ -40,8 +42,8 @@ export const PrivacyDataSettings: React.FC = () => {
       </div>
 
       {/* Data Collection */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-6">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500">Data Collection</h4>
+      <SettingsCard className="space-y-6">
+        <MonoLabel>Data Collection</MonoLabel>
         <ToggleItem
           label="Analytics Tracking"
           desc="Allow Pulse to collect anonymous usage data to improve the app"
@@ -50,12 +52,9 @@ export const PrivacyDataSettings: React.FC = () => {
         />
         <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
         <div>
-          <label
-            htmlFor="nudge-frequency"
-            className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block"
-          >
+          <MonoLabel as="label" htmlFor="nudge-frequency" className="mb-3 block">
             Nudge Reminder Frequency
-          </label>
+          </MonoLabel>
           <select
             id="nudge-frequency"
             value={nudgeFrequencyHours}
@@ -65,7 +64,7 @@ export const PrivacyDataSettings: React.FC = () => {
               settingsService.set('nudgeFrequencyHours', v);
             }}
             title="How often dismissed nudges reappear"
-            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
           >
             <option value={24}>Every 24 hours</option>
             <option value={72}>Every 3 days</option>
@@ -74,7 +73,7 @@ export const PrivacyDataSettings: React.FC = () => {
           </select>
           <p className="text-xs text-zinc-400 mt-1.5">Controls how long dismissed feature hints stay hidden.</p>
         </div>
-      </div>
+      </SettingsCard>
 
       {/* Data Retention — per-type windows */}
       <DataRetentionCard />
@@ -83,8 +82,8 @@ export const PrivacyDataSettings: React.FC = () => {
       <DataExportRequestCard />
 
       {/* Misc data management */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6">Data Management</h4>
+      <SettingsCard>
+        <MonoLabel className="mb-6">Data Management</MonoLabel>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -138,7 +137,7 @@ export const PrivacyDataSettings: React.FC = () => {
             </button>
           </div>
         </div>
-      </div>
+      </SettingsCard>
 
       {/* Erasure — GDPR Article 17 */}
       <DataErasureCard />

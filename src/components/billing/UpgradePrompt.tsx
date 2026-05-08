@@ -72,7 +72,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   if (variant === 'modal') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
-        <div className="w-full max-w-md rounded-2xl p-6 shadow-2xl" style={{ background: 'var(--set-surface)' }}>
+        <div className="w-full max-w-md rounded-2xl p-6 shadow-2xl" style={{ background: 'var(--pulse-surface)' }}>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: colors.gradient }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -80,13 +80,13 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-semibold" style={{ color: 'var(--set-text-main)' }}>
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--pulse-ink)' }}>
                 {title || `Upgrade to ${PLAN_LABELS[requiredPlan]}`}
               </h3>
             </div>
           </div>
 
-          <p className="text-sm mb-6" style={{ color: 'var(--set-text-secondary)', lineHeight: 1.6 }}>
+          <p className="text-sm mb-6" style={{ color: 'var(--pulse-ink-2)', lineHeight: 1.6 }}>
             {description || `This feature requires the ${PLAN_LABELS[requiredPlan]} plan. Upgrade to unlock ${feature} and more.`}
           </p>
 
@@ -104,7 +104,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
                 type="button"
                 onClick={onDismiss}
                 className="px-4 py-2.5 text-sm font-medium rounded-xl transition-all"
-                style={{ background: 'var(--set-surface-raised)', border: '1px solid var(--set-border)', color: 'var(--set-text-secondary)' }}
+                style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)', color: 'var(--pulse-ink-2)' }}
               >
                 Maybe Later
               </button>
@@ -118,8 +118,8 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   // Inline banner variant
   return (
     <div className="rounded-xl p-4 flex items-center gap-4" style={{
-      background: 'var(--set-surface)',
-      border: '1px solid var(--set-border)',
+      background: 'var(--pulse-surface)',
+      border: '1px solid var(--pulse-border)',
     }}>
       <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: colors.gradient }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -127,10 +127,10 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
         </svg>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium" style={{ color: 'var(--set-text-main)' }}>
+        <p className="text-sm font-medium" style={{ color: 'var(--pulse-ink)' }}>
           {title || `Upgrade to ${PLAN_LABELS[requiredPlan]}`}
         </p>
-        <p className="text-xs mt-0.5" style={{ color: 'var(--set-text-muted)' }}>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--pulse-ink-3)' }}>
           {description || `Unlock ${feature} with the ${PLAN_LABELS[requiredPlan]} plan.`}
         </p>
       </div>
@@ -148,7 +148,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
           type="button"
           onClick={onDismiss}
           className="text-xs flex-shrink-0"
-          style={{ color: 'var(--set-text-muted)' }}
+          style={{ color: 'var(--pulse-ink-3)' }}
         >
           Dismiss
         </button>
@@ -199,7 +199,7 @@ export const UsageLimitWarning: React.FC<UsageLimitWarningProps> = ({ metric, cu
           type="button"
           onClick={onUpgrade}
           className="mt-2 text-xs font-medium"
-          style={{ color: 'var(--set-primary)' }}
+          style={{ color: 'var(--pulse-rose)' }}
         >
           Upgrade for more →
         </button>

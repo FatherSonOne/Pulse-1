@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Receipt, Loader2, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useWorkspaceData, useWorkspaceActions } from '../../../contexts/WorkspaceContext';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 const TAX_ID_TYPES: { value: string; label: string; example: string }[] = [
   { value: 'us_ein',     label: 'United States — EIN',           example: '12-3456789' },
@@ -96,10 +98,10 @@ export const TaxIdCard: React.FC = () => {
   const example = TAX_ID_TYPES.find(o => o.value === type)?.example;
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center gap-2">
         <Receipt className="w-4 h-4 text-zinc-500" />
-        <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Tax ID</h4>
+        <MonoLabel>Tax ID</MonoLabel>
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
         Optional. Appears on invoices and exports we generate. The canonical record lives in your Stripe
@@ -158,6 +160,6 @@ export const TaxIdCard: React.FC = () => {
           {isSaving ? 'Saving...' : 'Save Tax ID'}
         </button>
       </div>
-    </div>
+    </SettingsCard>
   );
 };

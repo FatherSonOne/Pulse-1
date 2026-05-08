@@ -51,15 +51,15 @@ export const ComingSoonIntegrations: React.FC = () => {
       </div>
 
       {/* Ecosystem Bridge moved to its own Settings section (Settings > Ecosystem Bridge) */}
-      <div className="mt-8 rounded-xl border border-violet-500/20 bg-violet-500/[0.04] px-5 py-4 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-violet-500/15 flex items-center justify-center flex-shrink-0">
-          <i className="fa-solid fa-circle-nodes text-violet-500 text-sm" />
+      <div className="mt-8 rounded-xl border border-rose-500/20 bg-rose-500/[0.04] px-5 py-4 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center flex-shrink-0">
+          <i className="fa-solid fa-circle-nodes text-rose-500 text-sm" />
         </div>
         <div>
           <p className="text-sm font-semibold text-zinc-900 dark:text-white">Ecosystem Bridge</p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Connect Pulse, Entomate &amp; Logos Vision — see the{' '}
-            <span className="text-violet-600 dark:text-violet-300 font-medium">Ecosystem Bridge</span> section in the sidebar.
+            Connect Pulse, Entomate &amp; Logos Vision, see the{' '}
+            <span className="text-rose-500 dark:text-rose-400 font-medium">Ecosystem Bridge</span> section in the sidebar.
           </p>
         </div>
       </div>

@@ -28,9 +28,11 @@ interface ViewProps {
   onDateClick?: (date: Date) => void;
   onEventClick?: (event: CalendarEvent) => void;
   onViewChange?: (view: 'year' | 'month' | 'week' | 'day', date?: Date) => void;
-  onShowMoreEvents?: (date: Date, events: CalendarEvent[]) => void;
+  onShowMoreEvents?: (date: Date, events: CalendarEvent[], origin?: { x: number; y: number }) => void;
   /** Called when user drags an event to a new time. Parent handles persistence. */
   onEventReschedule?: (event: CalendarEvent, newStart: Date, newEnd: Date) => void;
+  /** Render shimmer skeletons in day cells during the initial fetch. */
+  loading?: boolean;
 }
 
 // ─── Drag-to-reschedule hook ──────────────────────────────────────────────────
@@ -176,18 +178,9 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
 const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const WEEKDAYS_MINI = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-const getEventColorClass = (color: string): string => {
-  if (color.includes('red') || color.includes('rose')) return 'cal-event-red';
-  if (color.includes('amber') || color.includes('yellow') || color.includes('orange')) return 'cal-event-amber';
-  if (color.includes('emerald') || color.includes('green')) return 'cal-event-emerald';
-  if (color.includes('sky') || color.includes('cyan') || color.includes('blue')) return 'cal-event-sky';
-  if (color.includes('violet') || color.includes('purple')) return 'cal-event-violet';
-  if (color.includes('pink') || color.includes('fuchsia')) return 'cal-event-pink';
-  if (color.includes('indigo')) return 'cal-event-indigo';
-  return 'cal-event-zinc';
-};
-
-// Returns inline style with type-specific background color (with opacity) and border
+// Single pill / block style used across Year, Month, Week, Day, and Agenda views.
+// Translucent fill (15%) + full-perimeter hairline (40%) + colored text. Coral stays
+// the only saturated solid in the calendar — the system's signal-vs-decoration rule.
 const getEventTypeStyle = (type?: string, _fallbackColor?: string): React.CSSProperties => {
   const meta = getEventTypeMeta(type);
   const hex = meta.color;
@@ -196,18 +189,8 @@ const getEventTypeStyle = (type?: string, _fallbackColor?: string): React.CSSPro
   const b = parseInt(hex.slice(5, 7), 16);
   return {
     backgroundColor: `rgba(${r}, ${g}, ${b}, 0.15)`,
-    borderLeft: `3px solid ${hex}`,
+    boxShadow: `inset 0 0 0 1px rgba(${r}, ${g}, ${b}, 0.40)`,
     color: hex,
-  };
-};
-
-// Pill style (month view) — solid background
-const getEventPillStyle = (type?: string, _fallbackColor?: string): React.CSSProperties => {
-  const meta = getEventTypeMeta(type);
-  return {
-    backgroundColor: meta.color,
-    color: '#fff',
-    border: 'none',
   };
 };
 
@@ -330,6 +313,7 @@ export const MonthView: React.FC<ViewProps> = ({
   onEventClick,
   onShowMoreEvents,
   onEventReschedule,
+  loading,
 }) => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -463,6 +447,16 @@ export const MonthView: React.FC<ViewProps> = ({
               <div className="cal-day-number" aria-hidden="true">{date.getDate()}</div>
 
               <div className="cal-day-events">
+                {/* Skeleton bars during initial fetch — only fire when the cell has nothing
+                    to show yet, on the deterministic third-of-cells subset to avoid every
+                    cell shimmering identically. Falls away the moment events arrive. */}
+                {loading && dayEvents.length === 0 && isCurrentMonth && index % 3 !== 1 && (
+                  <>
+                    <div className="cal-skeleton-bar" aria-hidden="true" />
+                    {index % 5 === 0 && <div className="cal-skeleton-bar" aria-hidden="true" />}
+                  </>
+                )}
+
                 {/* All-day events first — up to 3 total slots */}
                 {allDayEvents.slice(0, 3).map(ev => (
                   <div
@@ -472,7 +466,7 @@ export const MonthView: React.FC<ViewProps> = ({
                     aria-label={`${ev.title}, all day`}
                     draggable
                     className={`cal-event-pill all-day cal-event-typed${draggingEventId === ev.id ? ' cal-event-dragging' : ''}`}
-                    style={getEventPillStyle(ev.type, ev.color)}
+                    style={getEventTypeStyle(ev.type, ev.color)}
                     onDragStart={(e) => handlePillDragStart(e, ev)}
                     onDragEnd={handleDragEnd}
                     onClick={(e) => {
@@ -496,7 +490,7 @@ export const MonthView: React.FC<ViewProps> = ({
                     aria-label={`${ev.title}, ${formatTime(ev.start)}`}
                     draggable
                     className={`cal-event-pill cal-event-typed${draggingEventId === ev.id ? ' cal-event-dragging' : ''}`}
-                    style={getEventPillStyle(ev.type, ev.color)}
+                    style={getEventTypeStyle(ev.type, ev.color)}
                     onDragStart={(e) => handlePillDragStart(e, ev)}
                     onDragEnd={handleDragEnd}
                     onClick={(e) => {
@@ -518,7 +512,7 @@ export const MonthView: React.FC<ViewProps> = ({
                     aria-label={`${dayEvents.length - 3} more event${dayEvents.length - 3 > 1 ? 's' : ''} on ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      onShowMoreEvents?.(date, dayEvents);
+                      onShowMoreEvents?.(date, dayEvents, { x: e.clientX, y: e.clientY });
                     }}
                   >
                     +{dayEvents.length - 3} more
@@ -630,7 +624,7 @@ export const WeekView: React.FC<ViewProps> = ({
                     <div
                       key={ev.id}
                       className="cal-event-pill cal-event-typed"
-                      style={getEventPillStyle(ev.type, ev.color)}
+                      style={getEventTypeStyle(ev.type, ev.color)}
                       onClick={() => onEventClick?.(ev)}
                     >
                       <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-pill-icon`} />
@@ -695,7 +689,7 @@ export const WeekView: React.FC<ViewProps> = ({
                         height: `${height}px`,
                         backgroundColor: ov.color,
                         opacity: 0.18,
-                        borderLeft: `3px solid ${ov.color}`,
+                        boxShadow: `inset 0 0 0 1px ${ov.color}`,
                       }}
                     />
                   );
@@ -842,7 +836,7 @@ export const DayView: React.FC<ViewProps> = ({
                 tabIndex={0}
                 aria-label={`${ev.title}, all day`}
                 className="cal-day-allday-event cal-event-typed"
-                style={getEventPillStyle(ev.type, ev.color)}
+                style={getEventTypeStyle(ev.type, ev.color)}
                 onClick={() => onEventClick?.(ev)}
                 onKeyDown={(e) => e.key === 'Enter' && onEventClick?.(ev)}
               >
@@ -898,7 +892,7 @@ export const DayView: React.FC<ViewProps> = ({
                   height: `${height}px`,
                   backgroundColor: ov.color,
                   opacity: 0.18,
-                  borderLeft: `3px solid ${ov.color}`,
+                  boxShadow: `inset 0 0 0 1px ${ov.color}`,
                 }}
               />
             );
@@ -1040,7 +1034,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
       </div>
 
       <div className="cal-view-switcher" role="group" aria-label="Calendar view">
-        {(['year', 'month', 'week', 'day', 'agenda', 'timeline'] as const).map(view => (
+        {(['month', 'day'] as const).map(view => (
           <button
             key={view}
             className={`cal-view-btn ${viewMode === view ? 'active' : ''}`}
@@ -1051,6 +1045,11 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             {view}
           </button>
         ))}
+        <span
+          className="cal-view-switcher-hint"
+          title="More views via ⌘K (Year · Week · Agenda · Timeline)"
+          aria-hidden="true"
+        >⌘K</span>
       </div>
     </div>
   );

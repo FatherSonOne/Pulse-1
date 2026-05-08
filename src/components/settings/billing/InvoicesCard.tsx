@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { ScrollText, ExternalLink, FileText, Filter } from 'lucide-react';
 import type { Invoice } from '../../../services/billingService';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 type StatusFilter = 'all' | 'paid' | 'open' | 'void' | 'uncollectible' | 'draft';
 
@@ -62,11 +64,11 @@ export const InvoicesCard: React.FC<Props> = ({ invoices }) => {
   const currency = invoices[0]?.currency || 'usd';
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+    <SettingsCard padded={false} className="overflow-hidden">
       <div className="p-6 pb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <ScrollText className="w-4 h-4 text-zinc-500" />
-          <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Invoice history</h4>
+          <MonoLabel>Invoice history</MonoLabel>
           <span className="text-[11px] text-zinc-400">({invoices.length})</span>
         </div>
 
@@ -175,6 +177,6 @@ export const InvoicesCard: React.FC<Props> = ({ invoices }) => {
           </div>
         </div>
       )}
-    </div>
+    </SettingsCard>
   );
 };

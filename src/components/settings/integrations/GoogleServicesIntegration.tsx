@@ -283,9 +283,9 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
                   <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
                     {userCalendars.map((cal) => (
                       <div key={cal.id} className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs flex items-center gap-2">
-                        <i className={`fa-solid fa-calendar text-blue-500 ${cal.primary ? 'text-blue-600' : 'text-zinc-400'}`}></i>
+                        <i className={`fa-solid fa-calendar ${cal.primary ? 'text-rose-500' : 'text-zinc-400'}`}></i>
                         <span className="dark:text-white text-zinc-900 truncate">{cal.name}</span>
-                        {cal.primary && <span className="text-[9px] bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">Primary</span>}
+                        {cal.primary && <span className="text-[9px] bg-rose-500/10 text-rose-500 dark:text-rose-400 px-1.5 py-0.5 rounded">Primary</span>}
                       </div>
                     ))}
                   </div>
@@ -436,7 +436,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
               className="nothing-input"
             />
             <p className="text-xs text-zinc-500 mt-2">
-              For enhanced location features. Get an API key from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Google Cloud Console</a>
+              For enhanced location features. Get an API key from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-rose-500 hover:text-rose-600 hover:underline">Google Cloud Console</a>
             </p>
           </div>
 

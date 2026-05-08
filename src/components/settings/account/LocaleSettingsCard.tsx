@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Globe, Clock, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { pulseService, UserProfile } from '../../../services/pulseService';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 const LANGUAGES: { value: string; label: string }[] = [
   { value: 'en',    label: 'English' },
@@ -178,10 +180,10 @@ export const LocaleSettingsCard: React.FC<Props> = ({ initialProfile, onProfileU
   const useDetectedTz = () => setTimezone(detectedTz);
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center gap-2">
         <Globe className="w-4 h-4 text-zinc-500" />
-        <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Language &amp; timezone</h4>
+        <MonoLabel>Language &amp; timezone</MonoLabel>
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
         Affects date/time formatting and (where available) AI responses.
@@ -189,9 +191,9 @@ export const LocaleSettingsCard: React.FC<Props> = ({ initialProfile, onProfileU
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label htmlFor="locale-language" className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-1">
+          <MonoLabel as="label" htmlFor="locale-language" className="block mb-1.5">
             Language
-          </label>
+          </MonoLabel>
           <select
             id="locale-language"
             value={language}
@@ -208,9 +210,9 @@ export const LocaleSettingsCard: React.FC<Props> = ({ initialProfile, onProfileU
         </div>
 
         <div>
-          <label htmlFor="locale-timezone" className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-1 flex items-center gap-1.5">
+          <MonoLabel as="label" htmlFor="locale-timezone" className="mb-1.5 flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-zinc-400" /> Timezone
-          </label>
+          </MonoLabel>
           <select
             id="locale-timezone"
             value={timezone}
@@ -286,6 +288,6 @@ export const LocaleSettingsCard: React.FC<Props> = ({ initialProfile, onProfileU
           {isSaving ? 'Saving...' : 'Save'}
         </button>
       </div>
-    </div>
+    </SettingsCard>
   );
 };

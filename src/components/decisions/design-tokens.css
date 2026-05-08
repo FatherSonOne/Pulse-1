@@ -61,6 +61,30 @@
   --dt-status-archived:  #6b7280;
 
   /* ─────────────────────────────────────────────────────────────────────────
+     PRIORITY VOCABULARY (intensity ramp, NOT status reuse)
+     Priority answers "how loud should this be" — distinct from status which
+     answers "what state is this in." DESIGN.md's Status-Stays-Status Rule:
+     status colors don't bleed into priority. Coral marks urgent because
+     urgent IS the brand voice; medium is intentionally neutral so most
+     cards don't add visual chatter; low hides entirely (default).
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-priority-urgent-bg:    #f43f5e;
+  --dt-priority-urgent-fg:    #ffffff;
+  --dt-priority-urgent-ring:  rgba(244, 63, 94, 0.30);
+
+  --dt-priority-high-bg:      rgba(244, 63, 94, 0.10);
+  --dt-priority-high-fg:      #e11d48;
+  --dt-priority-high-ring:    rgba(244, 63, 94, 0.20);
+
+  --dt-priority-medium-bg:    rgba(0, 0, 0, 0.04);
+  --dt-priority-medium-fg:    #52525b;
+  --dt-priority-medium-ring:  rgba(0, 0, 0, 0.08);
+
+  --dt-priority-low-bg:       transparent;
+  --dt-priority-low-fg:       #6b7280;
+  --dt-priority-low-ring:     rgba(0, 0, 0, 0.04);
+
+  /* ─────────────────────────────────────────────────────────────────────────
      STATUS BACKGROUNDS (5% opacity for column backgrounds)
      ───────────────────────────────────────────────────────────────────────── */
   --dt-status-bg-overdue:     rgba(239, 68, 68, 0.05);
@@ -208,6 +232,28 @@
   --dt-glass-bg:     rgba(10, 10, 10, 0.95);
   --dt-glass-border: rgba(255, 255, 255, 0.06);
   --dt-glass-blur:   24px;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     PRIORITY VOCABULARY (Dark mode)
+     Coral stays the urgent voice. High shifts to a brighter rose so it
+     reads against the true-black canvas. Medium uses a translucent white
+     surface (no opaque grey panel) per the Translucency-Over-Tinting Rule.
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-priority-urgent-bg:    #f43f5e;
+  --dt-priority-urgent-fg:    #ffffff;
+  --dt-priority-urgent-ring:  rgba(244, 63, 94, 0.40);
+
+  --dt-priority-high-bg:      rgba(244, 63, 94, 0.14);
+  --dt-priority-high-fg:      #fb7185;
+  --dt-priority-high-ring:    rgba(244, 63, 94, 0.28);
+
+  --dt-priority-medium-bg:    rgba(255, 255, 255, 0.05);
+  --dt-priority-medium-fg:    #b4b4b8;
+  --dt-priority-medium-ring:  rgba(255, 255, 255, 0.08);
+
+  --dt-priority-low-bg:       transparent;
+  --dt-priority-low-fg:       #6b7280;
+  --dt-priority-low-ring:     rgba(255, 255, 255, 0.05);
 
   /* ─────────────────────────────────────────────────────────────────────────
      STATUS BACKGROUNDS (Dark mode - slightly higher opacity)

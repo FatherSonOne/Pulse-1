@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Moon, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { settingsService } from '../../../services/settingsService';
+import { SettingsCard } from '../shared/SettingsCard';
+import { MonoLabel } from '../shared/MonoLabel';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -68,10 +70,10 @@ export const QuietHoursCard: React.FC = () => {
   const wrapsMidnight = enabled && start && end && start > end;
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center gap-2">
         <Moon className="w-4 h-4 text-zinc-500" />
-        <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Quiet hours</h4>
+        <MonoLabel>Quiet hours</MonoLabel>
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
         Suppress non-urgent push notifications during this window. Security alerts and direct mentions still come through.
@@ -158,6 +160,6 @@ export const QuietHoursCard: React.FC = () => {
           {isSaving ? 'Saving...' : 'Save Quiet Hours'}
         </button>
       </div>
-    </div>
+    </SettingsCard>
   );
 };

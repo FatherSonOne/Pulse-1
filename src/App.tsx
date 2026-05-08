@@ -27,7 +27,6 @@ const Meetings = lazy(() => import('./components/Meetings').then(module => ({ de
 const Contacts = lazy(() => import('./components/Contacts'));
 const Archives = lazy(() => import('./components/Archives'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
-const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const MessageAnalytics = lazy(() => import('./components/MessageAnalytics'));
 const UnifiedSearchRedesign = lazy(() => import('./components/UnifiedSearchRedesign'));
 const TestMatrix = lazy(() => import('./components/TestMatrix'));
@@ -786,8 +785,6 @@ const App: React.FC = () => {
                 initialSection={settingsSection}
                 onClose={() => setView(AppView.DASHBOARD)}
               />;
-            case AppView.MESSAGE_ADMIN:
-              return <AdminDashboard userId={user?.id || ''} />;
             case AppView.MESSAGE_ANALYTICS:
               return <MessageAnalytics />;
             case AppView.MULTI_MODAL:
@@ -871,8 +868,8 @@ const App: React.FC = () => {
     <FeatureProvider defaultMode="simple">
     <PulseAIProvider user={user} activeView={view}>
       {/* Global toast host — required by useAIErrorHandler + other toast-using
-          components (emailStore, archiveStore, AdminDashboard, etc). Mounted
-          once here so a single Toaster serves the whole app. */}
+          components (emailStore, archiveStore, etc). Mounted once here so a
+          single Toaster serves the whole app. */}
       <Toaster position="top-right" gutter={8} />
 
       {/* Blocking org-onboarding modal: appears when the active workspace has

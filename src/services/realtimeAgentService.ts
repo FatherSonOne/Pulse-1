@@ -1372,58 +1372,74 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
 // ============= EPHEMERAL TOKEN GENERATION =============
 
 /**
- * Generate an ephemeral token for OpenAI Realtime API
- * Uses a Supabase Edge Function to proxy the request (avoids CORS issues)
+ * Generate an ephemeral token for OpenAI Realtime API.
+ *
+ * Calls the `openai-realtime-token` edge function, which validates the caller's
+ * Supabase user JWT via `auth.getUser()` before minting the OpenAI ephemeral key.
+ * That validation is why we send the user's session access_token in the
+ * Authorization header — sending the anon key passes the platform gateway but
+ * fails `getUser()` and returns 401 "Invalid or expired token".
  */
 export async function generateEphemeralToken(
-  openaiApiKey: string,
+  _openaiApiKey: string,
   config: { model?: string; voice?: string } = {}
 ): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl) {
     throw new Error('Supabase URL not configured');
+  }
+  if (!anonKey) {
+    throw new Error('Supabase anon key not configured');
+  }
+
+  // Lazy-import to avoid circular dependencies and let early callers boot.
+  const { supabase } = await import('./supabase');
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw new Error('Could not read your sign-in. Reload Pulse and try again.');
+  }
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) {
+    throw new Error('Sign in required. Sign in to Pulse to use voice.');
   }
 
   const model = config.model || 'gpt-4o-realtime-preview';
   const voice = config.voice || 'alloy';
 
-  console.log(`🎤 Generating ephemeral token via edge function for model: ${model}`);
+  const response = await fetch(`${supabaseUrl}/functions/v1/openai-realtime-token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      // Edge function reads `Authorization` for the user identity (auth.getUser).
+      'Authorization': `Bearer ${accessToken}`,
+      // Platform gateway routes the project by `apikey`. Both headers are required.
+      'apikey': anonKey,
+    },
+    body: JSON.stringify({ model, voice }),
+  });
 
-  try {
-    // Call our Supabase Edge Function to proxy the request
-    const response = await fetch(`${supabaseUrl}/functions/v1/openai-realtime-token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({
-        apiKey: openaiApiKey,
-        model,
-        voice,
-      }),
-    });
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ error: `HTTP ${response.status}` }));
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
-      console.error('❌ Edge function error:', errorData);
-      throw new Error(errorData.error || `Failed to generate token: ${response.status}`);
+    // Auth failures get a clear, actionable message routed up to the UI layer.
+    if (response.status === 401) {
+      throw new Error('Sign-in expired. Reload Pulse or sign in again to reconnect voice.');
     }
-
-    const data = await response.json();
-
-    if (!data.token) {
-      throw new Error('No token returned from edge function');
-    }
-
-    console.log('✅ Ephemeral token generated successfully via edge function');
-    return data.token;
-
-  } catch (error) {
-    console.error('❌ Token generation failed:', error);
-    throw error instanceof Error ? error : new Error(String(error));
+    throw new Error(errorData.error || `Failed to generate token: ${response.status}`);
   }
+
+  const data = await response.json();
+
+  if (!data.token) {
+    throw new Error('No token returned from edge function');
+  }
+
+  return data.token;
 }
 
 // ============= SINGLETON INSTANCE =============

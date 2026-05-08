@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
 import {
   Bot,
   Send,
@@ -344,46 +343,20 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
       <div className="pa-header">
         <div className="pa-header-left">
           <div className="pa-icon" aria-hidden="true">
-            <motion.svg
-              viewBox="0 0 64 64"
-              width="26"
-              height="26"
-              animate={{ scale: [1, 1.06, 1], opacity: [0.85, 1, 0.85] }}
-              transition={{ duration: 2, ease: 'easeInOut', repeat: Infinity }}
-            >
-              <defs>
-                <linearGradient id="pa-hdr-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ffffff" />
-                  <stop offset="100%" stopColor="rgba(255,255,255,0.75)" />
-                </linearGradient>
-                <filter id="pa-hdr-glow">
-                  <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
-                  <feMerge>
-                    <feMergeNode in="coloredBlur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-              <motion.path
+            <svg viewBox="0 0 64 64" width="22" height="22">
+              <path
                 d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32"
-                stroke="url(#pa-hdr-grad)"
+                stroke="currentColor"
                 strokeWidth="5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 fill="none"
-                filter="url(#pa-hdr-glow)"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{
-                  pathLength: { duration: 0.8, ease: 'easeInOut' },
-                  opacity: { duration: 0.4 },
-                }}
               />
-            </motion.svg>
+            </svg>
           </div>
           <div className="pa-title-group">
             <h3>Pulse AI</h3>
-            <p>Ask me anything about Pulse</p>
+            {messages.length === 0 && <p>{sectionLabel} · context aware</p>}
           </div>
         </div>
 
@@ -414,7 +387,7 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
               aria-label="Clear conversation"
               title="Clear conversation"
             >
-              <span className="pa-clear-label">CLR</span>
+              <span className="pa-clear-label">Clear</span>
             </button>
           </div>
         )}
@@ -429,15 +402,15 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
         </button>
       </div>
 
-      {/* ── Context chip (current section + summary) ── */}
+      {/* ── Context bar — Mono uppercase, no gradient pill ── */}
       <div className="pa-context-bar">
         <div className="pa-context-chip" aria-label={`Current section: ${sectionLabel}`}>
           {sectionLabel}
         </div>
         {isContextLoading ? (
           <span className="pa-context-loading">
-            <Loader size={12} className="pa-spinner" aria-hidden="true" />
-            Loading context…
+            <Loader size={11} className="pa-spinner" aria-hidden="true" />
+            Loading
           </span>
         ) : sectionSummary ? (
           <span className="pa-context-summary">{sectionSummary}</span>
@@ -455,17 +428,32 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
         {messages.length === 0 && (
           <div className="pa-welcome">
             <div className="pa-welcome-icon" aria-hidden="true">
-              <Bot size={36} />
+              <svg viewBox="0 0 64 64" width="22" height="22">
+                <path
+                  d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+              </svg>
             </div>
             <h4>{timeGreeting.greeting}</h4>
             <p>
-              I'm context-aware and know which section you're in. Ask me anything — or use a quick
-              action below.
+              I see your <strong>{sectionLabel}</strong> data. Ask anything, or pick a quick action.
             </p>
           </div>
         )}
 
-        {messages.filter(m => m.content || m.role === 'user').map(message => (
+        {(() => {
+          const visible = messages.filter(m => m.content || m.role === 'user');
+          return visible.map((message, idx) => {
+            // Provenance chip on first AI bubble of a streak only — keeps long
+            // threads quiet while still attributing each AI turn the user can scan.
+            const prev = visible[idx - 1];
+            const showProvenance = message.role === 'assistant' && (!prev || prev.role !== 'assistant');
+            return (
           <div
             key={message.id}
             className={`pa-message ${message.role}`}
@@ -475,6 +463,11 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
               {message.role === 'user' ? <UserIcon size={16} /> : <Bot size={16} />}
             </div>
             <div className="pa-msg-content">
+              {showProvenance && (
+                <div className="pa-provenance" aria-label="AI source">
+                  PULSE AI · {message.id.startsWith('msg-proactive-') ? 'NUDGE' : 'REPLY'}
+                </div>
+              )}
               {message.role === 'assistant' ? (
                 <div className={`pa-msg-text pa-msg-markdown${isLoading && message.id === messages[messages.length - 1]?.id ? ' pa-streaming-cursor' : ''}`}>
                   <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -535,7 +528,9 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
               )}
             </div>
           </div>
-        ))}
+            );
+          });
+        })()}
 
         {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && messages[messages.length - 1].content === '' && (
           <div className="pa-message assistant">
@@ -630,8 +625,8 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
             className="pa-input"
             placeholder={
               isContextLoading
-                ? `Loading ${sectionLabel} data…`
-                : 'Ask anything about your data…'
+                ? `Loading ${sectionLabel}…`
+                : `Ask about ${sectionLabel}…`
             }
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}

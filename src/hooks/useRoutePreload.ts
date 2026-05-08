@@ -29,7 +29,6 @@ const routeImports: Record<string, () => Promise<any>> = {
   '/meetings': () => import('../components/Meetings'),
   '/contacts': () => import('../components/Contacts'),
   '/archives': () => import('../components/Archives'),
-  '/admin': () => import('../components/AdminDashboard'),
   '/analytics': () => import('../components/Analytics'),
   '/search': () => import('../components/UnifiedSearchRedesign'),
 };

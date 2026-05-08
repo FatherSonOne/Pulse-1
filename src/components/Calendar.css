@@ -1,53 +1,42 @@
 /* ============================================================
-   PULSE CALENDAR — Pulse Premium Dark · Rose Accent System
+   PULSE CALENDAR — The Coral Cockpit
    ============================================================
-   Redesigned: Inter font · #f43f5e rose · glassmorphism ·
-   spring easing · true black canvas
+   Inter for prose · JetBrains Mono for labels/timestamps ·
+   tinted neutrals · coral as signal only · hairline borders.
+   Tokens are aliases over --pulse-* (canonical, src/styles/pulse-tokens.css).
 */
 
-/* ── Design Tokens ────────────────────────────────────────── */
+/* ── Design Tokens — aliased over the canonical --pulse-* set ── */
 .pulse-calendar {
-  /* Light mode */
-  --cal-bg:              #f8f8f8;
-  --cal-bg-elevated:     #ffffff;
+  --cal-bg:              var(--pulse-canvas);
+  --cal-bg-elevated:     var(--pulse-surface);
   --cal-bg-subtle:       rgba(0, 0, 0, 0.03);
-  --cal-border:          rgba(0, 0, 0, 0.08);
+  --cal-border:          var(--pulse-border);
   --cal-border-subtle:   rgba(0, 0, 0, 0.05);
-  --cal-text:            #0f0f0f;
-  --cal-text-muted:      #52525b;
-  --cal-text-subtle:     #6b7280;
-  --cal-accent:          #f43f5e;
-  --cal-accent-soft:     rgba(244, 63, 94, 0.10);
-  --cal-accent-glow:     rgba(244, 63, 94, 0.25);
-  --cal-accent-amber:    #f59e0b;
-  --cal-accent-emerald:  #10b981;
-  --cal-accent-violet:   #8b5cf6;
-  --cal-accent-sky:      #0ea5e9;
-  --cal-today-ring:      rgba(244, 63, 94, 0.20);
+  --cal-text:            var(--pulse-ink);
+  --cal-text-muted:      var(--pulse-ink-2);
+  --cal-text-subtle:     var(--pulse-ink-3);
+  --cal-accent:          var(--pulse-rose);
+  --cal-accent-soft:     var(--pulse-rose-soft);
+  --cal-accent-glow:     var(--pulse-rose-glow);
+  --cal-accent-amber:    var(--pulse-tone-warning);
+  --cal-accent-emerald:  var(--pulse-tone-positive);
+  --cal-accent-sky:      var(--pulse-tone-info);
+  --cal-today-ring:      var(--pulse-rose-glow);
   --cal-shadow-sm:       0 1px 3px rgba(0,0,0,0.06);
   --cal-shadow-md:       0 4px 12px rgba(0,0,0,0.08);
   --cal-shadow-lg:       0 12px 40px rgba(0,0,0,0.12);
   --cal-radius-sm:       6px;
   --cal-radius-md:       12px;
   --cal-radius-lg:       20px;
-  --cal-transition:      200ms cubic-bezier(0.16, 1, 0.3, 1);
-  --cal-transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  --cal-transition:      var(--pulse-duration) var(--pulse-ease);
+  --cal-transition-slow: 400ms var(--pulse-ease);
 }
 
 .dark .pulse-calendar {
-  /* Dark mode — true black canvas, translucent surfaces */
-  --cal-bg:             #000000;
-  --cal-bg-elevated:    rgba(255, 255, 255, 0.03);
+  /* Dark-mode shadow ramp — translucent surfaces from --pulse-* already swap above. */
   --cal-bg-subtle:      rgba(255, 255, 255, 0.055);
-  --cal-border:         rgba(255, 255, 255, 0.06);
   --cal-border-subtle:  rgba(255, 255, 255, 0.04);
-  --cal-text:           #fafafa;
-  --cal-text-muted:     #b4b4b8;
-  --cal-text-subtle:    #6b7280;
-  --cal-accent:         #f43f5e;
-  --cal-accent-soft:    rgba(244, 63, 94, 0.12);
-  --cal-accent-glow:    rgba(244, 63, 94, 0.30);
-  --cal-today-ring:     rgba(244, 63, 94, 0.25);
   --cal-shadow-sm:      0 1px 4px rgba(0,0,0,0.50);
   --cal-shadow-md:      0 4px 16px rgba(0,0,0,0.60);
   --cal-shadow-lg:      0 12px 40px rgba(0,0,0,0.70);
@@ -66,25 +55,26 @@
 
 /* ── Focus ring ──────────────────────────────────────────── */
 .pulse-calendar *:focus-visible {
-  outline: 2px solid #f43f5e;
+  outline: 2px solid var(--cal-accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
 .pulse-calendar *:focus:not(:focus-visible) { outline: none; }
 
 /* ── Scrollbars ──────────────────────────────────────────── */
+/* Neutral by default — coral is reserved for state and signal, not chrome. */
 .pulse-calendar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(244, 63, 94, 0.25) transparent;
+  scrollbar-color: var(--cal-border) transparent;
 }
 .pulse-calendar ::-webkit-scrollbar       { width: 6px; height: 6px; }
 .pulse-calendar ::-webkit-scrollbar-track { background: transparent; }
 .pulse-calendar ::-webkit-scrollbar-thumb {
-  background: rgba(244, 63, 94, 0.25);
+  background: var(--cal-border);
   border-radius: 3px;
 }
 .pulse-calendar ::-webkit-scrollbar-thumb:hover {
-  background: rgba(244, 63, 94, 0.45);
+  background: var(--cal-text-subtle);
 }
 
 /* ── List stagger animation ──────────────────────────────── */
@@ -92,6 +82,184 @@
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Hero motion: date navigation slide ────────────────────
+   When prev/next is invoked, the grid container gets a one-shot
+   directional fade-and-slide. The grid renders synchronously (state
+   already updated); the animation plays over the new frame so users
+   see the new month "arrive" rather than a hard cut. Transform-only,
+   GPU-accelerated; reduced-motion gates duration to 0.01ms below. */
+@keyframes calGridNavForward {
+  from { opacity: 0; transform: translate3d(16px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes calGridNavBackward {
+  from { opacity: 0; transform: translate3d(-16px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.cal-grid-nav-forward {
+  animation: calGridNavForward 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+.cal-grid-nav-backward {
+  animation: calGridNavBackward 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+/* ── Pill cascade after the grid slide settles ──────────────
+   Second beat of the navigation hero: once the new grid has slid
+   ~40% in, the events fade up into their cells. The cascade is
+   per-cell (each cell's pills stagger 0/40/80ms), not grid-wide,
+   so it caps at three regardless of how full the month is. Tied
+   to the nav class — never plays on initial mount or live data
+   updates, only on user-driven prev/next/keyboard nav. */
+@keyframes calPillEnter {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cal-grid-nav-forward  .cal-day-events .cal-event-pill,
+.cal-grid-nav-backward .cal-day-events .cal-event-pill {
+  animation: calPillEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 140ms;
+}
+.cal-grid-nav-forward  .cal-day-events .cal-event-pill:nth-child(2),
+.cal-grid-nav-backward .cal-day-events .cal-event-pill:nth-child(2) {
+  animation-delay: 180ms;
+}
+.cal-grid-nav-forward  .cal-day-events .cal-event-pill:nth-child(3),
+.cal-grid-nav-backward .cal-day-events .cal-event-pill:nth-child(3) {
+  animation-delay: 220ms;
+}
+.cal-grid-nav-forward  .cal-day-events .cal-more-events,
+.cal-grid-nav-backward .cal-day-events .cal-more-events {
+  animation: calPillEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 260ms;
+}
+
+/* ── Today arrival ripple ───────────────────────────────────
+   When the user invokes Today (button, ⌘T, or T shortcut), the
+   today day-number gets a single coral ring expansion to confirm
+   landing — quiet feedback that "you arrived here". One-shot,
+   700ms, never loops. Class is applied to .pulse-calendar root
+   for the duration, then removed. */
+@keyframes calTodayArrivalRipple {
+  0%   { transform: scale(0.7); opacity: 0.85; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.cal-day-cell.today .cal-day-number {
+  position: relative;
+}
+.cal-today-arrival .cal-day-cell.today .cal-day-number::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--cal-accent);
+  pointer-events: none;
+  animation: calTodayArrivalRipple 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Now-pulse on the current-time dot ──────────────────────
+   Quiet ambient signal that "now" is alive. Halo expands and
+   fades on a 4s cadence — deliberately out-of-phase with the
+   3s today-breath so the two signals never sync into a single
+   metronome. box-shadow only, no layout, GPU-cheap. */
+@keyframes calNowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--cal-accent-glow); }
+  50%      { box-shadow: 0 0 0 6px transparent; }
+}
+
+/* ── Today indicator: subtle 3s breath ─────────────────────
+   The single most-checked signal in the calendar gets a quiet
+   "I'm now" pulse. Symmetric ease (sine-ish via two halves) for a
+   loop; halo ring expands and fades inside the same scale cycle. */
+@keyframes calTodayBreath {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--cal-accent-glow);
+  }
+  50% {
+    transform: scale(1.045);
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+
+/* ── Drop-target draw-in ───────────────────────────────────
+   When dragging an event, the candidate cells fade their dashed
+   coral ring + soft fill in over 180ms instead of appearing instantly.
+   Reinforces the spatial relationship and avoids the "flash" feel. */
+@keyframes calDropTargetEnter {
+  from {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+  to {
+    background-color: var(--cal-accent-soft);
+    box-shadow: inset 0 0 0 2px var(--cal-accent);
+  }
+}
+
+/* ── +N more reveal: origin-aware day-detail entrance ──────
+   Modal scales in from the click coordinates (set as transform-origin
+   inline by the JSX). A short, decisive scale + opacity, no slide. */
+@keyframes calDayDetailEnter {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.cal-day-detail-enter {
+  animation: calDayDetailEnter 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+@keyframes calDayDetailBackdropEnter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.cal-day-detail-backdrop-enter {
+  animation: calDayDetailBackdropEnter 200ms ease-out both;
+}
+
+/* DayDetailModal is portaled outside .pulse-calendar, so the in-scope
+   reduced-motion gate doesn't apply. Mirror it globally for these classes. */
+@media (prefers-reduced-motion: reduce) {
+  .cal-day-detail-enter,
+  .cal-day-detail-backdrop-enter {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ── Skeleton shimmer for initial event fetch ──────────────
+   Renders muted shimmer bars in day cells while events load.
+   background-position only (paint, not layout). */
+@keyframes calSkeletonShimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+.cal-skeleton-bar {
+  height: 12px;
+  border-radius: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--cal-bg-subtle) 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    var(--cal-bg-subtle) 100%
+  );
+  background-size: 200% 100%;
+  animation: calSkeletonShimmer 1.6s linear infinite;
+  opacity: 0.7;
+  margin-bottom: 3px;
+}
+.dark .cal-skeleton-bar {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.10) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 200% 100%;
+}
+.cal-skeleton-bar:nth-child(1) { width: 70%; }
+.cal-skeleton-bar:nth-child(2) { width: 55%; }
 
 /* ── Focus heartbeat ─────────────────────────────────────── */
 @keyframes calHeartbeat {
@@ -163,12 +331,11 @@
 }
 
 .cal-title-year {
+  /* Solid color — gradient text is banned. Emphasis comes from weight, not chroma. */
   font-size: 2.5rem;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--cal-accent) 0%, var(--cal-accent-amber) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--cal-text);
+  letter-spacing: -0.04em;
 }
 
 .cal-nav-btn {
@@ -194,8 +361,9 @@
 .cal-today-btn {
   padding: 8px 16px;
   border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--cal-accent);
@@ -214,6 +382,7 @@
 /* View Mode Switcher */
 .cal-view-switcher {
   display: flex;
+  align-items: center;
   background: var(--cal-bg-subtle);
   border-radius: var(--cal-radius-md);
   padding: 4px;
@@ -221,16 +390,18 @@
 }
 
 .cal-view-btn {
-  padding: 8px 16px;
+  padding: 8px 14px;
   border-radius: 8px;
-  font-size: 0.8125rem;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
   font-weight: 600;
+  letter-spacing: 0.1em;
   color: var(--cal-text-muted);
   background: transparent;
   border: none;
   cursor: pointer;
   transition: var(--cal-transition);
-  text-transform: capitalize;
+  text-transform: uppercase;
 }
 
 .cal-view-btn:hover {
@@ -241,6 +412,23 @@
   background: var(--cal-accent-soft);
   color: var(--cal-accent);
   box-shadow: var(--cal-shadow-sm);
+}
+
+/* Inline hint pointing power users to ⌘K for the rest of the view modes. */
+.cal-view-switcher-hint {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px 0 12px;
+  margin-left: 4px;
+  border-left: 1px solid var(--cal-border);
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--cal-text-subtle);
+  user-select: none;
+  cursor: help;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ============================================
@@ -429,8 +617,9 @@
 
 .cal-weekday-cell {
   padding: 12px 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--cal-text-subtle);
@@ -439,7 +628,9 @@
 }
 
 .cal-weekday-cell.weekend {
-  color: var(--cal-accent);
+  /* Weekend column headers: subtle distinction, not signal. Coral is reserved for state. */
+  color: var(--cal-text-subtle);
+  opacity: 0.85;
 }
 
 .cal-month-grid {
@@ -480,19 +671,11 @@
   opacity: 0.5;
 }
 
-.cal-day-cell.today {
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.04) 0%, transparent 100%);
-}
-
-.cal-day-cell.today::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--cal-accent);
-}
+/* Today cell carries no background tint and no top stripe — the breathing
+   coral day-number circle is the only marker, the TODAY pill in the header
+   is the second. Four overlapping today-markers (cell-bg + side-stripe +
+   circle + breath + header pill) violated the ≤10% coral budget; the cell
+   tint and top stripe (a side-stripe in disguise) were the redundant ones. */
 
 .cal-day-number {
   font-size: 0.875rem;
@@ -512,10 +695,13 @@
   background: var(--cal-accent);
   color: white;
   font-weight: 700;
+  /* Subtle 3s breath — drawing attention without animation fatigue. */
+  animation: calTodayBreath 3s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
 .cal-day-cell.weekend .cal-day-number {
-  color: var(--cal-accent);
+  /* Weekend day-numbers: muted, not coral. Today's coral pill remains the only signal. */
+  color: var(--cal-text-subtle);
 }
 
 .cal-day-events {
@@ -528,13 +714,13 @@
 }
 
 .cal-event-pill {
-  padding: 3px 8px 3px 6px;
+  /* Background, color, and inset hairline come from inline getEventTypeStyle —
+     translucent 15% fill, 40% perimeter ring, colored text. Keeping the base
+     defaults neutral so coral stays the only saturated solid in the calendar. */
+  padding: 3px 8px;
   border-radius: 4px;
-  border-left: 2px solid currentColor;
   font-size: 0.6875rem;
   font-weight: 600;
-  color: white;
-  background: rgba(255, 255, 255, 0.15);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -551,36 +737,39 @@
 }
 
 .cal-event-pill.all-day {
-  border-left: 3px solid rgba(255,255,255,0.5);
+  /* All-day variant — inline boxShadow (40% hairline) already provides the ring;
+     a slight opacity nudge gives just-enough visual lift over timed events. */
+  opacity: 0.95;
 }
 
 .cal-more-events {
+  /* Neutral by default — coral is reserved for state, not chrome. */
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   font-size: 0.625rem;
-  font-weight: 600;
-  color: var(--cal-accent);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--cal-text-muted);
   padding: 2px 4px;
   cursor: pointer;
   border-radius: 4px;
   transition: var(--cal-transition);
-  background: var(--cal-accent-soft);
+  background: transparent;
   display: inline-block;
   margin-top: 2px;
+  text-decoration: underline;
+  text-decoration-color: var(--cal-border);
+  text-underline-offset: 2px;
+  font-variant-numeric: tabular-nums;
 }
 
 .cal-more-events:hover {
-  color: white;
-  background: var(--cal-accent);
+  color: var(--cal-text);
+  text-decoration-color: var(--cal-text-subtle);
 }
 
-/* Event Colors — translucent fill + left border via color inheritance */
-.cal-event-red    { background: rgba(244,  63,  94, 0.18); color: #f43f5e; }
-.cal-event-amber  { background: rgba(245, 158,  11, 0.18); color: #f59e0b; }
-.cal-event-emerald{ background: rgba( 16, 185, 129, 0.18); color: #10b981; }
-.cal-event-sky    { background: rgba( 14, 165, 233, 0.18); color: #0ea5e9; }
-.cal-event-violet { background: rgba(139,  92, 246, 0.18); color: #8b5cf6; }
-.cal-event-pink   { background: rgba(236,  72, 153, 0.18); color: #ec4899; }
-.cal-event-indigo { background: rgba( 99, 102, 241, 0.18); color: #6366f1; }
-.cal-event-zinc   { background: rgba(113, 113, 122, 0.18); color: #71717a; }
+/* (Removed: legacy .cal-event-* color classes plus their getEventColorClass
+   helper. They were dead code displaced by the inline getEventTypeStyle
+   approach used by every view; keeping them only invited drift.) */
 
 /* Type-aware event styles (inline styles override bg, border) */
 .cal-event-typed {
@@ -687,12 +876,14 @@
 }
 
 .cal-week-day-header.today {
-  background: linear-gradient(180deg, rgba(220, 38, 38, 0.08) 0%, transparent 100%);
+  /* Brand-aligned today header tint — uses --cal-accent (rose 500). */
+  background: linear-gradient(180deg, var(--cal-accent-soft) 0%, transparent 100%);
 }
 
 .cal-week-day-name {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--cal-text-subtle);
@@ -731,10 +922,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   font-size: 0.5625rem;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   color: var(--cal-text-subtle);
 }
 
@@ -788,8 +980,10 @@
 }
 
 .cal-week-time-label {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   font-size: 0.625rem;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   color: var(--cal-text-subtle);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -882,6 +1076,7 @@
   height: 10px;
   border-radius: 50%;
   background: var(--cal-accent);
+  animation: calNowPulse 4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
 /* ============================================
@@ -908,12 +1103,14 @@
 }
 
 .cal-day-header.today {
-  background: linear-gradient(180deg, rgba(220, 38, 38, 0.06) 0%, var(--cal-bg-elevated) 100%);
+  /* Brand-aligned today header tint — uses --cal-accent (rose 500), no off-brand red. */
+  background: linear-gradient(180deg, var(--cal-accent-soft) 0%, var(--cal-bg-elevated) 100%);
 }
 
 .cal-day-header-weekday {
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.15em;
   color: var(--cal-text-subtle);
@@ -952,8 +1149,9 @@
 }
 
 .cal-day-allday-label {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   font-size: 0.625rem;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--cal-text-subtle);
@@ -1017,8 +1215,10 @@
 }
 
 .cal-day-time-label {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   font-size: 0.6875rem;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   color: var(--cal-text-subtle);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -1057,15 +1257,8 @@
   overflow: hidden;
 }
 
-.cal-day-event::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 4px;
-  background: rgba(255,255,255,0.4);
-}
+/* Side-stripe pseudo-element removed — was a banned anti-pattern.
+   Day events now rely on background fill + 1px hairline for definition. */
 
 .cal-day-event:hover {
   z-index: 10;
@@ -1224,14 +1417,15 @@
    DRAG-TO-RESCHEDULE
    ============================================ */
 
-/* Ghost preview overlay shown while dragging an event */
+/* Ghost preview overlay shown while dragging an event.
+   Uses --cal-accent — drag-target IS active selection (legitimate signal use). */
 .cal-event-drag-ghost {
   position: absolute;
   left: 4px;
   right: 4px;
   border-radius: var(--cal-radius-sm);
-  background: rgba(99, 102, 241, 0.18);
-  border: 2px dashed #6366f1;
+  background: var(--cal-accent-soft);
+  border: 2px dashed var(--cal-accent);
   pointer-events: none;
   z-index: 20;
   display: flex;
@@ -1240,26 +1434,19 @@
   transition: top 60ms linear, height 60ms linear;
 }
 
-/* Time label inside ghost */
+/* Time label inside ghost — Mono numerals */
 .cal-event-drag-label {
-  font-size: 0.7rem;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
   font-weight: 600;
-  color: #6366f1;
-  background: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.02em;
+  color: var(--cal-accent);
+  background: var(--cal-bg-elevated);
   padding: 2px 6px;
   border-radius: 4px;
   white-space: nowrap;
   pointer-events: none;
-}
-
-.dark .cal-event-drag-label {
-  background: rgba(24, 24, 27, 0.85);
-  color: #818cf8;
-}
-
-.dark .cal-event-drag-ghost {
-  background: rgba(99, 102, 241, 0.12);
-  border-color: #818cf8;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Source event while being dragged — slightly faded */
@@ -1300,17 +1487,14 @@
   cursor: grabbing;
 }
 
-/* Month-view drop target cell highlight */
+/* Month-view drop target cell highlight — coral, matching the drag-ghost.
+   Animation draws the highlight in over 180ms instead of flashing on instantly. */
 .cal-day-cell.cal-day-drop-target {
-  background: rgba(99, 102, 241, 0.08);
-  outline: 2px dashed #6366f1;
+  background: var(--cal-accent-soft);
+  outline: 2px dashed var(--cal-accent);
   outline-offset: -2px;
   border-radius: 4px;
-}
-
-.dark .cal-day-cell.cal-day-drop-target {
-  background: rgba(99, 102, 241, 0.12);
-  outline-color: #818cf8;
+  animation: calDropTargetEnter 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* ============================================
@@ -1327,7 +1511,8 @@
   display: none !important;
 }
 
-/* Subtle indigo indicator bar on the top edge while focus mode is on */
+/* Subtle coral indicator bar on the top edge while focus mode is on.
+   Focus mode IS active state — coral signal is appropriate. */
 .cal-focus-mode::before {
   content: '';
   position: absolute;
@@ -1335,7 +1520,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  background: var(--cal-accent);
   z-index: 100;
   pointer-events: none;
 }
@@ -1508,32 +1693,12 @@
   color: var(--cal-text-muted);
 }
 
-/* More events — is a <button> element, reset button styles then apply ours */
+/* More events — is a <button> element, reset button styles. Neutral
+   text-muted gives ~6:1 on the elevated card surface (WCAG-AA pass). */
 .cal-more-events {
-  color: #b91c1c; /* deeper red — 4.6:1 on white bg */
-  background: rgba(185, 28, 28, 0.07);
-  /* Reset browser button defaults */
   border: none;
-  cursor: pointer;
   text-align: left;
   width: 100%;
-  font-family: inherit;
-  font-size: inherit;
-}
-
-.cal-more-events:hover {
-  color: white;
-  background: #b91c1c;
-}
-
-.dark .cal-more-events {
-  color: var(--cal-accent);
-  background: var(--cal-accent-soft);
-}
-
-.dark .cal-more-events:hover {
-  color: white;
-  background: var(--cal-accent);
 }
 
 /* Week view all-day gutter label */
@@ -1553,31 +1718,26 @@
 }
 
 /* ============================================================
-   GLASS DROPDOWNS / POPOVERS
-   ============================================================ */
+   DROPDOWNS / POPOVERS / CONTEXT MENUS
+   ============================================================
+   Opaque elevated surfaces with a hairline border. Glass-by-default
+   is banned (DESIGN.md); blur is reserved for modal scrims only. */
 .cal-popover,
 .cal-context-menu,
 .cal-color-picker-dropdown {
-  background: rgba(255, 255, 255, 0.97);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-          backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(244, 63, 94, 0.18);
-  border-radius: 16px;
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.12),
-    0 0 0 1px rgba(244, 63, 94, 0.04) inset;
+  background: var(--cal-bg-elevated);
+  border: 1px solid var(--cal-border);
+  border-radius: var(--cal-radius-lg);
+  box-shadow: var(--cal-shadow-lg);
 }
 
 .dark .cal-popover,
 .dark .cal-context-menu,
 .dark .cal-color-picker-dropdown {
-  background: rgba(10, 10, 10, 0.95);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-          backdrop-filter: blur(24px) saturate(180%);
+  /* Dark-mode dropdowns sit above the true-black canvas with a translucent
+     surface — depth from layer, not blur. */
+  background: rgba(20, 20, 20, 0.98);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.70),
-    0 0 0 1px rgba(244, 63, 94, 0.08) inset;
 }
 
 /* ============================================================
