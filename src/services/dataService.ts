@@ -1483,6 +1483,20 @@ class DataService {
       }
       result = data;
     } else {
+      // RLS on voxer_recordings INSERT requires user_has_workspace_access(workspace_id)
+      // AND user_id = auth.uid(). workspace_id is NOT NULL on the table.
+      const { data: ws } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', userId)
+        .limit(1)
+        .maybeSingle();
+      if (!ws?.workspace_id) {
+        console.error('Error saving voxer recording: no workspace for user');
+        return null;
+      }
+      recordingData.workspace_id = ws.workspace_id;
+
       // Insert new
       const { data, error } = await supabase
         .from('voxer_recordings')

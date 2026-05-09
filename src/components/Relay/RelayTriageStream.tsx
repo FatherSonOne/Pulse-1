@@ -167,10 +167,20 @@ const TriageRow: React.FC<{
 
   return (
     <div className="group relative">
-      <button
-        type="button"
+      {/* Row wrapper is a div+role=button (not a <button>) because it hosts an
+          interactive Play <button> as a descendant — nesting buttons is invalid
+          DOM. Keyboard parity is preserved via onKeyDown. */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onClick}
-        className="w-full text-left px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition flex items-start gap-3"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        className="w-full text-left px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition flex items-start gap-3 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
       >
         {canPlay ? (
           <button
@@ -246,7 +256,7 @@ const TriageRow: React.FC<{
             </div>
           )}
         </div>
-      </button>
+      </div>
 
       {(canReply || onDismiss || onSnooze || onMarkRead || onDelete) && (
         <div

@@ -23,11 +23,37 @@ import type {
 
 class VoxModeService {
   private userId: string | null = null;
+  private workspaceId: string | null = null;
   private bucketChecked: boolean = false;
   private bucketExists: boolean = false;
 
   setUserId(userId: string) {
     this.userId = userId;
+  }
+
+  /**
+   * Resolve the caller's workspace_id by looking up workspace_members.
+   * Required for inserts into workspace-scoped tables (e.g. quick_vox_messages),
+   * whose RLS policies gate on `user_has_workspace_access(workspace_id)`.
+   * Cached per-session — clear via clearWorkspaceCache() on workspace switch.
+   */
+  async ensureWorkspaceId(): Promise<string | null> {
+    if (this.workspaceId) return this.workspaceId;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data, error } = await supabase
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .maybeSingle();
+    if (error || !data?.workspace_id) return null;
+    this.workspaceId = data.workspace_id as string;
+    return this.workspaceId;
+  }
+
+  clearWorkspaceCache() {
+    this.workspaceId = null;
   }
 
   async ensureUserId(): Promise<string> {
@@ -592,12 +618,19 @@ class VoxModeService {
   async createVoiceThread(participantIds: string[], subject?: string): Promise<VoiceThread | null> {
     const userId = await this.ensureUserId();
     if (!userId) return null;
+    // RLS: user_has_workspace_access(workspace_id) AND auth.uid() = ANY(participants).
+    const workspaceId = await this.ensureWorkspaceId();
+    if (!workspaceId) {
+      console.error('createVoiceThread: no workspace for current user');
+      return null;
+    }
 
     const allParticipants = [...new Set([userId, ...participantIds])];
 
     const { data, error } = await supabase
       .from('voice_threads')
       .insert([{
+        workspace_id: workspaceId,
         participants: allParticipants,
         subject,
         message_count: 0,
@@ -1333,6 +1366,13 @@ class VoxModeService {
     const userId = await this.ensureUserId();
     if (!userId) return null;
 
+    // RLS: user_has_workspace_access(workspace_id) AND user_id = auth.uid().
+    const workspaceId = await this.ensureWorkspaceId();
+    if (!workspaceId) {
+      console.error('saveVoxNote: no workspace for current user');
+      return null;
+    }
+
     // Auto-generate title and tags from transcript
     const autoTitle = title || this.generateTitleFromTranscript(transcript);
     const autoTags = await this.extractTagsAI(transcript);
@@ -1341,6 +1381,7 @@ class VoxModeService {
     const { data, error } = await supabase
       .from('vox_notes')
       .insert([{
+        workspace_id: workspaceId,
         user_id: userId,
         audio_url: audioUrl,
         duration: Math.round(duration),
@@ -1907,13 +1948,29 @@ class VoxModeService {
   }
 
   async sendQuickVox(recipientId: string, audioUrl: string, duration: number): Promise<QuickVoxMessage | null> {
-    const userId = await this.ensureUserId();
-    if (!userId) return null;
+    // RLS on quick_vox_messages: user_has_workspace_access(workspace_id)
+    //   AND sender_id = auth.uid(). Both pieces must be supplied — read auth
+    // fresh (ensureUserId can return a stale cache / localStorage fallback
+    // that fails the auth.uid() check), and resolve the workspace via
+    // workspace_members (workspace_id is NOT NULL on the table).
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) {
+      console.error('sendQuickVox: no authenticated session');
+      return null;
+    }
+    this.userId = authUser.id;
+
+    const workspaceId = await this.ensureWorkspaceId();
+    if (!workspaceId) {
+      console.error('sendQuickVox: no workspace for current user');
+      return null;
+    }
 
     const { data, error } = await supabase
       .from('quick_vox_messages')
       .insert([{
-        sender_id: userId,
+        workspace_id: workspaceId,
+        sender_id: authUser.id,
         recipient_id: recipientId,
         audio_url: audioUrl,
         duration: Math.round(duration),
@@ -1936,7 +1993,7 @@ class VoxModeService {
       `${sender?.displayName} sent you a vox`,
       'Tap to listen',
       data.id,
-      userId,
+      authUser.id,
       sender?.displayName
     );
 
@@ -2045,10 +2102,17 @@ class VoxModeService {
   ): Promise<VoxDrop | null> {
     const userId = await this.ensureUserId();
     if (!userId) return null;
+    // RLS: user_has_workspace_access(workspace_id) AND sender_id = auth.uid().
+    const workspaceId = await this.ensureWorkspaceId();
+    if (!workspaceId) {
+      console.error('scheduleVoxDrop: no workspace for current user');
+      return null;
+    }
 
     const { data, error } = await supabase
       .from('vox_drops')
       .insert([{
+        workspace_id: workspaceId,
         sender_id: userId,
         recipient_ids: recipientIds,
         audio_url: audioUrl,
