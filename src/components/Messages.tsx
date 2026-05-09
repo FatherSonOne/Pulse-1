@@ -1132,8 +1132,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       label: tool.name,
       desc: tool.description,
       kind: 'action' as const,
-      icon: tool.icon ? `fa-${tool.icon}` : 'fa-tools',
+      // toolRegistry icons are already FA-prefixed (e.g. 'fa-robot') — don't
+      // double it. Fall back to 'fa-tools' for tools without an icon.
+      icon: tool.icon || 'fa-tools',
       keywords: tool.keywords,
+      shortcut: tool.shortcut,
       group: 'Messages tools',
       run: tool.onLaunch,
     }));
@@ -1141,53 +1144,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   useRegisterCommands('messages:tools', { commands: messagesToolCommands });
 
-  // Global keyboard shortcuts for tools (Phase 2A)
-  // Uses capture phase to intercept before browser's default behavior
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      const ctrl = e.ctrlKey || e.metaKey;
-      const shift = e.shiftKey;
-      const key = e.key.toLowerCase();
-
-      // Ctrl+K is handled globally in App.tsx (opens the command palette).
-      // Messages registers its tool commands via useRegisterCommands.
-
-      // Tool shortcuts (Ctrl+Shift+Key)
-      if (ctrl && shift) {
-        let toolId: string | null = null;
-
-        switch (key) {
-          case 'r': toolId = 'deep-reasoner'; break;
-          case 'v': toolId = 'video-analyst'; break;
-          case 'c': toolId = 'code-studio'; break;
-          case 'i': toolId = 'vision-lab'; break;
-          case 's': toolId = 'deep-search'; break;
-          case 'm': toolId = 'meeting-intel'; break;
-          case 'a': toolId = 'ai-assistant'; break;
-        }
-
-        if (toolId) {
-          e.preventDefault();
-          e.stopPropagation();
-
-          // Save to recent tools for usage tracking
-          saveRecentTool(toolId);
-
-          // Get the overlay type for this tool
-          const overlayType = getToolOverlayType(toolId);
-
-          if (overlayType) {
-            // Launch the tool in its overlay
-            setActiveToolOverlay(overlayType);
-          }
-        }
-      }
-    };
-
-    // Use capture: true to intercept in capture phase before browser handlers
-    document.addEventListener('keydown', handleGlobalKeyDown, { capture: true });
-    return () => document.removeEventListener('keydown', handleGlobalKeyDown, { capture: true });
-  }, []);
+  // Tool shortcuts (Ctrl+Shift+R/V/C/I/S/M/A) are now fired by the global
+  // CommandPaletteContext runner — each tool command registers its `shortcut`
+  // and the runner matches the keypress against the registry. The previous
+  // local handler that lived here is gone to avoid double-fires.
 
   // Start Pulse conversation with a user
   const startPulseConversation = useCallback(async (user: SearchUserResult) => {

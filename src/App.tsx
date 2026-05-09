@@ -71,7 +71,7 @@ import { DeletedWorkspaceInterstitial } from './components/settings/DeletedWorks
 import { OrgOnboardingModal } from './components/settings/OrgOnboardingModal';
 import { Toaster } from 'react-hot-toast';
 
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Command as CommandIcon } from 'lucide-react';
 
 // Loading fallback component for lazy-loaded routes
 // Uses inline=true so it fills the content area via flex layout rather than fixed/absolute positioning
@@ -157,11 +157,13 @@ const PulseRoomPage: React.FC<{ roomName: string }> = ({ roomName }) => {
 // itself renders outside the provider, so it can't call open() directly.
 
 interface AppCommandRegistrarProps {
+  view: AppView;
   setView: React.Dispatch<React.SetStateAction<AppView>>;
   setSettingsSection: React.Dispatch<React.SetStateAction<string | undefined>>;
 }
 
 const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
+  view,
   setView,
   setSettingsSection,
 }) => {
@@ -192,16 +194,19 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
       { id: 'nav-settings', label: 'Settings', desc: 'Preferences and account', view: AppView.SETTINGS, icon: 'fa-gear', keywords: ['preferences', 'account'] },
       { id: 'nav-users-guide', label: "User's Guide", desc: 'How to use Pulse', view: AppView.USERS_GUIDE, icon: 'fa-circle-question', keywords: ['help', 'docs', 'guide'] },
     ];
-    return navDestinations.map(n => ({
-      id: n.id,
-      label: n.label,
-      desc: n.desc,
-      icon: n.icon,
-      kind: 'navigate' as const,
-      keywords: n.keywords,
-      run: () => setView(n.view),
-    }));
-  }, [setView]);
+    return navDestinations
+      // Hide the "Go to <current view>" row — it would no-op and just adds noise.
+      .filter(n => n.view !== view)
+      .map(n => ({
+        id: n.id,
+        label: n.label,
+        desc: n.desc,
+        icon: n.icon,
+        kind: 'navigate' as const,
+        keywords: n.keywords,
+        run: () => setView(n.view),
+      }));
+  }, [setView, view]);
 
   const helpCommands = useMemo<Command[]>(() => [
     {
@@ -957,7 +962,7 @@ const App: React.FC = () => {
           Sections register their commands via useRegisterCommands so the
           palette aggregates Pulse-wide actions and section-specific ones. */}
       <GlobalCommandPalette />
-      <AppCommandRegistrar setView={setView} setSettingsSection={setSettingsSection} />
+      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} />
 
       {/* Blocking org-onboarding modal: appears when the active workspace has
           onboarding_step='pending' and the user is the owner. Self-dismisses. */}
@@ -982,6 +987,18 @@ const App: React.FC = () => {
              <span className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">Pulse</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
+            {/* Command palette — mobile entry point. Dispatches the same
+                'pulse:command-palette-open' event the global Cmd+K listener
+                uses, so it opens the modal palette identically. */}
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('pulse:command-palette-open'))}
+              className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center text-zinc-500 dark:text-zinc-400 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition active:scale-95"
+              aria-label="Open command palette"
+              title="Run a command"
+            >
+              <CommandIcon className="text-lg" size={20} />
+            </button>
             {/* User Guide */}
             <button
               type="button"
