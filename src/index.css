@@ -2199,6 +2199,44 @@ html, body {
   will-change: auto;
 }
 
+/* ─── Email delight moments — tasteful, brand-aware, never decorative ─────── */
+
+/* Inbox-zero halo: slow rose ring breathing behind the icon (3.6s loop, low energy). */
+@keyframes pulse-email-zero-halo {
+  0%, 100% { transform: scale(1);   opacity: 0.55; }
+  50%      { transform: scale(1.18); opacity: 0.85; }
+}
+.pulse-email-zero-halo { animation: pulse-email-zero-halo 3.6s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+
+/* Star pop: one-shot 280ms scale-overshoot when star toggles on. */
+@keyframes pulse-email-star-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.32); }
+  70%  { transform: scale(0.94); }
+  100% { transform: scale(1); }
+}
+.pulse-email-star-pop { animation: pulse-email-star-pop 280ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Sync success ring: brief 600ms rose ring fade after sync completes. */
+@keyframes pulse-email-sync-success {
+  0%   { transform: scale(0.6); opacity: 0;   }
+  20%  { opacity: 0.65; }
+  100% { transform: scale(1.85); opacity: 0; }
+}
+.pulse-email-sync-success {
+  position: absolute; inset: 0; border-radius: 9999px;
+  border: 1.5px solid rgb(244 63 94 / 0.85);
+  pointer-events: none;
+  animation: pulse-email-sync-success 620ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* AI provenance fresh pulse: coral dot breathes 3 cycles after fresh analysis arrives. */
+@keyframes pulse-email-ai-fresh {
+  0%, 100% { box-shadow: 0 0 0 0   rgb(244 63 94 / 0.55); }
+  50%      { box-shadow: 0 0 0 4px rgb(244 63 94 / 0);    }
+}
+.pulse-email-ai-fresh { animation: pulse-email-ai-fresh 1.4s cubic-bezier(0.16, 1, 0.3, 1) 3; }
+
 /* Reduced motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   *,

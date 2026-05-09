@@ -68,27 +68,27 @@ export const GoogleAuthStatus: React.FC<GoogleAuthStatusProps> = ({ onReconnect 
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center">
       {status === 'connected' && (
         <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20"
+          className="flex items-center gap-1.5 h-7 px-2 rounded-md text-stone-500 dark:text-zinc-500"
           title={`Session valid for ${minutesLeft} more minutes`}
         >
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-          <span className="text-xs font-medium text-green-600 dark:text-green-400">
-            Google Connected
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em]">
+            Google
           </span>
         </div>
       )}
 
       {status === 'expiring-soon' && (
         <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20"
+          className="flex items-center gap-1.5 h-7 px-2 rounded-md bg-orange-500/10 text-orange-600 dark:text-orange-400"
           title="Your Google session will expire soon"
         >
-          <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
-          <span className="text-xs font-medium text-orange-600 dark:text-orange-400">
-            Expires in {minutesLeft} min
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" aria-hidden="true" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em] tabular-nums">
+            Expires {minutesLeft}m
           </span>
         </div>
       )}
@@ -96,24 +96,13 @@ export const GoogleAuthStatus: React.FC<GoogleAuthStatusProps> = ({ onReconnect 
       {status === 'expired' && (
         <button
           onClick={onReconnect}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 hover:bg-yellow-500/20 transition-colors"
+          className="flex items-center gap-1.5 h-7 px-2 rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-colors"
           title="Click to reconnect your Google account"
         >
-          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-          <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
-            Session Expired
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" aria-hidden="true" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em]">
+            Reconnect
           </span>
-          <svg
-            className="w-3 h-3 text-yellow-600 dark:text-yellow-400"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
         </button>
       )}
     </div>

@@ -44,6 +44,9 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
 
+  // Per-row star-pop animation key — increments only on star (not unstar) for that row
+  const [starPopKeys, setStarPopKeys] = useState<Record<string, number>>({});
+
   const toggleSelect = useCallback((emailId: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -170,18 +173,45 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
   }
 
   if (emails.length === 0) {
+    const isInboxZero = currentFolder === 'inbox';
     return (
       <div className="flex-1 flex items-center justify-center bg-white dark:bg-transparent p-8">
         <div className="text-center max-w-sm">
-          <Inbox className="w-8 h-8 text-stone-300 dark:text-zinc-700 mx-auto mb-5" />
-          <h3 className="text-lg font-light text-stone-900 dark:text-white tracking-tight mb-2">
-            {currentFolder === 'inbox' ? 'Inbox zero.' : `Nothing in ${currentFolder}.`}
-          </h3>
-          <p className="text-sm text-stone-500 dark:text-zinc-500">
-            {currentFolder === 'inbox'
-              ? "You're caught up. Focus on what matters."
-              : 'Empty for now. Check back later.'}
-          </p>
+          {isInboxZero ? (
+            // Milestone moment: triage achieved. Rose halo + mono badge + confident next-move.
+            <>
+              <div className="relative w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+                <span
+                  className="pulse-email-zero-halo absolute inset-0 rounded-full bg-rose-500/15 dark:bg-rose-500/20"
+                  aria-hidden="true"
+                />
+                <span
+                  className="absolute inset-2 rounded-full bg-rose-500/10 dark:bg-rose-500/15"
+                  aria-hidden="true"
+                />
+                <Inbox className="w-6 h-6 text-rose-500 relative" strokeWidth={1.75} />
+              </div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-rose-600 dark:text-rose-400 mb-3">
+                Inbox · Zero
+              </div>
+              <h3 className="text-lg font-light text-stone-900 dark:text-white tracking-tight mb-1.5">
+                You're caught up.
+              </h3>
+              <p className="text-sm text-stone-500 dark:text-zinc-500 max-w-[34ch] mx-auto">
+                Nothing waiting. Use this window for the work that needs you.
+              </p>
+            </>
+          ) : (
+            <>
+              <Inbox className="w-8 h-8 text-stone-300 dark:text-zinc-700 mx-auto mb-5" strokeWidth={1.5} />
+              <h3 className="text-lg font-light text-stone-900 dark:text-white tracking-tight mb-2">
+                Nothing in {currentFolder}.
+              </h3>
+              <p className="text-sm text-stone-500 dark:text-zinc-500">
+                Empty for now. Check back later.
+              </p>
+            </>
+          )}
         </div>
       </div>
     );
@@ -195,15 +225,15 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
     >
       {/* Sticky Header: Tabs + Bulk Actions — solid, no backdrop-blur (reserved for modals) */}
       <div className="sticky top-0 z-20 bg-white dark:bg-zinc-900 border-b border-stone-200 dark:border-zinc-800">
-        {/* Category Tabs (Inbox Only) — neutral chrome, single coral underline marks active */}
+        {/* Category Filter (Inbox Only) — mono chip row, breaks the Gmail-tab metaphor */}
         {currentFolder === 'inbox' && activeCategory && onCategoryChange && (
-          <div className="flex items-stretch px-2 border-b border-stone-100 dark:border-zinc-800/60">
+          <div className="flex items-center gap-1 px-3 py-2 border-b border-stone-100 dark:border-zinc-800/60 overflow-x-auto" role="tablist" aria-label="Inbox categories">
             {(['primary', 'promotions', 'social', 'updates'] as const).map((cat) => {
               const isActive = activeCategory === cat;
               const count = categoryCounts?.[cat] || 0;
               const labels = {
                 primary: { label: 'Primary', description: "Personal emails and messages that don't appear in other tabs." },
-                promotions: { label: 'Promotions', description: 'Marketing, newsletters, and other promotional emails.' },
+                promotions: { label: 'Promos', description: 'Marketing, newsletters, and other promotional emails.' },
                 social: { label: 'Social', description: 'Notifications from social networks and media sites.' },
                 updates: { label: 'Updates', description: 'Confirmations, receipts, bills, and statements.' },
               }[cat];
@@ -213,25 +243,23 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
                   key={cat}
                   onClick={() => onCategoryChange(cat as EmailCategory)}
                   title={labels.description}
-                  className={`flex-1 relative flex items-center justify-center gap-2 h-11 transition-colors min-w-0 outline-none focus-visible:bg-stone-50 dark:focus-visible:bg-white/[0.03] ${
+                  className={`group flex items-center gap-1.5 h-7 px-2.5 rounded-md transition-colors outline-none focus-visible:ring-2 focus-visible:ring-rose-500/30 ${
                     isActive
-                      ? 'text-stone-900 dark:text-white'
-                      : 'text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-zinc-300'
+                      ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                      : 'text-stone-500 dark:text-zinc-500 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-800 dark:hover:text-zinc-200'
                   }`}
                   role="tab"
                   aria-selected={isActive}
                 >
-                  <span className={`text-sm ${isActive ? 'font-medium' : 'font-normal'}`}>{labels.label}</span>
+                  <span className={`font-mono text-[10px] uppercase tracking-[0.12em] ${isActive ? 'font-medium' : ''}`}>
+                    {labels.label}
+                  </span>
                   {count > 0 && (
-                    <span className={`font-mono text-[10px] tabular-nums tracking-wider ${
+                    <span className={`font-mono text-[10px] tabular-nums ${
                       isActive ? 'text-rose-600 dark:text-rose-400' : 'text-stone-400 dark:text-zinc-600'
                     }`}>
                       {count > 99 ? '99+' : count}
                     </span>
-                  )}
-                  {/* Single coral underline — the only signal of active state */}
-                  {isActive && (
-                    <span className="absolute left-3 right-3 bottom-0 h-[2px] bg-rose-500 rounded-t" aria-hidden="true" />
                   )}
                 </button>
               );
@@ -329,10 +357,13 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
                 <span className="absolute left-0 top-2 bottom-2 w-[2px] rounded-r bg-rose-500" aria-hidden="true" />
               )}
 
-              {/* Unread dot — coral pip in left margin, single signal */}
-              {!email.is_read && !isSelected && (
-                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden="true" />
-              )}
+              {/* Unread dot — fades out when read, single signal */}
+              <span
+                className={`absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-rose-500 transition-opacity duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none ${
+                  !email.is_read && !isSelected ? 'opacity-100' : 'opacity-0'
+                }`}
+                aria-hidden="true"
+              />
 
               {/* Checkbox */}
               <div className="pt-[3px]" onClick={(e) => e.stopPropagation()}>
@@ -348,6 +379,9 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (!email.is_starred) {
+                    setStarPopKeys((prev) => ({ ...prev, [email.id]: (prev[email.id] ?? 0) + 1 }));
+                  }
                   onToggleStar(email);
                 }}
                 className={`pt-[3px] transition-colors ${
@@ -357,7 +391,12 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
                 }`}
                 title={email.is_starred ? 'Unstar' : 'Star'}
               >
-                <i className={`fa-${email.is_starred ? 'solid' : 'regular'} fa-star text-[13px]`}></i>
+                <i
+                  key={starPopKeys[email.id] ?? 0}
+                  className={`fa-${email.is_starred ? 'solid' : 'regular'} fa-star text-[13px] inline-block ${
+                    (starPopKeys[email.id] ?? 0) > 0 ? 'pulse-email-star-pop' : ''
+                  }`}
+                />
               </button>
 
               {/* Avatar — neutral tint, mono initials */}
