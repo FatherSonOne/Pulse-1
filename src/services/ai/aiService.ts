@@ -18,6 +18,7 @@ import {
   AIProviderUnavailableError,
   AIRouterError,
 } from './errors';
+import { maskParams, shouldMask } from './piiMasking';
 
 export interface InvokeAIOptions {
   workspaceId: string;
@@ -26,6 +27,9 @@ export interface InvokeAIOptions {
   /** Override the task's default provider/model for this single call.
    *  Must be a model id from `aiModelCatalog` (validated server-side). */
   modelOverride?: string;
+  /** Workspace-level PII masking enforcement (from `ai_pii_masking_enforced`).
+   *  When true, prompts are scrubbed regardless of the user's personal toggle. */
+  piiMaskingEnforced?: boolean;
 }
 
 export async function invokeAI(
@@ -45,12 +49,17 @@ export async function invokeAI(
     throw new AIRouterError('Not authenticated', 'unauthorized');
   }
 
+  // PII masking — applied client-side BEFORE the prompt leaves the browser.
+  // Effective masking = (workspace enforces) OR (user opted in).
+  const maskingActive = await shouldMask({ enforced: opts.piiMaskingEnforced });
+  const outboundParams = maskingActive ? maskParams(params) : params;
+
   // Use supabase.functions.invoke — it sets both apikey + Authorization headers
   // which the Supabase edge-function gateway requires.
   const { data, error } = await supabase.functions.invoke('ai-router', {
     body: {
       task,
-      params,
+      params: outboundParams,
       workspace_id: opts.workspaceId,
       ...(opts.modelOverride ? { model_override: opts.modelOverride } : {}),
     },

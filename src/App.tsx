@@ -1,6 +1,6 @@
 
 import { Capacitor } from '@capacitor/core';
-import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import LiveSession from './components/LiveSession';
 import { PulseVoiceChat } from './components/VoiceChat';
 import MessageContainer from './components/MessageContainer';
@@ -29,7 +29,6 @@ const Archives = lazy(() => import('./components/Archives'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const MessageAnalytics = lazy(() => import('./components/MessageAnalytics'));
 const UnifiedSearchRedesign = lazy(() => import('./components/UnifiedSearchRedesign'));
-const TestMatrix = lazy(() => import('./components/TestMatrix'));
 const AnalyticsDashboard = lazy(() => import('./components/Analytics').then(module => ({ default: module.AnalyticsDashboard })));
 const UsersGuide = lazy(() => import('./components/UsersGuide/UsersGuide'));
 
@@ -64,6 +63,8 @@ import { InstallPrompt } from './components/PWA/InstallPrompt';
 import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider } from './contexts/FeatureContext';
 import { PulseAIProvider } from './contexts/PulseAIContext';
+import { CommandPaletteProvider, useCommandPalette, useRegisterCommands, Command } from './contexts/CommandPaletteContext';
+import { GlobalCommandPalette } from './components/GlobalCommandPalette';
 import { WorkspaceProvider, useWorkspaceData, useWorkspaceActions } from './contexts/WorkspaceContext';
 import { TrialGate } from './components/billing/TrialGate';
 import { DeletedWorkspaceInterstitial } from './components/settings/DeletedWorkspaceInterstitial';
@@ -146,6 +147,89 @@ const PulseRoomPage: React.FC<{ roomName: string }> = ({ roomName }) => {
       />
     </div>
   );
+};
+
+// ─── AppCommandRegistrar ──────────────────────────────────────────────────────
+// Registers the global navigation + help commands that should appear in the
+// palette regardless of which view is active. Sits inside the
+// CommandPaletteProvider so it can use the hook. Also listens for the
+// pulse:command-palette-open event dispatched by App's Cmd+K handler — App
+// itself renders outside the provider, so it can't call open() directly.
+
+interface AppCommandRegistrarProps {
+  setView: React.Dispatch<React.SetStateAction<AppView>>;
+  setSettingsSection: React.Dispatch<React.SetStateAction<string | undefined>>;
+}
+
+const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
+  setView,
+  setSettingsSection,
+}) => {
+  const { open } = useCommandPalette();
+
+  // Bridge the global Cmd+K event into the provider scope.
+  useEffect(() => {
+    const handler = () => open();
+    window.addEventListener('pulse:command-palette-open', handler);
+    return () => window.removeEventListener('pulse:command-palette-open', handler);
+  }, [open]);
+
+  const navCommands = useMemo<Command[]>(() => {
+    const navDestinations: Array<{
+      id: string; label: string; desc: string; view: AppView; icon: string; keywords?: string[];
+    }> = [
+      { id: 'nav-dashboard', label: 'Dashboard', desc: 'Daily briefing and quick actions', view: AppView.DASHBOARD, icon: 'fa-house', keywords: ['home', 'briefing', 'today'] },
+      { id: 'nav-messages', label: 'Messages', desc: 'Unified inbox', view: AppView.MESSAGES, icon: 'fa-message', keywords: ['inbox', 'chat', 'dm'] },
+      { id: 'nav-email', label: 'Email', desc: 'Pulse email client', view: AppView.EMAIL, icon: 'fa-envelope', keywords: ['mail', 'gmail'] },
+      { id: 'nav-calendar', label: 'Calendar', desc: 'Schedule and tasks', view: AppView.CALENDAR, icon: 'fa-calendar', keywords: ['schedule', 'events', 'tasks', 'meeting'] },
+      { id: 'nav-relay', label: 'Relay', desc: 'Voice messages and notes', view: AppView.RELAY, icon: 'fa-microphone', keywords: ['vox', 'voice', 'audio'] },
+      { id: 'nav-contacts', label: 'Contacts', desc: 'People and teams', view: AppView.CONTACTS, icon: 'fa-users', keywords: ['people', 'crm'] },
+      { id: 'nav-archives', label: 'Memory', desc: 'Every word, every voice — find any conversation', view: AppView.ARCHIVES, icon: 'fa-box-archive', keywords: ['archives', 'history'] },
+      { id: 'nav-search', label: 'Search', desc: 'Search across Pulse', view: AppView.MULTI_MODAL, icon: 'fa-magnifying-glass', keywords: ['find', 'global'] },
+      { id: 'nav-decisions', label: 'Decisions & Tasks', desc: 'Decision hub and task board', view: AppView.DECISIONS_TASKS, icon: 'fa-list-check', keywords: ['todo', 'task'] },
+      { id: 'nav-meetings', label: 'Meetings', desc: 'Video meetings', view: AppView.MEETINGS, icon: 'fa-video', keywords: ['video', 'call'] },
+      { id: 'nav-sms', label: 'SMS', desc: 'Text messages', view: AppView.SMS, icon: 'fa-comment-sms', keywords: ['text'] },
+      { id: 'nav-settings', label: 'Settings', desc: 'Preferences and account', view: AppView.SETTINGS, icon: 'fa-gear', keywords: ['preferences', 'account'] },
+      { id: 'nav-users-guide', label: "User's Guide", desc: 'How to use Pulse', view: AppView.USERS_GUIDE, icon: 'fa-circle-question', keywords: ['help', 'docs', 'guide'] },
+    ];
+    return navDestinations.map(n => ({
+      id: n.id,
+      label: n.label,
+      desc: n.desc,
+      icon: n.icon,
+      kind: 'navigate' as const,
+      keywords: n.keywords,
+      run: () => setView(n.view),
+    }));
+  }, [setView]);
+
+  const helpCommands = useMemo<Command[]>(() => [
+    {
+      id: 'help-shortcuts',
+      label: 'View keyboard shortcuts',
+      desc: 'See every binding in one list',
+      icon: 'fa-keyboard',
+      kind: 'help',
+      keywords: ['hotkeys', 'bindings'],
+      run: () => window.dispatchEvent(new CustomEvent('pulse:show-shortcuts')),
+    },
+    {
+      id: 'help-billing',
+      label: 'Billing settings',
+      desc: 'Plan, usage, invoices',
+      icon: 'fa-credit-card',
+      kind: 'navigate',
+      keywords: ['plan', 'subscription', 'invoice'],
+      run: () => { setSettingsSection('billing'); setView(AppView.SETTINGS); },
+    },
+  ], [setSettingsSection, setView]);
+
+  // Register navigation as a separate scope from help so registries are
+  // organized by intent and easy to debug.
+  useRegisterCommands('app:navigation', { commands: navCommands });
+  useRegisterCommands('app:help',       { commands: helpCommands });
+
+  return null;
 };
 
 const App: React.FC = () => {
@@ -582,20 +666,18 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Keyboard shortcut: Cmd+K or Ctrl+K opens search
+  // Cmd+K / Ctrl+K opens the global command palette from anywhere. The palette
+  // is mounted once at App level via CommandPaletteProvider; sections register
+  // their commands via useRegisterCommands so the palette aggregates everything.
   useEffect(() => {
-    const handleSearchKey = (e: KeyboardEvent) => {
+    const handleKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        setView(AppView.MULTI_MODAL);
-        // Small delay to allow lazy component to mount before focusing
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('pulse:focus-search'));
-        }, 50);
+        window.dispatchEvent(new CustomEvent('pulse:command-palette-open'));
       }
     };
-    window.addEventListener('keydown', handleSearchKey);
-    return () => window.removeEventListener('keydown', handleSearchKey);
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
   }, []);
 
   // Global navigation event — allows PulseAssistant suggested actions + the
@@ -789,9 +871,7 @@ const App: React.FC = () => {
               return <MessageAnalytics />;
             case AppView.MULTI_MODAL:
               // Using the Redesigned Search Page
-              return <UnifiedSearchRedesign />;
-            case AppView.TEST_MATRIX:
-              return <TestMatrix />;
+              return <UnifiedSearchRedesign isDarkMode={isDarkMode} />;
             case AppView.ANALYTICS:
               return <AnalyticsDashboard
                 onClose={() => setView(AppView.DASHBOARD)}
@@ -867,10 +947,17 @@ const App: React.FC = () => {
     <TrialGate>
     <FeatureProvider defaultMode="simple">
     <PulseAIProvider user={user} activeView={view}>
+    <CommandPaletteProvider>
       {/* Global toast host — required by useAIErrorHandler + other toast-using
           components (emailStore, archiveStore, etc). Mounted once here so a
           single Toaster serves the whole app. */}
       <Toaster position="top-right" gutter={8} />
+
+      {/* Single global command palette — opened by Cmd+K from anywhere.
+          Sections register their commands via useRegisterCommands so the
+          palette aggregates Pulse-wide actions and section-specific ones. */}
+      <GlobalCommandPalette />
+      <AppCommandRegistrar setView={setView} setSettingsSection={setSettingsSection} />
 
       {/* Blocking org-onboarding modal: appears when the active workspace has
           onboarding_step='pending' and the user is the owner. Self-dismisses. */}
@@ -950,6 +1037,12 @@ const App: React.FC = () => {
               // User state will be updated by AuthContext
             }}
             isSidebarCollapsed={isSidebarCollapsed}
+            isDarkMode={isDarkMode}
+            onToggleTheme={toggleTheme}
+            onOpenFullSettings={(section) => {
+              if (section) setSettingsSection(section);
+              setView(AppView.SETTINGS);
+            }}
           />
         )}
         renderVoiceLogo={(collapsed) => (
@@ -1026,6 +1119,7 @@ const App: React.FC = () => {
       <OnlineStatus />
         </div>
       </MessageContainer>
+    </CommandPaletteProvider>
     </PulseAIProvider>
     </FeatureProvider>
     </TrialGate>

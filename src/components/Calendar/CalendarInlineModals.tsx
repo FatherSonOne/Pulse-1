@@ -60,8 +60,8 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
       {/* Team Management Modal */}
       {showTeamModal && (
         <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+          <div className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
+            <div className="p-6 border-b border-[var(--pulse-border)] flex items-center justify-between">
               <h3 className="text-lg font-bold dark:text-white">
                 {editingTeam ? 'Edit Team' : 'Create New Team'}
               </h3>
@@ -77,7 +77,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
                   placeholder="e.g., Marketing Team"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none"
                 />
               </div>
               <div>
@@ -95,7 +95,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
               </div>
               <div>
                 <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Team Members</label>
-                <div className="max-h-48 overflow-y-auto space-y-2 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2">
+                <div className="max-h-48 overflow-y-auto space-y-2 border border-[var(--pulse-border)] rounded-lg p-2">
                   {contacts.map(contact => (
                     <label key={contact.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer">
                       <input
@@ -119,7 +119,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                 </div>
               </div>
             </div>
-            <div className="p-6 border-t border-zinc-200 dark:border-zinc-800 flex justify-between">
+            <div className="p-6 border-t border-[var(--pulse-border)] flex justify-between">
               {editingTeam && teams.length > 1 && (
                 <button
                   onClick={() => {
@@ -133,7 +133,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                 </button>
               )}
               <div className="flex gap-3 ml-auto">
-                <button onClick={() => { setShowTeamModal(false); resetTeamForm(); }} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
+                <button onClick={() => { setShowTeamModal(false); resetTeamForm(); }} className="px-4 py-2 text-zinc-500 hover:text-[var(--pulse-ink)] transition">
                   Cancel
                 </button>
                 <button
@@ -151,8 +151,8 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
       {/* Calendar Invite Modal */}
       {showInviteModal && inviteContact && (
         <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
+            <div className="p-6 border-b border-[var(--pulse-border)]">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold dark:text-white">Schedule Meeting</h3>
                 <button onClick={() => { setShowInviteModal(false); setInviteContact(null); }} className="text-zinc-400 hover:text-zinc-600">
@@ -191,7 +191,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                   name="title"
                   required
                   placeholder="e.g., Project Discussion"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -202,7 +202,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                     name="date"
                     required
                     defaultValue={new Date().toISOString().split('T')[0]}
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
+                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -213,7 +213,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                       name="startTime"
                       required
                       defaultValue="10:00"
-                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
+                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none"
                     />
                   </div>
                   <div>
@@ -223,7 +223,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                       name="endTime"
                       required
                       defaultValue="11:00"
-                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
+                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none"
                     />
                   </div>
                 </div>
@@ -234,11 +234,11 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                   name="description"
                   rows={3}
                   placeholder="Add meeting details..."
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none resize-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none resize-none"
                 />
               </div>
               <div className="pt-4 flex justify-end gap-3">
-                <button type="button" onClick={() => { setShowInviteModal(false); setInviteContact(null); }} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
+                <button type="button" onClick={() => { setShowInviteModal(false); setInviteContact(null); }} className="px-4 py-2 text-zinc-500 hover:text-[var(--pulse-ink)] transition">
                   Cancel
                 </button>
                 <button type="submit" className="px-5 py-2 bg-rose-500 text-white rounded-lg text-sm font-bold hover:bg-rose-600 transition flex items-center gap-2">
@@ -254,8 +254,8 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
       {/* Create New Google Calendar Modal */}
       {showCreateCalendarModal && (
         <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+          <div className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
+            <div className="p-6 border-b border-[var(--pulse-border)] flex items-center justify-between">
               <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
                 <ExternalLink className="text-blue-500" />
                 Create New Calendar
@@ -272,7 +272,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                   value={newCalendarName}
                   onChange={(e) => setNewCalendarName(e.target.value)}
                   placeholder="e.g., Work Projects"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none"
                 />
               </div>
               <div>
@@ -282,12 +282,12 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                   onChange={(e) => setNewCalendarDescription(e.target.value)}
                   rows={3}
                   placeholder="What is this calendar for?"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none resize-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none resize-none"
                 />
               </div>
             </div>
-            <div className="p-6 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-3">
-              <button onClick={() => setShowCreateCalendarModal(false)} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
+            <div className="p-6 border-t border-[var(--pulse-border)] flex justify-end gap-3">
+              <button onClick={() => setShowCreateCalendarModal(false)} className="px-4 py-2 text-zinc-500 hover:text-[var(--pulse-ink)] transition">
                 Cancel
               </button>
               <button

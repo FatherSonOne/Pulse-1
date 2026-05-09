@@ -9,8 +9,8 @@ import { googleCalendarService } from '../../services/googleCalendarService';
 import { workspaceService } from '../../services/workspaceService';
 import { teamService } from '../../services/teamService';
 import { settingsService } from '../../services/settingsService';
-import { searchService } from '../../services/searchService';
 import { savedSearchesService } from '../../services/savedSearches';
+import { supabase } from '../../services/supabase';
 
 // Sections that load decisions + tasks
 const DECISION_TASK_SECTIONS: AppView[] = [AppView.DECISIONS_TASKS, AppView.DASHBOARD];
@@ -182,9 +182,22 @@ export function useAssistantContext(
       }
 
       // ── Search ─────────────────────────────────────────────────────────
+      // Sources from search_history (the global search source of truth);
+      // the assistant context ran on message-thread-search recents before,
+      // which mismatched the surface the user was actually looking at.
       if (activeView === AppView.MULTI_MODAL) {
         try {
-          const recentSearches = searchService.getRecentSearches();
+          let recentSearches: string[] = [];
+          try {
+            const { data } = await supabase
+              .from('search_history')
+              .select('query')
+              .eq('user_id', user.id)
+              .order('updated_at', { ascending: false })
+              .limit(10);
+            recentSearches = (data || []).map((r: any) => r.query);
+          } catch { /* table might not exist — empty list is fine */ }
+
           let savedSearchCount = 0;
           try {
             const saved = await savedSearchesService.getSavedSearches(user.id);

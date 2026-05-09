@@ -1,7 +1,8 @@
-import { AppView, User, Contact, CalendarEvent, Thread, ArchiveItem } from "../types";
-import { DecisionWithVotes } from "./decisionService";
-import { Task } from "./taskService";
-import { CachedEmail } from "./emailSyncService";
+import { AppView } from "../types";
+import type { User, Contact, CalendarEvent, Thread, ArchiveItem } from "../types";
+import type { DecisionWithVotes } from "./decisionService";
+import type { Task } from "./taskService";
+import type { CachedEmail } from "./emailSyncService";
 import { invokeAI } from "./ai/aiService";
 import { getCurrentWorkspaceId } from "./ai/getWorkspaceId";
 
@@ -273,7 +274,6 @@ export const SECTION_LABELS: Partial<Record<AppView, string>> = {
   [AppView.USERS_GUIDE]: 'User Guide',
   [AppView.LIVE]: 'Pulse Chat',
   [AppView.CONTACT_MAP]: 'Contacts',
-  [AppView.TEST_MATRIX]: 'Test Matrix',
   [AppView.MESSAGE_ANALYTICS]: 'Message Analytics',
 };
 

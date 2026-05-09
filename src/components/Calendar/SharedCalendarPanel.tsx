@@ -53,8 +53,8 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
 
   return (
     <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-sm shadow-2xl animate-scale-in">
-        <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+      <div className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-sm shadow-2xl animate-scale-in">
+        <div className="p-5 border-b border-[var(--pulse-border)] flex items-center justify-between">
           <h3 className="text-base font-bold dark:text-white">New Team Calendar</h3>
           <button type="button" onClick={onClose} className="text-zinc-400 hover:text-zinc-600 transition">
             <X className="w-4 h-4" />
@@ -70,7 +70,7 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
               onChange={e => setName(e.target.value)}
               placeholder="e.g., Marketing Calendar"
               required
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition"
             />
           </div>
           <div>
@@ -95,7 +95,7 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
               value={description}
               onChange={e => setDesc(e.target.value)}
               placeholder="What's this calendar for?"
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition"
             />
           </div>
           <div className="flex gap-3 pt-2">
@@ -212,7 +212,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
         {calendars.map(cal => (
           <div key={cal.id} className="flex items-center gap-2 group py-0.5">
             {/* Color dot + visibility toggle */}
-            <label className="flex items-center gap-1.5 flex-1 min-w-0 text-xs lg:text-sm text-zinc-600 dark:text-zinc-300 cursor-pointer">
+            <label className="flex items-center gap-1.5 flex-1 min-w-0 text-xs lg:text-sm text-[var(--pulse-ink-2)] cursor-pointer">
               <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cal.color }} />
               <input
                 type="checkbox"
@@ -237,7 +237,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
                 <button
                   type="button"
                   onClick={() => { setEditingCalId(cal.id); setEditName(cal.name); }}
-                  className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
+                  className="text-zinc-400 hover:text-[var(--pulse-ink-2)] transition"
                   title="Manage calendar"
                 >
                   <Settings className="w-3 h-3" />
@@ -261,7 +261,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
 
       {/* Inline rename editor */}
       {editingCalId && (
-        <div className="mt-2 p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+        <div className="mt-2 p-2 bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] rounded-lg">
           <label className="text-[10px] text-zinc-400 uppercase tracking-wider">Rename Calendar</label>
           <div className="flex gap-1.5 mt-1">
             <input
@@ -270,7 +270,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
               onChange={e => setEditName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditingCalId(null); }}
               placeholder="Calendar name"
-              className="flex-1 px-2 py-1 text-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded"
+              className="flex-1 px-2 py-1 text-xs bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border-strong)] rounded"
               autoFocus
             />
             <button type="button" onClick={handleSaveEdit} disabled={editSaving || !editName.trim()} className="px-2 py-1 text-xs bg-rose-500 text-white rounded disabled:opacity-50">

@@ -21,6 +21,7 @@ interface CallOpts {
 export function useAI() {
   const { currentWorkspace } = useWorkspaceData();
   const workspaceId = currentWorkspace?.id;
+  const piiMaskingEnforced = currentWorkspace?.ai_pii_masking_enforced ?? false;
 
   // Warm prefs cache once so synchronous resolve() works on first call.
   useEffect(() => { void aiPreferencesService.load(); }, []);
@@ -37,9 +38,10 @@ export function useAI() {
         workspaceId,
         signal: o.signal,
         modelOverride: resolveOverride(task, o.modelOverride),
+        piiMaskingEnforced,
       });
     },
-    [workspaceId],
+    [workspaceId, piiMaskingEnforced],
   );
 
   const prompt = useCallback(
@@ -53,9 +55,10 @@ export function useAI() {
         workspaceId,
         ...opts,
         modelOverride: resolveOverride(task, opts?.modelOverride),
+        piiMaskingEnforced,
       });
     },
-    [workspaceId],
+    [workspaceId, piiMaskingEnforced],
   );
 
   const json = useCallback(
@@ -69,9 +72,10 @@ export function useAI() {
         workspaceId,
         ...opts,
         modelOverride: resolveOverride(task, opts?.modelOverride),
+        piiMaskingEnforced,
       });
     },
-    [workspaceId],
+    [workspaceId, piiMaskingEnforced],
   );
 
   return { invoke, prompt, json, workspaceId, ready: !!workspaceId };

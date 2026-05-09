@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
 import { User, AppView, BatchedNotification, CalendarEvent, Task, Thread, Contact } from '../types';
-import { generateJournalInsight, generateSearchResponse, generateDailyBriefing, generateThinkingResponse } from '../services/geminiService';
+import { generateJournalInsight, generateDailyBriefing, generateThinkingResponse } from '../services/geminiService';
+import { useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
+import { InlineCommandPalette } from './GlobalCommandPalette';
 import { saveArchiveItem } from '../services/dbService';
 import { dataService } from '../services/dataService';
 import { useWorkspaceData } from '../contexts/WorkspaceContext';
@@ -364,10 +365,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
   const [lastSavedId, setLastSavedId] = useState<string | null>(null);
   const [recentJournals, setRecentJournals] = useState<Array<{id: string; title: string; date: Date; content: string}>>([]);
 
-  // Search/Tools State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResult, setSearchResult] = useState<{text: string, sources: any[]} | null>(null);
-  const [loadingTools, setLoadingTools] = useState(false);
+  // The Dashboard's old "Search the web" widget was replaced by the global
+  // command palette (rendered inline below). Its state is gone with the bar.
 
   // Mini Pulse AI State
   const [pulseAiQuery, setPulseAiQuery] = useState('');
@@ -408,12 +407,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
   // Keyboard shortcut overlay
   const [showKbdOverlay, setShowKbdOverlay] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-
-  // Command palette (Cmd+K / Ctrl+K)
-  const [showCmdPalette, setShowCmdPalette] = useState(false);
-  const [cmdPaletteQuery, setCmdPaletteQuery] = useState('');
-  const [cmdPaletteIdx, setCmdPaletteIdx] = useState(0);
-  const cmdPaletteInputRef = useRef<HTMLInputElement | null>(null);
+  // The Dashboard's command-palette state moved to App-level CommandPaletteProvider.
+  // Cmd+K is owned by App.tsx; this view registers its own commands via
+  // useRegisterCommands and renders the InlineCommandPalette in the hero slot.
 
   // Persistent activity badge — shows "SAVED hh:mm" briefly after any save.
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -697,28 +693,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     loadRecentJournals();
   }, [loadRecentJournals]);
 
-  // Keyboard shortcuts: ESC closes overlays; J focuses #1; K focuses #2; R refreshes briefing; / focuses search; ? toggles overlay; Cmd+K toggles palette
+  // Keyboard shortcuts: ESC closes overlays; J focuses #1; K focuses #2; R refreshes briefing; / focuses search; ? toggles overlay.
+  // Cmd+K is handled globally in App.tsx and opens the command palette.
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
 
-      // Cmd+K / Ctrl+K toggles command palette — works while typing too.
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setShowCmdPalette(prev => !prev);
-        return;
-      }
-
       // ESC closes overlays in priority order
       if (e.key === 'Escape') {
-        if (showCmdPalette) { setShowCmdPalette(false); return; }
         if (showKbdOverlay) { setShowKbdOverlay(false); return; }
         if (showQuickActions) { setShowQuickActions(false); return; }
       }
 
-      // The rest only fire when the user isn't typing (and not when palette is open — palette has its own input)
-      if (isTyping || showCmdPalette) return;
+      // The rest only fire when the user isn't typing
+      if (isTyping) return;
 
       // ? toggles the shortcut overlay
       if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -727,7 +716,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         return;
       }
 
-      // / focuses the search input
+      // / focuses the dashboard inline palette
       if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         searchInputRef.current?.focus();
@@ -747,18 +736,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [showQuickActions, showKbdOverlay, showCmdPalette, priorities, loadingBriefing]);
+  }, [showQuickActions, showKbdOverlay, priorities, loadingBriefing]);
 
-  // Reset palette state when it closes
+  // Listen for the global "show shortcuts" command from the palette.
   useEffect(() => {
-    if (!showCmdPalette) {
-      setCmdPaletteQuery('');
-      setCmdPaletteIdx(0);
-    } else {
-      // Focus the input when opening
-      setTimeout(() => cmdPaletteInputRef.current?.focus(), 0);
-    }
-  }, [showCmdPalette]);
+    const handler = () => setShowKbdOverlay(true);
+    window.addEventListener('pulse:show-shortcuts', handler);
+    return () => window.removeEventListener('pulse:show-shortcuts', handler);
+  }, []);
 
   // Draft protection: warn before browser navigation when journal has unsaved text
   useEffect(() => {
@@ -1027,22 +1012,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     });
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    setLoadingTools(true);
-    try {
-      const { text, groundingChunks } = await generateSearchResponse(effectiveApiKey, searchQuery);
-      setSearchResult({ text, sources: groundingChunks });
-    } catch (err) {
-      console.error('Search failed:', err);
-      if (!handleAIError(err)) {
-        toast.error('Search failed. Try again.');
-      }
-    }
-    setLoadingTools(false);
-  };
-
   const handlePulseAiQuery = async (query: string) => {
     if (!query.trim()) return;
     setLoadingPulseAi(true);
@@ -1250,18 +1219,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     { id: 'search', label: 'Search', icon: 'fa-magnifying-glass', view: AppView.MULTI_MODAL },
   ], []);
 
-  // Build the command palette rows: actions (from quickActions) + nav destinations + help
-  const commandRows = useMemo(() => {
-    type Row = {
-      id: string;
-      label: string;
-      desc: string;
-      kind: 'action' | 'navigate' | 'help';
-      icon: string;
-      run: () => void;
-    };
-    const rows: Row[] = [];
-
+  // Build dashboard-scoped commands (Quick Actions). Navigation rows live in
+  // AppCommandRegistrar so they're available on every view, not just here.
+  const dashboardCommands = useMemo<PaletteCommand[]>(() => {
     const actionDescs: Record<string, string> = {
       task: 'Open the task composer',
       message: 'Compose a new message',
@@ -1270,73 +1230,25 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       vox: 'Record a quick voice message',
       contact: 'Add a new contact',
       warroom: 'Open the live war room',
-      search: 'Open multi-modal search',
+      search: 'Open Pulse search',
     };
 
-    quickActions.forEach(a => {
-      rows.push({
-        id: `action-${a.id}`,
-        label: a.label,
-        desc: actionDescs[a.id] || 'Run this action',
-        kind: 'action',
-        icon: a.icon,
-        run: () => {
-          const params: Record<string, boolean> = {};
-          if (a.openTaskPanel) params.openTaskPanel = true;
-          if (a.openAddContact) params.openAddContact = true;
-          setView(a.view, Object.keys(params).length > 0 ? params : undefined);
-          setShowCmdPalette(false);
-        },
-      });
-    });
-
-    const navDestinations: Array<{ id: string; label: string; desc: string; view: AppView; icon: string }> = [
-      { id: 'nav-messages', label: 'Messages', desc: 'Unified inbox', view: AppView.MESSAGES, icon: 'fa-message' },
-      { id: 'nav-email', label: 'Email', desc: 'Pulse email client', view: AppView.EMAIL, icon: 'fa-envelope' },
-      { id: 'nav-calendar', label: 'Calendar', desc: 'Schedule and tasks', view: AppView.CALENDAR, icon: 'fa-calendar' },
-      { id: 'nav-relay', label: 'Relay', desc: 'Voice messages and notes', view: AppView.RELAY, icon: 'fa-microphone' },
-      { id: 'nav-contacts', label: 'Contacts', desc: 'People and teams', view: AppView.CONTACTS, icon: 'fa-users' },
-      { id: 'nav-archives', label: 'Memory', desc: 'Every word, every voice — find any conversation', view: AppView.ARCHIVES, icon: 'fa-box-archive' },
-      { id: 'nav-settings', label: 'Settings', desc: 'Preferences and account', view: AppView.SETTINGS, icon: 'fa-gear' },
-      { id: 'nav-dashboard', label: 'Dashboard', desc: 'You are here', view: AppView.DASHBOARD, icon: 'fa-house' },
-    ];
-    navDestinations.forEach(n => {
-      rows.push({
-        id: n.id,
-        label: n.label,
-        desc: n.desc,
-        kind: 'navigate',
-        icon: n.icon,
-        run: () => { setView(n.view); setShowCmdPalette(false); },
-      });
-    });
-
-    // Help: opens the keyboard shortcuts overlay
-    rows.push({
-      id: 'help-shortcuts',
-      label: 'View keyboard shortcuts',
-      desc: 'See every binding in one list',
-      kind: 'help',
-      icon: 'fa-keyboard',
+    return quickActions.map(a => ({
+      id: `action-${a.id}`,
+      label: a.label,
+      desc: actionDescs[a.id] || 'Run this action',
+      kind: 'action' as const,
+      icon: a.icon,
       run: () => {
-        setShowCmdPalette(false);
-        setShowKbdOverlay(true);
+        const params: Record<string, boolean> = {};
+        if (a.openTaskPanel) params.openTaskPanel = true;
+        if (a.openAddContact) params.openAddContact = true;
+        setView(a.view, Object.keys(params).length > 0 ? params : undefined);
       },
-    });
-
-    return rows;
+    }));
   }, [quickActions, setView]);
 
-  const filteredCmdRows = useMemo(() => {
-    const q = cmdPaletteQuery.trim().toLowerCase();
-    if (!q) return commandRows;
-    return commandRows.filter(r => r.label.toLowerCase().includes(q));
-  }, [commandRows, cmdPaletteQuery]);
-
-  // Clamp idx into range when filter changes
-  useEffect(() => {
-    if (cmdPaletteIdx >= filteredCmdRows.length) setCmdPaletteIdx(Math.max(0, filteredCmdRows.length - 1));
-  }, [filteredCmdRows.length, cmdPaletteIdx]);
+  useRegisterCommands('dashboard:actions', { commands: dashboardCommands });
 
   // Derived: upcoming events (next 3 future events sorted by start time)
   const upcomingEvents = useMemo(() => {
@@ -1399,74 +1311,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       {/* Organization setup checklist — shown to admins while onboarding_step='named' */}
       {openSettings && <OrgSetupChecklist openSettings={openSettings} />}
 
-      {/* Top AI Web Search Bar */}
-      <div className="relative">
-        <form onSubmit={handleSearch}>
-          <div className="relative flex items-center">
-            <Search className="absolute left-4 text-zinc-400 w-4 h-4 pointer-events-none" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search the web"
-              className="w-full bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl pl-11 pr-32 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/60 dark:focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-colors duration-150"
-            />
-            {!searchQuery && (
-              <span className="hidden sm:inline-flex absolute right-24 top-1/2 -translate-y-1/2 items-center gap-1 pointer-events-none">
-                <kbd className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.06]">/</kbd>
-                <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.06]">⌘K</kbd>
-              </span>
-            )}
-            <button
-              type="submit"
-              disabled={loadingTools || !searchQuery.trim()}
-              className="absolute right-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 inline-flex items-center gap-1.5"
-            >
-              {loadingTools ? <Loader2 className="animate-spin w-3 h-3" /> : 'Search'}
-            </button>
-          </div>
-        </form>
-        {searchResult && (
-          <div className="mt-2 bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl p-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 animate-fade-in">
-            <div className="mb-3">
-              <ProvenanceChip provider="gemini" kind="WEB" />
-            </div>
-            <div className="text-sm leading-relaxed">
-              <ReactMarkdown
-                components={{
-                  p: ({ node, ...props }) => <p className="my-2 leading-relaxed text-zinc-700 dark:text-zinc-300" {...props} />,
-                  h1: ({ node, ...props }) => <h1 className="text-base font-semibold mt-4 mb-2 text-zinc-900 dark:text-zinc-50" {...props} />,
-                  h2: ({ node, ...props }) => <h2 className="text-sm font-semibold mt-4 mb-2 text-zinc-900 dark:text-zinc-50" {...props} />,
-                  h3: ({ node, ...props }) => <h3 className="text-sm font-semibold mt-3 mb-1.5 text-zinc-900 dark:text-zinc-50" {...props} />,
-                  ul: ({ node, ...props }) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
-                  ol: ({ node, ...props }) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
-                  li: ({ node, ...props }) => <li className="leading-relaxed text-zinc-700 dark:text-zinc-300" {...props} />,
-                  strong: ({ node, ...props }) => <strong className="font-semibold text-zinc-900 dark:text-zinc-50" {...props} />,
-                  em: ({ node, ...props }) => <em className="italic text-zinc-700 dark:text-zinc-300" {...props} />,
-                  a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" className="text-rose-500 hover:text-rose-400 underline underline-offset-2" {...props} />,
-                  code: ({ node, ...props }) => <code className="px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-rose-500 text-xs font-mono" {...props} />,
-                  blockquote: ({ node, ...props }) => <blockquote className="pl-3 my-2 italic text-zinc-600 dark:text-zinc-400" {...props} />,
-                  hr: () => <hr className="my-3 border-zinc-200 dark:border-zinc-800" />,
-                }}
-              >
-                {searchResult.text}
-              </ReactMarkdown>
-            </div>
-            {searchResult.sources?.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap gap-2">
-                {searchResult.sources.slice(0, 3).map((s: any, i: number) => (
-                  <a key={i} href={s.web?.uri} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-rose-500 hover:text-rose-400 underline underline-offset-2 truncate max-w-[200px]">
-                    {s.web?.title || s.web?.uri}
-                  </a>
-                ))}
-              </div>
-            )}
-            <button onClick={() => setSearchResult(null)} className="mt-2 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">Dismiss</button>
-          </div>
-        )}
-      </div>
+      {/* Global command palette — inline mode. The bar IS the palette: type a
+          command (Compose Email, Go to Calendar, View shortcuts, …) and hit
+          Enter. Cmd+K everywhere opens the modal version of the same palette. */}
+      <InlineCommandPalette inputRef={searchInputRef} />
 
       {/* Daily Briefing — quiet, triage-first */}
       {loadingBriefing || isLoading ? (
@@ -2120,103 +1968,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
             >
               <Plus className="w-5 h-5" />
             </button>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Command Palette (Cmd+K / Ctrl+K) */}
-      {showCmdPalette && ReactDOM.createPortal(
-        <div
-          className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-start justify-center z-[10001] p-4 pt-[12vh] animate-fade-in"
-          onClick={() => setShowCmdPalette(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Command palette"
-        >
-          <div
-            className="bg-white dark:bg-zinc-950 rounded-xl w-full max-w-lg shadow-2xl border border-zinc-200 dark:border-white/[0.08] overflow-hidden animate-scale-in flex flex-col"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Input */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-100 dark:border-white/[0.06]">
-              <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" />
-              <input
-                ref={cmdPaletteInputRef}
-                type="text"
-                value={cmdPaletteQuery}
-                onChange={e => { setCmdPaletteQuery(e.target.value); setCmdPaletteIdx(0); }}
-                onKeyDown={e => {
-                  if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    setCmdPaletteIdx(i => Math.min(i + 1, filteredCmdRows.length - 1));
-                  } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    setCmdPaletteIdx(i => Math.max(i - 1, 0));
-                  } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const row = filteredCmdRows[cmdPaletteIdx];
-                    if (row) row.run();
-                  }
-                }}
-                placeholder="Type a command, jump to a section"
-                className="flex-1 bg-transparent border-0 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-0"
-                autoFocus
-              />
-              <kbd className="hidden sm:inline-flex pulse-label items-center justify-center min-w-[2rem] h-5 px-1.5 rounded text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.06] shrink-0">ESC</kbd>
-            </div>
-
-            {/* Rows */}
-            <div className="max-h-[50vh] overflow-y-auto py-1">
-              {filteredCmdRows.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">No commands match.</p>
-                  <p className="pulse-label text-zinc-400 dark:text-zinc-500 mt-1">TRY A SHORTER QUERY</p>
-                </div>
-              ) : (
-                <ul role="listbox">
-                  {filteredCmdRows.map((row, idx) => (
-                    <li key={row.id}>
-                      <button
-                        onClick={row.run}
-                        onMouseEnter={() => setCmdPaletteIdx(idx)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors duration-100 ${
-                          idx === cmdPaletteIdx
-                            ? 'bg-rose-500/10'
-                            : 'hover:bg-zinc-50 dark:hover:bg-white/[0.04]'
-                        }`}
-                      >
-                        <i className={`fa-solid ${row.icon} w-4 text-center shrink-0 ${
-                          idx === cmdPaletteIdx ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-400 dark:text-zinc-500'
-                        }`}></i>
-                        <span className="flex-1 min-w-0">
-                          <span className={`block text-sm truncate ${
-                            idx === cmdPaletteIdx ? 'text-rose-700 dark:text-rose-300 font-medium' : 'text-zinc-800 dark:text-zinc-200'
-                          }`}>
-                            {row.label}
-                          </span>
-                          <span className="block text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                            {row.desc}
-                          </span>
-                        </span>
-                        <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0">
-                          {row.kind === 'action' ? 'ACTION' : row.kind === 'navigate' ? 'GO TO' : 'HELP'}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-zinc-100 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02]">
-              <div className="pulse-label inline-flex items-center gap-2 text-zinc-400 dark:text-zinc-500">
-                <kbd className="font-mono normal-case tracking-normal">↑↓</kbd> NAVIGATE
-                <kbd className="font-mono normal-case tracking-normal ml-2">↵</kbd> RUN
-              </div>
-              <span className="pulse-label text-zinc-400 dark:text-zinc-500">{filteredCmdRows.length} OF {commandRows.length}</span>
-            </div>
           </div>
         </div>,
         document.body

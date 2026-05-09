@@ -159,7 +159,7 @@ export const RSVPPanel: React.FC<RSVPPanelProps> = ({ eventId, isOrganizer }) =>
 
       {/* Summary row */}
       {summary.total > 0 && (
-        <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 pb-1 border-b border-zinc-100 dark:border-zinc-800">
+        <div className="flex items-center gap-3 text-xs text-[var(--pulse-ink-3)] pb-1 border-b border-[var(--pulse-border)]">
           {summary.accepted > 0 && <span className="text-emerald-600 dark:text-emerald-400 font-medium">{summary.accepted} accepted</span>}
           {summary.declined > 0 && <span className="text-red-500 font-medium">{summary.declined} declined</span>}
           {summary.maybe > 0    && <span className="text-amber-500 font-medium">{summary.maybe} maybe</span>}
@@ -217,7 +217,7 @@ export const RSVPPanel: React.FC<RSVPPanelProps> = ({ eventId, isOrganizer }) =>
 
       {/* Add attendee */}
       {isOrganizer && (
-        <div className="border-t border-zinc-100 dark:border-zinc-800 pt-3">
+        <div className="border-t border-[var(--pulse-border)] pt-3">
           {!showAddForm ? (
             <button
               type="button"
@@ -234,7 +234,7 @@ export const RSVPPanel: React.FC<RSVPPanelProps> = ({ eventId, isOrganizer }) =>
                 placeholder="Name (optional)"
                 value={addName}
                 onChange={e => setAddName(e.target.value)}
-                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none focus:border-rose-400 dark:text-zinc-200 transition"
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-rose-400 dark:text-zinc-200 transition"
               />
               <input
                 type="email"
@@ -242,7 +242,7 @@ export const RSVPPanel: React.FC<RSVPPanelProps> = ({ eventId, isOrganizer }) =>
                 value={addEmail}
                 onChange={e => setAddEmail(e.target.value)}
                 required
-                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none focus:border-rose-400 dark:text-zinc-200 transition"
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-rose-400 dark:text-zinc-200 transition"
               />
               <div className="flex gap-2">
                 <button

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { Contact, CalendarEvent, Task } from '../types';
 import { fetchCalendarEvents, fetchTasks } from '../services/authService';
 import { dataService } from '../services/dataService';
@@ -20,7 +21,7 @@ import CustomEventTypesManager from './CustomEventTypesManager';
 import { customEventTypesService } from '../services/customEventTypesService';
 import { EventCreationModal } from './Calendar/EventCreationModal';
 import { CalendarAIPanel } from './Calendar/CalendarAIPanel';
-import CommandPalette from './CommandPalette';
+import { useCommandPalette, useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
 import ShortcutsHelp from './ShortcutsHelp';
 import JumpToDate from './JumpToDate';
 import ConflictResolutionBanner, { EventConflict, detectConflicts } from './ConflictResolutionBanner';
@@ -80,7 +81,10 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [colorPickerOpenFor, setColorPickerOpenFor] = useState<string | null>(null);
   const [showTaskPanel, setShowTaskPanel] = useState(openTaskPanel);
   const [showEventModal, setShowEventModal] = useState(false);
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  // Calendar contributes its event-finder + view-switching commands to the
+  // global palette via useRegisterCommands. The local Cmd+K state and modal
+  // are gone — App.tsx owns Cmd+K, and the global palette renders at root.
+  const { open: openCommandPalette } = useCommandPalette();
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [showJumpToDate, setShowJumpToDate] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
@@ -191,9 +195,10 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [newEventAllDay, setNewEventAllDay] = useState(false);
   const [newEventStatus, setNewEventStatus] = useState<'confirmed' | 'tentative' | 'cancelled'>('confirmed');
 
-  // Drag and Drop State
-  const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
-  const [dragOverDate, setDragOverDate] = useState<Date | null>(null);
+  // (Drag-and-drop is owned by the view components — MonthView keeps its own
+  //  draggedEventId / dragOverDate state in CalendarViews.tsx, Week/Day use the
+  //  shared useDragReschedule hook there. Both paths route through the
+  //  onEventReschedule prop → handleEventReschedule, which carries undo.)
 
   // Event Detail View
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -624,17 +629,117 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     return () => window.clearTimeout(t);
   }, [todayArrivalTick]);
 
+  // Undo toast — coral-soft surface, mono label, single Undo affordance.
+  // Renders via the app-wide <Toaster /> mounted in App.tsx.
+  // Returns the toast id so callers can dismiss it programmatically when a
+  // newer op supersedes an older one (see pendingOpsRef).
+  const showUndoToast = useCallback((label: string, onUndo: () => void): string => {
+    return toast.custom((t) => (
+      <div className={`cal-undo-toast${t.visible ? ' is-visible' : ''}`}>
+        <span className="cal-undo-toast-label">{label}</span>
+        <button
+          className="cal-undo-toast-btn"
+          onClick={() => {
+            onUndo();
+            toast.dismiss(t.id);
+          }}
+        >
+          Undo
+        </button>
+      </div>
+    ), { duration: 6000 });
+  }, []);
+
+  // Pending-op tracker: keyed by event id. A new op for the same id supersedes
+  // the prior op — its commit runs immediately, its toast is dismissed, its
+  // timer is cleared. On unmount we eagerly fire every pending commit so the
+  // user's expected persistence still happens even if they navigate away.
+  type PendingOp = {
+    toastId: string;
+    timer: number;
+    commit: () => void;
+    rollback: () => void;
+  };
+  const pendingOpsRef = useRef<Map<string, PendingOp>>(new Map());
+
+  const supersedePendingOp = useCallback((eventId: string) => {
+    const prior = pendingOpsRef.current.get(eventId);
+    if (!prior) return;
+    window.clearTimeout(prior.timer);
+    toast.dismiss(prior.toastId);
+    try { prior.commit(); } catch (err) { console.error('Pending op commit failed:', err); }
+    pendingOpsRef.current.delete(eventId);
+  }, []);
+
+  // Fire every pending commit on unmount so deferred persistence is not lost
+  // when the user navigates away from Calendar before a 6s timer fires.
+  useEffect(() => {
+    const ops = pendingOpsRef.current;
+    return () => {
+      ops.forEach(op => {
+        window.clearTimeout(op.timer);
+        toast.dismiss(op.toastId);
+        try { op.commit(); } catch (err) { console.error('Pending op commit failed on unmount:', err); }
+      });
+      ops.clear();
+    };
+  }, []);
+
+  // Soft-delete with 6s undo window. Handles Supabase + Google + Outlook
+  // deletion in the deferred commit so all three deletion paths (keyboard,
+  // context menu, modal-detail Delete button) share identical recovery
+  // semantics.
+  const softDeleteEvent = useCallback((event: CalendarEvent) => {
+    supersedePendingOp(event.id);
+    setEvents(prev => prev.filter(e => e.id !== event.id));
+
+    const commit = () => {
+      if (event.googleEventId && googleConnected) {
+        googleCalendarService.deleteEvent(
+          event.googleEventId,
+          event.calendarId || 'primary',
+          'all'
+        ).catch(err => console.error('Failed to delete from Google Calendar:', err));
+      }
+      if (event.outlookEventId && outlookConnected) {
+        outlookCalendarService.deleteEvent(
+          event.outlookEventId,
+          event.calendarId || 'primary'
+        ).catch(err => console.error('Failed to delete from Outlook Calendar:', err));
+      }
+      dataService.deleteEvent(event.id).catch(err =>
+        console.error('Failed to delete event from DB:', err)
+      );
+    };
+
+    const rollback = () => setEvents(prev => [...prev, event]);
+
+    const timer = window.setTimeout(() => {
+      if (pendingOpsRef.current.get(event.id)?.timer === timer) {
+        pendingOpsRef.current.delete(event.id);
+        commit();
+      }
+    }, 6000);
+
+    const toastId = showUndoToast(`Deleted "${event.title}"`, () => {
+      const op = pendingOpsRef.current.get(event.id);
+      if (op?.timer === timer) {
+        window.clearTimeout(op.timer);
+        pendingOpsRef.current.delete(event.id);
+        rollback();
+      }
+    });
+
+    pendingOpsRef.current.set(event.id, { toastId, timer, commit, rollback });
+  }, [showUndoToast, supersedePendingOp, googleConnected, outlookConnected]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const meta = e.metaKey || e.ctrlKey;
 
-      // Cmd+K / Ctrl+K — command palette (works even while typing)
-      if (meta && e.key === 'k') {
-        e.preventDefault();
-        setShowCommandPalette(prev => !prev);
-        return;
-      }
+      // Cmd+K — handled globally in App.tsx (opens the global palette).
+      // Calendar registers its commands via useRegisterCommands above.
 
       // Cmd+J — jump to date (works even while typing)
       if (meta && e.key === 'j') {
@@ -674,11 +779,10 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         case 'e': case 'E':
           if (selectedEvent) openEventDetail(selectedEvent);
           break;
-        // Delete selected event
+        // Delete selected event — soft-delete with 6s undo
         case 'Delete': case 'Backspace':
           if (selectedEvent) {
-            setEvents(prev => prev.filter(ev => ev.id !== selectedEvent.id));
-            dataService.deleteEvent(selectedEvent.id).catch(() => {});
+            softDeleteEvent(selectedEvent);
             setSelectedEvent(null);
             setShowEventDetail(false);
           }
@@ -704,14 +808,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           if (focusMode)         { setFocusMode(false);         break; }
           setShowAIPanel(false);
           setShowCalendarSettings(false);
-          setShowCommandPalette(false);
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showEventModal, showDayDetail, showShortcutsHelp, showJumpToDate, focusMode, selectedEvent, handlePrev, handleNext, handleToday]);
+  }, [showEventModal, showDayDetail, showShortcutsHelp, showJumpToDate, focusMode, selectedEvent, handlePrev, handleNext, handleToday, softDeleteEvent]);
 
   // Swipe gesture navigation
   const navigateNext = useCallback(() => {
@@ -1717,36 +1820,6 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       .slice(0, 10);
   }, [filteredEvents]);
 
-  // Drag and drop handlers
-  const handleDragStart = useCallback((e: React.DragEvent, event: CalendarEvent) => {
-    setDraggedEvent(event);
-    e.dataTransfer.effectAllowed = 'move';
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent, date: Date) => {
-    e.preventDefault();
-    setDragOverDate(date);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent, targetDate: Date) => {
-    e.preventDefault();
-    if (draggedEvent) {
-      const daysDiff = Math.floor((targetDate.getTime() - draggedEvent.start.getTime()) / (1000 * 60 * 60 * 24));
-      const newStart = new Date(draggedEvent.start);
-      newStart.setDate(newStart.getDate() + daysDiff);
-      const newEnd = new Date(draggedEvent.end);
-      newEnd.setDate(newEnd.getDate() + daysDiff);
-
-      setEvents(prev => prev.map(ev =>
-        ev.id === draggedEvent.id
-          ? { ...ev, start: newStart, end: newEnd }
-          : ev
-      ));
-    }
-    setDraggedEvent(null);
-    setDragOverDate(null);
-  }, [draggedEvent]);
-
   // Open event detail
   const openEventDetail = useCallback((event: CalendarEvent) => {
     setSelectedEvent(event);
@@ -1754,41 +1827,131 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     setShowEventDetail(true);
   }, []);
 
-  /** Handle drag-to-reschedule from WeekView / DayView */
-  const handleEventReschedule = useCallback(async (event: CalendarEvent, newStart: Date, newEnd: Date) => {
-    const updated: CalendarEvent = { ...event, start: newStart, end: newEnd };
+  // ─── Command palette registration ──────────────────────────────────────────
+  // Calendar contributes view-switching, today, create-event, and a dynamic
+  // event-finder provider. All scoped to 'calendar:*' so they unmount cleanly.
 
-    // Optimistically update local state
+  const calendarStaticCommands = useMemo<PaletteCommand[]>(() => [
+    {
+      id: 'calendar-today',
+      label: 'Go to Today',
+      desc: 'Jump the calendar to the current date',
+      kind: 'action',
+      icon: 'fa-calendar-day',
+      keywords: ['today', 'now', 'current'],
+      run: () => handleToday(),
+    },
+    {
+      id: 'calendar-create-event',
+      label: 'Create New Event',
+      desc: 'Open the event creation form',
+      kind: 'action',
+      icon: 'fa-plus',
+      keywords: ['new', 'create', 'add', 'event', 'schedule'],
+      run: () => setShowEventModal(true),
+    },
+    { id: 'calendar-view-month',  label: 'Switch to Month View',  desc: 'Calendar view', kind: 'action', icon: 'fa-calendar',       keywords: ['month'],  run: () => setViewMode('month') },
+    { id: 'calendar-view-week',   label: 'Switch to Week View',   desc: 'Calendar view', kind: 'action', icon: 'fa-calendar-week',  keywords: ['week'],   run: () => setViewMode('week') },
+    { id: 'calendar-view-day',    label: 'Switch to Day View',    desc: 'Calendar view', kind: 'action', icon: 'fa-calendar-day',   keywords: ['day'],    run: () => setViewMode('day') },
+    { id: 'calendar-view-agenda', label: 'Switch to Agenda View', desc: 'Calendar view', kind: 'action', icon: 'fa-list',           keywords: ['agenda', 'list'], run: () => setViewMode('agenda') },
+    { id: 'calendar-view-year',   label: 'Switch to Year View',   desc: 'Calendar view', kind: 'action', icon: 'fa-calendar-alt',   keywords: ['year', 'overview'], run: () => setViewMode('year') },
+  ], [handleToday]);
+
+  // Dynamic provider: matches events against the live query string. Returns
+  // up to 8 results sorted by proximity to "now" so upcoming events float.
+  const calendarEventProvider = useCallback((query: string): PaletteCommand[] => {
+    const q = query.trim().toLowerCase();
+    if (q.length < 2) return [];
+    const now = Date.now();
+    return events
+      .filter(ev =>
+        ev.title.toLowerCase().includes(q) ||
+        ev.location?.toLowerCase().includes(q) ||
+        ev.description?.toLowerCase().includes(q)
+      )
+      .sort((a, b) => Math.abs(a.start.getTime() - now) - Math.abs(b.start.getTime() - now))
+      .slice(0, 8)
+      .map(ev => {
+        const when = ev.start.toLocaleString(undefined, {
+          month: 'short', day: 'numeric',
+          hour: 'numeric', minute: '2-digit',
+        });
+        return {
+          id: `calendar-event-${ev.id}`,
+          label: ev.title,
+          desc: when + (ev.location ? ` · ${ev.location}` : ''),
+          kind: 'search' as const,
+          icon: 'fa-calendar-check',
+          group: 'Events',
+          run: () => openEventDetail(ev),
+        };
+      });
+  }, [events, openEventDetail]);
+
+  useRegisterCommands('calendar:actions', { commands: calendarStaticCommands });
+  useRegisterCommands('calendar:events',  { provider: calendarEventProvider });
+
+  /** Handle drag-to-reschedule from WeekView / DayView. Optimistically applies the
+   *  new times locally and surfaces a 6s "Moved · Undo" toast; the Google Calendar
+   *  and Supabase writes are deferred until the toast expires so an Undo click
+   *  never round-trips through the backend. A second drag of the same event
+   *  within the 6s window supersedes the first — the first move's persistence
+   *  is committed eagerly and its toast dismissed, so an Undo on the surviving
+   *  toast cannot overwrite the newer optimistic position.
+   */
+  const handleEventReschedule = useCallback((event: CalendarEvent, newStart: Date, newEnd: Date) => {
+    // Capture the original BEFORE superseding any prior op — event.start/end
+    // here is the visible, post-prior-move position the user is dragging from.
+    const originalStart = event.start;
+    const originalEnd = event.end;
+    supersedePendingOp(event.id);
+
+    const updated: CalendarEvent = { ...event, start: newStart, end: newEnd };
     setEvents(prev => prev.map(ev => ev.id === event.id ? updated : ev));
 
-    // Persist to Google Calendar only if the event originated there AND we're actually connected.
-    // Re-check connection live (not from stale state) to avoid spurious errors.
-    if (event.googleEventId && event.source === 'google') {
-      const stillConnected = await googleCalendarService.isConnected();
-      if (stillConnected) {
-        try {
-          await googleCalendarService.updateEvent(
-            event.googleEventId,
+    const commit = () => {
+      if (event.googleEventId && event.source === 'google') {
+        googleCalendarService.isConnected().then(stillConnected => {
+          if (!stillConnected) return;
+          googleCalendarService.updateEvent(
+            event.googleEventId!,
             updated,
             event.calendarId || 'primary'
-          );
-        } catch (err) {
-          console.error('Failed to reschedule Google Calendar event:', err);
-        }
+          ).catch(err => console.error('Failed to reschedule Google Calendar event:', err));
+        });
       }
-    }
+      // Persist to Supabase only for locally-stored events (UUID id format).
+      // Google-synced events use Google's own IDs which are not UUIDs.
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (UUID_RE.test(event.id)) {
+        dataService.updateEvent(event.id, updated).catch(err =>
+          console.error('Failed to persist rescheduled event:', err)
+        );
+      }
+    };
 
-    // Persist to Supabase only for locally-stored events (UUID id format).
-    // Google-synced events use Google's own IDs which are not UUIDs.
-    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (UUID_RE.test(event.id)) {
-      try {
-        await dataService.updateEvent(event.id, updated);
-      } catch (err) {
-        console.error('Failed to persist rescheduled event:', err);
+    const rollback = () => setEvents(prev => prev.map(ev =>
+      ev.id === event.id ? { ...ev, start: originalStart, end: originalEnd } : ev
+    ));
+
+    const timer = window.setTimeout(() => {
+      if (pendingOpsRef.current.get(event.id)?.timer === timer) {
+        pendingOpsRef.current.delete(event.id);
+        commit();
       }
-    }
-  }, []);
+    }, 6000);
+
+    const toastId = showUndoToast(`Moved "${event.title}"`, () => {
+      const op = pendingOpsRef.current.get(event.id);
+      if (op?.timer === timer) {
+        window.clearTimeout(op.timer);
+        pendingOpsRef.current.delete(event.id);
+        rollback();
+      }
+    });
+
+    pendingOpsRef.current.set(event.id, { toastId, timer, commit, rollback });
+  }, [showUndoToast, supersedePendingOp]);
 
   // Add attendee
   const addAttendee = useCallback((contactId: string) => {
@@ -1874,10 +2037,8 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const handleDeleteEvent = () => {
     if (contextMenu.eventId) {
       const eventId = contextMenu.eventId;
-      setEvents(prev => prev.filter(e => e.id !== eventId));
-      dataService.deleteEvent(eventId).catch(err =>
-        console.error('Failed to delete event from DB:', err)
-      );
+      const event = events.find(e => e.id === eventId);
+      if (event) softDeleteEvent(event);
     }
     closeContextMenu();
   };
@@ -2253,7 +2414,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                               }`}
                             >
                               <Video size={15} />
-                              {isActive ? 'Join Now — Pulse Meet' : minsUntilStart > 0 ? `Join in ${Math.round(minsUntilStart)} min` : 'Join Pulse Meet'}
+                              {isActive ? 'Join Now: Pulse Meet' : minsUntilStart > 0 ? `Join in ${Math.round(minsUntilStart)} min` : 'Join Pulse Meet'}
                             </button>
                             {/* Copy + room code row */}
                             <div className="flex items-center gap-2">
@@ -2339,11 +2500,10 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                                 attendee.responseStatus === 'declined'  ? 'ring-red-400' :
                                 attendee.responseStatus === 'tentative' ? 'ring-amber-400' :
                                 'ring-zinc-300 dark:ring-zinc-600';
-                              const bgColors = ['bg-blue-500','bg-purple-500','bg-emerald-500','bg-pink-500','bg-amber-500','bg-indigo-500'];
-                              const bg = bgColors[i % bgColors.length];
+                              const isOrganizer = selectedEvent.organizer?.email && attendee.email === selectedEvent.organizer.email;
                               return (
-                                <div key={i} title={`${name} — ${attendee.responseStatus || 'pending'}`} className="flex items-center gap-1.5">
-                                  <div className={`w-7 h-7 rounded-full ${bg} ring-2 ${statusColor} flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>
+                                <div key={i} title={`${name}: ${attendee.responseStatus || 'pending'}`} className="flex items-center gap-1.5">
+                                  <div className={`w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 ring-2 ${statusColor} ${isOrganizer ? 'shadow-[inset_0_0_0_1px_var(--cal-accent)]' : ''} flex items-center justify-center text-zinc-600 dark:text-zinc-300 text-[10px] font-bold flex-shrink-0`}>
                                     {initials}
                                   </div>
                                   <span className="text-xs text-zinc-600 dark:text-zinc-300 max-w-[80px] truncate">{name.split(' ')[0]}</span>
@@ -2363,10 +2523,9 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                           <div className="flex flex-wrap gap-2">
                             {selectedEvent.attendees.map((a, i) => {
                               const initials = a.split(/[@\s]/).filter(Boolean).map((w: string) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
-                              const bgColors = ['bg-blue-500','bg-purple-500','bg-emerald-500','bg-pink-500','bg-amber-500','bg-indigo-500'];
                               return (
                                 <div key={i} title={a} className="flex items-center gap-1.5">
-                                  <div className={`w-7 h-7 rounded-full ${bgColors[i % bgColors.length]} flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>
+                                  <div className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 text-[10px] font-bold flex-shrink-0">
                                     {initials}
                                   </div>
                                   <span className="text-xs text-zinc-600 dark:text-zinc-300 max-w-[80px] truncate">{a.split('@')[0]}</span>
@@ -2463,35 +2622,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                         <Pen className="text-xs" /> Edit
                       </button>
                       <button
-                        onClick={async () => {
-                          // Sync deletion with Google Calendar if it's a Google event
-                          if (selectedEvent.googleEventId && googleConnected) {
-                            try {
-                              await googleCalendarService.deleteEvent(
-                                selectedEvent.googleEventId,
-                                selectedEvent.calendarId || 'primary',
-                                'all'
-                              );
-                            } catch (error) {
-                              console.error('Failed to delete from Google Calendar:', error);
-                            }
-                          }
-                          // Sync deletion with Outlook if it's an Outlook event
-                          if (selectedEvent.outlookEventId && outlookConnected) {
-                            try {
-                              await outlookCalendarService.deleteEvent(
-                                selectedEvent.outlookEventId,
-                                selectedEvent.calendarId || 'primary'
-                              );
-                            } catch (error) {
-                              console.error('Failed to delete from Outlook Calendar:', error);
-                            }
-                          }
-                          // Persist deletion to Supabase
-                          dataService.deleteEvent(selectedEvent.id).catch(err =>
-                            console.error('Failed to delete event from DB:', err)
-                          );
-                          setEvents(prev => prev.filter(e => e.id !== selectedEvent.id));
+                        onClick={() => {
+                          // Route through softDeleteEvent so all three deletion
+                          // paths (keyboard, context menu, modal) share the
+                          // same 6s deferred-undo window and remote-sync
+                          // semantics.
+                          softDeleteEvent(selectedEvent);
+                          setSelectedEvent(null);
                           setShowEventDetail(false);
                         }}
                         className="px-4 py-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm font-medium text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40 transition flex items-center justify-center gap-2"
@@ -2554,44 +2691,45 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         onViewChange={(view) => setViewMode(view)}
       />
 
-      {/* Unified Toolbar — search, filters, actions, NL quick-add all in one row */}
-      <div className="bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 flex flex-col">
-
-        {/* Main toolbar row */}
+      {/* Distilled toolbar — single row. Search + Type filter live in the
+          command palette (⌘K) so the toolbar carries only primary actions. */}
+      <div className="bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
         <div className="px-3 py-2 flex items-center gap-2">
 
-          {/* Search */}
-          <div className="relative flex-1 min-w-0 max-w-[220px]">
-            <input
-              type="text"
-              placeholder="Search events…"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-1.5 text-xs pl-8 outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent dark:text-white"
-            />
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 w-3 h-3" />
-            {searchInput && (
-              <button
-                onClick={() => { setSearchInput(''); setSearchQuery(''); }}
-                aria-label="Clear search"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-
-          {/* Type Filter */}
-          <select
-            value={filterEventType}
-            onChange={(e) => setFilterEventType(e.target.value)}
-            className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2 py-1.5 text-xs outline-none dark:text-white hidden sm:block focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+          {/* Search → opens the global ⌘K command palette (Calendar contributes
+              event matches and view-switching commands while mounted). */}
+          <button
+            onClick={openCommandPalette}
+            aria-label="Search events (⌘K)"
+            title="Search events (⌘K)"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white transition"
           >
-            <option value="all">All Types</option>
-            {EVENT_TYPES.map(type => (
-              <option key={type.id} value={type.id}>{type.name}</option>
-            ))}
-          </select>
+            <Search className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Active-filter pill (only when a non-default filter is set) */}
+          {filterEventType !== 'all' && (
+            <button
+              onClick={() => setFilterEventType('all')}
+              aria-label={`Clear filter: ${EVENT_TYPES.find(t => t.id === filterEventType)?.name || filterEventType}`}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md font-mono text-[10px] tracking-[0.1em] uppercase font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/15 transition"
+            >
+              {EVENT_TYPES.find(t => t.id === filterEventType)?.name || filterEventType}
+              <X className="w-2.5 h-2.5" />
+            </button>
+          )}
+
+          {/* Active-search pill (only when a query is active) */}
+          {searchQuery && (
+            <button
+              onClick={() => { setSearchInput(''); setSearchQuery(''); }}
+              aria-label={`Clear search: ${searchQuery}`}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md font-mono text-[10px] tracking-[0.1em] uppercase font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition max-w-[160px]"
+            >
+              <span className="truncate normal-case tracking-normal">{searchQuery}</span>
+              <X className="w-2.5 h-2.5 shrink-0" />
+            </button>
+          )}
 
           {/* Spacer */}
           <div className="flex-1" />
@@ -2669,6 +2807,23 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   >
                     <span className="flex items-center gap-2.5"><ListChecks className="w-3.5 h-3.5 text-zinc-400" /> Tasks</span>
                   </button>
+
+                  <div className="px-3 py-2 border-y border-zinc-100 dark:border-zinc-800 mt-1">
+                    <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-400">Filter</span>
+                  </div>
+                  <div className="px-3 py-2">
+                    <select
+                      value={filterEventType}
+                      onChange={(e) => setFilterEventType(e.target.value)}
+                      aria-label="Filter events by type"
+                      className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2 py-1.5 text-xs outline-none dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                    >
+                      <option value="all">All event types</option>
+                      {EVENT_TYPES.map(type => (
+                        <option key={type.id} value={type.id}>{type.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
                   <div className="px-3 py-2 border-y border-zinc-100 dark:border-zinc-800 mt-1">
                     <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-400">Navigate</span>
@@ -3088,26 +3243,8 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         />
       )}
 
-      {/* Command Palette — Cmd+K / Ctrl+K */}
-      <CommandPalette
-        isOpen={showCommandPalette}
-        onClose={() => setShowCommandPalette(false)}
-        events={events}
-        currentDate={currentDate}
-        viewMode={viewMode}
-        onViewChange={(view, date) => {
-          setViewMode(view);
-          if (date) setCurrentDate(date);
-        }}
-        onGoToToday={handleToday}
-        onCreateEvent={(date) => {
-          if (date) {
-            setNewEventDate(date.toISOString().split('T')[0]);
-          }
-          setShowEventModal(true);
-        }}
-        onEventClick={openEventDetail}
-      />
+      {/* Calendar's command-palette UI lives at the App level now —
+          see GlobalCommandPalette + useRegisterCommands('calendar:*'). */}
 
       {/* Keyboard Shortcuts Help — ? */}
       <ShortcutsHelp

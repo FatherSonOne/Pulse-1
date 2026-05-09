@@ -1,265 +1,104 @@
 import React, { useState, useEffect } from 'react';
 import { Shield } from 'lucide-react';
 import { settingsService } from '../../services/settingsService';
-import i18n from '../../i18n';
 import { SettingsCard } from './shared/SettingsCard';
 import { MonoLabel } from './shared/MonoLabel';
 
-const ToggleItem = ({ label, desc, active, onToggle }: { label: string; desc: string; active: boolean; onToggle: () => void }) => (
-  <div className="flex justify-between items-center group cursor-pointer" onClick={onToggle}>
-    <div>
-      <div className="dark:text-white text-zinc-900 font-medium text-sm">{label}</div>
-      <div className="text-zinc-500 text-xs">{desc}</div>
-    </div>
-    <button
-      className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${active ? 'bg-rose-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-    >
-      <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${active ? 'translate-x-6' : 'translate-x-0'}`} />
-    </button>
-  </div>
-);
+/**
+ * War Room settings.
+ *
+ * Only renders controls that drive real behavior. The previous version had
+ * 13 toggles (AI Reasoning Depth, Token Streaming, Thinking Panel, Annotations,
+ * Default Agent, Voice Mode, Voice Gender, Content Safety, Profanity Filter,
+ * Hallucination Detection, Advanced Language) that all persisted to settings
+ * but had zero consumers — flipping them did nothing in production.
+ *
+ * Voice gender + voice mode now live in the War Room itself (per-session
+ * via warRoomStore). Guardrails are configured at the realtimeAgentService
+ * level. Reasoning depth is selected automatically by aiPreferencesService
+ * based on the user's quality dial in AI & Intelligence settings.
+ *
+ * Only `warRoomDefaultMode` survives — read by LiveDashboard on mount.
+ */
+const MODE_OPTIONS: { value: string; label: string; desc: string }[] = [
+  { value: 'command-center', label: 'Command Center', desc: 'Full surface: chat, agents, intel desk, board' },
+  { value: 'focus',          label: 'Focus',          desc: 'Single-agent chat without the rails' },
+  { value: 'live',           label: 'Live',           desc: 'Voice-first session with the realtime agent' },
+];
 
 export const StudioSettings: React.FC = () => {
-  const [warRoomDefaultMode, setWarRoomDefaultMode] = useState('command-center');
-  const [warRoomAIDepth, setWarRoomAIDepth] = useState<'fast' | 'balanced' | 'deep'>('balanced');
-  const [warRoomTokenStreaming, setWarRoomTokenStreaming] = useState(true);
-  const [warRoomThinkingPanel, setWarRoomThinkingPanel] = useState(true);
-  const [warRoomAnnotations, setWarRoomAnnotations] = useState(true);
-  const [warRoomDefaultAgent, setWarRoomDefaultAgent] = useState('general');
-  const [warRoomVoiceMode, setWarRoomVoiceMode] = useState('push-to-talk');
-  const [warRoomVoiceGender, setWarRoomVoiceGender] = useState<'male' | 'female' | 'neutral'>('neutral');
-  const [warRoomGuardrailContentSafety, setWarRoomGuardrailContentSafety] = useState(true);
-  const [warRoomGuardrailProfanity, setWarRoomGuardrailProfanity] = useState(true);
-  const [warRoomGuardrailHallucination, setWarRoomGuardrailHallucination] = useState(true);
-  const [warRoomLanguage, setWarRoomLanguage] = useState('en');
+  const [defaultMode, setDefaultMode] = useState('command-center');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const load = async () => {
-      const [wrMode, wrDepth, wrStream, wrThink, wrAnnot, wrAgent, wrVoiceMode, wrVoiceGender, wrGCSafety, wrGCProfanity, wrGCHallucination, wrLang] = await Promise.all([
-        settingsService.get('warRoomDefaultMode'),
-        settingsService.get('warRoomAIDepth'),
-        settingsService.get('warRoomTokenStreaming'),
-        settingsService.get('warRoomThinkingPanel'),
-        settingsService.get('warRoomAnnotations'),
-        settingsService.get('warRoomDefaultAgent'),
-        settingsService.get('warRoomVoiceMode'),
-        settingsService.get('warRoomVoiceGender'),
-        settingsService.get('warRoomGuardrailContentSafety'),
-        settingsService.get('warRoomGuardrailProfanity'),
-        settingsService.get('warRoomGuardrailHallucination'),
-        settingsService.get('warRoomLanguage'),
-      ]);
-      if (wrMode) setWarRoomDefaultMode(wrMode);
-      if (wrDepth) setWarRoomAIDepth(wrDepth);
-      if (wrStream !== undefined) setWarRoomTokenStreaming(wrStream);
-      if (wrThink !== undefined) setWarRoomThinkingPanel(wrThink);
-      if (wrAnnot !== undefined) setWarRoomAnnotations(wrAnnot);
-      if (wrAgent) setWarRoomDefaultAgent(wrAgent);
-      if (wrVoiceMode) setWarRoomVoiceMode(wrVoiceMode);
-      if (wrVoiceGender) setWarRoomVoiceGender(wrVoiceGender);
-      if (wrGCSafety !== undefined) setWarRoomGuardrailContentSafety(wrGCSafety);
-      if (wrGCProfanity !== undefined) setWarRoomGuardrailProfanity(wrGCProfanity);
-      if (wrGCHallucination !== undefined) setWarRoomGuardrailHallucination(wrGCHallucination);
-      if (wrLang) setWarRoomLanguage(wrLang);
-    };
-    load();
+    let cancelled = false;
+    (async () => {
+      const stored = await settingsService.get('warRoomDefaultMode');
+      if (cancelled) return;
+      if (typeof stored === 'string') setDefaultMode(stored);
+      setIsLoading(false);
+    })();
+    return () => { cancelled = true; };
   }, []);
+
+  const handleChange = (value: string) => {
+    setDefaultMode(value);
+    void settingsService.set('warRoomDefaultMode', value);
+  };
 
   return (
     <div className="space-y-8 animate-slide-up">
       <div className="section-header">
         <h3><Shield /> War Room</h3>
-        <p>Configure default behavior for the War Room.</p>
+        <p>
+          Choose the default surface War Room opens in. Per-session controls
+          (voice mode, voice, guardrails) live inside War Room itself.
+        </p>
       </div>
 
-      <SettingsCard className="space-y-6">
-        {/* AI Depth */}
-        <div>
-          <MonoLabel as="label" className="mb-3 block">AI Reasoning Depth</MonoLabel>
-          <div className="flex gap-3">
-            {(['fast', 'balanced', 'deep'] as const).map((depth) => (
-              <button
-                key={depth}
-                type="button"
-                onClick={() => {
-                  setWarRoomAIDepth(depth);
-                  settingsService.set('warRoomAIDepth', depth);
-                }}
-                className={`flex-1 py-2 border rounded-lg text-sm font-medium capitalize transition ${
-                  warRoomAIDepth === depth
-                    ? 'border-rose-500 bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400'
-                    : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600'
-                }`}
-              >
-                {depth}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
-
-        {/* Visualization Toggles */}
-        <ToggleItem
-          label="Token Streaming"
-          desc="Show tokens appearing in real-time as AI responds"
-          active={warRoomTokenStreaming}
-          onToggle={() => {
-            const v = !warRoomTokenStreaming;
-            setWarRoomTokenStreaming(v);
-            settingsService.set('warRoomTokenStreaming', v);
-          }}
-        />
-        <ToggleItem
-          label="Thinking Panel"
-          desc="Display AI reasoning steps in a side panel"
-          active={warRoomThinkingPanel}
-          onToggle={() => {
-            const v = !warRoomThinkingPanel;
-            setWarRoomThinkingPanel(v);
-            settingsService.set('warRoomThinkingPanel', v);
-          }}
-        />
-        <ToggleItem
-          label="Annotations"
-          desc="Show inline annotations and source citations"
-          active={warRoomAnnotations}
-          onToggle={() => {
-            const v = !warRoomAnnotations;
-            setWarRoomAnnotations(v);
-            settingsService.set('warRoomAnnotations', v);
-          }}
-        />
-
-        <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
-
-        {/* Default Agent */}
-        <div>
-          <MonoLabel as="label" className="mb-3 block">Default Agent</MonoLabel>
-          <select
-            value={warRoomDefaultAgent}
-            onChange={(e) => {
-              setWarRoomDefaultAgent(e.target.value);
-              settingsService.set('warRoomDefaultAgent', e.target.value);
-            }}
-            title="Default War Room agent"
-            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-          >
-            <option value="general">General</option>
-            <option value="skeptic">Skeptic</option>
-            <option value="scribe">Scribe</option>
-            <option value="deep-diver">Deep Diver</option>
-          </select>
-        </div>
-
-        <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
-
-        {/* Voice Settings */}
-        <div>
-          <MonoLabel as="label" className="mb-3 block">Voice Mode</MonoLabel>
-          <select
-            value={warRoomVoiceMode}
-            onChange={(e) => {
-              setWarRoomVoiceMode(e.target.value);
-              settingsService.set('warRoomVoiceMode', e.target.value);
-            }}
-            title="Voice interaction mode"
-            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-          >
-            <option value="push-to-talk">Push-to-Talk</option>
-            <option value="always-on">Always On</option>
-            <option value="wake-word">Wake Word</option>
-          </select>
-        </div>
-
-        <div>
-          <MonoLabel as="label" className="mb-3 block">Voice Gender</MonoLabel>
-          <div className="flex gap-3">
-            {(['male', 'female', 'neutral'] as const).map((gender) => (
-              <button
-                key={gender}
-                type="button"
-                onClick={() => {
-                  setWarRoomVoiceGender(gender);
-                  settingsService.set('warRoomVoiceGender', gender);
-                }}
-                className={`flex-1 py-2 border rounded-lg text-sm font-medium capitalize transition ${
-                  warRoomVoiceGender === gender
-                    ? 'border-rose-500 bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400'
-                    : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600'
-                }`}
-              >
-                {gender}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
-
-        {/* Guardrails */}
-        <div>
-          <MonoLabel as="label" className="mb-3 block">Guardrails</MonoLabel>
-        </div>
-        <ToggleItem
-          label="Content Safety"
-          desc="Flag potentially harmful or unsafe content in AI responses"
-          active={warRoomGuardrailContentSafety}
-          onToggle={() => {
-            const v = !warRoomGuardrailContentSafety;
-            setWarRoomGuardrailContentSafety(v);
-            settingsService.set('warRoomGuardrailContentSafety', v);
-          }}
-        />
-        <ToggleItem
-          label="Profanity Filter"
-          desc="Filter profane language from AI-generated content"
-          active={warRoomGuardrailProfanity}
-          onToggle={() => {
-            const v = !warRoomGuardrailProfanity;
-            setWarRoomGuardrailProfanity(v);
-            settingsService.set('warRoomGuardrailProfanity', v);
-          }}
-        />
-        <ToggleItem
-          label="Hallucination Detection"
-          desc="Highlight responses that may contain unsupported claims"
-          active={warRoomGuardrailHallucination}
-          onToggle={() => {
-            const v = !warRoomGuardrailHallucination;
-            setWarRoomGuardrailHallucination(v);
-            settingsService.set('warRoomGuardrailHallucination', v);
-          }}
-        />
-
-        <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
-
-        {/* Advanced */}
-        <div>
-          <MonoLabel as="label" className="mb-3 block">Advanced</MonoLabel>
-          <select
-            value={warRoomLanguage}
-            onChange={(e) => {
-              setWarRoomLanguage(e.target.value);
-              settingsService.set('warRoomLanguage', e.target.value);
-              i18n.changeLanguage(e.target.value);
-            }}
-            title="Language preference"
-            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-          >
-            <option value="en">English</option>
-            <option value="es">Spanish</option>
-            <option value="fr">French</option>
-            <option value="de">German</option>
-            <option value="ja">Japanese</option>
-            <option value="zh">Chinese</option>
-            <option value="pt">Portuguese</option>
-            <option value="ar">Arabic</option>
-            <option value="hi">Hindi</option>
-            <option value="ko">Korean</option>
-          </select>
+      <SettingsCard className="space-y-4">
+        <MonoLabel as="label" className="block">Default Mode</MonoLabel>
+        <div className="space-y-2">
+          {MODE_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => handleChange(opt.value)}
+              disabled={isLoading}
+              className={`w-full flex items-start gap-3 p-3 rounded-lg border transition text-left disabled:opacity-50 ${
+                defaultMode === opt.value
+                  ? 'border-rose-500 bg-rose-500/5 dark:bg-rose-500/10'
+                  : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
+              }`}
+            >
+              <div className="flex-1 min-w-0">
+                <div className={`text-sm font-medium ${
+                  defaultMode === opt.value
+                    ? 'text-rose-500 dark:text-rose-400'
+                    : 'text-zinc-900 dark:text-white'
+                }`}>
+                  {opt.label}
+                </div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  {opt.desc}
+                </div>
+              </div>
+              {defaultMode === opt.value && (
+                <span
+                  aria-hidden="true"
+                  className="w-2 h-2 rounded-full bg-rose-500 mt-1.5 flex-shrink-0"
+                />
+              )}
+            </button>
+          ))}
         </div>
       </SettingsCard>
+
+      <p className="text-xs text-zinc-400 dark:text-zinc-500 max-w-prose">
+        Looking for reasoning depth, voice settings, or guardrails? Reasoning depth
+        follows your AI &amp; Intelligence model preferences. Voice and guardrails
+        are configured per-session inside War Room.
+      </p>
     </div>
   );
 };

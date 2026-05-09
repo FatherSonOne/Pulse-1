@@ -119,17 +119,6 @@ const getNavSections = (): NavSection[] => {
     },
   ];
 
-  if (import.meta.env.DEV) {
-    sections.push({
-      label: 'Dev',
-      color: 'amber',
-      collapsible: true,
-      items: [
-        { icon: ClipboardCheck, label: 'Test Matrix', view: AppView.TEST_MATRIX },
-      ],
-    });
-  }
-
   return sections;
 };
 

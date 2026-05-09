@@ -1,0 +1,323 @@
+/*
+ * AccountSettingsModal — quick-access launcher
+ *
+ * Demoted from a 4-tab full-settings duplicate to a thin launcher. All
+ * surfaces consume --pulse-* tokens; coral is restricted to a single
+ * signature element (the "All settings" CTA at the bottom) plus the
+ * segmented control's selected state. The auth menu's coral-on-avatar
+ * is the in-app signature; this launcher leans on the CTA instead, so
+ * the two surfaces don't compete.
+ */
+
+/* ─── Scrim + dialog frame ─── */
+
+.pulse-account-launcher__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  /* Tinted toward ink, never pure black. */
+  background: rgba(15, 15, 15, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  animation: pulse-account-launcher-scrim-in 160ms var(--pulse-ease);
+}
+@keyframes pulse-account-launcher-scrim-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pulse-account-launcher {
+  width: 100%;
+  max-width: 420px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--pulse-surface);
+  border-left: 1px solid var(--pulse-border);
+  box-shadow: var(--pulse-shadow-md);
+  overflow: hidden;
+  animation: pulse-account-launcher-slide-in 240ms var(--pulse-ease);
+}
+:where(.dark) .pulse-account-launcher {
+  background: rgba(20, 20, 20, 0.96);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+@keyframes pulse-account-launcher-slide-in {
+  from { transform: translateX(16px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* ─── Header ─── */
+
+.pulse-account-launcher__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--pulse-border);
+  background: var(--pulse-surface);
+}
+:where(.dark) .pulse-account-launcher__header {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.pulse-account-launcher__avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: var(--pulse-surface-raised);
+  border: 1px solid var(--pulse-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pulse-account-launcher__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pulse-account-launcher__avatar > span {
+  font-family: var(--pulse-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--pulse-ink-2);
+}
+
+.pulse-account-launcher__identity {
+  flex: 1;
+  min-width: 0;
+}
+.pulse-account-launcher__name {
+  margin: 0;
+  font-family: var(--pulse-font);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--pulse-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pulse-account-launcher__email {
+  margin: 2px 0 0;
+  font-family: var(--pulse-font);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--pulse-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pulse-account-launcher__close {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pulse-ink-2);
+  cursor: pointer;
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              color var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-account-launcher__close:hover {
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink);
+}
+.pulse-account-launcher__close:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
+/* ─── Body ─── */
+
+.pulse-account-launcher__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px;
+}
+
+.pulse-account-launcher__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: var(--pulse-ink-2);
+  font-family: var(--pulse-font);
+  font-size: 13px;
+}
+.pulse-account-launcher__spinner {
+  animation: pulse-account-launcher-spin 900ms linear infinite;
+  color: var(--pulse-rose);
+}
+@keyframes pulse-account-launcher-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* The single SettingsCard housing all three quick controls. */
+.pulse-account-launcher__card {
+  /* SettingsCard already gives surface + border + radius; we layout inside. */
+  padding: 0;
+}
+
+.pulse-account-launcher__row {
+  padding: 14px 16px;
+}
+.pulse-account-launcher__row--theme {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pulse-account-launcher__row--toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pulse-account-launcher__row-text {
+  flex: 1;
+  min-width: 0;
+}
+.pulse-account-launcher__row-label {
+  font-family: var(--pulse-font);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pulse-ink);
+}
+.pulse-account-launcher__row-desc {
+  margin-top: 2px;
+  font-family: var(--pulse-font);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--pulse-ink-3);
+}
+
+.pulse-account-launcher__row-icon {
+  color: var(--pulse-ink-3);
+  flex-shrink: 0;
+}
+
+.pulse-account-launcher__row--toggle > div:last-child,
+.pulse-account-launcher__row--toggle > .flex {
+  flex: 1;
+}
+
+.pulse-account-launcher__divider {
+  height: 1px;
+  background: var(--pulse-border);
+  margin: 0 12px;
+}
+
+/* ─── Segmented control (theme) ─── */
+
+.pulse-account-launcher__segment {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--pulse-surface-raised);
+  border: 1px solid var(--pulse-border);
+}
+
+.pulse-account-launcher__segment-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--pulse-ink-2);
+  font-family: var(--pulse-font);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              color var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-account-launcher__segment-button:hover {
+  color: var(--pulse-ink);
+}
+.pulse-account-launcher__segment-button:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+.pulse-account-launcher__segment-button.is-active {
+  background: var(--pulse-surface);
+  color: var(--pulse-rose);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+:where(.dark) .pulse-account-launcher__segment-button.is-active {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+}
+
+/* ─── Footer ─── */
+
+.pulse-account-launcher__footer {
+  padding: 14px 18px;
+  border-top: 1px solid var(--pulse-border);
+  background: var(--pulse-surface);
+}
+:where(.dark) .pulse-account-launcher__footer {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.pulse-account-launcher__cta {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--pulse-rose);
+  color: #ffffff;
+  font-family: var(--pulse-font);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 12px var(--pulse-rose-glow);
+  transition: filter var(--pulse-duration) var(--pulse-ease),
+              transform var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-account-launcher__cta:hover {
+  filter: brightness(0.96);
+  /* 1px lift only — within the 2px-Lift-Cap rule. */
+  transform: translateY(-1px);
+}
+.pulse-account-launcher__cta:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+.pulse-account-launcher__cta:active {
+  transform: translateY(0);
+}
+
+/* ─── Reduced motion ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-account-launcher__scrim,
+  .pulse-account-launcher { animation: none; }
+  .pulse-account-launcher__close,
+  .pulse-account-launcher__segment-button,
+  .pulse-account-launcher__cta { transition: none; }
+  .pulse-account-launcher__cta:hover { transform: none; }
+  .pulse-account-launcher__spinner { animation: none; }
+}

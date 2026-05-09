@@ -84,7 +84,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
     <div
       ref={sidebarRef}
       style={{ width: `${sidebarWidth}px`, minWidth: '160px', maxWidth: '400px' }}
-      className="bg-zinc-50 dark:bg-zinc-900/30 border-r border-zinc-200 dark:border-zinc-800 p-3 lg:p-4 overflow-y-auto hidden lg:flex flex-col relative flex-shrink-0"
+      className="bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)]/30 border-r border-[var(--pulse-border)] p-3 lg:p-4 overflow-y-auto hidden lg:flex flex-col relative flex-shrink-0"
     >
       {/* Resize Handle */}
       <div
@@ -96,7 +96,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
       <div className="mb-4 lg:mb-6">
         <h3 className="text-[10px] lg:text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2 lg:mb-3">My Calendars</h3>
         <div className="space-y-2">
-          <label className="flex items-center gap-2 text-xs lg:text-sm text-zinc-600 dark:text-zinc-300 cursor-pointer group">
+          <label className="flex items-center gap-2 text-xs lg:text-sm text-[var(--pulse-ink-2)] cursor-pointer group">
             <input
               type="checkbox"
               checked={visibleCalendars.has('user')}
@@ -137,7 +137,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
                       aria-label={`Change color for ${cal.summary}`}
                       title="Change calendar color"
                     />
-                    <label className="flex items-center gap-1.5 flex-1 min-w-0 text-xs lg:text-sm text-zinc-600 dark:text-zinc-300 cursor-pointer">
+                    <label className="flex items-center gap-1.5 flex-1 min-w-0 text-xs lg:text-sm text-[var(--pulse-ink-2)] cursor-pointer">
                       <input
                         type="checkbox"
                         checked={visibleCalendars.has(cal.id)}
@@ -153,7 +153,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
                   </div>
                   {isPickerOpen && (
                     <div
-                      className="absolute left-0 top-6 z-20 p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl grid grid-cols-6 gap-1.5"
+                      className="absolute left-0 top-6 z-20 p-2 bg-white dark:bg-zinc-800 border border-[var(--pulse-border-strong)] rounded-xl shadow-xl grid grid-cols-6 gap-1.5"
                       onMouseDown={e => e.stopPropagation()}
                     >
                       {CAL_PALETTE.map(hex => (
@@ -184,17 +184,17 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
 
       {/* Google Calendar connect prompt */}
       {!googleConnected && (
-        <div className="mb-8 p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
+        <div className="mb-8 p-4 bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)]/50 rounded-xl border border-[var(--pulse-border-strong)]">
           <div className="flex items-center gap-2 mb-2">
             <ExternalLink className="text-blue-500" />
             <span className="text-sm font-medium dark:text-white">Google Calendar</span>
           </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
+          <p className="text-xs text-[var(--pulse-ink-3)] mb-3">
             Connect to sync your events and enable AI scheduling
           </p>
           <button
             onClick={() => { if (onNavigateToIntegrations) onNavigateToIntegrations(); }}
-            className="w-full flex items-center justify-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition shadow-sm"
+            className="w-full flex items-center justify-center gap-2 bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border-strong)] rounded-lg px-3 py-2 text-sm font-medium text-[var(--pulse-ink-2)] hover:bg-zinc-50 dark:hover:bg-zinc-800 transition shadow-sm"
           >
             <Settings className="text-sm" />
             Connect in Settings
@@ -244,7 +244,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
             aria-label="Select team"
             value={selectedTeamId}
             onChange={(e) => setSelectedTeamId(e.target.value)}
-            className="w-full mb-4 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-rose-400 transition"
+            className="w-full mb-4 bg-white dark:bg-zinc-800 border border-[var(--pulse-border-strong)] rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-rose-400 transition"
           >
             {teams.map(team => (
               <option key={team.id} value={team.id}>{team.name}</option>
@@ -269,7 +269,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
               {teamMembers.map(contact => {
                 const overlayOn = overlayMemberIds.has(contact.id);
                 return (
-                  <div key={contact.id} className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300 group p-2 rounded-lg hover:bg-white dark:hover:bg-zinc-800 transition">
+                  <div key={contact.id} className="flex items-center gap-2 text-sm text-[var(--pulse-ink-2)] group p-2 rounded-lg hover:bg-white dark:hover:bg-zinc-800 transition">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <div className={`w-6 h-6 rounded-full ${contact.avatarColor} flex-shrink-0 flex items-center justify-center text-white text-xs font-bold`}>
                         {contact.name.charAt(0)}
@@ -312,14 +312,16 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
                 );
               })}
 
-              {/* Free-time finder */}
+              {/* Free-time finder — coral active state aligns with the
+                  system's coral-as-signal rule (active selection), no
+                  emerald-island chrome. */}
               {teamMembers.length > 0 && (viewMode === 'week' || viewMode === 'day') && (
                 <button
                   onClick={() => setShowFreeTimeFinder(f => !f)}
                   className={`mt-1 w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition ${
                     showFreeTimeFinder
-                      ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-white'
+                      ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30'
+                      : 'border border-transparent text-[var(--pulse-ink-3)] hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-white'
                   }`}
                 >
                   <Clock className="text-[10px]" />
@@ -328,26 +330,26 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
               )}
 
               {showFreeTimeFinder && (viewMode === 'week' || viewMode === 'day') && (
-                <div className="mt-2 border border-emerald-200 dark:border-emerald-800/60 rounded-xl overflow-hidden">
-                  <div className="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2">
-                    <Wand2 className="text-emerald-500 text-[10px]" />
-                    <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+                <div className="mt-2 border border-[var(--pulse-border)] rounded-xl overflow-hidden">
+                  <div className="px-3 py-2 bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border-b border-[var(--pulse-border)] flex items-center gap-2">
+                    <Wand2 className="w-3 h-3 text-zinc-500" />
+                    <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-500">
                       Available slots
                     </span>
                   </div>
                   {freeTimeSlots.length === 0 ? (
-                    <div className="px-3 py-3 text-xs text-zinc-400 dark:text-zinc-500 text-center">
+                    <div className="px-3 py-3 text-xs text-[var(--pulse-ink-3)] text-center">
                       No free slots found this {viewMode === 'week' ? 'week' : 'day'}
                     </div>
                   ) : (
-                    <div className="divide-y divide-emerald-100 dark:divide-emerald-900/40 max-h-40 overflow-y-auto">
+                    <div className="divide-y divide-[var(--pulse-border)] max-h-40 overflow-y-auto">
                       {freeTimeSlots.map((slot, i) => {
                         const fmt = (d: Date) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                         const dur = Math.round((slot.end.getTime() - slot.start.getTime()) / 60000);
                         return (
                           <button
                             key={i}
-                            className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition group"
+                            className="w-full text-left px-3 py-2 hover:bg-[var(--pulse-canvas-soft)] dark:hover:bg-[var(--pulse-surface)] transition group"
                             title="Click to create an event in this slot"
                             onClick={() => {
                               setNewEventDate(slot.start.toISOString().split('T')[0]);
@@ -355,10 +357,10 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
                               setShowEventModal(true);
                             }}
                           >
-                            <div className="text-[11px] font-medium text-zinc-700 dark:text-zinc-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition">
+                            <div className="text-[11px] font-medium text-[var(--pulse-ink-2)] group-hover:text-rose-600 dark:group-hover:text-rose-400 transition">
                               {fmt(slot.start)} – {fmt(slot.end)}
                             </div>
-                            <div className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                            <div className="text-[10px] text-[var(--pulse-ink-3)]">
                               {slot.dayLabel} · {dur} min
                             </div>
                           </button>

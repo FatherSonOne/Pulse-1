@@ -114,7 +114,7 @@ export const BookingPageManager: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide">Booking Pages</h3>
+        <h3 className="text-sm font-bold text-[var(--pulse-ink-2)] uppercase tracking-wide">Booking Pages</h3>
         <button type="button" onClick={() => setShowCreate(s => !s)} className="flex items-center gap-1.5 text-xs text-rose-500 hover:text-rose-600 font-medium transition">
           <Plus className="w-3.5 h-3.5" /> New page
         </button>
@@ -122,19 +122,19 @@ export const BookingPageManager: React.FC = () => {
 
       {/* Create form */}
       {showCreate && (
-        <form onSubmit={handleCreate} className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3">
+        <form onSubmit={handleCreate} className="bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-xl p-4 space-y-3">
           {error && <p className="text-xs text-red-500">{error}</p>}
           <div>
             <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Title</label>
             <input type="text" required value={form.title} onChange={e => handleTitleChange(e.target.value)} placeholder="30-minute intro call"
-              className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition" />
+              className="w-full bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)] border border-[var(--pulse-border-strong)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition" />
           </div>
           <div>
             <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">URL slug</label>
             <div className="flex items-center">
-              <span className="text-xs text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border border-r-0 border-zinc-200 dark:border-zinc-700 rounded-l-lg px-2 py-2 whitespace-nowrap">/book/</span>
+              <span className="text-xs text-zinc-400 bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] border border-r-0 border-[var(--pulse-border-strong)] rounded-l-lg px-2 py-2 whitespace-nowrap">/book/</span>
               <input type="text" required minLength={3} maxLength={60} pattern="[a-z0-9-]+" value={form.slug} onChange={e => setForm(p => ({ ...p, slug: slugify(e.target.value) }))} placeholder="intro-call"
-                className="flex-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-r-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition" />
+                className="flex-1 bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)] border border-[var(--pulse-border-strong)] rounded-r-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition" />
             </div>
           </div>
           <div>
@@ -142,7 +142,7 @@ export const BookingPageManager: React.FC = () => {
             <div className="flex gap-2 flex-wrap">
               {DURATIONS.map(d => (
                 <button key={d} type="button" onClick={() => setForm(p => ({ ...p, duration_minutes: d }))}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${form.duration_minutes === d ? 'bg-rose-500 border-rose-500 text-white' : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-rose-300'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${form.duration_minutes === d ? 'bg-rose-500 border-rose-500 text-white' : 'border-[var(--pulse-border-strong)] text-[var(--pulse-ink-2)] hover:border-rose-300'}`}>
                   {d}m
                 </button>
               ))}
@@ -153,7 +153,7 @@ export const BookingPageManager: React.FC = () => {
             <div className="flex gap-1.5">
               {DAYS.map((day, i) => (
                 <button key={i} type="button" onClick={() => setForm(p => ({ ...p, days: p.days.includes(i) ? p.days.filter(d => d !== i) : [...p.days, i] }))}
-                  className={`w-8 h-8 rounded-full text-xs font-medium transition ${form.days.includes(i) ? 'bg-rose-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
+                  className={`w-8 h-8 rounded-full text-xs font-medium transition ${form.days.includes(i) ? 'bg-rose-500 text-white' : 'bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] text-zinc-500 hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-[var(--pulse-surface-raised)]'}`}>
                   {day[0]}
                 </button>
               ))}
@@ -163,12 +163,12 @@ export const BookingPageManager: React.FC = () => {
             <div>
               <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Start time</label>
               <input type="time" aria-label="Availability start time" value={form.start} onChange={e => setForm(p => ({ ...p, start: e.target.value }))}
-                className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition" />
+                className="w-full bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)] border border-[var(--pulse-border-strong)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition" />
             </div>
             <div>
               <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">End time</label>
               <input type="time" aria-label="Availability end time" value={form.end} onChange={e => setForm(p => ({ ...p, end: e.target.value }))}
-                className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition" />
+                className="w-full bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)] border border-[var(--pulse-border-strong)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition" />
             </div>
           </div>
           <div className="flex gap-2 pt-1">
@@ -188,12 +188,12 @@ export const BookingPageManager: React.FC = () => {
       ) : (
         <div className="space-y-2">
           {pages.map(page => (
-            <div key={page.id} className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl group">
+            <div key={page.id} className="flex items-center gap-3 p-3 bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-xl group">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">{page.title}</span>
                   <span className="text-[10px] text-zinc-400">{page.duration_minutes}m</span>
-                  {!page.is_active && <span className="text-[10px] bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-1.5 py-0.5 rounded">Inactive</span>}
+                  {!page.is_active && <span className="text-[10px] bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] text-zinc-500 px-1.5 py-0.5 rounded">Inactive</span>}
                 </div>
                 <div className="text-xs text-zinc-400 font-mono truncate">/book/{page.slug}</div>
               </div>

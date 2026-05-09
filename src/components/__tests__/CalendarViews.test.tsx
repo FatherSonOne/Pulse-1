@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CalendarEvent } from '../../types';
@@ -51,6 +51,7 @@ const makeEvent = (
   type: 'event',
   color: '#6b7280',
   allDay: false,
+  calendarId: 'primary',
   ...overrides,
 });
 
@@ -74,6 +75,18 @@ const defaults = {
 
 /** DayView defaults pinned to Feb 17 so events on d(2026,2,17,...) are visible. */
 const dayDefaults = { ...defaults, currentDate: DAY_17 };
+
+// Pin the wall clock to TODAY so production calls to `new Date()` (e.g. the
+// "today" highlight in MonthView/YearView) resolve to the same date the tests
+// pass in via `currentDate`. Restrict the fake-timer scope to Date only —
+// faking setTimeout would break userEvent's async waits.
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(TODAY);
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 beforeEach(() => vi.clearAllMocks());
 

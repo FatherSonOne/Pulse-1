@@ -238,10 +238,12 @@
 .cal-skeleton-bar {
   height: 12px;
   border-radius: 3px;
+  /* Light mode: darken the middle stop instead of lightening it — a white
+     middle stop on a near-white canvas reads as a flat bar with no shimmer. */
   background: linear-gradient(
     90deg,
     var(--cal-bg-subtle) 0%,
-    rgba(255, 255, 255, 0.04) 50%,
+    rgba(0, 0, 0, 0.06) 50%,
     var(--cal-bg-subtle) 100%
   );
   background-size: 200% 100%;
@@ -252,9 +254,9 @@
 .dark .cal-skeleton-bar {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.04) 0%,
+    var(--cal-bg-subtle) 0%,
     rgba(255, 255, 255, 0.10) 50%,
-    rgba(255, 255, 255, 0.04) 100%
+    var(--cal-bg-subtle) 100%
   );
   background-size: 200% 100%;
 }
@@ -269,7 +271,6 @@
 }
 
 /* ── Typography ──────────────────────────────────────────── */
-/* Typography - Inter replaces SF Pro Display */
 .pulse-calendar {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-feature-settings: 'tnum' on, 'lnum' on;
@@ -414,21 +415,73 @@
   box-shadow: var(--cal-shadow-sm);
 }
 
-/* Inline hint pointing power users to ⌘K for the rest of the view modes. */
-.cal-view-switcher-hint {
+/* Overflow button: holds Year / Week / Agenda / Timeline behind a popover so
+   first-timers can discover the full view vocabulary without reading the
+   keyboard-shortcut help. */
+.cal-view-btn-overflow {
+  min-width: 36px;
+  padding: 8px 10px;
   display: inline-flex;
   align-items: center;
-  padding: 0 10px 0 12px;
-  margin-left: 4px;
-  border-left: 1px solid var(--cal-border);
+  justify-content: center;
+  gap: 4px;
+}
+
+.cal-view-overflow-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 30;
+  min-width: 160px;
+  background: var(--cal-bg-elevated);
+  border: 1px solid var(--cal-border);
+  border-radius: 10px;
+  box-shadow: var(--cal-shadow-md), 0 12px 32px rgba(0, 0, 0, 0.10);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  animation: calFadeIn 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cal-view-overflow-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
   font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cal-text-muted);
+  transition: var(--cal-transition);
+}
+
+.cal-view-overflow-item:hover {
+  background: var(--cal-bg-subtle);
+  color: var(--cal-text);
+}
+
+.cal-view-overflow-item.active {
+  background: var(--cal-accent-soft);
+  color: var(--cal-accent);
+}
+
+.cal-view-overflow-item kbd {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.625rem;
   font-weight: 500;
   letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--cal-bg-subtle);
   color: var(--cal-text-subtle);
-  user-select: none;
-  cursor: help;
-  font-variant-numeric: tabular-nums;
+  text-transform: none;
 }
 
 /* ============================================
@@ -487,35 +540,16 @@
   height: 100%;
 }
 
-.cal-mini-month::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--cal-accent), transparent);
-  opacity: 0;
-  transition: var(--cal-transition);
-}
-
 .cal-mini-month:hover {
   border-color: var(--cal-border);
   box-shadow: var(--cal-shadow-md);
-  transform: translateY(-2px);
 }
 
-.cal-mini-month:hover::before {
-  opacity: 1;
-}
-
+/* Current-month signal: full-perimeter coral hairline, no gradient tint, no
+   side-stripe. Coral-as-signal stays tonal here — the border alone marks the
+   month without painting decoration into the YearView. */
 .cal-mini-month.current-month {
   border-color: var(--cal-accent);
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.04) 0%, transparent 100%);
-}
-
-.cal-mini-month.current-month::before {
-  opacity: 1;
 }
 
 .cal-mini-month-name {
@@ -539,9 +573,11 @@
 }
 
 .cal-mini-day-header {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   font-size: 0.5625rem;
   font-weight: 600;
-  color: var(--cal-text-subtle);
+  letter-spacing: 0.1em;
+  color: var(--cal-text-muted);
   text-align: center;
   padding: 2px 0;
   text-transform: uppercase;
@@ -731,15 +767,11 @@
 }
 
 .cal-event-pill:hover {
-  transform: translateX(2px);
+  /* Drop the translate — a packed Month grid has up to 126 pills and a
+     cursor sweep would jitter every one. Shadow + z-index lift carries the
+     hover signal without animating geometry. */
   box-shadow: var(--cal-shadow-sm);
   z-index: 10;
-}
-
-.cal-event-pill.all-day {
-  /* All-day variant — inline boxShadow (40% hairline) already provides the ring;
-     a slight opacity nudge gives just-enough visual lift over timed events. */
-  opacity: 0.95;
 }
 
 .cal-more-events {
@@ -1039,9 +1071,9 @@
 }
 
 .cal-week-event:hover {
+  /* No scale — adjacent overlapping events would jitter against each other. */
   z-index: 10;
   box-shadow: var(--cal-shadow-md);
-  transform: scale(1.02);
 }
 
 .cal-week-event-title {
@@ -1261,9 +1293,10 @@
    Day events now rely on background fill + 1px hairline for definition. */
 
 .cal-day-event:hover {
+  /* No translate — 4px violated the 2px hover cap. Shadow + z-index lift
+     carries the hover signal. */
   z-index: 10;
   box-shadow: var(--cal-shadow-lg);
-  transform: translateX(4px);
 }
 
 .cal-day-event-title {
@@ -1535,8 +1568,6 @@
   }
 }
 
-/* calScaleIn defined above — duplicate removed */
-
 /* ============================================
    FOCUS-VISIBLE — keyboard navigation styles
    ============================================ */
@@ -1563,9 +1594,12 @@
   border-radius: 50%;
 }
 
-/* Event pills — tight ring */
+/* Event pills — tight ring. The outline reads as a thin contrast separator
+   between the pill's translucent body and the surrounding coral halo; using
+   the elevated surface token keeps it visible across both themes (raw #fff
+   disappears on the light-mode #f8f8f8 canvas). */
 .cal-event-pill:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--cal-bg-elevated);
   outline-offset: 1px;
   box-shadow: 0 0 0 4px var(--cal-accent);
 }
@@ -1573,7 +1607,7 @@
 /* Day/week events */
 .cal-week-event:focus-visible,
 .cal-day-event:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--cal-bg-elevated);
   outline-offset: 1px;
   box-shadow: 0 0 0 3px var(--cal-accent), var(--cal-shadow-md);
   z-index: 15;
@@ -1676,11 +1710,15 @@
    COLOR CONTRAST — WCAG AA compliance
    ============================================ */
 
-/* cal-text-subtle (#a1a1aa on #fafafa) is ~2.6:1 — too low.
-   Upgrade gutter/time labels to meet 3:1 minimum for UI components. */
+/* --cal-text-subtle resolves to #6b7280 (~4.7:1 on the light canvas), which
+   clears AA for normal text. UI-label selectors below explicitly upgrade to
+   --cal-text-muted (#52525b ~7:1) where icon-adjacent labels need extra
+   weight. Remaining --cal-text-subtle uses in this file are decorative
+   (skeleton fill, text-decoration tint, etc.) where contrast is not
+   load-bearing. */
 .cal-week-time-label,
 .cal-day-time-label {
-  color: var(--cal-text-muted); /* #71717a — ~4.6:1 on white */
+  color: var(--cal-text-muted);
 }
 
 /* Weekday header labels */
@@ -1749,3 +1787,97 @@
 .cal-event-list .cal-event-pill:nth-child(4) { animation: calEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 120ms; }
 .cal-event-list .cal-event-pill:nth-child(5) { animation: calEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 160ms; }
 .cal-event-list .cal-event-pill:nth-child(n+6) { animation: none; will-change: auto; }
+
+/* ============================================================
+   UNDO TOAST — soft-delete and drag-reschedule recovery
+   ============================================================
+   Rendered by react-hot-toast at document.body, so selectors stay unscoped
+   (the .pulse-calendar prefix wouldn't match). Theme switches via the global
+   .dark class on document root. Tokens come from --pulse-* declared at :root
+   in pulse-tokens.css and cascade fine to body-portaled nodes. Hairline +
+   tinted-neutral surface (cockpit register), not Sonner-style 40px shadow;
+   mono label, coral lives only on the Undo affordance. */
+.cal-undo-toast {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 10px 10px 16px;
+  background: var(--pulse-surface);
+  color: var(--pulse-ink);
+  border: 1px solid var(--pulse-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.08);
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  max-width: 460px;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+.cal-undo-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dark .cal-undo-toast {
+  /* Dark mode: opaque elevated surface above the true-black canvas, hairline
+     border, deeper shadow ramp. Translucent-on-translucent at body level
+     would let page chrome bleed through, so this stays opaque-tinted. */
+  background: rgba(20, 20, 20, 0.98);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.50), 0 4px 16px rgba(0, 0, 0, 0.60);
+}
+
+.cal-undo-toast-label {
+  /* 2-line clamp so the disambiguating event title survives instead of being
+     ellipsized on the first ~30 chars. */
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+
+.cal-undo-toast-btn {
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pulse-rose);
+  background: var(--pulse-rose-soft);
+  border: 1px solid var(--pulse-rose-glow);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cal-undo-toast-btn:hover {
+  background: var(--pulse-rose);
+  color: var(--pulse-surface);
+}
+
+.cal-undo-toast-btn:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal-undo-toast {
+    transition: none;
+    transform: none;
+    opacity: 1;
+  }
+}

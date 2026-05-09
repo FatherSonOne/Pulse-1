@@ -18,7 +18,8 @@ import { TemplatesLibrary } from '../MessageEnhancements/TemplatesLibrary';
 import { AttachmentManager } from '../MessageEnhancements/AttachmentManager';
 import { BackupSync } from '../MessageEnhancements/BackupSync';
 import { SmartSuggestions } from '../MessageEnhancements/SmartSuggestions';
-import { getAllToolActions, saveRecentTool, getRecentTools, getToolOverlayType } from '../../services/toolRegistry';
+// (Tool-registry imports were removed when the QuickActionsCommandPalette
+// modal moved to the global ⌘K palette; tools are registered in Messages.tsx.)
 import { messagePersonalService } from '../../services/messagePersonalService';
 
 const BundleAnalytics = React.lazy(() => import('../MessageEnhancements/BundleAnalytics'));
@@ -120,8 +121,6 @@ export interface MessagesFeaturePanelsProps {
   showIntelligencePanel: boolean;
   intelligenceTab: 'insights' | 'reactions' | 'bookmarks' | 'tags' | 'delivery';
   setIntelligenceTab: (tab: 'insights' | 'reactions' | 'bookmarks' | 'tags' | 'delivery') => void;
-  showCommandPalette: boolean;
-  setShowCommandPalette: (open: boolean) => void;
   userBookmarks: UserBookmark[];
   setUserBookmarks: (b: UserBookmark[] | ((prev: UserBookmark[]) => UserBookmark[])) => void;
   conversationTagAssignments: ConversationTagAssignment[];
@@ -162,7 +161,6 @@ function anyPanelVisible(p: MessagesFeaturePanelsProps): boolean {
     (p.showCollaborationPanel && !!p.activeThread) ||
     (p.showProductivityPanel && !!p.activeThread) ||
     (p.showIntelligencePanel && !!p.activeThread) ||
-    p.showCommandPalette ||
     (p.showProactivePanel && !!p.activeThread) ||
     (p.showCommunicationPanel && !!p.activeThread) ||
     (p.showPersonalizationPanel && !!p.activeThread) ||
@@ -187,7 +185,6 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
       userScheduledMessages, setUserScheduledMessages,
       userReminders, setUserReminders,
       showIntelligencePanel, intelligenceTab, setIntelligenceTab,
-      showCommandPalette, setShowCommandPalette,
       userBookmarks, setUserBookmarks,
       conversationTagAssignments, setConversationTagAssignments,
       activeToolOverlay, setActiveToolOverlay,
@@ -1344,45 +1341,9 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
           </div>
         )}
 
-        {/* Command Palette with Tool Integration (Phase 2A) */}
-        {showCommandPalette && (
-          <MessageEnhancementErrorBoundary featureName="Intelligence">
-            <React.Suspense fallback={<FeatureSkeleton />}>
-              <BundleIntelligence.QuickActionsCommandPalette
-                isOpen={showCommandPalette}
-                onClose={() => setShowCommandPalette(false)}
-                onAction={(actionId) => {
-                  console.log('Command action:', actionId);
-                  saveRecentTool(actionId);
-                }}
-                customActions={getAllToolActions((toolId) => {
-                  console.log('Launching tool:', toolId);
-                  saveRecentTool(toolId);
-                  setShowCommandPalette(false);
-
-                  // Launch tool in its overlay
-                  const overlayType = getToolOverlayType(toolId);
-                  if (overlayType) {
-                    setActiveToolOverlay(overlayType);
-                  } else {
-                    console.warn(`No overlay mapping for tool: ${toolId}`);
-                  }
-                }).map(tool => ({
-                  id: tool.id,
-                  label: tool.name,
-                  description: tool.description,
-                  icon: tool.icon,
-                  category: 'tools' as const,
-                  shortcut: tool.shortcut,
-                  keywords: tool.keywords,
-                  action: tool.onLaunch,
-                  badge: tool.requiresApiKey ? 'API' : tool.isPro ? 'PRO' : undefined,
-                }))}
-                recentActions={getRecentTools()}
-              />
-            </React.Suspense>
-          </MessageEnhancementErrorBoundary>
-        )}
+        {/* The QuickActionsCommandPalette modal that lived here was retired
+            in favor of the global ⌘K palette (CommandPaletteContext). Tool
+            actions register via Messages.tsx → useRegisterCommands. */}
 
 
       </>

@@ -111,7 +111,7 @@ import { TemplatesLibrary } from './MessageEnhancements/TemplatesLibrary';
 import { AttachmentManager } from './MessageEnhancements/AttachmentManager';
 import { BackupSync } from './MessageEnhancements/BackupSync';
 import { SmartSuggestions } from './MessageEnhancements/SmartSuggestions';
-import { useCommandPalette } from './MessageEnhancements/QuickActionsCommandPalette';
+import { useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
 import { useAutoSaveDraft } from './MessageEnhancements/DraftManager';
 import { getAllToolActions, fuzzySearchTools, saveRecentTool, suggestToolsFromContext, getRecentTools, getToolOverlayType } from '../services/toolRegistry';
 import type { ToolAction } from '../services/toolRegistry';
@@ -611,7 +611,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // Phase 6: Intelligence & Organization State
   const [showIntelligencePanel, setShowIntelligencePanel] = useState(false);
   const [intelligenceTab, setIntelligenceTab] = useState<'insights' | 'reactions' | 'bookmarks' | 'tags' | 'delivery'>('insights');
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  // Messages contributes its tool actions to the global command palette via
+  // useRegisterCommands below. The local Cmd+K + modal palette are gone —
+  // App.tsx owns Cmd+K and the global palette renders at root. The modal
+  // QuickActionsCommandPalette is still used in *embedded* mode inside
+  // ToolOverlay's Commands tab; that's a separate surface and stays.
   const [userBookmarks, setUserBookmarks] = useState<Array<{
     id: string;
     messageId: string;
@@ -1110,7 +1114,34 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     }
   }, [inputText]);
 
-  // Global keyboard shortcuts for command palette and tools (Phase 2A)
+  // ─── Command palette: register Messages' tools ────────────────────────────
+  // Each tool action becomes a row in the global ⌘K palette while the user is
+  // in Messages. Launching a tool triggers its overlay via the same path the
+  // old QuickActionsCommandPalette used.
+  const messagesToolCommands = useMemo<PaletteCommand[]>(() => {
+    return getAllToolActions((toolId: string) => {
+      saveRecentTool(toolId);
+      const overlayType = getToolOverlayType(toolId);
+      if (overlayType) {
+        setActiveToolOverlay(overlayType);
+      } else {
+        console.warn(`No overlay mapping for tool: ${toolId}`);
+      }
+    }).map(tool => ({
+      id: `messages-tool-${tool.id}`,
+      label: tool.name,
+      desc: tool.description,
+      kind: 'action' as const,
+      icon: tool.icon ? `fa-${tool.icon}` : 'fa-tools',
+      keywords: tool.keywords,
+      group: 'Messages tools',
+      run: tool.onLaunch,
+    }));
+  }, [setActiveToolOverlay]);
+
+  useRegisterCommands('messages:tools', { commands: messagesToolCommands });
+
+  // Global keyboard shortcuts for tools (Phase 2A)
   // Uses capture phase to intercept before browser's default behavior
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -1118,13 +1149,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       const shift = e.shiftKey;
       const key = e.key.toLowerCase();
 
-      // Ctrl+K or Cmd+K to toggle command palette
-      if (ctrl && !shift && key === 'k') {
-        e.preventDefault();
-        e.stopPropagation();
-        setShowCommandPalette(prev => !prev);
-        return;
-      }
+      // Ctrl+K is handled globally in App.tsx (opens the command palette).
+      // Messages registers its tool commands via useRegisterCommands.
 
       // Tool shortcuts (Ctrl+Shift+Key)
       if (ctrl && shift) {
@@ -3005,7 +3031,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // overlay. E (archive) deferred until Pulse archive backend exists.
   // MUST be before any early returns (Rules of Hooks).
   const keyboardDisabled =
-    showFeatureSettings || showCommandPalette || showOutcomeSetup ||
+    showFeatureSettings || showOutcomeSetup ||
     showStatsPanel || showHandoffCard || showThemeSelector ||
     showInviteModal || showNewChatModal || showAnalyticsDashboard ||
     showShortcuts || showToolsDrawer || showArtifactModal;
@@ -4499,8 +4525,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           showIntelligencePanel={showIntelligencePanel}
           intelligenceTab={intelligenceTab}
           setIntelligenceTab={setIntelligenceTab}
-          showCommandPalette={showCommandPalette}
-          setShowCommandPalette={setShowCommandPalette}
           userBookmarks={userBookmarks}
           setUserBookmarks={setUserBookmarks}
           conversationTagAssignments={conversationTagAssignments}

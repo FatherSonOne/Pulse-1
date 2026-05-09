@@ -82,7 +82,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
     <div className="absolute inset-0 z-50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4 overflow-y-auto">
       <form
         onSubmit={props.onSubmit}
-        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-scale-in my-8"
+        className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-scale-in my-8"
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold dark:text-white text-zinc-900">
@@ -123,7 +123,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
               <button
                 type="button"
                 onClick={props.onOpenCustomTypesManager}
-                className="px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:border-zinc-400"
+                className="px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-[var(--pulse-ink-2)] hover:border-zinc-400"
               >
                 <Sliders /> Manage
               </button>
@@ -137,7 +137,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
               type="text"
               tabIndex={0}
               autoFocus
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
               placeholder="Event Title"
               value={props.newEventTitle}
               onChange={(e) => {
@@ -174,7 +174,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
               />
               <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
             </label>
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">All Day Event</span>
+            <span className="text-sm text-[var(--pulse-ink-2)]">All Day Event</span>
           </div>
 
           {/* Date / Time row */}
@@ -185,7 +185,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                 type="date"
                 tabIndex={0}
                 aria-label="Event date"
-                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
                 value={props.newEventDate}
                 onChange={(e) => props.onDateChange(e.target.value)}
                 required
@@ -200,7 +200,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                     step="60"
                     tabIndex={0}
                     aria-label="Start time"
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
                     value={props.newEventTime || '09:00'}
                     onChange={(e) => props.onTimeChange(e.target.value)}
                   />
@@ -212,7 +212,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                     step="60"
                     tabIndex={0}
                     aria-label="End time"
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
                     value={props.newEventEndTime || '10:00'}
                     onChange={(e) => props.onEndTimeChange(e.target.value)}
                   />
@@ -227,7 +227,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
             <input
               type="text"
               tabIndex={0}
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
               placeholder="Add location or meeting link"
               value={props.newEventLocation}
               onChange={(e) => props.onLocationChange(e.target.value)}
@@ -267,7 +267,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                 aria-label="Repeat frequency"
                 value={props.newEventRecurrence}
                 onChange={(e) => props.onRecurrenceChange(e.target.value as RecurrenceType)}
-                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-rose-500 outline-none transition"
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-rose-500 outline-none transition"
               >
                 <option value="none">Does not repeat</option>
                 <option value="daily">Daily</option>
@@ -295,7 +295,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
               aria-label="Reminder time"
               value={props.newEventReminder}
               onChange={(e) => props.onReminderChange(e.target.value as ReminderTime)}
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
             >
               <option value="none">No reminder</option>
               <option value="5min">5 minutes before</option>
@@ -319,7 +319,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
                       (props.newEventStatus ?? 'confirmed') === s
                         ? 'border-transparent ring-2 ring-rose-500'
-                        : 'border-zinc-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-700'
+                        : 'border-[var(--pulse-border-strong)] hover:border-rose-300 dark:hover:border-rose-700'
                     }`}
                   >
                     <EventStatusBadge status={s} />
@@ -336,7 +336,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
               {props.newEventAttendees.map(id => {
                 const contact = props.contacts.find(c => c.id === id);
                 return contact ? (
-                  <span key={id} className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-xs">
+                  <span key={id} className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] rounded-full text-xs">
                     <span className={`w-4 h-4 rounded-full ${contact.avatarColor} flex items-center justify-center text-[8px] text-white font-bold`}>
                       {contact.name.charAt(0)}
                     </span>
@@ -369,7 +369,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
           <div>
             <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Description</label>
             <textarea
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 outline-none resize-none h-20"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 outline-none resize-none h-20"
               placeholder="Add description or notes..."
               value={props.newEventDesc}
               onChange={(e) => props.onDescChange(e.target.value)}
@@ -381,7 +381,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
           <button
             type="button"
             onClick={props.onClose}
-            className="px-5 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition text-sm font-medium"
+            className="px-5 py-2 text-zinc-500 hover:text-[var(--pulse-ink)] transition text-sm font-medium"
           >
             Cancel
           </button>

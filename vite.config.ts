@@ -108,7 +108,14 @@ export default defineConfig(({ mode }) => {
                 if (id.includes('/AILab') || id.includes('/AiLab')) return 'feature-ailab';
               }
 
-              // Services layer — split into domain groups to avoid one 768 kB blob
+              // Services layer — split into domain groups to avoid one 768 kB blob.
+              //
+              // CRITICAL: svc-core (the catchall) MUST NOT statically import any other
+              // svc-* chunk at runtime, or chunks will form an init cycle and trip TDZ
+              // ("Cannot access 'X' before initialization") on first load. When you add
+              // a service that imports across domains, either co-locate it in the
+              // importee's chunk via an explicit pattern below, OR convert the import
+              // to `import type` if it is type-only.
               if (id.includes('/src/services/')) {
                 // Voice / Relay — heavy, only needed in voice features
                 if (id.includes('/relay/') ||
@@ -122,6 +129,9 @@ export default defineConfig(({ mode }) => {
                 }
 
                 // AI / ML inference services
+                // agentHandoffService and conversationIntelligenceService are pinned
+                // here because they statically import realtimeAgentService /
+                // geminiService at runtime — would otherwise create svc-core -> svc-ai.
                 if (id.includes('geminiService') || id.includes('openAiService') ||
                     id.includes('anthropicService') || id.includes('perplexity') ||
                     id.includes('unifiedAIService') || id.includes('advancedAI') ||
@@ -129,11 +139,17 @@ export default defineConfig(({ mode }) => {
                     id.includes('realtimeAgent') || id.includes('aiInsights') ||
                     id.includes('aiFormatting') || id.includes('aiLab') ||
                     id.includes('smartCompose') || id.includes('proactiveSuggestions') ||
-                    id.includes('toolRegistry')) {
+                    id.includes('toolRegistry') ||
+                    id.includes('agentHandoffService') ||
+                    id.includes('conversationIntelligenceService')) {
                   return 'svc-ai';
                 }
 
                 // Email domain
+                // bulkOperations, emailCampaign, labelService, webhookService are
+                // pinned here because they statically import emailSyncService /
+                // gmailService / unifiedInboxService at runtime — would otherwise
+                // create svc-core -> svc-email.
                 if (id.includes('emailSync') || id.includes('emailAI') ||
                     id.includes('emailFilter') || id.includes('emailMeet') ||
                     id.includes('emailSearch') || id.includes('emailSignature') ||
@@ -141,16 +157,24 @@ export default defineConfig(({ mode }) => {
                     id.includes('gmailService') || id.includes('enhancedEmail') ||
                     id.includes('offlineEmail') || id.includes('confidentialEmail') ||
                     id.includes('vacationResponder') || id.includes('emailService') ||
-                    id.includes('unifiedInbox')) {
+                    id.includes('unifiedInbox') ||
+                    id.includes('bulkOperationsService') ||
+                    id.includes('emailCampaignService') ||
+                    id.includes('labelService') ||
+                    id.includes('webhookService')) {
                   return 'svc-email';
                 }
 
                 // Calendar domain
+                // videoConferencingService is pinned here because it statically
+                // imports outlookCalendarService at runtime — would otherwise create
+                // svc-core -> svc-calendar.
                 if (id.includes('googleCalendar') || id.includes('calendarAI') ||
                     id.includes('customEventTypes') || id.includes('conflictDetection') ||
                     id.includes('meetingDetection') || id.includes('postMeeting') ||
                     id.includes('inviteService') || id.includes('briefingService') ||
-                    id.includes('outlookCalendar') || id.includes('unifiedCalendar')) {
+                    id.includes('outlookCalendar') || id.includes('unifiedCalendar') ||
+                    id.includes('videoConferencingService')) {
                   return 'svc-calendar';
                 }
 
@@ -170,6 +194,10 @@ export default defineConfig(({ mode }) => {
                 // because they statically import relationshipIntelligenceService /
                 // relationshipAlertService — keeping them in the same chunk avoids
                 // the svc-core <-> svc-crm-analytics circular chunk dependency.
+                // weeklyBriefingService and relationshipAutopilotService are pinned
+                // here for the same reason (they statically import analyticsService,
+                // relationshipHealthService, recognitionService, predictiveAnalyticsService,
+                // contactGoalTypes runtime values).
                 if (id.includes('/crm/') || id.includes('crmService') ||
                     id.includes('crmActions') || id.includes('leadScoring') ||
                     id.includes('contactEnrich') || id.includes('googleContacts') ||
@@ -181,11 +209,17 @@ export default defineConfig(({ mode }) => {
                     id.includes('teamService') || id.includes('recognitionService') ||
                     id.includes('achievementService') || id.includes('outcomeService') ||
                     id.includes('contactCircle') || id.includes('contactSearchAI') ||
-                    id.includes('contactGoal') || id.includes('todayFeed')) {
+                    id.includes('contactGoal') || id.includes('todayFeed') ||
+                    id.includes('weeklyBriefingService') ||
+                    id.includes('relationshipAutopilotService')) {
                   return 'svc-crm-analytics';
                 }
 
-                // Storage / data / export — large but rarely on critical path
+                // Storage / data / export — large but rarely on critical path.
+                // authService and meetingService are pinned here because they
+                // statically import dataService at runtime — would otherwise create
+                // svc-core -> svc-storage. (This was the cycle that caused the
+                // "Cannot access 'Ze' before initialization" deploy regression.)
                 if (id.includes('dataService') || id.includes('dbService') ||
                     id.includes('archiveService') || id.includes('dataExport') ||
                     id.includes('dataPrivacy') || id.includes('dataRetention') ||
@@ -194,11 +228,12 @@ export default defineConfig(({ mode }) => {
                     id.includes('virusScan') || id.includes('encryptionService') ||
                     id.includes('encryption.ts') || id.includes('warRoom') ||
                     id.includes('brainstorm') || id.includes('contextBank') ||
-                    id.includes('savedSearch') || id.includes('/documentProcessors/')) {
+                    id.includes('savedSearch') || id.includes('/documentProcessors/') ||
+                    id.includes('authService') || id.includes('meetingService')) {
                   return 'svc-storage';
                 }
 
-                // Everything else (auth, settings, search, etc.)
+                // Everything else (settings, search, etc.)
                 return 'svc-core';
               }
             }

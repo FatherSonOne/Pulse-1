@@ -139,7 +139,7 @@ export const VideoLinkSelector: React.FC<VideoLinkSelectorProps> = ({
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
               selected === p.id
                 ? 'bg-rose-500 border-rose-500 text-white'
-                : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-rose-300 dark:hover:border-rose-700 hover:text-rose-500'
+                : 'bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border-[var(--pulse-border-strong)] text-[var(--pulse-ink-2)] hover:border-rose-300 dark:hover:border-rose-700 hover:text-rose-500'
             }`}
           >
             {p.icon}
@@ -164,8 +164,8 @@ export const VideoLinkSelector: React.FC<VideoLinkSelectorProps> = ({
               </div>
             </div>
           ) : result?.url ? (
-            <div className="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
-              <span className="flex-1 text-xs text-zinc-600 dark:text-zinc-300 font-mono truncate">{result.url}</span>
+            <div className="flex items-center gap-2 p-2.5 bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg">
+              <span className="flex-1 text-xs text-[var(--pulse-ink-2)] font-mono truncate">{result.url}</span>
               <button
                 type="button"
                 onClick={handleCopy}
