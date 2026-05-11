@@ -62,6 +62,12 @@ interface RealtimeVoiceAgentProps {
   projectId?: string;
   sessionId?: string;
   openaiApiKey?: string;
+  /**
+   * Workspace ID. Required when `openaiApiKey` is empty or is not a BYO master
+   * key — the token mint endpoint uses it for tier-gating. Ignored when the
+   * caller supplies a personal `sk-...` key (BYO).
+   */
+  workspaceId?: string;
   voiceSettings?: VoiceSettings;
   contextFiles?: ContextFile[];
   aiMode?: AIParticipantMode;
@@ -102,6 +108,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
   projectId,
   sessionId,
   openaiApiKey,
+  workspaceId,
   voiceSettings,
   contextFiles = [],
   aiMode = 'active',
@@ -169,12 +176,14 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
     setError(null);
 
     try {
-      // Generate ephemeral token
-      // Use gpt-4o-realtime-preview as the model name
-      const ephemeralKey = await generateEphemeralToken(openaiApiKey, {
-        model: 'gpt-4o-realtime-preview',
-        voice: effectiveSettings.voice,
-      });
+      // Generate ephemeral token. `openaiApiKey` is either a BYO master key
+      // (`sk-...`) or a previously-resolved ephemeral; the helper auto-detects
+      // BYO and forwards `workspaceId` only for hosted-mode tier-gating.
+      const ephemeralKey = await generateEphemeralToken(
+        openaiApiKey,
+        { model: 'gpt-4o-realtime-preview', voice: effectiveSettings.voice },
+        { workspaceId },
+      );
 
       // Create session with configurable settings
       // Balanced settings for natural conversation flow while preventing echo
@@ -298,7 +307,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
     } finally {
       setIsConnecting(false);
     }
-  }, [userId, projectId, sessionId, openaiApiKey, effectiveSettings, contextFiles]);
+  }, [userId, projectId, sessionId, openaiApiKey, workspaceId, effectiveSettings, contextFiles]);
 
   const disconnect = useCallback(async () => {
     if (session) {

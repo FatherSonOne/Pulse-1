@@ -1379,10 +1379,22 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
  * That validation is why we send the user's session access_token in the
  * Authorization header — sending the anon key passes the platform gateway but
  * fails `getUser()` and returns 401 "Invalid or expired token".
+ *
+ * Two modes:
+ *   - **Hosted** (default): the edge function uses Pulse's OpenAI key and
+ *     tier-gates by Pulse plan + monthly usage. Requires `options.workspaceId`.
+ *   - **BYO**: the caller's first arg is a user's personal OpenAI key
+ *     (`sk-...`). The edge function uses it for the mint and skips all gating;
+ *     OpenAI bills the user directly. Detected automatically when the key
+ *     starts with `sk-`. No `workspaceId` needed.
+ *
+ * The first arg is BOTH the activation gate (must be non-empty so the caller
+ * has clearly resolved a mode) AND, when it begins with `sk-`, the BYO key.
  */
 export async function generateEphemeralToken(
-  _openaiApiKey: string,
-  config: { model?: string; voice?: string } = {}
+  openaiApiKey: string,
+  config: { model?: string; voice?: string } = {},
+  options: { workspaceId?: string } = {},
 ): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -1392,6 +1404,11 @@ export async function generateEphemeralToken(
   }
   if (!anonKey) {
     throw new Error('Supabase anon key not configured');
+  }
+
+  const isByoKey = typeof openaiApiKey === 'string' && openaiApiKey.startsWith('sk-');
+  if (!isByoKey && !options.workspaceId) {
+    throw new Error('Workspace not loaded yet. Reload Pulse and try again.');
   }
 
   // Lazy-import to avoid circular dependencies and let early callers boot.
@@ -1409,6 +1426,13 @@ export async function generateEphemeralToken(
   const model = config.model || 'gpt-4o-realtime-preview';
   const voice = config.voice || 'alloy';
 
+  // BYO sends the personal key in the body; the edge function uses it for the
+  // OpenAI mint and skips the tier/usage gate. Plaintext only on this one
+  // request — never logged server-side.
+  const requestBody = isByoKey
+    ? { model, voice, byo_key: openaiApiKey }
+    : { model, voice, workspace_id: options.workspaceId };
+
   const response = await fetch(`${supabaseUrl}/functions/v1/openai-realtime-token`, {
     method: 'POST',
     headers: {
@@ -1418,7 +1442,7 @@ export async function generateEphemeralToken(
       // Platform gateway routes the project by `apikey`. Both headers are required.
       'apikey': anonKey,
     },
-    body: JSON.stringify({ model, voice }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {

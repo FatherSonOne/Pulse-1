@@ -18,6 +18,8 @@ export interface Plan {
   max_workflows: number | null;
   max_workflow_runs_mo: number | null;
   max_integrations: number | null;
+  max_summit_minutes_mo: number | null;
+  max_summit_session_sec: number | null;
   features: Record<string, boolean>;
   stripe_price_monthly: string;
   stripe_price_yearly: string;
@@ -36,6 +38,11 @@ export interface Entitlements {
   max_workflows: number | null;
   max_workflow_runs_mo: number | null;
   max_integrations: number | null;
+  // Summit (live voice) caps. NULL until the workspace has a plan that grants
+  // Summit access; trial users override to tighter values at runtime in the
+  // edge function. See migration 20260512000001_summit_usage.sql.
+  max_summit_minutes_mo: number | null;
+  max_summit_session_sec: number | null;
   features: Record<string, boolean>;
   is_trialing: boolean;
   trial_ends_at: string | null;
@@ -142,6 +149,8 @@ const billingService = {
         max_workflows: 0,
         max_workflow_runs_mo: 0,
         max_integrations: 0,
+        max_summit_minutes_mo: 0,
+        max_summit_session_sec: 0,
         features: {},
         is_trialing: false,
         trial_ends_at: null,

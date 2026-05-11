@@ -1,5 +1,5 @@
 /**
- * SessionsCanvas — the hero of Pulse Chat.
+ * SessionsCanvas — the hero of Summit.
  *
  * Three states:
  *   1. Idle, no recent       → example prompts + keyboard primer
@@ -10,8 +10,17 @@
  * voice itself is now a side-rail breathing transcript, not the hero.
  */
 
-import React from 'react';
-import { Trash2, Sparkles, MessageSquareQuote, Inbox } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Trash2,
+  Sparkles,
+  MessageSquareQuote,
+  Inbox,
+  MoreHorizontal,
+  Download,
+  BookOpen,
+  Mail,
+} from 'lucide-react';
 import {
   formatDuration,
   formatRelative,
@@ -33,6 +42,18 @@ export interface LiveSessionView {
   currentTranscript?: string;
 }
 
+export type SessionExportTarget = 'markdown' | 'warRoom' | 'email';
+
+/** Monthly Summit-minutes meter shown in the live session header. */
+export interface SummitMeterView {
+  /** True when this session is using a personal OpenAI key (no cap). */
+  isByoSession: boolean;
+  /** Minutes consumed in the current calendar month (hosted mode only). */
+  usedMinutes: number;
+  /** Plan allowance in minutes/month (hosted mode only). 0 = no plan cap. */
+  capMinutes: number;
+}
+
 interface SessionsCanvasProps {
   isConnected: boolean;
   isConnecting: boolean;
@@ -43,6 +64,10 @@ interface SessionsCanvasProps {
   onPromptSelect: (prompt: string) => void;
   onSessionView?: (session: VoiceSessionRecord) => void;
   onSessionDelete?: (id: string) => void;
+  /** Re-export a past session to a chosen target. Implemented by Summit.tsx. */
+  onSessionExport?: (session: VoiceSessionRecord, target: SessionExportTarget) => void;
+  /** Optional usage meter — rendered in the live-session header. */
+  summitMeter?: SummitMeterView;
 }
 
 const SessionsCanvas: React.FC<SessionsCanvasProps> = ({
@@ -55,8 +80,57 @@ const SessionsCanvas: React.FC<SessionsCanvasProps> = ({
   onPromptSelect,
   onSessionView,
   onSessionDelete,
+  onSessionExport,
+  summitMeter,
 }) => {
+  // Live meter text. BYO shows mode only; hosted shows used/cap with live
+  // ticks during the session by adding the current session's duration on
+  // top of the persisted monthly total.
+  const renderMeter = (live?: LiveSessionView): React.ReactNode => {
+    if (!summitMeter) return null;
+    if (summitMeter.isByoSession) {
+      return <span className="pvc-summit-meter">YOUR OPENAI KEY</span>;
+    }
+    if (summitMeter.capMinutes <= 0) return null;
+    const liveMin = live ? Math.ceil(live.durationSec / 60) : 0;
+    const effectiveUsed = Math.min(summitMeter.capMinutes, summitMeter.usedMinutes + liveMin);
+    const remaining = Math.max(0, summitMeter.capMinutes - effectiveUsed);
+    const ratio = effectiveUsed / summitMeter.capMinutes;
+    const cls =
+      ratio >= 1 ? 'pvc-summit-meter pvc-summit-meter--over'
+      : ratio >= 0.8 ? 'pvc-summit-meter pvc-summit-meter--warn'
+      : 'pvc-summit-meter';
+    return (
+      <span className={cls}>
+        {effectiveUsed} / {summitMeter.capMinutes} MIN
+        {remaining > 0 && remaining <= 10 ? ` · ${remaining} LEFT` : ''}
+      </span>
+    );
+  };
+
   const showExamples = !isConnected && recentSessions.length === 0 && !liveSession;
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Close the export menu on outside-click or Escape. Only mounted while a
+  // menu is open so we're not running listeners idly.
+  useEffect(() => {
+    if (!openMenuId) return;
+    const onPointer = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenMenuId(null);
+    };
+    document.addEventListener('mousedown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [openMenuId]);
 
   return (
     <div className="pvc-canvas-scroll">
@@ -72,6 +146,12 @@ const SessionsCanvas: React.FC<SessionsCanvasProps> = ({
               {formatDuration(liveSession.durationSec)}
               <span className="pvc-live-meta-sep" aria-hidden="true">·</span>
               {liveSession.captures.length} CAPTURED
+              {renderMeter(liveSession) && (
+                <>
+                  <span className="pvc-live-meta-sep" aria-hidden="true">·</span>
+                  {renderMeter(liveSession)}
+                </>
+              )}
             </span>
           </header>
 
@@ -149,6 +229,67 @@ const SessionsCanvas: React.FC<SessionsCanvasProps> = ({
                     <MessageSquareQuote size={13} />
                     Open notes
                   </button>
+                  {onSessionExport && (
+                    <div
+                      className="pvc-recent-card-menu-wrap"
+                      ref={openMenuId === s.id ? menuRef : undefined}
+                    >
+                      <button
+                        type="button"
+                        className="pvc-recent-card-btn"
+                        onClick={() =>
+                          setOpenMenuId((id) => (id === s.id ? null : s.id))
+                        }
+                        aria-label="Export session"
+                        aria-haspopup="menu"
+                        aria-expanded={openMenuId === s.id}
+                        title="Export"
+                      >
+                        <MoreHorizontal size={13} />
+                      </button>
+                      {openMenuId === s.id && (
+                        <div
+                          className="pvc-recent-card-menu"
+                          role="menu"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              onSessionExport(s, 'markdown');
+                              setOpenMenuId(null);
+                            }}
+                          >
+                            <Download size={12} />
+                            Download MD
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              onSessionExport(s, 'warRoom');
+                              setOpenMenuId(null);
+                            }}
+                          >
+                            <BookOpen size={12} />
+                            Send to War Room
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              onSessionExport(s, 'email');
+                              setOpenMenuId(null);
+                            }}
+                          >
+                            <Mail size={12} />
+                            Email draft
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <button
                     type="button"
                     className="pvc-recent-card-btn pvc-recent-card-btn--danger"

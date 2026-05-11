@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Cpu, Loader2, Lock, AlertTriangle } from 'lucide-react';
+import { Cpu, Loader2, Lock, AlertTriangle, Key, CheckCircle2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '../../../contexts/WorkspaceContext';
 import { settingsService } from '../../../services/settingsService';
 import { SettingsCard } from '../shared/SettingsCard';
 import { MonoLabel } from '../shared/MonoLabel';
+import {
+  getByoKeyStatus,
+  saveByoKey,
+  deleteByoKey,
+  type ByoKeyStatus,
+} from '../../../services/byoKeyService';
 
 type ProviderKey = 'openai' | 'anthropic' | 'google';
 
@@ -39,6 +45,14 @@ export const AIProvidersCard: React.FC = () => {
   const [isLoadingOverrides, setIsLoadingOverrides] = useState(true);
   const [isSavingOverrides, setIsSavingOverrides]   = useState(false);
 
+  // BYO OpenAI key (Summit Phase 1). The plaintext never lives in this
+  // component's state beyond the input field while typing.
+  const [byoStatus, setByoStatus] = useState<ByoKeyStatus>({ hasKey: false });
+  const [byoLoading, setByoLoading] = useState(true);
+  const [byoInput, setByoInput] = useState('');
+  const [byoSaving, setByoSaving] = useState(false);
+  const [byoEditing, setByoEditing] = useState(false);
+
   useEffect(() => {
     if (!currentWorkspace) return;
     const fromDb = currentWorkspace.ai_allowed_providers ?? {};
@@ -59,6 +73,53 @@ export const AIProvidersCard: React.FC = () => {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const status = await getByoKeyStatus();
+      if (cancelled) return;
+      setByoStatus(status);
+      setByoLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSaveByoKey = async () => {
+    const candidate = byoInput.trim();
+    if (!candidate) return;
+    setByoSaving(true);
+    try {
+      await saveByoKey(candidate);
+      const status = await getByoKeyStatus();
+      setByoStatus(status);
+      setByoInput('');
+      setByoEditing(false);
+      toast.success('OpenAI key saved');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save key';
+      toast.error(msg);
+    } finally {
+      setByoSaving(false);
+    }
+  };
+
+  const handleDeleteByoKey = async () => {
+    if (!confirm('Remove your OpenAI key? Summit will fall back to Pulse-hosted minutes.')) return;
+    setByoSaving(true);
+    try {
+      await deleteByoKey();
+      setByoStatus({ hasKey: false });
+      setByoInput('');
+      setByoEditing(false);
+      toast.success('OpenAI key removed');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to remove key';
+      toast.error(msg);
+    } finally {
+      setByoSaving(false);
+    }
+  };
 
   if (!currentWorkspace) return null;
 
@@ -122,6 +183,111 @@ export const AIProvidersCard: React.FC = () => {
         Pulse routes each task to the right model automatically. Use these controls to restrict which providers
         can be used in this organization, and to opt out of providers for your own account.
       </p>
+
+      {/* BYO OpenAI key — personal, used by Summit live voice */}
+      <div className="bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Key className="w-3.5 h-3.5 text-zinc-500" />
+          <p className="text-xs font-bold uppercase tracking-wide text-zinc-700 dark:text-zinc-300">
+            Your OpenAI key (Summit)
+          </p>
+        </div>
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+          Summit (live voice) uses OpenAI Realtime. Bring your own key and OpenAI bills you
+          directly (~$0.25/min) — no Summit minute cap, no overage. Otherwise Summit uses your
+          Pulse-hosted minutes included with Team and Growth plans.
+        </p>
+
+        {byoLoading && (
+          <div className="py-2"><Loader2 className="w-4 h-4 text-zinc-400 animate-spin" /></div>
+        )}
+
+        {!byoLoading && byoStatus.hasKey && !byoEditing && (
+          <div className="flex items-center justify-between gap-3 px-3 py-2 bg-white dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+            <div className="flex items-center gap-2 min-w-0">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-mono text-zinc-900 dark:text-white truncate">
+                  {byoStatus.hint}
+                </p>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  {byoStatus.lastOk === false
+                    ? 'Last validation failed — replace the key to retry.'
+                    : 'Active. Summit will use this key.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setByoEditing(true)}
+                disabled={byoSaving}
+                className="text-xs font-medium text-rose-500 hover:text-rose-600 disabled:text-zinc-400"
+              >
+                Replace
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteByoKey}
+                disabled={byoSaving}
+                className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 disabled:text-zinc-400"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Remove
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!byoLoading && (byoEditing || !byoStatus.hasKey) && (
+          <div className="space-y-2">
+            <input
+              type="password"
+              value={byoInput}
+              onChange={(e) => setByoInput(e.target.value)}
+              placeholder="sk-..."
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full px-3 py-2 text-sm font-mono bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+            />
+            <div className="flex items-center justify-between gap-3">
+              <a
+                href="https://platform.openai.com/api-keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-rose-500 hover:text-rose-600"
+              >
+                Get a key from OpenAI →
+              </a>
+              <div className="flex items-center gap-2">
+                {byoEditing && byoStatus.hasKey && (
+                  <button
+                    type="button"
+                    onClick={() => { setByoEditing(false); setByoInput(''); }}
+                    disabled={byoSaving}
+                    className="text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSaveByoKey}
+                  disabled={byoSaving || !byoInput.trim()}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {byoSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {byoSaving ? 'Validating...' : 'Save key'}
+                </button>
+              </div>
+            </div>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              We validate the key against OpenAI before storing it (encrypted at rest via Supabase Vault).
+              The plaintext never touches your browser storage.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Organization policy — admin+ */}
       {isAdmin && (
