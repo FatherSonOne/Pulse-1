@@ -219,8 +219,7 @@
   width: 320px;
   max-width: 85vw;
   height: 100%;
-  background: var(--vt-bg-elevated);
-  backdrop-filter: blur(20px);
+  background: var(--vt-bg-secondary);
   border-right: 1px solid var(--vt-border);
   display: flex;
   flex-direction: column;
@@ -1269,8 +1268,7 @@
   max-width: 500px;
   max-height: 90vh;
   border-radius: 20px;
-  background: var(--vt-bg-elevated);
-  backdrop-filter: blur(20px);
+  background: var(--vt-bg-secondary);
   border: 1px solid var(--vt-border);
   box-shadow: var(--vt-shadow-lg);
   overflow: hidden;

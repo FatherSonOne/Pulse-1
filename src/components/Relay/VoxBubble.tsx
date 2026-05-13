@@ -189,7 +189,7 @@ export const VoxBubble: React.FC<VoxBubbleProps> = ({
           max-w-[85%] md:max-w-[70%] rounded-2xl overflow-hidden
           border transition-all duration-200
           ${isMine
-            ? 'bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/10 dark:to-amber-900/10 border-orange-200 dark:border-orange-800 rounded-br-md'
+            ? 'bg-rose-50 dark:bg-[rgba(244,63,94,0.08)] border-rose-200 dark:border-rose-900/40 rounded-br-md'
             : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-bl-md'
           }
           ${starred ? 'ring-2 ring-yellow-400 ring-offset-2 dark:ring-offset-zinc-950' : ''}
@@ -228,10 +228,10 @@ export const VoxBubble: React.FC<VoxBubbleProps> = ({
                 onClick={isPlaying ? onPause : onPlay}
                 className={`
                   w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0
-                  transition-all duration-200 hover:scale-105 active:scale-95
+                  transition-all duration-200
                   ${isPlaying
-                    ? 'bg-gradient-to-r from-orange-500 to-amber-500'
-                    : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500'
+                    ? 'bg-[#f43f5e]'
+                    : 'bg-[#e11d48] hover:bg-[#f43f5e]'
                   }
                 `}
               >
@@ -250,7 +250,7 @@ export const VoxBubble: React.FC<VoxBubbleProps> = ({
                     className={`
                       flex-1 rounded-full transition-all duration-75
                       ${bar.isPlayed
-                        ? 'bg-gradient-to-t from-orange-500 to-amber-400'
+                        ? 'bg-[#f43f5e]'
                         : 'bg-zinc-700'
                       }
                     `}

@@ -52,11 +52,12 @@ const LoadingFallback: React.FC<{ message?: string }> = ({ message = 'Loading...
 };
 
 interface LiveDashboardProps {
-  apiKey: string;
+  /** @deprecated no-op — AI routing is server-side via edge functions. */
+  apiKey?: string;
   userId: string;
 }
 
-const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
+const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) => {
   // ── Zustand store — all War Room state ───────────────────────────────────
   const {
     projects, setProjects,
@@ -676,7 +677,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
       console.log('   Has context:', !!context);
       console.log('   Full prompt preview:', fullPrompt.substring(0, 300) + '...');
 
-      const response = await processWithModel(apiKey, fullPrompt);
+      const response = await processWithModel(fullPrompt);
 
       console.log('📥 AI Response received:');
       console.log('   Length:', response?.length);
@@ -902,12 +903,11 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
         .join('\n');
 
       const summaryText = await processWithModel(
-        apiKey,
         `Provide a brief 30-second audio summary of this conversation:\n\n${conversationSummary}`
       );
 
       if (summaryText) {
-        const audio = await generateSpeech(apiKey, summaryText);
+        const audio = await generateSpeech(summaryText);
         if (audio) {
           const blob = new Blob([audio], { type: 'audio/mp3' });
           const url = URL.createObjectURL(blob);

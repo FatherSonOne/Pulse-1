@@ -62,14 +62,14 @@ const priorityConfig = {
     label: 'High',
   },
   normal: {
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/30',
+    color: 'text-[#a1a1aa]',
+    bgColor: 'bg-[rgba(255,255,255,0.06)]',
+    borderColor: 'border-[rgba(255,255,255,0.10)]',
     icon: 'MessageCircle',
     label: 'Normal',
   },
   low: {
-    color: 'text-gray-500',
+    color: 'text-[#6b7280]',
     bgColor: 'bg-gray-500/10',
     borderColor: 'border-gray-500/30',
     icon: 'MessageSquare',
@@ -234,7 +234,7 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
           onClick={onClose}
         >
           <motion.div
-            className="w-full max-w-lg max-h-[85vh] overflow-hidden rounded-2xl bg-gray-900 border border-gray-700 shadow-2xl"
+            className="w-full max-w-lg max-h-[85vh] overflow-hidden rounded-2xl bg-[#0a0a0a] border border-[rgba(255,255,255,0.10)] shadow-2xl"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -242,23 +242,23 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="relative px-6 py-5 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-blue-600/20 border-b border-gray-700">
+            <div className="relative px-6 py-5 bg-gradient-to-r from-[#f43f5e]/15 to-[#ec4899]/15 border-b border-[rgba(255,255,255,0.10)]">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col gap-2">
                   <AIProvenanceTag source="pulse-ai" kind="digest" />
                   <div>
                     <h2 className="text-lg font-semibold text-white">Focus Session Digest</h2>
-                    <p className="text-sm text-gray-400">
+                    <p className="text-sm text-[#b4b4b8]">
                       {sessionDuration} min session completed
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-full hover:bg-gray-700 transition-colors"
+                  className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.10)] transition-colors"
                   aria-label="Close digest"
                 >
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-[#b4b4b8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -266,9 +266,9 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
 
               {/* Stats Row */}
               <div className="flex items-center gap-4 mt-4">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-800/60 text-sm">
-                  <span className="text-gray-400">{stats.total}</span>
-                  <span className="text-gray-500">messages</span>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[rgba(255,255,255,0.055)] text-sm">
+                  <span className="text-[#b4b4b8]">{stats.total}</span>
+                  <span className="text-[#6b7280]">messages</span>
                 </div>
                 {stats.urgentCount > 0 && (
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/20 text-sm">
@@ -298,8 +298,8 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <p className="text-gray-300 font-medium">All caught up!</p>
-                  <p className="text-gray-500 text-sm mt-1">No messages during your focus session</p>
+                  <p className="text-[#fafafa] font-medium">All caught up!</p>
+                  <p className="text-[#6b7280] text-sm mt-1">No messages during your focus session</p>
                 </motion.div>
               ) : (
                 groupedMessages.map((group, index) => (
@@ -322,12 +322,12 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
                             className="w-10 h-10 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-300 font-medium">
+                          <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-[#fafafa] font-medium">
                             {group.senderName.charAt(0).toUpperCase()}
                           </div>
                         )}
                         {group.unreadCount > 0 && (
-                          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-medium">
+                          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#f43f5e] text-white text-xs flex items-center justify-center font-medium">
                             {group.unreadCount}
                           </span>
                         )}
@@ -341,14 +341,14 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
                             {priorityConfig[group.highestPriority].label}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-400 truncate">
+                        <p className="text-sm text-[#b4b4b8] truncate">
                           {group.messages[0].content}
                         </p>
                       </div>
 
                       {/* Expand Icon */}
                       <motion.svg
-                        className="w-5 h-5 text-gray-400"
+                        className="w-5 h-5 text-[#b4b4b8]"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -367,7 +367,7 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="border-t border-gray-700/50"
+                          className="border-t border-[rgba(255,255,255,0.10)]/50"
                         >
                           {group.messages.map((message) => (
                             <div
@@ -377,10 +377,10 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
                               <div className="flex items-start gap-3">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-sm text-gray-300">{message.senderName}</span>
-                                    <span className="text-xs text-gray-500">{formatTimestamp(message.timestamp)}</span>
+                                    <span className="text-sm text-[#fafafa]">{message.senderName}</span>
+                                    <span className="text-xs text-[#6b7280]">{formatTimestamp(message.timestamp)}</span>
                                   </div>
-                                  <p className="text-sm text-gray-400 line-clamp-2">{message.content}</p>
+                                  <p className="text-sm text-[#b4b4b8] line-clamp-2">{message.content}</p>
                                 </div>
 
                                 {/* Quick Actions */}
@@ -390,7 +390,7 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
                                     whileHover="hover"
                                     whileTap="tap"
                                     onClick={() => onReply(message.threadId, message.id)}
-                                    className="p-2 rounded-lg hover:bg-blue-500/20 text-blue-400 transition-colors"
+                                    className="p-2 rounded-lg hover:bg-[rgba(244,63,94,0.10)] text-[#f43f5e] transition-colors"
                                     aria-label="Reply"
                                   >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -419,7 +419,7 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
                                           initial={{ opacity: 0, scale: 0.9, y: -10 }}
                                           animate={{ opacity: 1, scale: 1, y: 0 }}
                                           exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                                          className="absolute right-0 top-full mt-1 w-32 py-1 rounded-lg bg-gray-800 border border-gray-700 shadow-xl z-10"
+                                          className="absolute right-0 top-full mt-1 w-32 py-1 rounded-lg bg-[rgba(255,255,255,0.055)] border border-[rgba(255,255,255,0.10)] shadow-xl z-10"
                                         >
                                           {snoozeOptions.map((option) => (
                                             <button
@@ -428,7 +428,7 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
                                                 onSnooze(message.id, option.minutes);
                                                 setSnoozeMenuOpen(null);
                                               }}
-                                              className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 transition-colors"
+                                              className="w-full px-3 py-2 text-left text-sm text-[#fafafa] hover:bg-[rgba(255,255,255,0.10)] transition-colors"
                                             >
                                               {option.label}
                                             </button>
@@ -443,7 +443,7 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
                                     whileHover="hover"
                                     whileTap="tap"
                                     onClick={() => onDismiss(message.id)}
-                                    className="p-2 rounded-lg hover:bg-gray-500/20 text-gray-400 transition-colors"
+                                    className="p-2 rounded-lg hover:bg-gray-500/20 text-[#b4b4b8] transition-colors"
                                     aria-label="Dismiss"
                                   >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -456,10 +456,10 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
                           ))}
 
                           {/* View Thread Button */}
-                          <div className="px-4 py-3 border-t border-gray-700/50">
+                          <div className="px-4 py-3 border-t border-[rgba(255,255,255,0.10)]/50">
                             <button
                               onClick={() => onViewThread(group.threadId)}
-                              className="w-full py-2 text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                              className="w-full py-2 text-sm text-[#f43f5e] hover:text-[#fb7185] font-medium transition-colors"
                             >
                               View full conversation
                             </button>
@@ -474,11 +474,11 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
 
             {/* Footer Actions */}
             {groupedMessages.length > 0 && (
-              <div className="px-6 py-4 border-t border-gray-700 bg-gray-800/50">
+              <div className="px-6 py-4 border-t border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.04)]">
                 <div className="flex items-center justify-between gap-3">
                   <button
                     onClick={onDismissAll}
-                    className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-[#b4b4b8] hover:text-white transition-colors"
                   >
                     Dismiss All
                   </button>
@@ -486,7 +486,7 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={onClose}
-                    className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors"
+                    className="btn-brand-primary px-6 py-2 rounded-lg text-white font-medium transition-colors"
                   >
                     Review Later
                   </motion.button>

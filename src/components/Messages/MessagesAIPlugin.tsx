@@ -129,14 +129,13 @@ export function useMessagesAIContext({
     if (!enabled || !conversationId || !conversationHistory) return;
 
     const id = ++fetchIdRef.current;
-    const key = apiKey ?? '';
 
     setIsLoading(true);
     void Promise.all([
-      shouldFetchCatchUp ? generateCatchUpSummary(key, conversationHistory) : Promise.resolve(null),
-      generateThreadContext(key, conversationHistory),
-      analyzeTeamHealth(key, conversationHistory),
-      generateNudge(key, conversationHistory),
+      shouldFetchCatchUp ? generateCatchUpSummary(conversationHistory) : Promise.resolve(null),
+      generateThreadContext(conversationHistory),
+      analyzeTeamHealth(conversationHistory),
+      generateNudge(conversationHistory),
     ])
       .then(([catchUpResult, ctx, health, nudgeResult]) => {
         if (id !== fetchIdRef.current) return; // stale
@@ -151,7 +150,7 @@ export function useMessagesAIContext({
       .finally(() => {
         if (id === fetchIdRef.current) setIsLoading(false);
       });
-  }, [conversationId, conversationHistory, enabled, shouldFetchCatchUp, apiKey, refetchTick]);
+  }, [conversationId, conversationHistory, enabled, shouldFetchCatchUp, refetchTick]);
 
   return { catchUp, threadContext, teamHealth, nudge, isLoading, refetch };
 }
@@ -211,13 +210,12 @@ export function useMessagesAIDraft({
     }
 
     const id = ++requestIdRef.current;
-    const key = apiKey ?? '';
 
     timerRef.current = window.setTimeout(async () => {
       try {
         const [analysis, deflection] = await Promise.all([
-          analyzeDraftIntent(key, draft),
-          detectMeetingIntent(key, draft),
+          analyzeDraftIntent(draft),
+          detectMeetingIntent(draft),
         ]);
         if (id !== requestIdRef.current) return; // stale
 
@@ -243,7 +241,7 @@ export function useMessagesAIDraft({
         timerRef.current = null;
       }
     };
-  }, [draft, enabled, debounceMs, minLength, apiKey]);
+  }, [draft, enabled, debounceMs, minLength]);
 
   return { draftAnalysis, asyncSuggestion, clear };
 }
@@ -359,7 +357,7 @@ const CatchUpSection: React.FC<{
   const toneClasses = {
     emerald: 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/[0.08] ring-1 ring-emerald-500/30',
     amber: 'text-amber-700 dark:text-amber-400 bg-amber-500/[0.08] ring-1 ring-amber-500/30',
-    blue: 'text-blue-700 dark:text-blue-400 bg-blue-500/[0.08] ring-1 ring-blue-500/30',
+    blue: 'text-[#52525b] dark:text-[#a1a1aa] bg-[rgba(255,255,255,0.06)] ring-1 ring-[rgba(255,255,255,0.10)]',
   }[tone];
 
   return (
@@ -402,7 +400,7 @@ const NUDGE_LABELS: Record<Nudge['type'], string> = {
 };
 
 const NUDGE_TONES: Record<Nudge['type'], string> = {
-  follow_up: 'ring-1 ring-blue-500/30 bg-blue-500/[0.06] dark:bg-blue-500/[0.08] text-blue-700 dark:text-blue-300',
+  follow_up: 'ring-1 ring-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.06)] dark:bg-[rgba(255,255,255,0.06)] text-[#52525b] dark:text-[#a1a1aa]',
   clarify: 'ring-1 ring-amber-500/30 bg-amber-500/[0.06] dark:bg-amber-500/[0.08] text-amber-700 dark:text-amber-300',
   de_escalate: 'ring-1 ring-rose-500/30 bg-rose-500/[0.06] dark:bg-rose-500/[0.08] text-rose-700 dark:text-rose-300',
   praise: 'ring-1 ring-emerald-500/30 bg-emerald-500/[0.06] dark:bg-emerald-500/[0.08] text-emerald-700 dark:text-emerald-300',

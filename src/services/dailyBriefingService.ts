@@ -1,6 +1,10 @@
 /**
- * Comprehensive Briefing Service
- * Aggregates data from all sources to generate rich AI briefings
+ * Daily Briefing Service
+ *
+ * Aggregates data from all sources to generate the morning/Pulse-AI nudge
+ * briefing surfaced on Dashboard and in the Pulse AI sidebar. Distinct from
+ * the Briefing *section* (formerly Pulse Chat) — that is a user-facing voice
+ * session feature whose state lives in the Briefing component.
  */
 
 import { dataService } from './dataService';
@@ -37,7 +41,7 @@ export interface BriefingContext {
   // Recent Searches
   recentSearches: string;
 
-  // Pulse Chat
+  // Unified message channels (Slack, etc.)
   unreadPulseChats: string;
 
   // War Room / Projects
@@ -78,7 +82,7 @@ export interface BriefingData {
   };
 }
 
-class BriefingService {
+class DailyBriefingService {
   private userId: string | null = null;
   private gmailService: GmailService | null = null;
 
@@ -503,4 +507,4 @@ ${context.taskIntelligence}
   }
 }
 
-export const briefingService = new BriefingService();
+export const dailyBriefingService = new DailyBriefingService();

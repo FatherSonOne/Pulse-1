@@ -48,8 +48,8 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({
         .join('\n');
 
       const [contextResult, handoffResult] = await Promise.all([
-        generateThreadContext(apiKey, history),
-        messages.length > 5 ? generateHandoffSummary(apiKey, history) : null
+        generateThreadContext(history),
+        messages.length > 5 ? generateHandoffSummary(history) : null
       ]);
 
       if (contextResult) {

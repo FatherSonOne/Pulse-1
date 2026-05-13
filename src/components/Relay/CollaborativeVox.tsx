@@ -555,10 +555,10 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
         ) : (
           <>
             {/* Header */}
-            <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-cyan-500/10 to-blue-500/10">
+            <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-rose-50/60 dark:bg-[rgba(244,63,94,0.06)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-white">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f43f5e] to-[#ec4899] flex items-center justify-center text-white">
                     <Users />
                   </div>
                   <div>
@@ -586,7 +586,7 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Team Update, Weekly Sync..."
-                    className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl border-0 focus:ring-2 focus:ring-cyan-500 dark:text-white"
+                    className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl border-0 focus:ring-2 focus:ring-[#f43f5e] dark:text-white"
                   />
                 </div>
                 <div>
@@ -596,7 +596,7 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="What's this collab about?"
-                    className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl border-0 focus:ring-2 focus:ring-cyan-500 dark:text-white"
+                    className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl border-0 focus:ring-2 focus:ring-[#f43f5e] dark:text-white"
                   />
                 </div>
               </div>
@@ -613,7 +613,7 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
                       onClick={() => toggleContact(contact.id)}
                       className={`w-full p-3 rounded-xl flex items-center gap-3 transition ${
                         selectedContacts.includes(contact.id)
-                          ? 'bg-cyan-50 dark:bg-cyan-900/20 border-2 border-cyan-500'
+                          ? 'bg-rose-50 dark:bg-[rgba(244,63,94,0.10)] border-2 border-[#f43f5e]'
                           : 'bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-2 border-transparent'
                       }`}
                     >
@@ -626,7 +626,7 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
                       </div>
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                         selectedContacts.includes(contact.id)
-                          ? 'bg-cyan-500 border-cyan-500 text-white'
+                          ? 'bg-[#f43f5e] border-[#f43f5e] text-white'
                           : 'border-zinc-300 dark:border-zinc-600'
                       }`}>
                         {selectedContacts.includes(contact.id) && (
@@ -640,7 +640,7 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
 
               {/* Selected Summary */}
               {selectedContacts.length > 0 && (
-                <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-3 text-sm text-cyan-600 dark:text-cyan-400">
+                <div className="bg-rose-50 dark:bg-[rgba(244,63,94,0.10)] rounded-xl p-3 text-sm text-[#e11d48] dark:text-[#fb7185]">
                   <Users className="mr-2" />
                   {selectedContacts.length + 1} people will collaborate (including you)
                 </div>
@@ -657,7 +657,7 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
               </button>
               <button
                 onClick={handleCreate}
-                className="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-xl font-semibold transition"
+                className="btn-brand-primary flex-1 py-3 rounded-xl font-semibold"
               >
                 <Play className="mr-2" />
                 Start Recording

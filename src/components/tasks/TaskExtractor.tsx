@@ -67,7 +67,7 @@ export const TaskExtractor: React.FC<TaskExtractorProps> = ({
     for (const message of recentMessages) {
       if (message.text && message.text.length > 10) {
         try {
-          const task = await extractTaskFromMessage(apiKey, message.text, contactNames);
+          const task = await extractTaskFromMessage(message.text, contactNames);
           if (task && task.title) {
             extracted.push({
               id: `extracted-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,

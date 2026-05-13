@@ -3,6 +3,7 @@ import { emailAIService } from './emailAIService';
 import { emailSyncService, CachedEmail } from './emailSyncService';
 import { offlineEmailStorage } from './offlineEmailStorage';
 import { supabase } from './supabase';
+import { invokeAIJson } from './ai/aiService';
 
 interface SearchResult {
   email: CachedEmail;
@@ -293,7 +294,8 @@ class EmailSearchService {
   }
 
   /**
-   * AI-powered semantic search for natural language queries
+   * AI-powered semantic search for natural language queries.
+   * Routes through ai-router (email_analysis → Gemini Flash, Claude Haiku fallback).
    */
   async semanticSearch(query: string, limit: number): Promise<SearchResult[]> {
     if (!emailAIService.isAvailable()) {
@@ -303,15 +305,12 @@ class EmailSearchService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
+    const workspaceId = await this.resolveWorkspaceId(user.id);
+    if (!workspaceId) return [];
+
     try {
-      // Get recent emails for semantic matching
       const recentEmails = await emailSyncService.getEmailsByFolder('all', 200);
 
-      // Use AI to understand query intent and match emails
-      const geminiApiKey = localStorage.getItem('gemini_api_key');
-      if (!geminiApiKey) return [];
-
-      // Create a summary of each email for matching
       const emailSummaries = recentEmails.slice(0, 50).map(e => ({
         id: e.id,
         from: e.from_name || e.from_email,
@@ -323,16 +322,7 @@ class EmailSearchService {
         summary: e.ai_summary
       }));
 
-      // Ask AI to find matching emails
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `You are an email search assistant. Given the user's search query and a list of emails, identify which emails best match the query.
+      const prompt = `You are an email search assistant. Given the user's search query and a list of emails, identify which emails best match the query.
 
 Search Query: "${query}"
 
@@ -344,30 +334,18 @@ Respond with a JSON array of objects with format:
 
 Only include emails with relevance > 30. Order by relevance descending.
 Maximum 10 results.
-Respond with valid JSON only, no markdown.`
-              }]
-            }],
-            generationConfig: {
-              temperature: 0.2,
-              maxOutputTokens: 1024
-            }
-          })
-        }
-      );
+Respond with valid JSON only, no markdown.`;
 
-      if (!response.ok) {
-        throw new Error('Gemini API error');
-      }
+      type RankedMatch = { id: string; relevance: number; reason?: string };
+      const matches = await invokeAIJson<RankedMatch[]>('email_analysis', prompt, {
+        workspaceId,
+        temperature: 0.2,
+      });
 
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+      if (!Array.isArray(matches)) return [];
 
-      // Parse AI response
-      const matches = JSON.parse(text.replace(/```json\n?|\n?```/g, ''));
-
-      // Map matches back to emails
       const results: SearchResult[] = [];
-      for (const match of matches) {
+      for (const match of matches.slice(0, limit)) {
         const email = recentEmails.find(e => e.id === match.id);
         if (email) {
           results.push({
@@ -383,6 +361,19 @@ Respond with valid JSON only, no markdown.`
       console.error('Semantic search error:', error);
       return [];
     }
+  }
+
+  private cachedWorkspaceId: string | null = null;
+  private async resolveWorkspaceId(userId: string): Promise<string | null> {
+    if (this.cachedWorkspaceId) return this.cachedWorkspaceId;
+    const { data } = await supabase
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('user_id', userId)
+      .limit(1)
+      .maybeSingle();
+    this.cachedWorkspaceId = (data?.workspace_id as string) || null;
+    return this.cachedWorkspaceId;
   }
 
   /**

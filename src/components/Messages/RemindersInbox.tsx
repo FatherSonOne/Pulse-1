@@ -288,7 +288,7 @@ const ReminderRow: React.FC<ReminderRowProps> = ({
           type="button"
           onClick={onDismiss}
           disabled={busy}
-          className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition disabled:opacity-50"
+          className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition disabled:opacity-50"
           aria-label="Dismiss reminder"
           title="Dismiss"
         >

@@ -265,7 +265,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-12 h-12 flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+        className="w-12 h-12 flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors"
         title="Tag this conversation"
         aria-label="Tag this conversation"
         aria-expanded={open}
@@ -275,11 +275,11 @@ export const TagPicker: React.FC<TagPickerProps> = ({
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 w-72 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden"
+          className="absolute right-0 top-full mt-1 w-72 bg-white dark:bg-[rgba(255,255,255,0.03)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] rounded-xl shadow-xl z-50 overflow-hidden"
           role="dialog"
         >
           {/* Search */}
-          <div className="p-2 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="p-2 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
               <input
@@ -287,7 +287,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search or create tag…"
-                className="w-full pl-7 pr-2 py-1.5 text-sm rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 outline-none focus:ring-2 focus:ring-rose-500/30"
+                className="w-full pl-7 pr-2 py-1.5 text-sm rounded-md bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 outline-none focus:ring-2 focus:ring-rose-500/30"
               />
             </div>
           </div>
@@ -313,7 +313,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
                       type="button"
                       onClick={() => void handleToggle(tag)}
                       disabled={!!pendingTagId}
-                      className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition disabled:opacity-50 disabled:cursor-wait"
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition disabled:opacity-50 disabled:cursor-wait"
                       role="menuitem"
                     >
                       <span
@@ -341,7 +341,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
             <button
               type="button"
               onClick={() => setCreating(true)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 border-t border-zinc-200 dark:border-zinc-800 transition"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] transition"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Create &ldquo;{query.trim()}&rdquo;</span>
@@ -349,7 +349,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
           )}
 
           {showCreateRow && creating && (
-            <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+            <div className="p-3 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] space-y-2">
               <div className="text-xs text-zinc-500 dark:text-zinc-400">
                 Pick a color for &ldquo;{query.trim()}&rdquo;:
               </div>
@@ -378,7 +378,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
                 <button
                   type="button"
                   onClick={() => setCreating(false)}
-                  className="px-3 py-1.5 text-xs rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                  className="px-3 py-1.5 text-xs rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
                 >
                   Cancel
                 </button>

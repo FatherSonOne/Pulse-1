@@ -359,10 +359,22 @@ export function useGlimpseRecording(options: UseGlimpseRecordingOptions = {}): U
       if (typeof navigator.mediaDevices.getDisplayMedia !== 'function') {
         throw new Error('Screen capture is not supported in this browser');
       }
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: false,
-      });
+      // Quirk: some Chromium builds throw `NotSupportedError: Not supported`
+      // when `audio: false` is explicit. Omitting the field entirely is the
+      // reliable form. If that still fails (older/embedded browsers), surface
+      // a clear unsupported error so the caller can fall back to cam-only.
+      let screenStream: MediaStream;
+      try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      } catch (err: unknown) {
+        const e = err as { name?: string; message?: string };
+        if (e?.name === 'NotSupportedError') {
+          throw new Error(
+            'Screen + camera capture is not supported in this browser. Try Chrome or Edge on desktop, or switch to camera-only.',
+          );
+        }
+        throw err;
+      }
       screenStreamRef.current = screenStream;
 
       // Cam track second.
@@ -439,11 +451,15 @@ export function useGlimpseRecording(options: UseGlimpseRecordingOptions = {}): U
 
       console.error('Failed to start cam+screen preview:', error);
 
+      const isUnsupported =
+        error?.name === 'NotSupportedError' ||
+        /not supported/i.test(message);
+
       const errorMessage =
         error?.name === 'NotAllowedError'
           ? 'Permission denied. Allow camera and screen sharing to use this mode.'
-          : message.includes('not supported')
-          ? message
+          : isUnsupported
+          ? 'Screen + camera capture is not supported in this browser. Switch to camera-only.'
           : `Capture unavailable: ${message || 'unknown error'}`;
 
       setState((prev) => ({ ...prev, status: 'idle', error: errorMessage }));

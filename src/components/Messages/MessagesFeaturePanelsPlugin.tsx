@@ -204,20 +204,20 @@ export const MessagesFeaturePanelHost: React.FC<MessagesFeaturePanelHostProps> =
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 30, stiffness: 280 }}
-          className={`absolute top-0 right-0 bottom-0 z-30 bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col ${className}`}
+          className={`absolute top-0 right-0 bottom-0 z-30 bg-white dark:bg-[rgba(255,255,255,0.03)] border-l border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] shadow-2xl flex flex-col ${className}`}
           style={{ width }}
           role="complementary"
           aria-label={`${PANEL_TITLES[activePanel]} panel`}
         >
           {/* Header */}
-          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
             <h2 className="text-sm font-bold text-zinc-900 dark:text-white">
               {PANEL_TITLES[activePanel]}
             </h2>
             <button
               type="button"
               onClick={closePanel}
-              className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 transition"
+              className="p-1.5 rounded-md hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] text-zinc-500 dark:text-zinc-400 transition"
               aria-label="Close panel"
               title="Close (Esc)"
             >

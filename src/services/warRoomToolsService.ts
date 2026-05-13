@@ -20,17 +20,14 @@ import { processWithModel, processWithModelViaProxy } from './geminiService';
 import { contextBankService, SearchResult } from './contextBankService';
 
 /**
- * Resolve Gemini API key: prefers proxy (key stays server-side),
- * falls back to localStorage for local development.
+ * Resolve Gemini API key — DEPRECATED.
+ * All downstream functions (`generateEmbedding`, `processWithModel`,
+ * `ragService.searchSimilar`) now route through Supabase edge functions
+ * with server-held keys. The apiKey arg is a no-op kept for signature
+ * compatibility until those signatures are cleaned up.
  */
 function resolveGeminiApiKey(): string {
-  if (import.meta.env.VITE_FORCE_LOCAL_KEYS === 'true') {
-    return localStorage.getItem('gemini_api_key') || '';
-  }
-  // For functions that require an explicit key (e.g. embedding APIs),
-  // we still read from localStorage as a fallback since the proxy
-  // handles the main LLM calls.
-  return localStorage.getItem('gemini_api_key') || '';
+  return '';
 }
 
 // ============= CITATION TRACKING =============
@@ -75,10 +72,7 @@ export const ragSearchTool: RealtimeTool = {
 
     const sessionId = context.sessionId || 'default';
     const apiKey = resolveGeminiApiKey();
-
-    if (!apiKey) {
-      return 'Error: API key not available for search. Please configure your Gemini API key in settings.';
-    }
+    // apiKey is a deprecated no-op; downstream functions route server-side.
 
     console.log(`🔍 RAG Search: "${query}" (type: ${searchType})`);
 
@@ -231,13 +225,9 @@ export const searchDocumentsTool: RealtimeTool = {
     }
 
     try {
-      const apiKey = resolveGeminiApiKey();
-      if (!apiKey) {
-        return 'Error: API key not available for document search.';
-      }
-
+      // apiKey arg is a deprecated no-op — server-side routing.
       const results = await ragService.searchSimilar(
-        apiKey,
+        '',
         query,
         context.userId,
         context.projectId
@@ -480,12 +470,8 @@ export const generateSummaryTool: RealtimeTool = {
         const summary = await processWithModelViaProxy(prompt);
         return `📋 Summary:\n\n${summary}`;
       } catch {
-        // Fallback to direct API call with localStorage key
-        const apiKey = resolveGeminiApiKey();
-        if (!apiKey) {
-          return 'Error: API key not available for summarization.';
-        }
-        const summary = await processWithModel(apiKey, prompt);
+        // Fallback path — processWithModel also routes server-side via ai-router.
+        const summary = await processWithModel(prompt);
         return `📋 Summary:\n\n${summary}`;
       }
     } catch (error) {

@@ -105,11 +105,11 @@ export const ragService = {
       onProgress?.(0.15); // 15%
 
       // 2. Generate AI Summary & Keywords (in parallel with chunking)
-      const summaryPromise = processWithModel(apiKey, withFormattedOutput(
+      const summaryPromise = processWithModel(withFormattedOutput(
         `Summarize this document in 2-3 sentences:\n\n${text.substring(0, 3000)}`,
         'summary'
       ));
-      const keywordsPromise = processWithModel(apiKey, withFormattedOutput(
+      const keywordsPromise = processWithModel(withFormattedOutput(
         `Extract 5-10 key topics/keywords from this document as a comma-separated list:\n\n${text.substring(0, 3000)}`,
         'summary'
       ));
@@ -133,7 +133,7 @@ export const ragService = {
         const embeddingProgress = 0.30 + (i / maxChunks) * 0.40;
         onProgress?.(embeddingProgress);
 
-        const embedding = await generateEmbedding(apiKey, chunk);
+        const embedding = await generateEmbedding(chunk);
 
         if (embedding) {
           embeddingsData.push({
@@ -199,7 +199,7 @@ export const ragService = {
     console.log('   User ID:', userId);
     console.log('   Project ID:', projectId);
     
-    const embedding = await generateEmbedding(apiKey, query);
+    const embedding = await generateEmbedding(query);
     
     if (!embedding) {
       console.error('❌ Failed to generate query embedding');
@@ -499,8 +499,8 @@ export const ragService = {
       onProgress?.(0.20);
 
       // Re-generate AI Summary & Keywords
-      const summaryPromise = processWithModel(apiKey, `Summarize this document in 2-3 sentences:\n\n${doc.text_content.substring(0, 3000)}`);
-      const keywordsPromise = processWithModel(apiKey, `Extract 5-10 key topics/keywords from this document as a comma-separated list:\n\n${doc.text_content.substring(0, 3000)}`);
+      const summaryPromise = processWithModel(`Summarize this document in 2-3 sentences:\n\n${doc.text_content.substring(0, 3000)}`);
+      const keywordsPromise = processWithModel(`Extract 5-10 key topics/keywords from this document as a comma-separated list:\n\n${doc.text_content.substring(0, 3000)}`);
 
       onProgress?.(0.30);
 
@@ -516,7 +516,7 @@ export const ragService = {
         const embeddingProgress = 0.30 + (i / maxChunks) * 0.40;
         onProgress?.(embeddingProgress);
 
-        const embedding = await generateEmbedding(apiKey, chunk);
+        const embedding = await generateEmbedding(chunk);
 
         if (embedding) {
           embeddingsData.push({
@@ -593,7 +593,7 @@ export const ragService = {
       // Step 2: Generate AI response
       const aiStepStart = Date.now();
       const prompt = `${message}${context}`;
-      const response = await processWithModel(apiKey, prompt);
+      const response = await processWithModel(prompt);
 
       thinkingSteps.push({
         step: 2,

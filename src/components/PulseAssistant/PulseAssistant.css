@@ -651,6 +651,26 @@
 .pa-msg-markdown > *:first-child { margin-top: 0; }
 .pa-msg-markdown > *:last-child { margin-bottom: 0; }
 
+/* Inline cross-section navigation link — emitted by the AI as
+   `[Open Messages](pulse://section/MESSAGES)` and intercepted by the
+   ReactMarkdown anchor renderer. Renders as an inline <button>. */
+.pa-inline-nav-link {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--pulse-accent, #ff3355);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.pa-inline-nav-link:hover,
+.pa-inline-nav-link:focus-visible {
+  text-decoration-thickness: 2px;
+  outline: none;
+}
+
 .pa-msg-markdown p {
   margin: 0 0 0.65rem;
   color: inherit;
@@ -902,6 +922,37 @@
 .dark .pa-feedback-btn.active {
   color: var(--pulse-rose-bright, #fda4af);
   background: rgba(244, 63, 94, 0.12);
+}
+
+/* "Take to Summit" — sized like a tiny chip with a label rather than a square */
+.pa-feedback-btn--summit {
+  width: auto;
+  padding: 0 6px 0 4px;
+  gap: 4px;
+  margin-left: auto; /* push to the far right of the row */
+  color: var(--pulse-rose-deep, #e11d48);
+  border: 1px solid transparent;
+}
+
+.pa-feedback-btn--summit:hover {
+  background: var(--pulse-rose-soft, rgba(244, 63, 94, 0.10));
+  border-color: var(--pulse-rose-deep, #e11d48);
+  color: var(--pulse-rose-deep, #e11d48);
+}
+
+.dark .pa-feedback-btn--summit {
+  color: var(--pulse-rose-bright, #fda4af);
+}
+
+.dark .pa-feedback-btn--summit:hover {
+  background: rgba(244, 63, 94, 0.12);
+  border-color: var(--pulse-rose-bright, #fda4af);
+}
+
+.pa-feedback-btn-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 /* ── 4D: Header actions (export, copy) ── */

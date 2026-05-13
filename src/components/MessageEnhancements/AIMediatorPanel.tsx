@@ -33,6 +33,10 @@ interface AIMediatorPanelProps {
   onApplySuggestion: (suggestion: MediationSuggestion) => void;
   onDismiss: () => void;
   apiKey?: string;
+  /** Suppress the component's outer rounded-border + collapsible
+   *  header. Use when the panel is wrapped in PanelShell so the host
+   *  owns chrome and dismiss. The body always renders expanded. */
+  hideHeader?: boolean;
 }
 
 // Conflict detection helper
@@ -185,11 +189,14 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
   messages,
   contactName,
   onApplySuggestion,
-  onDismiss
+  onDismiss,
+  hideHeader = false,
 }) => {
   const [signals, setSignals] = useState<ConflictSignal[]>([]);
   const [suggestions, setSuggestions] = useState<MediationSuggestion[]>([]);
-  const [expanded, setExpanded] = useState(false);
+  // When wrapped in PanelShell, the host owns expand/collapse, so we
+  // always render the body. Otherwise default to collapsed.
+  const [expanded, setExpanded] = useState(hideHeader);
   const [dismissed, setDismissed] = useState(false);
   const [llmHealth, setLlmHealth] = useState<TeamHealth | null>(null);
 
@@ -235,65 +242,38 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
   const highSeverityCount = signals.filter(s => s.severity === 'high').length;
   const alertLevel = highSeverityCount >= 2 ? 'high' : highSeverityCount >= 1 ? 'medium' : 'low';
 
-  const alertColors = {
-    high: 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20',
-    medium: 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20',
-    low: 'border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20'
-  };
+  // Severity badge — status colors are allowed here (semantic, not
+  // decorative). Background is a 0.08 tint over the canvas, never a
+  // thick coloured border per the Status-Stays-Status rule.
+  const severityBadge = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-[0.1em] font-medium ${
+        alertLevel === 'high'
+          ? 'bg-red-500/[0.08] dark:bg-red-500/[0.12] text-red-700 dark:text-red-300'
+          : alertLevel === 'medium'
+            ? 'bg-amber-500/[0.08] dark:bg-amber-500/[0.12] text-amber-700 dark:text-amber-300'
+            : 'bg-zinc-500/[0.08] dark:bg-zinc-500/[0.12] text-zinc-700 dark:text-zinc-300'
+      }`}>
+        <i className={`fa-solid ${
+          alertLevel === 'high' ? 'fa-triangle-exclamation' :
+          alertLevel === 'medium' ? 'fa-circle-info' :
+          'fa-lightbulb'
+        }`} />
+        {alertLevel === 'high' ? 'Needs attention' : alertLevel === 'medium' ? 'Some tension' : 'Light signal'}
+      </span>
+      <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+        {signals.length} signal{signals.length !== 1 ? 's' : ''} detected
+      </span>
+    </div>
+  );
 
-  const alertIcons = {
-    high: 'fa-triangle-exclamation text-red-500',
-    medium: 'fa-circle-info text-amber-500',
-    low: 'fa-lightbulb text-blue-500'
-  };
-
-  return (
-    <div className={`rounded-xl border-2 ${alertColors[alertLevel]} overflow-hidden animate-slide-up`}>
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-3 cursor-pointer"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-            alertLevel === 'high' ? 'bg-red-100 dark:bg-red-900/40' :
-            alertLevel === 'medium' ? 'bg-amber-100 dark:bg-amber-900/40' :
-            'bg-blue-100 dark:bg-blue-900/40'
-          }`}>
-            <i className={`fa-solid ${alertIcons[alertLevel]}`} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <AIProvenanceTag source="pulse-ai" kind="mediation" />
-              {alertLevel === 'high' && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono uppercase tracking-[0.1em] font-medium bg-red-500/[0.10] dark:bg-red-500/[0.15] text-red-700 dark:text-red-300">
-                  Needs Attention
-                </span>
-              )}
-            </div>
-            <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-              {signals.length} signal{signals.length !== 1 ? 's' : ''} detected in conversation
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setDismissed(true);
-              onDismiss();
-            }}
-            className="p-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-black/20 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-          >
-            <X className="text-xs" />
-          </button>
-          <i className={`fa-solid fa-chevron-${expanded ? 'up' : 'down'} text-xs text-zinc-400`} />
-        </div>
-      </div>
-
-      {/* Expanded content */}
-      {expanded && (
-        <div className="px-4 pb-4 space-y-4">
+  // Wrapped-in-PanelShell variant: no outer chrome, no collapsible
+  // header — the host already owns provenance, title and dismiss.
+  if (hideHeader) {
+    return (
+      <div className="space-y-3">
+        {severityBadge}
+        <div className="space-y-4">
           {/* Signals summary */}
           <div className="flex flex-wrap gap-2">
             {signals.slice(0, 3).map(signal => (

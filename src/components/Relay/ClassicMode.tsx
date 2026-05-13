@@ -51,6 +51,7 @@ import { dataService } from '../../services/dataService';
 import { userContactService } from '../../services/userContactService';
 import { whisperService } from '../../services/relay/whisperService';
 import { audioEnhancementService } from '../../services/relay/audioEnhancementService';
+import { voxModeService } from '../../services/relay/voxModeService';
 import type { EnrichedUserProfile } from '../../types/userContact';
 import toast from 'react-hot-toast';
 import './ClassicMode.css';
@@ -170,6 +171,22 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [playingId, setPlayingId] = useState<string | null>(null);
+
+  // Safety net: ensure `quick_vox_status.is_recording` clears if the tab is
+  // closed or this view unmounts mid-recording. The hook-based modes get this
+  // via useVoxRecording; ClassicMode owns its own MediaRecorder, so it owns
+  // its own cleanup too.
+  useEffect(() => {
+    if (!isRecording) return;
+    const flipFalse = () => voxModeService.updateQuickVoxStatus(false).catch(() => {});
+    window.addEventListener('pagehide', flipFalse);
+    window.addEventListener('beforeunload', flipFalse);
+    return () => {
+      window.removeEventListener('pagehide', flipFalse);
+      window.removeEventListener('beforeunload', flipFalse);
+      flipFalse();
+    };
+  }, [isRecording]);
   const [showNewVoxModal, setShowNewVoxModal] = useState(false);
   const [pendingRecording, setPendingRecording] = useState<{
     blob: Blob;
@@ -547,22 +564,18 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               } else {
                 // Fallback to Gemini if Whisper not configured
                 toast.loading('Transcribing...', { id: 'transcribe' });
-                if (apiKey) {
-                  const base64 = await blobToBase64(blob);
-                  const transcriptText = await transcribeMedia(apiKey, base64, 'audio/webm');
-                  setTranscript(transcriptText || '');
-                }
+                const base64 = await blobToBase64(blob);
+                const transcriptText = await transcribeMedia(base64, 'audio/webm');
+                setTranscript(transcriptText || '');
                 toast.success('Transcribed', { id: 'transcribe' });
               }
             } else {
               // Use Gemini
-              if (apiKey) {
-                toast.loading('Transcribing with Gemini...', { id: 'transcribe' });
-                const base64 = await blobToBase64(blob);
-                const transcriptText = await transcribeMedia(apiKey, base64, 'audio/webm');
-                setTranscript(transcriptText || '');
-                toast.success('Transcribed', { id: 'transcribe' });
-              }
+              toast.loading('Transcribing with Gemini...', { id: 'transcribe' });
+              const base64 = await blobToBase64(blob);
+              const transcriptText = await transcribeMedia(base64, 'audio/webm');
+              setTranscript(transcriptText || '');
+              toast.success('Transcribed', { id: 'transcribe' });
             }
           } catch (e) {
             console.error('Transcription error:', e);
@@ -575,6 +588,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       startTimeRef.current = Date.now();
       mediaRecorderRef.current.start(100);
       setIsRecording(true);
+      voxModeService.updateQuickVoxStatus(true).catch(() => {});
 
       // Update duration timer
       timerRef.current = setInterval(() => {
@@ -603,6 +617,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       setIsRecording(false);
       setRecordingDuration(0);
       setAudioLevel(0);
+      voxModeService.updateQuickVoxStatus(false).catch(() => {});
     }
   }, [isRecording]);
 
@@ -1272,12 +1287,12 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                           }}
                           className={`absolute top-3 ${recording.sender === 'me' ? 'left-3' : 'right-3'} w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
                             isSelected(recording.id)
-                              ? 'bg-orange-500 border-2 border-orange-600'
+                              ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
                               : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
                           }`}
                           style={{
                             boxShadow: isSelected(recording.id)
-                              ? '0 4px 12px rgba(249, 115, 22, 0.4)'
+                              ? '0 4px 12px rgba(244, 63, 94, 0.4)'
                               : '0 2px 8px rgba(0, 0, 0, 0.2)',
                           }}
                         >
@@ -1453,7 +1468,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       <button
                         type="button"
                         onClick={() => handleGenerateChapters(recording)}
-                        className="text-xs text-cyan-600 dark:text-cyan-400 hover:underline mt-1 flex items-center gap-1"
+                        className="text-xs text-[#e11d48] dark:text-[#fb7185] hover:underline mt-1 flex items-center gap-1"
                         title="Generate AI chapter markers for this message"
                       >
                         <List className="w-3 h-3" />
@@ -1715,7 +1730,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                 setActiveChapters([]);
                 setChapterRecordingId(null);
               }}
-              className="absolute -top-2 -right-2 z-10 w-8 h-8 rounded-full bg-cyan-500 text-white hover:bg-cyan-600 transition flex items-center justify-center shadow-lg"
+              className="absolute -top-2 -right-2 z-10 w-8 h-8 rounded-full bg-[#f43f5e] text-white hover:bg-[#e11d48] transition flex items-center justify-center shadow-lg"
               title="Close chapters"
             >
               <X className="w-4 h-4" />

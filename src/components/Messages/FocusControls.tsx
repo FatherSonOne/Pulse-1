@@ -40,7 +40,7 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
         {!isActive ? (
           <motion.button
             onClick={onStart}
-            className="flex items-center space-x-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-semibold text-lg shadow-lg transition-colors focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50"
+            className="btn-brand-primary flex items-center space-x-2 px-8 py-4 text-white rounded-full font-semibold text-lg shadow-lg transition-colors focus:outline-none focus:ring-4 focus:ring-[#f43f5e] focus:ring-opacity-50"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             aria-label="Start focus session"
@@ -163,7 +163,7 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
       {/* Break Counter */}
       {breakCount > 0 && (
         <motion.div
-          className="flex items-center space-x-2 px-4 py-2 bg-gray-800 rounded-lg"
+          className="flex items-center space-x-2 px-4 py-2 bg-[rgba(255,255,255,0.055)] rounded-lg"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
@@ -180,7 +180,7 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
               clipRule="evenodd"
             />
           </svg>
-          <span className="text-sm font-medium text-gray-300">
+          <span className="text-sm font-medium text-[#fafafa]">
             {breakCount} {breakCount === 1 ? 'break' : 'breaks'} completed
           </span>
         </motion.div>
@@ -190,7 +190,7 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
       {onSettings && !isActive && (
         <motion.button
           onClick={onSettings}
-          className="flex items-center space-x-2 px-4 py-2 text-gray-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 rounded-lg"
+          className="flex items-center space-x-2 px-4 py-2 text-[#b4b4b8] hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 rounded-lg"
           whileHover={{ scale: 1.05 }}
           aria-label="Focus mode settings"
         >
@@ -211,12 +211,12 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
       )}
 
       {/* Keyboard Shortcut Hint */}
-      <div className="text-xs text-gray-500 flex items-center space-x-2">
-        <kbd className="px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-400">
+      <div className="text-xs text-[#6b7280] flex items-center space-x-2">
+        <kbd className="px-2 py-1 bg-[rgba(255,255,255,0.055)] border border-[rgba(255,255,255,0.10)] rounded text-[#b4b4b8]">
           Shift
         </kbd>
         <span>+</span>
-        <kbd className="px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-400">
+        <kbd className="px-2 py-1 bg-[rgba(255,255,255,0.055)] border border-[rgba(255,255,255,0.10)] rounded text-[#b4b4b8]">
           F
         </kbd>
         <span>to exit focus mode</span>

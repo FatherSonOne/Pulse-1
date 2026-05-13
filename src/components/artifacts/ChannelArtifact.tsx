@@ -58,7 +58,7 @@ export const ChannelArtifactComponent: React.FC<ChannelArtifactProps> = ({
         .map((m) => `[${m.sender}] ${new Date(m.timestamp).toLocaleString()}: ${m.text}`)
         .join('\n');
 
-      const result = await generateChannelArtifact(apiKey, history, channelName);
+      const result = await generateChannelArtifact(history, channelName);
 
       if (result) {
         const fullArtifact: ChannelArtifactType = {

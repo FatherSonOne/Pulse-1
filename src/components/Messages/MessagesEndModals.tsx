@@ -164,7 +164,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
             }}
           />
           <div
-            className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white dark:bg-zinc-900 shadow-2xl z-50 transform transition-transform duration-300 ease-out overflow-hidden"
+            className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white dark:bg-[rgba(255,255,255,0.03)] shadow-2xl z-50 transform transition-transform duration-300 ease-out overflow-hidden"
             style={{ animation: 'slideInRight 0.3s ease-out' }}
           >
             <UserContactCard
@@ -190,15 +190,15 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
       {/* Message Analytics Dashboard Modal */}
       {props.showAnalyticsDashboard && (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <TrendingUp className="text-indigo-500" />
+                <TrendingUp className="text-[#f43f5e]" />
                 Message Analytics Dashboard
               </h2>
               <button
                 onClick={() => props.setShowAnalyticsDashboard(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] text-zinc-500"
               >
                 <X />
               </button>
@@ -213,15 +213,15 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
       {/* Network Graph Modal */}
       {props.showNetworkGraph && (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-3xl max-h-[80vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-3xl max-h-[80vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <GitFork className="text-purple-500" />
+                <GitFork className="text-[#f43f5e]" />
                 Connection Network
               </h2>
               <button
                 onClick={() => props.setShowNetworkGraph(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] text-zinc-500"
               >
                 <X />
               </button>
@@ -246,18 +246,18 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
       {/* Context Panel Sidebar */}
       {props.showContextPanel && (props.activeThread || props.activePulseConv) && (
         <div
-          className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white dark:bg-zinc-900 shadow-2xl z-40 overflow-hidden border-l border-zinc-200 dark:border-zinc-800"
+          className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white dark:bg-[rgba(255,255,255,0.03)] shadow-2xl z-40 overflow-hidden border-l border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]"
           style={{ animation: 'slideInRight 0.3s ease-out' }}
         >
           <div className="h-full flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <Layers className="text-purple-500" />
+                <Layers className="text-[#f43f5e]" />
                 Context & Insights
               </h2>
               <button
                 onClick={() => props.setShowContextPanel(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] text-zinc-500"
               >
                 <X />
               </button>
@@ -278,15 +278,15 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
       {/* Task Extractor Panel */}
       {props.showTaskExtractor && (props.activeThread || props.activePulseConv) && (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-3xl max-h-[85vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-3xl max-h-[85vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
                 <ListChecks className="text-emerald-500" />
                 Extract Tasks from Conversation
               </h2>
               <button
                 onClick={() => props.setShowTaskExtractor(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] text-zinc-500"
               >
                 <X />
               </button>
@@ -308,15 +308,15 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
       {/* Channel Artifact Panel */}
       {props.showChannelArtifactPanel && (props.activeThread || props.activePulseConv) && (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <FileOutput className="text-blue-500" />
+                <FileOutput className="text-[#f43f5e]" />
                 Export as Living Document
               </h2>
               <button
                 onClick={() => props.setShowChannelArtifactPanel(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] text-zinc-500"
               >
                 <X />
               </button>

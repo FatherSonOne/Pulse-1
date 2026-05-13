@@ -30,6 +30,7 @@ import type {
   SessionArtifact,
   SessionArtifacts,
 } from './voiceSessionStore';
+import CapturesPanel from '../Capture/CapturesPanel';
 
 interface ArtifactPanelProps {
   artifacts: SessionArtifacts;
@@ -38,6 +39,11 @@ interface ArtifactPanelProps {
   onAdd: (kind: ArtifactKind, content: string) => void;
   onUpdate: (kind: ArtifactKind, id: string, content: string) => void;
   onDelete: (kind: ArtifactKind, id: string) => void;
+  /**
+   * Active Summit session id. When set, the embedded CapturesPanel filters
+   * pulse_notes to this session so Cmd+J captures show up alongside artifacts.
+   */
+  sessionId?: string;
 }
 
 interface BucketDef {
@@ -106,6 +112,7 @@ const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
   onAdd,
   onUpdate,
   onDelete,
+  sessionId,
 }) => {
   const [activeBucket, setActiveBucket] = useState<ArtifactKind>('decision');
   const [draftText, setDraftText] = useState('');
@@ -310,6 +317,15 @@ const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
           <Plus size={14} />
         </button>
       </div>
+
+      {/* Cross-surface captures scoped to this Summit session. Cmd+J anywhere
+          while a session is live writes here. Read-only feed; the trigger
+          lives in the modal itself. */}
+      {sessionId && !collapsed && (
+        <div className="pvc-artifacts-captures">
+          <CapturesPanel sourceSection="summit" sourceId={sessionId} title="NOTES" />
+        </div>
+      )}
     </aside>
   );
 };

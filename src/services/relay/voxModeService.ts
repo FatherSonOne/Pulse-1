@@ -2,6 +2,7 @@
 import { supabase } from '../supabase';
 import { transcribeMedia } from '../geminiService';
 import { usageTracker } from '../usageTracker';
+import { invokeAIPrompt, invokeAIJson } from '../ai/aiService';
 import type {
   VoxMode,
   PulseUser,
@@ -923,130 +924,126 @@ class VoxModeService {
     const userId = await this.ensureUserId();
     if (!userId) return null;
 
-    const { data, error } = await supabase
-      .from('vox_workspaces')
-      .insert([{
-        name,
-        description,
-        owner_id: userId,
-        member_ids: [userId],
-        created_at: new Date().toISOString(),
-      }])
-      .select()
-      .single();
+    const slug = `vox-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
 
-    if (error) {
-      console.error('Error creating workspace:', error);
+    // bootstrap_workspace is a SECURITY DEFINER RPC that atomically inserts
+    // both the workspace and the owner workspace_members row, sidestepping the
+    // chicken-and-egg between workspaces_select and workspace_members_insert.
+    const { data: workspaceId, error: rpcError } = await supabase.rpc('bootstrap_workspace', {
+      p_name: name,
+      p_slug: slug,
+      p_description: description ?? null,
+      p_plan: 'free',
+    });
+
+    if (rpcError || !workspaceId) {
+      console.error('Error creating workspace:', rpcError);
       return null;
     }
 
     // Create default general channel
-    await this.createTeamChannel(data.id, 'General', 'General discussion', 'general');
+    await this.createTeamChannel(workspaceId, 'General', 'General discussion', 'general');
 
-    return this.mapDbToWorkspace(data);
+    return this.mapDbToWorkspace({
+      id: workspaceId,
+      name,
+      description,
+      owner_id: userId,
+      avatar_url: null,
+      created_at: new Date().toISOString(),
+      member_ids: [userId],
+      vox_team_channels: [],
+    });
   }
 
   async getMyWorkspaces(limit: number = 50, offset: number = 0): Promise<VoxWorkspace[]> {
     const userId = await this.ensureUserId();
     if (!userId) return [];
 
-    const { data, error } = await supabase
-      .from('vox_workspaces')
-      .select('*, vox_team_channels(*)')
-      .contains('member_ids', [userId])
+    // workspaces RLS already restricts the row set to workspaces I'm a member of,
+    // so a plain select + embed is enough — no explicit membership filter needed.
+    const { data: workspaces, error } = await supabase
+      .from('workspaces')
+      .select('id, name, description, owner_id, avatar_url, created_at, vox_team_channels(*)')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error || !data) return [];
-    return data.map(workspace => this.mapDbToWorkspace(workspace));
+    if (error || !workspaces) {
+      if (error) console.error('Error fetching workspaces:', error);
+      return [];
+    }
+
+    // member_ids[] is no longer a column — derive it per workspace from workspace_members
+    const ids = workspaces.map(w => w.id);
+    let membersByWorkspace = new Map<string, string[]>();
+    if (ids.length > 0) {
+      const { data: members } = await supabase
+        .from('workspace_members')
+        .select('workspace_id, user_id')
+        .in('workspace_id', ids);
+      for (const row of members || []) {
+        const list = membersByWorkspace.get(row.workspace_id) || [];
+        list.push(row.user_id);
+        membersByWorkspace.set(row.workspace_id, list);
+      }
+    }
+
+    return workspaces.map(workspace => this.mapDbToWorkspace({
+      ...workspace,
+      member_ids: membersByWorkspace.get(workspace.id) || [],
+    }));
   }
 
   async addMemberToWorkspace(workspaceId: string, memberId: string): Promise<boolean> {
-    const userId = await this.ensureUserId();
-    if (!userId) return false;
+    // RLS on workspace_members enforces: only an owner/admin of this workspace
+    // may insert a member row. No need to re-check ownership client-side.
+    const { error } = await supabase
+      .from('workspace_members')
+      .insert([{
+        workspace_id: workspaceId,
+        user_id: memberId,
+        role: 'member',
+      }]);
 
-    // Fetch workspace and verify ownership
-    const { data: workspace, error: fetchError } = await supabase
-      .from('vox_workspaces')
-      .select('member_ids, owner_id')
-      .eq('id', workspaceId)
-      .single();
-
-    if (fetchError || !workspace) {
-      console.error('Error fetching workspace:', fetchError);
+    if (error) {
+      // 23505 = unique violation — member already exists, treat as success
+      if ((error as any).code === '23505') return true;
+      console.error('Error adding member to workspace:', error);
       return false;
     }
-
-    // Only workspace owner can add members
-    if (workspace.owner_id !== userId) {
-      console.error('Only the workspace owner can add members');
-      return false;
-    }
-
-    // Check if member already exists
-    const currentMembers: string[] = workspace.member_ids || [];
-    if (currentMembers.includes(memberId)) {
-      return true;
-    }
-
-    // Add new member
-    const updatedMembers = [...currentMembers, memberId];
-
-    const { error: updateError } = await supabase
-      .from('vox_workspaces')
-      .update({ member_ids: updatedMembers })
-      .eq('id', workspaceId);
-
-    if (updateError) {
-      console.error('Error adding member to workspace:', updateError);
-      return false;
-    }
-
     return true;
   }
 
   async removeMemberFromWorkspace(workspaceId: string, memberId: string): Promise<boolean> {
-    const userId = await this.ensureUserId();
-    if (!userId) return false;
+    // Don't let callers nuke the owner row
+    const { data: target, error: fetchError } = await supabase
+      .from('workspace_members')
+      .select('role')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', memberId)
+      .maybeSingle();
 
-    // Fetch workspace and verify ownership
-    const { data: workspace, error: fetchError } = await supabase
-      .from('vox_workspaces')
-      .select('member_ids, owner_id')
-      .eq('id', workspaceId)
-      .single();
-
-    if (fetchError || !workspace) {
-      console.error('Error fetching workspace:', fetchError);
+    if (fetchError) {
+      console.error('Error fetching membership:', fetchError);
       return false;
     }
-
-    // Only workspace owner can remove members
-    if (workspace.owner_id !== userId) {
-      console.error('Only the workspace owner can remove members');
-      return false;
-    }
-
-    // Can't remove the owner
-    if (workspace.owner_id === memberId) {
+    if (!target) return true; // already gone
+    if (target.role === 'owner') {
       console.error('Cannot remove workspace owner');
       return false;
     }
 
-    // Remove member
-    const currentMembers: string[] = workspace.member_ids || [];
-    const updatedMembers = currentMembers.filter(id => id !== memberId);
+    // RLS enforces admin/owner-only deletes
+    const { error: deleteError } = await supabase
+      .from('workspace_members')
+      .delete()
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', memberId);
 
-    const { error: updateError } = await supabase
-      .from('vox_workspaces')
-      .update({ member_ids: updatedMembers })
-      .eq('id', workspaceId);
-
-    if (updateError) {
-      console.error('Error removing member from workspace:', updateError);
+    if (deleteError) {
+      console.error('Error removing member from workspace:', deleteError);
       return false;
     }
-
     return true;
   }
 
@@ -1131,23 +1128,18 @@ class VoxModeService {
       let finalTranscript = transcript || '';
       if (!finalTranscript) {
         try {
-          const geminiKey = this.getGeminiApiKey() || '';
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const result = reader.result as string;
+              resolve(result.split(',')[1]);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(audioBlob);
+          });
 
-          if (geminiKey) {
-            // Convert blob to base64
-            const base64 = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                const result = reader.result as string;
-                resolve(result.split(',')[1]);
-              };
-              reader.onerror = reject;
-              reader.readAsDataURL(audioBlob);
-            });
-
-            const result = await transcribeMedia(geminiKey, base64, 'audio/webm');
-            finalTranscript = result || '';
-          }
+          const result = await transcribeMedia(base64, 'audio/webm');
+          finalTranscript = result || '';
         } catch (transcriptError) {
           console.error('Team Vox transcription failed:', transcriptError);
         }
@@ -1327,23 +1319,18 @@ class VoxModeService {
       // Transcribe the audio
       let transcript = '';
       try {
-        const geminiKey = this.getGeminiApiKey() || '';
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            resolve(result.split(',')[1]); // Remove data URL prefix
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(audioBlob);
+        });
 
-        if (geminiKey) {
-          // Convert blob to base64
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              const result = reader.result as string;
-              resolve(result.split(',')[1]); // Remove data URL prefix
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(audioBlob);
-          });
-
-          const result = await transcribeMedia(geminiKey, base64, 'audio/webm');
-          transcript = result || '';
-        }
+        const result = await transcribeMedia(base64, 'audio/webm');
+        transcript = result || '';
       } catch (transcriptError) {
         console.error('Transcription failed:', transcriptError);
         // Continue without transcript - it can be transcribed later
@@ -2313,13 +2300,6 @@ class VoxModeService {
   // HELPER FUNCTIONS
   // ============================================
 
-  private getGeminiApiKey(): string | null {
-    const key = import.meta.env.VITE_API_KEY ||
-      import.meta.env.VITE_GEMINI_API_KEY ||
-      localStorage.getItem('gemini_api_key');
-    return key || null;
-  }
-
   private generateAvatarColor(): string {
     const colors = ['#8B5CF6', '#10B981', '#F59E0B', '#EC4899', '#3B82F6', '#EF4444'];
     return colors[Math.floor(Math.random() * colors.length)];
@@ -2356,109 +2336,74 @@ class VoxModeService {
   }
 
   /**
-   * Generate a summary using Gemini AI, with keyword fallback.
+   * Generate a summary via ai-router (Gemini Flash), with keyword fallback.
    */
   private async generateSummary(transcript: string): Promise<string> {
-    const apiKey = this.getGeminiApiKey();
-    if (!apiKey || transcript.length < 50) {
-      // Fallback: first 2 sentences
+    const keywordFallback = () => {
       const sentences = transcript.split(/[.!?]/).filter(s => s.trim());
       return sentences.slice(0, 2).join('. ') + '.';
-    }
+    };
+
+    if (transcript.length < 50) return keywordFallback();
+
+    const workspaceId = await this.ensureWorkspaceId();
+    if (!workspaceId) return keywordFallback();
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `Summarize the following voice message transcript in 1-2 concise sentences. Return only the summary, no preamble.\n\nTranscript: "${transcript}"` }] }],
-            generationConfig: { maxOutputTokens: 150, temperature: 0.3 },
-          }),
-        }
+      const summary = await invokeAIPrompt(
+        'voxer_transcript_summary',
+        `Summarize the following voice message transcript in 1-2 concise sentences. Return only the summary, no preamble.\n\nTranscript: "${transcript}"`,
+        { workspaceId, temperature: 0.3 },
       );
-
-      if (!response.ok) throw new Error('Gemini API error');
-
-      const data = await response.json();
-      const summary = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      if (summary) return summary;
+      const trimmed = summary?.trim();
+      if (trimmed) return trimmed;
     } catch {
       // Fall through to keyword fallback
     }
-
-    const sentences = transcript.split(/[.!?]/).filter(s => s.trim());
-    return sentences.slice(0, 2).join('. ') + '.';
+    return keywordFallback();
   }
 
   /**
-   * Extract action items using Gemini AI, with keyword fallback.
+   * Extract action items via ai-router, with keyword fallback.
    */
   async extractActionItemsAI(transcript: string): Promise<string[]> {
-    const apiKey = this.getGeminiApiKey();
-    if (!apiKey || transcript.length < 30) return this.extractActionItems(transcript);
+    if (transcript.length < 30) return this.extractActionItems(transcript);
+
+    const workspaceId = await this.ensureWorkspaceId();
+    if (!workspaceId) return this.extractActionItems(transcript);
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `Extract action items from this voice message transcript. Return a JSON array of strings, max 5 items. If none found, return []. No markdown.\n\nTranscript: "${transcript}"` }] }],
-            generationConfig: { maxOutputTokens: 200, temperature: 0.2 },
-          }),
-        }
+      const parsed = await invokeAIJson<unknown>(
+        'voxer_transcript_summary',
+        `Extract action items from this voice message transcript. Return a JSON array of strings, max 5 items. If none found, return []. No markdown.\n\nTranscript: "${transcript}"`,
+        { workspaceId, temperature: 0.2 },
       );
-
-      if (!response.ok) throw new Error('Gemini API error');
-
-      const data = await response.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      if (text) {
-        const parsed = JSON.parse(text);
-        if (Array.isArray(parsed)) return parsed.slice(0, 5);
-      }
+      if (Array.isArray(parsed)) return (parsed as string[]).slice(0, 5);
     } catch {
       // Fall through to keyword fallback
     }
-
     return this.extractActionItems(transcript);
   }
 
   /**
-   * Extract tags using Gemini AI, with keyword fallback.
+   * Extract tags via ai-router, with keyword fallback.
    */
   async extractTagsAI(transcript: string): Promise<string[]> {
-    const apiKey = this.getGeminiApiKey();
-    if (!apiKey || transcript.length < 30) return this.extractTagsFromTranscript(transcript);
+    if (transcript.length < 30) return this.extractTagsFromTranscript(transcript);
+
+    const workspaceId = await this.ensureWorkspaceId();
+    if (!workspaceId) return this.extractTagsFromTranscript(transcript);
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `Extract 3-5 topic tags from this voice message transcript. Return a JSON array of lowercase single-word tags. No markdown.\n\nTranscript: "${transcript}"` }] }],
-            generationConfig: { maxOutputTokens: 100, temperature: 0.2 },
-          }),
-        }
+      const parsed = await invokeAIJson<unknown>(
+        'auto_tag',
+        `Extract 3-5 topic tags from this voice message transcript. Return a JSON array of lowercase single-word tags. No markdown.\n\nTranscript: "${transcript}"`,
+        { workspaceId, temperature: 0.2 },
       );
-
-      if (!response.ok) throw new Error('Gemini API error');
-
-      const data = await response.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      if (text) {
-        const parsed = JSON.parse(text);
-        if (Array.isArray(parsed)) return parsed.slice(0, 5);
-      }
+      if (Array.isArray(parsed)) return (parsed as string[]).slice(0, 5);
     } catch {
       // Fall through to keyword fallback
     }
-
     return this.extractTagsFromTranscript(transcript);
   }
 

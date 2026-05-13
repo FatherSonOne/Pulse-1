@@ -123,7 +123,7 @@ export const IntentComposer: React.FC<IntentComposerProps> = ({
     analysisTimeoutRef.current = setTimeout(async () => {
       setIsAnalyzing(true);
       try {
-        const result = await analyzeDraftIntent(apiKey, value);
+        const result = await analyzeDraftIntent(value);
         if (result) {
           setAnalysis(result);
         }

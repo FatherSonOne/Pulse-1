@@ -267,7 +267,7 @@ const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
       {isMobile && showMobileView === 'conversation' && (
         <button
           onClick={toggleMobileView}
-          className="mobile-back-button fixed top-4 left-4 z-50 bg-white dark:bg-zinc-800 rounded-lg shadow-lg"
+          className="mobile-back-button fixed top-4 left-4 z-50 bg-white dark:bg-[rgba(255,255,255,0.055)] rounded-lg shadow-lg"
           aria-label="Back to threads"
         >
           <ArrowLeft className="text-zinc-600 dark:text-zinc-400" />
@@ -329,7 +329,7 @@ const KeyboardShortcutsHelper: React.FC = () => {
       onClick={() => setIsVisible(false)}
     >
       <div
-        className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4"
+        className="bg-white dark:bg-[rgba(255,255,255,0.03)] rounded-xl shadow-2xl p-6 max-w-md w-full mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
@@ -338,7 +338,7 @@ const KeyboardShortcutsHelper: React.FC = () => {
           </h3>
           <button
             onClick={() => setIsVisible(false)}
-            className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-2 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors"
             aria-label="Close"
           >
             <X className="text-zinc-600 dark:text-zinc-400" />
@@ -368,8 +368,8 @@ const KeyboardShortcutsHelper: React.FC = () => {
           />
         </div>
 
-        <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-xs text-zinc-500 dark:text-zinc-400">
-          Press <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800">?</kbd> to toggle this help
+        <div className="mt-4 pt-4 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] text-xs text-zinc-500 dark:text-zinc-400">
+          Press <kbd className="px-1.5 py-0.5 rounded bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)]">?</kbd> to toggle this help
         </div>
       </div>
     </div>
@@ -388,7 +388,7 @@ const ShortcutItem: React.FC<ShortcutItemProps> = ({ keys, description }) => {
       <div className="flex items-center gap-1">
         {keys.map((key, index) => (
           <React.Fragment key={key}>
-            <kbd className="px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-mono text-xs border border-zinc-200 dark:border-zinc-700">
+            <kbd className="px-2 py-1 rounded bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] text-zinc-900 dark:text-white font-mono text-xs border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)]">
               {key}
             </kbd>
             {index < keys.length - 1 && (

@@ -64,7 +64,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, onClose }) => {
     setResults(prev => [...prev, newResult]);
 
     try {
-      const { text, groundingChunks } = await generateSearchResponse('', searchQuery);
+      const { text, groundingChunks } = await generateSearchResponse(searchQuery);
       const citations = (groundingChunks || [])
         .map((c: any) => c?.web?.uri)
         .filter((uri: any): uri is string => Boolean(uri));

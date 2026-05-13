@@ -519,7 +519,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
             {/* Send */}
             <button
               onClick={onSend}
-              className="flex-[2] py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-semibold shadow-lg shadow-orange-500/25 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+              className="btn-brand-primary flex-[2] py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2"
             >
               <Send />
               Send Vox

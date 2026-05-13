@@ -10,18 +10,23 @@ import { VoxKeyboardShortcutsHelp } from './Relay/VoxKeyboardShortcutsHelp';
 // Audience renderers — Relay's six peer views each render one of these.
 // 'direct' / 'channel' / 'broadcast' are what 'messages' used to be; the
 // audience picker has been folded into the top nav (2026-04 brand sweep).
+// 'live' renders VoiceRooms (Discord-style persistent voice channels); the
+// 6-peer refactor (0733367) left it pointed at PulseRadio so Broadcast and
+// Live rendered the same body — fixed 2026-05-12.
 import {
   ClassicMode,
   VoxNotesMode,
   PulseRadio,
   TeamVoxMode,
+  VoiceRooms,
 } from './Relay/index';
 import { RelayTriageStream } from './Relay/RelayTriageStream';
 import { RelayComposer, type ComposerReplyTo } from './Relay/RelayComposer';
 import { RelaySettings } from './Relay/RelaySettings';
 
 interface RelayProps {
-  apiKey: string;
+  /** @deprecated no-op — AI routing is server-side via edge functions. */
+  apiKey?: string;
   contacts: Contact[];
   /** Pulse user id to land on inside Direct (e.g. opening a contact's DM). */
   initialContactId?: string;
@@ -50,7 +55,7 @@ const RELAY_VIEW_LABELS: Record<RelayView, string> = {
   live: 'Live',
 };
 
-const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDarkMode = false }) => {
+const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, isDarkMode = false }) => {
   // user.id powers the Triage stream's voice-source queries.
   const { user } = useAuth();
 
@@ -95,12 +100,12 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
   }, true);
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-fade-in shadow-xl">
+    <div className="h-full flex flex-col bg-white dark:bg-black rounded-2xl overflow-hidden border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] animate-fade-in shadow-xl">
       {/* Mode nav — six peers + settings affordance. The Direct / Channel /
           Broadcast triplet replaces the old "Messages" umbrella so the top
           nav stays the single mode signal. */}
       <nav
-        className="flex items-center gap-1 px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto"
+        className="flex items-center gap-1 px-3 py-2 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-x-auto"
         role="tablist"
         aria-label="Relay views"
       >
@@ -113,8 +118,8 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
             onClick={() => setView(v)}
             className={`shrink-0 px-3 py-1.5 rounded-md text-xs font-mono uppercase tracking-[0.1em] transition ${
               view === v
-                ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
+                : 'text-[#52525b] dark:text-[#b4b4b8] hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'
             }`}
           >
             {RELAY_VIEW_LABELS[v]}
@@ -123,7 +128,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
         <button
           type="button"
           onClick={() => setShowSettings(true)}
-          className="ml-auto shrink-0 p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+          className="ml-auto shrink-0 p-1.5 rounded-md text-[#52525b] dark:text-[#b4b4b8] hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f43f5e]"
           aria-label="Open Relay settings"
           title="Relay settings"
         >
@@ -194,12 +199,16 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
             initialNoteId={focusNoteId ?? undefined}
           />
         )}
-        {view === 'live' && (
-          <PulseRadio
-            onBack={() => setView('triage')}
-            apiKey={apiKey}
-            isDarkMode={isDarkMode}
-            initialBroadcastId={focusBroadcastId ?? undefined}
+        {view === 'live' && user && (
+          <VoiceRooms
+            isOpen
+            onClose={() => setView('triage')}
+            contacts={contacts}
+            currentUser={{
+              id: user.id,
+              name: user.name,
+              avatarColor: 'bg-rose-500',
+            }}
           />
         )}
       </div>

@@ -19,6 +19,8 @@ import { BookOpen, Check, Download, FileOutput, FolderOpen, Inbox, MessageSquare
 // Types
 // ============================================
 
+import CapturesPanel from '../Capture/CapturesPanel';
+
 export interface WarRoomProject {
   id: string;
   name: string;
@@ -515,6 +517,19 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
               </div>
             )}
           </div>
+
+          {/* Captures scoped to the selected session (or project if no session
+              is focused). Cmd+J anywhere inside the War Room writes here. */}
+          {(selectedSessionId || selectedProjectId) && (
+            <div className="wrs-captures p-3 border-t border-zinc-200 dark:border-white/[0.08]">
+              <CapturesPanel
+                sourceSection="war_room"
+                sourceId={selectedSessionId ?? selectedProjectId ?? undefined}
+                title="NOTES"
+                limit={8}
+              />
+            </div>
+          )}
         </div>
       )}
       </aside>

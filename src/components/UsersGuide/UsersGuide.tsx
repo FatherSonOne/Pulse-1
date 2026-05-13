@@ -19,65 +19,6 @@ interface UsersGuideProps {
   isDarkMode?: boolean;
 }
 
-// ─── Theme ─────────────────────────────────────────────────────────────────────
-
-function buildTheme(isDark: boolean): React.CSSProperties {
-  if (isDark) {
-    return {
-      '--ug-accent': '#f43f5e',
-      '--ug-bg': '#000000',
-      '--ug-surface': 'rgba(255,255,255,0.03)',
-      '--ug-surface-2': 'rgba(255,255,255,0.055)',
-      '--ug-border': 'rgba(255,255,255,0.07)',
-      '--ug-text': '#fafafa',
-      '--ug-text2': '#b4b4b8',
-      '--ug-text3': '#6b7280',
-      '--ug-step-bg': 'rgba(255,255,255,0.03)',
-      '--ug-active-bg': 'rgba(244,63,94,0.10)',
-      '--ug-active-text': '#fb7185',
-      '--ug-search-bg': 'rgba(255,255,255,0.04)',
-      '--ug-search-border': 'rgba(255,255,255,0.07)',
-      '--ug-badge-new': '#16a34a',
-      '--ug-badge-upd': '#d97706',
-      '--ug-cat-text': '#475569',
-      '--ug-highlight': 'rgba(244,63,94,0.35)',
-      '--ug-highlight-text': '#fecdd3',
-      '--ug-expand-bg': 'rgba(244,63,94,0.06)',
-      '--ug-expand-border': 'rgba(244,63,94,0.20)',
-      '--ug-table-header': 'rgba(244,63,94,0.10)',
-      '--ug-table-row-alt': 'rgba(255,255,255,0.02)',
-      '--ug-note-bg': 'rgba(99,102,241,0.08)',
-      '--ug-note-border': '#6366f1',
-    } as React.CSSProperties;
-  }
-  return {
-    '--ug-accent': '#f43f5e',
-    '--ug-bg': '#f8fafc',
-    '--ug-surface': '#ffffff',
-    '--ug-surface-2': '#f8fafc',
-    '--ug-border': '#e2e8f0',
-    '--ug-text': '#0f172a',
-    '--ug-text2': '#64748b',
-    '--ug-text3': '#94a3b8',
-    '--ug-step-bg': '#f8fafc',
-    '--ug-active-bg': 'rgba(244,63,94,0.07)',
-    '--ug-active-text': '#e11d48',
-    '--ug-search-bg': '#ffffff',
-    '--ug-search-border': '#e2e8f0',
-    '--ug-badge-new': '#16a34a',
-    '--ug-badge-upd': '#d97706',
-    '--ug-cat-text': '#94a3b8',
-    '--ug-highlight': '#fde68a',
-    '--ug-highlight-text': '#92400e',
-    '--ug-expand-bg': 'rgba(244,63,94,0.04)',
-    '--ug-expand-border': 'rgba(244,63,94,0.15)',
-    '--ug-table-header': 'rgba(244,63,94,0.06)',
-    '--ug-table-row-alt': 'rgba(0,0,0,0.018)',
-    '--ug-note-bg': 'rgba(99,102,241,0.06)',
-    '--ug-note-border': '#6366f1',
-  } as React.CSSProperties;
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Returns JSX with query matches wrapped in <mark> */
@@ -401,18 +342,23 @@ const SectionDetail: React.FC<{
               <button
                 key={s.id}
                 className="ug-toc-pill"
-                onClick={() => { setOpenSubs(prev => { const n = new Set(prev); n.add(s.id); return n; }); setTimeout(() => document.getElementById(`sub-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
+                onClick={() => {
+                  setOpenSubs(prev => { const n = new Set(prev); n.add(s.id); return n; });
+                  requestAnimationFrame(() => {
+                    document.getElementById(`sub-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  });
+                }}
               >
                 {s.title}
               </button>
             ))}
             {(section.useCases?.length ?? 0) > 0 && (
-              <button className="ug-toc-pill ug-toc-pill--uc" onClick={() => document.getElementById(`ucs-${section.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+              <button className="ug-toc-pill" onClick={() => document.getElementById(`ucs-${section.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
                 Use Cases
               </button>
             )}
             {(section.advanced?.length ?? 0) > 0 && (
-              <button className="ug-toc-pill ug-toc-pill--adv" onClick={() => document.getElementById(`adv-${section.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+              <button className="ug-toc-pill" onClick={() => document.getElementById(`adv-${section.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
                 Advanced
               </button>
             )}
@@ -544,7 +490,7 @@ const SearchResults: React.FC<{
 
   return (
     <div className="ug-search-results">
-      <p className="ug-results-heading">
+      <p className="ug-results-heading" aria-live="polite" aria-atomic="true">
         {results.length} section{results.length !== 1 ? 's' : ''} matching <strong>"{query}"</strong>
       </p>
       {results.map(section => {
@@ -625,7 +571,7 @@ const Sidebar: React.FC<{
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-const UsersGuide: React.FC<UsersGuideProps> = ({ isDarkMode = false }) => {
+const UsersGuide: React.FC<UsersGuideProps> = (_props) => {
   const [activeId, setActiveId] = useState<string>(guideSections[0].id);
   const [query, setQuery] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
@@ -662,7 +608,7 @@ const UsersGuide: React.FC<UsersGuideProps> = ({ isDarkMode = false }) => {
   }, []);
 
   return (
-    <div className="users-guide" style={buildTheme(isDarkMode)}>
+    <div className="users-guide">
 
       {/* ── Header ── */}
       <div className="ug-header">

@@ -44,23 +44,15 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
     .slice(0, 200);
 
   return (
-    <div className={`rounded-xl border overflow-hidden mt-1 ${
-      hasProfile
-        ? 'border-indigo-500/25 bg-indigo-500/5'
-        : 'border-violet-500/20 bg-violet-500/5'
-    }`}>
+    <div className="rounded-xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[rgba(255,255,255,0.03)] overflow-hidden mt-1">
       {/* Card header */}
-      <div className={`flex items-center justify-between px-4 py-3 border-b ${
-        hasProfile ? 'border-indigo-500/10' : 'border-violet-500/10'
-      }`}>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-            hasProfile ? 'bg-indigo-500/20' : 'bg-violet-500/20'
-          }`}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[rgba(244,63,94,0.10)]">
             {hasProfile ? (
               <span className="text-base leading-none">{profile.icon || '📋'}</span>
             ) : (
-              <MessageSquare className="w-4 h-4 text-violet-400" />
+              <MessageSquare className="w-4 h-4 text-[#f43f5e]" />
             )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -111,11 +103,11 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
           {hasProfile && metadata.profileSections?.length ? (
             <div className="space-y-3">
               {metadata.profileSections.map((section, i) => (
-                <div key={i} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
-                  <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1.5">
+                <div key={i} className="rounded-lg bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.03)] border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)] p-3">
+                  <div className="text-[10px] font-mono font-medium text-[#52525b] dark:text-[#b4b4b8] uppercase tracking-[0.1em] mb-1.5">
                     {section.title}
                   </div>
-                  <div className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                  <div className="text-sm text-[#0f0f0f] dark:text-[#fafafa] leading-relaxed whitespace-pre-wrap">
                     {section.content}
                   </div>
                 </div>
@@ -130,14 +122,14 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
 
           {/* Key Decisions */}
           {metadata.keyDecisions?.length && (
-            <div className="rounded-lg bg-violet-500/10 border border-violet-500/15 p-3">
-              <div className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-2">
+            <div className="rounded-lg bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.15)] p-3">
+              <div className="text-[10px] font-mono font-medium text-[#e11d48] dark:text-[#fb7185] uppercase tracking-[0.1em] mb-2">
                 Key Decisions
               </div>
               <ul className="space-y-1">
                 {metadata.keyDecisions.map((d, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
-                    <span className="text-violet-400 mt-0.5 flex-shrink-0">•</span>
+                  <li key={i} className="flex items-start gap-2 text-sm text-[#0f0f0f] dark:text-[#fafafa]">
+                    <span className="text-[#f43f5e] mt-0.5 flex-shrink-0">•</span>
                     <span>{d}</span>
                   </li>
                 ))}
@@ -188,18 +180,12 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
 
       {/* Action buttons */}
       {actions.length > 0 && (
-        <div className={`px-4 py-3 border-t flex flex-wrap gap-2 ${
-          hasProfile ? 'border-indigo-500/10' : 'border-violet-500/10'
-        }`}>
+        <div className="px-4 py-3 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex flex-wrap gap-2">
           {actions.map((action, i) => (
             <button
               key={i}
               onClick={() => onAction?.(action) || (action.url && window.open(action.url, '_blank'))}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                hasProfile
-                  ? 'bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/25 hover:border-indigo-500/40'
-                  : 'bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 border border-violet-500/25 hover:border-violet-500/40'
-              }`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-[rgba(244,63,94,0.10)] hover:bg-[rgba(244,63,94,0.15)] text-[#e11d48] dark:text-[#fb7185] border border-[rgba(244,63,94,0.20)] hover:border-[rgba(244,63,94,0.35)]"
             >
               {action.action === 'rate_meeting' ? (
                 <Star className="w-3 h-3" />
@@ -237,7 +223,7 @@ function renderMarkdown(text: string): React.ReactNode {
       );
     }
     if (line.startsWith('---')) {
-      return <hr key={i} className="border-zinc-700/50 my-2" />;
+      return <hr key={i} className="border-[rgba(255,255,255,0.10)]/50 my-2" />;
     }
     if (!line.trim()) return <div key={i} className="h-1" />;
 

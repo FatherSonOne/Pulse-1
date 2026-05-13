@@ -245,7 +245,7 @@ Analyze and return a JSON object with these exact fields:
 Return ONLY valid JSON, no markdown or extra text.`;
 
     try {
-      const result = await processWithModel(apiKey, prompt);
+      const result = await processWithModel(prompt);
       if (result) {
         const jsonMatch = result.match(/\{[\s\S]*\}/);
         if (jsonMatch) {

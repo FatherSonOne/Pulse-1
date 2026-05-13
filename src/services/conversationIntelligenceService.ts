@@ -165,7 +165,7 @@ Return as JSON:
   "trend": "improving/declining/stable"
 }`;
 
-      const response = await processWithModel(apiKey, prompt, 'gemini-2.5-flash');
+      const response = await processWithModel(prompt, 'gemini-2.5-flash');
       const parsed = this.parseJSONResponse(response || '{}');
 
       return {
@@ -211,7 +211,7 @@ Return as JSON array:
   {"topic": "another topic", "confidence": 0.75}
 ]`;
 
-      const response = await processWithModel(apiKey, prompt, 'gemini-2.5-flash');
+      const response = await processWithModel(prompt, 'gemini-2.5-flash');
       const parsed = this.parseJSONResponse(response || '[]');
 
       if (!Array.isArray(parsed)) {
@@ -256,7 +256,7 @@ Focus on:
 Return as JSON array of strings:
 ["suggestion 1", "suggestion 2", "suggestion 3"]`;
 
-      const response = await processWithModel(apiKey, prompt, 'gemini-2.5-flash-lite');
+      const response = await processWithModel(prompt, 'gemini-2.5-flash-lite');
       const parsed = this.parseJSONResponse(response || '[]');
 
       if (Array.isArray(parsed)) {

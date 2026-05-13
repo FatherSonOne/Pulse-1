@@ -113,7 +113,6 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
       // Call AI parser (router handles key server-side)
       const parsed = await parseNaturalLanguageTaskWithFallback(
-        '',
         naturalLanguageInput,
         membersList
       );

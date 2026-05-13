@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Zap
 } from 'lucide-react';
-import { detectMeetingIntent, AsyncSuggestion } from '../../services/geminiService';
+import { detectMeetingIntent } from '../../services/geminiService';
+import type { AsyncSuggestion } from '../../types';
 import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 import './MeetingDeflector.css';
 
@@ -93,7 +94,7 @@ export const MeetingDeflector: React.FC<MeetingDeflectorProps> = ({
   const checkForMeetingIntent = async () => {
     setLoading(true);
     try {
-      const result = await detectMeetingIntent(apiKey, messageText);
+      const result = await detectMeetingIntent(messageText);
       if (result && result.detected) {
         setSuggestion(result);
         setDismissed(false);

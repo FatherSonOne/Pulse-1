@@ -415,8 +415,8 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
   const tc = {
     overlay: isDarkMode ? 'bg-zinc-950/70' : 'bg-zinc-950/50',
     modalBg: isDarkMode
-      ? 'bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800'
-      : 'bg-gradient-to-br from-white via-white to-gray-50',
+      ? 'bg-[#0a0a0a]'
+      : 'bg-white',
     border: isDarkMode ? 'border-gray-700/50' : 'border-gray-200/60',
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',

@@ -122,14 +122,14 @@ export class AudioVoiceServiceGemini {
           console.warn('⚠️ Whisper failed, falling back to Gemini:', whisperError);
           // Fall back to Gemini
           const base64 = await this.blobToBase64(voiceMessage.audioBlob);
-          transcript = await transcribeMedia(this.apiKey, base64, 'audio/webm');
+          transcript = await transcribeMedia(base64, 'audio/webm');
           confidence = transcript ? 0.85 : 0;
         }
       } else {
         // Use Gemini transcription
         console.log('🎤 Using Gemini API for transcription...');
         const base64 = await this.blobToBase64(voiceMessage.audioBlob!);
-        transcript = await transcribeMedia(this.apiKey, base64, 'audio/webm');
+        transcript = await transcribeMedia(base64, 'audio/webm');
         confidence = transcript ? 0.85 : 0;
       }
 
@@ -194,7 +194,7 @@ export class AudioVoiceServiceGemini {
           console.warn('⚠️ Whisper failed, using Gemini for transcription:', whisperError);
           // Fallback to Gemini for everything
           const base64 = await this.blobToBase64(voiceMessage.audioBlob);
-          const analysis = await analyzeVoiceMemo(this.apiKey, base64);
+          const analysis = await analyzeVoiceMemo(base64);
           
           if (!analysis) {
             throw new Error('Analysis failed - no response from Gemini');
@@ -205,7 +205,7 @@ export class AudioVoiceServiceGemini {
       } else {
         // Use Gemini for everything (original behavior)
         const base64 = await this.blobToBase64(voiceMessage.audioBlob!);
-        const analysis = await analyzeVoiceMemo(this.apiKey, base64);
+        const analysis = await analyzeVoiceMemo(base64);
         
         if (!analysis) {
           throw new Error('Analysis failed - no response from Gemini');

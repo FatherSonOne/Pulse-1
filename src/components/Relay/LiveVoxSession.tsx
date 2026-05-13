@@ -390,7 +390,7 @@ Only include arrays that have items. Return ONLY valid JSON.`;
       <div className="bg-zinc-950 rounded-3xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-zinc-800 shadow-2xl animate-scaleIn">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-gradient-to-r from-zinc-900 to-zinc-950">
+        <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-[rgba(255,255,255,0.03)]">
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isSessionActive ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-800'}`}>
               <Podcast className="text-xl text-white" />
@@ -612,7 +612,7 @@ Only include arrays that have items. Return ONLY valid JSON.`;
         </div>
 
         {/* Footer Controls */}
-        <div className="px-6 py-4 border-t border-zinc-800 bg-gradient-to-r from-zinc-900 to-zinc-950">
+        <div className="px-6 py-4 border-t border-zinc-800 bg-[rgba(255,255,255,0.03)]">
           <div className="flex items-center justify-center gap-4">
             {!isSessionActive ? (
               <button

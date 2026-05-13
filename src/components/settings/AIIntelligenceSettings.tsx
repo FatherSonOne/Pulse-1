@@ -1,5 +1,4 @@
 import React from 'react';
-import AIHealthMonitor from '../AIHealthMonitor';
 import { Brain, Sliders } from 'lucide-react';
 import { SettingsCard } from './shared/SettingsCard';
 import { AIProvidersCard } from './ai/AIProvidersCard';
@@ -10,7 +9,6 @@ import { AIModelPreferencesCard } from './ai/AIModelPreferencesCard';
  * AI & Intelligence settings.
  *
  * Only renders controls that drive real behavior:
- *   - AI Health Monitor — live status from geminiHealthMonitor
  *   - AI Providers       — server-enforced opt-out via workspaceService
  *   - Model Preferences  — drives useAI.resolve() model selection
  *   - AI Data Policy     — PII masking applied in invokeAI() before send
@@ -31,9 +29,6 @@ export const AIIntelligenceSettings: React.FC = () => {
           right model for each task automatically; everything below is a guardrail.
         </p>
       </div>
-
-      {/* Live status from the health monitor */}
-      <AIHealthMonitor />
 
       {/* Org policy + per-user provider opt-out */}
       <AIProvidersCard />

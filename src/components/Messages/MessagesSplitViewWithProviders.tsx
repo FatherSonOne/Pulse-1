@@ -448,7 +448,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ draft, setDraft, onSend, onSendVo
   });
 
   return (
-    <div className="flex flex-col gap-2 p-3 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+    <div className="flex flex-col gap-2 p-3 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[rgba(255,255,255,0.03)]">
       {voice.isRecording && <voice.RecordingBanner />}
       <div className="flex items-end gap-2">
         <textarea
@@ -462,7 +462,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ draft, setDraft, onSend, onSendVo
           }}
           placeholder="Type a message…"
           rows={1}
-          className="flex-1 resize-none rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+          className="flex-1 resize-none rounded-lg border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] bg-white dark:bg-[rgba(255,255,255,0.055)] px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
         />
         <voice.RecordButton size="md" />
         <button
@@ -935,7 +935,7 @@ const PanelTabs: React.FC<{
   activeTab: string;
   setTab: (t: string) => void;
 }> = ({ tabs, activeTab, setTab }) => (
-  <div className="flex border-b border-zinc-200 dark:border-zinc-800 px-2 overflow-x-auto">
+  <div className="flex border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] px-2 overflow-x-auto">
     {tabs.map((t) => (
       <button
         key={t.key}

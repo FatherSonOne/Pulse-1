@@ -131,7 +131,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           {/* Drawer */}
           <motion.div
             ref={drawerRef}
-            className={`fixed top-0 bottom-0 ${side === 'left' ? 'left-0' : 'right-0'} z-50 bg-white dark:bg-zinc-900 shadow-2xl overflow-hidden flex flex-col`}
+            className={`fixed top-0 bottom-0 ${side === 'left' ? 'left-0' : 'right-0'} z-50 bg-white dark:bg-[rgba(255,255,255,0.03)] shadow-2xl overflow-hidden flex flex-col`}
             style={{
               width,
               maxWidth: '400px',
@@ -289,12 +289,12 @@ export const MobileDrawerHeader: React.FC<{
   showCloseButton?: boolean;
 }> = ({ title, onClose, showCloseButton = true }) => {
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-shrink-0">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[rgba(255,255,255,0.03)] flex-shrink-0">
       <h2 className="text-lg font-bold text-zinc-900 dark:text-white">{title}</h2>
       {showCloseButton && (
         <button
           onClick={onClose}
-          className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition"
+          className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition"
           aria-label="Close drawer"
         >
           <X className="text-lg" />

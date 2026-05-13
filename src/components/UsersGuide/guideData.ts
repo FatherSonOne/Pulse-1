@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.4.0 · May 4, 2026
+// Version 25.5.0 · May 10, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -60,6 +60,7 @@ export const CATEGORIES: { label: string; ids: string[] }[] = [
   { label: 'AI & Intelligence',  ids: ['ai-features', 'analytics'] },
   { label: 'Integrations',       ids: ['crm', 'tools', 'search', 'ecosystem-bridge'] },
   { label: 'Organization',       ids: ['archives'] },
+  { label: 'Experimental',       ids: ['summit'] },
   { label: 'App & Settings',     ids: ['settings', 'billing', 'mobile', 'shortcuts', 'troubleshooting'] },
 ];
 
@@ -2226,7 +2227,7 @@ export const guideSections: GuideSection[] = [
           'Under Knowledge Base, set your default search scope and toggle automatic document analysis.',
           'Under Devices, select your preferred microphone, speaker, and camera. Use Test Devices to confirm hardware.',
         ],
-        note: 'Pulse automatically picks the best AI model for each task (fast for bulk summaries, high-quality for conversations and reasoning). No Gemini, Claude, or OpenAI keys to configure — everything runs under your Pulse Team subscription.',
+        note: 'Pulse automatically picks the best AI model for each task (fast for bulk summaries, high-quality for conversations and reasoning) under your Pulse subscription. The one exception is Summit (live voice) — under AI Providers you can paste your own OpenAI key for unlimited Summit minutes, or use the plan-included monthly minutes.',
       },
       {
         id: 'war-room-settings',
@@ -2807,7 +2808,151 @@ export const guideSections: GuideSection[] = [
       'The in-app Help & Support chat connects you directly to the Pulse team during business hours.',
     ],
   },
+
+  // ── 23. SUMMIT (LIVE VOICE) ──────────────────────────────────────────────
+  {
+    id: 'summit',
+    title: 'Summit — Live Voice',
+    icon: '🎙️',
+    badge: 'New',
+    summary: 'A real-time voice agent you can speak to naturally. Summit listens, transcribes, summarizes, and extracts decisions and tasks while you talk — solo, with a teammate, or while thinking out loud.',
+    steps: [
+      'Open Summit from the sidebar under the Experimental section (or press Ctrl+/ and search "Summit").',
+      'On first visit, read the explainer modal — it shows which mode you are in (BYO key, plan minutes, or trial) and your monthly minute budget.',
+      'Click the microphone button to start a session. The header meter (e.g., "12 / 60 MIN") tracks usage in real time.',
+      'Speak naturally — Summit transcribes both sides of the conversation and shows the live rail of what it heard.',
+      'When you mention a decision, action item, follow-up, or scheduling intent, Summit extracts it into the Artifacts panel on the right.',
+      'Pause or mute mid-session with the controls in the header — the meter pauses with you.',
+      'End the session with the X button. The End Session sheet lets you send transcripts, decisions, tasks, or summaries to Messages, Decisions, Tasks, War Room, or email.',
+    ],
+    subsections: [
+      {
+        id: 'summit-modes',
+        title: 'BYO Key vs Plan Minutes',
+        description: 'Summit runs in one of two modes — bring your own OpenAI key for unlimited use, or use plan-included minutes.',
+        steps: [
+          'BYO Key mode — paste your personal OpenAI API key in Settings → AI Providers. Summit uses it directly, you pay OpenAI, and there is no Pulse minute cap.',
+          'Hosted minutes — your Pulse plan grants a monthly minute pool and a per-session length cap. The header meter shows usage and color-shifts at 80% (amber) and 100% (red).',
+          'Switch modes anytime by adding or removing your key in Settings → AI Providers. Pulse picks BYO automatically when a valid key is on file.',
+          'Your OpenAI key is encrypted in Supabase Vault and is only readable by RPCs that match your account — admins and other workspace members never see it.',
+        ],
+        note: 'You do not need any key for normal Pulse AI features (summaries, smart replies, transcription, etc.). The BYO key is only for Summit live voice.',
+      },
+      {
+        id: 'summit-tier-limits',
+        title: 'Plan Limits',
+        steps: [
+          'Trial workspaces: 15 minutes/month with 5-minute sessions — designed for evaluating the feature.',
+          'Pulse Team: 60 minutes/month with 15-minute sessions.',
+          'Pulse Growth: 240 minutes/month with 30-minute sessions.',
+          'BYO Key: unlimited minutes and unlimited session length (capped only by OpenAI on their side).',
+          'When you reach the per-session cap, Summit warns you at 60 seconds remaining and hard-disconnects at zero — the transcript is preserved.',
+          'When you exhaust your monthly minutes, the meter turns red and the Start button is disabled until the next billing cycle, or until you add a BYO key.',
+        ],
+      },
+      {
+        id: 'summit-artifacts',
+        title: 'Artifacts — Decisions, Tasks, Summaries',
+        description: 'Summit watches the transcript for actionable moments and surfaces them in the right-hand Artifacts panel.',
+        steps: [
+          'Decision — when you say "let\'s go with X" or "we decided Y", Summit creates a decision card.',
+          'Task — when you say "I need to email Sam by Friday", Summit creates a task card with assignee, deadline, and source quote.',
+          'Question — when someone asks something that needs follow-up, Summit captures it for later.',
+          'Summary — at any time, click "Summarize so far" to get a structured recap of the session up to that point.',
+          'Each artifact has Edit and Delete controls — review before sending anywhere.',
+        ],
+      },
+      {
+        id: 'summit-session-end',
+        title: 'Ending and Exporting',
+        steps: [
+          'Click X or press Esc to open the End Session sheet.',
+          'Pick destinations: Messages (post recap in a channel), Decisions (push decision artifacts to the Decisions hub), Tasks (push task artifacts to Tasks), War Room (push everything as a session), or Email (send transcript and summary).',
+          'Each destination shows a status indicator (queued, sent, failed) as Summit pushes the data.',
+          'You can also Copy the markdown transcript or Download it as a file.',
+          'Sessions are saved automatically — find them in Archives → Voice Sessions, or in the Sessions panel inside Summit.',
+        ],
+      },
+      {
+        id: 'summit-safety',
+        title: 'Safety & Auto-Disconnect',
+        description: 'Summit protects against runaway sessions that could burn through your minutes by accident.',
+        steps: [
+          '60-second warning toast before your session cap is reached.',
+          'Hard auto-disconnect when the per-session cap is hit — the transcript is saved.',
+          'Tab-hidden pause: Summit pauses if you switch tabs for 2 minutes and disconnects after 10.',
+          'Transcript-inactivity disconnect: if no speech is detected for 5 minutes, Summit ends the session.',
+        ],
+        note: 'Plan-minute mode never bills you for paused or background time — the meter only counts active spoken audio.',
+      },
+    ],
+    tables: [
+      {
+        title: 'Summit by Plan',
+        columns: ['Plan', 'Monthly Minutes', 'Per-Session Cap'],
+        rows: [
+          ['Trial', '15 min', '5 min'],
+          ['Pulse Team', '60 min', '15 min'],
+          ['Pulse Growth', '240 min', '30 min'],
+          ['BYO OpenAI Key', 'Unlimited', 'Unlimited'],
+        ],
+      },
+    ],
+    tips: [
+      'Use Summit as a thinking partner — talk through a hard decision out loud and let the artifact panel capture the conclusions.',
+      'For long research or brainstorming sessions, add a BYO OpenAI key — it removes both the monthly minutes cap and the per-session length cap.',
+      'Pin the Summit tab while you work — tab-hidden pause keeps it from burning minutes when you switch away.',
+      'Review the Artifacts panel before clicking End — edit out anything you do not want pushed to Decisions, Tasks, or Messages.',
+    ],
+    useCases: [
+      {
+        id: 'uc-summit-debrief',
+        title: '15-Minute Post-Meeting Debrief',
+        scenario: 'You just finished a customer call and want to capture decisions and next steps before context fades.',
+        steps: [
+          'Open Summit and start a session.',
+          'Talk through what happened in the meeting: who said what, what was agreed, what is next.',
+          'When you mention a decision or task, watch the Artifacts panel pick it up automatically.',
+          'Click "Summarize so far" to get a structured recap.',
+          'End the session and push the artifacts to Decisions, Tasks, and Messages in one click.',
+        ],
+      },
+      {
+        id: 'uc-summit-solo-thinking',
+        title: 'Solo Thinking-Out-Loud',
+        scenario: 'You are stuck on a problem and want to talk it through with a patient listener that takes notes.',
+        steps: [
+          'Open Summit and start a session.',
+          'Talk through the problem from multiple angles — Summit will not interrupt unless you address it directly.',
+          'Ask it questions like "Did I just contradict myself?" or "Summarize what I have decided so far".',
+          'End the session — the transcript, summary, and any captured tasks are saved to Archives.',
+        ],
+      },
+    ],
+    advanced: [
+      {
+        id: 'adv-summit-key-rotation',
+        title: 'BYO Key Management',
+        items: [
+          'Rotate your OpenAI key anytime in Settings → AI Providers — Summit picks up the new key on the next session.',
+          'Remove the key to fall back to plan-included minutes — your minute usage that month is preserved.',
+          'Set a monthly budget alarm in your OpenAI dashboard so you are warned before unexpected charges.',
+          'Keys are encrypted in Supabase Vault with SECURITY DEFINER RPC gating — only your own account can decrypt them server-side.',
+        ],
+      },
+      {
+        id: 'adv-summit-errors',
+        title: 'Common Errors',
+        items: [
+          'NO_SUBSCRIPTION — your workspace is on Free; upgrade to Team or Growth or add a BYO key.',
+          'WRONG_TIER — your plan does not include Summit minutes; switch plan or use BYO key.',
+          'TRIAL_CAP / OVER_CAP — you have used all of this month\'s minutes; wait for renewal or add a BYO key.',
+          'NOT_MEMBER — you are not a workspace member; ask your admin to re-invite you.',
+        ],
+      },
+    ],
+  },
 ];
 
-export const guideVersion = '25.4.0';
-export const guideUpdated = 'May 4, 2026';
+export const guideVersion = '25.5.0';
+export const guideUpdated = 'May 10, 2026';

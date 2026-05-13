@@ -106,11 +106,11 @@ export const DistractionBlockingOverlay: React.FC<DistractionBlockingOverlayProp
   // Colors based on mode
   const modeColors = {
     work: {
-      primary: 'from-blue-600/30 to-purple-600/30',
-      accent: 'text-blue-400',
-      accentBg: 'bg-blue-500',
-      glow: 'shadow-blue-500/20',
-      border: 'border-blue-500/30',
+      primary: 'from-[#f43f5e]/30 to-[#ec4899]/30',
+      accent: 'text-[#f43f5e]',
+      accentBg: 'bg-[#f43f5e]',
+      glow: 'shadow-[#f43f5e]/20',
+      border: 'border-[#f43f5e]/30',
     },
     break: {
       primary: 'from-green-600/30 to-emerald-600/30',
@@ -200,14 +200,14 @@ export const DistractionBlockingOverlay: React.FC<DistractionBlockingOverlayProp
             exit="exit"
           >
             <div
-              className={`relative overflow-hidden rounded-2xl bg-gray-900/90 backdrop-blur-xl border ${colors.border} shadow-2xl ${colors.glow} w-72`}
+              className={`relative overflow-hidden rounded-2xl bg-[#0a0a0a]/90 backdrop-blur-xl border ${colors.border} shadow-2xl ${colors.glow} w-72`}
             >
               {/* Subtle Animated Border */}
               <div className="absolute inset-0 rounded-2xl overflow-hidden">
                 <motion.div
                   className={`absolute inset-[-100%] ${colors.accentBg} opacity-20`}
                   style={{
-                    background: `conic-gradient(from 0deg, transparent, ${mode === 'work' ? '#3b82f6' : '#10b981'}, transparent)`,
+                    background: `conic-gradient(from 0deg, transparent, ${mode === 'work' ? '#f43f5e' : '#10b981'}, transparent)`,
                   }}
                   animate={{ rotate: 360 }}
                   transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
@@ -217,7 +217,7 @@ export const DistractionBlockingOverlay: React.FC<DistractionBlockingOverlayProp
               <div className="relative p-5">
                 {/* Mode Badge */}
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${mode === 'work' ? 'bg-blue-500/20' : 'bg-green-500/20'}`}>
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${mode === 'work' ? 'bg-[rgba(244,63,94,0.10)]' : 'bg-green-500/20'}`}>
                     <motion.div
                       className={`w-2 h-2 rounded-full ${colors.accentBg}`}
                       animate={{
@@ -234,15 +234,15 @@ export const DistractionBlockingOverlay: React.FC<DistractionBlockingOverlayProp
                   {/* Blocked Notifications Badge */}
                   {blockedNotifications > 0 && (
                     <motion.div
-                      className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-gray-800"
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-[rgba(255,255,255,0.055)]"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     >
-                      <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3.5 h-3.5 text-[#b4b4b8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                       </svg>
-                      <span className="text-xs text-gray-400">{blockedNotifications}</span>
+                      <span className="text-xs text-[#b4b4b8]">{blockedNotifications}</span>
                     </motion.div>
                   )}
                 </div>
@@ -258,13 +258,13 @@ export const DistractionBlockingOverlay: React.FC<DistractionBlockingOverlayProp
                   >
                     {formattedTime}
                   </motion.div>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-[#b4b4b8] mt-1">
                     {progressPercent}% complete
                   </p>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="relative h-2 rounded-full bg-gray-800 overflow-hidden mb-4">
+                <div className="relative h-2 rounded-full bg-[rgba(255,255,255,0.055)] overflow-hidden mb-4">
                   <motion.div
                     className={`absolute inset-y-0 left-0 ${colors.accentBg} rounded-full`}
                     initial={{ width: 0 }}
@@ -280,9 +280,9 @@ export const DistractionBlockingOverlay: React.FC<DistractionBlockingOverlayProp
 
                 {/* Session Goal */}
                 {sessionGoal && (
-                  <div className="mb-4 p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Session Goal</p>
-                    <p className="text-sm text-gray-300 line-clamp-2">{sessionGoal}</p>
+                  <div className="mb-4 p-3 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.10)]/50">
+                    <p className="text-xs text-[#6b7280] uppercase tracking-wider mb-1">Session Goal</p>
+                    <p className="text-sm text-[#fafafa] line-clamp-2">{sessionGoal}</p>
                   </div>
                 )}
 
@@ -299,9 +299,9 @@ export const DistractionBlockingOverlay: React.FC<DistractionBlockingOverlayProp
                       />
                     ))}
                     {breakCount > 4 && (
-                      <span className="text-xs text-gray-500">+{breakCount - 4}</span>
+                      <span className="text-xs text-[#6b7280]">+{breakCount - 4}</span>
                     )}
-                    <span className="text-xs text-gray-500 ml-1">
+                    <span className="text-xs text-[#6b7280] ml-1">
                       {breakCount === 1 ? 'break' : 'breaks'}
                     </span>
                   </div>
@@ -310,7 +310,7 @@ export const DistractionBlockingOverlay: React.FC<DistractionBlockingOverlayProp
                 {/* Emergency End Button */}
                 <div className="relative">
                   <button
-                    className="w-full py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-red-500/50 text-gray-400 hover:text-red-400 text-sm font-medium transition-all duration-200"
+                    className="w-full py-2.5 rounded-lg bg-[rgba(255,255,255,0.055)] hover:bg-[rgba(255,255,255,0.10)] border border-[rgba(255,255,255,0.10)] hover:border-red-500/50 text-[#b4b4b8] hover:text-red-400 text-sm font-medium transition-all duration-200"
                     onMouseDown={startHold}
                     onMouseUp={endHold}
                     onMouseLeave={endHold}
@@ -356,7 +356,7 @@ export const DistractionBlockingOverlay: React.FC<DistractionBlockingOverlayProp
                 {/* Keyboard Shortcut Hint */}
                 <div className="mt-3 text-center">
                   <p className="text-xs text-gray-600">
-                    Press <kbd className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 font-mono text-xs">Esc</kbd> to view full timer
+                    Press <kbd className="px-1.5 py-0.5 rounded bg-[rgba(255,255,255,0.055)] text-[#b4b4b8] font-mono text-xs">Esc</kbd> to view full timer
                   </p>
                 </div>
               </div>

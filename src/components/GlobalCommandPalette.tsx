@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { Search, ArrowRight, Clock } from 'lucide-react';
+import { Search, ArrowRight, Clock, NotebookPen } from 'lucide-react';
 import { Command, useCommandPalette } from '../contexts/CommandPaletteContext';
 import { getRecentCommandIds, pushRecentCommand, getMostUsedCommandIds, isMac } from '../utils/recentCommands';
+import { useWorkspaceData } from '../contexts/WorkspaceContext';
+import { captureService, type CaptureNote } from '../services/captureService';
+import { AppView } from '../types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -196,12 +199,32 @@ const CommandRow: React.FC<CommandRowProps> = ({ command, active, onHover, onAct
 
 export const GlobalCommandPalette: React.FC = () => {
   const { isOpen, close, getMatches } = useCommandPalette();
+  const { currentWorkspace } = useWorkspaceData();
   const [query, setQuery] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [popularIds, setPopularIds] = useState<Set<string>>(() => new Set());
+  const [captureMatches, setCaptureMatches] = useState<CaptureNote[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const activeRowRef = useRef<HTMLLIElement>(null);
+
+  // Debounced full-text capture search. Triggers at 2+ chars; results render in
+  // a "NOTES" group below commands. Falls back to empty array silently on
+  // workspace-missing / network failure.
+  useEffect(() => {
+    if (!isOpen) return;
+    const q = query.trim();
+    if (q.length < 2 || !currentWorkspace?.id) {
+      setCaptureMatches([]);
+      return;
+    }
+    let cancelled = false;
+    const t = window.setTimeout(async () => {
+      const rows = await captureService.search(currentWorkspace.id, q, 5);
+      if (!cancelled) setCaptureMatches(rows);
+    }, 200);
+    return () => { cancelled = true; window.clearTimeout(t); };
+  }, [isOpen, query, currentWorkspace?.id]);
 
   // Reset query + focus input each time the palette opens. Re-read recents
   // and most-used so a Run from elsewhere (or another tab) is reflected.
@@ -346,6 +369,47 @@ export const GlobalCommandPalette: React.FC = () => {
                 </ul>
               </div>
             ))
+          )}
+
+          {/* Capture matches — separate group below commands. Not part of the
+              keyboard-navigable command list; clicking jumps to Archives. */}
+          {captureMatches.length > 0 && (
+            <div>
+              <div className="px-4 pt-3 pb-1 pulse-label text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                <NotebookPen size={10} />
+                NOTES · {captureMatches.length}
+              </div>
+              <ul role="listbox">
+                {captureMatches.map(note => {
+                  const date = new Date(note.created_at);
+                  const dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+                  return (
+                    <li key={note.id}>
+                      <button
+                        onClick={() => {
+                          sessionStorage.setItem('pulse_focus_note', note.id);
+                          window.dispatchEvent(new CustomEvent('pulse:navigate', { detail: { view: AppView.ARCHIVES } }));
+                          close();
+                        }}
+                        className="w-full flex items-baseline gap-3 px-4 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                      >
+                        <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 min-w-[46px]">
+                          {dateLabel}
+                        </span>
+                        {note.kind && (
+                          <span className="pulse-label text-rose-600 dark:text-rose-400 shrink-0">
+                            {note.kind.toUpperCase()}
+                          </span>
+                        )}
+                        <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate flex-1">
+                          {note.content.slice(0, 80)}{note.content.length > 80 ? '…' : ''}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
         </div>
 

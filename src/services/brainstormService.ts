@@ -985,12 +985,9 @@ export async function checkSimilarity(
 ): Promise<BrainstormIdea[]> {
   if (!newIdea || existingIdeas.length === 0) return [];
 
-  const apiKey = localStorage.getItem('gemini_api_key');
-  if (!apiKey) return [];
-
   try {
-    // Generate embedding for new idea
-    const newEmbedding = await generateEmbedding(apiKey, newIdea);
+    // Generate embedding for new idea (apiKey arg ignored — routed server-side)
+    const newEmbedding = await generateEmbedding(newIdea);
     if (!newEmbedding) return [];
 
     // Find similar ideas
@@ -1002,7 +999,7 @@ export async function checkSimilarity(
       let ideaEmbedding = await aiCache.get(embeddingCacheKey);
 
       if (!ideaEmbedding) {
-        ideaEmbedding = await generateEmbedding(apiKey, idea.text);
+        ideaEmbedding = await generateEmbedding(idea.text);
         if (ideaEmbedding) {
           await aiCache.set(embeddingCacheKey, ideaEmbedding);
         }
@@ -1047,11 +1044,8 @@ export async function findConnections(
   const cached = await aiCache.get(cacheKey);
   if (cached) return cached;
 
-  const apiKey = localStorage.getItem('gemini_api_key');
-  if (!apiKey) return [];
-
   try {
-    // Generate embeddings for all ideas
+    // Generate embeddings for all ideas (apiKey arg ignored — server-side)
     const embeddings: Map<string, number[]> = new Map();
 
     for (const idea of ideas) {
@@ -1059,7 +1053,7 @@ export async function findConnections(
       let embedding = await aiCache.get(embeddingCacheKey);
 
       if (!embedding) {
-        embedding = await generateEmbedding(apiKey, idea.text);
+        embedding = await generateEmbedding(idea.text);
         if (embedding) {
           await aiCache.set(embeddingCacheKey, embedding);
         }

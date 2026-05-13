@@ -127,7 +127,7 @@ export function useMessagesVoiceComposer(
           className={`${dimension} rounded-lg flex items-center justify-center transition flex-shrink-0 ${
             isRecording
               ? 'bg-red-500 text-white animate-pulse'
-              : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-rose-500'
+              : 'text-zinc-500 dark:text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] hover:text-rose-500'
           } ${className}`}
         >
           <Mic className={iconSize} />

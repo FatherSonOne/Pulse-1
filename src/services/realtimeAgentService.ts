@@ -1026,7 +1026,7 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
           console.warn('No API key available for summarization');
           return;
         }
-        summary = await processWithModel(apiKey, summaryPrompt);
+        summary = await processWithModel(summaryPrompt);
       }
 
       if (!summary) {

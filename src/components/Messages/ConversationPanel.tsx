@@ -82,61 +82,99 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
 
   const messageGroups = groupMessagesByDate(messages);
 
-  // Default message bubble renderer
-  const defaultRenderMessageBubble = (message: ChannelMessage) => {
+  // Group consecutive messages from the same sender (within 3 minutes)
+  // so the mono sender header renders once per block. Returns the same
+  // ordered array with a `grouped` flag on every message except the
+  // first of each block.
+  const GROUP_WINDOW_MS = 3 * 60 * 1000;
+  const annotateGrouping = (list: ChannelMessage[]) => {
+    return list.map((m, i) => {
+      const prev = list[i - 1];
+      const grouped = !!prev
+        && prev.sender_id === m.sender_id
+        && new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() < GROUP_WINDOW_MS;
+      return { message: m, grouped };
+    });
+  };
+
+  // Identify the latest own-message — that's the one carrying the
+  // DELIVERED / READ receipt. Older own-messages just show their bubble.
+  // (Read state will upgrade once read_by lands on ChannelMessage; for
+  // now the receipt is always DELIVERED.)
+  const latestOwnId = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].sender_id === currentUserId) return messages[i].id;
+    }
+    return null;
+  })();
+
+  // Default message bubble renderer — Pulse Coral Cockpit hybrid:
+  // received = quote-style with coral leading hairline, sent = coral
+  // glass card with a heartbeat hairline.
+  const defaultRenderMessageBubble = (message: ChannelMessage, grouped: boolean) => {
     const isOwnMessage = message.sender_id === currentUserId;
+    const senderInitials = message.sender_name
+      ? message.sender_name.slice(0, 2).toUpperCase()
+      : 'U';
+    const senderLabel = isOwnMessage ? 'YOU' : (message.sender_name || 'UNKNOWN').toUpperCase();
+    const showReceipt = isOwnMessage && message.id === latestOwnId;
 
     return (
       <motion.div
         key={message.id}
-        className={`message-bubble-wrapper flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}
-        initial={{ opacity: 0, y: 20 }}
+        data-grouped={grouped ? 'true' : 'false'}
+        className={`message-bubble-wrapper flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className={`flex gap-2.5 max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-          {/* Avatar */}
-          {!isOwnMessage && (
-            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-              {message.sender_name ? message.sender_name.slice(0, 2).toUpperCase() : 'U'}
+        <div className={`flex gap-2.5 max-w-[78%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+          {/* Avatar — only rendered on first message of a received block */}
+          {!isOwnMessage && !grouped && (
+            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-mono font-semibold tracking-[0.05em] mt-[2px]">
+              {senderInitials}
             </div>
           )}
+          {/* Grouped received messages — keep the indent without re-drawing the avatar */}
+          {!isOwnMessage && grouped && (
+            <div className="flex-shrink-0 w-7" aria-hidden="true" />
+          )}
 
-          {/* Message content */}
-          <div className="flex flex-col">
-            {/* Sender name (for other users) */}
-            {!isOwnMessage && message.sender_name && (
-              <span className="text-[13px] font-semibold text-[#fb7185] mb-1 px-3">
-                {message.sender_name}
-              </span>
-            )}
+          {/* Message column */}
+          <div className={`flex flex-col min-w-0 ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+            {/* Mono sender · timestamp header — once per group */}
+            <div className="msg-sender-header">
+              <span className="msg-sender-name">{senderLabel}</span>
+              <span className="msg-sep" aria-hidden="true">·</span>
+              <span className="msg-timestamp">{formatMessageTime(message.created_at)}</span>
+            </div>
 
-            {/* Message bubble */}
+            {/* Message body */}
             <div
-              className={`message-bubble ${
-                isOwnMessage
-                  ? 'message-bubble-sent'
-                  : 'message-bubble-received'
-              }`}
+              className={`message-bubble ${isOwnMessage ? 'message-bubble-sent' : 'message-bubble-received'}`}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
+              <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                {message.content}
+              </p>
 
-              {/* Edited indicator */}
+              {/* Edited indicator — mono, muted */}
               {message.edited_at && (
-                <span className="text-xs opacity-60 mt-1 inline-block">(edited)</span>
+                <span className="ml-2 align-baseline font-mono uppercase tracking-[0.1em] text-[9px] opacity-60">
+                  edited
+                </span>
               )}
             </div>
 
             {/* Reactions */}
             {message.reactions && Object.keys(message.reactions).length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1.5 px-1">
+              <div className="flex flex-wrap gap-1 mt-1.5">
                 {Object.entries(message.reactions).map(([emoji, users]) => (
                   <button
                     key={emoji}
                     className={`reaction-badge px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-colors ${
                       users.includes(currentUserId)
                         ? 'bg-rose-500/20 border border-rose-500/30 text-[#fb7185]'
-                        : 'bg-[#1e293b] border border-white/[0.07] text-[#94a3b8] hover:bg-white/[0.08]'
+                        : 'bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] text-[#94a3b8] hover:bg-[rgba(255,255,255,0.06)]'
                     }`}
                     onClick={() => onAddReaction?.(message.id, emoji)}
                     aria-label={`${emoji} reaction (${users.length})`}
@@ -148,12 +186,14 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
               </div>
             )}
 
-            {/* Timestamp */}
-            <span
-              className={`text-[11px] text-[#94a3b8] mt-1 px-1 ${isOwnMessage ? 'text-right' : 'text-left'}`}
-            >
-              {formatMessageTime(message.created_at)}
-            </span>
+            {/* Receipt — only the latest own-message in the thread carries it.
+                Default state is "delivered"; future read_by wiring upgrades it. */}
+            {showReceipt && (
+              <div className="msg-receipt" data-state="delivered">
+                <span className="msg-receipt-dot" aria-hidden="true" />
+                <span>DELIVERED</span>
+              </div>
+            )}
           </div>
         </div>
       </motion.div>
@@ -257,23 +297,26 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
               </div>
             ) : (
               <AnimatePresence mode="popLayout">
-                {Object.entries(messageGroups).map(([date, dateMessages]) => (
-                  <div key={date} className="message-group mb-6">
-                    {/* Date divider */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="flex-1 h-px bg-rose-500/20" />
-                      <span className="text-[10px] font-semibold text-[#94a3b8] uppercase tracking-[3px] flex-shrink-0">{date}</span>
-                      <div className="flex-1 h-px bg-rose-500/20" />
-                    </div>
+                {Object.entries(messageGroups).map(([date, dateMessages]) => {
+                  const annotated = annotateGrouping(dateMessages);
+                  return (
+                    <div key={date} className="message-group mb-6">
+                      {/* Pulse date divider — coral dot + mono label, no center pill */}
+                      <div className="date-divider">
+                        <span className="date-divider-dot" aria-hidden="true" />
+                        <span className="date-divider-label">{date}</span>
+                        <span className="date-divider-line" aria-hidden="true" />
+                      </div>
 
-                    {/* Messages for this date */}
-                    {dateMessages.map((message) =>
-                      renderMessageBubble
-                        ? renderMessageBubble(message)
-                        : defaultRenderMessageBubble(message)
-                    )}
-                  </div>
-                ))}
+                      {/* Messages for this date — pass grouping flag */}
+                      {annotated.map(({ message, grouped }) =>
+                        renderMessageBubble
+                          ? renderMessageBubble(message)
+                          : defaultRenderMessageBubble(message, grouped)
+                      )}
+                    </div>
+                  );
+                })}
               </AnimatePresence>
             )}
             <div ref={messagesEndRef} />

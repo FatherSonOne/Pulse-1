@@ -671,8 +671,8 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       case 'standup':
         // Full hairline + tinted bg; status carried by the existing "Standup" pill.
         return isDarkMode
-          ? 'border-amber-500/40 bg-amber-500/10'
-          : 'border-amber-500/40 bg-amber-500/5';
+          ? 'border-[#f43f5e]/40 bg-[#f43f5e]/10'
+          : 'border-[#f43f5e]/40 bg-[#f43f5e]/5';
       case 'announcement':
         // Full hairline + tinted bg; status carried by the existing "Announcement" pill.
         return isDarkMode
@@ -685,50 +685,50 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
   // Theme classes for consistent styling
   const tc = {
-    // Backgrounds
+    // Backgrounds (Pulse brand surfaces — translucent over true-black in dark)
     pageBg: isDarkMode
-      ? 'bg-gradient-to-br from-gray-900 via-amber-900/10 to-gray-900'
-      : 'bg-gradient-to-br from-slate-50 via-amber-50/30 to-white',
+      ? 'bg-black'
+      : 'bg-[#f8f8f8]',
     panelBg: isDarkMode
-      ? 'bg-gray-900'
+      ? 'bg-[rgba(255,255,255,0.03)]'
       : 'bg-white',
     cardBg: isDarkMode
-      ? 'bg-gray-800/60'
+      ? 'bg-[rgba(255,255,255,0.055)]'
       : 'bg-white',
     inputBg: isDarkMode
-      ? 'bg-gray-800/60 border-gray-700/50'
-      : 'bg-white/80 border-gray-200/60',
+      ? 'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.10)]'
+      : 'bg-white border-[rgba(0,0,0,0.08)]',
     hoverBg: isDarkMode
-      ? 'hover:bg-gray-800/60'
-      : 'hover:bg-gray-100/80',
+      ? 'hover:bg-[rgba(255,255,255,0.055)]'
+      : 'hover:bg-[#f2f2f2]',
     activeBg: isDarkMode
-      ? 'bg-amber-500/20'
-      : 'bg-amber-500/10',
+      ? 'bg-[rgba(244,63,94,0.12)]'
+      : 'bg-[rgba(244,63,94,0.08)]',
 
     // Borders
-    border: isDarkMode ? 'border-gray-800/60' : 'border-gray-200/60',
-    borderAccent: isDarkMode ? 'border-amber-500/30' : 'border-amber-400/40',
+    border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-[rgba(0,0,0,0.08)]',
+    borderAccent: 'border-[#f43f5e]',
 
     // Text
-    text: isDarkMode ? 'text-white' : 'text-gray-900',
-    textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
-    textMuted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-    textAccent: 'text-amber-500',
+    text: isDarkMode ? 'text-[#fafafa]' : 'text-[#0f0f0f]',
+    textSecondary: isDarkMode ? 'text-[#b4b4b8]' : 'text-[#52525b]',
+    textMuted: 'text-[#6b7280]',
+    textAccent: 'text-[#f43f5e]',
 
     // Buttons
-    btnPrimary: 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/25',
+    btnPrimary: 'btn-brand-primary',
     btnSecondary: isDarkMode
-      ? 'bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 border border-gray-700/50'
-      : 'bg-white/80 hover:bg-gray-100/80 text-gray-700 border border-gray-200/60',
+      ? 'bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.055)] text-[#fafafa] border border-[rgba(255,255,255,0.10)]'
+      : 'bg-white hover:bg-[#f2f2f2] text-[#0f0f0f] border border-[rgba(0,0,0,0.08)]',
     btnGhost: isDarkMode
-      ? 'hover:bg-gray-800/60 text-gray-400 hover:text-white'
-      : 'hover:bg-gray-100/80 text-gray-500 hover:text-gray-900',
+      ? 'hover:bg-[rgba(255,255,255,0.055)] text-[#b4b4b8] hover:text-[#fafafa]'
+      : 'hover:bg-[#f2f2f2] text-[#52525b] hover:text-[#0f0f0f]',
 
     // Modal
-    modalOverlay: 'bg-zinc-950/60 backdrop-blur-sm',
+    modalOverlay: 'pulse-modal-scrim',
     modalBg: isDarkMode
-      ? 'bg-gray-900 border-gray-800/60'
-      : 'bg-white border-gray-200/60',
+      ? 'bg-[#0a0a0a] border-[rgba(255,255,255,0.06)]'
+      : 'bg-white border-[rgba(0,0,0,0.08)]',
   };
 
   // Render sidebar content (shared between mobile and desktop)
@@ -741,14 +741,14 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             onClick={() => toggleWorkspaceExpanded(workspace.id)}
             className={`w-full px-3 py-2.5 flex items-center gap-2 transition-all border-l ${
               selectedWorkspace?.id === workspace.id
-                ? `border-amber-500/60 ${tc.activeBg}`
+                ? `border-[#f43f5e]/60 ${tc.activeBg}`
                 : `border-transparent ${tc.hoverBg}`
             }`}
           >
             {expandedWorkspaces.has(workspace.id) ? (
-              <ChevronDown className={`w-4 h-4 ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.textMuted}`} />
+              <ChevronDown className={`w-4 h-4 ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.textMuted}`} />
             ) : (
-              <ChevronRight className={`w-4 h-4 ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.textMuted}`} />
+              <ChevronRight className={`w-4 h-4 ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.textMuted}`} />
             )}
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm"
@@ -763,7 +763,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               </span>
             </div>
             <div className="flex-1 text-left min-w-0">
-              <span className={`font-semibold text-sm truncate block ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.text}`}>
+              <span className={`font-semibold text-sm truncate block ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.text}`}>
                 {workspace.name}
               </span>
               <span className={`text-xs ${tc.textMuted}`}>
@@ -774,7 +774,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
           {/* Channels */}
           {expandedWorkspaces.has(workspace.id) && (
-            <div className={`ml-8 border-l ${selectedWorkspace?.id === workspace.id ? 'border-amber-500/30' : tc.border} pl-3 space-y-0.5 mt-1`}>
+            <div className={`ml-8 border-l ${selectedWorkspace?.id === workspace.id ? 'border-[#f43f5e]/30' : tc.border} pl-3 space-y-0.5 mt-1`}>
               {workspace.channels.map((channel) => (
                 <button
                   key={channel.id}
@@ -785,22 +785,22 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   }}
                   className={`w-full px-3 py-2 flex items-center gap-2 rounded-r-lg text-sm transition-all group ${
                     selectedChannel?.id === channel.id
-                      ? `${tc.activeBg} text-amber-500 font-medium`
-                      : `${tc.textSecondary} ${tc.hoverBg} hover:text-amber-500`
+                      ? `${tc.activeBg} text-[#f43f5e] font-medium`
+                      : `${tc.textSecondary} ${tc.hoverBg} hover:text-[#f43f5e]`
                   }`}
                   title={`${channel.type.charAt(0).toUpperCase() + channel.type.slice(1)} channel`}
                 >
-                  <span className={selectedChannel?.id === channel.id ? 'text-amber-500' : tc.textMuted}>
+                  <span className={selectedChannel?.id === channel.id ? 'text-[#f43f5e]' : tc.textMuted}>
                     {CHANNEL_ICONS[channel.type]}
                   </span>
                   <span className="truncate flex-1 text-left">{channel.name}</span>
                   {channel.unreadCount > 0 && (
-                    <span className="px-2 py-0.5 text-xs bg-amber-500 text-white rounded-full font-semibold">
+                    <span className="px-2 py-0.5 text-xs bg-[#f43f5e] text-white rounded-full font-semibold">
                       {channel.unreadCount}
                     </span>
                   )}
                   {channel.isPinned && (
-                    <Pin className={`w-3 h-3 ${selectedChannel?.id === channel.id ? 'text-amber-500' : tc.textMuted}`} />
+                    <Pin className={`w-3 h-3 ${selectedChannel?.id === channel.id ? 'text-[#f43f5e]' : tc.textMuted}`} />
                   )}
                 </button>
               ))}
@@ -811,7 +811,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   setSelectedWorkspace(workspace);
                   setShowNewChannel(true);
                 }}
-                className={`w-full px-3 py-2 flex items-center gap-2 rounded-r-lg text-sm ${tc.textMuted} hover:text-amber-500 hover:bg-amber-500/10 transition-all mt-1`}
+                className={`w-full px-3 py-2 flex items-center gap-2 rounded-r-lg text-sm ${tc.textMuted} hover:text-[#f43f5e] hover:bg-[#f43f5e]/10 transition-all mt-1`}
                 title="Create a new channel in this workspace"
               >
                 <Plus className="w-4 h-4" />
@@ -867,12 +867,12 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
           },
         ]}
       >
-        {/* Workspace Selector - Desktop */}
+        {/* Workspace Selector (all viewports — mobile hamburger is hard to discover) */}
         {selectedWorkspace && (
-          <div ref={workspaceDropdownRef} className="hidden md:block relative">
+          <div ref={workspaceDropdownRef} className="relative">
             <button
               onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnSecondary} border hover:border-amber-500/50`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnSecondary} border hover:border-[#f43f5e]/50`}
               title="Switch workspace"
             >
               <Briefcase className="w-4 h-4" />
@@ -906,7 +906,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                         }}
                         className={`w-full px-4 py-3 flex items-center gap-3 transition-all ${
                           selectedWorkspace?.id === workspace.id
-                            ? `${tc.activeBg} text-amber-500`
+                            ? `${tc.activeBg} text-[#f43f5e]`
                             : `${tc.hoverBg} ${tc.text}`
                         }`}
                       >
@@ -923,7 +923,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                           </span>
                         </div>
                         <div className="flex-1 text-left min-w-0">
-                          <p className={`font-medium truncate ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.text}`}>
+                          <p className={`font-medium truncate ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.text}`}>
                             {workspace.name}
                           </p>
                           <p className={`text-xs ${tc.textMuted} truncate`}>
@@ -931,7 +931,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                           </p>
                         </div>
                         {selectedWorkspace?.id === workspace.id && (
-                          <div className="w-2 h-2 rounded-full bg-amber-500" />
+                          <div className="w-2 h-2 rounded-full bg-[#f43f5e]" />
                         )}
                       </button>
                     ))}
@@ -942,7 +942,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                         setShowWorkspaceDropdown(false);
                         setShowNewWorkspace(true);
                       }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${tc.hoverBg} hover:text-amber-500`}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${tc.hoverBg} hover:text-[#f43f5e]`}
                     >
                       <Plus className="w-4 h-4" />
                       Create New Workspace
@@ -1087,7 +1087,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                 }}
                                 className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
                                   isSelected(message.id)
-                                    ? 'bg-orange-500 border-2 border-orange-600'
+                                    ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
                                     : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
                                 }`}
                                 style={{
@@ -1113,7 +1113,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                     {message.senderName}
                                   </span>
                                   {message.messageType === 'standup' && (
-                                    <span className="px-2 py-0.5 text-xs bg-amber-500/20 text-amber-500 rounded-full">
+                                    <span className="px-2 py-0.5 text-xs bg-[#f43f5e]/20 text-[#f43f5e] rounded-full">
                                       Standup
                                     </span>
                                   )}
@@ -1264,7 +1264,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                           {['👍', '❤️', '😂', '🔥', '👏', '🎉'].map((emoji) => (
                                             <button
                                               key={emoji}
-                                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-amber-500/20 transition-colors text-lg"
+                                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f43f5e]/20 transition-colors text-lg"
                                               onClick={() => {
                                                 const userId = voxModeService.getUserId();
                                                 setMessages((prev) =>
@@ -1314,7 +1314,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                         {['👍', '❤️', '😂', '🔥', '👏', '🎉'].map((emoji) => (
                                           <button
                                             key={emoji}
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-amber-500/20 transition-colors text-lg"
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f43f5e]/20 transition-colors text-lg"
                                             onClick={() => {
                                               const userId = voxModeService.getUserId();
                                               setMessages((prev) =>
@@ -1403,7 +1403,6 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                       setTimeout(() => startRecording(), 100);
                     }}
                     isDarkMode={isDarkMode}
-                    modeColor={MODE_COLOR}
                   />
                 </div>
               ) : (
@@ -1439,7 +1438,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                               ? type === 'announcement'
                                 ? 'bg-red-500/20 text-red-500'
                                 : type === 'standup'
-                                  ? 'bg-amber-500/20 text-amber-500'
+                                  ? 'bg-[#f43f5e]/20 text-[#f43f5e]'
                                   : `${tc.activeBg} ${tc.text}`
                               : `${tc.cardBg} ${tc.textSecondary} ${tc.hoverBg}`
                           }`}
@@ -1535,7 +1534,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   value={workspaceName}
                   onChange={(e) => setWorkspaceName(e.target.value)}
                   placeholder="My Team"
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
                 />
               </div>
               <div>
@@ -1547,7 +1546,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   onChange={(e) => setWorkspaceDesc(e.target.value)}
                   placeholder="What's this workspace for?"
                   rows={3}
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all resize-none`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all resize-none`}
                 />
               </div>
             </div>
@@ -1595,7 +1594,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   value={channelName}
                   onChange={(e) => setChannelName(e.target.value)}
                   placeholder="new-channel"
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
                 />
               </div>
               <div>
@@ -1609,7 +1608,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                       onClick={() => setChannelType(type)}
                       className={`p-3 rounded-xl flex items-center gap-2 transition-all border ${
                         channelType === type
-                          ? `${tc.activeBg} ${tc.borderAccent} text-amber-500`
+                          ? `${tc.activeBg} ${tc.borderAccent} text-[#f43f5e]`
                           : `${tc.cardBg} ${tc.border} ${tc.textSecondary} ${tc.hoverBg}`
                       }`}
                     >
@@ -1665,7 +1664,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 placeholder="Search Pulse users..."
                 value={memberSearchQuery}
                 onChange={(e) => setMemberSearchQuery(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all`}
+                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
               />
             </div>
 
@@ -1754,7 +1753,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                     name="notification"
                     checked={notificationPref === option.value}
                     onChange={() => setNotificationPref(option.value)}
-                    className="w-4 h-4 text-amber-500"
+                    className="w-4 h-4 text-[#f43f5e]"
                   />
                 </label>
               ))}
@@ -1811,7 +1810,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   type="text"
                   value={editChannelName}
                   onChange={(e) => setEditChannelName(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
                 />
               </div>
               <div>
@@ -1822,7 +1821,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   onChange={(e) => setEditChannelDesc(e.target.value)}
                   placeholder="What's this channel about?"
                   rows={3}
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all resize-none`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all resize-none`}
                 />
               </div>
               <div className={`p-4 rounded-xl ${tc.cardBg} border ${tc.border}`}>
@@ -1919,7 +1918,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 placeholder="Search team members..."
                 value={mentionSearchQuery}
                 onChange={(e) => setMentionSearchQuery(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all`}
+                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
               />
             </div>
 

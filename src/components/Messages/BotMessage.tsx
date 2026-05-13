@@ -20,14 +20,14 @@ const BOT_CONFIG: Record<string, { name: string; emoji: string; avatarBg: string
   entomate: {
     name: 'Entomate',
     emoji: '🤖',
-    avatarBg: 'bg-violet-500/15 ring-1 ring-violet-500/30',
-    accentColor: 'ring-1 ring-violet-500/30 bg-violet-500/[0.06]',
+    avatarBg: 'bg-[rgba(244,63,94,0.10)] ring-1 ring-[rgba(244,63,94,0.20)]',
+    accentColor: 'ring-1 ring-[rgba(244,63,94,0.20)] bg-[rgba(244,63,94,0.08)]',
   },
   logos_vision: {
     name: 'Logos Vision',
     emoji: '🔮',
-    avatarBg: 'bg-blue-500/15 ring-1 ring-blue-500/30',
-    accentColor: 'ring-1 ring-blue-500/30 bg-blue-500/[0.06]',
+    avatarBg: 'bg-[rgba(244,63,94,0.10)] ring-1 ring-[rgba(244,63,94,0.20)]',
+    accentColor: 'ring-1 ring-[rgba(244,63,94,0.20)] bg-[rgba(244,63,94,0.08)]',
   },
 };
 
@@ -165,7 +165,7 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
 
         {/* Export all status */}
         {exportAllState === 'exporting' && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-violet-700 dark:text-violet-300 bg-violet-500/[0.08] ring-1 ring-violet-500/30 rounded-lg px-3 py-2">
+          <div className="mt-2 flex items-center gap-2 text-xs text-[#e11d48] dark:text-[#fb7185] bg-[rgba(244,63,94,0.08)] ring-1 ring-[rgba(244,63,94,0.20)] rounded-lg px-3 py-2">
             <Loader2 className="w-3 h-3 animate-spin" />
             <span>Exporting recordings to Entomate...</span>
           </div>
@@ -231,7 +231,7 @@ function InlineRating({ rating, submitted, meetingId, onRate, onClose }: {
             onMouseEnter={() => setHovered(i + 1)}
             onMouseLeave={() => setHovered(0)}
             onClick={() => onRate(i + 1)}
-            className="p-0.5 transition-transform hover:scale-125"
+            className="p-0.5 transition-transform"
           >
             <Star className={`w-4 h-4 transition-colors ${
               (hovered || rating) > i
@@ -345,7 +345,7 @@ function SimpleMarkdown({ text }: { text: string }) {
           );
         }
         if (line.startsWith('---')) {
-          return <hr key={i} className="border-zinc-700/50 my-2" />;
+          return <hr key={i} className="border-[rgba(255,255,255,0.10)]/50 my-2" />;
         }
         if (!line.trim()) return <div key={i} className="h-1" />;
 

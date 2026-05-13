@@ -1,7 +1,9 @@
 // Relay Transcription Service
-// Supports multiple transcription providers: Gemini, OpenAI Whisper, AssemblyAI
+// Supports multiple transcription providers: Gemini (server-side via gemini-audio
+// edge function), OpenAI Whisper, AssemblyAI.
 
-import { GoogleGenAI } from "@google/genai";
+import { supabase } from '../supabase';
+import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
 import {
   TranscriptionConfig,
   TranscriptionResult,
@@ -15,16 +17,15 @@ import {
 // ============================================
 
 export class RelayTranscriptionService {
-  private geminiApiKey: string;
+  // Gemini path no longer needs a client-side key — routes through the
+  // gemini-audio edge function. Whisper/AssemblyAI still BYO.
   private openaiApiKey: string;
   private assemblyaiApiKey: string;
 
   constructor(config: {
-    geminiApiKey?: string;
     openaiApiKey?: string;
     assemblyaiApiKey?: string;
-  }) {
-    this.geminiApiKey = config.geminiApiKey || '';
+  } = {}) {
     this.openaiApiKey = config.openaiApiKey || localStorage.getItem('openai_api_key') || '';
     this.assemblyaiApiKey = config.assemblyaiApiKey || '';
   }
@@ -81,50 +82,38 @@ export class RelayTranscriptionService {
     base64: string,
     config: TranscriptionConfig
   ): Promise<TranscriptionResult> {
-    if (!this.geminiApiKey) {
-      throw new Error('Gemini API key not configured');
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) {
+      throw new Error('No active workspace — cannot invoke gemini-audio');
     }
 
-    const ai = new GoogleGenAI({ apiKey: this.geminiApiKey });
+    const { data, error } = await supabase.functions.invoke('gemini-audio', {
+      body: {
+        action: 'transcribe',
+        audio_base64: base64,
+        mime_type: 'audio/webm',
+        workspace_id: workspaceId,
+        punctuation: config.enablePunctuation ?? true,
+        diarization: config.enableSpeakerDiarization ?? false,
+      },
+    });
 
-    try {
-      let prompt = `Transcribe the speech in this audio exactly as spoken.`;
-      
-      if (config.enablePunctuation) {
-        prompt += ` Include proper punctuation.`;
-      }
-      
-      if (config.enableSpeakerDiarization) {
-        prompt += ` If multiple speakers, identify them as Speaker 1, Speaker 2, etc.`;
-      }
-
-      prompt += ` Return ONLY the transcription, no commentary or explanations.`;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: {
-          parts: [
-            { inlineData: { mimeType: 'audio/webm', data: base64 } },
-            { text: prompt }
-          ]
-        },
-      });
-
-      const text = response.text || '';
-
-      return {
-        id: `trans-${Date.now()}`,
-        text,
-        confidence: 0.9,
-        language: config.language || 'en',
-        duration: this.estimateDuration(text),
-        provider: 'gemini',
-        processedAt: new Date(),
-      };
-    } catch (error) {
+    if (error) {
       console.error('Gemini transcription error:', error);
       throw error;
     }
+
+    const text = (data as { text?: string } | null)?.text ?? '';
+
+    return {
+      id: `trans-${Date.now()}`,
+      text,
+      confidence: 0.9,
+      language: config.language || 'en',
+      duration: this.estimateDuration(text),
+      provider: 'gemini',
+      processedAt: new Date(),
+    };
   }
 
   // ============================================
@@ -340,7 +329,8 @@ export class RelayTranscriptionService {
   private getBestProvider(): TranscriptionProvider {
     if (this.openaiApiKey) return 'whisper';
     if (this.assemblyaiApiKey) return 'assemblyai';
-    if (this.geminiApiKey) return 'gemini';
+    // Gemini is always available — routed through the gemini-audio edge function
+    // which holds the server-side key.
     return 'gemini';
   }
 
@@ -376,10 +366,6 @@ export class RelayTranscriptionService {
   // API KEY MANAGEMENT
   // ============================================
 
-  setGeminiApiKey(key: string): void {
-    this.geminiApiKey = key;
-  }
-
   setOpenAIApiKey(key: string): void {
     this.openaiApiKey = key;
   }
@@ -389,8 +375,8 @@ export class RelayTranscriptionService {
   }
 
   getAvailableProviders(): TranscriptionProvider[] {
-    const providers: TranscriptionProvider[] = [];
-    if (this.geminiApiKey) providers.push('gemini');
+    // Gemini is always available — server-side via gemini-audio edge function.
+    const providers: TranscriptionProvider[] = ['gemini'];
     if (this.openaiApiKey) providers.push('whisper');
     if (this.assemblyaiApiKey) providers.push('assemblyai');
     return providers;
@@ -404,7 +390,6 @@ export class RelayTranscriptionService {
 let transcriptionServiceInstance: RelayTranscriptionService | null = null;
 
 export const getRelayTranscriptionService = (config?: {
-  geminiApiKey?: string;
   openaiApiKey?: string;
   assemblyaiApiKey?: string;
 }): RelayTranscriptionService => {

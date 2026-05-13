@@ -114,7 +114,7 @@ const getNavSections = (): NavSection[] => {
       color: 'amber',
       collapsible: true,
       items: [
-        { icon: MessageSquare, label: 'Pulse Chat', view: AppView.LIVE },
+        { icon: MessageSquare, label: 'Summit', view: AppView.LIVE },
       ],
     },
   ];

@@ -282,22 +282,11 @@ export const subtaskService = {
     maxSubtasks: number = 8
   ): Promise<Subtask[]> {
     try {
-      // Get API key
-      const apiKey = localStorage.getItem('gemini_api_key') ||
-                     (typeof window !== 'undefined' && (window as any).import?.meta?.env?.VITE_GEMINI_API_KEY) ||
-                     '';
-
-      if (!apiKey) {
-        console.error('No Gemini API key found for subtask generation');
-        return [];
-      }
-
       // Lazy import geminiService to avoid circular dependencies
       const { generateSubtasksFromTaskWithFallback } = await import('./geminiService');
 
-      // Call AI to generate subtasks
+      // Call AI to generate subtasks (server-side routing).
       const aiSubtasks = await generateSubtasksFromTaskWithFallback(
-        apiKey,
         taskTitle,
         taskDescription,
         taskPriority,

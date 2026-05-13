@@ -269,38 +269,42 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
           </div>
         )}
         
-        {/* Public Information */}
-        <div className="card-section">
-          <div className="section-header">
-            <div className="section-label">Public Information</div>
-          </div>
-          
-          <div className="info-grid">
-            {profile.email && (
-              <div className="info-item">
-                <Mail />
-                <div className="info-content">
-                  <span className="info-label">Email</span>
-                  <a href={`mailto:${profile.email}`} className="info-value">
-                    {profile.email}
-                  </a>
+        {/* Public Information — only renders when there's something to show.
+            A section header with nothing under it teaches users this surface
+            is empty; better to hide the affordance entirely. */}
+        {(profile.email || profile.phone) && (
+          <div className="card-section">
+            <div className="section-header">
+              <div className="section-label">Public Information</div>
+            </div>
+
+            <div className="info-grid">
+              {profile.email && (
+                <div className="info-item">
+                  <Mail />
+                  <div className="info-content">
+                    <span className="info-label">Email</span>
+                    <a href={`mailto:${profile.email}`} className="info-value">
+                      {profile.email}
+                    </a>
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            {profile.phone && (
-              <div className="info-item">
-                <Phone />
-                <div className="info-content">
-                  <span className="info-label">Phone</span>
-                  <a href={`tel:${profile.phone}`} className="info-value">
-                    {profile.phone}
-                  </a>
+              )}
+
+              {profile.phone && (
+                <div className="info-item">
+                  <Phone />
+                  <div className="info-content">
+                    <span className="info-label">Phone</span>
+                    <a href={`tel:${profile.phone}`} className="info-value">
+                      {profile.phone}
+                    </a>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
         
         {/* Private Notes Section */}
         <div className="card-section private-section">

@@ -449,8 +449,8 @@ const PulseForwardModal: React.FC<PulseForwardModalProps> = ({
   );
   return (
     <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+      <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
+        <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
           <h3 className="font-bold dark:text-white">Forward Message</h3>
           <button
             onClick={onClose}
@@ -461,7 +461,7 @@ const PulseForwardModal: React.FC<PulseForwardModalProps> = ({
           </button>
         </div>
         <div className="p-4">
-          <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300 mb-4 max-h-32 overflow-y-auto">
+          <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300 mb-4 max-h-32 overflow-y-auto">
             {message.text}
           </div>
           <div className="text-xs text-zinc-500 mb-2">Forward to:</div>
@@ -477,7 +477,7 @@ const PulseForwardModal: React.FC<PulseForwardModalProps> = ({
                       void onForwardPulse(message.id, other.id);
                       onClose();
                     }}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                       {other.avatar_url
@@ -496,7 +496,7 @@ const PulseForwardModal: React.FC<PulseForwardModalProps> = ({
             {/* Legacy SMS-thread fallback (opt-in) */}
             {legacyThreads && legacyThreads.length > 0 && onForwardLegacy && (
               <>
-                <div className="text-xs text-zinc-400 dark:text-zinc-500 pt-2 border-t border-zinc-200 dark:border-zinc-700 mt-2 mb-1">
+                <div className="text-xs text-zinc-400 dark:text-zinc-500 pt-2 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] mt-2 mb-1">
                   Legacy threads
                 </div>
                 {legacyThreads.map((t) => (
@@ -506,7 +506,7 @@ const PulseForwardModal: React.FC<PulseForwardModalProps> = ({
                       onForwardLegacy(t.id);
                       onClose();
                     }}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
                   >
                     <div className={`w-8 h-8 rounded-full ${t.avatarColor} flex items-center justify-center text-white text-xs font-bold`}>
                       {t.contactName.charAt(0)}
@@ -529,10 +529,10 @@ const KeyboardShortcutsModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
     onClick={onClose}
   >
     <div
-      className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800"
+      className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]"
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+      <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
         <h3 className="font-bold dark:text-white">Keyboard Shortcuts</h3>
         <button onClick={onClose} aria-label="Close" className="text-zinc-500">×</button>
       </div>
@@ -562,7 +562,7 @@ const DeleteThreadConfirmModal: React.FC<{
     onClick={onCancel}
   >
     <div
-      className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-5"
+      className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-sm rounded-2xl shadow-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] p-5"
       onClick={(e) => e.stopPropagation()}
     >
       <h3 className="font-bold text-lg dark:text-white mb-2">Delete this thread?</h3>
@@ -572,7 +572,7 @@ const DeleteThreadConfirmModal: React.FC<{
       <div className="flex justify-end gap-2">
         <button
           onClick={onCancel}
-          className="px-4 py-2 rounded-lg text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+          className="px-4 py-2 rounded-lg text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
         >
           Cancel
         </button>

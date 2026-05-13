@@ -601,50 +601,50 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
 
   // Theme classes for consistent styling
   const tc = {
-    // Backgrounds
+    // Backgrounds (Pulse brand surfaces — translucent over true-black in dark)
     pageBg: isDarkMode
-      ? 'bg-gradient-to-br from-gray-900 via-pink-900/10 to-gray-900'
-      : 'bg-gradient-to-br from-slate-50 via-pink-50/30 to-white',
+      ? 'bg-black'
+      : 'bg-[#f8f8f8]',
     panelBg: isDarkMode
-      ? 'bg-gray-900'
+      ? 'bg-[rgba(255,255,255,0.03)]'
       : 'bg-white',
     cardBg: isDarkMode
-      ? 'bg-gray-800/60'
+      ? 'bg-[rgba(255,255,255,0.055)]'
       : 'bg-white',
     inputBg: isDarkMode
-      ? 'bg-gray-800/60 border-gray-700/50'
-      : 'bg-white/80 border-gray-200/60',
+      ? 'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.10)]'
+      : 'bg-white border-[rgba(0,0,0,0.08)]',
     hoverBg: isDarkMode
-      ? 'hover:bg-gray-800/60'
-      : 'hover:bg-gray-100/80',
+      ? 'hover:bg-[rgba(255,255,255,0.055)]'
+      : 'hover:bg-[#f2f2f2]',
     activeBg: isDarkMode
-      ? 'bg-pink-500/20'
-      : 'bg-pink-500/10',
+      ? 'bg-[rgba(244,63,94,0.12)]'
+      : 'bg-[rgba(244,63,94,0.08)]',
 
     // Borders
-    border: isDarkMode ? 'border-gray-800/60' : 'border-gray-200/60',
-    borderAccent: isDarkMode ? 'border-pink-500/30' : 'border-pink-400/40',
+    border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-[rgba(0,0,0,0.08)]',
+    borderAccent: 'border-[#f43f5e]',
 
     // Text
-    text: isDarkMode ? 'text-white' : 'text-gray-900',
-    textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
-    textMuted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-    textAccent: 'text-pink-500',
+    text: isDarkMode ? 'text-[#fafafa]' : 'text-[#0f0f0f]',
+    textSecondary: isDarkMode ? 'text-[#b4b4b8]' : 'text-[#52525b]',
+    textMuted: 'text-[#6b7280]',
+    textAccent: 'text-[#f43f5e]',
 
     // Buttons
-    btnPrimary: 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/25',
+    btnPrimary: 'btn-brand-primary',
     btnSecondary: isDarkMode
-      ? 'bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 border border-gray-700/50'
-      : 'bg-white/80 hover:bg-gray-100/80 text-gray-700 border border-gray-200/60',
+      ? 'bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.055)] text-[#fafafa] border border-[rgba(255,255,255,0.10)]'
+      : 'bg-white hover:bg-[#f2f2f2] text-[#0f0f0f] border border-[rgba(0,0,0,0.08)]',
     btnGhost: isDarkMode
-      ? 'hover:bg-gray-800/60 text-gray-400 hover:text-white'
-      : 'hover:bg-gray-100/80 text-gray-500 hover:text-gray-900',
+      ? 'hover:bg-[rgba(255,255,255,0.055)] text-[#b4b4b8] hover:text-[#fafafa]'
+      : 'hover:bg-[#f2f2f2] text-[#52525b] hover:text-[#0f0f0f]',
 
     // Modal
-    modalOverlay: 'bg-zinc-950/60 backdrop-blur-sm',
+    modalOverlay: 'pulse-modal-scrim',
     modalBg: isDarkMode
-      ? 'bg-gray-900 border-gray-800/60'
-      : 'bg-white border-gray-200/60',
+      ? 'bg-[#0a0a0a] border-[rgba(255,255,255,0.06)]'
+      : 'bg-white border-[rgba(0,0,0,0.08)]',
   };
 
   // Render notes list (shared between mobile and desktop)
@@ -659,7 +659,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
             placeholder="Search notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full pl-10 pr-4 py-2.5 rounded-xl ${tc.inputBg} ${tc.text} text-sm border focus:outline-none focus:ring-2 focus:ring-pink-500/50 transition-all`}
+            className={`w-full pl-10 pr-4 py-2.5 rounded-xl ${tc.inputBg} ${tc.text} text-sm border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
           />
         </div>
 
@@ -668,7 +668,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
             onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
             className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               showFavoritesOnly
-                ? `${tc.activeBg} text-pink-500 border ${tc.borderAccent}`
+                ? `${tc.activeBg} text-[#f43f5e] border ${tc.borderAccent}`
                 : `${tc.cardBg} ${tc.textSecondary} border ${tc.border} ${tc.hoverBg}`
             }`}
           >
@@ -682,7 +682,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
               onClick={() => setFilterTag(filterTag === tag ? null : tag)}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                 filterTag === tag
-                  ? `${tc.activeBg} text-pink-500 border ${tc.borderAccent}`
+                  ? `${tc.activeBg} text-[#f43f5e] border ${tc.borderAccent}`
                   : `${tc.cardBg} ${tc.textSecondary} border ${tc.border} ${tc.hoverBg}`
               }`}
             >
@@ -756,7 +756,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                     }}
                     className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
                       isSelected(note.id)
-                        ? 'bg-pink-500 border-2 border-pink-600'
+                        ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
                         : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
                     }`}
                     style={{
@@ -903,7 +903,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
               setTimeout(() => startRecording(), 100);
             }}
             isDarkMode={isDarkMode}
-            modeColor={MODE_COLOR}
           />
         </div>
       )}
@@ -982,12 +981,12 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                           type="text"
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
-                          className={`text-xl font-bold rounded-xl px-3 py-1 ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-pink-500/50`}
+                          className={`text-xl font-bold rounded-xl px-3 py-1 ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50`}
                           autoFocus
                         />
                         <button
                           onClick={handleUpdateTitle}
-                          className={`p-2 rounded-xl text-pink-500 ${tc.hoverBg}`}
+                          className={`p-2 rounded-xl text-[#f43f5e] ${tc.hoverBg}`}
                           aria-label="Save"
                         >
                           <Check className="w-5 h-5" />
@@ -1006,7 +1005,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                           setEditTitle(selectedNote.title || '');
                           setIsEditing(true);
                         }}
-                        className={`text-lg md:text-xl font-bold cursor-pointer hover:text-pink-500 transition-colors truncate ${tc.text}`}
+                        className={`text-lg md:text-xl font-bold cursor-pointer hover:text-[#f43f5e] transition-colors truncate ${tc.text}`}
                       >
                         {selectedNote.title || 'Untitled Note'}
                       </h2>
@@ -1200,7 +1199,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
 
                     <button
                       onClick={() => setShowLinkModal(true)}
-                      className={`w-full p-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2 ${tc.cardBg} border ${tc.border} ${tc.textSecondary} ${tc.hoverBg} hover:text-pink-500`}
+                      className={`w-full p-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2 ${tc.cardBg} border ${tc.border} ${tc.textSecondary} ${tc.hoverBg} hover:text-[#f43f5e]`}
                     >
                       <Link2 className="w-4 h-4" />
                       Link to Email, Meeting, or Task
@@ -1262,7 +1261,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                 <button
                   key={type}
                   onClick={() => handleLinkToItem(type)}
-                  className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-3 ${tc.cardBg} border ${tc.border} ${tc.hoverBg} hover:border-pink-500/50`}
+                  className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-3 ${tc.cardBg} border ${tc.border} ${tc.hoverBg} hover:border-[#f43f5e]/50`}
                   type="button"
                 >
                   <div className="p-2 rounded-lg" style={{ background: `${MODE_COLOR}20` }}>

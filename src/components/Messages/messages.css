@@ -372,10 +372,43 @@
    Message Bubble Styles
    ========================= */
 
+/* ── Pulse Coral Cockpit thread ─────────────────────────────────────
+   Hybrid bubble system: received = quote-style (coral hairline,
+   no bubble, mono header). Sent = coral-glass card, symmetric 12px,
+   right-edge heartbeat hairline. Bubbles never wear chat tails.
+   Group siblings (data-grouped) tighten to read as one block. */
+
 .message-bubble-wrapper {
-  margin-bottom: 0.875rem;
+  margin-bottom: 0.75rem;
   animation: msgEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
   will-change: opacity, transform;
+}
+
+/* Consecutive messages from the same sender (within ~3 min) — read as one block */
+.message-bubble-wrapper[data-grouped="true"] {
+  margin-bottom: 2px;
+}
+.message-bubble-wrapper[data-grouped="true"] .msg-sender-header {
+  display: none;
+}
+.message-bubble-wrapper[data-grouped="true"] .msg-receipt {
+  display: none;
+}
+
+/* Pulse DM thread row (Messages.tsx renderer) — uses outer wrapper with
+   data-pulse-msg-row + data-grouped. Same-sender stack collapses tight;
+   first message of a block keeps a clean breath. Specificity beats the
+   utility-class margin so we don't fight Tailwind. */
+[data-pulse-msg-row="true"][data-grouped="true"] {
+  margin-top: 1px !important;
+  margin-bottom: 1px !important;
+}
+[data-pulse-msg-row="true"][data-grouped="false"] {
+  margin-top: 12px !important;
+}
+/* First row in the conversation should not have the breath above it */
+[data-pulse-msg-row="true"]:first-of-type {
+  margin-top: 0 !important;
 }
 
 /* Stagger first 5 message wrappers — nth-child, no JS needed */
@@ -390,8 +423,62 @@
   will-change: auto;
 }
 
+/* Mono section header above a message group — sender · time */
+.msg-sender-header {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.msg-sender-header .msg-sender-name {
+  color: var(--msg-primary, #f43f5e);
+}
+
+.msg-sender-header .msg-sep {
+  color: rgba(0, 0, 0, 0.20);
+}
+.dark .msg-sender-header .msg-sep {
+  color: rgba(255, 255, 255, 0.20);
+}
+
+.msg-sender-header .msg-timestamp {
+  color: #6b7280;
+}
+
+/* Read / Delivered receipt — JetBrains Mono, sits under sent bubbles */
+.msg-receipt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6b7280;
+}
+
+.msg-receipt[data-state="read"] {
+  color: var(--msg-primary, #f43f5e);
+}
+
+.msg-receipt .msg-receipt-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+/* Common bubble body — symmetric corners, no tail */
 .message-bubble {
-  padding: 0.625rem 0.875rem;
+  padding: 0.5rem 0.875rem;
   border-radius: 12px;
   border: 1px solid transparent;
   word-wrap: break-word;
@@ -405,101 +492,158 @@
               box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Received message — neutral glass, hairline perimeter */
+/* ── Received message — quote-style. Coral 1px leading hairline,
+      no bubble background, no perimeter border. Reads like Linear /
+      email thread, not like Slack. */
 .message-bubble-received {
-  background: var(--msg-surface, #ffffff);
-  border-color: var(--msg-border, #e4e4e4);
+  background: transparent;
+  border: 0;
+  border-left: 1px solid rgba(244, 63, 94, 0.30);
+  border-radius: 0;
+  padding: 0.125rem 0 0.125rem 14px;
+  color: var(--msg-text-main, #0f0f0f);
 }
 
 .dark .message-bubble-received {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.10);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: #fafafa;
+  border-left-color: rgba(244, 63, 94, 0.40);
+}
+
+/* Hover on received — coral hairline thickens 1 → 2px, no jitter */
+.message-bubble-received:hover {
+  border-left-color: rgba(244, 63, 94, 0.55);
 }
 
 .dark .message-bubble-received:hover {
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+  border-left-color: rgba(244, 63, 94, 0.65);
 }
 
-/* Sent message — rose-tinted glass, full coral perimeter */
+/* ── Sent message — coral-glass card. Symmetric 12px (no chat tail).
+      Right-edge coral hairline acts as the "you" heartbeat signal. */
 .message-bubble-sent {
-  background: rgba(244, 63, 94, 0.04);
-  border-color: rgba(244, 63, 94, 0.20);
+  background: rgba(244, 63, 94, 0.05);
+  border-color: rgba(244, 63, 94, 0.18);
+  position: relative;
+}
+
+.message-bubble-sent::after {
+  content: '';
+  position: absolute;
+  top: 12%;
+  bottom: 12%;
+  right: -1px;
+  width: 1px;
+  background: rgba(244, 63, 94, 0.55);
+  border-radius: 1px;
+  pointer-events: none;
 }
 
 .dark .message-bubble-sent {
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.18) 0%, rgba(236, 72, 153, 0.12) 100%);
-  border-color: rgba(244, 63, 94, 0.35);
-  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.25), 0 1px 4px rgba(244, 63, 94, 0.15);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.16) 0%, rgba(236, 72, 153, 0.10) 100%);
+  border-color: rgba(244, 63, 94, 0.30);
+  box-shadow: 0 1px 3px rgba(244, 63, 94, 0.10);
+}
+
+.dark .message-bubble-sent::after {
+  background: rgba(244, 63, 94, 0.75);
 }
 
 .dark .message-bubble-sent:hover {
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.24) 0%, rgba(236, 72, 153, 0.18) 100%);
-  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.35), 0 2px 6px rgba(244, 63, 94, 0.20);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.22) 0%, rgba(236, 72, 153, 0.14) 100%);
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.18);
 }
 
-/* Sender name — above bubble */
+/* New-message arrival flourish — coral underglow that fades over 1.6s.
+   Triggered by data-arrival="new", which the component flips off after
+   the animation completes. Single moment of delight per message. */
+@keyframes msgArrivalGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.45), 0 0 24px 0 rgba(244, 63, 94, 0.25); }
+  60%  { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.20), 0 0 16px 4px rgba(244, 63, 94, 0.10); }
+  100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0), 0 0 0 0 rgba(244, 63, 94, 0); }
+}
+
+.message-bubble[data-arrival="new"] {
+  animation: msgArrivalGlow 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Legacy class — preserved for sub-components that still set it directly.
+   Now matches the mono header treatment above. */
 .msg-sender-name,
 .message-sender {
-  font-size: 0.875rem;              /* 14px */
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--msg-text-main, #0f0f0f);
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--msg-primary, #f43f5e);
   margin-bottom: 3px;
 }
 
 .dark .msg-sender-name,
 .dark .message-sender {
-  color: #fafafa;
-}
-
-/* Own messages — rose sender name */
-.message-bubble-wrapper.own .msg-sender-name,
-.message-bubble-wrapper.sent .msg-sender-name {
   color: var(--msg-primary, #f43f5e);
 }
 
-/* Timestamp */
+/* Inline timestamp — mono, muted, small */
 .msg-timestamp,
 .message-timestamp {
-  font-size: 0.6875rem;             /* 11px */
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px;
   font-weight: 400;
+  letter-spacing: 0.04em;
   color: #6b7280;
-  font-family: 'Inter', system-ui, sans-serif; /* override mono — cleaner */
 }
 
-/* Date dividers */
+/* ── Date dividers — left-aligned mono header with leading coral
+      pulse-dot. Replaces the line-with-pill-in-the-middle pattern. */
 .date-divider,
 .messages-date-divider {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 1.25rem 0 0.75rem;
+  margin: 1.5rem 0 0.875rem;
+  padding-left: 4px;
 }
 
 .date-divider-line,
-.messages-date-divider::before,
 .messages-date-divider::after {
   flex: 1;
   height: 1px;
-  background: var(--msg-border, #e4e4e4);
+  background: rgba(0, 0, 0, 0.06);
   content: '';
 }
 
-.dark .date-divider-line {
+.dark .date-divider-line,
+.dark .messages-date-divider::after {
   background: rgba(255, 255, 255, 0.06);
+}
+
+.messages-date-divider::before { display: none; }
+
+.date-divider-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--msg-primary, #f43f5e);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.12);
 }
 
 .date-divider-label,
 .messages-date-divider span {
-  font-size: 0.6875rem;             /* 11px — BG spec */
-  font-weight: 600;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.12em;           /* BG spec */
+  letter-spacing: 0.12em;
   color: #6b7280;
   white-space: nowrap;
-  padding: 0 6px;
+  padding: 0;
+}
+
+.dark .date-divider-label,
+.dark .messages-date-divider span {
+  color: #b4b4b8;
 }
 
 /* Reaction badges */

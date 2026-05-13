@@ -2,7 +2,7 @@
 import { Capacitor } from '@capacitor/core';
 import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import LiveSession from './components/LiveSession';
-import { PulseVoiceChat } from './components/VoiceChat';
+import { Summit } from './components/Summit';
 import MessageContainer from './components/MessageContainer';
 import Login from './components/Login';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -65,6 +65,7 @@ import { FeatureProvider } from './contexts/FeatureContext';
 import { PulseAIProvider } from './contexts/PulseAIContext';
 import { CommandPaletteProvider, useCommandPalette, useRegisterCommands, Command } from './contexts/CommandPaletteContext';
 import { GlobalCommandPalette } from './components/GlobalCommandPalette';
+import CaptureModal from './components/Capture/CaptureModal';
 import { WorkspaceProvider, useWorkspaceData, useWorkspaceActions } from './contexts/WorkspaceContext';
 import { TrialGate } from './components/billing/TrialGate';
 import { DeletedWorkspaceInterstitial } from './components/settings/DeletedWorkspaceInterstitial';
@@ -329,13 +330,6 @@ const App: React.FC = () => {
   // Presence tracking - only start heartbeat when user is authenticated
   // This prevents AbortError when app loads before authentication completes
   usePresence(!!user && !isAuthLoading);
-
-  // Get Gemini API key from environment variables or localStorage (user can set it in Settings)
-  const apiKey = import.meta.env.VITE_API_KEY || 
-                 import.meta.env.VITE_GEMINI_API_KEY || 
-                 process.env.API_KEY || 
-                 localStorage.getItem('gemini_api_key') || 
-                 '';
 
   // Toggle theme function - defined early so it can be used in useEffect hooks
   const toggleTheme = useCallback(() => {
@@ -685,6 +679,28 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKey);
   }, []);
 
+  // Cmd+J / Ctrl+J opens the global Capture modal from anywhere. CaptureModal
+  // is mounted once at App level (sibling of GlobalCommandPalette) and listens
+  // for `pulse:capture-open`. Notes land in `pulse_notes` tagged with the
+  // current AppView so dashboard / war-room / summit / archives surfaces can
+  // filter their views.
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'j') {
+        // Skip when typing into an input/textarea/contentEditable — let the
+        // user's text-input shortcuts work normally there.
+        const t = e.target as HTMLElement | null;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) {
+          return;
+        }
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('pulse:capture-open'));
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
+
   // Global navigation event — allows PulseAssistant suggested actions + the
   // AI-error handler's "Upgrade" CTA to navigate. `section` is honoured when
   // navigating into AppView.SETTINGS (e.g. `section: 'billing'`).
@@ -825,8 +841,7 @@ const App: React.FC = () => {
         {(() => {
           switch (view) {
             case AppView.LIVE:
-              return <PulseVoiceChat
-                apiKey={apiKey}
+              return <Summit
                 userId={user?.id}
                 onClose={() => setView(AppView.DASHBOARD)}
                 onSendToArchive={async (notes) => {
@@ -843,15 +858,15 @@ const App: React.FC = () => {
                 }}
               />;
             case AppView.RELAY:
-              return <Relay apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} />;
+              return <Relay contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} />;
             case AppView.GLIMPSE:
-              return <Glimpse apiKey={apiKey} isDarkMode={isDarkMode} />;
+              return <Glimpse isDarkMode={isDarkMode} />;
             case AppView.MESSAGES:
-              return <Messages apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} onAddContact={handleAddContact} fullPage={true} />;
+              return <Messages contacts={contacts} initialContactId={selectedContactId} onAddContact={handleAddContact} fullPage={true} />;
             case AppView.SMS:
               return <SMS contacts={contacts} />;
             case AppView.MEETINGS:
-              return <Meetings apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} initialMeetingCode={initialMeetingCode || undefined} />;
+              return <Meetings contacts={contacts} initialContactId={selectedContactId} initialMeetingCode={initialMeetingCode || undefined} />;
             case AppView.CALENDAR:
               return <Calendar contacts={contacts} openTaskPanel={openTaskPanel} onNavigateToIntegrations={() => { setSettingsSection('integrations'); setView(AppView.SETTINGS); }} />;
             case AppView.CONTACTS:
@@ -861,7 +876,7 @@ const App: React.FC = () => {
               setView(AppView.CONTACTS);
               return null;
             case AppView.EMAIL:
-              return user ? <EmailClient user={user} onUpdateUser={() => setUser({...user})} apiKey={apiKey} /> : null;
+              return user ? <EmailClient user={user} onUpdateUser={() => setUser({...user})} /> : null;
             case AppView.ARCHIVES:
               return <Archives />;
             case AppView.SETTINGS:
@@ -885,14 +900,14 @@ const App: React.FC = () => {
                 onOpenCalendar={() => setView(AppView.CALENDAR)}
               />;
             case AppView.LIVE_AI:
-              return <LiveDashboard apiKey={apiKey} userId={user?.id || ''} />;
+              return <LiveDashboard userId={user?.id || ''} />;
             case AppView.DECISIONS_TASKS:
               return <DecisionTaskHub user={user} />;
             case AppView.USERS_GUIDE:
               return <UsersGuide isDarkMode={isDarkMode} />;
             case AppView.DASHBOARD:
             default:
-              return <Dashboard user={user} apiKey={apiKey} setView={(v, options) => {
+              return <Dashboard user={user} setView={(v, options) => {
                 setView(v);
                 setIsMobileMenuOpen(false);
                 if (options?.openTaskPanel) {
@@ -963,6 +978,10 @@ const App: React.FC = () => {
           palette aggregates Pulse-wide actions and section-specific ones. */}
       <GlobalCommandPalette />
       <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} />
+
+      {/* Single global Capture modal — opened by Cmd+J from anywhere. Mirrors
+          the GlobalCommandPalette pattern. Tags captures with the current view. */}
+      <CaptureModal currentView={view} />
 
       {/* Blocking org-onboarding modal: appears when the active workspace has
           onboarding_step='pending' and the user is the owner. Self-dismisses. */}

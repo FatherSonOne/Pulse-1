@@ -34,3 +34,12 @@ export class AIProviderUnavailableError extends AIRouterError {
     this.name = 'AIProviderUnavailableError';
   }
 }
+
+/** Thrown when invokeAIJson can't parse the model response after fence-stripping
+ *  and structural extraction. Carries the raw text for debugging. */
+export class AIJsonParseError extends AIRouterError {
+  constructor(public readonly rawText: string, public readonly parseError: Error) {
+    super(`AI returned unparseable JSON: ${parseError.message}`, 'json_parse_failed');
+    this.name = 'AIJsonParseError';
+  }
+}

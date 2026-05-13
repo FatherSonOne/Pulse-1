@@ -216,7 +216,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
             onClick={() => setShowArchived(!showArchived)}
             className={`flex-shrink-0 h-6 px-2 rounded font-mono uppercase tracking-[0.1em] text-[10px] font-medium inline-flex items-center gap-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
               showArchived
-                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
                 : 'text-zinc-500 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/[0.04]'
             }`}
             title={showArchived ? 'Hide archived' : 'Show archived'}
@@ -247,7 +247,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
 
       {/* Search Results */}
       {searchQuery && searchResults.length > 0 && (
-        <div className="px-2 pb-2 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="px-2 pb-2 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)]">
           <div className="text-xs text-zinc-500 dark:text-zinc-400 px-2 mb-2">{searchResults.length} results</div>
           <div className="max-h-48 overflow-y-auto space-y-1">
             {searchResults.slice(0, 5).map(result => (

@@ -1620,7 +1620,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
           workspaceMembers={workspaceMembers}
           onClose={() => setDecisionToDecompose(null)}
           onTasksGenerated={handleDecompositionComplete}
-          apiKey=""
         />,
         document.body
       )}

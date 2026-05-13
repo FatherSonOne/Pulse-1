@@ -17,6 +17,7 @@ import {
   AITrialExpiredError,
   AIProviderUnavailableError,
   AIRouterError,
+  AIJsonParseError,
 } from './errors';
 import { maskParams, shouldMask } from './piiMasking';
 
@@ -130,20 +131,81 @@ export async function invokeAIPrompt(
   return result.text;
 }
 
-/** JSON-mode call that parses the response. Throws if parsing fails. */
+/** JSON-mode call that parses the response. Throws AIJsonParseError if all
+ *  repair attempts fail. Repair tiers:
+ *    1. raw                         — strict parse
+ *    2. fence-stripped              — remove ```json … ``` wrappers
+ *    3. balanced-substring extract  — slice from first { (or [) to its matching
+ *                                     close brace, useful when the model adds
+ *                                     prose before/after the object
+ *  Truncated responses (model hit max_output_tokens mid-string) can't be
+ *  recovered here — callers should catch AIJsonParseError and fall back. */
 export async function invokeAIJson<T = unknown>(
   task: AITask,
   prompt: string,
   opts: InvokeAIOptions & { systemPrompt?: string; temperature?: number },
 ): Promise<T> {
   const text = await invokeAIPrompt(task, prompt, { ...opts, jsonMode: true });
+
+  // Tier 1: strict parse
   try {
     return JSON.parse(text) as T;
-  } catch {
-    // Fallback — strip markdown fences if model wrapped the JSON
-    const cleaned = text.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
-    return JSON.parse(cleaned) as T;
+  } catch { /* fall through */ }
+
+  // Tier 2: strip markdown fences
+  const fenceStripped = text
+    .replace(/^\s*```(?:json)?\s*\n?/i, '')
+    .replace(/\n?\s*```\s*$/i, '')
+    .trim();
+  try {
+    return JSON.parse(fenceStripped) as T;
+  } catch { /* fall through */ }
+
+  // Tier 3: extract first balanced { … } or [ … ]
+  const extracted = extractBalancedJson(fenceStripped);
+  if (extracted) {
+    try {
+      return JSON.parse(extracted) as T;
+    } catch { /* fall through */ }
   }
+
+  // All repairs failed — surface a typed error with the raw text so callers
+  // can log it and decide whether to fall back to defaults.
+  const finalErr = (() => {
+    try { JSON.parse(fenceStripped); return new Error('unknown'); }
+    catch (e) { return e as Error; }
+  })();
+  throw new AIJsonParseError(text, finalErr);
+}
+
+/** Walks `s` looking for the first {/[ and returns the substring up to and
+ *  including its balanced matching brace. Respects string literals (so braces
+ *  inside quoted strings don't count) and `\"` escapes. Returns null if no
+ *  balanced container is found (e.g. truncated mid-string). */
+function extractBalancedJson(s: string): string | null {
+  const startIdx = s.search(/[{[]/);
+  if (startIdx < 0) return null;
+  const open = s[startIdx];
+  const close = open === '{' ? '}' : ']';
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = startIdx; i < s.length; i++) {
+    const ch = s[i];
+    if (inString) {
+      if (escaped) { escaped = false; continue; }
+      if (ch === '\\') { escaped = true; continue; }
+      if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === open) depth++;
+    else if (ch === close) {
+      depth--;
+      if (depth === 0) return s.slice(startIdx, i + 1);
+    }
+  }
+  return null;
 }
 
 export type { AITask, AIInvokeParams, AIResult, AIMessage } from './types';

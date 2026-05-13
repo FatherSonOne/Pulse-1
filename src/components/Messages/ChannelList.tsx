@@ -107,13 +107,13 @@ export const ChannelList: React.FC<ChannelListProps> = ({
 
       {/* New Channel Form */}
       {showNewChannel && (
-        <div className="px-4 py-4 border-b border-zinc-800 space-y-3 animate-slideInDown bg-zinc-900/50">
+        <div className="px-4 py-4 border-b border-[rgba(255,255,255,0.06)] space-y-3 animate-slideInDown bg-[rgba(255,255,255,0.03)]">
           <input
             type="text"
             placeholder="Channel name..."
             value={newChannelName}
             onChange={(e) => setNewChannelName(e.target.value)}
-            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 transition"
+            className="w-full px-3 py-2 bg-[rgba(255,255,255,0.055)] border border-[rgba(255,255,255,0.10)] rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 transition"
             autoFocus
           />
           <input
@@ -121,14 +121,14 @@ export const ChannelList: React.FC<ChannelListProps> = ({
             placeholder="Description (optional)"
             value={newChannelDesc}
             onChange={(e) => setNewChannelDesc(e.target.value)}
-            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 transition"
+            className="w-full px-3 py-2 bg-[rgba(255,255,255,0.055)] border border-[rgba(255,255,255,0.10)] rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 transition"
           />
           <label className="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer">
             <input
               type="checkbox"
               checked={isGroup}
               onChange={(e) => setIsGroup(e.target.checked)}
-              className="w-4 h-4 rounded border-zinc-600 text-rose-500 focus:ring-rose-500 bg-zinc-800"
+              className="w-4 h-4 rounded border-[rgba(255,255,255,0.10)] text-rose-500 focus:ring-rose-500 bg-[rgba(255,255,255,0.055)]"
             />
             <Users className="text-rose-400" />
             Private Group Chat
@@ -146,7 +146,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
                 setNewChannelName('');
                 setNewChannelDesc('');
               }}
-              className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-2 rounded-lg text-xs font-medium transition"
+              className="flex-1 bg-[rgba(255,255,255,0.055)] hover:bg-[rgba(255,255,255,0.10)] text-white py-2 rounded-lg text-xs font-medium transition"
             >
               Cancel
             </button>
@@ -158,7 +158,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
       <div className="flex-1 overflow-y-auto py-2">
         {loading ? (
           <div className="px-4 py-8 text-center">
-            <div className="w-5 h-5 border-2 border-zinc-600 border-t-rose-500 rounded-full animate-spin mx-auto mb-2"></div>
+            <div className="w-5 h-5 border-2 border-[rgba(255,255,255,0.10)] border-t-rose-500 rounded-full animate-spin mx-auto mb-2"></div>
             <span className="text-zinc-500 text-sm">Loading channels...</span>
           </div>
         ) : channels.length === 0 ? (

@@ -377,10 +377,6 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  useEffect(() => {
-    voxModeService.updateQuickVoxStatus(recordingState === 'recording');
-  }, [recordingState]);
-
   const handleSendRecording = async () => {
     if (!recordingData) {
       console.error('Cannot send: no recording data');
@@ -519,55 +515,55 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
 
   // Theme classes for consistent styling
   const tc = {
-    // Backgrounds
+    // Backgrounds (Pulse brand surfaces — translucent over true-black in dark)
     pageBg: isDarkMode
-      ? 'bg-gradient-to-br from-gray-900 via-blue-900/10 to-gray-900'
-      : 'bg-gradient-to-br from-slate-50 via-blue-50/30 to-white',
+      ? 'bg-black'
+      : 'bg-[#f8f8f8]',
     panelBg: isDarkMode
-      ? 'bg-gray-900'
+      ? 'bg-[rgba(255,255,255,0.03)]'
       : 'bg-white',
     cardBg: isDarkMode
-      ? 'bg-gray-800/60'
+      ? 'bg-[rgba(255,255,255,0.055)]'
       : 'bg-white',
     inputBg: isDarkMode
-      ? 'bg-gray-800/60 border-gray-700/50'
-      : 'bg-white/80 border-gray-200/60',
+      ? 'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.10)]'
+      : 'bg-white border-[rgba(0,0,0,0.08)]',
     hoverBg: isDarkMode
-      ? 'hover:bg-gray-800/60'
-      : 'hover:bg-gray-100/80',
+      ? 'hover:bg-[rgba(255,255,255,0.055)]'
+      : 'hover:bg-[#f2f2f2]',
     activeBg: isDarkMode
-      ? 'bg-blue-500/20'
-      : 'bg-blue-500/10',
+      ? 'bg-[rgba(244,63,94,0.12)]'
+      : 'bg-[rgba(244,63,94,0.08)]',
 
     // Borders
-    border: isDarkMode ? 'border-gray-800/60' : 'border-gray-200/60',
-    borderAccent: isDarkMode ? 'border-blue-500/30' : 'border-blue-400/40',
+    border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-[rgba(0,0,0,0.08)]',
+    borderAccent: 'border-[#f43f5e]',
 
     // Text
-    text: isDarkMode ? 'text-white' : 'text-gray-900',
-    textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
-    textMuted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-    textAccent: 'text-blue-500',
+    text: isDarkMode ? 'text-[#fafafa]' : 'text-[#0f0f0f]',
+    textSecondary: isDarkMode ? 'text-[#b4b4b8]' : 'text-[#52525b]',
+    textMuted: 'text-[#6b7280]',
+    textAccent: 'text-[#f43f5e]',
 
-    // Message bubbles
+    // Message bubbles — coral tint for sender ("mine"), translucent neutral for "other"
     messageMine: isDarkMode
-      ? 'bg-blue-600/20 border-blue-500/30'
-      : 'bg-blue-500/10 border-blue-400/30',
+      ? 'bg-[rgba(244,63,94,0.12)] border-[rgba(244,63,94,0.30)]'
+      : 'bg-[rgba(244,63,94,0.08)] border-[rgba(244,63,94,0.20)]',
     messageOther: isDarkMode
-      ? 'bg-gray-800/60 border-gray-700/50'
-      : 'bg-gray-100/80 border-gray-200/50',
+      ? 'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.06)]'
+      : 'bg-[#f2f2f2] border-[rgba(0,0,0,0.06)]',
 
     // Buttons
-    btnPrimary: 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/25',
+    btnPrimary: 'btn-brand-primary',
     btnSecondary: isDarkMode
-      ? 'bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 border border-gray-700/50'
-      : 'bg-white/80 hover:bg-gray-100/80 text-gray-700 border border-gray-200/60',
+      ? 'bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.055)] text-[#fafafa] border border-[rgba(255,255,255,0.10)]'
+      : 'bg-white hover:bg-[#f2f2f2] text-[#0f0f0f] border border-[rgba(0,0,0,0.08)]',
     btnGhost: isDarkMode
-      ? 'hover:bg-gray-800/60 text-gray-400 hover:text-white'
-      : 'hover:bg-gray-100/80 text-gray-500 hover:text-gray-900',
+      ? 'hover:bg-[rgba(255,255,255,0.055)] text-[#b4b4b8] hover:text-[#fafafa]'
+      : 'hover:bg-[#f2f2f2] text-[#52525b] hover:text-[#0f0f0f]',
 
     // Modal
-    modalOverlay: 'bg-zinc-950/60 backdrop-blur-sm',
+    modalOverlay: 'pulse-modal-scrim',
     modalBg: isDarkMode
       ? 'bg-gray-900 border-gray-800/60'
       : 'bg-white border-gray-200/60',
@@ -748,7 +744,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
                             }}
                             className={`absolute top-1 ${isMe ? 'right-1' : 'left-1'} w-6 h-6 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
                               isSelected(message.id)
-                                ? 'bg-blue-500 border-2 border-blue-600'
+                                ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
                                 : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
                             }`}
                             style={{
@@ -866,7 +862,6 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
                     setTimeout(() => startRecording(), 100);
                   }}
                   isDarkMode={isDarkMode}
-                  modeColor={MODE_COLOR}
                 />
               ) : (
                 <VoxRecordArea
@@ -952,7 +947,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
                 placeholder="Search contacts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full pl-10 pr-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} text-sm border focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all`}
+                className={`w-full pl-10 pr-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} text-sm border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
               />
             </div>
 

@@ -1842,6 +1842,7 @@ const Summit: React.FC<SummitProps> = ({
           onAdd={handleArtifactAdd}
           onUpdate={handleArtifactUpdate}
           onDelete={handleArtifactDelete}
+          sessionId={sessionIdRef.current ?? undefined}
         />
       </div>
 

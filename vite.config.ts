@@ -396,8 +396,11 @@ export default defineConfig(({ mode }) => {
         })
       ],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        // GEMINI_API_KEY is intentionally NOT exposed to the client bundle.
+        // All Gemini calls are routed through Supabase edge functions
+        // (ai-router, gemini-embed, gemini-proxy, gemini-live-token) which
+        // hold the master key as a server-side secret. Re-introducing these
+        // defines would inline the key into every browser bundle at build time.
         '__APP_VERSION__': JSON.stringify(process.env.npm_package_version || '2.4.0'),
       },
       resolve: {

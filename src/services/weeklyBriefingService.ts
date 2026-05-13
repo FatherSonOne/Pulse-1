@@ -9,7 +9,7 @@
  * `message_summary`); the signals list is templated deterministically so it
  * stays specific and citation-grounded.
  *
- * Distinct from `briefingService` (daily AI context for the chat assistant).
+ * Distinct from `dailyBriefingService` (daily AI context for the Pulse AI sidebar nudges).
  */
 
 import {

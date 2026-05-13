@@ -29,8 +29,9 @@ import {
 } from './relayTypes';
 
 export interface RelayServiceConfig {
-  geminiApiKey?: string;
+  /** OpenAI Whisper key — still client-side (BYO). */
   openaiApiKey?: string;
+  /** AssemblyAI key — still client-side (BYO). */
   assemblyaiApiKey?: string;
   settings?: Partial<RelaySettings>;
 }
@@ -41,18 +42,18 @@ export class RelayService {
   private feedbackService: RelayFeedbackService;
   private settings: RelaySettings;
 
-  constructor(config: RelayServiceConfig) {
-    const geminiKey = config.geminiApiKey || import.meta.env.VITE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '';
+  constructor(config: RelayServiceConfig = {}) {
     const openaiKey = config.openaiApiKey || localStorage.getItem('openai_api_key') || '';
 
     this.transcriptionService = new RelayTranscriptionService({
-      geminiApiKey: geminiKey,
       openaiApiKey: openaiKey,
       assemblyaiApiKey: config.assemblyaiApiKey,
     });
 
-    this.analysisService = new RelayAnalysisService(geminiKey);
-    this.feedbackService = new RelayFeedbackService(geminiKey);
+    // Gemini-backed services no longer need a client-side key — they route
+    // through server-side edge functions (ai-router / gemini-audio / etc.).
+    this.analysisService = new RelayAnalysisService();
+    this.feedbackService = new RelayFeedbackService();
     this.settings = { ...DEFAULT_RELAY_SETTINGS, ...config.settings };
   }
 

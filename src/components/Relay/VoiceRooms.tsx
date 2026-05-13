@@ -495,7 +495,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
           {activeRoom ? (
             <>
               {/* Room Header */}
-              <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-zinc-900/50 to-transparent">
+              <div className="px-6 py-4 border-b border-zinc-800 bg-[rgba(255,255,255,0.03)]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className={`w-14 h-14 rounded-2xl ${activeRoom.color} flex items-center justify-center text-white text-xl`}>
@@ -566,7 +566,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
               </div>
 
               {/* Controls */}
-              <div className="px-6 py-4 border-t border-zinc-800 bg-gradient-to-r from-zinc-900 to-zinc-950">
+              <div className="px-6 py-4 border-t border-zinc-800 bg-[rgba(255,255,255,0.03)]">
                 <div className="flex items-center justify-center gap-4">
                   <button
                     onClick={toggleMute}

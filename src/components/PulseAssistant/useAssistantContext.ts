@@ -73,11 +73,17 @@ export function useAssistantContext(
         }
       }
 
+      // Dashboard is the cross-section overview, so it pulls a slim slice of
+      // threads + email + today's calendar alongside decisions/tasks. This is
+      // what makes "who needs my attention first?" and "who messaged me last?"
+      // answerable from Dashboard instead of forcing a section switch.
+      const isDashboard = activeView === AppView.DASHBOARD;
+
       // ── Messages / Threads ─────────────────────────────────────────────
-      if (activeView === AppView.MESSAGES) {
+      if (activeView === AppView.MESSAGES || isDashboard) {
         try {
           const threads = await dataService.getThreads();
-          newCtx.threads = threads.slice(0, 20);
+          newCtx.threads = threads.slice(0, isDashboard ? 8 : 20);
         } catch (e) {
           console.error('[PulseAssistant] Failed to load threads:', e);
           newCtx.threads = [];
@@ -85,10 +91,11 @@ export function useAssistantContext(
       }
 
       // ── Email ──────────────────────────────────────────────────────────
-      if (activeView === AppView.EMAIL) {
+      if (activeView === AppView.EMAIL || isDashboard) {
         try {
+          const limit = isDashboard ? 5 : 15;
           const [emails, unreadCount] = await Promise.all([
-            emailSyncService.getEmailsByFolder('inbox', 15, 0),
+            emailSyncService.getEmailsByFolder('inbox', limit, 0),
             emailSyncService.getUnreadCount('inbox'),
           ]);
           newCtx.emails = emails;
@@ -101,11 +108,11 @@ export function useAssistantContext(
       }
 
       // ── Calendar & Meetings ────────────────────────────────────────────
-      if (CALENDAR_SECTIONS.includes(activeView)) {
+      if (CALENDAR_SECTIONS.includes(activeView) || isDashboard) {
         try {
           const [todayEvents, upcomingEvents] = await Promise.all([
             googleCalendarService.getTodayEvents(),
-            googleCalendarService.getUpcomingEvents(7),
+            googleCalendarService.getUpcomingEvents(isDashboard ? 3 : 7),
           ]);
           // Merge and deduplicate by id
           const seen = new Set<string>();
@@ -114,7 +121,7 @@ export function useAssistantContext(
             seen.add(e.id);
             return true;
           });
-          newCtx.events = allEvents.slice(0, 20);
+          newCtx.events = allEvents.slice(0, isDashboard ? 8 : 20);
         } catch (e) {
           console.error('[PulseAssistant] Failed to load calendar events:', e);
           newCtx.events = [];

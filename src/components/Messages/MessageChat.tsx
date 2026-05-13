@@ -372,7 +372,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <div className="w-8 h-8 border-2 border-zinc-600 border-t-red-500 rounded-full animate-spin mx-auto mb-3"></div>
+              <div className="w-8 h-8 border-2 border-[rgba(255,255,255,0.10)] border-t-red-500 rounded-full animate-spin mx-auto mb-3"></div>
               <span className="text-zinc-500 text-sm">Loading messages...</span>
             </div>
           </div>
@@ -502,7 +502,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                                 }
                               }}
                               rows={Math.min(6, Math.max(1, editText.split('\n').length))}
-                              className="w-full bg-zinc-100 dark:bg-zinc-800 border border-rose-400/40 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-rose-500/30 resize-none"
+                              className="w-full bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] border border-rose-400/40 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-rose-500/30 resize-none"
                             />
                             <div className="flex gap-2 mt-1.5 text-xs">
                               <button
@@ -514,7 +514,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                               </button>
                               <button
                                 onClick={cancelEditMessage}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
                               >
                                 <X className="w-3 h-3" /> Cancel
                               </button>
@@ -562,14 +562,14 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                       <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
                         <button
                           onClick={() => handleReaction(message.id, '👍')}
-                          className="w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-rose-400 transition"
+                          className="w-7 h-7 rounded hover:bg-[rgba(255,255,255,0.055)] flex items-center justify-center text-zinc-500 hover:text-rose-400 transition"
                           title="Add reaction"
                         >
                           <Smile className="text-xs" />
                         </button>
                         <button
                           onClick={() => handlePinMessage(message.id)}
-                          className={`w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center transition ${message.is_pinned ? 'text-rose-500 dark:text-rose-bright' : 'text-zinc-500 hover:text-rose-400'}`}
+                          className={`w-7 h-7 rounded hover:bg-[rgba(255,255,255,0.055)] flex items-center justify-center transition ${message.is_pinned ? 'text-rose-500 dark:text-rose-bright' : 'text-zinc-500 hover:text-rose-400'}`}
                           title={message.is_pinned ? 'Unpin message' : 'Pin message'}
                         >
                           <Pin className="text-xs" />
@@ -578,7 +578,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                           <>
                             <button
                               onClick={() => startEditMessage(message.id, message.content)}
-                              className="w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-rose-400 transition"
+                              className="w-7 h-7 rounded hover:bg-[rgba(255,255,255,0.055)] flex items-center justify-center text-zinc-500 hover:text-rose-400 transition"
                               title="Edit message"
                             >
                               <Pencil className="text-xs" />
@@ -609,14 +609,14 @@ export const MessageChat: React.FC<MessageChatProps> = ({
         <div className="message-input-field-wrapper">
           <div className="input-actions-left flex gap-2">
             <button
-              className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition text-zinc-600 dark:text-zinc-400 hover:text-rose-500 flex-shrink-0"
+              className="w-10 h-10 rounded-lg bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] flex items-center justify-center transition text-zinc-600 dark:text-zinc-400 hover:text-rose-500 flex-shrink-0"
               title="Attach file"
             >
               <Paperclip />
             </button>
 
             <button
-              className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition text-zinc-600 dark:text-zinc-400 hover:text-rose-500 flex-shrink-0"
+              className="w-10 h-10 rounded-lg bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] flex items-center justify-center transition text-zinc-600 dark:text-zinc-400 hover:text-rose-500 flex-shrink-0"
               title="Add emoji"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             >
@@ -662,7 +662,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
           </div>
         </div>
         <div className="flex items-center justify-between mt-2 text-[11px] text-zinc-600">
-          <span>Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400">Enter</kbd> to send, <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400">Shift+Enter</kbd> for new line</span>
+          <span>Press <kbd className="px-1.5 py-0.5 bg-[rgba(255,255,255,0.055)] rounded text-zinc-400">Enter</kbd> to send, <kbd className="px-1.5 py-0.5 bg-[rgba(255,255,255,0.055)] rounded text-zinc-400">Shift+Enter</kbd> for new line</span>
           <span>{inputValue.length} characters</span>
         </div>
       </div>

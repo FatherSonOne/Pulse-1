@@ -55,18 +55,18 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800"
+          className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]"
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+          <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
             <h3 className="font-bold dark:text-white flex items-center gap-2">
-              <Clock className="text-blue-500" />
+              <Clock className="text-[#f43f5e]" />
               Schedule Message
             </h3>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition"
+              className="w-8 h-8 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center justify-center transition"
             >
               <X className="text-zinc-500" />
             </button>
@@ -75,7 +75,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
           {/* Content */}
           <div className="p-4 space-y-4">
             {/* Message Preview */}
-            <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300">
+            <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300">
               {messageText || 'No message to schedule'}
             </div>
 
@@ -87,7 +87,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
                   type="date"
                   value={scheduleDate}
                   onChange={e => onDateChange(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-[rgba(255,255,255,0.055)] dark:border-[rgba(255,255,255,0.10)] dark:text-white"
                 />
               </div>
               <div>
@@ -96,7 +96,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
                   type="time"
                   value={scheduleTime}
                   onChange={e => onTimeChange(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-[rgba(255,255,255,0.055)] dark:border-[rgba(255,255,255,0.10)] dark:text-white"
                 />
               </div>
             </div>
@@ -111,7 +111,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
                   {scheduledMessages.map(msg => (
                     <div
                       key={msg.id}
-                      className="flex justify-between items-center text-xs bg-zinc-50 dark:bg-zinc-800 p-2 rounded"
+                      className="flex justify-between items-center text-xs bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-2 rounded"
                     >
                       <span className="truncate flex-1">{msg.text}</span>
                       <span className="text-zinc-400 ml-2">
@@ -135,7 +135,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
             <button
               onClick={onSchedule}
               disabled={!canSchedule}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="btn-brand-primary text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               Schedule
             </button>
