@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
+import { scoreMessageSentiments } from '../../services/geminiService';
 
 // Types
 interface SentimentDataPoint {
@@ -34,6 +35,17 @@ interface SentimentInsight {
 interface SentimentTimelineProps {
   conversationId: string;
   dataPoints?: SentimentDataPoint[];
+  /** Raw thread messages. When provided and dataPoints is not, the
+   *  component scores them via the LLM and renders the result. Falls
+   *  back to mock data if scoring fails. */
+  sourceMessages?: Array<{
+    id: string;
+    text: string;
+    sender: 'user' | 'other' | string;
+    senderName?: string;
+    timestamp: string | Date;
+  }>;
+  contactName?: string;
   timeRange?: '7d' | '30d' | '90d' | 'all';
   onMessageClick?: (messageId: string) => void;
   onClose?: () => void;
@@ -105,6 +117,8 @@ const generateMockDataPoints = (): SentimentDataPoint[] => {
 export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
   conversationId,
   dataPoints: propDataPoints,
+  sourceMessages,
+  contactName,
   timeRange: initialTimeRange = '30d',
   onMessageClick,
   onClose,
@@ -112,9 +126,59 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
   const [timeRange, setTimeRange] = useState(initialTimeRange);
   const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'emotions'>('timeline');
   const [hoveredPoint, setHoveredPoint] = useState<string | null>(null);
+  const [llmDataPoints, setLlmDataPoints] = useState<SentimentDataPoint[] | null>(null);
 
-  // Use provided or mock data
-  const dataPoints = useMemo(() => propDataPoints || generateMockDataPoints(), [propDataPoints]);
+  // When source messages arrive (no explicit dataPoints), batch-score
+  // them via the AI router. The mock data falls in if the LLM isn't
+  // available or fails — that keeps the chart populated rather than
+  // empty during loading.
+  useEffect(() => {
+    if (propDataPoints || !sourceMessages || sourceMessages.length === 0) {
+      setLlmDataPoints(null);
+      return;
+    }
+    let cancelled = false;
+    void scoreMessageSentiments(
+      sourceMessages.map(m => ({
+        id: m.id,
+        text: m.text,
+        sender: m.sender === 'user' ? 'You' : (m.senderName || contactName || 'Contact'),
+      })),
+    )
+      .then(scores => {
+        if (cancelled || !scores) return;
+        const scoreById = new Map(scores.map(s => [s.messageId, s] as const));
+        const points: SentimentDataPoint[] = sourceMessages
+          .map(m => {
+            const s = scoreById.get(m.id);
+            if (!s) return null;
+            return {
+              timestamp: new Date(m.timestamp),
+              messageId: m.id,
+              messagePreview: m.text.length > 120 ? m.text.slice(0, 120) + '…' : m.text,
+              sender: m.sender === 'user' ? 'user' : 'contact',
+              senderName: m.sender === 'user' ? 'You' : (m.senderName || contactName || 'Contact'),
+              sentiment: s.label,
+              score: s.score,
+              emotions: s.emotions,
+              keywords: [],
+            } satisfies SentimentDataPoint;
+          })
+          .filter((p): p is SentimentDataPoint => p !== null);
+        setLlmDataPoints(points);
+      })
+      .catch(() => {
+        // Router hard errors bubble (Cap / Trial / ProviderUnavailable)
+        // — soft failures land here and we keep the mock fallback.
+      });
+    return () => { cancelled = true; };
+  }, [propDataPoints, sourceMessages, contactName]);
+
+  // Priority: explicit propDataPoints → LLM-scored points → mock.
+  const dataPoints = useMemo(
+    () => propDataPoints ?? llmDataPoints ?? generateMockDataPoints(),
+    [propDataPoints, llmDataPoints],
+  );
 
   // Filter by time range
   const filteredData = useMemo(() => {

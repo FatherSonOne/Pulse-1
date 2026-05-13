@@ -1,5 +1,14 @@
+// ─── Phase D migration note ──────────────────────────────────────────────────
+// AI routing in this module is server-side via Supabase edge functions
+// (ai-router, gemini-audio, gemini-video, gemini-image, gemini-speech,
+// gemini-embed). No browser-side Gemini API key is read or threaded through
+// these exports — workspace JWT auth + workspace_id are used instead.
+//
+// The ONE exception is `generateVideo` (Veo long-poll), which still uses the
+// browser-side key per Phase C decision 5B until that long-polling surface is
+// migrated to its own async edge function.
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { DraftAnalysis, ThreadContext, CatchUpSummary, AsyncSuggestion, Task, TeamHealth, Nudge, HandoffSummary, VoiceAnalysis, ChannelArtifact } from "../types";
 import { googleCalendarService } from "./googleCalendarService";
 import { withFormattedOutput } from "./aiFormattingService";
@@ -9,11 +18,13 @@ import { sanitizationService } from "./sanitizationService";
 import { usageTracker } from "./usageTracker";
 import { invokeAI, invokeAIPrompt, invokeAIJson } from "./ai/aiService";
 import { getCurrentWorkspaceId } from "./ai/getWorkspaceId";
+import { supabase } from "./supabase";
 import {
   AIRouterError,
   AICapExceededError,
   AITrialExpiredError,
   AIProviderUnavailableError,
+  AIJsonParseError,
 } from "./ai/errors";
 
 // ─── Router error handling ────────────────────────────────────────────────────
@@ -57,8 +68,7 @@ export const getCalendarContextForAI = async (): Promise<string> => {
 
 // Web-grounded search via the ai-router's 'web_search' task, which auto-enables
 // Gemini's googleSearch tool. Cheaper, one vendor, real citations via groundingChunks.
-export const generateSearchResponse = async (apiKey: string, query: string) => {
-  void apiKey;
+export const generateSearchResponse = async (query: string) => {
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return { text: "No response generated.", groundingChunks: [] };
@@ -89,8 +99,7 @@ Format your response in clean GitHub-flavored markdown so it's easy to scan:
   }
 };
 
-export const generateMapsResponse = async (apiKey: string, query: string) => {
-  void apiKey;
+export const generateMapsResponse = async (query: string) => {
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return { text: "Error retrieving map data.", groundingChunks: [] };
@@ -112,75 +121,64 @@ export const generateMapsResponse = async (apiKey: string, query: string) => {
   }
 };
 
-// ─── Image generation — KEPT on direct SDK ───────────────────────────────────
-// Uses gemini-2.5-flash-image / gemini-3-pro-image-preview — specialized image
-// models that are not routed through ai-router.
+// ─── Image generation — migrated to gemini-image edge function ───────────────
+// Server-side wrapper holds GEMINI_API_KEY and enforces workspace/cap.
+// `apiKey` parameter is ignored (kept for backward compatibility — drop in Phase D).
 
-export const generateImage = async (apiKey: string, prompt: string) => {
-  const ai = new GoogleGenAI({ apiKey });
+async function invokeGeminiImage(
+  action: 'generate' | 'edit' | 'pro_generate',
+  body: Record<string, unknown>,
+): Promise<string | null> {
+  const workspaceId = getCurrentWorkspaceId();
+  if (!workspaceId) return null;
+  const { data, error } = await supabase.functions.invoke('gemini-image', {
+    body: { action, workspace_id: workspaceId, ...body },
+  });
+  if (error) {
+    console.error(`[gemini-image:${action}] invoke error:`, error);
+    throw error;
+  }
+  return (data as { image?: string } | null)?.image ?? null;
+}
+
+export const generateImage = async (prompt: string) => {
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: { parts: [{ text: prompt }] },
-    });
-    const parts = response.candidates?.[0]?.content?.parts || [];
-    for (const part of parts) {
-      if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
-    }
-    return null;
+    return await invokeGeminiImage('generate', { prompt });
   } catch (error) {
-    console.error("Image Gen Error:", error);
+    console.error('Image Gen Error:', error);
     throw error;
   }
 };
 
-export const editImage = async (apiKey: string, imageBase64: string, prompt: string, mimeType: string = 'image/png') => {
-  const ai = new GoogleGenAI({ apiKey });
-  const cleanMime = mimeType.split(';')[0].trim();
+export const editImage = async (imageBase64: string, prompt: string, mimeType: string = 'image/png') => {
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: {
-        parts: [
-          { inlineData: { data: imageBase64, mimeType: cleanMime } },
-          { text: prompt },
-        ],
-      },
+    return await invokeGeminiImage('edit', {
+      prompt,
+      image_base64: imageBase64,
+      mime_type: mimeType,
     });
-    const parts = response.candidates?.[0]?.content?.parts || [];
-    for (const part of parts) {
-      if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
-    }
-    return null;
   } catch (error) {
-    console.error("Image Edit Error:", error);
+    console.error('Image Edit Error:', error);
     throw error;
   }
 };
 
-export const generateProImage = async (apiKey: string, prompt: string, aspectRatio: string = "1:1", size: string = "1K") => {
-  const ai = new GoogleGenAI({ apiKey });
+export const generateProImage = async (prompt: string, aspectRatio: string = '1:1', size: string = '1K') => {
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview',
-      contents: { parts: [{ text: prompt }] },
-      config: { imageConfig: { aspectRatio: aspectRatio, imageSize: size } }
+    return await invokeGeminiImage('pro_generate', {
+      prompt,
+      aspect_ratio: aspectRatio,
+      image_size: size,
     });
-    const parts = response.candidates?.[0]?.content?.parts || [];
-    for (const part of parts) {
-      if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
-    }
-    return null;
   } catch (error) {
-    console.error("Pro Image Gen Error:", error);
+    console.error('Pro Image Gen Error:', error);
     throw error;
   }
 };
 
 // ─── Text generation — migrated to router ────────────────────────────────────
 
-export const generateJournalInsight = async (apiKey: string, text: string) => {
-  void apiKey;
+export const generateJournalInsight = async (text: string) => {
   const prompt = `Analyze this journal entry and provide a very brief, empathetic insight or advice (max 2 sentences). Entry: "${text}"`;
   try {
     const workspaceId = getCurrentWorkspaceId();
@@ -194,8 +192,7 @@ export const generateJournalInsight = async (apiKey: string, text: string) => {
   }
 };
 
-export const generateSmartReply = async (apiKey: string, history: {role: string, text: string}[]) => {
-  void apiKey;
+export const generateSmartReply = async (history: {role: string, text: string}[]) => {
   const conversation = history.map(h => `${h.role}: ${h.text}`).join('\n');
 
   // Get calendar context for scheduling-related replies
@@ -227,8 +224,7 @@ export const generateSmartReply = async (apiKey: string, history: {role: string,
   }
 };
 
-export const generateSummary = async (apiKey: string, text: string) => {
-  void apiKey;
+export const generateSummary = async (text: string) => {
   const prompt = `Summarize the following text or conversation into 3 key bullet points:\n\n${text}`;
   try {
     const workspaceId = getCurrentWorkspaceId();
@@ -242,47 +238,45 @@ export const generateSummary = async (apiKey: string, text: string) => {
   }
 };
 
-// ─── Audio transcription — KEPT on direct SDK ────────────────────────────────
-// Uses gemini-2.5-flash with audio inlineData (base64). The router does not
-// yet accept audio/video binary payloads — that's Phase 4 territory.
+// ─── Audio transcription — migrated to gemini-audio edge function ────────────
+// Server-side wrapper holds GEMINI_API_KEY and enforces workspace/cap.
+// `apiKey` parameter is ignored (kept for backward compatibility with callers
+// that still pass localStorage'd keys — drop those reads in Phase D cleanup).
 
-export const transcribeMedia = async (apiKey: string, mediaBase64: string, mimeType: string = 'audio/webm') => {
-  const ai = new GoogleGenAI({ apiKey });
-  const cleanMime = mimeType.split(';')[0].trim();
+async function invokeGeminiAudio<T extends 'transcribe' | 'meeting_note' | 'analyze_memo'>(
+  action: T,
+  audio_base64: string,
+  mime_type: string,
+  extra: Record<string, unknown> = {},
+): Promise<{ text?: string; data?: unknown } | null> {
+  const workspaceId = getCurrentWorkspaceId();
+  if (!workspaceId) return null;
+  const { data, error } = await supabase.functions.invoke('gemini-audio', {
+    body: { action, audio_base64, mime_type, workspace_id: workspaceId, ...extra },
+  });
+  if (error) {
+    console.error(`[gemini-audio:${action}] invoke error:`, error);
+    return null;
+  }
+  return data as { text?: string; data?: unknown };
+}
+
+export const transcribeMedia = async (mediaBase64: string, mimeType: string = 'audio/webm') => {
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: {
-        parts: [
-          { inlineData: { mimeType: cleanMime, data: mediaBase64 } },
-          { text: "Transcribe the speech in this media exactly as spoken. Do not add any commentary." }
-        ]
-      },
+    const result = await invokeGeminiAudio('transcribe', mediaBase64, mimeType, {
+      punctuation: false,
     });
-    return response.text;
+    return result?.text ?? null;
   } catch (e) {
-    console.error("Transcription Error Full Details:", e);
+    console.error('Transcription Error Full Details:', e);
     return null;
   }
 };
 
-export const generateMeetingNote = async (apiKey: string, audioBase64: string, mimeType: string = 'audio/webm') => {
-  const ai = new GoogleGenAI({ apiKey });
-  const cleanMime = mimeType.split(';')[0].trim();
+export const generateMeetingNote = async (audioBase64: string, mimeType: string = 'audio/webm') => {
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: {
-        parts: [
-          { inlineData: { mimeType: cleanMime, data: audioBase64 } },
-          { text: withFormattedOutput(
-            "You are an AI meeting scribe. Listen to this short audio segment of a meeting. Extract any key facts, action items, decisions, or important updates into a single concise sentence. If the audio is silence or irrelevant, return empty string.",
-            'meeting-notes'
-          ) }
-        ]
-      },
-    });
-    return response.text;
+    const result = await invokeGeminiAudio('meeting_note', audioBase64, mimeType);
+    return result?.text ?? null;
   } catch {
     return null;
   }
@@ -290,8 +284,7 @@ export const generateMeetingNote = async (apiKey: string, audioBase64: string, m
 
 // ─── Daily briefing (migrated, JSON mode) ────────────────────────────────────
 
-export const generateDailyBriefing = async (apiKey: string, context: string) => {
-  void apiKey;
+export const generateDailyBriefing = async (context: string) => {
 
   const briefingPrompt = `You are a top-tier executive assistant for Pulse, a comprehensive personal productivity and communication platform.
 
@@ -345,7 +338,16 @@ Return ONLY valid JSON.`;
     return await invokeAIJson('thread_digest', withFormattedOutput(briefingPrompt, 'briefing'), { workspaceId });
   } catch (e) {
     if (isRouterHardError(e)) throw e;
-    console.error('Briefing generation error:', e);
+    if (e instanceof AIJsonParseError) {
+      // Model returned malformed/truncated JSON — likely hit max_output_tokens
+      // on a large briefing context. Log a head of the raw text for triage.
+      console.warn(
+        '[briefing] model returned unparseable JSON; using fallback. Head:',
+        e.rawText.slice(0, 200),
+      );
+    } else {
+      console.error('Briefing generation error:', e);
+    }
     return {
       greeting: "Welcome back.",
       summary: "Your dashboard is ready. Connect your accounts to get personalized insights.",
@@ -356,8 +358,7 @@ Return ONLY valid JSON.`;
   }
 };
 
-export const generateThinkingResponse = async (apiKey: string, prompt: string) => {
-  void apiKey;
+export const generateThinkingResponse = async (prompt: string) => {
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return null;
@@ -373,8 +374,7 @@ export const generateThinkingResponse = async (apiKey: string, prompt: string) =
   }
 };
 
-export const generateCode = async (apiKey: string, prompt: string) => {
-  void apiKey;
+export const generateCode = async (prompt: string) => {
   const codePrompt = `Write clean code for: ${prompt}. Return ONLY code with brief explanatory comments.`;
   try {
     const workspaceId = getCurrentWorkspaceId();
@@ -399,25 +399,32 @@ export const generateCode = async (apiKey: string, prompt: string) => {
 // Uses veo-3.1-fast-generate-preview (video gen) and gemini-3-pro-preview with
 // video inlineData for analysis — specialized models not in router.
 
-export const analyzeVideo = async (apiKey: string, videoBase64: string, mimeType: string, prompt: string) => {
-  const ai = new GoogleGenAI({ apiKey });
-  const cleanMime = mimeType.split(';')[0].trim();
-  try {
-    const response = await ai.models.generateContent({
+export const analyzeVideo = async (videoBase64: string, mimeType: string, prompt: string) => {
+  const workspaceId = getCurrentWorkspaceId();
+  if (!workspaceId) return null;
+  const { data, error } = await supabase.functions.invoke('gemini-video', {
+    body: {
+      action: 'analyze',
+      video_base64: videoBase64,
+      mime_type: mimeType,
+      prompt,
       model: 'gemini-3-pro-preview',
-      contents: {
-        parts: [
-          { inlineData: { mimeType: cleanMime, data: videoBase64 } },
-          { text: prompt }
-        ]
-      },
-    });
-    return response.text;
-  } catch (e) {
-    throw e;
+      workspace_id: workspaceId,
+    },
+  });
+  if (error) {
+    console.error('[gemini-video:analyzeVideo] invoke error:', error);
+    throw error;
   }
+  return (data as { text?: string } | null)?.text ?? null;
 };
 
+// TODO(Phase-C, decision-5B): Veo `generateVideo` is NOT migrated to a server-
+// side edge function. The 1-6 minute long-poll would double the gemini-video
+// surface (sync poll endpoint + client polling loop) for negligible value —
+// the only caller is Tools.tsx (internal dev tool). When/if Veo gets a real
+// user-facing surface, build a gemini-video-async function with operation_id
+// polling. For now this still uses the browser-side API key.
 export const generateVideo = async (apiKey: string, prompt: string, imageBase64?: string, imageMime?: string) => {
   const ai = new GoogleGenAI({ apiKey });
   try {
@@ -453,21 +460,22 @@ export const generateVideo = async (apiKey: string, prompt: string, imageBase64?
   }
 };
 
-// ─── Speech (TTS) — KEPT on direct SDK ───────────────────────────────────────
-// Uses gemini-2.5-flash-preview-tts — specialized TTS model not in router.
+// ─── Speech (TTS) — migrated to gemini-speech edge function ──────────────────
+// Returns raw base64 PCM string (no data-URL prefix) to preserve the legacy
+// contract expected by audioService.decodeAudioData.
 
-export const generateSpeech = async (apiKey: string, text: string) => {
-  const ai = new GoogleGenAI({ apiKey });
+export const generateSpeech = async (text: string): Promise<string | null> => {
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-preview-tts",
-      contents: { parts: [{ text: text }] },
-      config: {
-        responseModalities: ["AUDIO"],
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
-      },
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const { data, error } = await supabase.functions.invoke('gemini-speech', {
+      body: { text, workspace_id: workspaceId },
     });
-    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (error) {
+      console.error('[gemini-speech] invoke error:', error);
+      return null;
+    }
+    return (data as { audio?: string } | null)?.audio ?? null;
   } catch {
     return null;
   }
@@ -475,8 +483,7 @@ export const generateSpeech = async (apiKey: string, text: string) => {
 
 // ─── Chat (migrated, multi-turn via router) ──────────────────────────────────
 
-export const chatWithBot = async (apiKey: string, history: {role: string, text: string}[], newMessage: string, includeCalendarContext: boolean = true) => {
-  void apiKey;
+export const chatWithBot = async (history: {role: string, text: string}[], newMessage: string, includeCalendarContext: boolean = true) => {
 
   // Get calendar context for AI awareness
   let systemContext = '';
@@ -528,8 +535,7 @@ export const chatWithBot = async (apiKey: string, history: {role: string, text: 
 
 // --- Context Aware Functions ---
 
-export const analyzeDraftIntent = async (apiKey: string, draft: string): Promise<DraftAnalysis | null> => {
-  void apiKey;
+export const analyzeDraftIntent = async (draft: string): Promise<DraftAnalysis | null> => {
   if (!draft || draft.length < 5) return null;
   try {
     const workspaceId = getCurrentWorkspaceId();
@@ -545,8 +551,7 @@ export const analyzeDraftIntent = async (apiKey: string, draft: string): Promise
   }
 };
 
-export const generateThreadContext = async (apiKey: string, history: string): Promise<ThreadContext | null> => {
-  void apiKey;
+export const generateThreadContext = async (history: string): Promise<ThreadContext | null> => {
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return null;
@@ -561,8 +566,7 @@ export const generateThreadContext = async (apiKey: string, history: string): Pr
   }
 };
 
-export const generateCatchUpSummary = async (apiKey: string, history: string): Promise<CatchUpSummary | null> => {
-  void apiKey;
+export const generateCatchUpSummary = async (history: string): Promise<CatchUpSummary | null> => {
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return null;
@@ -582,8 +586,7 @@ export const generateCatchUpSummary = async (apiKey: string, history: string): P
 
 // --- Attention Intelligence Functions ---
 
-export const detectMeetingIntent = async (apiKey: string, text: string): Promise<AsyncSuggestion | null> => {
-  void apiKey;
+export const detectMeetingIntent = async (text: string): Promise<AsyncSuggestion | null> => {
   if (!text || text.length < 5) return null;
   try {
     const workspaceId = getCurrentWorkspaceId();
@@ -601,8 +604,7 @@ export const detectMeetingIntent = async (apiKey: string, text: string): Promise
   }
 };
 
-export const analyzeMessageUrgency = async (apiKey: string, senderRole: string, message: string): Promise<'high' | 'medium' | 'low'> => {
-  void apiKey;
+export const analyzeMessageUrgency = async (senderRole: string, message: string): Promise<'high' | 'medium' | 'low'> => {
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return 'medium';
@@ -620,8 +622,7 @@ export const analyzeMessageUrgency = async (apiKey: string, senderRole: string, 
 
 // --- Task Workflow Functions ---
 
-export const extractTaskFromMessage = async (apiKey: string, message: string, contactList: string[]): Promise<(Partial<Task> & { assigneeName?: string }) | null> => {
-  void apiKey;
+export const extractTaskFromMessage = async (message: string, contactList: string[]): Promise<(Partial<Task> & { assigneeName?: string }) | null> => {
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return null;
@@ -649,7 +650,6 @@ Return JSON with fields:
 };
 
 export const parseNaturalLanguageTask = async (
-  apiKey: string,
   input: string,
   workspaceMembers: Array<{ name: string; id: string }> = []
 ): Promise<{
@@ -662,7 +662,6 @@ export const parseNaturalLanguageTask = async (
   estimatedHours?: number;
   dependencies?: string[];
 } | null> => {
-  void apiKey;
   const memberNames = workspaceMembers.map(m => m.name).join(', ');
 
   try {
@@ -728,12 +727,11 @@ Return ONLY valid JSON, no explanations.`,
 };
 
 export const parseNaturalLanguageTaskWithFallback = async (
-  apiKey: string,
   input: string,
   workspaceMembers: Array<{ name: string; id: string }> = []
 ): Promise<ReturnType<typeof parseNaturalLanguageTask>> => {
   try {
-    return await parseNaturalLanguageTask(apiKey, input, workspaceMembers);
+    return await parseNaturalLanguageTask(input, workspaceMembers);
   } catch (err) {
     if (isRouterHardError(err)) throw err;
     console.error('[gemini:parseNaturalLanguageTask] Primary call failed', err);
@@ -742,7 +740,6 @@ export const parseNaturalLanguageTaskWithFallback = async (
 };
 
 export const generateSubtasksFromTask = async (
-  apiKey: string,
   taskTitle: string,
   taskDescription?: string,
   taskPriority?: string,
@@ -752,7 +749,6 @@ export const generateSubtasksFromTask = async (
   estimatedHours?: number;
   order: number;
 }> | null> => {
-  void apiKey;
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return null;
@@ -799,7 +795,6 @@ Return ONLY the JSON array, no explanations.`,
 };
 
 export const generateSubtasksFromTaskWithFallback = async (
-  apiKey: string,
   taskTitle: string,
   taskDescription?: string,
   taskPriority?: string,
@@ -810,7 +805,7 @@ export const generateSubtasksFromTaskWithFallback = async (
   order: number;
 }> | null> => {
   try {
-    return await generateSubtasksFromTask(apiKey, taskTitle, taskDescription, taskPriority, maxSubtasks);
+    return await generateSubtasksFromTask(taskTitle, taskDescription, taskPriority, maxSubtasks);
   } catch (err) {
     if (isRouterHardError(err)) throw err;
     console.error('[gemini:generateSubtasksFromTask] Primary call failed', err);
@@ -818,8 +813,7 @@ export const generateSubtasksFromTaskWithFallback = async (
   }
 };
 
-export const analyzeOutcomeProgress = async (apiKey: string, history: string, goal: string): Promise<{status: string, progress: number, blockers: string[]}> => {
-  void apiKey;
+export const analyzeOutcomeProgress = async (history: string, goal: string): Promise<{status: string, progress: number, blockers: string[]}> => {
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return { status: 'on_track', progress: 0, blockers: [] };
@@ -839,8 +833,7 @@ History: ${history}`,
 
 // --- Social Health & Relationship Functions ---
 
-export const analyzeTeamHealth = async (apiKey: string, history: string): Promise<TeamHealth | null> => {
-  void apiKey;
+export const analyzeTeamHealth = async (history: string): Promise<TeamHealth | null> => {
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return null;
@@ -861,8 +854,58 @@ Return JSON with fields: score (number 0-100), status (one of: healthy, at_risk,
   }
 };
 
-export const generateNudge = async (apiKey: string, history: string): Promise<Nudge | null> => {
-  void apiKey;
+// Per-message sentiment scoring. Returns an array of `{messageId, score
+// in [-1, 1], label, emotions}` for each input message in a single
+// batched LLM call. Used by the Sentiment tool to populate the timeline
+// chart without N round-trips. Returns null on soft failure; callers
+// can fall back to heuristic / empty state.
+export const scoreMessageSentiments = async (
+  messages: Array<{ id: string; text: string; sender: string }>,
+): Promise<Array<{
+  messageId: string;
+  score: number;
+  label: 'very_positive' | 'positive' | 'neutral' | 'negative' | 'very_negative';
+  emotions: string[];
+}> | null> => {
+  if (!messages.length) return [];
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    // Cap the batch so we stay well under context limits.
+    const batch = messages.slice(-50);
+    const payload = batch.map(m => `[${m.id}] ${m.sender}: ${m.text}`).join('\n');
+    const result = await invokeAIJson<{
+      scores: Array<{
+        messageId: string;
+        score: number;
+        label: 'very_positive' | 'positive' | 'neutral' | 'negative' | 'very_negative';
+        emotions?: string[];
+      }>;
+    }>(
+      'sentiment_analysis',
+      withFormattedOutput(
+        `Score the sentiment of each message. Return JSON {"scores": [{messageId, score (-1 to 1), label (one of: very_positive, positive, neutral, negative, very_negative), emotions (string array of up to 3 emotion words)}]}.
+
+Messages:
+${payload}`,
+        'analysis',
+      ),
+      { workspaceId },
+    );
+    if (!result?.scores) return null;
+    return result.scores.map(s => ({
+      messageId: s.messageId,
+      score: Math.max(-1, Math.min(1, s.score ?? 0)),
+      label: s.label,
+      emotions: s.emotions ?? [],
+    }));
+  } catch (e) {
+    if (isRouterHardError(e)) throw e;
+    return null;
+  }
+};
+
+export const generateNudge = async (history: string): Promise<Nudge | null> => {
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return null;
@@ -884,8 +927,7 @@ Return JSON with field: suggestion — an object with {type: one of "follow_up" 
   }
 };
 
-export const generateHandoffSummary = async (apiKey: string, history: string): Promise<HandoffSummary | null> => {
-  void apiKey;
+export const generateHandoffSummary = async (history: string): Promise<HandoffSummary | null> => {
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return null;
@@ -912,43 +954,17 @@ Return JSON with fields: context (string), keyDecisions (string array), pendingA
 // Uses gemini-2.5-flash with audio inlineData (base64) — multimodal audio input
 // not yet supported by the router.
 
-export const analyzeVoiceMemo = async (apiKey: string, audioBase64: string): Promise<VoiceAnalysis | null> => {
-  const ai = new GoogleGenAI({ apiKey });
+export const analyzeVoiceMemo = async (audioBase64: string): Promise<VoiceAnalysis | null> => {
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: {
-        parts: [
-          { inlineData: { mimeType: 'audio/webm', data: audioBase64 } },
-          { text: withFormattedOutput(
-            "Listen to this audio. Return JSON with: full transcription, concise summary (1-2 sentences), list of action items (tasks), and list of decisions made.",
-            'voice-analysis'
-          ) }
-        ]
-      },
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            transcription: { type: Type.STRING },
-            summary: { type: Type.STRING },
-            actionItems: { type: Type.ARRAY, items: { type: Type.STRING } },
-            decisions: { type: Type.ARRAY, items: { type: Type.STRING } }
-          },
-          required: ["transcription", "summary", "actionItems", "decisions"]
-        }
-      }
-    });
-    return JSON.parse(response.text || '{}') as VoiceAnalysis;
+    const result = await invokeGeminiAudio('analyze_memo', audioBase64, 'audio/webm');
+    return (result?.data as VoiceAnalysis | undefined) ?? null;
   } catch (e) {
-    console.error("Deep Audio Error", e);
+    console.error('Deep Audio Error', e);
     return null;
   }
 };
 
-export const generateChannelArtifact = async (apiKey: string, history: string, title: string): Promise<ChannelArtifact | null> => {
-  void apiKey;
+export const generateChannelArtifact = async (history: string, title: string): Promise<ChannelArtifact | null> => {
   try {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return null;
@@ -978,7 +994,6 @@ export interface EmailDraft {
 }
 
 export const generateEmailDraft = async (
-  apiKey: string,
   context: {
     replyTo?: { from: string; subject: string; body: string };
     intent: string;
@@ -986,7 +1001,6 @@ export const generateEmailDraft = async (
     recipientName?: string;
   }
 ): Promise<EmailDraft | null> => {
-  void apiKey;
 
   const toneDescriptions = {
     professional: 'professional and business-appropriate',
@@ -1029,11 +1043,9 @@ export const generateEmailDraft = async (
 };
 
 export const improveEmailText = async (
-  apiKey: string,
   text: string,
   improvement: 'shorten' | 'elaborate' | 'fix_grammar' | 'make_friendlier' | 'make_formal'
 ): Promise<string | null> => {
-  void apiKey;
   if (!text) return null;
 
   const instructions = {
@@ -1059,10 +1071,8 @@ export const improveEmailText = async (
 };
 
 export const generateEmailSuggestions = async (
-  apiKey: string,
   emailContext: { from: string; subject: string; body: string }
 ): Promise<string[] | null> => {
-  void apiKey;
 
   const rawPrompt = `Given this email:
 From: ${emailContext.from}
@@ -1088,8 +1098,7 @@ Return JSON array: ["suggestion 1", "suggestion 2", "suggestion 3"]`;
 };
 
 // AI Lab Functions
-export const summarizeText = async (apiKey: string, text: string): Promise<string | null> => {
-  void apiKey;
+export const summarizeText = async (text: string): Promise<string | null> => {
   if (!text) return null;
 
   const prompt = `Summarize the following text concisely, capturing the key points and main ideas:\n\n${text}\n\nProvide a clear, well-structured summary.`;
@@ -1106,61 +1115,91 @@ export const summarizeText = async (apiKey: string, text: string): Promise<strin
   }
 };
 
-// ─── Image analysis — KEPT on direct SDK ─────────────────────────────────────
-// Text output from image input (multimodal). Router does not yet support
-// image payloads — that's Phase 4 territory.
+// ─── Embeddings — routed through `gemini-embed` edge function ────────────────
+// We deliberately do NOT call Google's embedContent endpoint from the browser
+// any more: that exposed the Gemini API key in the URL (browser DevTools and
+// every error log), couldn't be metered, and used a separate billing project.
+// The edge function shares the GEMINI_API_KEY secret with ai-router.
+//
+// The legacy `apiKey` parameter is kept in the signature for backward
+// compatibility with the 8+ downstream callers, but it's ignored — auth is
+// handled via the user's Supabase JWT, not a Google key.
+//
+// Session-level circuit breaker: if the first call fails (e.g., the function
+// hasn't been deployed yet or upstream is down), we log once and skip the rest.
+// Downstream callers already tolerate `null` — chunks just index without
+// vectors, falling back to keyword matching.
+let embeddingDisabled = false;
+let embeddingDisabledReason = '';
 
-export const analyzeImage = async (apiKey: string, imageBase64: string, prompt: string): Promise<string | null> => {
-  if (!apiKey || !imageBase64) return null;
+async function callEmbedFunction(payload: { text?: string; texts?: string[] }): Promise<(number[] | null)[]> {
+  const { supabase } = await import('./supabase');
+  const { data, error } = await supabase.functions.invoke('gemini-embed', { body: payload });
+
+  if (error) {
+    const ctx = (error as { context?: { response?: Response } }).context;
+    const response = ctx?.response;
+    let detail = error.message ?? 'unknown';
+    if (response) {
+      try {
+        const body = await response.clone().json();
+        detail = (body?.detail as string) || (body?.error as string) || detail;
+      } catch { /* not JSON */ }
+    }
+    throw new Error(detail);
+  }
+
+  return (data?.embeddings ?? []) as (number[] | null)[];
+}
+
+export const generateEmbedding = async (
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  text: string,
+): Promise<number[] | null> => {
+  if (embeddingDisabled) return null;
+  if (!text || text.trim().length === 0) return null;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { inline_data: { mime_type: 'image/png', data: imageBase64 } },
-            { text: withFormattedOutput(prompt, 'image-analysis') }
-          ]
-        }]
-      })
-    });
-
-    const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+    const [embedding] = await callEmbedFunction({ text });
+    return embedding ?? null;
   } catch (e) {
-    console.error('Image analysis failed:', e);
+    embeddingDisabled = true;
+    embeddingDisabledReason = e instanceof Error ? e.message : 'unknown error';
+    console.warn(
+      `[geminiService] Embeddings disabled for this session: ${embeddingDisabledReason}. ` +
+      `Documents will index without semantic vectors (keyword search only).`,
+    );
     return null;
   }
 };
 
-// ─── Embeddings — KEPT on direct SDK ─────────────────────────────────────────
-// Uses text-embedding-005 — not a generative model, not in router.
+/**
+ * Batch variant — embeds up to 100 texts in a single round-trip via
+ * Gemini's `batchEmbedContents`. Use for indexing pipelines that would
+ * otherwise loop `generateEmbedding`. Returns null entries for any text
+ * the upstream couldn't embed; callers should treat null the same way
+ * they treat a single-call null (skip semantic vector, keep the chunk).
+ */
+export const generateEmbeddingsBatch = async (texts: string[]): Promise<(number[] | null)[]> => {
+  if (embeddingDisabled || texts.length === 0) return texts.map(() => null);
 
-export const generateEmbedding = async (apiKey: string, text: string): Promise<number[] | null> => {
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/text-embedding-005:embedContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        content: {
-          parts: [{ text }]
-        }
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error(`Embedding API Error (${response.status}):`, errorData);
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await callEmbedFunction({ texts });
+    // Defensive: pad/truncate so output length always matches input length.
+    if (result.length !== texts.length) {
+      const padded: (number[] | null)[] = [];
+      for (let i = 0; i < texts.length; i++) padded.push(result[i] ?? null);
+      return padded;
     }
-
-    const data = await response.json();
-    return data.embedding?.values || null;
+    return result;
   } catch (e) {
-    console.error("Embedding generation failed:", e);
-    return null;
+    embeddingDisabled = true;
+    embeddingDisabledReason = e instanceof Error ? e.message : 'unknown error';
+    console.warn(
+      `[geminiService] Embeddings disabled for this session: ${embeddingDisabledReason}. ` +
+      `Documents will index without semantic vectors (keyword search only).`,
+    );
+    return texts.map(() => null);
   }
 };
 
@@ -1169,11 +1208,9 @@ export const generateEmbedding = async (apiKey: string, text: string): Promise<n
 // Kept in the signature for backward compatibility with the 25+ downstream callers.
 
 export const processWithModel = async (
-  apiKey: string,
   prompt: string,
   model: string = 'gemini-2.5-flash' // IGNORED — router decides per task
 ): Promise<string | null> => {
-  void apiKey;
   void model;
   if (!prompt) return null;
 
@@ -1207,7 +1244,7 @@ export async function processWithModelViaProxy(
   prompt: string,
   model: string = 'gemini-2.5-flash'
 ): Promise<string> {
-  const result = await processWithModel('', prompt, model);
+  const result = await processWithModel(prompt, model);
   return result || '';
 }
 

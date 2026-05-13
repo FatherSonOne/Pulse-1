@@ -20,7 +20,7 @@ import { SmartSuggestions } from '../MessageEnhancements/SmartSuggestions';
 // (Tool-registry imports were removed when the QuickActionsCommandPalette
 // modal moved to the global ⌘K palette; tools are registered in Messages.tsx.)
 import { messagePersonalService } from '../../services/messagePersonalService';
-import { generateSummary, processWithModel } from '../../services/geminiService';
+import { generateSummary, processWithModel, scoreMessageSentiments } from '../../services/geminiService';
 import { pulseService } from '../../services/pulseService';
 
 const BundleAnalytics = React.lazy(() => import('../MessageEnhancements/BundleAnalytics'));
@@ -981,7 +981,18 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                   <React.Suspense fallback={<FeatureSkeleton />}>
                     <BundleProactive.SentimentTimeline
                       conversationId={activeThread.id}
-                      onPeriodClick={(period) => console.log('Period clicked:', period)}
+                      contactName={activeThread.contactName}
+                      sourceMessages={activeThread.messages.map(m => ({
+                        id: m.id,
+                        text: m.text,
+                        sender: m.sender,
+                        senderName: m.sender === 'user' ? 'You' : activeThread.contactName,
+                        timestamp: m.timestamp,
+                      }))}
+                      onMessageClick={(msgId) => {
+                        const el = document.getElementById(`message-${msgId}`);
+                        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
                     />
                   </React.Suspense>
                 </MessageEnhancementErrorBoundary>
