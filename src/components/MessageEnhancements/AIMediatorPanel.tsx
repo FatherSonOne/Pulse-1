@@ -267,22 +267,25 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
     </div>
   );
 
-  // Wrapped-in-PanelShell variant: no outer chrome, no collapsible
-  // header — the host already owns provenance, title and dismiss.
-  if (hideHeader) {
-    return (
-      <div className="space-y-3">
-        {severityBadge}
-        <div className="space-y-4">
-          {/* Signals summary */}
+  // Body content shared by both render variants (wrapped vs.
+  // standalone). Status colours are 0.08/0.12 tints — never thick
+  // borders — per the Status-Stays-Status rule.
+  const body = (
+    <div className="space-y-3">
+      {severityBadge}
+      <div className="space-y-4">
+        {/* Signals summary */}
+        {signals.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {signals.slice(0, 3).map(signal => (
-              <div
+              <span
                 key={signal.id}
-                className={`text-xs px-2.5 py-1.5 rounded-lg border ${
-                  signal.severity === 'high' ? 'border-red-300 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
-                  signal.severity === 'medium' ? 'border-amber-300 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' :
-                  'border-blue-300 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                className={`inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.1em] font-medium px-2 py-1 rounded ${
+                  signal.severity === 'high'
+                    ? 'bg-red-500/[0.08] dark:bg-red-500/[0.12] text-red-700 dark:text-red-300'
+                    : signal.severity === 'medium'
+                      ? 'bg-amber-500/[0.08] dark:bg-amber-500/[0.12] text-amber-700 dark:text-amber-300'
+                      : 'bg-zinc-500/[0.08] dark:bg-zinc-500/[0.12] text-zinc-700 dark:text-zinc-300'
                 }`}
               >
                 <i className={`fa-solid ${
@@ -290,43 +293,42 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
                   signal.type === 'frustration' ? 'fa-face-frown' :
                   signal.type === 'disagreement' ? 'fa-arrows-left-right' :
                   'fa-question-circle'
-                } mr-1.5`} />
+                }`} />
                 {signal.type}
-              </div>
+              </span>
             ))}
           </div>
+        )}
 
-          {/* Suggestions */}
+        {/* Suggestions */}
+        {suggestions.length > 0 && (
           <div className="space-y-2">
-            <div className="text-xs font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-wider">
+            <div className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-400">
               Suggestions
             </div>
             {suggestions.map(suggestion => (
               <div
                 key={suggestion.id}
-                className="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-zinc-200 dark:border-zinc-700"
+                className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] rounded-lg p-3 ring-1 ring-[rgba(0,0,0,0.08)] dark:ring-[rgba(255,255,255,0.10)]"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium text-zinc-800 dark:text-white">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
                       {suggestion.title}
                     </div>
                     <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
                       {suggestion.description}
                     </div>
                     {suggestion.suggestedText && (
-                      <div className="mt-2 p-2 bg-zinc-50 dark:bg-zinc-900 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 italic">
+                      <div className="mt-2 p-2 bg-white dark:bg-[rgba(255,255,255,0.03)] rounded-lg text-xs text-zinc-700 dark:text-zinc-300 italic ring-1 ring-[rgba(0,0,0,0.06)] dark:ring-[rgba(255,255,255,0.06)]">
                         "{suggestion.suggestedText}"
                       </div>
                     )}
                   </div>
                   <button
+                    type="button"
                     onClick={() => onApplySuggestion(suggestion)}
-                    className={`text-xs px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition-colors ${
-                      suggestion.type === 'pause' || suggestion.type === 'escalate'
-                        ? 'bg-amber-100 hover:bg-amber-200 text-amber-700 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 dark:text-amber-300'
-                        : 'bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 dark:text-blue-300'
-                    }`}
+                    className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium px-2.5 py-1.5 rounded-md whitespace-nowrap transition-colors bg-rose-500/[0.10] hover:bg-rose-500/[0.18] dark:bg-rose-500/[0.15] dark:hover:bg-rose-500/[0.22] text-rose-600 dark:text-rose-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                   >
                     {suggestion.actionLabel}
                   </button>
@@ -334,31 +336,76 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
               </div>
             ))}
           </div>
+        )}
 
-          {/* Quick tips */}
-          <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
-            <div className="text-xs font-bold text-zinc-600 dark:text-zinc-300 mb-2 flex items-center gap-1.5">
-              <Lightbulb className="text-amber-500" />
-              Quick Tips
-            </div>
-            <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5">
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-500">•</span>
-                Use "I" statements instead of "you" to reduce defensiveness
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-500">•</span>
-                Acknowledge their point before presenting yours
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-500">•</span>
-                Ask clarifying questions when unsure
-              </li>
-            </ul>
+        {/* Quick tips */}
+        <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.03)] rounded-lg p-3 ring-1 ring-[rgba(0,0,0,0.06)] dark:ring-[rgba(255,255,255,0.06)]">
+          <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-400 mb-2">
+            <Lightbulb className="w-3 h-3" />
+            Quick tips
           </div>
+          <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5">
+            <li className="flex items-start gap-2">
+              <span className="text-rose-500">•</span>
+              Use "I" statements instead of "you" to reduce defensiveness
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-rose-500">•</span>
+              Acknowledge their point before presenting yours
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-rose-500">•</span>
+              Ask clarifying questions when unsure
+            </li>
+          </ul>
         </div>
-      )}
+      </div>
     </div>
+  );
+
+  // Wrapped-in-PanelShell variant: no outer chrome — the host owns
+  // provenance, title and dismiss.
+  if (hideHeader) {
+    return body;
+  }
+
+  // Standalone variant (kept for any caller that doesn't wrap in
+  // PanelShell). Coral-only chrome, expandable header with the same
+  // body underneath.
+  return (
+    <section
+      className="bg-white dark:bg-[rgba(255,255,255,0.03)] ring-1 ring-[rgba(0,0,0,0.08)] dark:ring-[rgba(255,255,255,0.06)] rounded-xl overflow-hidden animate-slide-up"
+      role="region"
+      aria-label="AI Mediator"
+    >
+      <div
+        className="flex items-center justify-between px-4 py-3 cursor-pointer"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex items-center gap-3">
+          <AIProvenanceTag source="pulse-ai" kind="mediation" />
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            {signals.length} signal{signals.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDismissed(true);
+              onDismiss();
+            }}
+            aria-label="Dismiss AI Mediator"
+            className="w-7 h-7 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-rose-500/[0.08] dark:hover:bg-rose-500/[0.10] flex items-center justify-center transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+          <i className={`fa-solid fa-chevron-${expanded ? 'up' : 'down'} text-xs text-zinc-400 dark:text-zinc-500`} />
+        </div>
+      </div>
+      {expanded && <div className="px-4 pb-4">{body}</div>}
+    </section>
   );
 };
 

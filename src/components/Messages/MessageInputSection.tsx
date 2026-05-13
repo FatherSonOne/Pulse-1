@@ -377,28 +377,38 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
          </div>
        )}
 
-       {/* Phase 2: AI Mediator - Conflict detection */}
+       {/* Phase 2: AI Mediator — wrapped in the shared PanelShell so
+           coach + mediator share identical chrome (coral provenance
+           chip, dismiss button, translucent surface). */}
        {showAIMediator && activeThread && activeThread.messages.length > 5 && (
          <div className="mb-3">
-           <MessageEnhancementErrorBoundary featureName="AI Features">
-             <Suspense fallback={<FeatureSkeleton />}>
-               <BundleAI.AIMediatorPanel
-                 messages={activeThread.messages.slice(-15).map(m => ({
-                   id: m.id,
-                   text: m.text,
-                   sender: m.sender,
-                   timestamp: m.timestamp
-                 }))}
-                 contactName={activeThread.contactName}
-                 onApplySuggestion={(suggestion) => {
-                   if (suggestion.suggestedText) {
-                     setInputText(suggestion.suggestedText);
-                   }
-                 }}
-                 onDismiss={() => setShowAIMediator(false)}
-               />
-             </Suspense>
-           </MessageEnhancementErrorBoundary>
+           <PanelShell
+             source="MEDIATOR"
+             title="Mediating this thread"
+             subtitle={`Conflict and de-escalation cues for ${activeThread.contactName}`}
+             onDismiss={() => setShowAIMediator(false)}
+           >
+             <MessageEnhancementErrorBoundary featureName="AI Features">
+               <Suspense fallback={<FeatureSkeleton />}>
+                 <BundleAI.AIMediatorPanel
+                   messages={activeThread.messages.slice(-15).map(m => ({
+                     id: m.id,
+                     text: m.text,
+                     sender: m.sender,
+                     timestamp: m.timestamp
+                   }))}
+                   contactName={activeThread.contactName}
+                   onApplySuggestion={(suggestion) => {
+                     if (suggestion.suggestedText) {
+                       setInputText(suggestion.suggestedText);
+                     }
+                   }}
+                   onDismiss={() => setShowAIMediator(false)}
+                   hideHeader
+                 />
+               </Suspense>
+             </MessageEnhancementErrorBoundary>
+           </PanelShell>
          </div>
        )}
 
