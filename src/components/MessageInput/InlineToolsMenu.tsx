@@ -1,49 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { getAllToolActions, getToolOverlayType, saveRecentTool } from '../../services/toolRegistry';
 import type { ToolAction } from '../../services/toolRegistry';
+import { CATEGORIES } from '../ToolsPanel/toolsData';
 import './InlineToolsMenu.css';
 
-import { ArrowLeft, ChevronRight, LayoutGrid, X } from 'lucide-react';
-
-interface ToolCategory {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-  tools: string[];
-}
-
-const TOOL_CATEGORIES: ToolCategory[] = [
-  {
-    id: 'ai',
-    name: 'AI Tools',
-    icon: 'fa-brain',
-    color: '#f43f5e',
-    tools: ['deep-reasoner', 'ai-coach', 'ai-mediator', 'conversation-intelligence', 'deep-search'],
-  },
-  {
-    id: 'content',
-    name: 'Content',
-    icon: 'fa-pen-fancy',
-    color: '#ec4899',
-    tools: ['code-studio', 'smart-compose', 'templates', 'quick-phrases', 'message-formatting'],
-  },
-  {
-    id: 'analysis',
-    name: 'Analysis',
-    icon: 'fa-chart-line',
-    color: '#fb7185',
-    tools: ['video-analyst', 'engagement-scoring', 'response-time-tracker', 'conversation-flow', 'sentiment-timeline', 'meeting-intel'],
-  },
-  {
-    id: 'utilities',
-    name: 'Utilities',
-    icon: 'fa-toolbox',
-    color: '#be123c',
-    tools: ['vision-lab', 'video-studio', 'voice-studio', 'translation', 'route-planner', 'keyboard-shortcuts', 'settings', 'backup-sync'],
-  },
-];
+import { LayoutGrid, X } from 'lucide-react';
 
 interface InlineToolsMenuProps {
   onClose: () => void;
@@ -51,9 +13,8 @@ interface InlineToolsMenuProps {
 }
 
 export const InlineToolsMenu: React.FC<InlineToolsMenuProps> = ({ onClose, setActiveToolOverlay }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const allTools = getAllToolActions(() => {});
+  const allTools = getAllToolActions(() => { /* launches dispatched below */ });
 
   // Click outside to close
   useEffect(() => {
@@ -69,17 +30,11 @@ export const InlineToolsMenu: React.FC<InlineToolsMenuProps> = ({ onClose, setAc
   // Escape to close
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (selectedCategory) {
-          setSelectedCategory(null);
-        } else {
-          onClose();
-        }
-      }
+      if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [selectedCategory, onClose]);
+  }, [onClose]);
 
   const handleToolClick = (toolId: string) => {
     const overlayType = getToolOverlayType(toolId);
@@ -90,150 +45,70 @@ export const InlineToolsMenu: React.FC<InlineToolsMenuProps> = ({ onClose, setAc
     onClose();
   };
 
-  const getToolsByCategory = (categoryId: string): ToolAction[] => {
-    const category = TOOL_CATEGORIES.find(c => c.id === categoryId);
-    if (!category) return [];
-    return allTools.filter(tool => category.tools.includes(tool.id));
-  };
-
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0, y: 10, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        type: 'spring',
-        stiffness: 300,
-        damping: 25,
-      },
-    },
-    exit: { opacity: 0, y: 10, scale: 0.95, transition: { duration: 0.15 } },
-  };
-
-  const categoryVariants = {
-    hidden: { x: -20, opacity: 0 },
-    visible: (i: number) => ({
-      x: 0,
-      opacity: 1,
-      transition: {
-        delay: i * 0.05,
-        type: 'spring',
-        stiffness: 300,
-        damping: 25,
-      },
-    }),
-  };
-
-  const toolVariants = {
-    hidden: { x: -15, opacity: 0 },
-    visible: (i: number) => ({
-      x: 0,
-      opacity: 1,
-      transition: {
-        delay: i * 0.03,
-        type: 'spring',
-        stiffness: 300,
-        damping: 25,
-      },
-    }),
-  };
+  // Group the 11 message tools by their canonical category (WRITE /
+  // ANALYZE / COACH). The list is short enough that we don't drill in
+  // and out of subscreens — everything renders on one surface with mono
+  // section labels.
+  const sections = CATEGORIES.map(category => ({
+    id: category.id,
+    name: category.name,
+    tools: allTools.filter(tool => tool.category === category.id),
+  })).filter(section => section.tools.length > 0);
 
   return (
     <motion.div
       ref={menuRef}
       className="inline-tools-menu"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
+      initial={{ opacity: 0, y: 10, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 10, scale: 0.97 }}
+      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
     >
       {/* Header */}
       <div className="inline-tools-header">
-        {selectedCategory ? (
-          <>
-            <button
-              className="back-button"
-              onClick={() => setSelectedCategory(null)}
-              aria-label="Back to categories"
-            >
-              <ArrowLeft />
-            </button>
-            <div className="header-content">
-              <i className={`fa-solid ${TOOL_CATEGORIES.find(c => c.id === selectedCategory)?.icon}`} />
-              <span>{TOOL_CATEGORIES.find(c => c.id === selectedCategory)?.name}</span>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="header-content">
-              <LayoutGrid />
-              <span>AI Tools</span>
-            </div>
-            <button className="close-button" onClick={onClose} aria-label="Close menu">
-              <X />
-            </button>
-          </>
-        )}
+        <div className="header-content">
+          <LayoutGrid />
+          <span>Message tools</span>
+          <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 tabular-nums">
+            · {allTools.length}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="close-button"
+          onClick={onClose}
+          aria-label="Close menu"
+        >
+          <X />
+        </button>
       </div>
 
-      {/* Content */}
+      {/* Flat list, sectioned by WRITE / ANALYZE / COACH */}
       <div className="inline-tools-content">
-        {!selectedCategory ? (
-          /* Categories Grid */
-          <div className="categories-grid">
-            {TOOL_CATEGORIES.map((category, index) => (
-              <motion.button
-                key={category.id}
-                className="category-card"
-                onClick={() => setSelectedCategory(category.id)}
-                variants={categoryVariants}
-                custom={index}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div
-                  className="category-icon"
-                  style={{ background: `linear-gradient(135deg, ${category.color}, ${category.color}dd)` }}
+        {sections.map(section => (
+          <div key={section.id} className="tools-section">
+            <div className="tools-section-label">{section.name} · {section.tools.length}</div>
+            <div className="tools-list">
+              {section.tools.map((tool: ToolAction) => (
+                <button
+                  key={tool.id}
+                  type="button"
+                  className="tool-item"
+                  onClick={() => handleToolClick(tool.id)}
                 >
-                  <i className={`fa-solid ${category.icon}`} />
-                </div>
-                <div className="category-info">
-                  <div className="category-name">{category.name}</div>
-                  <div className="category-count">{category.tools.length} tools</div>
-                </div>
-                <ChevronRight className="category-arrow" />
-              </motion.button>
-            ))}
+                  <div className="tool-icon">
+                    <i className={`fa-solid ${tool.icon} text-rose-500`} />
+                  </div>
+                  <div className="tool-info">
+                    <div className="tool-name">{tool.name}</div>
+                    <div className="tool-desc">{tool.description}</div>
+                  </div>
+                  {tool.shortcut && <kbd className="tool-shortcut">{tool.shortcut}</kbd>}
+                </button>
+              ))}
+            </div>
           </div>
-        ) : (
-          /* Tools List */
-          <div className="tools-list">
-            {getToolsByCategory(selectedCategory).map((tool, index) => (
-              <motion.button
-                key={tool.id}
-                className="tool-item"
-                onClick={() => handleToolClick(tool.id)}
-                variants={toolVariants}
-                custom={index}
-                whileHover={{ x: 4 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="tool-icon">
-                  <i className={`fa-solid ${tool.icon} text-rose-500`} />
-                </div>
-                <div className="tool-info">
-                  <div className="tool-name">{tool.name}</div>
-                  <div className="tool-desc">{tool.description}</div>
-                </div>
-                {tool.shortcut && (
-                  <kbd className="tool-shortcut">{tool.shortcut}</kbd>
-                )}
-              </motion.button>
-            ))}
-          </div>
-        )}
+        ))}
       </div>
     </motion.div>
   );

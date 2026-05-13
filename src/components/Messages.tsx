@@ -117,7 +117,6 @@ import type { LiveCollaborator } from '../types/messageEnhancements';
 import { VoiceTextButton } from './shared/VoiceTextButton';
 import { TriageBrief } from './Messages/TriageBrief';
 import MessageInput from './MessageInput';
-import { FloatingToolsButton } from './FloatingToolsButton';
 // Advanced Features - Context, Attention, Tasks, Artifacts
 import { IntentComposer, ContextPanel } from './context';
 import { MeetingDeflector } from './attention';
