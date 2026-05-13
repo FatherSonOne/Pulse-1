@@ -1,148 +1,144 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ToolCategorySegment } from './ToolCategorySegment';
-import { ToolSubMenu } from './ToolSubMenu';
-import { getToolOverlayType, saveRecentTool } from '../../services/toolRegistry';
-import { TOOL_CATEGORIES, getToolsByCategory } from './categories';
+import { LayoutGrid, X } from 'lucide-react';
+import { getAllToolActions, getToolOverlayType, saveRecentTool } from '../../services/toolRegistry';
+import type { ToolAction } from '../../services/toolRegistry';
+import { CATEGORIES } from '../ToolsPanel/toolsData';
 import type { FloatingToolsButtonProps } from './types';
 import './FloatingToolsButton.css';
 
+// Flat popup variant of the floating action button. With only 11
+// message tools, the previous 4-segment radial menu + per-category
+// drill-down was overkill (and pointed at deleted tool ids). The FAB
+// now opens a vertical list sectioned by WRITE / ANALYZE / COACH.
+
 export const FloatingToolsButton: React.FC<FloatingToolsButtonProps> = ({ setActiveToolOverlay }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const fabRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const allTools = getAllToolActions(() => { /* launch dispatched in handleToolClick */ });
 
   // Click outside to close
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (fabRef.current && !fabRef.current.contains(e.target as Node)) {
+    if (!isOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
-        setSelectedCategory(null);
       }
     };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
   }, [isOpen]);
 
   // Escape to close
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsOpen(false);
-        setSelectedCategory(null);
-      }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
     };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
 
   const handleToolClick = (toolId: string) => {
-    const overlayType = getToolOverlayType(toolId);
-    if (overlayType && setActiveToolOverlay) {
-      setActiveToolOverlay(overlayType);
-    }
+    const overlay = getToolOverlayType(toolId);
+    if (overlay && setActiveToolOverlay) setActiveToolOverlay(overlay);
     saveRecentTool(toolId);
     setIsOpen(false);
-    setSelectedCategory(null);
   };
 
-  const handleCategoryClick = (categoryId: string) => {
-    if (selectedCategory === categoryId) {
-      setSelectedCategory(null);
-    } else {
-      setSelectedCategory(categoryId);
-    }
-  };
-
-  // Animation variants
-  const backdropVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.2 } },
-    exit: { opacity: 0, transition: { duration: 0.15 } }
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        delayChildren: 0.1,
-        staggerChildren: 0.05
-      }
-    },
-    exit: { opacity: 0, transition: { duration: 0.15 } }
-  };
+  const sections = CATEGORIES.map(category => ({
+    id: category.id,
+    name: category.name,
+    tools: allTools.filter(tool => tool.category === category.id),
+  })).filter(section => section.tools.length > 0);
 
   return createPortal(
-    <div ref={fabRef} className="ftb-container">
-      {/* Backdrop */}
+    <div ref={containerRef} className="ftb-container">
+      {/* Backdrop scrim — modal-style attention without blanking the chat */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             className="ftb-backdrop"
-            variants={backdropVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            aria-hidden="true"
           />
         )}
       </AnimatePresence>
 
-      {/* FAB Button */}
-      <motion.button
-        className="ftb-fab"
-        onClick={() => setIsOpen(!isOpen)}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        animate={{ rotate: isOpen ? 45 : 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      {/* FAB toggle */}
+      <button
+        type="button"
+        className={`ftb-fab ${isOpen ? 'ftb-fab--open' : ''}`}
+        onClick={() => setIsOpen(v => !v)}
         aria-label={isOpen ? 'Close tools menu' : 'Open tools menu'}
+        aria-expanded={isOpen}
       >
-        <i className={`fa-solid ${isOpen ? 'fa-times' : 'fa-magic-wand-sparkles'}`} />
-      </motion.button>
+        {isOpen ? <X size={18} /> : <LayoutGrid size={18} />}
+      </button>
 
-      {/* Radial Menu */}
+      {/* Popup */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="ftb-radial-container"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+            className="ftb-popup"
+            role="menu"
+            initial={{ opacity: 0, y: 8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.97 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           >
-            {TOOL_CATEGORIES.map((category, index) => (
-              <ToolCategorySegment
-                key={category.id}
-                category={category}
-                isSelected={selectedCategory === category.id}
-                onClick={() => handleCategoryClick(category.id)}
-                position={
-                  index === 0 ? 'top-right' :
-                  index === 1 ? 'top-left' :
-                  index === 2 ? 'bottom-left' :
-                  'bottom-right'
-                }
-              />
-            ))}
+            <header className="ftb-popup-header">
+              <span className="ftb-popup-title">
+                <LayoutGrid size={14} />
+                Message tools
+                <span className="ftb-popup-count">· {allTools.length}</span>
+              </span>
+              <button
+                type="button"
+                className="ftb-popup-close"
+                onClick={() => setIsOpen(false)}
+                aria-label="Close"
+              >
+                <X size={14} />
+              </button>
+            </header>
 
-            {/* Tool Submenu */}
-            {selectedCategory && (
-              <ToolSubMenu
-                category={TOOL_CATEGORIES.find(c => c.id === selectedCategory)!}
-                tools={getToolsByCategory(selectedCategory)}
-                onToolClick={handleToolClick}
-                onClose={() => setSelectedCategory(null)}
-              />
-            )}
+            <div className="ftb-popup-body">
+              {sections.map(section => (
+                <section key={section.id} className="ftb-section">
+                  <div className="ftb-section-label">{section.name} · {section.tools.length}</div>
+                  <div className="ftb-tool-list">
+                    {section.tools.map((tool: ToolAction) => (
+                      <button
+                        key={tool.id}
+                        type="button"
+                        className="ftb-tool"
+                        onClick={() => handleToolClick(tool.id)}
+                        role="menuitem"
+                      >
+                        <span className="ftb-tool-icon">
+                          <i className={`fa-solid ${tool.icon}`} />
+                        </span>
+                        <span className="ftb-tool-info">
+                          <span className="ftb-tool-name">{tool.name}</span>
+                          <span className="ftb-tool-desc">{tool.description}</span>
+                        </span>
+                        {tool.shortcut && <kbd className="ftb-tool-shortcut">{tool.shortcut}</kbd>}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>,
-    document.body
+    document.body,
   );
 };
 
