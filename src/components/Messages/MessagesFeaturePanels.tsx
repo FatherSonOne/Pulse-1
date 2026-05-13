@@ -14,13 +14,14 @@ import { FeatureSkeleton } from '../MessageEnhancements/FeatureSkeleton';
 import { MessageEnhancementErrorBoundary } from '../MessageEnhancements/MessageEnhancementErrorBoundary';
 import { TranslationHub } from '../MessageEnhancements/TranslationHub';
 import { AnalyticsExport } from '../MessageEnhancements/AnalyticsExport';
-import { TemplatesLibrary } from '../MessageEnhancements/TemplatesLibrary';
 import { AttachmentManager } from '../MessageEnhancements/AttachmentManager';
 import { BackupSync } from '../MessageEnhancements/BackupSync';
 import { SmartSuggestions } from '../MessageEnhancements/SmartSuggestions';
 // (Tool-registry imports were removed when the QuickActionsCommandPalette
 // modal moved to the global ⌘K palette; tools are registered in Messages.tsx.)
 import { messagePersonalService } from '../../services/messagePersonalService';
+import { generateSummary, processWithModel } from '../../services/geminiService';
+import { pulseService } from '../../services/pulseService';
 
 const BundleAnalytics = React.lazy(() => import('../MessageEnhancements/BundleAnalytics'));
 const BundleCollaboration = React.lazy(() => import('../MessageEnhancements/BundleCollaboration'));
@@ -91,8 +92,8 @@ export interface MessagesFeaturePanelsProps {
   // Phase 3 — Analytics
   showAnalyticsPanel: boolean;
   setShowAnalyticsPanel: (open: boolean) => void;
-  analyticsView: 'response' | 'engagement' | 'flow' | 'insights';
-  setAnalyticsView: (view: 'response' | 'engagement' | 'flow' | 'insights') => void;
+  analyticsView: 'pace' | 'flow' | 'insights';
+  setAnalyticsView: (view: 'pace' | 'flow' | 'insights') => void;
 
   // Phase 4 — Collaboration
   showCollaborationPanel: boolean;
@@ -190,7 +191,6 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
       activeToolOverlay, setActiveToolOverlay,
       showProactivePanel, proactiveTab, setProactiveTab,
       showCommunicationPanel, communicationTab, setCommunicationTab,
-      showPersonalizationPanel, personalizationTab, setPersonalizationTab,
       showSecurityPanel, securityTab, setSecurityTab,
       showMediaHubPanel, mediaHubTab, setMediaHubTab,
     } = p;
@@ -203,8 +203,7 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
             {/* Tab Navigation */}
             <div className="flex gap-1 mb-4">
               {[
-                { id: 'response' as const, label: 'Response Time', icon: 'fa-stopwatch' },
-                { id: 'engagement' as const, label: 'Engagement', icon: 'fa-fire' },
+                { id: 'pace' as const, label: 'Pace', icon: 'fa-stopwatch' },
                 { id: 'flow' as const, label: 'Flow', icon: 'fa-diagram-project' },
                 { id: 'insights' as const, label: 'AI Insights', icon: 'fa-lightbulb' }
               ].map(tab => (
@@ -233,33 +232,29 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
 
             {/* Tab Content */}
             <div className="max-h-80 overflow-y-auto">
-              {analyticsView === 'response' && (
+              {analyticsView === 'pace' && (
                 <MessageEnhancementErrorBoundary featureName="Analytics">
                   <React.Suspense fallback={<FeatureSkeleton />}>
-                    <BundleAnalytics.ResponseTimeTracker
-                      messages={activeThread.messages.map(m => ({
-                        id: m.id,
-                        sender: m.sender,
-                        timestamp: m.timestamp
-                      }))}
-                      contactName={activeThread.contactName}
-                    />
-                  </React.Suspense>
-                </MessageEnhancementErrorBoundary>
-              )}
-              {analyticsView === 'engagement' && (
-                <MessageEnhancementErrorBoundary featureName="Analytics">
-                  <React.Suspense fallback={<FeatureSkeleton />}>
-                    <BundleAnalytics.EngagementScoring
-                      messages={activeThread.messages.map(m => ({
-                        id: m.id,
-                        text: m.text,
-                        sender: m.sender,
-                        timestamp: m.timestamp,
-                        reactions: m.reactions
-                      }))}
-                      contactName={activeThread.contactName}
-                    />
+                    <div className="space-y-4">
+                      <BundleAnalytics.EngagementScoring
+                        messages={activeThread.messages.map(m => ({
+                          id: m.id,
+                          text: m.text,
+                          sender: m.sender,
+                          timestamp: m.timestamp,
+                          reactions: m.reactions
+                        }))}
+                        contactName={activeThread.contactName}
+                      />
+                      <BundleAnalytics.ResponseTimeTracker
+                        messages={activeThread.messages.map(m => ({
+                          id: m.id,
+                          sender: m.sender,
+                          timestamp: m.timestamp
+                        }))}
+                        contactName={activeThread.contactName}
+                      />
+                    </div>
                   </React.Suspense>
                 </MessageEnhancementErrorBoundary>
               )}
@@ -572,15 +567,44 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                       reminders={userReminders}
                       currentThreadId={activeThread.id}
                       currentThreadName={activeThread.contactName}
-                      onScheduleMessage={(message) => {
+                      onScheduleMessage={async (message) => {
+                        // Persist via pulseService — the pg_cron job in
+                        // 20260330000002_pulse_scheduled_messages_and_storage.sql
+                        // picks up `pending` rows whose scheduled_for has
+                        // passed and dispatches them.
+                        const localId = uuidv4();
+                        // Optimistic insert so the UI updates immediately.
                         setUserScheduledMessages(prev => [...prev, {
                           ...message,
-                          id: uuidv4(),
+                          id: localId,
                           createdAt: new Date().toISOString(),
-                          status: 'pending'
+                          status: 'pending',
                         }]);
+                        try {
+                          const rowId = await pulseService.scheduleMessage(
+                            activeThread.contactId,
+                            message.content,
+                            new Date(message.scheduledFor),
+                          );
+                          // Swap the optimistic id for the real row id.
+                          setUserScheduledMessages(prev => prev.map(m =>
+                            m.id === localId ? { ...m, id: rowId } : m,
+                          ));
+                        } catch (err) {
+                          console.error('[Messages] scheduleMessage failed:', err);
+                          setUserScheduledMessages(prev => prev.map(m =>
+                            m.id === localId ? { ...m, status: 'failed' } : m,
+                          ));
+                        }
                       }}
-                      onCancelScheduled={(id) => setUserScheduledMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'cancelled' } : m))}
+                      onCancelScheduled={async (id) => {
+                        setUserScheduledMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'cancelled' } : m));
+                        try {
+                          await pulseService.cancelScheduledMessage(id);
+                        } catch (err) {
+                          console.error('[Messages] cancelScheduledMessage failed:', err);
+                        }
+                      }}
                       onCreateReminder={(reminder) => {
                         setUserReminders(prev => [...prev, {
                           ...reminder,
@@ -606,8 +630,39 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                         timestamp: m.timestamp
                       }))}
                       contactName={activeThread.contactName}
-                      onExportSummary={(format) => console.log('Export summary:', format)}
-                      onShareSummary={(method) => console.log('Share summary:', method)}
+                      onGenerateSummary={async () => {
+                        const transcript = activeThread.messages
+                          .map(m => `${m.sender === 'user' ? 'You' : activeThread.contactName}: ${m.text}`)
+                          .join('\n');
+                        const out = await generateSummary(transcript);
+                        return out ?? 'Unable to generate a summary right now.';
+                      }}
+                      onExportSummary={(format) => {
+                        const transcript = activeThread.messages
+                          .map(m => `${m.sender === 'user' ? 'You' : activeThread.contactName}: ${m.text}`)
+                          .join('\n');
+                        const filename = `summary-${activeThread.contactName.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.${format === 'pdf' ? 'pdf' : format === 'markdown' ? 'md' : 'txt'}`;
+                        const mime = format === 'markdown' ? 'text/markdown' : 'text/plain';
+                        const blob = new Blob([transcript], { type: mime });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        a.click();
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                      }}
+                      onShareSummary={async (method) => {
+                        const transcript = activeThread.messages
+                          .map(m => `${m.sender === 'user' ? 'You' : activeThread.contactName}: ${m.text}`)
+                          .join('\n');
+                        const out = await generateSummary(transcript);
+                        const text = out ?? transcript;
+                        if (method === 'copy') {
+                          await navigator.clipboard.writeText(text);
+                        } else if (method === 'email') {
+                          window.location.href = `mailto:?subject=${encodeURIComponent(`Conversation summary: ${activeThread.contactName}`)}&body=${encodeURIComponent(text)}`;
+                        }
+                      }}
                     />
                   </React.Suspense>
                 </MessageEnhancementErrorBoundary>
@@ -619,13 +674,69 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                       threadId={activeThread.id}
                       threadTitle={activeThread.contactName}
                       messageCount={activeThread.messages.length}
-                      onExport={async (options) => {
-                        console.log('Export with options:', options);
-                        return { url: '#' };
+                      onExport={async (options: { format?: 'markdown' | 'json' | 'txt' | 'pdf' | string; messageRange?: { startDate?: Date; endDate?: Date } }) => {
+                        // Build a real Blob and return its object URL. The
+                        // ExportSharing component owns the download UI (it
+                        // surfaces the URL in a "Download" button) — we just
+                        // need to hand it a usable URL.
+                        const format = options.format ?? 'markdown';
+                        const inRange = (m: typeof activeThread.messages[number]) => {
+                          if (!options.messageRange) return true;
+                          const ts = new Date(m.timestamp).getTime();
+                          if (options.messageRange.startDate && ts < options.messageRange.startDate.getTime()) return false;
+                          if (options.messageRange.endDate && ts > options.messageRange.endDate.getTime()) return false;
+                          return true;
+                        };
+                        const rows = activeThread.messages.filter(inRange);
+                        let body: string;
+                        let mime: string;
+                        if (format === 'json') {
+                          body = JSON.stringify({
+                            thread: activeThread.id,
+                            contact: activeThread.contactName,
+                            exportedAt: new Date().toISOString(),
+                            messages: rows.map(m => ({
+                              id: m.id,
+                              text: m.text,
+                              sender: m.sender,
+                              timestamp: m.timestamp,
+                            })),
+                          }, null, 2);
+                          mime = 'application/json';
+                        } else if (format === 'txt') {
+                          body = rows.map(m => `[${new Date(m.timestamp).toLocaleString()}] ${m.sender === 'user' ? 'You' : activeThread.contactName}: ${m.text}`).join('\n');
+                          mime = 'text/plain';
+                        } else {
+                          // markdown (default). PDF: same payload, mark as markdown
+                          // (browser-only Blob can't render PDF without a lib).
+                          body = `# Conversation with ${activeThread.contactName}\n\n` +
+                            rows.map(m => `**${m.sender === 'user' ? 'You' : activeThread.contactName}** _${new Date(m.timestamp).toLocaleString()}_\n\n${m.text}\n`).join('\n');
+                          mime = 'text/markdown';
+                        }
+                        const blob = new Blob([body], { type: mime });
+                        const url = URL.createObjectURL(blob);
+                        return { url, blob };
                       }}
-                      onShare={async (options) => {
-                        console.log('Share with options:', options);
-                        return { shareUrl: 'https://pulse.app/share/abc123', success: true };
+                      onShare={async (options: { method?: 'email' | 'copy' | 'link' | string }) => {
+                        const transcript = activeThread.messages
+                          .map(m => `${m.sender === 'user' ? 'You' : activeThread.contactName}: ${m.text}`)
+                          .join('\n');
+                        if (options.method === 'copy') {
+                          try {
+                            await navigator.clipboard.writeText(transcript);
+                            return { success: true };
+                          } catch {
+                            return { success: false };
+                          }
+                        }
+                        if (options.method === 'email') {
+                          window.location.href = `mailto:?subject=${encodeURIComponent(`Conversation: ${activeThread.contactName}`)}&body=${encodeURIComponent(transcript.slice(0, 1500))}`;
+                          return { success: true };
+                        }
+                        // 'link' or unknown — no public-share endpoint exists
+                        // yet, surface a clean failure so the UI tells the
+                        // user instead of pretending it worked.
+                        return { success: false };
                       }}
                     />
                   </React.Suspense>
@@ -1026,125 +1137,6 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
           </div>
         )}
 
-        {/* Phase 9: Advanced Personalization & Automation Panel */}
-        {showPersonalizationPanel && activeThread && (
-          <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-4 animate-slide-down">
-            {/* Tab Navigation */}
-            <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
-              {[
-                { id: 'rules' as const, label: 'Auto-Response', icon: 'fa-robot' },
-                { id: 'formatting' as const, label: 'Formatting', icon: 'fa-text-height' },
-                { id: 'notes' as const, label: 'Contact Notes', icon: 'fa-sticky-note' },
-                { id: 'modes' as const, label: 'Modes', icon: 'fa-toggle-on' },
-                { id: 'sounds' as const, label: 'Sounds', icon: 'fa-volume-high' },
-                { id: 'drafts' as const, label: 'Drafts', icon: 'fa-file-pen' }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setPersonalizationTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
-                    personalizationTab === tab.id
-                      ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
-                  }`}
-                  aria-pressed={personalizationTab === tab.id}
-                >
-                  <i className={`fa-solid ${tab.icon} text-[10px] opacity-70`} />
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Tab Content */}
-            <div className="max-h-96 overflow-y-auto">
-
-                {personalizationTab === 'rules' && (
-                  <MessageEnhancementErrorBoundary featureName="Automation">
-                    <React.Suspense fallback={<FeatureSkeleton />}>
-                      <BundleAutomation.AutoResponseRules
-                        onRuleTriggered={(rule, message) => console.log('Rule triggered:', rule.name, message)}
-                      />
-                    </React.Suspense>
-                  </MessageEnhancementErrorBoundary>
-                )}
-                {personalizationTab === 'formatting' && (
-                  <MessageEnhancementErrorBoundary featureName="Automation">
-                    <React.Suspense fallback={<FeatureSkeleton />}>
-                      <BundleAutomation.FormattingToolbar
-                        onFormat={(format) => {
-                          const formatMap: Record<string, { prefix: string; suffix: string }> = {
-                            bold: { prefix: '**', suffix: '**' },
-                            italic: { prefix: '_', suffix: '_' },
-                            code: { prefix: '`', suffix: '`' },
-                            strike: { prefix: '~~', suffix: '~~' },
-                            bullet: { prefix: '• ', suffix: '' },
-                            number: { prefix: '1. ', suffix: '' },
-                            quote: { prefix: '> ', suffix: '' },
-                            heading: { prefix: '# ', suffix: '' },
-                            link: { prefix: '[', suffix: '](url)' },
-                            mention: { prefix: '@', suffix: ' ' }
-                          };
-                          const fmt = formatMap[format];
-                          if (fmt) {
-                            setNewMessage(prev => `${prev}${fmt.prefix}${fmt.suffix}`);
-                          }
-                        }}
-                        onInsertEmoji={(emoji) => setNewMessage(prev => prev + emoji)}
-                        onInsertLink={(text, url) => setNewMessage(prev => `${prev}[${text}](${url})`)}
-                        onChangeColor={(color) => console.log('Color changed:', color)}
-                      />
-                    </React.Suspense>
-                  </MessageEnhancementErrorBoundary>
-                )}
-                {personalizationTab === 'notes' && (
-                  <MessageEnhancementErrorBoundary featureName="Automation">
-                    <React.Suspense fallback={<FeatureSkeleton />}>
-                      <BundleAutomation.ContactNotes
-                        contactId={activeThread.contactId}
-                        contactName={activeThread.contactName || 'Unknown'}
-                        onNoteAdded={(note) => console.log('Note added:', note)}
-                        onNoteDeleted={(noteId) => console.log('Note deleted:', noteId)}
-                      />
-                    </React.Suspense>
-                  </MessageEnhancementErrorBoundary>
-                )}
-                {personalizationTab === 'modes' && (
-                  <MessageEnhancementErrorBoundary featureName="Automation">
-                    <React.Suspense fallback={<FeatureSkeleton />}>
-                      <BundleAutomation.ConversationModes
-                        onModeChange={(mode) => console.log('Mode changed:', mode)}
-                      />
-                    </React.Suspense>
-                  </MessageEnhancementErrorBoundary>
-                )}
-                {personalizationTab === 'sounds' && (
-                  <MessageEnhancementErrorBoundary featureName="Automation">
-                    <React.Suspense fallback={<FeatureSkeleton />}>
-                      <BundleAutomation.NotificationSounds
-                        onSoundChange={(event, sound) => console.log('Sound changed:', event, sound)}
-                        onVolumeChange={(volume) => console.log('Volume changed:', volume)}
-                      />
-                    </React.Suspense>
-                  </MessageEnhancementErrorBoundary>
-                )}
-                {personalizationTab === 'drafts' && (
-                  <MessageEnhancementErrorBoundary featureName="Automation">
-                    <React.Suspense fallback={<FeatureSkeleton />}>
-                      <BundleAutomation.DraftManager
-                        onLoadDraft={(draft) => {
-                          setNewMessage(draft.content);
-                          console.log('Draft loaded:', draft);
-                        }}
-                        onDeleteDraft={(draftId) => console.log('Draft deleted:', draftId)}
-                      />
-                    </React.Suspense>
-                  </MessageEnhancementErrorBoundary>
-                )}
-
-            </div>
-          </div>
-        )}
-
         {/* Phase 10: Security, Insights & Productivity Panel */}
         {showSecurityPanel && activeThread && (
           <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-4 animate-slide-down">
@@ -1253,7 +1245,6 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
               {[
                 { id: 'translation' as const, label: 'Translation', icon: 'fa-language' },
                 { id: 'export' as const, label: 'Export', icon: 'fa-file-export' },
-                { id: 'templates' as const, label: 'Templates', icon: 'fa-file-lines' },
                 { id: 'attachments' as const, label: 'Attachments', icon: 'fa-paperclip' },
                 { id: 'backup' as const, label: 'Backup', icon: 'fa-cloud-arrow-up' },
                 { id: 'suggestions' as const, label: 'Suggestions', icon: 'fa-wand-magic-sparkles' }
@@ -1277,13 +1268,26 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {mediaHubTab === 'translation' && (
-                
-                  <TranslationHub
-                    conversationId={activeThread.id}
-                    onTranslate={(text, from, to) => console.log('Translate:', text, from, to)}
-                    onLanguageChange={(lang) => console.log('Language changed:', lang)}
-                  />
-                
+                <TranslationHub
+                  conversationId={activeThread.id}
+                  onTranslate={async (text, targetLanguage) => {
+                    // Route through processWithModel (server-side). No
+                    // dedicated translate edge function exists yet, so we
+                    // hand the LLM a tight instruction and trust the
+                    // formatted-output post-processing to strip framing.
+                    const out = await processWithModel(
+                      `Translate the following text into ${targetLanguage}. Reply with only the translation, no preface or explanation.\n\nTEXT:\n${text}`
+                    );
+                    return out ?? text;
+                  }}
+                  onLanguageChange={(lang) => {
+                    try {
+                      localStorage.setItem('pulse_translate_target_lang', lang);
+                    } catch {
+                      /* storage may be unavailable in private mode */
+                    }
+                  }}
+                />
               )}
               {mediaHubTab === 'export' && (
                 
@@ -1291,17 +1295,6 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                     conversationId={activeThread.id}
                     onExportStart={(job) => console.log('Export started:', job)}
                     onExportComplete={(job) => console.log('Export complete:', job)}
-                  />
-                
-              )}
-              {mediaHubTab === 'templates' && (
-                
-                  <TemplatesLibrary
-                    onTemplateSelect={(template) => {
-                      setNewMessage(template.content);
-                      console.log('Template selected:', template);
-                    }}
-                    onTemplateCreate={(template) => console.log('Template created:', template)}
                   />
                 
               )}

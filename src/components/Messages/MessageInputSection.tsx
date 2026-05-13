@@ -6,6 +6,7 @@ import { SmartCompose } from '../MessageEnhancements/SmartCompose';
 import { QuickActions } from '../MessageEnhancements/QuickActions';
 import { MessageEnhancementErrorBoundary } from '../MessageEnhancements/MessageEnhancementErrorBoundary';
 import { FeatureSkeleton } from '../MessageEnhancements/FeatureSkeleton';
+import { PanelShell } from '../MessageEnhancements/PanelShell';
 import { VoiceTextButton } from '../shared/VoiceTextButton';
 import { MeetingDeflector } from '../attention';
 import { IntentComposer } from '../context';
@@ -42,6 +43,7 @@ interface MessageInputSectionProps {
   showAICoach: boolean;
   setShowAICoach: (v: boolean) => void;
   showSmartCompose: boolean;
+  setShowSmartCompose: (v: boolean) => void;
   messageEnhancements: any;
   showQuickActionsBar: boolean;
   isRecording: boolean;
@@ -92,7 +94,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
   showEmojiPicker, emojiPickerMessageId, setShowEmojiPicker,
   inputText, setInputText,
   showAICoach, setShowAICoach,
-  showSmartCompose, messageEnhancements,
+  showSmartCompose, setShowSmartCompose, messageEnhancements,
   showQuickActionsBar, isRecording, startRecording, handleSmartReply,
   showAIMediator, setShowAIMediator,
   showQuickPhrases, setShowQuickPhrases,
@@ -150,7 +152,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
        {/* SMS Mode Banner for Native Apps */}
        {isNonPulseThread && canSendNativeSms && (
-         <div className="mb-3 px-3 py-2 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg flex items-center gap-2 text-xs">
+         <div className="mb-3 px-3 py-2 bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.03)]/40 border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] rounded-lg flex items-center gap-2 text-xs">
            <MessageSquare className="text-zinc-500 dark:text-zinc-400" />
            <span className="text-zinc-700 dark:text-zinc-300">
              Messages to {activeContact?.name || 'this contact'} will be sent as SMS via your carrier
@@ -172,7 +174,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
        {/* Message Templates Popup */}
        {showTemplates && (
-         <div className="absolute bottom-full left-4 right-4 mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-3 animate-slide-up z-30">
+         <div className="absolute bottom-full left-4 right-4 mb-2 bg-white dark:bg-[rgba(255,255,255,0.03)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] rounded-xl shadow-xl p-3 animate-slide-up z-30">
            <div className="flex items-center justify-between mb-3">
              <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-400">Quick Templates</span>
              <button onClick={() => setShowTemplates(false)} className="text-zinc-400 hover:text-zinc-600">
@@ -196,7 +198,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                  <button
                    key={template.id}
                    onClick={() => useTemplate(template)}
-                   className="text-left p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
+                   className="text-left p-2 rounded-lg bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] transition"
                  >
                    <div className="text-xs font-medium dark:text-white flex items-center gap-1.5">
                      <Wand2 className="text-zinc-400 dark:text-zinc-500 text-[8px]" />
@@ -212,7 +214,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
        {/* Extended Emoji Picker */}
        {showEmojiPicker && !emojiPickerMessageId && (
-         <div className="absolute bottom-full left-4 mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-3 animate-slide-up z-30 w-80">
+         <div className="absolute bottom-full left-4 mb-2 bg-white dark:bg-[rgba(255,255,255,0.03)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] rounded-xl shadow-xl p-3 animate-slide-up z-30 w-80">
            <div className="flex items-center justify-between mb-3">
              <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-400">Add Emoji</span>
              <button onClick={() => setShowEmojiPicker(false)} className="text-zinc-400 hover:text-zinc-600">
@@ -228,7 +230,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      <button
                        key={emoji}
                        onClick={() => { setInputText(prev => prev + emoji); setShowEmojiPicker(false); }}
-                       className="w-8 h-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded text-lg"
+                       className="w-8 h-8 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded text-lg"
                      >
                        {emoji}
                      </button>
@@ -240,36 +242,119 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
          </div>
        )}
 
-       {/* Phase 2: AI Coach - Real-time draft analysis */}
+       {/* Phase 2: AI Coach — real-time draft analysis, wrapped in
+           the shared PanelShell so coach + mediator + insights all
+           wear the same translucent chrome. */}
        {showAICoach && inputText.length > 10 && activeThread && (
          <div className="mb-3">
-           <MessageEnhancementErrorBoundary featureName="AI Features">
-             <Suspense fallback={<FeatureSkeleton />}>
-               <BundleAI.AICoachEnhanced
-                 draftText={inputText}
-                 recentMessages={activeThread.messages.slice(-10).map(m => ({
-                   text: m.text,
-                   sender: m.sender,
-                   timestamp: m.timestamp
-                 }))}
-                 contactName={activeThread.contactName}
-                 onApplySuggestion={(newText) => setInputText(newText)}
-                 onDismiss={() => setShowAICoach(false)}
-               />
-             </Suspense>
-           </MessageEnhancementErrorBoundary>
+           <PanelShell
+             source="COACH"
+             title="Coaching this draft"
+             subtitle={`Tone and clarity check for ${activeThread.contactName}`}
+             onDismiss={() => setShowAICoach(false)}
+           >
+             <MessageEnhancementErrorBoundary featureName="AI Features">
+               <Suspense fallback={<FeatureSkeleton />}>
+                 <BundleAI.AICoachEnhanced
+                   draftText={inputText}
+                   recentMessages={activeThread.messages.slice(-10).map(m => ({
+                     text: m.text,
+                     sender: m.sender,
+                     timestamp: m.timestamp
+                   }))}
+                   contactName={activeThread.contactName}
+                   onApplySuggestion={(newText) => setInputText(newText)}
+                   onDismiss={() => setShowAICoach(false)}
+                   hideHeader
+                 />
+               </Suspense>
+             </MessageEnhancementErrorBoundary>
+           </PanelShell>
          </div>
        )}
 
-       {/* Smart Compose - AI-powered message suggestions */}
-       {showSmartCompose && messageEnhancements.smartSuggestions.length > 0 && (
+       {/* Smart Compose — AI suggestions and quick phrases (one panel,
+           two modes). Phase 2 fold: the dedicated Quick Phrases panel
+           below was retired; phrases now appear as a tab inside this
+           panel. */}
+       {(showSmartCompose || showQuickPhrases) && (
          <div className="mb-3">
-           <SmartCompose
-             text={inputText}
-             suggestions={messageEnhancements.smartSuggestions}
-             onSelectSuggestion={(text) => setInputText(text)}
-             loading={messageEnhancements.loadingSuggestions}
-           />
+           <section className="bg-white dark:bg-[rgba(255,255,255,0.03)] ring-1 ring-[rgba(0,0,0,0.08)] dark:ring-[rgba(255,255,255,0.06)] rounded-xl overflow-hidden">
+             <header className="flex items-center justify-between gap-3 px-3 pt-2 pb-2 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
+               <div className="flex items-center gap-3 min-w-0">
+                 <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-rose-600 dark:text-rose-bright flex-shrink-0">
+                   PULSE AI · COMPOSE
+                 </span>
+                 <nav role="tablist" aria-label="Compose mode" className="flex gap-0.5 ml-1">
+                   <button
+                     type="button"
+                     role="tab"
+                     aria-selected={!showQuickPhrases}
+                     onClick={() => { setShowSmartCompose(true); setShowQuickPhrases(false); }}
+                     className={`px-2 py-1 rounded text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+                       !showQuickPhrases
+                         ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                         : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-bright'
+                     }`}
+                   >
+                     Suggest
+                   </button>
+                   <button
+                     type="button"
+                     role="tab"
+                     aria-selected={showQuickPhrases}
+                     onClick={() => { setShowSmartCompose(false); setShowQuickPhrases(true); }}
+                     className={`px-2 py-1 rounded text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+                       showQuickPhrases
+                         ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                         : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-bright'
+                     }`}
+                   >
+                     Phrases
+                   </button>
+                 </nav>
+               </div>
+               <button
+                 type="button"
+                 onClick={() => { setShowSmartCompose(false); setShowQuickPhrases(false); }}
+                 aria-label="Dismiss Smart Compose"
+                 className="w-6 h-6 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-rose-500/[0.08] dark:hover:bg-rose-500/[0.10] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 flex-shrink-0"
+               >
+                 <X className="w-3.5 h-3.5" />
+               </button>
+             </header>
+             <div className="p-3">
+               {!showQuickPhrases && (
+                 messageEnhancements.smartSuggestions.length > 0 ? (
+                   <SmartCompose
+                     text={inputText}
+                     suggestions={messageEnhancements.smartSuggestions}
+                     onSelectSuggestion={(text) => setInputText(text)}
+                     loading={messageEnhancements.loadingSuggestions}
+                   />
+                 ) : (
+                   <p className="text-xs text-zinc-500 dark:text-zinc-400 py-2">
+                     {messageEnhancements.loadingSuggestions
+                       ? 'Generating draft suggestions…'
+                       : 'Start typing for AI draft suggestions, or switch to Phrases for saved openers.'}
+                   </p>
+                 )
+               )}
+               {showQuickPhrases && (
+                 <MessageEnhancementErrorBoundary featureName="AI Features">
+                   <Suspense fallback={<FeatureSkeleton />}>
+                     <BundleAI.QuickPhrases
+                       onSelect={(phrase) => {
+                         setInputText(phrase);
+                         setShowQuickPhrases(false);
+                       }}
+                       context="general"
+                     />
+                   </Suspense>
+                 </MessageEnhancementErrorBoundary>
+               )}
+             </div>
+           </section>
          </div>
        )}
 
@@ -311,23 +396,6 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                    }
                  }}
                  onDismiss={() => setShowAIMediator(false)}
-               />
-             </Suspense>
-           </MessageEnhancementErrorBoundary>
-         </div>
-       )}
-
-       {/* Phase 2: Quick Phrases */}
-       {showQuickPhrases && (
-         <div className="mb-3">
-           <MessageEnhancementErrorBoundary featureName="AI Features">
-             <Suspense fallback={<FeatureSkeleton />}>
-               <BundleAI.QuickPhrases
-                 onSelect={(phrase) => {
-                   setInputText(phrase);
-                   setShowQuickPhrases(false);
-                 }}
-                 context="general"
                />
              </Suspense>
            </MessageEnhancementErrorBoundary>
@@ -389,13 +457,13 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
          />
        )}
 
-       <div className={`flex gap-1 sm:gap-2 items-end relative bg-zinc-50 dark:bg-zinc-900 p-1.5 sm:p-2 rounded-xl border transition-colors ${proposalModeEnabled && isProposalMode ? 'border-amber-500/50' : isRecording ? 'border-red-500/50' : 'border-zinc-200 dark:border-zinc-800'}`}>
+       <div className={`flex gap-1 sm:gap-2 items-end relative bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.03)] p-1.5 sm:p-2 rounded-xl border transition-colors ${proposalModeEnabled && isProposalMode ? 'border-amber-500/50' : isRecording ? 'border-red-500/50' : 'border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]'}`}>
          {/* Left Action Buttons - Collapsed on mobile */}
          <div className="flex gap-0.5 sm:gap-1 relative flex-shrink-0">
            {proposalModeEnabled && (
              <button
                 onClick={() => setIsProposalMode(!isProposalMode)}
-                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${isProposalMode ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${isProposalMode ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
                 title="Make Proposal (Ctrl+Shift+P)"
              >
                 <Gavel className="text-xs sm:text-sm" />
@@ -403,33 +471,28 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            )}
            <button
               onClick={() => setShowTemplates(!showTemplates)}
-              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showTemplates ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showTemplates ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
               title="Message Templates (Ctrl+Shift+T)"
            >
               <Zap className="text-xs sm:text-sm" />
            </button>
            <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showEmojiPicker ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showEmojiPicker ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
               title="Add Emoji (Ctrl+Shift+E)"
            >
               <Smile className="text-xs sm:text-sm" />
            </button>
 
-           {/* Phase 2: Quick Phrases Button - Hidden on mobile */}
-           <button
-              onClick={() => setShowQuickPhrases(!showQuickPhrases)}
-              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showQuickPhrases ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-              title="Quick Phrases"
-           >
-              <MessageCircle className="text-xs sm:text-sm" />
-           </button>
+           {/* Quick Phrases now live inside the Smart Compose panel
+               (Suggest / Phrases tabs). Open Smart Compose from the
+               Tools menu to access either mode. */}
 
            {/* Attachment Menu Button */}
            <div className="relative" ref={attachmentMenuRef}>
              <button
                 onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showAttachmentMenu ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showAttachmentMenu ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
                 title="Attach File, Image, Video, or Link"
              >
                 <Plus className="text-xs sm:text-sm" />
@@ -437,13 +500,13 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
              {/* Attachment Menu Dropdown */}
              {showAttachmentMenu && (
-               <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden z-50 min-w-[200px] animate-scale-in origin-bottom-left">
+               <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[rgba(255,255,255,0.03)] rounded-xl shadow-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden z-50 min-w-[200px] animate-scale-in origin-bottom-left">
                  <div className="p-2">
                    <button
                      onClick={() => imageInputRef.current?.click()}
-                     className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
+                     className="w-full px-4 py-3 text-left hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                     <div className="w-10 h-10 rounded-lg bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
                        <Image className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
@@ -454,9 +517,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
                    <button
                      onClick={() => videoInputRef.current?.click()}
-                     className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
+                     className="w-full px-4 py-3 text-left hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                     <div className="w-10 h-10 rounded-lg bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
                        <Video className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
@@ -467,9 +530,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
                    <button
                      onClick={() => fileInputRef.current?.click()}
-                     className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
+                     className="w-full px-4 py-3 text-left hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                     <div className="w-10 h-10 rounded-lg bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
                        <File className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
@@ -478,13 +541,13 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      </div>
                    </button>
 
-                   <div className="border-t border-zinc-200 dark:border-zinc-800 my-1"></div>
+                   <div className="border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] my-1"></div>
 
                    <button
                      onClick={handleAddLink}
-                     className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
+                     className="w-full px-4 py-3 text-left hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                     <div className="w-10 h-10 rounded-lg bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
                        <Link className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
@@ -592,11 +655,11 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
               onTranscript={(text) => setInputText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
               size="sm"
               disabled={isRecording}
-              className="text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 w-8 h-8 sm:w-10 sm:h-10"
+              className="text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] w-8 h-8 sm:w-10 sm:h-10"
            />
            <button
               onClick={isRecording ? stopRecording : startRecording}
-              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
               title={isRecording ? "Stop Recording" : "Voice Message"}
            >
               <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'} text-xs sm:text-sm`}></i>
@@ -607,7 +670,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            <button
               onClick={() => setShowScheduleModal(true)}
               disabled={!inputText.trim()}
-              className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-40"
+              className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] disabled:opacity-40"
               title="Schedule Message"
            >
               <Clock className="text-xs sm:text-sm" />
@@ -615,7 +678,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            {/* Phase 2: Voice Context Extractor Toggle - Hidden on mobile */}
            <button
               onClick={() => setShowVoiceExtractor(!showVoiceExtractor)}
-              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showVoiceExtractor ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showVoiceExtractor ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
               title="AI Voice Transcription"
            >
               <MessageCircle className="text-xs sm:text-sm" />
@@ -623,7 +686,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            <button
               onClick={handleSmartReply}
               disabled={loadingAI || isBotChat}
-              className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-40"
+              className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] disabled:opacity-40"
               title="AI Smart Reply"
            >
               <i className={`fa-solid ${loadingAI ? 'fa-circle-notch fa-spin' : 'fa-wand-magic-sparkles'} text-xs sm:text-sm`}></i>
@@ -642,7 +705,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              // Disabled button for view-only mode
              <button
                disabled
-               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center cursor-not-allowed"
+               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#e8e8e8] dark:bg-[rgba(255,255,255,0.055)] text-zinc-500 flex items-center justify-center cursor-not-allowed"
                title="Send from your mobile device"
              >
                <Lock className="text-xs sm:text-sm" />

@@ -4,7 +4,6 @@
 
 import { TranslationHub, TranslateButton } from './TranslationHub';
 import { AnalyticsExport, QuickExportButton as AnalyticsExportButton } from './AnalyticsExport';
-import { TemplatesLibrary, TemplateInsertButton } from './TemplatesLibrary';
 import { AttachmentManager, AttachmentButton } from './AttachmentManager';
 import { BackupSync, SyncStatusIndicator } from './BackupSync';
 import { SmartSuggestions, SuggestionButton } from './SmartSuggestions';
@@ -16,8 +15,6 @@ export default {
   TranslateButton,
   AnalyticsExport,
   AnalyticsExportButton,
-  TemplatesLibrary,
-  TemplateInsertButton,
   AttachmentManager,
   AttachmentButton,
   BackupSync,

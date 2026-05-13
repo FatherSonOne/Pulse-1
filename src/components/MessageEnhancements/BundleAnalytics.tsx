@@ -4,7 +4,6 @@
 
 import { ConversationHealthWidget } from './ConversationHealthWidget';
 import { AchievementToast, AchievementProgress } from './AchievementToast';
-import { MessageImpactVisualization } from './MessageImpactVisualization';
 import { ProactiveInsights } from './ProactiveInsights';
 import { MessageAnalyticsDashboard } from './MessageAnalyticsDashboard';
 import { NetworkGraph } from './NetworkGraph';
@@ -21,7 +20,6 @@ export default {
   ConversationHealthWidget,
   AchievementToast,
   AchievementProgress,
-  MessageImpactVisualization,
   ProactiveInsights,
   MessageAnalyticsDashboard,
   NetworkGraph,

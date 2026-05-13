@@ -108,8 +108,7 @@ export function MigratedToolsPanelExample() {
     'meeting-intel': 'meeting_intel',
     'voice-studio': 'voice_studio',
     'deep-search': 'deep_search',
-    'route-planner': 'route_planner',
-    'ai-assistant': 'ai_assistant'
+    'route-planner': 'route_planner'
   };
 
   const handleToolSelect = (toolId: string) => {

@@ -21,80 +21,42 @@ export interface ToolAction {
   onLaunch: () => void;
 }
 
-// Map tool categories to keyboard shortcuts
+// Keyboard shortcuts for message tools. Globally available so the user
+// can pop a tool open without first opening the drawer.
 const TOOL_SHORTCUTS: Record<string, string> = {
-  'deep-reasoner': 'Ctrl+Shift+R',
-  'video-analyst': 'Ctrl+Shift+V',
-  'code-studio': 'Ctrl+Shift+C',
-  'vision-lab': 'Ctrl+Shift+I',
-  'deep-search': 'Ctrl+Shift+S',
-  'meeting-intel': 'Ctrl+Shift+M',
-  'video-studio': 'Ctrl+Shift+U',
-  'voice-studio': 'Ctrl+Shift+O',
-  'route-planner': 'Ctrl+Shift+P',
-  'ai-assistant': 'Ctrl+Shift+A',
+  'smart-compose': 'Ctrl+Shift+W',
+  'templates': 'Ctrl+Shift+T',
+  'message-formatting': 'Ctrl+Shift+F',
+  'translation': 'Ctrl+Shift+L',
+  'conversation-summary': 'Ctrl+Shift+S',
+  'pace': 'Ctrl+Shift+P',
+  'sentiment': 'Ctrl+Shift+Y',
+  'conversation-flow': 'Ctrl+Shift+G',
+  'ai-coach': 'Ctrl+Shift+K',
+  'ai-mediator': 'Ctrl+Shift+M',
+  'insights': 'Ctrl+Shift+I',
 };
 
 /**
- * Map tool IDs to ToolOverlay categories for keyboard shortcut launching
- * This enables tools to be opened directly in their corresponding overlay
+ * Map message-tool IDs to overlay categories. Used when a tool is
+ * launched via keyboard shortcut or command palette so the right
+ * surface opens. Tools without an overlay entry are inline-toggled
+ * (Smart Compose, AI Coach, AI Mediator).
  */
 export const TOOL_OVERLAY_MAP: Record<string, 'analytics' | 'collaboration' | 'productivity' | 'intelligence' | 'proactive' | 'communication' | 'personalization' | 'security' | 'mediaHub'> = {
-  // AI Tools → Intelligence overlay
-  'deep-reasoner': 'intelligence',
-  'ai-coach': 'intelligence',
-  'ai-mediator': 'intelligence',
-  'conversation-intelligence': 'intelligence',
-  'brainstorm-assistant': 'intelligence',
-  'ai-assistant': 'intelligence',
-
-  // Content Creation → varies by tool type
-  'code-studio': 'productivity',
-  'smart-compose': 'productivity',
+  // WRITE
   'templates': 'productivity',
-  'quick-phrases': 'productivity',
-  'scheduled-messages': 'productivity',
-  'draft-manager': 'productivity',
-
-  // Media Tools → Media Hub
-  'vision-lab': 'mediaHub',
-  'video-studio': 'mediaHub',
-  'voice-studio': 'mediaHub',
-  'voice-recorder': 'mediaHub',
-  'file-attachments': 'mediaHub',
-
-  // Analysis Tools → Analytics overlay
-  'video-analyst': 'analytics',
-  'sentiment-analysis': 'analytics',
-  'engagement-scoring': 'analytics',
-  'response-time-tracker': 'analytics',
-  'conversation-flow': 'analytics',
-  'sentiment-timeline': 'analytics',
-  'analytics-export': 'analytics',
-  'message-impact': 'analytics',
-
-  // Meeting/Research → Analytics/Intelligence
-  'meeting-intel': 'analytics',
-  'deep-search': 'intelligence',
-
-  // Communication Tools → Communication overlay
-  'translation': 'communication',
-  'emoji-reactions': 'communication',
-  'voice-context': 'communication',
-
-  // Collaboration Tools → Collaboration overlay
-  'search-filter': 'collaboration',
-  'message-pinning': 'collaboration',
-  'thread-linking': 'collaboration',
-  'knowledge-base': 'collaboration',
-  'read-receipts': 'collaboration',
-
-  // Utilities
-  'keyboard-shortcuts': 'personalization',
   'message-formatting': 'personalization',
-  'settings': 'personalization',
-  'backup-sync': 'personalization',
-  'route-planner': 'mediaHub',
+  'translation': 'mediaHub',
+
+  // ANALYZE
+  'conversation-summary': 'productivity',
+  'pace': 'analytics',
+  'sentiment': 'proactive',
+  'conversation-flow': 'analytics',
+
+  // COACH
+  'insights': 'security',
 };
 
 /**
@@ -133,16 +95,12 @@ export function getAllToolActions(onLaunch: (toolId: string) => void): ToolActio
 }
 
 /**
- * Get category color for consistent theming
+ * Get category color. Coral-as-signal rule: every category uses the
+ * same rose tint; differentiation comes from the section label, not
+ * a colour swatch.
  */
-function getCategoryColor(category: string): string {
-  const colorMap: Record<string, string> = {
-    ai: '#f43f5e', // rose-500 (BRAND COLOR)
-    content: '#ec4899', // pink-500
-    analysis: '#fb7185', // rose-400
-    utilities: '#be123c', // rose-700
-  };
-  return colorMap[category] || '#f43f5e';
+function getCategoryColor(_category: string): string {
+  return '#f43f5e';
 }
 
 /**
@@ -273,75 +231,41 @@ export function getToolById(
 }
 
 /**
- * Suggest tools based on context (message content, file types, etc.)
+ * Suggest message tools based on draft / thread context. Code Studio,
+ * Vision Lab, etc. live in the global Tools modal now, so they don't
+ * appear here. Only message-tool suggestions are returned.
  */
 export function suggestToolsFromContext(
   context: {
     messageContent?: string;
-    fileType?: string;
-    hasCode?: boolean;
-    hasImage?: boolean;
-    hasVideo?: boolean;
-    hasAudio?: boolean;
   },
   tools: ToolAction[]
 ): ToolAction[] {
   const suggestions: ToolAction[] = [];
-
   const lower = context.messageContent?.toLowerCase() || '';
 
-  // Code detection
-  if (context.hasCode || lower.includes('code') || lower.includes('function') || lower.includes('bug')) {
-    const codeTool = tools.find(t => t.id === 'code-studio');
-    if (codeTool) suggestions.push(codeTool);
-  }
-
-  // Video detection
-  if (context.hasVideo || lower.includes('video') || lower.includes('analyze this') || lower.includes('watch')) {
-    const videoTool = tools.find(t => t.id === 'video-analyst');
-    if (videoTool) suggestions.push(videoTool);
-  }
-
-  // Complex problem detection
-  if (lower.includes('analyze') || lower.includes('think about') || lower.includes('complex') || lower.includes('reason')) {
-    const reasonTool = tools.find(t => t.id === 'deep-reasoner');
-    if (reasonTool) suggestions.push(reasonTool);
-  }
-
-  // Image detection
-  if (context.hasImage || lower.includes('image') || lower.includes('photo') || lower.includes('picture') || lower.includes('create image')) {
-    const visionTool = tools.find(t => t.id === 'vision-lab');
-    if (visionTool) suggestions.push(visionTool);
-  }
-
-  // Audio/Meeting detection
-  if (context.hasAudio || lower.includes('meeting') || lower.includes('transcribe') || lower.includes('recording')) {
-    const meetingTool = tools.find(t => t.id === 'meeting-intel');
-    if (meetingTool) suggestions.push(meetingTool);
-  }
-
-  // Route/Map detection
-  if (lower.includes('route') || lower.includes('directions') || lower.includes('map') || lower.includes('navigate')) {
-    const routeTool = tools.find(t => t.id === 'route-planner');
-    if (routeTool) suggestions.push(routeTool);
-  }
-
-  // Voice/TTS detection
-  if (lower.includes('voice') || lower.includes('speak') || lower.includes('tts') || lower.includes('text to speech')) {
-    const voiceTool = tools.find(t => t.id === 'voice-studio');
-    if (voiceTool) suggestions.push(voiceTool);
-  }
-
-  // Search detection
-  if (lower.includes('search') || lower.includes('research') || lower.includes('find out') || lower.includes('look up')) {
-    const searchTool = tools.find(t => t.id === 'deep-search');
-    if (searchTool) suggestions.push(searchTool);
-  }
-
-  // Translation detection
+  // Translation
   if (lower.includes('translate') || lower.includes('language') || lower.includes('español') || lower.includes('français')) {
-    const translationTool = tools.find(t => t.id === 'translation');
-    if (translationTool) suggestions.push(translationTool);
+    const t = tools.find(x => x.id === 'translation');
+    if (t) suggestions.push(t);
+  }
+
+  // Summary
+  if (lower.includes('summarize') || lower.includes('summary') || lower.includes('recap') || lower.includes('tldr')) {
+    const t = tools.find(x => x.id === 'conversation-summary');
+    if (t) suggestions.push(t);
+  }
+
+  // Sentiment cues — strong words trigger a sentiment check
+  if (lower.match(/\b(angry|frustrated|upset|annoyed|happy|excited|love|hate)\b/)) {
+    const t = tools.find(x => x.id === 'sentiment');
+    if (t) suggestions.push(t);
+  }
+
+  // Coach cues — apology / softening territory
+  if (lower.match(/\b(sorry|apologize|wrong|terrible|stupid|always|never)\b/)) {
+    const t = tools.find(x => x.id === 'ai-coach');
+    if (t) suggestions.push(t);
   }
 
   return suggestions;

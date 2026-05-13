@@ -303,6 +303,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
   );
 
   const applyFormat = useCallback((action: FormattingAction) => {
+    // Map FormattingAction types to the execCommand identifier the
+    // browser actually accepts. Several were silently no-ops before:
+    //   - 'strikethrough' must be 'strikeThrough' (camelCase)
+    //   - 'list' must be 'insertUnorderedList'
+    //   - 'quote' must be 'formatBlock' with value 'blockquote'
+    //   - 'code' has no execCommand equivalent — wrap the selection in
+    //     a <code> node by hand
     if (action.type === 'link') {
       const url = window.prompt(tr('messages.input.linkPrompt', 'Enter URL:'));
       if (!url) return;
@@ -314,8 +321,51 @@ const MessageInput: React.FC<MessageInputProps> = ({
       return;
     }
 
+    if (action.type === 'code') {
+      // Inline-code: wrap the current selection in <code>...</code> via a
+      // Range surround. execCommand has no native 'code' command.
+      try {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+          // No selection — insert empty <code> placeholder and put the
+          // caret inside.
+          const code = document.createElement('code');
+          code.appendChild(document.createTextNode('​'));
+          document.execCommand('insertHTML', false, code.outerHTML);
+        } else {
+          const range = selection.getRangeAt(0);
+          const code = document.createElement('code');
+          code.appendChild(range.extractContents());
+          range.insertNode(code);
+          // Move caret to end of inserted node.
+          range.setStartAfter(code);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      } catch {
+        /* no-op — DOM ranges can fail in edge cases. */
+      }
+      return;
+    }
+
+    const commandMap: Record<FormattingAction['type'], { cmd: string; value?: string } | null> = {
+      bold: { cmd: 'bold' },
+      italic: { cmd: 'italic' },
+      underline: { cmd: 'underline' },
+      strikethrough: { cmd: 'strikeThrough' },
+      list: { cmd: 'insertUnorderedList' },
+      quote: { cmd: 'formatBlock', value: 'blockquote' },
+      // 'link' and 'code' handled above.
+      link: null,
+      code: null,
+    };
+
+    const entry = commandMap[action.type];
+    if (!entry) return;
+
     try {
-      document.execCommand(action.type, false, undefined);
+      document.execCommand(entry.cmd, false, entry.value);
     } catch {
       /* no-op — browsers may reject deprecated commands */
     }
@@ -325,7 +375,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
       setActiveFormats((prev) => {
         const next = new Set<string>(prev);
         if (FORMATTABLE.includes(action.type as FormattingAction['type'])) {
-          if (document.queryCommandState(action.type)) next.add(action.type);
+          if (document.queryCommandState(entry.cmd)) next.add(action.type);
           else next.delete(action.type);
         }
         return next;
@@ -683,12 +733,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 <button
                   type="button"
                   className="simple-action-button"
-                  onClick={() => {
-                    /* host wires emoji picker via setActiveToolOverlay */
-                  }}
+                  onClick={() => setActiveToolOverlay?.('communication')}
                   aria-label={tr('messages.input.emoji', 'Add emoji')}
                   title={tr('messages.input.emoji', 'Add emoji')}
-                  disabled={disabled}
+                  disabled={disabled || !setActiveToolOverlay}
                 >
                   <Smile size={16} />
                 </button>

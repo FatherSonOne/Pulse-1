@@ -79,7 +79,6 @@ import { NetworkGraph } from './MessageEnhancements/NetworkGraph';
 import { SmartCompose } from './MessageEnhancements/SmartCompose';
 import { QuickActions } from './MessageEnhancements/QuickActions';
 import { ThreadActionsMenu, ThreadBadges } from './MessageEnhancements/ThreadActions';
-import { MessageImpactVisualization } from './MessageEnhancements/MessageImpactVisualization';
 import { TranslationWidget } from './MessageEnhancements/TranslationWidget';
 // TypingIndicator moved to Phase 4 component (Messages/TypingIndicator.tsx)
 // Hover-triggered reactions - shows reaction bar on 300ms hover (desktop) or long-press (mobile)
@@ -107,12 +106,10 @@ import { MessageEnhancementErrorBoundary } from './MessageEnhancements/MessageEn
 import ToolOverlay from './MessageEnhancements/ToolOverlay';
 import { TranslationHub } from './MessageEnhancements/TranslationHub';
 import { AnalyticsExport } from './MessageEnhancements/AnalyticsExport';
-import { TemplatesLibrary } from './MessageEnhancements/TemplatesLibrary';
 import { AttachmentManager } from './MessageEnhancements/AttachmentManager';
 import { BackupSync } from './MessageEnhancements/BackupSync';
 import { SmartSuggestions } from './MessageEnhancements/SmartSuggestions';
 import { useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
-import { useAutoSaveDraft } from './MessageEnhancements/DraftManager';
 import { getAllToolActions, fuzzySearchTools, saveRecentTool, suggestToolsFromContext, getRecentTools, getToolOverlayType } from '../services/toolRegistry';
 import type { ToolAction } from '../services/toolRegistry';
 import { messageEnhancementsService } from '../services/messageEnhancementsService';
@@ -155,7 +152,7 @@ import { TagPicker, TagPills } from './Messages/TagPills';
 import { tagsService, type TagDefinition } from '../services/tagsService';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 
-import { Archive, ArrowLeft, ArrowRight, ArrowUp, AtSign, BarChart, Bot, Check, CheckCheck, CheckCircle, CheckCircle2, Clock, Copy, Crosshair, Download, Ellipsis, Eye, File, FileOutput, FileText, Flag, Gavel, GitFork, Handshake, Hash, HeartPulse, History, Image, Keyboard, Layers, LayoutGrid, Link, ListChecks, Loader2, Lock, LogOut, Mail, Menu, MessageCircle, MessageSquare, MessagesSquare, Pen, PenTool, Play, Plus, Reply, Rocket, Scale, Search, Send, Share, SlidersHorizontal, Smartphone, Smile, Square, SquarePen, Star, Target, Terminal, ThumbsDown, ThumbsUp, Trash2, TrendingUp, Trophy, UserPlus, UserX, Users, Video, Wand2, Wrench, X, Zap } from 'lucide-react';
+import { Archive, ArrowLeft, ArrowRight, ArrowUp, AtSign, BarChart, Bold, Bot, Check, CheckCheck, CheckCircle, CheckCircle2, Clock, Copy, Crosshair, Download, Ellipsis, Eye, File, FileOutput, FileText, Flag, Gavel, GitFork, GraduationCap, Handshake, Hash, HeartPulse, History, Image, Keyboard, Languages, Layers, LayoutGrid, Lightbulb, Link, ListChecks, Loader2, Lock, LogOut, Mail, Menu, MessageCircle, MessageSquare, MessagesSquare, Pen, PenTool, Play, Plus, Reply, Rocket, Scale, Search, Send, Share, SlidersHorizontal, Smartphone, Smile, Sparkles, Square, SquarePen, Star, Target, Terminal, ThumbsDown, ThumbsUp, Timer, Trash2, TrendingUp, Trophy, UserPlus, UserX, Users, Video, Wand2, Wrench, X, Zap } from 'lucide-react';
 
 // Extracted Modals
 import {
@@ -212,7 +209,7 @@ const QuickAddContact: React.FC<QuickAddContactProps> = ({ onAddContact, onConta
   return (
     <div className="space-y-4">
       <div className="text-center py-4">
-        <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-3">
+        <div className="w-16 h-16 bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] rounded-full flex items-center justify-center mx-auto mb-3">
           <UserPlus className="text-2xl text-zinc-400" />
         </div>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">No contacts yet. Add your first contact to start messaging.</p>
@@ -293,7 +290,7 @@ const renderTextWithLinks = (text: string): React.ReactNode => {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-500 hover:text-blue-600 underline break-all"
+        className="text-[#e11d48] dark:text-[#fb7185] hover:text-[#f43f5e] underline break-all"
         onClick={(e) => e.stopPropagation()}
       >
         {match}
@@ -326,12 +323,13 @@ const KEYBOARD_SHORTCUTS = {
 };
 
 const AVATAR_COLORS = [
-  'bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500',
-  'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500'
+  'bg-rose-500', 'bg-rose-600', 'bg-rose-400', 'bg-rose-700',
+  'bg-pink-500', 'bg-pink-600', 'bg-pink-400', 'bg-pink-700'
 ];
 
 interface MessagesProps {
-  apiKey: string;
+  /** @deprecated no-op — AI routing is server-side via edge functions. */
+  apiKey?: string;
   contacts: Contact[];
   initialContactId?: string;
   onAddContact?: (contact: Omit<Contact, 'id'>) => Promise<Contact | null>;
@@ -533,7 +531,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   // Phase 3: Analytics & Engagement State
   const [showAnalyticsPanel, setShowAnalyticsPanel] = useState(false);
-  const [analyticsView, setAnalyticsView] = useState<'response' | 'engagement' | 'flow' | 'insights'>('response');
+  const [analyticsView, setAnalyticsView] = useState<'pace' | 'flow' | 'insights'>('pace');
 
   // Phase 4: Collaboration & Advanced Features State
   const [showCollaborationPanel, setShowCollaborationPanel] = useState(false);
@@ -1096,10 +1094,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       const suggestions = suggestToolsFromContext(
         {
           messageContent: inputText,
-          hasCode: /```|function|class|const|let|var|def |import |package /.test(inputText),
-          hasImage: /image|photo|picture|screenshot|diagram/.test(inputText.toLowerCase()),
-          hasVideo: /video|watch|analyze|recording|clip/.test(inputText.toLowerCase()),
-          hasAudio: /audio|voice|sound|speech|transcribe/.test(inputText.toLowerCase()),
         },
         tools
       );
@@ -1888,7 +1882,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // --- Effect: Load Context, Health, & Outcome ---
   useEffect(() => {
     const fetchContext = async () => {
-        if (!apiKey || isBotChat || !activeThread) return;
+        if (isBotChat || !activeThread) return;
         setLoadingContext(true);
         setCatchUpSummary(null);
         setThreadContext(null);
@@ -1898,10 +1892,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         const history = activeThread.messages.map(m => `${m.sender}: ${m.text}`).join('\n');
 
         const [catchUp, ctx, health, nudgeRec] = await Promise.all([
-            (activeThread.unread || activeThread.messages.length > 5) ? generateCatchUpSummary(apiKey, history) : Promise.resolve(null),
-            generateThreadContext(apiKey, history),
-            analyzeTeamHealth(apiKey, history),
-            generateNudge(apiKey, history)
+            (activeThread.unread || activeThread.messages.length > 5) ? generateCatchUpSummary(history) : Promise.resolve(null),
+            generateThreadContext(history),
+            analyzeTeamHealth(history),
+            generateNudge(history)
         ]);
 
         if (catchUp) setCatchUpSummary(catchUp);
@@ -1911,7 +1905,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
         // Update Outcome Progress if exists
         if (activeThread.outcome) {
-            const outcomeData = await analyzeOutcomeProgress(apiKey, history, activeThread.outcome.goal);
+            const outcomeData = await analyzeOutcomeProgress(history, activeThread.outcome.goal);
             setThreads(prev => prev.map(t =>
                 t.id === activeThreadId ? {
                     ...t,
@@ -1935,7 +1929,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     if (activeThread?.unread) {
        setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, unread: false } : t));
     }
-  }, [activeThreadId, apiKey, activeThread]);
+  }, [activeThreadId, activeThread]);
 
   // --- Effect: Draft Analysis & Meeting Detection ---
   useEffect(() => {
@@ -1943,20 +1937,20 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     setDraftAnalysis(null);
     setAsyncSuggestion(null);
 
-    if (inputText.length > 5 && apiKey && !isBotChat) {
+    if (inputText.length > 5 && !isBotChat) {
         draftTimeoutRef.current = window.setTimeout(async () => {
-            const analysis = await analyzeDraftIntent(apiKey, inputText);
+            const analysis = await analyzeDraftIntent(inputText);
             if (analysis && analysis.confidence > 0.7 && analysis.intent !== 'social') {
                 setDraftAnalysis(analysis);
             }
-            const deflection = await detectMeetingIntent(apiKey, inputText);
+            const deflection = await detectMeetingIntent(inputText);
             if (deflection && deflection.detected) {
                 setAsyncSuggestion(deflection);
             }
         }, 800);
     }
     return () => { if (draftTimeoutRef.current) window.clearTimeout(draftTimeoutRef.current); }
-  }, [inputText, apiKey]);
+  }, [inputText]);
 
   const toggleFocusMode = () => {
       if (focusThreadId) {
@@ -1980,10 +1974,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       setHandoffContent(null);
 
       try {
-          // Try AI-powered summary first if API key available
-          if (apiKey) {
+          // Try AI-powered summary first (server-side routing).
+          {
               const history = activeThread.messages.map(m => `${m.sender}: ${m.text}`).join('\n');
-              const data = await generateHandoffSummary(apiKey, history);
+              const data = await generateHandoffSummary(history);
               if (data && data.context) {
                   setHandoffContent(data);
                   setLoadingHandoff(false);
@@ -2011,11 +2005,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   };
 
   const handleGenerateArtifact = async () => {
-      if (!apiKey) return;
       setLoadingArtifact(true);
       setShowArtifactModal(true);
       const history = activeThread.messages.map(m => `${m.sender}: ${m.text}`).join('\n');
-      const data = await generateChannelArtifact(apiKey, history, activeThread.contactName);
+      const data = await generateChannelArtifact(history, activeThread.contactName);
       setArtifact(data);
       setLoadingArtifact(false);
   };
@@ -2055,7 +2048,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               reader.readAsDataURL(blob);
           });
           
-          const analysis = await analyzeVoiceMemo(apiKey, base64);
+          const analysis = await analyzeVoiceMemo(base64);
           if (analysis) {
               setThreads(prev => prev.map(t => {
                   if (t.id !== activeThreadId) return t;
@@ -2201,7 +2194,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     if (isBotChat) {
         setTypingThreads(prev => ({ ...prev, [activeThreadId]: true }));
         const history = activeThread.messages.map(m => ({ role: m.sender, text: m.text }));
-        const response = await chatWithBot(apiKey, history, text);
+        const response = await chatWithBot(history, text);
         setTypingThreads(prev => ({ ...prev, [activeThreadId]: false }));
 
         const botMsg: Message = { id: uuidv4(), sender: 'other', source:'pulse', text: response || "Error.", timestamp: new Date(), status: 'read' };
@@ -2276,7 +2269,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const handleExtractTask = async (msg: Message) => {
       setCreatingTaskForMsgId(msg.id);
       const contactNames = contacts.map(c => c.name);
-      const taskData = await extractTaskFromMessage(apiKey, msg.text, contactNames);
+      const taskData = await extractTaskFromMessage(msg.text, contactNames);
       
       if (taskData) {
           // Find contact ID for assignee
@@ -2333,20 +2326,20 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   // --- Smart Reply Handler ---
   const handleSmartReply = useCallback(async () => {
-    if (!apiKey || isBotChat || !activeThread) return;
+    if (isBotChat || !activeThread) return;
     setLoadingAI(true);
     const history = activeThread.messages.map(m => ({ role: m.sender, text: m.text }));
-    const reply = await generateSmartReply(apiKey, history);
+    const reply = await generateSmartReply(history);
     if (reply) setInputText(reply);
     setLoadingAI(false);
-  }, [apiKey, isBotChat, activeThread]);
+  }, [isBotChat, activeThread]);
 
   // --- TTS Handler ---
   const handleTTS = useCallback(async (text: string, id: string) => {
     if (isPlayingId) return;
     setIsPlayingId(id);
     try {
-      const audioData = await generateSpeech(apiKey, text);
+      const audioData = await generateSpeech(text);
       if (audioData) {
         if (!audioContextRef.current) audioContextRef.current = new AudioContext();
         const buffer = await decodeAudioData(audioData, audioContextRef.current);
@@ -2360,7 +2353,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       console.error('TTS error:', e);
     }
     setIsPlayingId(null);
-  }, [apiKey, isPlayingId]);
+  }, [isPlayingId]);
 
   // --- File Upload Handler ---
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3017,7 +3010,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     const EnhancedLoadingScreen = lazy(() => import('./EnhancedLoadingScreen'));
     return (
       <Suspense fallback={
-        <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-950">
+        <div className="h-full flex items-center justify-center bg-[#f8f8f8] dark:bg-black">
           <div className="text-center">
             <Loader2 className="text-3xl text-rose-500 dark:text-rose-bright mb-4 animate-spin" />
             <p className="text-zinc-500 dark:text-zinc-400">Loading...</p>
@@ -3032,7 +3025,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // Cellular SMS Sub-page
   if (showCellularSMS) {
     return (
-      <div className="h-full bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      <div className="h-full bg-[#f8f8f8] dark:bg-black rounded-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden">
         <CellularSMS
           onBack={() => {
             setShowCellularSMS(false);
@@ -3125,7 +3118,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   };
 
   return (
-    <div className={`${fullPage ? 'h-screen' : 'h-full'} flex bg-white dark:bg-zinc-950 ${fullPage ? '' : 'rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl'} overflow-hidden relative animate-fade-in`}>
+    <div className={`${fullPage ? 'h-screen' : 'h-full'} flex bg-[#f8f8f8] dark:bg-black ${fullPage ? '' : 'rounded-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] shadow-xl'} overflow-hidden relative animate-fade-in`}>
       
       <MessagesTopModals
         showNewChatModal={showNewChatModal}
@@ -3243,16 +3236,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       {/* Main Chat Area - 70% width on desktop for split-view */}
       {/* Pulse Conversation View */}
       {activePulseConv && !activeThread && (
-        <div className={`flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
+        <div className={`flex-1 flex flex-col min-w-0 bg-[#f8f8f8] dark:bg-black ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
           {/* Pulse Chat Header - Fixed at top */}
-          <div className="min-h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 py-2 z-10 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md flex-shrink-0 mobile-header-safe">
+          <div className="min-h-16 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex items-center justify-between px-4 py-2 z-10 bg-[#f8f8f8]/95 dark:bg-black/95 flex-shrink-0 mobile-header-safe">
             <div className="flex items-center gap-3">
               {/* Mobile Menu Button (visible only on mobile) */}
-              <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition" title="Open menu">
+              <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition" title="Open menu">
                 <Menu />
               </button>
               {/* Desktop Back Button (visible only on mobile when chat is active) */}
-              <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition" title="Back to messages">
+              <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition" title="Back to messages">
                 <ArrowLeft />
               </button>
               <button
@@ -3346,7 +3339,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               {/* Feature Settings Button */}
               <button
                 onClick={() => setShowFeatureSettings(true)}
-                className="w-12 h-12 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                className="w-12 h-12 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors"
                 title="Feature Settings"
                 aria-label="Open feature settings"
               >
@@ -3391,7 +3384,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     .map(msg => (
                       <div
                         key={msg.id}
-                        className="p-2 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:border-rose-500/40 transition-colors"
+                        className="p-2 rounded-lg bg-white dark:bg-[rgba(255,255,255,0.055)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] cursor-pointer hover:border-rose-500/40 transition-colors"
                       >
                         <div className="flex items-center gap-2 text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">
                           <span className="font-medium">
@@ -3421,15 +3414,131 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             </div>
           )}
 
-          {/* Tools Panel Drawer - Coral Cockpit dense list */}
+          {/* Tools Panel Drawer — WRITE / ANALYZE / COACH taxonomy.
+              Each row: Lucide icon · name · one-line description.
+              Inline tools (Smart Compose, AI Coach, AI Mediator) flip a
+              boolean and reveal a panel above the input; overlay tools
+              open a tabbed surface and dock to a panel slot. */}
           <AnimatePresence>
             {showToolsDrawer && (() => {
-              const hasAchievements = showAchievements && messageEnhancements.getAllAchievements().length > 0;
-              const utilitiesCount = 5 + (hasAchievements ? 1 : 0);
-              const totalTools = 4 + 4 + 4 + utilitiesCount;
-              const rowClass = "w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-bright transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40";
-              const iconClass = "w-4 text-center text-zinc-400 dark:text-zinc-500 group-hover:text-rose-500 dark:group-hover:text-rose-bright flex-shrink-0";
+              type DrawerRow = {
+                id: string;
+                Icon: React.ComponentType<{ className?: string }>;
+                name: string;
+                description: string;
+                onActivate: () => void;
+              };
+
+              const closeAndRun = (fn: () => void) => () => {
+                fn();
+                setShowToolsDrawer(false);
+              };
+
+              const writeRows: DrawerRow[] = [
+                {
+                  id: 'smart-compose',
+                  Icon: Wand2,
+                  name: 'Smart Compose',
+                  description: 'Draft suggestions and quick phrases',
+                  onActivate: closeAndRun(() => {
+                    setShowSmartCompose(true);
+                    setShowQuickPhrases(false);
+                  }),
+                },
+                {
+                  id: 'templates',
+                  Icon: FileText,
+                  name: 'Templates',
+                  description: 'Saved phrases with variables',
+                  onActivate: closeAndRun(() => setActiveToolOverlay('productivity' as any)),
+                },
+                {
+                  id: 'message-formatting',
+                  Icon: Bold,
+                  name: 'Format',
+                  description: 'Bold, italic, code, list, quote, link',
+                  onActivate: closeAndRun(() => setActiveToolOverlay('personalization' as any)),
+                },
+                {
+                  id: 'translation',
+                  Icon: Languages,
+                  name: 'Translate',
+                  description: 'Live translation, received and draft',
+                  onActivate: closeAndRun(() => setActiveToolOverlay('mediaHub' as any)),
+                },
+              ];
+
+              const analyzeRows: DrawerRow[] = [
+                {
+                  id: 'conversation-summary',
+                  Icon: ListChecks,
+                  name: 'Conversation Summary',
+                  description: 'LLM recap on demand',
+                  onActivate: closeAndRun(() => setActiveToolOverlay('productivity' as any)),
+                },
+                {
+                  id: 'pace',
+                  Icon: Timer,
+                  name: 'Pace',
+                  description: 'Engagement and response-time charts',
+                  onActivate: closeAndRun(() => setActiveToolOverlay('analytics' as any)),
+                },
+                {
+                  id: 'sentiment',
+                  Icon: Smile,
+                  name: 'Sentiment',
+                  description: 'Tone of the message and thread trend',
+                  onActivate: closeAndRun(() => setActiveToolOverlay('proactive' as any)),
+                },
+                {
+                  id: 'conversation-flow',
+                  Icon: GitFork,
+                  name: 'Conversation Flow',
+                  description: 'Message rhythm and turn-taking',
+                  onActivate: closeAndRun(() => setActiveToolOverlay('analytics' as any)),
+                },
+              ];
+
+              const coachRows: DrawerRow[] = [
+                {
+                  id: 'ai-coach',
+                  Icon: GraduationCap,
+                  name: 'AI Coach',
+                  description: 'Real-time draft critique and rewrites',
+                  onActivate: closeAndRun(() => setShowAICoach(true)),
+                },
+                {
+                  id: 'ai-mediator',
+                  Icon: Handshake,
+                  name: 'AI Mediator',
+                  description: 'De-escalation when conflict signals appear',
+                  onActivate: closeAndRun(() => setShowAIMediator(true)),
+                },
+                {
+                  id: 'insights',
+                  Icon: Lightbulb,
+                  name: 'Insights',
+                  description: 'Patterns and themes across the thread',
+                  onActivate: closeAndRun(() => setActiveToolOverlay('security' as any)),
+                },
+              ];
+
               const sectionLabel = "px-2 pt-4 pb-1.5 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500";
+              const rowClass = "w-full flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-bright transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40";
+              const iconClass = "w-4 h-4 mt-0.5 text-zinc-400 dark:text-zinc-500 group-hover:text-rose-500 dark:group-hover:text-rose-bright flex-shrink-0";
+
+              const renderRow = (row: DrawerRow) => (
+                <button key={row.id} type="button" onClick={row.onActivate} className={rowClass}>
+                  <row.Icon className={iconClass} />
+                  <span className="flex-1 text-left min-w-0">
+                    <span className="block text-sm leading-tight">{row.name}</span>
+                    <span className="block text-[11px] text-zinc-500 dark:text-zinc-500 mt-0.5 leading-snug">{row.description}</span>
+                  </span>
+                </button>
+              );
+
+              const totalTools = writeRows.length + analyzeRows.length + coachRows.length;
+
               return (
               <>
                 {/* Backdrop */}
@@ -3447,15 +3556,15 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="fixed right-0 top-0 bottom-0 w-72 bg-white dark:bg-black border-l border-zinc-200/60 dark:border-white/[0.06] shadow-2xl z-[91] flex flex-col"
+                  className="fixed right-0 top-0 bottom-0 w-80 bg-white dark:bg-black border-l border-zinc-200/60 dark:border-white/[0.06] shadow-2xl z-[91] flex flex-col"
                   role="dialog"
                   aria-label="Tools menu"
                 >
                   {/* Drawer Header */}
                   <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200/60 dark:border-white/[0.06]">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-[11px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-700 dark:text-zinc-200">TOOLS</span>
-                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 tabular-nums">· {totalTools} AVAILABLE</span>
+                      <span className="text-[11px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-700 dark:text-zinc-200">MESSAGE TOOLS</span>
+                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 tabular-nums">· {totalTools}</span>
                     </div>
                     <button
                       onClick={() => setShowToolsDrawer(false)}
@@ -3468,111 +3577,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
                   {/* Tools List */}
                   <div className="flex-1 overflow-y-auto px-2 py-1">
-                    {/* AI section */}
-                    <div className={`${sectionLabel} pt-2`}>AI · 4</div>
-                    <div className="space-y-0.5">
-                      {[
-                        { id: 'ai-coach', icon: 'fa-user-graduate', name: 'Coach', overlay: 'intelligence' },
-                        { id: 'smart-compose', icon: 'fa-wand-magic-sparkles', name: 'Compose', overlay: 'productivity' },
-                        { id: 'sentiment-analysis', icon: 'fa-face-smile', name: 'Sentiment', overlay: 'analytics' },
-                        { id: 'translation', icon: 'fa-language', name: 'Translate', overlay: 'communication' },
-                      ].map(tool => (
-                        <button
-                          key={tool.id}
-                          onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
-                          className={rowClass}
-                        >
-                          <i className={`fa-solid ${tool.icon} ${iconClass}`}></i>
-                          <span className="text-sm flex-1 text-left">{tool.name}</span>
-                        </button>
-                      ))}
-                    </div>
+                    <div className={`${sectionLabel} pt-2`}>WRITE · {writeRows.length}</div>
+                    <div className="space-y-0.5">{writeRows.map(renderRow)}</div>
 
-                    {/* Content section */}
-                    <div className={sectionLabel}>CONTENT · 4</div>
-                    <div className="space-y-0.5">
-                      {[
-                        { id: 'templates', icon: 'fa-file-lines', name: 'Templates', overlay: 'productivity' },
-                        { id: 'voice-recorder', icon: 'fa-microphone', name: 'Voice', overlay: 'mediaHub' },
-                        { id: 'attachments', icon: 'fa-paperclip', name: 'Files', overlay: 'mediaHub' },
-                        { id: 'schedule', icon: 'fa-clock', name: 'Schedule', overlay: 'productivity' },
-                      ].map(tool => (
-                        <button
-                          key={tool.id}
-                          onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
-                          className={rowClass}
-                        >
-                          <i className={`fa-solid ${tool.icon} ${iconClass}`}></i>
-                          <span className="text-sm flex-1 text-left">{tool.name}</span>
-                        </button>
-                      ))}
-                    </div>
+                    <div className={sectionLabel}>ANALYZE · {analyzeRows.length}</div>
+                    <div className="space-y-0.5">{analyzeRows.map(renderRow)}</div>
 
-                    {/* Analysis section */}
-                    <div className={sectionLabel}>ANALYSIS · 4</div>
-                    <div className="space-y-0.5">
-                      {[
-                        { id: 'analytics', icon: 'fa-chart-pie', name: 'Analytics', overlay: 'analytics' },
-                        { id: 'health', icon: 'fa-heart-pulse', name: 'Health', overlay: 'analytics' },
-                        { id: 'network', icon: 'fa-diagram-project', name: 'Network', overlay: 'collaboration' },
-                        { id: 'insights', icon: 'fa-magnifying-glass-chart', name: 'Insights', overlay: 'intelligence' },
-                      ].map(tool => (
-                        <button
-                          key={tool.id}
-                          onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
-                          className={rowClass}
-                        >
-                          <i className={`fa-solid ${tool.icon} ${iconClass}`}></i>
-                          <span className="text-sm flex-1 text-left">{tool.name}</span>
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Utilities section */}
-                    <div className={sectionLabel}>UTILITIES · {utilitiesCount}</div>
-                    <div className="space-y-0.5 pb-2">
-                      {/* Focus Mode (toggleable) */}
-                      <button
-                        onClick={() => {
-                          setIsFocusModeActive(!isFocusModeActive);
-                          setFocusThreadId(isFocusModeActive ? null : activeThreadId || 'main');
-                          setShowToolsDrawer(false);
-                        }}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${isFocusModeActive ? 'bg-rose-500/10 dark:bg-rose-500/10 text-rose-600 dark:text-rose-bright' : 'hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-bright'}`}
-                        aria-pressed={isFocusModeActive}
-                      >
-                        <Crosshair className={`w-4 h-4 flex-shrink-0 ${isFocusModeActive ? 'text-rose-500 dark:text-rose-bright' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-rose-500 dark:group-hover:text-rose-bright'}`} />
-                        <span className="text-sm flex-1 text-left">Focus Mode</span>
-                        {isFocusModeActive && <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium">ON</span>}
-                      </button>
-
-                      {/* Achievements (conditional) */}
-                      {hasAchievements && (
-                        <button
-                          onClick={() => { setShowAnalyticsDashboard(true); setShowToolsDrawer(false); }}
-                          className={rowClass}
-                        >
-                          <Trophy className="w-4 h-4 text-zinc-400 dark:text-zinc-500 group-hover:text-rose-500 dark:group-hover:text-rose-bright flex-shrink-0" />
-                          <span className="text-sm flex-1 text-left">Achievements</span>
-                        </button>
-                      )}
-
-                      {[
-                        { id: 'theme', icon: 'fa-palette', name: 'Theme', overlay: 'personalization' },
-                        { id: 'security', icon: 'fa-shield-halved', name: 'Security', overlay: 'security' },
-                        { id: 'export', icon: 'fa-download', name: 'Export', overlay: 'productivity' },
-                        { id: 'settings', icon: 'fa-gear', name: 'Settings', overlay: 'personalization' },
-                      ].map(tool => (
-                        <button
-                          key={tool.id}
-                          onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
-                          className={rowClass}
-                        >
-                          <i className={`fa-solid ${tool.icon} ${iconClass}`}></i>
-                          <span className="text-sm flex-1 text-left">{tool.name}</span>
-                        </button>
-                      ))}
-                    </div>
+                    <div className={sectionLabel}>COACH · {coachRows.length}</div>
+                    <div className="space-y-0.5 pb-2">{coachRows.map(renderRow)}</div>
                   </div>
 
                   {/* Footer */}
@@ -3643,7 +3655,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   type="button"
                   onClick={loadMorePulseMessages}
                   disabled={isLoadingMoreMessages}
-                  className="px-4 py-2 text-xs font-medium rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition disabled:opacity-50"
+                  className="px-4 py-2 text-xs font-medium rounded-full bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] text-zinc-600 dark:text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] transition disabled:opacity-50"
                 >
                   {isLoadingMoreMessages ? 'Loading...' : 'Load older messages'}
                 </button>
@@ -3662,17 +3674,29 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             ) : (
               pulseMessages.map((msg, idx) => {
                 const isMe = msg.sender_id !== activePulseConv.other_user?.id;
-                
+                // The latest own-message in the thread carries the
+                // DELIVERED / READ receipt. Older own-messages stay quiet.
+                const isLatestOwn = isMe && pulseMessages
+                  .slice(idx + 1)
+                  .every((m) => m.sender_id === activePulseConv.other_user?.id);
+
                 const prevMsg = idx > 0 ? pulseMessages[idx - 1] : null;
                 const nextMsg = idx < pulseMessages.length - 1 ? pulseMessages[idx + 1] : null;
 
-                // Message grouping: consecutive messages from same sender within 5 minutes
+                // Date divider state — computed first so grouping can reference it.
+                const showDate = shouldShowDateDivider(prevMsg ? new Date(prevMsg.created_at) : null, new Date(msg.created_at));
+
+                // Message grouping: consecutive messages from the same sender on the same date.
+                // A date divider always breaks the group; otherwise same-sender stacks tight
+                // regardless of time gap. Mirrors iMessage's visual rhythm for spread-out chats.
                 const isSameSender = prevMsg?.sender_id === msg.sender_id;
-                const timeDiff = prevMsg ? new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime() : Infinity;
-                const isGrouped = isSameSender && timeDiff < 5 * 60 * 1000;
+                const isGrouped = isSameSender && !showDate;
 
                 const showAvatar = !isGrouped;
-                const showDate = shouldShowDateDivider(prevMsg ? new Date(prevMsg.created_at) : null, new Date(msg.created_at));
+                const senderLabel = isMe
+                  ? 'YOU'
+                  : (activePulseConv.other_user?.display_name || activePulseConv.other_user?.handle || 'UNKNOWN').toUpperCase();
+                const messageTime = new Date(msg.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
                 const reactions = pulseMessageReactions[msg.id] || [];
                 const isStarred = starredPulseMessages.has(msg.id);
@@ -3687,7 +3711,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         label={formatDateDivider(new Date(msg.created_at))} 
                       />
                     )}
-                    <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative ${isGrouped ? 'mb-1' : 'mb-4'}`}>
+                    <div
+                      data-grouped={isGrouped ? 'true' : 'false'}
+                      data-pulse-msg-row="true"
+                      className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative ${isGrouped ? 'mb-0.5' : 'mb-3'}`}
+                    >
                       {!isMe && showAvatar && (
                         <div
                           className="w-8 h-8 rounded-full flex items-center justify-center text-xs mr-2 mt-auto flex-shrink-0 bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-700 dark:text-rose-300 font-medium"
@@ -3701,7 +3729,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       )}
                       {!isMe && !showAvatar && <div className="w-8 mr-2"></div>}
 
-                      <div className="max-w-[70%] sm:max-w-[75%] md:max-w-[70%] relative">
+                      <div className={`max-w-[70%] sm:max-w-[75%] md:max-w-[70%] relative flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                        {/* Mono sender · time header — first message of a received block.
+                            Sits ABOVE the GestureHandler so flex alignment on the column applies. */}
+                        {!isGrouped && !isMe && (
+                          <div className="msg-sender-header">
+                            <span className="msg-sender-name">{senderLabel}</span>
+                            <span className="msg-sep" aria-hidden="true">·</span>
+                            <span className="msg-timestamp">{messageTime}</span>
+                          </div>
+                        )}
+
                         {/* Star indicator */}
                         {isStarred && (
                           <div className={`absolute -top-2 ${isMe ? '-left-2' : '-right-2'} z-10`}>
@@ -3745,7 +3783,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 duration: 0.2,
                                 ease: [0.4, 0, 0.2, 1]
                               }}
-                              className="flex items-center gap-1 p-1.5 bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700"
+                              className="flex items-center gap-1 p-1.5 bg-white dark:bg-[rgba(255,255,255,0.055)] rounded-full shadow-lg border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)]"
                               style={{ ...position }}
                             >
                               {COMMON_REACTIONS.map((emoji, index) => (
@@ -3759,7 +3797,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     ease: [0.4, 0, 0.2, 1]
                                   }}
                                   onClick={() => onReact(emoji)}
-                                  className="w-8 h-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-full transition-colors text-base"
+                                  className="w-8 h-8 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors text-base"
                                   whileHover={{ scale: 1.25 }}
                                   whileTap={{ scale: 0.9 }}
                                 >
@@ -3777,7 +3815,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.15, delay: 0.2 }}
                                 onClick={(e) => handleOpenContextMenuFromButton(e as any, msg.id)}
-                                className="w-8 h-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-full transition-colors text-zinc-500"
+                                className="w-8 h-8 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors text-zinc-500"
                                 title="More options"
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
@@ -3789,12 +3827,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         >
                           <div
                             data-message-id={msg.id}
-                            className={`message-bubble ${isMe ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2.5 shadow-sm cursor-pointer select-none transition-all hover:shadow-md`}
-                            style={{
-                              borderRadius: '12px',
-                              borderBottomRightRadius: isMe ? '4px' : '12px',
-                              borderBottomLeftRadius: !isMe ? '4px' : '12px',
-                            }}
+                            className={`message-bubble ${isMe ? 'message-bubble-sent' : 'message-bubble-received'} cursor-pointer select-none transition-all`}
                             onContextMenu={(e) => handlePulseMessageContextMenu(e, msg.id)}
                           >
                             {/* Media content (images, audio, files) */}
@@ -3840,7 +3873,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     if (e.key === 'Enter') saveEditPulseMessage();
                                     if (e.key === 'Escape') cancelEditPulseMessage();
                                   }}
-                                  className="w-full px-2 py-1 rounded bg-white/20 dark:bg-black/20 border border-zinc-300 dark:border-zinc-600 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                  className="w-full px-2 py-1 rounded bg-white/20 dark:bg-black/20 border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] text-sm focus:outline-none focus:ring-1 focus:ring-[#f43f5e]"
                                   autoFocus
                                 />
                                 <div className="flex gap-2 text-[10px]">
@@ -3863,33 +3896,23 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             {/* Phase 7b: OG link preview cards. Renders nothing if no
                              *  URLs in the text — graceful enhancement. Cached server-side. */}
                             <MessageLinkPreviews text={msg.content} max={2} />
-                            <div
-                              className="mt-1.5 flex items-center gap-2"
-                              style={{
-                                fontSize: 'var(--font-size-timestamp)',
-                                fontWeight: 'var(--font-weight-timestamp)',
-                                fontFamily: 'var(--font-mono)',
-                                color: 'var(--text-tertiary)',
-                                justifyContent: isMe ? 'flex-end' : 'flex-start'
-                              }}
-                            >
-                              <SmartTimestamp time={msg.created_at} />
-                              {msg.metadata?.edited && (
-                                <span className="text-[9px] italic opacity-70">edited</span>
-                              )}
-                              {isMe && msg.is_read && (
-                                <span className="flex items-center gap-0.5" style={{ opacity: 0.9 }}>
-                                  <CheckCheck />
-                                  <span className="text-[9px]">Read</span>
-                                </span>
-                              )}
-                              {isMe && !msg.is_read && (
-                                <Check />
-                              )}
-                            </div>
+                            {msg.metadata?.edited && (
+                              <span className="ml-2 align-baseline font-mono uppercase tracking-[0.1em] text-[9px] opacity-60">
+                                edited
+                              </span>
+                            )}
                           </div>
                         </HoverReactionTrigger>
                         </GestureHandler>
+
+                        {/* Receipt — only the latest own-message carries it.
+                            Coral mono "READ" when read, muted "DELIVERED" otherwise. */}
+                        {isLatestOwn && (
+                          <div className="msg-receipt" data-state={msg.is_read ? 'read' : 'delivered'}>
+                            <span className="msg-receipt-dot" aria-hidden="true" />
+                            <span>{msg.is_read ? 'READ' : 'DELIVERED'}</span>
+                          </div>
+                        )}
 
                         {/* Context Menu - appears on right-click or long-press */}
                         {pulseContextMenuMsgId === msg.id && pulseContextMenuPosition && (
@@ -3912,7 +3935,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                         handlePulseReaction(msg.id, emoji);
                                         closePulseContextMenu();
                                       }}
-                                      className="w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition text-lg hover:scale-125"
+                                      className="w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-full transition text-lg"
                                     >
                                       {emoji}
                                     </button>
@@ -3926,7 +3949,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     setReplyingToPulseMessage(msg);
                                     closePulseContextMenu();
                                   }}
-                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
+                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
                                 >
                                   <Reply className="text-zinc-400 group-hover:text-rose-500 dark:group-hover:text-rose-bright w-4" />
                                   Reply
@@ -3936,7 +3959,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     copyPulseMessage(msg.content);
                                     closePulseContextMenu();
                                   }}
-                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
+                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
                                 >
                                   <Copy className="text-zinc-500 w-4" />
                                   Copy Text
@@ -3946,7 +3969,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     toggleStarPulseMessage(msg.id);
                                     closePulseContextMenu();
                                   }}
-                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
+                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
                                 >
                                   <i className={`fa-${isStarred ? 'solid' : 'regular'} fa-star ${isStarred ? 'text-rose-500/70 dark:text-rose-bright/70' : 'text-zinc-500'} w-4`}></i>
                                   {isStarred ? 'Unstar' : 'Star'}
@@ -3956,9 +3979,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     sharePulseMessage(msg);
                                     closePulseContextMenu();
                                   }}
-                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
+                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
                                 >
-                                  <Share className="text-purple-500 w-4" />
+                                  <Share className="text-[#f43f5e] w-4" />
                                   Share
                                 </button>
                                 {/* Edit - only for own messages */}
@@ -3968,7 +3991,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                       startEditPulseMessage(msg);
                                       closePulseContextMenu();
                                     }}
-                                    className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
+                                    className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
                                   >
                                     <i className="fa-solid fa-pen text-zinc-400 group-hover:text-rose-500 dark:group-hover:text-rose-bright w-4"></i>
                                     Edit
@@ -3988,7 +4011,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     setShowForwardModal(true);
                                     closePulseContextMenu();
                                   }}
-                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
+                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
                                 >
                                   <ArrowRight className="text-rose-500 dark:text-rose-bright w-4" />
                                   Forward
@@ -4005,7 +4028,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                               <button
                                 key={ridx}
                                 onClick={() => handlePulseReaction(msg.id, r.emoji)}
-                                className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition ${r.me ? 'bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/30' : 'bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700'}`}
+                                className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition ${r.me ? 'bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/30' : 'bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)]'}`}
                               >
                                 <span>{r.emoji}</span>
                                 <span className="text-zinc-500">{r.count}</span>
@@ -4331,17 +4354,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       {/* Regular Thread Chat View - Empty state or active thread */}
       {!activeThread && !activePulseConv && renderEmptyChatArea()}
       {activeThread && (
-      <div className={`flex-1 flex flex-col relative min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
+      <div className={`flex-1 flex flex-col relative min-w-0 bg-[#f8f8f8] dark:bg-black ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
 
         {/* Header - Mobile Optimized - Fixed at top */}
-        <div className="min-h-[56px] md:h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-2 sm:px-4 z-10 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md flex-shrink-0 gap-2 mobile-header-safe">
+        <div className="min-h-[56px] md:h-16 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex items-center justify-between px-2 sm:px-4 z-10 bg-[#f8f8f8]/95 dark:bg-black/95 flex-shrink-0 gap-2 mobile-header-safe">
           <div className="flex items-center gap-2 min-w-0 flex-shrink">
              {/* Mobile Menu Button (visible only on mobile) */}
-             <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0" title="Open menu">
+             <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex-shrink-0" title="Open menu">
                <Menu />
              </button>
              {/* Desktop Back Button (visible only on mobile when chat is active) */}
-             <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0" title="Back to messages"><ArrowLeft /></button>
+             <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex-shrink-0" title="Back to messages"><ArrowLeft /></button>
              <div className="flex flex-col min-w-0">
                  <span className="font-medium text-zinc-900 dark:text-white leading-tight flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base truncate">
                      <span className="truncate max-w-[120px] sm:max-w-none">{activeThread.contactName}</span>
@@ -4634,7 +4657,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     <div className="max-w-[85%] md:max-w-[70%] relative">
                         {/* Source Indicator for Unified Inbox */}
                         {msg.source && msg.source !== 'pulse' && (
-                            <div className="absolute -top-3 right-0 bg-white dark:bg-zinc-800 px-1.5 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm z-10">
+                            <div className="absolute -top-3 right-0 bg-white dark:bg-[rgba(255,255,255,0.055)] px-1.5 py-0.5 rounded-full border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] shadow-sm z-10">
                                 {getSourceIcon(msg.source)}
                             </div>
                         )}
@@ -4645,8 +4668,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                               : isApproved
                               ? `bg-emerald-500/5 dark:bg-emerald-500/[0.08] ring-1 ring-emerald-500/30 text-zinc-800 dark:text-zinc-200 ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}`
                               : isMe
-                              ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-br-sm'
-                              : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-bl-sm'
+                              ? 'bg-[#0f0f0f] dark:bg-white text-white dark:text-[#0f0f0f] rounded-br-sm'
+                              : 'bg-white dark:bg-[rgba(255,255,255,0.055)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] text-zinc-800 dark:text-zinc-200 rounded-bl-sm'
                         }`}>
 
                             {/* Proposal Header */}
@@ -4817,13 +4840,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
                         {/* Message Actions */}
                         <div className={`absolute -top-8 ${isMe ? 'right-0' : 'left-0'} opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 z-20`}>
-                            <div className="flex items-center bg-white dark:bg-zinc-800 rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700 p-1">
+                            <div className="flex items-center bg-white dark:bg-[rgba(255,255,255,0.055)] rounded-full shadow-xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] p-1">
                                 {/* Quick Reactions */}
                                 {COMMON_REACTIONS.slice(0, 4).map(emoji => (
                                   <button
                                     key={emoji}
                                     onClick={() => handleReaction(msg.id, emoji)}
-                                    className="w-7 h-7 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-full transition text-sm"
+                                    className="w-7 h-7 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] rounded-full transition text-sm"
                                     title={`React with ${emoji}`}
                                   >
                                     {emoji}
@@ -4846,7 +4869,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 </button>
                                 <button
                                     onClick={() => { setForwardingMessage(msg); setShowForwardModal(true); }}
-                                    className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-purple-500 rounded-full transition"
+                                    className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-[#f43f5e] rounded-full transition"
                                     title="Forward"
                                 >
                                     <Share className="text-xs" />
@@ -4854,7 +4877,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 {isMe && (
                                   <button
                                       onClick={() => startEditMessage(msg)}
-                                      className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-amber-500 rounded-full transition"
+                                      className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-[#f43f5e] rounded-full transition"
                                       title="Edit"
                                   >
                                       <Pen className="text-xs" />
@@ -4888,23 +4911,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           </div>
                         )}
 
-                        {/* Message Impact Visualization - Show on hover for important messages */}
-                        {!isMe && msg.text && msg.text.length > 50 && (
-                          <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MessageImpactVisualization
-                              impact={messageEnhancements.calculateMessageImpact(msg, activeThread)}
-                              compact={true}
-                            />
-                          </div>
-                        )}
-
                         {/* Read Receipt */}
                         {isMe && showReadReceipts && msg.status && (
                           <div className="flex justify-end mt-1">
                             <span className="text-[10px] text-zinc-400 flex items-center gap-1">
                               {msg.status === 'sent' && <><Check /> Sent</>}
                               {msg.status === 'delivered' && <><CheckCheck /> Delivered</>}
-                              {msg.status === 'read' && <><CheckCheck className="text-blue-500" /> Read</>}
+                              {msg.status === 'read' && <><CheckCheck className="text-[#3b82f6]" /> Read</>}
                             </span>
                           </div>
                         )}
@@ -4999,6 +5012,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         showAICoach={showAICoach}
         setShowAICoach={setShowAICoach}
         showSmartCompose={showSmartCompose}
+        setShowSmartCompose={setShowSmartCompose}
         messageEnhancements={messageEnhancements}
         showQuickActionsBar={showQuickActionsBar}
         isRecording={isRecording}

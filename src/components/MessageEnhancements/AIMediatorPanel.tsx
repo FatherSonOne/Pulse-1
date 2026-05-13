@@ -1,8 +1,13 @@
-// AI Mediator Panel - Conflict Detection and Resolution Assistant
+// AI Mediator Panel — conflict detection and resolution assistant.
+// Combines keyword heuristics (detectConflicts, below — instant signal)
+// with a debounced LLM call (analyzeTeamHealth) so users get a fast
+// preview AND a higher-fidelity LLM read of the thread.
 import React, { useState, useEffect } from 'react';
 
 import { Lightbulb, X } from 'lucide-react';
 import { AIProvenanceTag } from '../shared/AIProvenanceTag';
+import { analyzeTeamHealth } from '../../services/geminiService';
+import type { TeamHealth } from '../../types';
 
 interface ConflictSignal {
   id: string;
@@ -186,6 +191,7 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
   const [suggestions, setSuggestions] = useState<MediationSuggestion[]>([]);
   const [expanded, setExpanded] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [llmHealth, setLlmHealth] = useState<TeamHealth | null>(null);
 
   useEffect(() => {
     const detectedSignals = detectConflicts(messages);
@@ -193,7 +199,38 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
     setSuggestions(generateSuggestions(detectedSignals, contactName));
   }, [messages, contactName]);
 
-  if (signals.length === 0 || dismissed) return null;
+  // LLM enrichment — call analyzeTeamHealth with the recent transcript
+  // and surface its issues as additional mediator signals. The router
+  // handles workspace + cap; soft failures return null and we silently
+  // fall back to the heuristic.
+  useEffect(() => {
+    if (messages.length < 6) {
+      setLlmHealth(null);
+      return;
+    }
+    let cancelled = false;
+    const transcript = messages
+      .slice(-15)
+      .map(m => `${m.sender === 'user' ? 'You' : contactName}: ${m.text}`)
+      .join('\n');
+    void analyzeTeamHealth(transcript)
+      .then(result => {
+        if (cancelled) return;
+        if (result && (result.status === 'at_risk' || result.status === 'critical')) {
+          setLlmHealth(result);
+        } else {
+          setLlmHealth(null);
+        }
+      })
+      .catch(() => { /* soft failure — heuristic still renders */ });
+    return () => { cancelled = true; };
+  }, [messages, contactName]);
+
+  // Show the panel if EITHER the heuristic flagged signals OR the LLM
+  // flagged a non-healthy team health. This lets the LLM catch
+  // tensions the keyword pass missed.
+  if (dismissed) return null;
+  if (signals.length === 0 && !llmHealth) return null;
 
   const highSeverityCount = signals.filter(s => s.severity === 'high').length;
   const alertLevel = highSeverityCount >= 2 ? 'high' : highSeverityCount >= 1 ? 'medium' : 'low';
