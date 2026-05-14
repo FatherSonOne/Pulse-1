@@ -314,7 +314,7 @@ const TriageRow: React.FC<{
               {snoozeMenuOpen && (
                 <div
                   role="menu"
-                  className="absolute right-0 top-full mt-1.5 w-44 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-zinc-950 py-1 z-10 shadow-md"
+                  className="absolute right-0 top-full mt-1.5 w-44 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-[#0a0a0a] py-1 z-10 shadow-md"
                 >
                   {[
                     { label: '1 hour', ms: 60 * 60 * 1000 },
@@ -380,7 +380,7 @@ const TriageRow: React.FC<{
               {overflowMenuOpen && (
                 <div
                   role="menu"
-                  className="absolute right-0 top-full mt-1.5 w-48 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-zinc-950 py-1 z-10 shadow-md"
+                  className="absolute right-0 top-full mt-1.5 w-48 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-[#0a0a0a] py-1 z-10 shadow-md"
                 >
                   {item.needsReply && onMarkRead && (
                     <button
@@ -655,7 +655,7 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
   };
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-zinc-950">
+    <div className="h-full flex flex-col bg-white dark:bg-[#080808]">
       {/* Filter chip row */}
       <div
         className="flex items-center gap-2 px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto"
@@ -669,9 +669,9 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
             role="tab"
             aria-selected={activeFilter === filter}
             onClick={() => setActiveFilter(filter)}
-            className={`shrink-0 px-3 py-1 rounded font-mono text-[11px] uppercase tracking-[0.1em] transition ${
+            className={`shrink-0 px-3 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] transition ${
               activeFilter === filter
-                ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
                 : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
             }`}
           >

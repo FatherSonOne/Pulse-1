@@ -107,14 +107,14 @@ export const AudioIOSettings: React.FC<AudioIOSettingsProps> = ({
   };
 
   const tc = {
-    bg: isDarkMode ? 'bg-gray-900/60' : 'bg-white/80',
-    cardBg: isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50/80',
-    border: isDarkMode ? 'border-gray-700/50' : 'border-gray-200/60',
+    bg: isDarkMode ? 'bg-white/[0.03]' : 'bg-white/80',
+    cardBg: isDarkMode ? 'bg-white/[0.03]' : 'bg-gray-50/80',
+    border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-gray-200/60',
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
     textMuted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-    inputBg: isDarkMode ? 'bg-gray-800/80' : 'bg-white',
-    hoverBg: isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100/80',
+    inputBg: isDarkMode ? 'bg-white/[0.055]' : 'bg-white',
+    hoverBg: isDarkMode ? 'hover:bg-white/[0.055]' : 'hover:bg-gray-100/80',
   };
 
   return (
@@ -205,54 +205,53 @@ export const AudioIOSettings: React.FC<AudioIOSettingsProps> = ({
         </div>
       </div>
 
-      {/* Audio Quality Presets */}
+      {/* Audio Quality — segmented control replaces the prior 3-card grid
+          (DESIGN.md absolute ban: identical card grids). The selected preset's
+          description + spec line lives underneath the control so each option
+          stays single-line in the segment. */}
       <div className="space-y-3">
         <label className={`flex items-center gap-2 text-sm font-medium ${tc.text}`}>
           <Sliders className="w-4 h-4" style={{ color: accentColor }} />
           Audio Quality
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div
+          className={`inline-flex w-full p-0.5 rounded-md ${isDarkMode ? 'bg-[rgba(255,255,255,0.055)]' : 'bg-[#f2f2f2]'}`}
+          role="radiogroup"
+          aria-label="Audio quality"
+        >
           {QUALITY_PRESETS.map((preset) => {
-            const Icon = preset.icon;
             const isSelected = audioQuality === preset.id;
-
             return (
               <button
                 key={preset.id}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
                 onClick={() => handleQualityChange(preset.id as typeof audioQuality)}
-                className={`relative p-4 rounded-xl border text-left transition-all ${
+                className={`flex-1 px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.1em] transition ${
                   isSelected
-                    ? ''
-                    : `${tc.border} ${tc.cardBg} ${tc.hoverBg}`
+                    ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
+                    : isDarkMode
+                      ? 'text-[#b4b4b8] hover:text-[#fafafa]'
+                      : 'text-[#52525b] hover:text-[#0f0f0f]'
                 }`}
-                style={isSelected ? {
-                  background: `linear-gradient(135deg, ${accentColor}15 0%, ${accentColor}05 100%)`,
-                  borderColor: `${accentColor}50`,
-                  boxShadow: `0 0 20px ${accentColor}15`,
-                } : undefined}
               >
-                {isSelected && (
-                  <CheckCircle2
-                    className="absolute top-3 right-3 w-4 h-4"
-                    style={{ color: accentColor }}
-                  />
-                )}
-                <Icon
-                  className="w-5 h-5 mb-2"
-                  style={{ color: isSelected ? accentColor : tc.textMuted.replace('text-', '') }}
-                />
-                <h4 className={`font-semibold text-sm ${tc.text}`}>{preset.name}</h4>
-                <p className={`text-xs ${tc.textMuted} mt-0.5`}>{preset.description}</p>
-                <p
-                  className="text-[10px] font-mono mt-2 uppercase tracking-wider"
-                  style={{ color: isSelected ? accentColor : tc.textMuted.replace('text-', '') }}
-                >
-                  {preset.specs}
-                </p>
+                {preset.name}
               </button>
             );
           })}
         </div>
+        {(() => {
+          const selected = QUALITY_PRESETS.find((p) => p.id === audioQuality);
+          if (!selected) return null;
+          return (
+            <p className={`text-xs ${tc.textMuted}`}>
+              {selected.description}
+              <span className="mx-1.5 opacity-50">·</span>
+              <span className="font-mono">{selected.specs}</span>
+            </p>
+          );
+        })()}
       </div>
 
       {/* Processing Options */}

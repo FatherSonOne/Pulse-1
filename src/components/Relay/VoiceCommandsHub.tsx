@@ -333,7 +333,7 @@ export const VoiceCommandsHub: React.FC<VoiceCommandsHubProps> = ({
   const categories = Object.keys(CATEGORY_CONFIG) as VoiceCommandCategory[];
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-zinc-950">
+    <div className="h-full flex flex-col bg-white dark:bg-[#080808]">
       {/* Listening Overlay */}
       <VoiceListeningOverlay
         isListening={isListening}

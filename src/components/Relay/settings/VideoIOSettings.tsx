@@ -133,14 +133,14 @@ export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
   };
 
   const tc = {
-    bg: isDarkMode ? 'bg-gray-900/60' : 'bg-white/80',
-    cardBg: isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50/80',
-    border: isDarkMode ? 'border-gray-700/50' : 'border-gray-200/60',
+    bg: isDarkMode ? 'bg-white/[0.03]' : 'bg-white/80',
+    cardBg: isDarkMode ? 'bg-white/[0.03]' : 'bg-gray-50/80',
+    border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-gray-200/60',
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
     textMuted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-    inputBg: isDarkMode ? 'bg-gray-800/80' : 'bg-white',
-    hoverBg: isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100/80',
+    inputBg: isDarkMode ? 'bg-white/[0.055]' : 'bg-white',
+    hoverBg: isDarkMode ? 'hover:bg-white/[0.055]' : 'hover:bg-gray-100/80',
   };
 
   return (
@@ -182,16 +182,12 @@ export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
         </div>
       )}
 
-      {/* Camera Preview */}
+      {/* Camera Preview — flat ink-near-true canvas (was a purple-tinted
+          gradient `#0a0a0f → #1a1a25` which leaked off-palette purple into
+          the chrome). The video itself is the focus; the surround stays out
+          of the way. */}
       <div className={`rounded-xl border ${tc.border} overflow-hidden`}>
-        <div
-          className="relative aspect-video bg-zinc-950 flex items-center justify-center"
-          style={{
-            background: isDarkMode
-              ? 'linear-gradient(135deg, #0a0a0f 0%, #1a1a25 100%)'
-              : 'linear-gradient(135deg, #1a1a25 0%, #0a0a0f 100%)'
-          }}
-        >
+        <div className="relative aspect-video bg-[#080808] flex items-center justify-center">
           {isPreviewActive ? (
             <video
               ref={videoRef}
@@ -259,11 +255,13 @@ export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
 
             {isPreviewActive && (
               <div
-                className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono"
+                className="flex items-center gap-1.5 px-2 py-1 rounded-md font-mono text-[10px] uppercase tracking-[0.1em]"
                 style={{ background: 'rgba(0,0,0,0.5)', color: accentColor }}
               >
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                LIVE
+                {/* Pulse uses coral for live state. Green here was a
+                    Status-Stays-Status violation (green = status-done). */}
+                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                Live
               </div>
             )}
           </div>
@@ -294,48 +292,51 @@ export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
         </div>
       </div>
 
-      {/* Video Quality */}
+      {/* Video Quality — segmented control (was 3-card grid). Selected
+          resolution is shown underneath so each segment stays single-line. */}
       <div className="space-y-3">
         <label className={`flex items-center gap-2 text-sm font-medium ${tc.text}`}>
           <MonitorPlay className="w-4 h-4" style={{ color: accentColor }} />
           Video Quality
         </label>
-        <div className="grid grid-cols-3 gap-3">
+        <div
+          className={`inline-flex w-full p-0.5 rounded-md ${isDarkMode ? 'bg-[rgba(255,255,255,0.055)]' : 'bg-[#f2f2f2]'}`}
+          role="radiogroup"
+          aria-label="Video quality"
+        >
           {VIDEO_QUALITIES.map((quality) => {
             const isSelected = videoQuality === quality.id;
-
             return (
               <button
                 key={quality.id}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
                 onClick={() => handleQualityChange(quality.id as typeof videoQuality)}
-                className={`relative p-3 rounded-xl border text-center transition-all ${
+                className={`flex-1 px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.1em] transition ${
                   isSelected
-                    ? ''
-                    : `${tc.border} ${tc.cardBg} ${tc.hoverBg}`
+                    ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
+                    : isDarkMode
+                      ? 'text-[#b4b4b8] hover:text-[#fafafa]'
+                      : 'text-[#52525b] hover:text-[#0f0f0f]'
                 }`}
-                style={isSelected ? {
-                  background: `linear-gradient(135deg, ${accentColor}15 0%, ${accentColor}05 100%)`,
-                  borderColor: `${accentColor}50`,
-                  boxShadow: `0 0 20px ${accentColor}15`,
-                } : undefined}
               >
-                {isSelected && (
-                  <CheckCircle2
-                    className="absolute top-2 right-2 w-3.5 h-3.5"
-                    style={{ color: accentColor }}
-                  />
-                )}
-                <h4 className={`font-semibold text-sm ${tc.text}`}>{quality.name}</h4>
-                <p
-                  className="text-[10px] font-mono mt-1"
-                  style={{ color: isSelected ? accentColor : undefined }}
-                >
-                  {quality.resolution}
-                </p>
+                {quality.name}
               </button>
             );
           })}
         </div>
+        {(() => {
+          const selected = VIDEO_QUALITIES.find((q) => q.id === videoQuality);
+          if (!selected) return null;
+          return (
+            <p className={`text-xs ${tc.textMuted}`}>
+              {selected.description}
+              <span className="mx-1.5 opacity-50">·</span>
+              <span className="font-mono">{selected.resolution}</span>
+            </p>
+          );
+        })()}
       </div>
 
       {/* Preview Options */}

@@ -90,6 +90,7 @@ import { getEmptyStateConfig } from './voxEmptyStates';
 import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
 import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 
 // ============================================
 // TYPES
@@ -130,6 +131,28 @@ interface Recording {
 
 // Quick reactions for Vox messages
 const QUICK_REACTIONS = ['❤️', '👍', '😂', '😮', '🔥', '👏'];
+
+// Deterministic bar-height pattern keyed off a recording id, so each message's
+// placeholder waveform stays stable across renders and looks unique per row.
+// Real peak extraction from the decoded AudioBuffer is a follow-up; this kills
+// the worst tell (Math.random per paint) at single-helper cost.
+function hashRecordingId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) {
+    h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return h;
+}
+
+function deterministicBarHeight(seed: number, index: number): number {
+  // Two-frequency superposition gives a believable "spoken word" envelope
+  // without looking sinusoidal. Output range stays in [30, 80] for the same
+  // visual presence the prior random version had.
+  const a = Math.sin((seed + index * 17) * 0.13);
+  const b = Math.cos((seed + index * 11) * 0.23);
+  const t = (a + b) / 2; // [-1, 1]
+  return 30 + ((t + 1) / 2) * 50; // [30, 80]
+}
 
 // Settings interface
 interface ClassicModeSettings {
@@ -1258,6 +1281,16 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                   }}
                 />
               ) : (
+                // TODO(impeccable phase 3 task 6 — RelayVoiceMessage migration):
+                // Migrate this Direct bubble to <RelayVoiceMessage /> from
+                // `./RelayVoiceMessage`. Surface slots needed:
+                // replyToContext (already supported), plus pending API
+                // additions: onReply, onReact + reaction picker state,
+                // selectionCheckbox, statusIndicator (delivered/read),
+                // reactionsDisplay, chapterButton, per-message
+                // PlaybackSpeedControl. Do this after the surface-migration
+                // API gap noted at the top of RelayVoiceMessage.tsx is
+                // filled. Migrate Direct first per the original plan.
                 activeThreadRecordings.map(recording => (
                   <div
                     key={recording.id}
@@ -1338,21 +1371,29 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                         )}
                       </button>
 
-                      {/* Waveform placeholder */}
-                      <div className="classic-waveform">
-                        <div className="classic-waveform-bars">
-                          {[...Array(24)].map((_, i) => (
-                            <div
-                              key={i}
-                              className="classic-waveform-bar"
-                              style={{
-                                height: `${30 + Math.random() * 50}%`,
-                                opacity: playingId === recording.id ? 1 : 0.5,
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </div>
+                      {/* Waveform placeholder — deterministic per-recording
+                          peaks (was Math.random() per render, which re-shuffled
+                          on every paint). Real peak extraction from the decoded
+                          AudioBuffer is a follow-up. */}
+                      {(() => {
+                        const seed = hashRecordingId(recording.id);
+                        return (
+                          <div className="classic-waveform">
+                            <div className="classic-waveform-bars">
+                              {[...Array(24)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="classic-waveform-bar"
+                                  style={{
+                                    height: `${deterministicBarHeight(seed, i)}%`,
+                                    opacity: playingId === recording.id ? 1 : 0.5,
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {/* Phase 6: Playback Speed Control */}
                       <PlaybackSpeedControl
@@ -1456,9 +1497,13 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       </div>
                     )}
 
-                    {/* Transcription */}
+                    {/* Transcription — provenance chip makes the machine-generated
+                        block legible as an AI artifact, not the sender's typed text. */}
                     {recording.transcription && (
                       <div className="classic-transcription">
+                        <div className="mb-1.5">
+                          <AIProvenanceChip vendor="PULSE AI" type="TRANSCRIPT" />
+                        </div>
                         <p>{recording.transcription}</p>
                       </div>
                     )}
@@ -1536,24 +1581,20 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
             </div>
           </>
         ) : (
-          /* Empty State */
-          <div className="classic-empty-state">
-            <div className="classic-empty-icon">
-              <div className="classic-empty-rings">
-                <div className="ring ring-1" />
-                <div className="ring ring-2" />
-                <div className="ring ring-3" />
+          /* Empty state — quieter pattern matching VoiceRooms / Notes. The
+              walkie-talkie SVG + concentric rings were category-reflex
+              decoration ("voice → walkie-talkie"); a single Radio glyph
+              carries the same meaning without the AI-slop tell. */
+          <div className="flex-1 flex items-center justify-center px-6">
+            <div className="text-center max-w-sm">
+              <div className="w-20 h-20 rounded-full bg-white/[0.03] border border-[rgba(255,255,255,0.06)] flex items-center justify-center mx-auto mb-5">
+                <Radio className="w-8 h-8 text-zinc-500" />
               </div>
-              <div className="classic-walkie">
-                <div className="walkie-antenna" />
-                <div className="walkie-body">
-                  <div className="walkie-speaker" />
-                  <div className="walkie-indicator" />
-                </div>
-              </div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-2">DIRECT</p>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Pick a contact, or start a new conversation to record.
+              </p>
             </div>
-            <h2>Ready to record</h2>
-            <p>Select a contact or start a new conversation</p>
           </div>
         )}
       </main>

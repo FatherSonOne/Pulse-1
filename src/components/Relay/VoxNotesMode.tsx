@@ -24,6 +24,7 @@ import {
   Download,
   Archive,
   MoreVertical,
+  ChevronRight,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
@@ -31,6 +32,7 @@ import RecordButton from './RecordButton';
 import VoxModeHeader from './VoxModeHeader';
 import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/relay/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
@@ -647,6 +649,13 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       : 'bg-white border-[rgba(0,0,0,0.08)]',
   };
 
+  // TODO(impeccable phase 3 task 6 — RelayVoiceMessage migration):
+  // Notes list rows + detail-panel audio render should migrate to
+  // <RelayVoiceMessage /> from `./RelayVoiceMessage` (sender always 'me',
+  // senderName "My note"). Surface slots needed: tag-chip row and
+  // linked-items button slot in footerExtras. Do this after the
+  // surface-migration API gap noted at the top of RelayVoiceMessage.tsx
+  // is filled.
   // Render notes list (shared between mobile and desktop)
   const renderNotesList = () => (
     <>
@@ -663,13 +672,15 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
           />
         </div>
 
+        {/* Chip vocabulary mirrors the Relay shell + Settings tabs: rounded-md
+            pill, mono uppercase, coral-fill active state, no border. */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+            className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] transition ${
               showFavoritesOnly
-                ? `${tc.activeBg} text-[#f43f5e] border ${tc.borderAccent}`
-                : `${tc.cardBg} ${tc.textSecondary} border ${tc.border} ${tc.hoverBg}`
+                ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
+                : `${tc.textSecondary} ${tc.hoverBg}`
             }`}
           >
             <Star className="w-3 h-3" />
@@ -680,10 +691,10 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
             <button
               key={tag}
               onClick={() => setFilterTag(filterTag === tag ? null : tag)}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] transition ${
                 filterTag === tag
-                  ? `${tc.activeBg} text-[#f43f5e] border ${tc.borderAccent}`
-                  : `${tc.cardBg} ${tc.textSecondary} border ${tc.border} ${tc.hoverBg}`
+                  ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
+                  : `${tc.textSecondary} ${tc.hoverBg}`
               }`}
             >
               <Tag className="w-3 h-3" />
@@ -770,14 +781,12 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                 )}
 
                 <div className="flex items-start gap-3">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{
-                      background: `linear-gradient(135deg, ${MODE_COLOR}20 0%, ${MODE_COLOR}10 100%)`,
-                      border: `1px solid ${MODE_COLOR}30`
-                    }}
-                  >
-                    <FileText className="w-5 h-5" style={{ color: MODE_COLOR }} />
+                  {/* Neutral avatar tile (was coral-gradient with a coral border
+                      and coral icon, repeated on every row — wallpaper-coral.
+                      Coral-As-Signal rule: the active-row tint already carries
+                      state; the row chrome stays out of the way.) */}
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${tc.cardBg} border ${tc.border}`}>
+                    <FileText className={`w-5 h-5 ${tc.textSecondary}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -891,52 +900,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         ]}
       />
 
-      {/* Recording Preview Panel */}
-      {recordingState === 'preview' && recordingData && (
-        <div className={`px-4 md:px-6 py-4 border-b ${tc.border}`}>
-          <RecordingPreview
-            recordingData={recordingData}
-            onSend={handleSendRecording}
-            onCancel={cancelRecording}
-            onRetry={() => {
-              cancelRecording();
-              setTimeout(() => startRecording(), 100);
-            }}
-            isDarkMode={isDarkMode}
-          />
-        </div>
-      )}
-
-      {/* VoxRecordArea - unified recording interface with Hold/Tap toggle */}
-      {recordingState !== 'preview' && (
-        <div className={`px-4 md:px-6 py-4 border-b ${tc.border}`}>
-          <VoxRecordArea
-            modeColor={MODE_COLOR}
-            isDarkMode={isDarkMode}
-            isRecording={recordingState === 'recording'}
-            isPreviewing={false}
-            recordingMode={recordingMode}
-            onToggleRecordingMode={() => setRecordingMode(prev => prev === 'hold' ? 'tap' : 'hold')}
-            onPointerDown={handlePointerDown}
-            onPointerUp={handlePointerUp}
-            onToggleRecording={handleToggleRecording}
-            recordingDuration={recordingDuration}
-            recordingState={recordingState}
-          >
-            {recordingState === 'recording' && (
-              <VoxAudioVisualizer
-                analyser={analyser}
-                isActive={true}
-                mode="waveform"
-                color={MODE_COLOR}
-                height={48}
-                isDarkMode={isDarkMode}
-              />
-            )}
-          </VoxRecordArea>
-        </div>
-      )}
-
       <div className="flex-1 flex overflow-hidden relative">
         {/* Mobile Sidebar Overlay */}
         {showMobileSidebar && (
@@ -1049,13 +1012,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                 <div className="flex items-center gap-3 md:gap-4">
                   <button
                     onClick={handlePlayNote}
-                    className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200"
-                    style={{
-                      background: isPlaying
-                        ? MODE_COLOR
-                        : `linear-gradient(135deg, ${MODE_COLOR} 0%, #e11d48 100%)`,
-                      boxShadow: `0 8px 24px ${MODE_COLOR}40`
-                    }}
+                    className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200 bg-rose-500 hover:bg-rose-600"
                     aria-label={isPlaying ? 'Pause' : 'Play'}
                   >
                     {isPlaying ? (
@@ -1093,27 +1050,27 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
 
               {/* Note Content */}
               <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-                {/* AI Summary */}
+                {/* AI Summary — provenance chip replaces the prior coral-text
+                    heading so the artifact is recognizably AI-attributed,
+                    consistent with the section's other AI surfaces. */}
                 {selectedNote.summary && (
-                  <div
-                    className="p-4 rounded-xl border"
-                    style={{
-                      background: `linear-gradient(135deg, ${MODE_COLOR}10 0%, ${MODE_COLOR}05 100%)`,
-                      borderColor: `${MODE_COLOR}30`
-                    }}
-                  >
-                    <h3 className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: MODE_COLOR }}>
-                      AI Summary
-                    </h3>
+                  <div className={`p-4 rounded-xl border ${tc.cardBg} ${tc.border}`}>
+                    <div className="mb-2">
+                      <AIProvenanceChip vendor="PULSE AI" type="SUMMARY" />
+                    </div>
                     <p className={`text-sm leading-relaxed ${tc.textSecondary}`}>
                       {selectedNote.summary}
                     </p>
                   </div>
                 )}
 
-                {/* Transcript */}
+                {/* Transcript — labeled as a machine artifact. The transcript
+                    text itself is user-bound data, but its existence is a
+                    Pulse AI side-effect of recording. */}
                 <div>
-                  <h3 className={`text-sm font-semibold mb-3 ${tc.textSecondary}`}>Transcript</h3>
+                  <div className="mb-3">
+                    <AIProvenanceChip vendor="PULSE AI" type="TRANSCRIPT" />
+                  </div>
                   <div className={`p-4 rounded-xl ${tc.cardBg} border ${tc.border}`}>
                     <p className={`leading-relaxed whitespace-pre-wrap ${tc.textSecondary}`}>
                       {selectedNote.transcript || 'No transcript available'}
@@ -1121,25 +1078,25 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                   </div>
                 </div>
 
-                {/* Tags */}
+                {/* Tags — neutral chips. Coral is reserved for state (active
+                    filter in the sidebar), not taxonomy on the artifact itself. */}
                 <div>
                   <h3 className={`text-sm font-semibold mb-3 ${tc.textSecondary}`}>Tags</h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedNote.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-3 py-1 rounded-full text-sm"
-                        style={{ background: `${MODE_COLOR}20`, color: MODE_COLOR }}
+                        className={`px-2 py-1 rounded font-mono text-[11px] uppercase tracking-[0.1em] ${tc.cardBg} border ${tc.border} ${tc.textSecondary}`}
                       >
                         {tag}
                       </span>
                     ))}
                     <button
                       onClick={() => setShowTagInput(!showTagInput)}
-                      className={`px-3 py-1 rounded-full text-sm transition-all flex items-center gap-1 ${tc.cardBg} border ${tc.border} ${tc.textSecondary} ${tc.hoverBg}`}
+                      className={`px-2 py-1 rounded font-mono text-[11px] uppercase tracking-[0.1em] transition flex items-center gap-1 ${tc.cardBg} border ${tc.border} ${tc.textSecondary} ${tc.hoverBg}`}
                     >
                       <Plus className="w-3 h-3" />
-                      Add Tag
+                      Add tag
                     </button>
                   </div>
                   {showTagInput && (
@@ -1186,7 +1143,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                         key={index}
                         className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer group ${tc.cardBg} border ${tc.border} ${tc.hoverBg}`}
                       >
-                        <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-200'}`}>
+                        <div className={`shrink-0 ${tc.textMuted}`}>
                           {LINK_TYPE_ICONS[item.type]}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1211,14 +1168,8 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
           ) : (
             <div className={`flex-1 flex items-center justify-center ${tc.textMuted}`}>
               <div className="text-center p-6">
-                <div
-                  className="w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${MODE_COLOR}20 0%, ${MODE_COLOR}10 100%)`,
-                    border: `1px solid ${MODE_COLOR}30`
-                  }}
-                >
-                  <FileText className="w-10 h-10" style={{ color: MODE_COLOR, opacity: 0.6 }} />
+                <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center border ${tc.border} ${isDarkMode ? 'bg-white/[0.03]' : 'bg-zinc-100'}`}>
+                  <FileText className={`w-7 h-7 ${tc.textMuted}`} />
                 </div>
                 <p className={`text-lg ${tc.text}`}>Select a note to view</p>
                 <p className={`text-sm mt-1 ${tc.textSecondary}`}>or record a new one</p>
@@ -1227,6 +1178,49 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
           )}
         </div>
       </div>
+
+      {/* Compose footer — mirrors Direct/Channel bottom-pinned record pattern */}
+      {recordingState === 'preview' && recordingData ? (
+        <div className={`px-4 md:px-6 py-4 border-t ${tc.border}`}>
+          <RecordingPreview
+            recordingData={recordingData}
+            onSend={handleSendRecording}
+            onCancel={cancelRecording}
+            onRetry={() => {
+              cancelRecording();
+              setTimeout(() => startRecording(), 100);
+            }}
+            isDarkMode={isDarkMode}
+          />
+        </div>
+      ) : (
+        <div className={`px-4 md:px-6 py-4 border-t ${tc.border}`}>
+          <VoxRecordArea
+            modeColor={MODE_COLOR}
+            isDarkMode={isDarkMode}
+            isRecording={recordingState === 'recording'}
+            isPreviewing={false}
+            recordingMode={recordingMode}
+            onToggleRecordingMode={() => setRecordingMode(prev => prev === 'hold' ? 'tap' : 'hold')}
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onToggleRecording={handleToggleRecording}
+            recordingDuration={recordingDuration}
+            recordingState={recordingState}
+          >
+            {recordingState === 'recording' && (
+              <VoxAudioVisualizer
+                analyser={analyser}
+                isActive={true}
+                mode="waveform"
+                color={MODE_COLOR}
+                height={48}
+                isDarkMode={isDarkMode}
+              />
+            )}
+          </VoxRecordArea>
+        </div>
+      )}
 
       {/* Hidden audio element */}
       <audio
@@ -1241,48 +1235,43 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         }}
       />
 
-      {/* Link Modal */}
+      {/* Link Modal — single-line list pattern; description rows + coral icon tiles were tautological */}
       {showLinkModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className={tc.modalOverlay} onClick={() => setShowLinkModal(false)} />
-          <div className={`relative w-full max-w-md rounded-2xl border ${tc.modalBg} p-6`}>
-            <div className="flex items-center gap-3 mb-6">
-              <div
-                className="p-2 rounded-xl"
-                style={{ background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #e11d48 100%)` }}
+          <div className={`relative w-full max-w-sm rounded-2xl border ${tc.modalBg} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-[11px] font-mono uppercase tracking-[0.1em] ${tc.textSecondary}`}>Link to item</h3>
+              <button
+                onClick={() => setShowLinkModal(false)}
+                className={`p-1 rounded-md ${tc.btnGhost}`}
+                type="button"
+                aria-label="Close"
               >
-                <Link2 className="w-5 h-5 text-white" />
-              </div>
-              <h3 className={`text-xl font-bold ${tc.text}`}>Link to Item</h3>
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <div className="space-y-2">
-              {(['email', 'meeting', 'task', 'contact', 'note'] as const).map((type) => (
+            <div className="space-y-0.5">
+              {([
+                { type: 'email' as const, Icon: Mail },
+                { type: 'meeting' as const, Icon: Calendar },
+                { type: 'task' as const, Icon: CheckSquare },
+                { type: 'contact' as const, Icon: User },
+                { type: 'note' as const, Icon: StickyNote },
+              ]).map(({ type, Icon }) => (
                 <button
                   key={type}
                   onClick={() => handleLinkToItem(type)}
-                  className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-3 ${tc.cardBg} border ${tc.border} ${tc.hoverBg} hover:border-[#f43f5e]/50`}
+                  className={`w-full px-3 py-2.5 rounded-lg text-left transition-colors flex items-center gap-3 ${tc.hoverBg}`}
                   type="button"
                 >
-                  <div className="p-2 rounded-lg" style={{ background: `${MODE_COLOR}20` }}>
-                    <span style={{ color: MODE_COLOR }}>{LINK_TYPE_ICONS[type]}</span>
-                  </div>
-                  <div>
-                    <p className={`font-medium capitalize ${tc.text}`}>Link to {type}</p>
-                    <p className={`text-xs ${tc.textSecondary}`}>
-                      Connect this note to a {type}
-                    </p>
-                  </div>
+                  <Icon className={`w-4 h-4 shrink-0 ${tc.textMuted}`} />
+                  <span className={`flex-1 text-sm capitalize ${tc.text}`}>{type}</span>
+                  <ChevronRight className={`w-4 h-4 ${tc.textMuted}`} />
                 </button>
               ))}
             </div>
-
-            <button
-              onClick={() => setShowLinkModal(false)}
-              className={`w-full mt-6 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnSecondary}`}
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}
