@@ -114,7 +114,7 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
 
         {/* Tab nav */}
         <nav
-          className={`flex items-center gap-1 px-3 py-2 border-b overflow-x-auto ${
+          className={`flex items-stretch gap-1 px-3 py-2 border-b ${
             isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-[rgba(0,0,0,0.08)]'
           }`}
           role="tablist"
@@ -129,7 +129,7 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] transition ${
+                className={`flex-1 min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] transition ${
                   isActive
                     ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
                     : isDarkMode
@@ -137,8 +137,8 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
                       : 'text-[#52525b] hover:bg-[#f2f2f2]'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-                {tab.label}
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{tab.label}</span>
               </button>
             );
           })}

@@ -195,10 +195,10 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
 
   const tc = {
     bg: isDarkMode
-      ? 'bg-gray-900/95'
+      ? 'bg-[#080808]/95'
       : 'bg-white/95',
     border: isDarkMode
-      ? 'border-gray-700/50'
+      ? 'border-[rgba(255,255,255,0.06)]'
       : 'border-gray-200/60',
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',

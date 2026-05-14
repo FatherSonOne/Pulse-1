@@ -25,7 +25,6 @@ import {
   BellRing,
   Trash2,
   Edit3,
-  Waves,
   CheckCheck,
   Tower,
   Reply,
@@ -71,6 +70,7 @@ import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 
 interface PulseRadioProps {
   apiKey?: string;
@@ -85,177 +85,13 @@ const MODE_COLOR = '#f43f5e';
 const MODE_COLOR_LIGHT = '#fb7185'; // rose-400
 
 // ============================================
-// LAYERED AUDIO VISUALIZER COMPONENT
-// ============================================
-
-interface LayeredVisualizerProps {
-  analyser: AnalyserNode | null;
-  isActive: boolean;
-  height?: number;
-  color?: string;
-  isDarkMode?: boolean;
-}
-
-const LayeredVisualizer: React.FC<LayeredVisualizerProps> = ({
-  analyser,
-  isActive,
-  height = 80,
-  color = MODE_COLOR,
-  isDarkMode = false,
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number>();
-  const smoothedRef = useRef<number[]>([]);
-  const [width, setWidth] = useState(600);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const updateWidth = () => {
-      if (containerRef.current) setWidth(containerRef.current.offsetWidth);
-    };
-    updateWidth();
-    const observer = new ResizeObserver(updateWidth);
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const numBars = Math.floor(width / 8);
-    const dataArray = new Uint8Array(analyser?.frequencyBinCount || 128);
-
-    const draw = () => {
-      animationRef.current = requestAnimationFrame(draw);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      let values: number[] = [];
-      const time = Date.now() / 1000;
-
-      if (isActive && analyser) {
-        analyser.getByteFrequencyData(dataArray);
-        const step = Math.max(1, Math.floor(dataArray.length / numBars));
-        for (let i = 0; i < numBars; i++) {
-          const idx = Math.min(i * step, dataArray.length - 1);
-          const normalized = dataArray[idx] / 255;
-          const boosted = Math.pow(normalized, 0.7) * 1.2;
-          values.push(Math.min(boosted, 1));
-        }
-        // Smooth
-        if (smoothedRef.current.length === numBars) {
-          values = values.map((v, i) => smoothedRef.current[i] * 0.3 + v * 0.7);
-        }
-        smoothedRef.current = values;
-      } else {
-        // Idle animation
-        for (let i = 0; i < numBars; i++) {
-          const x = i / numBars;
-          const wave = Math.sin(x * Math.PI * 4 + time * 2) * 0.15;
-          const wave2 = Math.sin(x * Math.PI * 8 + time * 3) * 0.08;
-          values.push(Math.abs(wave + wave2) * Math.sin(x * Math.PI) + 0.05);
-        }
-      }
-
-      const centerY = height / 2;
-      const maxH = height / 2 - 8;
-
-      // Layer 1: Background spectrum glow
-      for (let i = 0; i < numBars; i++) {
-        const x = (i / numBars) * width;
-        const barW = width / numBars - 2;
-        const val = values[i] || 0;
-        const h = val * maxH * 0.6;
-
-        const gradient = ctx.createLinearGradient(x, centerY - h, x, centerY + h);
-        gradient.addColorStop(0, `${color}08`);
-        gradient.addColorStop(0.5, `${color}20`);
-        gradient.addColorStop(1, `${color}08`);
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x, centerY - h, barW, h * 2);
-      }
-
-      // Layer 2: Mid-layer bars (spectrum style)
-      ctx.shadowBlur = 12;
-      ctx.shadowColor = `${color}60`;
-      for (let i = 0; i < numBars; i++) {
-        const x = (i / numBars) * width + 1;
-        const barW = Math.max(2, width / numBars - 4);
-        const val = values[i] || 0;
-        const h = val * maxH;
-
-        const gradient = ctx.createLinearGradient(x, centerY - h, x, centerY + h);
-        gradient.addColorStop(0, `${MODE_COLOR_LIGHT}90`);
-        gradient.addColorStop(0.5, `${color}`);
-        gradient.addColorStop(1, `${MODE_COLOR_LIGHT}90`);
-        ctx.fillStyle = gradient;
-
-        // Upper bar
-        ctx.beginPath();
-        ctx.roundRect(x, centerY - h, barW, h, 2);
-        ctx.fill();
-
-        // Lower bar (mirror, fainter)
-        ctx.fillStyle = `${color}40`;
-        ctx.beginPath();
-        ctx.roundRect(x, centerY + 2, barW, h * 0.5, 2);
-        ctx.fill();
-      }
-      ctx.shadowBlur = 0;
-
-      // Layer 3: Waveform line overlay
-      ctx.beginPath();
-      ctx.strokeStyle = isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(244,63,94,0.6)';
-      ctx.lineWidth = 2;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      for (let i = 0; i < numBars; i++) {
-        const x = (i / numBars) * width;
-        const val = values[i] || 0;
-        const y = centerY - val * maxH * 0.8;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-
-      // Particle effects when active
-      if (isActive) {
-        const particleCount = 8;
-        for (let i = 0; i < particleCount; i++) {
-          const px = (Math.sin(time * 2 + i) * 0.5 + 0.5) * width;
-          const py = centerY + Math.cos(time * 3 + i * 2) * maxH * 0.5;
-          const size = 2 + Math.sin(time * 5 + i) * 1.5;
-          const alpha = 0.3 + Math.sin(time * 4 + i) * 0.2;
-
-          ctx.beginPath();
-          ctx.arc(px, py, size, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(167, 139, 250, ${alpha})`;
-          ctx.fill();
-        }
-      }
-    };
-
-    draw();
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, [analyser, isActive, width, height, color, isDarkMode]);
-
-  return (
-    <div ref={containerRef} className="pulse-radio-visualizer-container" style={{ height }}>
-      <div className="pulse-radio-visualizer-glow" style={{ background: `radial-gradient(ellipse at 50% 50%, ${color}25 0%, transparent 70%)` }} />
-      <canvas ref={canvasRef} width={width} height={height} className="w-full h-full" style={{ width: '100%', height }} />
-    </div>
-  );
-};
-
-// ============================================
 // MAIN COMPONENT
 // ============================================
+// The LayeredVisualizer (3-layer canvas + particles + glow + ambient idle
+// wave) was retired during the /impeccable distill pass — its decoration
+// collided with the Coral Cockpit philosophy (category-reflex "broadcast =
+// glowing radio waves"). The shared VoxAudioVisualizer now carries the
+// signal, matching Direct / Channel / Notes.
 
 const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = false, initialBroadcastId }) => {
   const [channels, setChannels] = useState<PulseChannel[]>([]);
@@ -890,13 +726,13 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
               {/* Channel Header */}
               <div className="pulse-radio-channel-header">
                 <div className="pulse-radio-channel-hero">
+                  {/* Hero glyph is chrome — coral is reserved for live state
+                      (recording, active broadcast). The concentric ring
+                      decoration was retired during /impeccable distill:
+                      category-reflex (radio → rings) collided with the
+                      Coral-As-Signal rule. */}
                   <div className="pulse-radio-hero-icon">
                     <Radio className="w-8 h-8" />
-                    <div className="pulse-radio-hero-rings">
-                      <div className="ring ring-1" />
-                      <div className="ring ring-2" />
-                      <div className="ring ring-3" />
-                    </div>
                   </div>
                   <div className="pulse-radio-hero-info">
                     <h2>{selectedChannel.name}</h2>
@@ -968,11 +804,12 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                         recordingState={recordingState}
                       >
                         {recordingState === 'recording' && (
-                          <LayeredVisualizer
+                          <VoxAudioVisualizer
                             analyser={analyser}
                             isActive={true}
-                            height={80}
+                            mode="waveform"
                             color={MODE_COLOR}
+                            height={80}
                             isDarkMode={isDarkMode}
                           />
                         )}
@@ -987,13 +824,23 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                 <h3 className="pulse-radio-section-title">Recent Broadcasts</h3>
 
                 <div className="pulse-radio-broadcast-list">
+                  {/* TODO(impeccable phase 3 task 6 — RelayVoiceMessage migration):
+                      Migrate this Broadcast episode render to <RelayVoiceMessage />
+                      from `./RelayVoiceMessage`. Surface slots needed:
+                      episodeChip (already supported), leadingAudienceLabel
+                      for "PUBLIC"/"PRIVATE", plus pending API addition:
+                      listener-count chip and like/share buttons in
+                      footerExtras. Do this after the surface-migration API
+                      gap noted at the top of RelayVoiceMessage.tsx is filled. */}
                   {broadcasts.map((broadcast) => {
                     const isLiked = likedBroadcasts.has(broadcast.id);
                     const isCurrentlyPlaying = playingBroadcastId === broadcast.id && isPlaying;
 
                     return (
                       <article key={broadcast.id} className={`pulse-radio-broadcast ${isCurrentlyPlaying ? 'playing' : ''}`} style={{position: 'relative'}}>
-                        {/* Phase 2: Selection Checkbox */}
+                        {/* Phase 2: Selection Checkbox — coral (was orange, which
+                            collided with the Status-Stays-Status rule: orange =
+                            status-blocked). Matches Direct + Notes selection chrome. */}
                         {isSelectionMode && (
                           <button
                             type="button"
@@ -1015,12 +862,12 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                             }}
                             className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
                               isSelected(broadcast.id)
-                                ? 'bg-orange-500 border-2 border-orange-600'
+                                ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
                                 : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
                             }`}
                             style={{
                               boxShadow: isSelected(broadcast.id)
-                                ? '0 4px 12px rgba(249, 115, 22, 0.4)'
+                                ? '0 4px 12px rgba(244, 63, 94, 0.4)'
                                 : '0 2px 8px rgba(0, 0, 0, 0.2)',
                             }}
                           >
@@ -1062,7 +909,12 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                           </div>
 
                           {broadcast.transcript && (
-                            <p className="pulse-radio-transcript">{broadcast.transcript}</p>
+                            <div>
+                              <div className="mb-1">
+                                <AIProvenanceChip vendor="PULSE AI" type="TRANSCRIPT" />
+                              </div>
+                              <p className="pulse-radio-transcript">{broadcast.transcript}</p>
+                            </div>
                           )}
 
                           <div className="pulse-radio-broadcast-actions">
@@ -1173,13 +1025,11 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
             </>
           ) : (
             <div className="pulse-radio-empty-state">
+              {/* Quiet empty state — the decorative wave-1/2/3 layer was the
+                  AI-slop tell. A single Radio glyph carries the same meaning
+                  without the category reflex. */}
               <div className="pulse-radio-empty-icon">
                 <Radio className="w-10 h-10" />
-                <div className="pulse-radio-empty-waves">
-                  <Waves className="wave wave-1" />
-                  <Waves className="wave wave-2" />
-                  <Waves className="wave wave-3" />
-                </div>
               </div>
               <p>Select or create a channel</p>
               <span>to start broadcasting</span>
@@ -1536,11 +1386,12 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                     recordingState={recordingState}
                   >
                     {recordingState === 'recording' && (
-                      <LayeredVisualizer
+                      <VoxAudioVisualizer
                         analyser={analyser}
                         isActive={true}
-                        height={48}
+                        mode="waveform"
                         color={MODE_COLOR}
+                        height={48}
                         isDarkMode={isDarkMode}
                       />
                     )}

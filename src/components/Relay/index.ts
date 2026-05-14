@@ -7,7 +7,13 @@ export type { PTTState, RecordingMode, MediaMode } from './PTTButton';
 
 export { MessageAIPanel } from './MessageAIPanel';
 export type { MessageAIPanelProps } from './MessageAIPanel';
-export { VoxBubble } from './VoxBubble';
+// VoxBubble was retired during the /impeccable extract evaluation: confirmed
+// unused by every 6-peer surface (Direct/Channel/Broadcast/Notes/Triage/Live
+// all render bubbles inline). It carried FontAwesome icon strings + status-
+// color sentiment badges. A shared <RelayVoiceMessage> with surface slots
+// remains a worthwhile follow-up; for now, the four inline implementations
+// at least no longer have a "canonical" candidate that lies about being the
+// shared component.
 export { LiveVoxSession } from './LiveVoxSession';
 export { VoiceRooms } from './VoiceRooms';
 

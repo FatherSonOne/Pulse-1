@@ -415,14 +415,14 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
   const tc = {
     overlay: isDarkMode ? 'bg-zinc-950/70' : 'bg-zinc-950/50',
     modalBg: isDarkMode
-      ? 'bg-[#0a0a0a]'
+      ? 'bg-[#080808]'
       : 'bg-white',
-    border: isDarkMode ? 'border-gray-700/50' : 'border-gray-200/60',
+    border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-gray-200/60',
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
     textMuted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-    cardBg: isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50',
-    cardBorder: isDarkMode ? 'border-gray-700/30' : 'border-gray-200/50',
+    cardBg: isDarkMode ? 'bg-white/[0.03]' : 'bg-gray-50',
+    cardBorder: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-gray-200/50',
   };
 
   return (

@@ -407,7 +407,7 @@ export const SilentModePanel: React.FC<SilentModeProps> = ({
   const unreadCount = incomingMessages.filter(m => !m.isRead).length;
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-zinc-950">
+    <div className="h-full flex flex-col bg-white dark:bg-[#080808]">
       {/* Header */}
       <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
