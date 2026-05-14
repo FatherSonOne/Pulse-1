@@ -360,11 +360,26 @@ export const workspaceService = {
 
     assertNoError(memberError, 'createWorkspace — insert owner member');
 
+    // Hard-fail on trial bootstrap. A workspace without an entitlements row paints
+    // TrialExpiredBlock on first navigation, which is worse than rolling back here.
+    // If the trial RPC errors we drop the workspace + membership we just created
+    // so the next attempt starts clean instead of zombieing the org.
     try {
       const billingService = (await import('./billingService')).default;
       await billingService.startPulseTeamTrial(workspace.id);
     } catch (e) {
-      console.warn('[workspaceService] Could not start Pulse Team trial:', e);
+      console.error('[workspaceService] startPulseTeamTrial failed; rolling back workspace', e);
+      try {
+        await supabase.from('workspace_members').delete().eq('workspace_id', workspace.id);
+        await supabase.from('workspaces').delete().eq('id', workspace.id);
+      } catch (rollbackErr) {
+        console.error('[workspaceService] Rollback also failed', rollbackErr);
+      }
+      throw new Error(
+        e instanceof Error
+          ? `Could not start your trial: ${e.message}`
+          : 'Could not start your trial. Please try again.',
+      );
     }
 
     return workspace as Workspace;
@@ -654,12 +669,15 @@ export const workspaceService = {
     }
 
     // Push the new seat count to Stripe. Non-fatal — billingService.syncSeats
-    // swallows errors so a flaky Stripe call never blocks joining a workspace.
+    // now queues a billing_drift_log entry on failure instead of silently
+    // swallowing, so the daily reconciler will pick up any drift.
     try {
       const billing = (await import('./billingService')).default;
-      await billing.syncSeats(result.workspace_id!);
+      await billing.syncSeats(result.workspace_id!, 'accept_invite');
     } catch (e) {
-      console.warn('[workspaceService] acceptInvite — seat sync failed:', e);
+      // Only reachable if the dynamic import itself blew up (very rare);
+      // syncSeats already catches its own errors and queues drift internally.
+      console.warn('[workspaceService] acceptInvite — billingService import failed:', e);
     }
 
     return result.workspace_id!;
@@ -704,12 +722,14 @@ export const workspaceService = {
 
     assertNoError(error, 'removeMember');
 
-    // Decrement the Stripe seat count. Fire-and-forget; billingService swallows errors.
+    // Decrement the Stripe seat count. billingService.syncSeats queues a
+    // billing_drift_log entry on failure so the reconciler picks it up.
     try {
       const billing = (await import('./billingService')).default;
-      await billing.syncSeats(workspaceId);
+      await billing.syncSeats(workspaceId, 'remove_member');
     } catch (e) {
-      console.warn('[workspaceService] removeMember — seat sync failed:', e);
+      // Only reachable if the dynamic import itself failed.
+      console.warn('[workspaceService] removeMember — billingService import failed:', e);
     }
   },
 
