@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
 import { workspaceService, WorkspaceMember, WorkspaceInvite, WORKSPACE_PLAN_LABELS, WORKSPACE_PLAN_LIMITS } from '../../services/workspaceService';
-import { Loader2, Mail, Send, Users, Shield, UserMinus, ChevronDown, Clock, X, RotateCcw } from 'lucide-react';
+import { Loader2, Mail, Send, Users, Shield, UserMinus, ChevronDown, Clock, X, RotateCcw, Copy, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { BulkInviteCard } from './team/BulkInviteCard';
 import { GroupsManagementCard } from './team/GroupsManagementCard';
@@ -30,6 +30,8 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
   const [isInviting, setIsInviting] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState<string | null>(null);
   const [isLoadingInvites, setIsLoadingInvites] = useState(false);
+  // Which pending-invite row was just copied? Drives the 1.5s Check icon.
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
 
   // Deep-link focus (?focus=invite) — scroll + highlight the invite form
   // and put the cursor in the email field.
@@ -127,6 +129,21 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
       await refreshMembers();
     } catch {
       toast.error('Failed to remove member');
+    }
+  };
+
+  const handleCopyInviteLink = async (invite: WorkspaceInvite) => {
+    const url = workspaceService.getInviteLink(invite.token);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedInviteId(invite.id);
+      toast.success('Invite link copied');
+      setTimeout(() => setCopiedInviteId((prev) => (prev === invite.id ? null : prev)), 1500);
+    } catch {
+      toast.error('Could not copy. Long-press to copy manually:');
+      // Some browsers block clipboard on insecure contexts. Show the URL inline
+      // via a second toast so the user can still grab it.
+      toast(url, { duration: 8000 });
     }
   };
 
@@ -251,13 +268,26 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="text-xs font-medium text-red-500 hover:text-red-600 flex items-center gap-1"
-                  onClick={() => handleRevokeInvite(invite)}
-                >
-                  <X className="w-3 h-3" /> Revoke
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center gap-1"
+                    onClick={() => handleCopyInviteLink(invite)}
+                    aria-label={`Copy invite link for ${invite.email}`}
+                  >
+                    {copiedInviteId === invite.id
+                      ? <><Check className="w-3 h-3" /> Copied</>
+                      : <><Copy className="w-3 h-3" /> Copy link</>}
+                  </button>
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-red-500 hover:text-red-600 flex items-center gap-1"
+                    onClick={() => handleRevokeInvite(invite)}
+                    aria-label={`Revoke invite for ${invite.email}`}
+                  >
+                    <X className="w-3 h-3" /> Revoke
+                  </button>
+                </div>
               </div>
             ))}
           </div>
