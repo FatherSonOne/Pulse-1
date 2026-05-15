@@ -358,9 +358,31 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
                       )}
                     </>
                   ) : (
-                    <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${roleColors[member.role]}`}>
-                      {member.role}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${roleColors[member.role]}`}>
+                        {member.role}
+                      </span>
+                      {/* Surface "Transfer ownership" on the owner's own row.
+                          Without this hint, an owner who wants to leave has
+                          to discover that (a) they can't remove themselves
+                          from Team, (b) ownership transfer lives in Workspace
+                          settings. Fires a custom event the Settings shell
+                          listens for. */}
+                      {isMemberOwner && isCurrentUser && isOwner && (
+                        <button
+                          type="button"
+                          onClick={() => window.dispatchEvent(
+                            new CustomEvent('pulse:settings-navigate', {
+                              detail: { section: 'workspace', focus: 'transfer' },
+                            }),
+                          )}
+                          className="text-xs font-medium text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300"
+                          aria-label="Transfer ownership in Workspace settings"
+                        >
+                          Transfer →
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
 
