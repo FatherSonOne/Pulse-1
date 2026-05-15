@@ -1,6 +1,6 @@
 /* ============================================================
    TaskEditModal — Coral Cockpit pass
-   Migrated off the legacy --hub-*/--dt-* token namespace onto
+   Migrated off the legacy --hub-* / --dt-* token namespace onto
    the canonical --pulse-* system. Coral is the only accent;
    status colors stay status. The AI Risk section was demoted
    from a peacock gradient card to a quiet disclosure that
