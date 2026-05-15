@@ -7,7 +7,17 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { CheckSquare, Square, X, Plus, Sparkles } from 'lucide-react';
 import { subtaskService, Subtask } from '../../services/subtaskService';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import './SubtaskList.css';
+
+// Empty-state scaffold — three placeholder subtasks the user can click to
+// promote. Teaches the pattern by example (Jordan persona), and removes the
+// "Generate with AI is the only path forward" framing from the cold-open.
+const STARTER_SCAFFOLD: string[] = [
+  'Draft the requirements',
+  'Get stakeholder review',
+  'Schedule the kickoff',
+];
 
 interface SubtaskListProps {
   taskId: string;
@@ -155,20 +165,44 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     }
   };
 
+  // Click-to-promote scaffold suggestion — creates the subtask with the
+  // suggested title pre-filled. No AI involved; the operator's choice.
+  const handlePromoteSuggestion = async (suggestion: string) => {
+    if (readonly) return;
+    try {
+      const newSubtask = await subtaskService.createSubtask({
+        task_id: taskId,
+        workspace_id: workspaceId,
+        title: suggestion,
+      });
+      if (newSubtask) setSubtasks(prev => [...prev, newSubtask]);
+    } catch (err) {
+      console.error('Failed to promote scaffold subtask:', err);
+      setError('Failed to add subtask');
+    }
+  };
+
+  const hasAnyAIGenerated = subtasks.some(s => s.metadata?.generated_by === 'ai');
+
   return (
     <div className="subtask-list" role="region" aria-label="Subtask list">
       {/* Header with progress */}
       <div className="subtask-list-header">
         <h3 className="subtask-list-title">Subtasks</h3>
-        {subtasks.length > 0 && (
-          <span
-            className="subtask-progress-text"
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            {progress.completed}/{progress.total} ({progress.percentage}%)
-          </span>
-        )}
+        <div className="subtask-list-header-right">
+          {hasAnyAIGenerated && (
+            <AIProvenanceChip vendor="PULSE AI" type="SUBTASKS" />
+          )}
+          {subtasks.length > 0 && (
+            <span
+              className="subtask-progress-text"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {progress.completed}/{progress.total} ({progress.percentage}%)
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Progress bar */}
@@ -252,33 +286,34 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           ))}
         </div>
       ) : (
-        <div className="subtask-empty">
-          No subtasks yet. Add one below to break down this task.
-        </div>
+        // Empty-state scaffold — three muted placeholder rows. Click any row
+        // to promote it into a real subtask. The pattern teaches by example
+        // and removes the "Generate with AI is the only door" framing.
+        !readonly && (
+          <div className="subtask-empty-scaffold" role="list" aria-label="Subtask suggestions">
+            <p className="subtask-empty-hint">
+              A subtask is one step of this task. Click a suggestion to add it, or type your own below.
+            </p>
+            {STARTER_SCAFFOLD.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                role="listitem"
+                className="subtask-scaffold-item"
+                onClick={() => handlePromoteSuggestion(suggestion)}
+                aria-label={`Add subtask: ${suggestion}`}
+              >
+                <Square size={18} aria-hidden />
+                <span className="subtask-scaffold-title">{suggestion}</span>
+                <span className="subtask-scaffold-cta">Add</span>
+              </button>
+            ))}
+          </div>
+        )
       )}
 
-      {/* AI Subtask Generation */}
-      {!readonly && (
-        <div className="subtask-ai-section">
-          <button
-            type="button"
-            className="subtask-ai-button"
-            onClick={handleGenerateWithAI}
-            disabled={isGeneratingAI || !taskTitle}
-            title="Generate subtasks using AI"
-          >
-            <Sparkles size={14} />
-            {isGeneratingAI ? 'Generating...' : 'Generate with AI'}
-          </button>
-          {aiGeneratedCount > 0 && (
-            <span className="ai-generated-badge">
-              {aiGeneratedCount} AI-generated
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Add new subtask input */}
+      {/* Add new subtask input — primary path. Manual entry first; AI assist
+          lives below as a secondary affordance per the critique. */}
       {!readonly && (
         <div className="subtask-add-input">
           <Plus size={18} className="subtask-add-icon" aria-hidden="true" />
@@ -299,6 +334,29 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           >
             Add
           </button>
+        </div>
+      )}
+
+      {/* AI assist — demoted from gradient pill to mono-uppercase secondary.
+          No Sparkles animation, no gradient background. The provenance chip
+          in the header carries the AI identity when subtasks have been
+          generated. */}
+      {!readonly && (
+        <div className="subtask-ai-row">
+          <button
+            type="button"
+            className="subtask-ai-chip"
+            onClick={handleGenerateWithAI}
+            disabled={isGeneratingAI || !taskTitle}
+            title="Suggest a breakdown using Pulse AI"
+          >
+            {isGeneratingAI ? 'Generating…' : '+ AI Breakdown'}
+          </button>
+          {aiGeneratedCount > 0 && (
+            <span className="subtask-ai-count">
+              {aiGeneratedCount} added by AI
+            </span>
+          )}
         </div>
       )}
     </div>

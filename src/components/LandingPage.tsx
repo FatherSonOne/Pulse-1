@@ -778,9 +778,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           stroke-dashoffset: 0;
         }
         /* ── Card hover compliance (Animate B) ──
-           DESIGN.md §4 caps hover lift at 2px and forbids theatrical motion.
-           Tones down the page-wide `hover:-translate-y-0.5` to a 1px lift and
-           adds the 1px-coral-border accent reserved for active/selected. */
+           DESIGN.md section 4 caps hover lift at 2px and forbids theatrical
+           motion. Page-wide hover:-translate-y-2 collapsed to -translate-y-0.5
+           on every card via replace-all; this rule reserves an additional
+           transition for use on cards that opt in via lp-card-hover. */
         .lp-card-hover {
           transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
                       border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),

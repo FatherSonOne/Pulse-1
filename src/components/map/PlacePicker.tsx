@@ -337,6 +337,22 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
                   isDarkMode ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'
                 }`}
               />
+              {duplicateCount > 0 && (
+                <span
+                  // Coral-as-signal: duplicate-hidden is a soft data-quality signal,
+                  // not an error. Mono-uppercase tracked label per the signature.
+                  className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium tracking-[0.1em] uppercase ${
+                    isDarkMode
+                      ? 'bg-rose-500/10 text-rose-300'
+                      : 'bg-rose-50 text-rose-600'
+                  }`}
+                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                  title={`${duplicateCount} duplicate${duplicateCount === 1 ? '' : 's'} hidden from this list. Edit each from its own row to consolidate.`}
+                  aria-label={`${duplicateCount} duplicates hidden`}
+                >
+                  {duplicateCount} hidden
+                </span>
+              )}
             </div>
           </div>
 
