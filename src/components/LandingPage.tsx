@@ -945,20 +945,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           55%     { transform: scale(0.92) translateY(3px); }
           70%     { transform: scale(1.08) translateY(0); }
         }
-        /* Resting — subtle, always playing */
-        .lp-icon-bob   { animation: icon-bob       3s   ease-in-out infinite; }
-        .lp-icon-spin  { animation: icon-spin-slow  9s   linear     infinite; }
-        .lp-icon-throb { animation: icon-throb      2.8s ease-in-out infinite; }
-        .lp-icon-zap   { animation: icon-zap        4s   ease-in-out infinite; }
-        .lp-icon-tilt  { animation: icon-tilt       3.2s ease-in-out infinite; }
-        .lp-icon-stamp { animation: icon-stamp      3s   ease-in-out infinite; }
-        /* Hover — bold, fast, glowing */
-        .group:hover .lp-icon-bob   { animation-duration: 0.55s; filter: brightness(2.5) drop-shadow(0 0 10px currentColor); }
-        .group:hover .lp-icon-spin  { animation-duration: 0.7s;  filter: brightness(2.5) drop-shadow(0 0 12px currentColor); }
-        .group:hover .lp-icon-throb { animation-duration: 0.55s; filter: brightness(3)   drop-shadow(0 0 14px currentColor); }
-        .group:hover .lp-icon-zap   { animation-duration: 0.38s; filter: brightness(4)   drop-shadow(0 0 18px currentColor); }
-        .group:hover .lp-icon-tilt  { animation-duration: 0.5s;  filter: brightness(2.5) drop-shadow(0 0 10px currentColor); }
-        .group:hover .lp-icon-stamp { animation-duration: 0.45s; filter: brightness(2.5) drop-shadow(0 0 10px currentColor); }
+        /* Resting — quiet. Per the impeccable critique, six different always-on
+           icon animations across the page made the interface feel fidgety. The
+           idle state now sits still and the :hover rules below carry all the
+           personality — predictable for skimmers, alive on contact. */
+        .lp-icon-bob,
+        .lp-icon-spin,
+        .lp-icon-throb,
+        .lp-icon-zap,
+        .lp-icon-tilt,
+        .lp-icon-stamp {
+          transition: filter 220ms cubic-bezier(0.16, 1, 0.3, 1),
+                      transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        /* Hover — bold, fast, glowing. Animation is added on hover only (now
+           that the rest-state animation is removed), runs a single iteration
+           so the icon settles back rather than looping while pointer dwells. */
+        .group:hover .lp-icon-bob   { animation: icon-bob       0.55s cubic-bezier(0.16, 1, 0.3, 1) 1; filter: brightness(2.5) drop-shadow(0 0 10px currentColor); }
+        .group:hover .lp-icon-spin  { animation: icon-spin-slow 0.7s  cubic-bezier(0.16, 1, 0.3, 1) 1; filter: brightness(2.5) drop-shadow(0 0 12px currentColor); }
+        .group:hover .lp-icon-throb { animation: icon-throb     0.55s cubic-bezier(0.16, 1, 0.3, 1) 1; filter: brightness(3)   drop-shadow(0 0 14px currentColor); }
+        .group:hover .lp-icon-zap   { animation: icon-zap       0.38s cubic-bezier(0.16, 1, 0.3, 1) 1; filter: brightness(4)   drop-shadow(0 0 18px currentColor); }
+        .group:hover .lp-icon-tilt  { animation: icon-tilt      0.5s  cubic-bezier(0.16, 1, 0.3, 1) 1; filter: brightness(2.5) drop-shadow(0 0 10px currentColor); }
+        .group:hover .lp-icon-stamp { animation: icon-stamp     0.45s cubic-bezier(0.16, 1, 0.3, 1) 1; filter: brightness(2.5) drop-shadow(0 0 10px currentColor); }
         /* Icon container glow ring on hover */
         .group:hover .lp-icon-wrap {
           box-shadow: 0 0 22px rgba(168,85,247,0.45), 0 0 8px rgba(168,85,247,0.3) inset;
@@ -2794,22 +2802,40 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </p>
           </div>
 
-          {/* Monthly / Yearly toggle */}
+          {/* Monthly / Yearly toggle — single coral pill slides between the
+              two buttons instead of swapping per-button gradients. Tactile
+              and quieter; matches the rest of the page's 220ms ease-out-expo
+              motion system. */}
           <div
-            className="mx-auto mb-10 flex items-center gap-1 p-1 rounded-xl bg-zinc-900/70 border border-zinc-800 w-fit"
+            className="mx-auto mb-10 relative grid grid-cols-2 items-center p-1 rounded-xl bg-zinc-900/70 border border-zinc-800"
             role="tablist"
             aria-label="Billing cycle"
+            style={{ width: '320px' }}
           >
+            {/* Sliding indicator — sits behind the labels, translates between
+                the two grid cells. left:4px / right:4px / top:4px / bottom:4px
+                respect the 1px container padding so the pill matches each
+                button's hit area. */}
+            <span
+              aria-hidden="true"
+              className="absolute top-1 bottom-1 rounded-lg bg-gradient-to-r from-fuchsia-600 to-pink-600 shadow-lg shadow-rose-500/20"
+              style={{
+                left: '4px',
+                width: 'calc(50% - 4px)',
+                transform: pricingCycle === 'yearly' ? 'translateX(100%)' : 'translateX(0)',
+                transition: 'transform 280ms cubic-bezier(0.16, 1, 0.3, 1)',
+                willChange: 'transform',
+              }}
+            />
             <button
               type="button"
               role="tab"
               aria-selected={pricingCycle === 'monthly'}
               onClick={() => setPricingCycle('monthly')}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                pricingCycle === 'monthly'
-                  ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-lg shadow-rose-500/20'
-                  : 'text-zinc-400 hover:text-white'
+              className={`relative z-10 px-5 py-2 rounded-lg text-sm font-medium ${
+                pricingCycle === 'monthly' ? 'text-white' : 'text-zinc-400 hover:text-white'
               }`}
+              style={{ transition: 'color 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
             >
               Monthly
             </button>
@@ -2818,18 +2844,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               role="tab"
               aria-selected={pricingCycle === 'yearly'}
               onClick={() => setPricingCycle('yearly')}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                pricingCycle === 'yearly'
-                  ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-lg shadow-rose-500/20'
-                  : 'text-zinc-400 hover:text-white'
+              className={`relative z-10 px-5 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
+                pricingCycle === 'yearly' ? 'text-white' : 'text-zinc-400 hover:text-white'
               }`}
+              style={{ transition: 'color 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
             >
               Yearly
               <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
                 pricingCycle === 'yearly'
                   ? 'bg-white/20 text-white'
                   : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
-              }`}>
+              }`} style={{ transition: 'background-color 220ms cubic-bezier(0.16, 1, 0.3, 1), color 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}>
                 2 months free
               </span>
             </button>
