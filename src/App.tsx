@@ -25,6 +25,9 @@ const Glimpse = lazy(() => import('./components/Glimpse'));
 const SMS = lazy(() => import('./components/SMS'));
 const Meetings = lazy(() => import('./components/Meetings').then(module => ({ default: module.Meetings })));
 const Contacts = lazy(() => import('./components/Contacts'));
+// Top-level Map section (Phase 3 IA promotion). Same component the Contacts
+// 'Map' tab used to mount; now also addressable from the Sidebar directly.
+const ContactMapView = lazy(() => import('./components/contacts/map/ContactMapView'));
 const Archives = lazy(() => import('./components/Archives'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const MessageAnalytics = lazy(() => import('./components/MessageAnalytics'));
@@ -882,9 +885,28 @@ const App: React.FC = () => {
               return <Calendar contacts={contacts} openTaskPanel={openTaskPanel} onNavigateToIntegrations={() => { setSettingsSection('integrations'); setView(AppView.SETTINGS); }} />;
             case AppView.CONTACTS:
               return <Contacts contacts={contacts} onAction={handleContactAction} onSyncComplete={handleSyncContacts} onUpdateContact={handleUpdateContact} onAddContact={handleAddContact} onDeleteContact={handleDeleteContact} openAddContact={openAddContact} isDarkMode={isDarkMode} userId={user?.id} />;
+            case AppView.MAP:
+              // Map is now a top-level section (Phase 3 IA promotion). The
+              // surface still uses ContactMapView under the hood; the move is
+              // purely about discoverability and IA truth, since the maps
+              // stack now powers Calendar travel chips, Today geo-clusters,
+              // War Room Team Radar, and Decisions/Tasks geofences — none of
+              // which are contact-relationship features.
+              return (
+                <div className="w-full h-full p-3 bg-zinc-50 dark:bg-zinc-950">
+                  <ContactMapView
+                    contacts={contacts}
+                    circles={[]}
+                    isDarkMode={isDarkMode}
+                    userId={user?.id ?? ''}
+                    onContactAction={handleContactAction}
+                    onContactUpdated={handleUpdateContact}
+                  />
+                </div>
+              );
             case AppView.CONTACT_MAP:
-              // Redirect legacy deep-links to Contacts with map tab pre-selected
-              setView(AppView.CONTACTS);
+              // Legacy deep-link compatibility. Map now lives at AppView.MAP.
+              setView(AppView.MAP);
               return null;
             case AppView.EMAIL:
               return user ? <EmailClient user={user} onUpdateUser={() => setUser({...user})} /> : null;

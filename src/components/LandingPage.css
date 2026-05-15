@@ -1164,14 +1164,19 @@ a.duration-300,
   color: #be123c;
 }
 
-/* Headline — Syne 800, massive scale — clamps 64px→96px across viewport */
+/* Headline — Syne 800, massive scale. The clamp scales proportionally from
+   narrow viewports (38px floor) up to 96px ceiling so "Every Decision." fits
+   on a single line inside the 52% content column without overflowing
+   overflow-x-hidden on the root. text-wrap: balance lets supporting browsers
+   smooth the rag without manual breaks. */
 .hero-asymm-headline {
   font-family: 'Syne', 'Inter', system-ui, sans-serif;
   font-weight: 800;
-  font-size: clamp(64px, 6.5vw, 96px);
-  line-height: 1.04;
-  letter-spacing: -0.03em;
+  font-size: clamp(38px, 9vw, 96px);
+  line-height: 1.06;
+  letter-spacing: -0.025em;
   margin-bottom: 40px;
+  text-wrap: balance;
 }
 
 /* Staggered blur-reveal per line */
@@ -1225,13 +1230,13 @@ a.duration-300,
 .lp-light .hero-signal-canvas { opacity: 0.2; }
 .lp-light .hero-asymm-grid { opacity: 0.3; }
 
-/* Mobile — stack canvas below text */
+/* Mobile — stack canvas below text. Headline font-size override removed so
+   the clamp() above handles scaling smoothly all the way down to phone size. */
 @media (max-width: 768px) {
   .hero-asymm-content {
     max-width: 100%;
-    padding: max(96px, 8vh) 24px 48px;
+    padding: max(96px, 8vh) 20px 48px;
   }
-  .hero-asymm-headline { font-size: 42px; }
   .hero-signal-canvas {
     width: 100%;
     height: 55%;

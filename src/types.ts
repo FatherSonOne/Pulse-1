@@ -16,6 +16,7 @@ export enum AppView {
   CALENDAR = 'CALENDAR',
   MEETINGS = 'MEETINGS',
   CONTACTS = 'CONTACTS',
+  MAP = 'MAP',
   LIVE = 'LIVE',
   LIVE_AI = 'LIVE_AI',
   ARCHIVES = 'ARCHIVES',
@@ -25,6 +26,10 @@ export enum AppView {
   ANALYTICS = 'ANALYTICS',
   DECISIONS_TASKS = 'DECISIONS_TASKS',
   USERS_GUIDE = 'USERS_GUIDE',
+  /**
+   * Deprecated. Map is now a top-level section (AppView.MAP). This value is
+   * kept so legacy deep-links keep working; App.tsx redirects to MAP.
+   */
   CONTACT_MAP = 'CONTACT_MAP',
 }
 

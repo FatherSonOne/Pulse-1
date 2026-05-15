@@ -12,7 +12,10 @@ interface ContactsProps {
   openAddContact?: boolean;
   isDarkMode?: boolean;
   userId?: string;
-  initialMode?: 'today' | 'people' | 'circles' | 'map';
+  // Map mode was removed — Map is now a top-level AppView (Phase 3 IA
+   // promotion). Callers that previously passed 'map' should dispatch
+   // `pulse:navigate` with AppView.MAP instead.
+  initialMode?: 'today' | 'people' | 'circles';
 }
 
 const Contacts: React.FC<ContactsProps> = (props) => {

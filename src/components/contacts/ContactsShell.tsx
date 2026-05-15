@@ -7,19 +7,21 @@
 
 import React, { useState, useCallback } from 'react';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
-import { Contact } from '../../types';
+import { AppView, Contact } from '../../types';
 import { ContactsRedesigned } from './ContactsRedesigned';
 import { TodayView } from './TodayView';
 import { CirclesView } from './CirclesView';
 import { ContactsOnboarding, shouldShowContactsTour } from './ContactsOnboarding';
 import { useContactsKeyboard } from './useContactsKeyboard';
-import ContactMapView from './map/ContactMapView';
 
-import { Search } from 'lucide-react';
+import { MapPin, Search } from 'lucide-react';
 
 // ==================== TYPES ====================
 
-type ContactsMode = 'today' | 'people' | 'circles' | 'map';
+// Map is no longer a tab here — it was promoted to a top-level Sidebar
+// section (AppView.MAP). The 'View on Map' chip in the tab bar deep-links
+// users who built muscle memory for Contacts → Map.
+type ContactsMode = 'today' | 'people' | 'circles';
 
 interface ContactsShellProps {
   contacts: Contact[];
@@ -65,13 +67,6 @@ const TABS: ModeTab[] = [
     icon: 'network',
     description: 'How your network connects',
     shortcut: '3',
-  },
-  {
-    id: 'map',
-    label: 'Map',
-    icon: 'location',
-    description: 'Where your contacts are',
-    shortcut: '4',
   },
 ];
 
@@ -145,8 +140,19 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
             );
           })}
 
-          {/* ⌘K hint */}
-          <div className="ml-auto flex items-center pr-2 pb-1">
+          {/* Right cluster — Map deep-link + ⌘K hint. Map moved to a top-
+              level Sidebar section; this chip preserves the muscle memory of
+              users who reached it via Contacts → Map. */}
+          <div className="ml-auto flex items-center gap-1.5 pr-2 pb-1">
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('pulse:navigate', { detail: { view: AppView.MAP } }))}
+              className="hidden sm:flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400 rounded border border-zinc-200 dark:border-zinc-700 hover:border-rose-300 hover:text-rose-500 dark:hover:border-rose-400/40 dark:hover:text-rose-300 transition-colors"
+              title="Open Map (top-level section)"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
+            >
+              <MapPin className="w-3 h-3" />
+              <span>View on Map</span>
+            </button>
             <button
               onClick={handleSearchFocus}
               className="hidden sm:flex items-center gap-1 px-2 py-1 text-[10px] text-zinc-400 dark:text-zinc-600 rounded border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
@@ -180,18 +186,6 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
             contacts={props.contacts}
             onAction={props.onAction}
           />
-        )}
-        {activeMode === 'map' && (
-          <div className="w-full h-full p-3">
-            <ContactMapView
-              contacts={props.contacts}
-              circles={[]}
-              isDarkMode={props.isDarkMode ?? false}
-              userId={props.userId ?? ''}
-              onContactAction={props.onAction}
-              onContactUpdated={props.onUpdateContact}
-            />
-          </div>
         )}
       </div>
 

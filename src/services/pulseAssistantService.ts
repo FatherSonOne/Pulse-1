@@ -273,7 +273,10 @@ export const SECTION_LABELS: Partial<Record<AppView, string>> = {
   [AppView.MULTI_MODAL]: 'Search',
   [AppView.USERS_GUIDE]: 'User Guide',
   [AppView.LIVE]: 'Summit',
-  [AppView.CONTACT_MAP]: 'Contacts',
+  [AppView.MAP]: 'Map',
+  // Legacy alias — kept so existing analytics + deep-links resolve. The
+  // canonical section is AppView.MAP; CONTACT_MAP redirects to it in App.tsx.
+  [AppView.CONTACT_MAP]: 'Map',
   [AppView.MESSAGE_ANALYTICS]: 'Message Analytics',
 };
 

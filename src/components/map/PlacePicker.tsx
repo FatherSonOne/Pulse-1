@@ -76,23 +76,30 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Dedupe key: case-folded name + lat/lng rounded to ~1m. We can't trust the
-  // table to be clean — RLS + sync from multiple devices yields dupes in
-  // practice. The picker is the last UI before the user; harden here.
-  const dedupePlaces = (rows: Place[]): { unique: Place[]; hiddenCount: number } => {
+  // Dedupe key: case-folded name + lat/lng rounded to ~1m. Rows without coords
+  // fall back to the row id so they never collapse against each other. We
+  // can't trust the table to be clean — RLS + sync from multiple devices
+  // yields dupes in practice; the picker is the last UI before the user.
+  const dedupePlaces = (rows: Place[], attachedId?: string | null): { unique: Place[]; hiddenCount: number } => {
     const seen = new Map<string, Place>();
     for (const p of rows) {
-      const lat = typeof p.lat === 'number' ? p.lat.toFixed(5) : '';
-      const lng = typeof p.lng === 'number' ? p.lng.toFixed(5) : '';
-      const name = (p.name ?? '').trim().toLowerCase();
-      const key = `${name}|${lat},${lng}`;
-      // Prefer the row with a geofence radius set (more configured) or the
-      // older row (lower id wins lexicographically) so the attached place
-      // tends to survive the dedupe.
+      const hasCoords = typeof p.lat === 'number' && typeof p.lng === 'number';
+      const key = hasCoords
+        ? `${(p.name ?? '').trim().toLowerCase()}|${p.lat.toFixed(5)},${p.lng.toFixed(5)}`
+        : `id:${p.id}`;
       const existing = seen.get(key);
+      // Survival order: attached > geofence-configured > first seen. This
+      // keeps the currently-attached row visible regardless of which dupe
+      // happens to come back first from the service.
       if (!existing) {
         seen.set(key, p);
-      } else if (p.geofenceRadiusM != null && existing.geofenceRadiusM == null) {
+        continue;
+      }
+      const pAttached = !!attachedId && p.id === attachedId;
+      const eAttached = !!attachedId && existing.id === attachedId;
+      if (pAttached && !eAttached) {
+        seen.set(key, p);
+      } else if (!eAttached && p.geofenceRadiusM != null && existing.geofenceRadiusM == null) {
         seen.set(key, p);
       }
     }

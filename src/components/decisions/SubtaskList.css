@@ -311,13 +311,89 @@
   opacity: 0.8;
 }
 
-/* Empty state */
+/* Legacy bare empty state — kept for read-only renders where we don't
+   want the click-to-promote scaffold to suggest editability. */
 .subtask-empty {
   padding: var(--dt-spacing-lg);
   text-align: center;
   color: var(--dt-text-muted);
   font-size: var(--dt-font-sm);
   font-style: italic;
+}
+
+/* Empty-state scaffold — three click-to-promote placeholder rows that
+   teach the subtask pattern by example instead of leaving the cold-open
+   to the AI button. */
+.subtask-empty-scaffold {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dt-spacing-xs);
+}
+
+.subtask-empty-hint {
+  margin: 0 0 var(--dt-spacing-xs);
+  font-size: var(--dt-font-sm);
+  color: var(--dt-text-secondary);
+  line-height: 1.5;
+}
+
+.subtask-scaffold-item {
+  display: flex;
+  align-items: center;
+  gap: var(--dt-spacing-sm);
+  padding: var(--dt-spacing-sm);
+  background: transparent;
+  border: 1px dashed var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-muted);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dt-transition-fast),
+              border-color var(--dt-transition-fast),
+              color var(--dt-transition-fast);
+}
+
+.subtask-scaffold-item:hover {
+  background: var(--dt-bg-card-hover);
+  border-color: var(--dt-border-hover);
+  color: var(--dt-text-primary);
+}
+
+.subtask-scaffold-item:focus-visible {
+  outline: 2px solid var(--dt-accent, #e11d48);
+  outline-offset: 1px;
+  color: var(--dt-text-primary);
+}
+
+.subtask-scaffold-title {
+  flex: 1;
+  font-size: var(--dt-font-sm);
+  line-height: 1.4;
+}
+
+.subtask-scaffold-cta {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dt-text-muted);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--dt-bg-card);
+  transition: background var(--dt-transition-fast), color var(--dt-transition-fast);
+}
+
+.subtask-scaffold-item:hover .subtask-scaffold-cta,
+.subtask-scaffold-item:focus-visible .subtask-scaffold-cta {
+  background: rgba(244, 63, 94, 0.10);
+  color: var(--dt-accent, #e11d48);
+}
+
+.subtask-list-header-right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dt-spacing-sm);
 }
 
 /* Loading state */
