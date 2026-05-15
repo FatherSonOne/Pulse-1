@@ -111,8 +111,9 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
       getPlacesForEntity(entityType, entityId),
       listUserPlaces(),
     ]);
-    setAttached(linked.find(p => p.role === role) ?? null);
-    const { unique, hiddenCount } = dedupePlaces(all);
+    const newAttached = linked.find(p => p.role === role) ?? null;
+    setAttached(newAttached);
+    const { unique, hiddenCount } = dedupePlaces(all, newAttached?.id ?? null);
     setAvailable(unique);
     setDuplicateCount(hiddenCount);
   }, [entityType, entityId, role]);

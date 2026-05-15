@@ -285,31 +285,34 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
             </div>
           ))}
         </div>
+      ) : readonly ? (
+        // Read-only views (e.g. the decision-side preview) don't get the
+        // click-to-promote scaffold — there's nothing to click. Keep a
+        // quiet line so the section doesn't disappear silently.
+        <div className="subtask-empty">No subtasks.</div>
       ) : (
         // Empty-state scaffold — three muted placeholder rows. Click any row
         // to promote it into a real subtask. The pattern teaches by example
         // and removes the "Generate with AI is the only door" framing.
-        !readonly && (
-          <div className="subtask-empty-scaffold" role="list" aria-label="Subtask suggestions">
-            <p className="subtask-empty-hint">
-              A subtask is one step of this task. Click a suggestion to add it, or type your own below.
-            </p>
-            {STARTER_SCAFFOLD.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                role="listitem"
-                className="subtask-scaffold-item"
-                onClick={() => handlePromoteSuggestion(suggestion)}
-                aria-label={`Add subtask: ${suggestion}`}
-              >
-                <Square size={18} aria-hidden />
-                <span className="subtask-scaffold-title">{suggestion}</span>
-                <span className="subtask-scaffold-cta">Add</span>
-              </button>
-            ))}
-          </div>
-        )
+        <div className="subtask-empty-scaffold" role="list" aria-label="Subtask suggestions">
+          <p className="subtask-empty-hint">
+            A subtask is one step of this task. Click a suggestion to add it, or type your own below.
+          </p>
+          {STARTER_SCAFFOLD.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              role="listitem"
+              className="subtask-scaffold-item"
+              onClick={() => handlePromoteSuggestion(suggestion)}
+              aria-label={`Add subtask: ${suggestion}`}
+            >
+              <Square size={18} aria-hidden />
+              <span className="subtask-scaffold-title">{suggestion}</span>
+              <span className="subtask-scaffold-cta">Add</span>
+            </button>
+          ))}
+        </div>
       )}
 
       {/* Add new subtask input — primary path. Manual entry first; AI assist

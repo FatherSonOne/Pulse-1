@@ -92,9 +92,12 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
   ), [title, description, priority, status, assigneeId, deadline, blockedReason]);
 
   // Centralised close path so ESC and the X button share dirty-state logic.
+  // The discard row lives inside the Details tab; snap there so the user
+  // sees the prompt regardless of which tab they were on when they hit ESC.
   const requestClose = useCallback(() => {
     if (isDirty && !confirmDiscard) {
       setConfirmDiscard(true);
+      setActiveTab('details');
       return;
     }
     onClose();
