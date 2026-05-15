@@ -22,6 +22,10 @@ interface Props {
   isAdmin: boolean;
 }
 
+// Group color palette. Stored as literal hex in workspace_groups.color so the
+// DB row is self-describing (no CSS-var leaks). The first entry mirrors
+// `--pulse-accent` from src/styles/pulse-tokens.css — keep them in sync if
+// the brand coral ever changes.
 const GROUP_COLORS = ['#f43f5e', '#f97316', '#eab308', '#22c55e', '#0ea5e9', '#8b5cf6', '#ec4899', '#64748b'];
 
 export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, isAdmin }) => {
@@ -262,8 +266,19 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
       )}
 
       {!isLoading && groups.length === 0 && !creating && (
-        <div className="py-8 text-center text-xs text-zinc-400">
-          No groups yet.{isAdmin && ' Create one above to get started.'}
+        <div className="py-10 text-center space-y-3">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            No groups yet.
+          </p>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setCreating(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition"
+            >
+              <Plus className="w-3.5 h-3.5" /> Create your first group
+            </button>
+          )}
         </div>
       )}
 
