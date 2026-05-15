@@ -95,7 +95,10 @@ export const sendInvitationEmail = async (
   workspaceName: string = 'Pulse Team'
 ): Promise<InviteResult> => {
   const resendApiKey = import.meta.env.VITE_RESEND_API_KEY;
-  const appUrl = import.meta.env.VITE_APP_URL || 'https://pulse.logosvision.org';
+  // Invite emails go to external recipients — always use the public URL so
+  // links don't 404 against the sender's localhost. Mirrors the hardcoded
+  // appUrl in sendInvitationViaGmail below.
+  const appUrl = 'https://pulse.logosvision.org';
 
   // If no Resend API key, fall back to mailto link
   if (!resendApiKey) {

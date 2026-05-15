@@ -589,7 +589,12 @@ export const workspaceService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return { ok: false, reason: 'Not signed in' };
 
-    const inviteUrl = `${window.location.origin}/invite?token=${encodeURIComponent(token)}`;
+    // Invite emails are delivered to external recipients — they cannot reach
+    // localhost or any dev origin. Always use the canonical public URL so the
+    // link resolves in the recipient's browser regardless of where the invite
+    // was sent from. Mirrors inviteService.sendInvitationViaGmail.
+    const PUBLIC_APP_URL = 'https://pulse.logosvision.org';
+    const inviteUrl = `${PUBLIC_APP_URL}/invite?token=${encodeURIComponent(token)}`;
     const fromName = inviterName || 'A teammate';
 
     const html = `
@@ -683,7 +688,10 @@ export const workspaceService = {
    * Returns the shareable invite link URL for a given invite token.
    */
   getInviteLink(token: string): string {
-    return `${window.location.origin}/invite?token=${encodeURIComponent(token)}`;
+    // Shareable invite links are pasted into email/Slack/SMS for external
+    // recipients, so they must always point at the public production URL
+    // even when generated from a dev environment.
+    return `https://pulse.logosvision.org/invite?token=${encodeURIComponent(token)}`;
   },
 
   /**
