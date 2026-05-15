@@ -1385,7 +1385,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           {/* Relay "Sonic Pulse" themed bg — indigo + pink, fades in with scroll */}
           <div
             className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-            style={{ opacity: isDarkMode ? Math.min(sectionVis['section-relay'] ?? 0, 1) : 0 }}
+            style={{ opacity: Math.min(sectionVis['section-relay'] ?? 0, 1) * (isDarkMode ? 1 : 0.55) }}
           >
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 15% 50%, rgba(244,63,94,0.13) 0%, transparent 55%), radial-gradient(ellipse at 85% 30%, rgba(236,72,153,0.09) 0%, transparent 50%), radial-gradient(ellipse at 50% 90%, rgba(244,63,94,0.06) 0%, transparent 45%)',
@@ -1564,7 +1564,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         {/* Section A2 — Glimpse (async video, peer of Relay) */}
         <section id="section-glimpse" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
-          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 70% 40%, rgba(244,63,94,0.10) 0%, transparent 55%), radial-gradient(ellipse at 25% 70%, rgba(236,72,153,0.06) 0%, transparent 50%)',
             }} />
@@ -1613,7 +1613,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         {/* Section B — War Room */}
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
-          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 30% 40%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 70% 60%, rgba(236,72,153,0.05) 0%, transparent 50%)',
             }} />
@@ -1695,7 +1695,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         {/* Section B2 — Email */}
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
-          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 70% 30%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 30% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
             }} />
@@ -1744,7 +1744,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         {/* Section B3 — Messaging */}
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
-          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 50% 40%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 80% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
             }} />
@@ -1793,7 +1793,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         {/* Section B4 — Calendar */}
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
-          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 40% 30%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 60% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
             }} />
@@ -1842,7 +1842,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         {/* Section B5 — Analytics */}
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
-          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 50% 50%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(236,72,153,0.05) 0%, transparent 50%)',
             }} />
@@ -1892,7 +1892,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           {/* Decision hub themed bg — rose radial glow + pure dark, from DecisionTaskHub.css */}
           <div
             className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-            style={{ opacity: isDarkMode ? Math.min(sectionVis['section-decisions'] ?? 0, 1) : 0 }}
+            style={{ opacity: Math.min(sectionVis['section-decisions'] ?? 0, 1) * (isDarkMode ? 1 : 0.55) }}
           >
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 50% 40%, rgba(244,63,94,0.13) 0%, transparent 55%), radial-gradient(ellipse at 20% 80%, rgba(236,72,153,0.08) 0%, transparent 45%), radial-gradient(ellipse at 80% 70%, rgba(244,63,94,0.06) 0%, transparent 40%)',
@@ -2000,7 +2000,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           {/* Indigo space background */}
           <div
             className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-            style={{ opacity: isDarkMode ? Math.min(sectionVis['section-crm'] ?? 0, 1) : 0 }}
+            style={{ opacity: Math.min(sectionVis['section-crm'] ?? 0, 1) * (isDarkMode ? 1 : 0.55) }}
           >
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 20% 30%, rgba(244,63,94,0.13) 0%, transparent 52%), radial-gradient(ellipse at 80% 70%, rgba(236,72,153,0.09) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(244,63,94,0.05) 0%, transparent 70%)',
@@ -2242,7 +2242,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
       {/* ── Section E — Maps & Field Operations ── */}
       <section id="section-maps" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? ' bg-zinc-950/40' : ' bg-stone-50'}`}>
-        <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
           <div className="absolute inset-0" style={{
             background: 'radial-gradient(ellipse at 25% 35%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 75% 65%, rgba(236,72,153,0.05) 0%, transparent 50%)',
           }} />

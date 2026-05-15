@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Send, Loader2, AlertCircle, Check, Mail, FileText } from 'lucide-react';
+import React, { useState, useMemo, useRef } from 'react';
+import { Send, Loader2, AlertCircle, Check, Mail, FileText, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { workspaceService } from '../../../services/workspaceService';
 import { SettingsCard } from '../shared/SettingsCard';
@@ -94,6 +94,66 @@ export const InviteCard: React.FC<InviteCardProps> = ({
   const [text, setText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [results, setResults] = useState<{ ok: number; failed: { email: string; reason: string }[] } | null>(null);
+
+  // CSV file upload state — same parser path as paste, just sourced from a file.
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Cap file size at 1 MB. A CSV with one email per ~30 bytes is ~30k rows
+  // at that ceiling — orders of magnitude past any realistic invite batch.
+  const MAX_FILE_SIZE = 1_000_000;
+
+  const handleFile = async (file: File) => {
+    if (!file) return;
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error(`File too large (${Math.round(file.size / 1024)} KB). Max 1 MB.`);
+      return;
+    }
+    // Be permissive about file type — some browsers report '' or
+    // 'application/vnd.ms-excel' for legitimate CSVs.
+    if (file.type && !/csv|text|plain/i.test(file.type)) {
+      toast.error(`Unsupported file type: ${file.type}. Use .csv or .txt.`);
+      return;
+    }
+    try {
+      const content = await file.text();
+      setText(content);
+      setFileName(file.name);
+      setResults(null);
+    } catch {
+      toast.error('Could not read file');
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+    // Reset the input so re-selecting the same file fires onChange again.
+    e.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (!isDragging) setIsDragging(true);
+  };
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
+  };
+
+  const clearLoadedFile = () => {
+    setFileName(null);
+    setText('');
+    setResults(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const parsed = useMemo(() => parseCsv(text), [text]);
   const validRows = parsed.filter(r => !r.error);
@@ -259,22 +319,73 @@ export const InviteCard: React.FC<InviteCardProps> = ({
         {/* Bulk mode */}
         {mode === 'bulk' && (
           <div className="space-y-3">
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Paste one entry per line: <code className="text-zinc-600 dark:text-zinc-400">email,role</code>.
-              Role is optional (defaults to <code>member</code>). Allowed: <code>admin</code>, <code>member</code>, <code>viewer</code>.
-            </p>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 flex-1 min-w-[200px]">
+                Paste, drag a CSV in, or click Upload. One entry per line:{' '}
+                <code className="text-zinc-600 dark:text-zinc-400">email,role</code>.
+                Role defaults to <code>member</code>. Allowed: <code>admin</code>, <code>member</code>, <code>viewer</code>.
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.txt,text/csv,text/plain"
+                onChange={handleFileInputChange}
+                className="sr-only"
+                aria-label="Upload CSV file"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-md transition"
+              >
+                <Upload className="w-3 h-3" />
+                Upload CSV
+              </button>
+            </div>
 
-            <div>
+            {fileName && (
+              <div className="flex items-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
+                <FileText className="w-3 h-3 text-zinc-400" />
+                <span className="font-mono truncate">{fileName}</span>
+                <button
+                  type="button"
+                  onClick={clearLoadedFile}
+                  aria-label="Clear loaded file"
+                  className="ml-auto text-zinc-400 hover:text-rose-500 transition"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`relative rounded-lg transition ${
+                isDragging
+                  ? 'ring-2 ring-rose-500/60 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900'
+                  : ''
+              }`}
+            >
               <label htmlFor="bulk-invite-csv" className="sr-only">CSV invite list</label>
               <textarea
                 id="bulk-invite-csv"
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => { setText(e.target.value); if (fileName) setFileName(null); }}
                 placeholder={'alice@acme.com,admin\nbob@acme.com,member\ncarol@acme.com'}
                 rows={6}
                 spellCheck={false}
                 className="w-full px-3 py-2 text-sm font-mono border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white resize-y focus:outline-none focus:ring-2 focus:ring-rose-500/50"
               />
+              {isDragging && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-rose-50/90 dark:bg-rose-500/10 pointer-events-none">
+                  <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-medium text-sm">
+                    <Upload className="w-4 h-4" />
+                    Drop CSV to load
+                  </div>
+                </div>
+              )}
             </div>
 
             {(dedupedValid.length > 0 || errorRows.length > 0) && (
