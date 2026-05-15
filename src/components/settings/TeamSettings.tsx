@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
 import { workspaceService, WorkspaceMember, WorkspaceInvite, WORKSPACE_PLAN_LABELS, WORKSPACE_PLAN_LIMITS } from '../../services/workspaceService';
-import { Loader2, Mail, Send, Users, Shield, UserMinus, ChevronDown, Clock, X, RotateCcw, Copy, Check } from 'lucide-react';
+import { Mail, Users, UserMinus, ChevronDown, Clock, X, Copy, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { BulkInviteCard } from './team/BulkInviteCard';
+import { InviteCard } from './team/InviteCard';
 import { GroupsManagementCard } from './team/GroupsManagementCard';
 import { RolePermissionsMatrixCard } from './team/RolePermissionsMatrixCard';
-import { RoleHelpPopover } from './team/RoleHelpPopover';
 import { ConfirmActionDialog } from './team/ConfirmActionDialog';
 import { SeatMeter } from './team/SeatMeter';
 import { SettingsCard } from './shared/SettingsCard';
@@ -28,9 +27,6 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
   const showGroups = useFeatureFlag('workspaceGroups', userId);
 
   const [pendingInvites, setPendingInvites] = useState<WorkspaceInvite[]>([]);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'admin' | 'member' | 'viewer'>('member');
-  const [isInviting, setIsInviting] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState<string | null>(null);
   const [isLoadingInvites, setIsLoadingInvites] = useState(false);
   // Which pending-invite row was just copied? Drives the 1.5s Check icon.
@@ -92,34 +88,6 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
   useEffect(() => {
     loadInvites();
   }, [loadInvites]);
-
-  const handleInvite = async () => {
-    if (!inviteEmail || !workspaceId || !currentWorkspace) return;
-    setIsInviting(true);
-    try {
-      const { isResend, emailDelivery } = await workspaceService.inviteMember(
-        workspaceId,
-        inviteEmail,
-        inviteRole,
-        { workspaceName: currentWorkspace.name },
-      );
-      if (emailDelivery.ok) {
-        toast.success(isResend ? `Re-sent invite to ${inviteEmail}` : `Invite sent to ${inviteEmail}`);
-      } else {
-        toast.error(
-          `Invite created but email couldn't be delivered (${emailDelivery.reason ?? 'unknown'}). Copy the link from Pending Invites and share it manually.`,
-        );
-      }
-      setInviteEmail('');
-      setInviteRole('member');
-      await loadInvites();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to send invite';
-      toast.error(msg);
-    } finally {
-      setIsInviting(false);
-    }
-  };
 
   const handleRoleChange = async (member: WorkspaceMember, newRole: 'admin' | 'member' | 'viewer') => {
     if (!workspaceId) return;
@@ -330,58 +298,18 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
         </div>
       </SettingsCard>
 
-      {/* Invite Form — admin+ only */}
-      {canManageMembers && (
-      <div
-        ref={inviteCardRef}
-        className="scroll-mt-4 rounded-2xl transition-shadow"
-        style={{
-          boxShadow: inviteFocused ? '0 0 0 3px rgba(244, 63, 94, 0.45)' : 'none',
-        }}
-      >
-        <SettingsCard>
-          <MonoLabel className="mb-6">Invite New Member</MonoLabel>
-          <div className="flex gap-2">
-            <input
-              ref={inviteEmailInputRef}
-              type="email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="colleague@company.com"
-              className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500"
-              onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
-            />
-            <select
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value as 'admin' | 'member' | 'viewer')}
-              aria-label="Invite role"
-              className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 dark:text-white text-zinc-900 text-sm focus:outline-none focus:border-rose-500"
-            >
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-              <option value="viewer">Viewer</option>
-            </select>
-            <RoleHelpPopover />
-            <button
-              type="button"
-              onClick={handleInvite}
-              disabled={!inviteEmail || isInviting}
-              className="px-6 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"
-            >
-              {isInviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Send
-            </button>
-          </div>
-        </SettingsCard>
-      </div>
-      )}
-
-      {/* Bulk invite — admin+ only */}
+      {/* Invite — admin+ only. Single card with a "Paste many" toggle that
+          swaps between single-email and CSV-paste modes. Replaces the
+          previous inline single-invite + separate BulkInviteCard combo
+          (audit #41 C3-merge). */}
       {canManageMembers && workspaceId && (
-        <BulkInviteCard
+        <InviteCard
           workspaceId={workspaceId}
           workspaceName={currentWorkspace.name}
           onInvitesSent={loadInvites}
+          isFocused={inviteFocused}
+          cardRef={inviteCardRef}
+          emailInputRef={inviteEmailInputRef}
         />
       )}
 
