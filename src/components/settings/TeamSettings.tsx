@@ -8,6 +8,7 @@ import { GroupsManagementCard } from './team/GroupsManagementCard';
 import { RolePermissionsMatrixCard } from './team/RolePermissionsMatrixCard';
 import { SettingsCard } from './shared/SettingsCard';
 import { MonoLabel } from './shared/MonoLabel';
+import { useFeatureFlag } from '../../lib/featureFlags';
 
 interface TeamSettingsProps {
   userId: string;
@@ -18,6 +19,10 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
   const { currentWorkspace, members } = useWorkspaceData();
   const { refreshMembers } = useWorkspaceActions();
   const { isOwner, isAdmin, canManageMembers } = useWorkspacePermissions();
+  // Groups card is gated behind a flag until #42 phase 5 lands a real read
+  // consumer (group_grants → mentions / routing / channel ACL). Dev override:
+  // ?ff_workspaceGroups=on (also persists to localStorage for that browser).
+  const showGroups = useFeatureFlag('workspaceGroups', userId);
 
   const [pendingInvites, setPendingInvites] = useState<WorkspaceInvite[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -314,8 +319,8 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
         </div>
       </SettingsCard>
 
-      {/* Groups & departments */}
-      {workspaceId && (
+      {/* Groups & departments — see showGroups flag declaration above. */}
+      {workspaceId && showGroups && (
         <GroupsManagementCard
           workspaceId={workspaceId}
           members={members}
