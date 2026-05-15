@@ -120,6 +120,36 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Cross-section navigation via custom event.  Components inside any
+  // settings section can dispatch
+  //   window.dispatchEvent(new CustomEvent('pulse:settings-navigate', {
+  //     detail: { section: 'workspace', focus: 'transfer' }
+  //   }))
+  // to switch sections AND drop a `?focus=<key>` param the destination
+  // section can read on mount (mirrors the ?focus=invite pattern in
+  // TeamSettings.tsx).  Decouples team-settings owner-row "Transfer
+  // ownership →" link from workspace-settings without URL routing.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ section?: string; focus?: string }>;
+      const section = ce.detail?.section;
+      const focus   = ce.detail?.focus;
+      if (!section) return;
+      setActiveSection(section);
+      if (focus) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('focus', focus);
+        window.history.replaceState(
+          {},
+          '',
+          `${window.location.pathname}?${params.toString()}`,
+        );
+      }
+    };
+    window.addEventListener('pulse:settings-navigate', handler);
+    return () => window.removeEventListener('pulse:settings-navigate', handler);
+  }, []);
+
   // Deep-link support: ?settings=<sectionId>
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

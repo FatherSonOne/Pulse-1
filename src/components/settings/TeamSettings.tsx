@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
 import { workspaceService, WorkspaceMember, WorkspaceInvite, WORKSPACE_PLAN_LABELS, WORKSPACE_PLAN_LIMITS } from '../../services/workspaceService';
-import { Loader2, Mail, Send, Users, Shield, UserMinus, ChevronDown, Clock, X, RotateCcw } from 'lucide-react';
+import { Loader2, Mail, Send, Users, Shield, UserMinus, ChevronDown, Clock, X, RotateCcw, Copy, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { BulkInviteCard } from './team/BulkInviteCard';
 import { GroupsManagementCard } from './team/GroupsManagementCard';
@@ -30,6 +30,34 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
   const [isInviting, setIsInviting] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState<string | null>(null);
   const [isLoadingInvites, setIsLoadingInvites] = useState(false);
+  // Which pending-invite row was just copied? Drives the 1.5s Check icon.
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
+
+  // Deep-link focus (?focus=invite) — scroll + highlight the invite form
+  // and put the cursor in the email field.
+  const inviteCardRef = useRef<HTMLDivElement>(null);
+  const inviteEmailInputRef = useRef<HTMLInputElement>(null);
+  const [inviteFocused, setInviteFocused] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('focus') !== 'invite') return;
+
+    setInviteFocused(true);
+    const scrollT = setTimeout(() => {
+      inviteCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => inviteEmailInputRef.current?.focus(), 400);
+    }, 50);
+    const fadeT = setTimeout(() => setInviteFocused(false), 3000);
+
+    params.delete('focus');
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`,
+    );
+
+    return () => { clearTimeout(scrollT); clearTimeout(fadeT); };
+  }, []);
 
   const workspaceId = currentWorkspace?.id;
   const plan = currentWorkspace?.plan ?? 'free';
@@ -104,6 +132,21 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
     }
   };
 
+  const handleCopyInviteLink = async (invite: WorkspaceInvite) => {
+    const url = workspaceService.getInviteLink(invite.token);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedInviteId(invite.id);
+      toast.success('Invite link copied');
+      setTimeout(() => setCopiedInviteId((prev) => (prev === invite.id ? null : prev)), 1500);
+    } catch {
+      toast.error('Could not copy. Long-press to copy manually:');
+      // Some browsers block clipboard on insecure contexts. Show the URL inline
+      // via a second toast so the user can still grab it.
+      toast(url, { duration: 8000 });
+    }
+  };
+
   const handleRevokeInvite = async (invite: WorkspaceInvite) => {
     if (!confirm(`Revoke invite for ${invite.email}?`)) return;
     try {
@@ -150,10 +193,18 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
 
       {/* Invite Form — admin+ only */}
       {canManageMembers && (
+      <div
+        ref={inviteCardRef}
+        className="scroll-mt-4 rounded-2xl transition-shadow"
+        style={{
+          boxShadow: inviteFocused ? '0 0 0 3px rgba(244, 63, 94, 0.45)' : 'none',
+        }}
+      >
         <SettingsCard>
           <MonoLabel className="mb-6">Invite New Member</MonoLabel>
           <div className="flex gap-2">
             <input
+              ref={inviteEmailInputRef}
               type="email"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
@@ -182,6 +233,7 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
             </button>
           </div>
         </SettingsCard>
+      </div>
       )}
 
       {/* Bulk invite — admin+ only */}
@@ -216,13 +268,26 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="text-xs font-medium text-red-500 hover:text-red-600 flex items-center gap-1"
-                  onClick={() => handleRevokeInvite(invite)}
-                >
-                  <X className="w-3 h-3" /> Revoke
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center gap-1"
+                    onClick={() => handleCopyInviteLink(invite)}
+                    aria-label={`Copy invite link for ${invite.email}`}
+                  >
+                    {copiedInviteId === invite.id
+                      ? <><Check className="w-3 h-3" /> Copied</>
+                      : <><Copy className="w-3 h-3" /> Copy link</>}
+                  </button>
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-red-500 hover:text-red-600 flex items-center gap-1"
+                    onClick={() => handleRevokeInvite(invite)}
+                    aria-label={`Revoke invite for ${invite.email}`}
+                  >
+                    <X className="w-3 h-3" /> Revoke
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -293,9 +358,31 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
                       )}
                     </>
                   ) : (
-                    <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${roleColors[member.role]}`}>
-                      {member.role}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${roleColors[member.role]}`}>
+                        {member.role}
+                      </span>
+                      {/* Surface "Transfer ownership" on the owner's own row.
+                          Without this hint, an owner who wants to leave has
+                          to discover that (a) they can't remove themselves
+                          from Team, (b) ownership transfer lives in Workspace
+                          settings. Fires a custom event the Settings shell
+                          listens for. */}
+                      {isMemberOwner && isCurrentUser && isOwner && (
+                        <button
+                          type="button"
+                          onClick={() => window.dispatchEvent(
+                            new CustomEvent('pulse:settings-navigate', {
+                              detail: { section: 'workspace', focus: 'transfer' },
+                            }),
+                          )}
+                          className="text-xs font-medium text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300"
+                          aria-label="Transfer ownership in Workspace settings"
+                        >
+                          Transfer →
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
 
