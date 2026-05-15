@@ -320,13 +320,15 @@ export const workspaceService = {
 
   /**
    * Creates a new primary (billed) workspace owned by the currently authenticated user.
-   * Automatically inserts the owner as a workspace_member with role 'owner' and
-   * starts a 30-day Pulse Team trial. Used for first-time users only — additional
-   * workspaces under an existing owner go through `createChildWorkspace`.
+   * The workspaces row and the owner workspace_members row are written together in the
+   * bootstrap_workspace SECURITY DEFINER RPC's single plpgsql transaction, so a
+   * partial-creation orphan can't happen. Then starts a 30-day Pulse Team trial; if
+   * that fails, the workspace is hard-deleted (FK CASCADE removes the member row).
+   *
+   * Used for first-time users only — additional workspaces under an existing owner
+   * go through `createChildWorkspace`.
    */
   async createWorkspace(name: string, description?: string, plan: WorkspacePlan = 'team'): Promise<Workspace> {
-    const userId = await getCurrentUserId();
-
     const baseSlug = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -334,44 +336,38 @@ export const workspaceService = {
       .slice(0, 40) || 'workspace';
     const slug = `${baseSlug}-${Date.now().toString(36)}`;
 
-    const { data: workspace, error: workspaceError } = await supabase
+    const { data: workspaceId, error: rpcError } = await supabase.rpc('bootstrap_workspace', {
+      p_name:        name,
+      p_slug:        slug,
+      p_description: description ?? null,
+      p_plan:        plan,
+    });
+
+    assertNoError(rpcError, 'createWorkspace — bootstrap_workspace RPC');
+
+    if (!workspaceId) {
+      throw new Error('[workspaceService] createWorkspace: RPC returned no workspace id');
+    }
+
+    // Fetch the just-created row to return the full Workspace shape. RLS allows
+    // this because the bootstrap RPC has already inserted the caller as the owner.
+    const { data: workspace, error: fetchError } = await supabase
       .from('workspaces')
-      .insert({
-        name,
-        slug,
-        description: description ?? null,
-        owner_id: userId,
-        plan,
-        parent_workspace_id: null,
-      })
-      .select()
+      .select('*')
+      .eq('id', workspaceId)
       .single();
 
-    assertNoError(workspaceError, 'createWorkspace — insert workspace');
+    assertNoError(fetchError, 'createWorkspace — fetch new workspace row');
 
-    const { error: memberError } = await supabase
-      .from('workspace_members')
-      .insert({
-        workspace_id: workspace.id,
-        user_id: userId,
-        role: 'owner',
-        invited_by: null,
-      });
-
-    assertNoError(memberError, 'createWorkspace — insert owner member');
-
-    // Hard-fail on trial bootstrap. A workspace without an entitlements row paints
-    // TrialExpiredBlock on first navigation, which is worse than rolling back here.
-    // If the trial RPC errors we drop the workspace + membership we just created
-    // so the next attempt starts clean instead of zombieing the org.
+    // Start the 30-day trial. On failure, hard-delete the workspace; FK CASCADE
+    // takes the workspace_members row with it, so a single DELETE is the rollback.
     try {
       const billingService = (await import('./billingService')).default;
-      await billingService.startPulseTeamTrial(workspace.id);
+      await billingService.startPulseTeamTrial(workspaceId as string);
     } catch (e) {
       console.error('[workspaceService] startPulseTeamTrial failed; rolling back workspace', e);
       try {
-        await supabase.from('workspace_members').delete().eq('workspace_id', workspace.id);
-        await supabase.from('workspaces').delete().eq('id', workspace.id);
+        await supabase.from('workspaces').delete().eq('id', workspaceId);
       } catch (rollbackErr) {
         console.error('[workspaceService] Rollback also failed', rollbackErr);
       }
