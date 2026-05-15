@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
+import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions, useWorkspaceMutationLock } from '../../contexts/WorkspaceContext';
 import { workspaceService, WorkspaceMember, WorkspaceInvite, WORKSPACE_PLAN_LABELS, WORKSPACE_PLAN_LIMITS } from '../../services/workspaceService';
 import { Mail, Users, UserMinus, ChevronDown, Clock, X, Copy, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -21,6 +21,7 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
   const { currentWorkspace, members } = useWorkspaceData();
   const { refreshMembers } = useWorkspaceActions();
   const { isOwner, isAdmin, canManageMembers } = useWorkspacePermissions();
+  const { acquireMutationLock } = useWorkspaceMutationLock();
   // Groups card is gated behind a flag until #42 phase 5 lands a real read
   // consumer (group_grants → mentions / routing / channel ACL). Dev override:
   // ?ff_workspaceGroups=on (also persists to localStorage for that browser).
@@ -90,15 +91,23 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
   }, [loadInvites]);
 
   const handleRoleChange = async (member: WorkspaceMember, newRole: 'admin' | 'member' | 'viewer') => {
-    if (!workspaceId) return;
+    // F1: capture workspaceId at mutation start so a workspace switch
+    // mid-flight can't redirect the await into a different workspace's
+    // context. acquireMutationLock disables the workspace switcher until
+    // release() fires.
+    const wsId = workspaceId;
+    if (!wsId) return;
+    const release = acquireMutationLock();
     try {
-      await workspaceService.updateMemberRole(workspaceId, member.user_id, newRole);
+      await workspaceService.updateMemberRole(wsId, member.user_id, newRole);
       toast.success(`Updated ${member.name || 'member'} to ${newRole}`);
       await refreshMembers();
     } catch {
       toast.error('Failed to update role');
+    } finally {
+      release();
+      setRoleDropdownOpen(null);
     }
-    setRoleDropdownOpen(null);
   };
 
   // Triggers — open the confirm dialog with the right target. Execution
@@ -129,11 +138,20 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
 
   const handleConfirmPending = async () => {
     if (!pendingConfirm) return;
+    // F1: capture workspaceId + acquire lock for the duration of the
+    // mutation. Both remove and revoke paths are workspace-scoped (the
+    // revoke RLS check qualifies workspace_id even though we delete by
+    // invite.id), so switching workspaces mid-await would still race.
+    const wsId = workspaceId;
+    if (!wsId) {
+      setPendingConfirm(null);
+      return;
+    }
+    const release = acquireMutationLock();
     setIsConfirming(true);
     try {
       if (pendingConfirm.kind === 'remove') {
-        if (!workspaceId) return;
-        await workspaceService.removeMember(workspaceId, pendingConfirm.member.user_id);
+        await workspaceService.removeMember(wsId, pendingConfirm.member.user_id);
         toast.success('Member removed');
         await refreshMembers();
       } else {
@@ -150,6 +168,7 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
       toast.error(pendingConfirm.kind === 'remove' ? 'Failed to remove member' : 'Failed to revoke invite');
     } finally {
       setIsConfirming(false);
+      release();
     }
   };
 
