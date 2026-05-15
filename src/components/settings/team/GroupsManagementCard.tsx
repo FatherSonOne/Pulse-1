@@ -197,7 +197,9 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
       </div>
 
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
-        Organize members into groups for permissions, mentions, and reporting. Members can belong to multiple groups.
+        Tags for organising members. Coming soon: mention routing,
+        notification rules, and channel access derived from group
+        membership.
       </p>
 
       {/* Create form */}

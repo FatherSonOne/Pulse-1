@@ -119,6 +119,24 @@ const featureFlagsConfig: FeatureFlagConfig = {
     version: '0.1.0'
   },
 
+  // Team Settings → Groups card.
+  //
+  // The workspace_groups + workspace_group_members schema is real (RLS,
+  // CRUD service methods, full UI), but the *read side* is absent — no
+  // mention parser, no notification router, no channel ACL, no RLS
+  // policy consumes workspace_group_members.  The card's promise of
+  // "groups for permissions, mentions, and reporting" is fiction until
+  // #42 phase 5 (group_grants table + extended user_has_permission)
+  // lands a consumer.  Hidden in production to avoid promising features
+  // that don't exist; dev override is `?ff_workspaceGroups=on`.
+  workspaceGroups: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'PAUSED — Groups CRUD UI; no read consumer until #42 ships group_grants',
+    version: '0.1.0'
+  },
+
   // Phase 5e — ⚠️ PAUSED as of 2026-04-27.
   //
   // The v2 entry exists as parallel-rebuild scaffolding but has a
