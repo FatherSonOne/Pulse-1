@@ -8,6 +8,7 @@ import { GroupsManagementCard } from './team/GroupsManagementCard';
 import { RolePermissionsMatrixCard } from './team/RolePermissionsMatrixCard';
 import { RoleHelpPopover } from './team/RoleHelpPopover';
 import { ConfirmActionDialog } from './team/ConfirmActionDialog';
+import { SeatMeter } from './team/SeatMeter';
 import { SettingsCard } from './shared/SettingsCard';
 import { MonoLabel } from './shared/MonoLabel';
 import { useFeatureFlag } from '../../lib/featureFlags';
@@ -206,10 +207,13 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
         <h3><Users /> Team Management</h3>
         <p>
           Manage members and invitations for <strong>{currentWorkspace.name}</strong>.
-          <span className="ml-2 text-xs text-zinc-400">
-            {members.length} / {memberLimit} members ({WORKSPACE_PLAN_LABELS[plan]} plan)
-          </span>
         </p>
+        <SeatMeter
+          used={members.length}
+          limit={memberLimit}
+          planLabel={WORKSPACE_PLAN_LABELS[plan]}
+          canUpgrade={isOwner || isAdmin}
+        />
       </div>
 
       {/* Current Members — promoted above Invite by daily-task-priority
