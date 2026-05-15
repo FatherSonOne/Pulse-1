@@ -54,6 +54,22 @@ export interface WorkspacePermissionsContextType {
   canManageMembers: boolean;
 }
 
+/**
+ * Cross-cutting mutation lock — held while a workspace-scoped mutation
+ * is in flight (e.g. Team Settings inviting, role change, member remove,
+ * invite revoke). Readers use this to disable affordances that would
+ * change `currentWorkspace` mid-mutation (workspace switcher), avoiding
+ * the race where a fetch returns into a different workspace's context.
+ *
+ * `acquireMutationLock()` returns a release function. Callers should
+ * wrap the await chain in a try/finally so the lock is released even
+ * on error. Counter-based so nested/parallel mutations stack cleanly.
+ */
+export interface WorkspaceMutationLockContextType {
+  isMutating: boolean;
+  acquireMutationLock: () => () => void;
+}
+
 // Aggregated type (backward compat)
 export interface WorkspaceContextType
   extends WorkspaceDataContextType,
@@ -67,6 +83,7 @@ export interface WorkspaceContextType
 export const WorkspaceDataContext = createContext<WorkspaceDataContextType | undefined>(undefined);
 export const WorkspaceActionsContext = createContext<WorkspaceActionsContextType | undefined>(undefined);
 export const WorkspacePermissionsContext = createContext<WorkspacePermissionsContextType | undefined>(undefined);
+export const WorkspaceMutationLockContext = createContext<WorkspaceMutationLockContextType | undefined>(undefined);
 
 // ---------------------------------------------------------------------------
 // Provider
@@ -84,6 +101,21 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [deletedWorkspaces, setDeletedWorkspaces] = useState<Workspace[]>([]);
+
+  // Mutation lock counter (F1). Tracks how many workspace-scoped mutations
+  // are currently in flight so the workspace switcher can disable itself.
+  // Counter (not bool) so nested/parallel mutations stack cleanly.
+  const [mutationLockCount, setMutationLockCount] = useState<number>(0);
+
+  const acquireMutationLock = useCallback((): (() => void) => {
+    setMutationLockCount(n => n + 1);
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      setMutationLockCount(n => Math.max(0, n - 1));
+    };
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Data fetching helpers
@@ -421,11 +453,18 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
     canManageMembers,
   }), [isOwner, isAdmin, canManageMembers]);
 
+  const mutationLockValue = useMemo<WorkspaceMutationLockContextType>(() => ({
+    isMutating: mutationLockCount > 0,
+    acquireMutationLock,
+  }), [mutationLockCount, acquireMutationLock]);
+
   return (
     <WorkspaceDataContext.Provider value={dataValue}>
       <WorkspaceActionsContext.Provider value={actionsValue}>
         <WorkspacePermissionsContext.Provider value={permissionsValue}>
-          {children}
+          <WorkspaceMutationLockContext.Provider value={mutationLockValue}>
+            {children}
+          </WorkspaceMutationLockContext.Provider>
         </WorkspacePermissionsContext.Provider>
       </WorkspaceActionsContext.Provider>
     </WorkspaceDataContext.Provider>
@@ -451,6 +490,12 @@ export const useWorkspaceActions = (): WorkspaceActionsContextType => {
 export const useWorkspacePermissions = (): WorkspacePermissionsContextType => {
   const ctx = useContext(WorkspacePermissionsContext);
   if (ctx === undefined) throw new Error('useWorkspacePermissions must be used within a WorkspaceProvider');
+  return ctx;
+};
+
+export const useWorkspaceMutationLock = (): WorkspaceMutationLockContextType => {
+  const ctx = useContext(WorkspaceMutationLockContext);
+  if (ctx === undefined) throw new Error('useWorkspaceMutationLock must be used within a WorkspaceProvider');
   return ctx;
 };
 

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Send, Loader2, AlertCircle, Check, Mail, FileText, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { workspaceService } from '../../../services/workspaceService';
+import { useWorkspaceMutationLock } from '../../../contexts/WorkspaceContext';
 import { SettingsCard } from '../shared/SettingsCard';
 import { MonoLabel } from '../shared/MonoLabel';
 import { RoleHelpPopover } from './RoleHelpPopover';
@@ -83,6 +84,7 @@ export const InviteCard: React.FC<InviteCardProps> = ({
   cardRef,
   emailInputRef,
 }) => {
+  const { acquireMutationLock } = useWorkspaceMutationLock();
   const [mode, setMode] = useState<InviteMode>('single');
 
   // Single mode state
@@ -166,10 +168,16 @@ export const InviteCard: React.FC<InviteCardProps> = ({
 
   const handleSingleInvite = async () => {
     if (!inviteEmail || !workspaceId) return;
+    // F1: snapshot workspaceId + acquire lock so the workspace switcher
+    // disables until this completes. workspaceId came in as a prop so the
+    // closure already captures the value at call time, but read into a
+    // local for clarity.
+    const wsId = workspaceId;
+    const release = acquireMutationLock();
     setIsInviting(true);
     try {
       const { isResend, emailDelivery } = await workspaceService.inviteMember(
-        workspaceId,
+        wsId,
         inviteEmail,
         inviteRole,
         { workspaceName },
@@ -190,11 +198,16 @@ export const InviteCard: React.FC<InviteCardProps> = ({
       toast.error(msg);
     } finally {
       setIsInviting(false);
+      release();
     }
   };
 
   const handleBulkSend = async () => {
     if (dedupedValid.length === 0 || !workspaceId) return;
+    // F1: snapshot workspaceId + hold the lock across the whole batch
+    // loop so the switcher stays disabled until every invite resolves.
+    const wsId = workspaceId;
+    const release = acquireMutationLock();
     setIsSending(true);
     setResults(null);
     let ok = 0;
@@ -203,7 +216,7 @@ export const InviteCard: React.FC<InviteCardProps> = ({
     for (const row of dedupedValid) {
       try {
         const { emailDelivery } = await workspaceService.inviteMember(
-          workspaceId,
+          wsId,
           row.email!,
           row.role!,
           { workspaceName },
@@ -224,6 +237,7 @@ export const InviteCard: React.FC<InviteCardProps> = ({
 
     setResults({ ok, failed });
     setIsSending(false);
+    release();
 
     if (ok > 0) toast.success(`Sent ${ok} invite${ok === 1 ? '' : 's'}`);
     if (failed.length > 0) toast.error(`${failed.length} invite${failed.length === 1 ? '' : 's'} failed — see details below`);
