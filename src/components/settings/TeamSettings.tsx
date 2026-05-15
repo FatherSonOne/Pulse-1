@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { BulkInviteCard } from './team/BulkInviteCard';
 import { GroupsManagementCard } from './team/GroupsManagementCard';
 import { RolePermissionsMatrixCard } from './team/RolePermissionsMatrixCard';
+import { RoleHelpPopover } from './team/RoleHelpPopover';
 import { SettingsCard } from './shared/SettingsCard';
 import { MonoLabel } from './shared/MonoLabel';
 import { useFeatureFlag } from '../../lib/featureFlags';
@@ -336,6 +337,7 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
               <option value="admin">Admin</option>
               <option value="viewer">Viewer</option>
             </select>
+            <RoleHelpPopover />
             <button
               type="button"
               onClick={handleInvite}
