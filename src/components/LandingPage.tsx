@@ -1388,12 +1388,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             style={{ opacity: isDarkMode ? Math.min(sectionVis['section-relay'] ?? 0, 1) : 0 }}
           >
             <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 15% 50%, rgba(99,102,241,0.18) 0%, transparent 55%), radial-gradient(ellipse at 85% 30%, rgba(236,72,153,0.13) 0%, transparent 50%), radial-gradient(ellipse at 50% 90%, rgba(139,92,246,0.10) 0%, transparent 45%)',
+              background: 'radial-gradient(ellipse at 15% 50%, rgba(244,63,94,0.13) 0%, transparent 55%), radial-gradient(ellipse at 85% 30%, rgba(236,72,153,0.09) 0%, transparent 50%), radial-gradient(ellipse at 50% 90%, rgba(244,63,94,0.06) 0%, transparent 45%)',
             }}></div>
             {/* Sonic rings — concentric indigo arcs like Relay's waveform visualizer */}
-            <div className="absolute left-[-80px] top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-indigo-500/10" style={{ boxShadow: 'inset 0 0 60px rgba(99,102,241,0.06)' }}></div>
-            <div className="absolute left-[-40px] top-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full border border-indigo-400/8"></div>
-            <div className="absolute left-[20px] top-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border border-pink-500/8"></div>
+            <div className="absolute left-[-80px] top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-rose-500/10" style={{ boxShadow: 'inset 0 0 60px rgba(244,63,94,0.06)' }}></div>
+            <div className="absolute left-[-40px] top-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full border border-rose-400/10"></div>
+            <div className="absolute left-[20px] top-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border border-pink-500/10"></div>
           </div>
           <div className="max-w-7xl mx-auto relative z-10">
             <div className="mb-14 animate-fade-in">
@@ -1412,7 +1412,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="relative flex items-center justify-center overflow-visible" style={{ height: '960px' }}>
               {/* Orbital ring decorations — centered via inset-0 m-auto */}
               <div className="absolute inset-0 m-auto rounded-full border border-rose-500/10 pointer-events-none" style={{ width: '860px', height: '860px' }} />
-              <div className="absolute inset-0 m-auto rounded-full border border-indigo-500/10 pointer-events-none" style={{ width: '560px', height: '560px' }} />
+              <div className="absolute inset-0 m-auto rounded-full border border-rose-500/10 pointer-events-none" style={{ width: '560px', height: '560px' }} />
               {/* Ambient center glow */}
               <div className="absolute inset-0 m-auto rounded-full pointer-events-none" style={{ width: '420px', height: '420px', background: 'radial-gradient(circle, rgba(244,63,94,0.09) 0%, transparent 70%)' }} />
 
@@ -1566,7 +1566,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <section id="section-glimpse" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
             <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 70% 40%, rgba(244,63,94,0.12) 0%, transparent 55%), radial-gradient(ellipse at 25% 70%, rgba(236,72,153,0.08) 0%, transparent 50%)',
+              background: 'radial-gradient(ellipse at 70% 40%, rgba(244,63,94,0.10) 0%, transparent 55%), radial-gradient(ellipse at 25% 70%, rgba(236,72,153,0.06) 0%, transparent 50%)',
             }} />
           </div>
           <div className="max-w-7xl mx-auto relative z-10">
@@ -1615,7 +1615,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
             <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 30% 40%, rgba(139,92,246,0.14) 0%, transparent 55%), radial-gradient(ellipse at 70% 60%, rgba(236,72,153,0.10) 0%, transparent 50%)',
+              background: 'radial-gradient(ellipse at 30% 40%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 70% 60%, rgba(236,72,153,0.05) 0%, transparent 50%)',
             }} />
           </div>
           <div className="max-w-7xl mx-auto relative z-10">
@@ -1697,7 +1697,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
             <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 70% 30%, rgba(59,130,246,0.12) 0%, transparent 55%), radial-gradient(ellipse at 30% 70%, rgba(99,102,241,0.08) 0%, transparent 50%)',
+              background: 'radial-gradient(ellipse at 70% 30%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 30% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
             }} />
           </div>
           <div className="max-w-7xl mx-auto relative z-10">
@@ -1746,7 +1746,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
             <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 50% 40%, rgba(99,102,241,0.12) 0%, transparent 55%), radial-gradient(ellipse at 80% 70%, rgba(168,85,247,0.08) 0%, transparent 50%)',
+              background: 'radial-gradient(ellipse at 50% 40%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 80% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
             }} />
           </div>
           <div className="max-w-7xl mx-auto relative z-10">
@@ -1795,7 +1795,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
             <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 40% 30%, rgba(16,185,129,0.12) 0%, transparent 55%), radial-gradient(ellipse at 60% 70%, rgba(20,184,166,0.08) 0%, transparent 50%)',
+              background: 'radial-gradient(ellipse at 40% 30%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 60% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
             }} />
           </div>
           <div className="max-w-7xl mx-auto relative z-10">
@@ -1844,7 +1844,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
             <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 50% 50%, rgba(245,158,11,0.10) 0%, transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(244,63,94,0.06) 0%, transparent 50%)',
+              background: 'radial-gradient(ellipse at 50% 50%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(236,72,153,0.05) 0%, transparent 50%)',
             }} />
           </div>
           <div className="max-w-7xl mx-auto relative z-10">
@@ -1895,7 +1895,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             style={{ opacity: isDarkMode ? Math.min(sectionVis['section-decisions'] ?? 0, 1) : 0 }}
           >
             <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 50% 40%, rgba(244,63,94,0.16) 0%, transparent 55%), radial-gradient(ellipse at 20% 80%, rgba(20,184,166,0.12) 0%, transparent 45%), radial-gradient(ellipse at 80% 70%, rgba(168,85,247,0.09) 0%, transparent 40%)',
+              background: 'radial-gradient(ellipse at 50% 40%, rgba(244,63,94,0.13) 0%, transparent 55%), radial-gradient(ellipse at 20% 80%, rgba(236,72,153,0.08) 0%, transparent 45%), radial-gradient(ellipse at 80% 70%, rgba(244,63,94,0.06) 0%, transparent 40%)',
             }}></div>
             {/* Rose pulse ring — central glow radiating from center like the decision health score */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full border border-rose-500/8" style={{ boxShadow: '0 0 120px rgba(244,63,94,0.06) inset' }}></div>
@@ -2003,7 +2003,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             style={{ opacity: isDarkMode ? Math.min(sectionVis['section-crm'] ?? 0, 1) : 0 }}
           >
             <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 20% 30%, rgba(99,102,241,0.18) 0%, transparent 52%), radial-gradient(ellipse at 80% 70%, rgba(168,85,247,0.13) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.07) 0%, transparent 70%)',
+              background: 'radial-gradient(ellipse at 20% 30%, rgba(244,63,94,0.13) 0%, transparent 52%), radial-gradient(ellipse at 80% 70%, rgba(236,72,153,0.09) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(244,63,94,0.05) 0%, transparent 70%)',
             }} />
             {/* Grid dot overlay — always visible */}
             <div className="absolute inset-0" style={{
@@ -2244,7 +2244,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <section id="section-maps" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? ' bg-zinc-950/40' : ' bg-stone-50'}`}>
         <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
           <div className="absolute inset-0" style={{
-            background: 'radial-gradient(ellipse at 25% 35%, rgba(16,185,129,0.12) 0%, transparent 55%), radial-gradient(ellipse at 75% 65%, rgba(20,184,166,0.08) 0%, transparent 50%)',
+            background: 'radial-gradient(ellipse at 25% 35%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 75% 65%, rgba(236,72,153,0.05) 0%, transparent 50%)',
           }} />
         </div>
         <div className="max-w-7xl mx-auto relative z-10">
@@ -2324,7 +2324,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
       {/* ── G + F: Mobile Preview + Keyboard Shortcuts ── */}
       <section className="py-24 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 80% 50%, rgba(99,102,241,0.08) 0%, transparent 55%)' }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 80% 50%, rgba(244,63,94,0.06) 0%, transparent 55%)' }} />
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
 
