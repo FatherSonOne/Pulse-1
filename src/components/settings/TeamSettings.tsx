@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
 import { workspaceService, WorkspaceMember, WorkspaceInvite, WORKSPACE_PLAN_LABELS, WORKSPACE_PLAN_LIMITS } from '../../services/workspaceService';
 import { Loader2, Mail, Send, Users, Shield, UserMinus, ChevronDown, Clock, X, RotateCcw } from 'lucide-react';
@@ -30,6 +30,32 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
   const [isInviting, setIsInviting] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState<string | null>(null);
   const [isLoadingInvites, setIsLoadingInvites] = useState(false);
+
+  // Deep-link focus (?focus=invite) — scroll + highlight the invite form
+  // and put the cursor in the email field.
+  const inviteCardRef = useRef<HTMLDivElement>(null);
+  const inviteEmailInputRef = useRef<HTMLInputElement>(null);
+  const [inviteFocused, setInviteFocused] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('focus') !== 'invite') return;
+
+    setInviteFocused(true);
+    const scrollT = setTimeout(() => {
+      inviteCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => inviteEmailInputRef.current?.focus(), 400);
+    }, 50);
+    const fadeT = setTimeout(() => setInviteFocused(false), 3000);
+
+    params.delete('focus');
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`,
+    );
+
+    return () => { clearTimeout(scrollT); clearTimeout(fadeT); };
+  }, []);
 
   const workspaceId = currentWorkspace?.id;
   const plan = currentWorkspace?.plan ?? 'free';
@@ -150,10 +176,18 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
 
       {/* Invite Form — admin+ only */}
       {canManageMembers && (
+      <div
+        ref={inviteCardRef}
+        className="scroll-mt-4 rounded-2xl transition-shadow"
+        style={{
+          boxShadow: inviteFocused ? '0 0 0 3px rgba(244, 63, 94, 0.45)' : 'none',
+        }}
+      >
         <SettingsCard>
           <MonoLabel className="mb-6">Invite New Member</MonoLabel>
           <div className="flex gap-2">
             <input
+              ref={inviteEmailInputRef}
               type="email"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
@@ -182,6 +216,7 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
             </button>
           </div>
         </SettingsCard>
+      </div>
       )}
 
       {/* Bulk invite — admin+ only */}
