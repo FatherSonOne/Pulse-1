@@ -29,6 +29,17 @@ const daysOpen = (createdAt: string): string => {
   return `${days}D`;
 };
 
+// Format `decide_by_date` for the per-row deadline pill. Returns:
+//   { label, overdue } — label like "BY MAY 15" or "OVERDUE", overdue true
+//   when the date is already in the past.
+const formatDeadline = (deadline: string): { label: string; overdue: boolean } => {
+  const d = new Date(deadline);
+  const overdue = d.getTime() < Date.now();
+  if (overdue) return { label: 'OVERDUE', overdue: true };
+  const label = `BY ${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase()}`;
+  return { label, overdue: false };
+};
+
 // Decisions waiting on this operator's vote: status='voting' + no decision_votes
 // row for the current user. Solo workspaces will see every voting decision they
 // proposed; multi-member workspaces will see only the ones they haven't weighed
@@ -185,6 +196,20 @@ const TeamDecisionsWaitingStrip: React.FC<TeamDecisionsWaitingStripProps> = ({
                   </span>
                   <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{d.title}</span>
                 </span>
+                {d.decide_by_date && (() => {
+                  const dl = formatDeadline(d.decide_by_date);
+                  return (
+                    <span
+                      className={`pulse-label px-1.5 py-0.5 rounded shrink-0 ${
+                        dl.overdue
+                          ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300'
+                          : 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-300'
+                      }`}
+                    >
+                      {dl.label}
+                    </span>
+                  );
+                })()}
                 <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0 min-w-[2.5rem] text-right">
                   {daysOpen(d.created_at)}
                 </span>

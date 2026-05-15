@@ -2,8 +2,17 @@
 // USER ANALYTICS & PRODUCT ANALYTICS
 // PostHog integration for user behavior tracking
 // ============================================
+//
+// Calls are still gated by VITE_POSTHOG_API_KEY — without it the module
+// stays dormant (the SDK is imported but never `.init()`-ed), so dev
+// envs without telemetry credentials don't fire any captures.
 
 import posthog from 'posthog-js';
+
+let isInitialized = false;
+function posthogOrNull(): typeof posthog | null {
+  return isInitialized ? posthog : null;
+}
 
 const POSTHOG_API_KEY = import.meta.env.VITE_POSTHOG_API_KEY;
 const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com';
@@ -16,6 +25,7 @@ export function initializeAnalytics(): void {
     console.log('Analytics disabled in development');
     return;
   }
+  if (isInitialized) return;
 
   posthog.init(POSTHOG_API_KEY, {
     api_host: POSTHOG_HOST,
@@ -27,14 +37,14 @@ export function initializeAnalytics(): void {
     session_recording: {
       maskAllInputs: true,
       maskTextSelector: '[data-sensitive]',
-      recordCrossOriginIframes: false
+      recordCrossOriginIframes: false,
     },
 
     // Autocapture
     autocapture: {
       dom_event_allowlist: ['click', 'submit', 'change'],
       url_allowlist: [/pulsemessages\.com/],
-      element_allowlist: ['button', 'a', 'input', 'select', 'textarea']
+      element_allowlist: ['button', 'a', 'input', 'select', 'textarea'],
     },
 
     // Privacy
@@ -47,12 +57,13 @@ export function initializeAnalytics(): void {
       if (ENVIRONMENT === 'development') {
         ph.debug();
       }
-    }
+    },
   });
 
+  isInitialized = true;
   console.log('Analytics initialized:', {
     environment: ENVIRONMENT,
-    version: APP_VERSION
+    version: APP_VERSION,
   });
 }
 
@@ -63,7 +74,7 @@ export function identifyUser(
 ): void {
   if (!POSTHOG_API_KEY) return;
 
-  posthog.identify(userId, {
+  posthogOrNull()?.identify(userId, {
     app_version: APP_VERSION,
     environment: ENVIRONMENT,
     ...properties
@@ -80,7 +91,7 @@ export function trackEvent(
     return;
   }
 
-  posthog.capture(eventName, {
+  posthogOrNull()?.capture(eventName, {
     ...properties,
     app_version: APP_VERSION,
     environment: ENVIRONMENT,
@@ -155,7 +166,7 @@ export function updateUserProperties(
 ): void {
   if (!POSTHOG_API_KEY) return;
 
-  posthog.people.set(properties);
+  posthogOrNull()?.people.set(properties);
 }
 
 // Increment user property
@@ -165,14 +176,14 @@ export function incrementUserProperty(
 ): void {
   if (!POSTHOG_API_KEY) return;
 
-  posthog.people.increment(property, value);
+  posthogOrNull()?.people.increment(property, value);
 }
 
 // Reset analytics on logout
 export function resetAnalytics(): void {
   if (!POSTHOG_API_KEY) return;
 
-  posthog.reset();
+  posthogOrNull()?.reset();
 }
 
 // Feature flag helpers
@@ -182,7 +193,7 @@ export function getFeatureFlag(
 ): boolean {
   if (!POSTHOG_API_KEY) return defaultValue || false;
 
-  return posthog.isFeatureEnabled(flagKey) || defaultValue || false;
+  return posthogOrNull()?.isFeatureEnabled(flagKey) || defaultValue || false;
 }
 
 export function onFeatureFlags(
@@ -190,7 +201,7 @@ export function onFeatureFlags(
 ): void {
   if (!POSTHOG_API_KEY) return;
 
-  posthog.onFeatureFlags(callback);
+  posthogOrNull()?.onFeatureFlags(callback);
 }
 
 // A/B testing helpers
@@ -199,34 +210,34 @@ export function getExperimentVariant(
 ): string | undefined {
   if (!POSTHOG_API_KEY) return undefined;
 
-  return posthog.getFeatureFlagPayload(experimentKey) as string | undefined;
+  return posthogOrNull()?.getFeatureFlagPayload(experimentKey) as string | undefined;
 }
 
 // Session recording control
 export function startSessionRecording(): void {
   if (!POSTHOG_API_KEY) return;
 
-  posthog.startSessionRecording();
+  posthogOrNull()?.startSessionRecording();
 }
 
 export function stopSessionRecording(): void {
   if (!POSTHOG_API_KEY) return;
 
-  posthog.stopSessionRecording();
+  posthogOrNull()?.stopSessionRecording();
 }
 
 // Opt out of tracking
 export function optOutTracking(): void {
   if (!POSTHOG_API_KEY) return;
 
-  posthog.opt_out_capturing();
+  posthogOrNull()?.opt_out_capturing();
 }
 
 // Opt in to tracking
 export function optInTracking(): void {
   if (!POSTHOG_API_KEY) return;
 
-  posthog.opt_in_capturing();
+  posthogOrNull()?.opt_in_capturing();
 }
 
 // Custom analytics for specific features
@@ -317,5 +328,7 @@ export function trackPerformanceMetric(
   });
 }
 
-// Export PostHog instance for advanced usage
+// Export PostHog instance for advanced usage (feature flag payloads,
+// custom capture options). Pre-initialization the SDK no-ops on most calls
+// per the package's own guards.
 export { posthog };

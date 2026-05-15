@@ -21,8 +21,26 @@ import {
   detachPlaceFromEntity,
   getPlacesForEntity,
   listUserPlaces,
+  setPlaceGeofence,
 } from '../../services/locationService';
 import { Place, PlaceEntityType, PlaceRole } from '../../types/placeTypes';
+
+// Default radius per entity type. Tasks fire when you reach the task site
+// (tight); decisions/meetings/events when you enter the venue (looser).
+const DEFAULT_GEOFENCE_RADIUS_M: Record<Exclude<PlaceEntityType, 'contact'>, number> = {
+  task: 100,
+  decision: 200,
+  meeting: 150,
+  event: 200,
+};
+
+const RADIUS_MIN_M = 25;
+const RADIUS_MAX_M = 2000;
+
+function formatRadius(m: number): string {
+  if (m < 1000) return `${m} m`;
+  return `${(m / 1000).toFixed(1)} km`;
+}
 
 interface PlacePickerProps {
   /** entity_places.entity_type — contacts use their own surface, so excluded. */
@@ -50,6 +68,7 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
 
   const [attached, setAttached] = useState<Place | null>(null);
   const [available, setAvailable] = useState<Place[]>([]);
+  const [duplicateCount, setDuplicateCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState('');
@@ -57,13 +76,38 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
+  // Dedupe key: case-folded name + lat/lng rounded to ~1m. We can't trust the
+  // table to be clean — RLS + sync from multiple devices yields dupes in
+  // practice. The picker is the last UI before the user; harden here.
+  const dedupePlaces = (rows: Place[]): { unique: Place[]; hiddenCount: number } => {
+    const seen = new Map<string, Place>();
+    for (const p of rows) {
+      const lat = typeof p.lat === 'number' ? p.lat.toFixed(5) : '';
+      const lng = typeof p.lng === 'number' ? p.lng.toFixed(5) : '';
+      const name = (p.name ?? '').trim().toLowerCase();
+      const key = `${name}|${lat},${lng}`;
+      // Prefer the row with a geofence radius set (more configured) or the
+      // older row (lower id wins lexicographically) so the attached place
+      // tends to survive the dedupe.
+      const existing = seen.get(key);
+      if (!existing) {
+        seen.set(key, p);
+      } else if (p.geofenceRadiusM != null && existing.geofenceRadiusM == null) {
+        seen.set(key, p);
+      }
+    }
+    return { unique: Array.from(seen.values()), hiddenCount: rows.length - seen.size };
+  };
+
   const refresh = useCallback(async () => {
     const [linked, all] = await Promise.all([
       getPlacesForEntity(entityType, entityId),
       listUserPlaces(),
     ]);
     setAttached(linked.find(p => p.role === role) ?? null);
-    setAvailable(all);
+    const { unique, hiddenCount } = dedupePlaces(all);
+    setAvailable(unique);
+    setDuplicateCount(hiddenCount);
   }, [entityType, entityId, role]);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -156,6 +200,26 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
     }
   };
 
+  const handleSetGeofence = useCallback(async (radius: number | null) => {
+    if (!attached) return;
+    try {
+      await setPlaceGeofence(attached.id, radius);
+      setAttached(prev => prev ? { ...prev, geofenceRadiusM: radius } : prev);
+      // Refresh the geofence detection cache so the change is picked up
+      // on the next position tick without needing a reload.
+      try {
+        const mod = await import('../../services/geofenceService');
+        await mod.refreshGeofences();
+      } catch { /* geofence module inactive — no-op */ }
+    } catch (err) {
+      console.error('[PlacePicker] setPlaceGeofence failed:', err);
+    }
+  }, [attached]);
+
+  const defaultRadius = DEFAULT_GEOFENCE_RADIUS_M[entityType];
+  const geofenceOn = (attached?.geofenceRadiusM ?? null) != null;
+  const currentRadius = attached?.geofenceRadiusM ?? defaultRadius;
+
   return (
     <div className="relative">
       <button
@@ -177,6 +241,79 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
         </span>
         <ChevronDown size={14} className="flex-shrink-0 opacity-70" />
       </button>
+
+      {/* Geofence controls — only meaningful once a place is attached. */}
+      {attached && (
+        <div
+          className={`mt-1.5 rounded-lg border px-3 py-2 ${
+            isDarkMode
+              ? 'bg-white/[0.03] border-white/10'
+              : 'bg-rose-50/40 border-rose-100/60'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <label className={`text-xs font-semibold flex items-center gap-1.5 ${
+              isDarkMode ? 'text-gray-200' : 'text-gray-700'
+            }`}>
+              <span aria-hidden>📍</span>
+              {entityType === 'task' ? 'Arrival = ready to complete' : 'Arrival alerts'}
+            </label>
+            <button
+              type="button"
+              onClick={() => handleSetGeofence(geofenceOn ? null : defaultRadius)}
+              aria-pressed={geofenceOn}
+              className={`relative h-5 w-9 rounded-full transition-colors ${
+                geofenceOn ? 'bg-rose-500' : isDarkMode ? 'bg-white/15' : 'bg-gray-300'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                  geofenceOn ? 'translate-x-4' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
+          </div>
+          {geofenceOn && (
+            <div className="mt-1.5 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className={`text-[10px] uppercase tracking-wider ${
+                  isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                }`}>
+                  Radius
+                </span>
+                <span className={`text-xs font-medium ${
+                  isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  {formatRadius(currentRadius)}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={RADIUS_MIN_M}
+                max={RADIUS_MAX_M}
+                step={25}
+                value={currentRadius}
+                onChange={e => {
+                  const next = Number(e.target.value);
+                  // Optimistic local update then persist so the slider feels live.
+                  setAttached(prev => prev ? { ...prev, geofenceRadiusM: next } : prev);
+                }}
+                onMouseUp={e => handleSetGeofence(Number((e.target as HTMLInputElement).value))}
+                onTouchEnd={e => handleSetGeofence(Number((e.target as HTMLInputElement).value))}
+                className="w-full accent-rose-500"
+                aria-label={`${entityType} geofence radius in meters`}
+              />
+              <p className={`text-[10px] ${
+                isDarkMode ? 'text-gray-500' : 'text-gray-500'
+              }`}>
+                {entityType === 'task'
+                  ? "When you arrive, Today surfaces the task with a complete prompt."
+                  : "You'll be notified when you arrive, approach, or leave."}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {isOpen && (
         <div

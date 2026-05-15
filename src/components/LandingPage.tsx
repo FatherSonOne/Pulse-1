@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
-import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, Mic, Network, Play, Rocket, Search, ShieldHalf, Signal, Smartphone, Wand2, Wifi, X } from 'lucide-react';
-import { STATS, VOX_MODES, CRM_PLATFORMS, PLATFORMS, FAQ_DATA, SHORTCUT_GROUPS, STUDIO_FEATURES, EMAIL_FEATURES, MESSAGING_FEATURES, CALENDAR_FEATURES, ANALYTICS_FEATURES, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING } from './LandingPage/landingData';
+import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, MapPin, Mic, Network, Play, Rocket, Search, ShieldHalf, Signal, Smartphone, Users, Video, Wand2, Wifi, X } from 'lucide-react';
+import { RELAY_PEERS, FAQ_DATA, SHORTCUT_GROUPS, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING } from './LandingPage/landingData';
 
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
 const UsersGuide = lazy(() => import('./UsersGuide/UsersGuide'));
@@ -25,7 +25,7 @@ const QntmEcosIcon = ({ size = 28 }: { size?: number }) => (
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 const SectionDivider = () => (
-  <div className="relative h-10 pointer-events-none overflow-hidden" aria-hidden="true">
+  <div className="lp-section-divider relative h-10 pointer-events-none overflow-hidden" aria-hidden="true">
     <svg viewBox="0 0 1440 40" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ position: 'absolute', bottom: 0, width: '100%', height: '40px' }}>
       <defs>
         <linearGradient id="div-grad" x1="0" y1="0" x2="1440" y2="0" gradientUnits="userSpaceOnUse">
@@ -106,6 +106,35 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       return next;
     });
   };
+
+  // Reveal-on-scroll for section headings and divider SVGs. Picks up every
+  // <h2> inside #main-content, every .lp-section-divider, and any explicit
+  // [data-reveal] element. Adds .lp-revealed when the element crosses the
+  // viewport so the CSS transition kicks in. Hero <h1> is unaffected — it
+  // owns its own .animate-blur-reveal cascade and stays as designed.
+  useEffect(() => {
+    const main = document.getElementById('main-content');
+    if (!main) return;
+    const targets: Element[] = [
+      ...Array.from(main.querySelectorAll('h2')),
+      ...Array.from(main.querySelectorAll('.lp-section-divider svg')),
+      ...Array.from(main.querySelectorAll('[data-reveal]')),
+    ];
+    targets.forEach(el => el.classList.add('lp-reveal'));
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('lp-revealed');
+            obs.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+    );
+    targets.forEach(el => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
 
   // Scroll-triggered section backgrounds — fade in/out as user scrolls through each section
   useEffect(() => {
@@ -332,6 +361,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     type MeshNode = { x: number; y: number; vx: number; vy: number; r: number; color: string; alpha: number; health: number; label: string };
     const nodes: MeshNode[] = [];
 
+    // Ping rings — recurring "activity" rings emitted from random named nodes.
+    // Communicates that the network is live, not a static diagram. One named
+    // node fires every 1.6-3.2s; max ~6 concurrent rings; each ring expands
+    // from r to 5r over PING_LIFE_MS while fading from 0.7 to 0 alpha.
+    type Ping = { nodeIdx: number; age: number; color: string };
+    const pings: Ping[] = [];
+    const PING_LIFE_MS = 1800;
+    let lastPingTime = performance.now();
+    let nextPingDelay = 1600 + Math.random() * 1600;
+
     const NAMED = [
       { label: 'Sarah K.',  health: 92, color: '#818cf8' },
       { label: 'Marcus T.', health: 78, color: '#818cf8' },
@@ -379,6 +418,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     function draw() {
       ctx.clearRect(0, 0, W, H);
 
+      // Ping scheduler — emit a new ring from a random named node.
+      const now = performance.now();
+      if (pings.length < 6 && now - lastPingTime > nextPingDelay) {
+        lastPingTime = now;
+        nextPingDelay = 1600 + Math.random() * 1600;
+        const namedCount = NAMED.length;
+        const nodeIdx = Math.floor(Math.random() * namedCount);
+        pings.push({ nodeIdx, age: 0, color: nodes[nodeIdx]?.color ?? '#818cf8' });
+      }
+      // Age pings, drop expired.
+      for (let i = pings.length - 1; i >= 0; i--) {
+        pings[i].age += 16;
+        if (pings[i].age > PING_LIFE_MS) pings.splice(i, 1);
+      }
+
       // Drift nodes — bounce off edges
       nodes.forEach(n => {
         n.x += n.vx;
@@ -406,6 +460,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           }
         }
       }
+
+      // Pings — render under the nodes so they look like emissions, not borders.
+      pings.forEach(ping => {
+        const node = nodes[ping.nodeIdx];
+        if (!node) return;
+        const t = ping.age / PING_LIFE_MS;        // 0 -> 1
+        const radius = node.r + (node.r * 5) * t; // r -> 5r
+        const alpha = (1 - t) * 0.55;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `${ping.color}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      });
 
       // Draw nodes
       nodes.forEach(n => {
@@ -568,7 +636,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         >
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm overlay-in cursor-pointer"
+            className="absolute inset-0 backdrop-blur-sm overlay-in cursor-pointer"
+            style={{ background: 'rgba(8, 8, 8, 0.7)' }}
             onClick={() => setIsGuideOpen(false)}
             aria-hidden="true"
           />
@@ -659,11 +728,145 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         .animation-delay-500 { animation-delay: 0.5s; }
         .card-elevated { box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
         .card-elevated-rose { box-shadow: 0 4px 24px rgba(244,63,94,0.22); }
-        .text-gradient-rose {
-          background: linear-gradient(to right, #fb7185, #ec4899);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+        /* Solid coral — kept the class name for callsite stability, but the
+           gradient-text effect was an absolute ban per impeccable + DESIGN.md.
+           Renders as a single Rose Pulse instead. */
+        .text-gradient-rose { color: #f43f5e; }
+        /* DESIGN.md §3 The Mono-Label Rule: every uppercase tracked label uses
+           JetBrains Mono. The font is preloaded in index.html; this rule
+           scopes the swap to the landing page only so the rest of the app
+           keeps its own typography. */
+        .lp-dark .uppercase.tracking-widest,
+        .lp-light .uppercase.tracking-widest,
+        .lp-dark .uppercase.tracking-wide,
+        .lp-light .uppercase.tracking-wide,
+        .lp-dark .uppercase.tracking-\[0\.1em\],
+        .lp-light .uppercase.tracking-\[0\.1em\] {
+          font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+          font-weight: 500;
+        }
+        /* ── Reveal-on-scroll (Animate A) ──
+           Section headings start opaque/blurred slightly, settle on viewport
+           entry. The .lp-revealed class is added by an IntersectionObserver
+           (see useEffect). Uses the same expo-out curve as the rest of the
+           system per DESIGN.md §4. */
+        .lp-reveal {
+          opacity: 0;
+          filter: blur(6px);
+          transform: translateY(10px);
+          transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1),
+                      filter 600ms cubic-bezier(0.16, 1, 0.3, 1),
+                      transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+          will-change: opacity, filter, transform;
+        }
+        .lp-revealed {
+          opacity: 1;
+          filter: blur(0);
+          transform: none;
+        }
+        /* ── Section divider draw-in (Animate F) ──
+           The decorative SVG line + dot sits on a stroke-dashoffset until the
+           divider enters view. */
+        .lp-section-divider svg.lp-reveal path,
+        .lp-section-divider svg.lp-reveal line {
+          stroke-dasharray: 1500;
+          stroke-dashoffset: 1500;
+          transition: stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lp-section-divider svg.lp-revealed path,
+        .lp-section-divider svg.lp-revealed line {
+          stroke-dashoffset: 0;
+        }
+        /* ── Card hover compliance (Animate B) ──
+           DESIGN.md §4 caps hover lift at 2px and forbids theatrical motion.
+           Tones down the page-wide `hover:-translate-y-0.5` to a 1px lift and
+           adds the 1px-coral-border accent reserved for active/selected. */
+        .lp-card-hover {
+          transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+                      border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+                      box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+          will-change: transform;
+        }
+        .lp-card-hover:hover {
+          transform: translateY(-2px);
+        }
+        /* ── Primary CTA coral halo (Animate C) ──
+           DESIGN.md §4 shadow vocabulary: the "alive" hover shadow reserved
+           for primary CTAs and recording indicators. */
+        .lp-cta-primary {
+          transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+                      box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+                      filter 220ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lp-cta-primary:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 0 0 1px #f43f5e, 0 6px 28px rgba(244,63,94,0.35);
+        }
+        .lp-cta-primary:active {
+          transform: translateY(0);
+        }
+        /* ── Orbit hover connector (Animate D) ──
+           Each peer card carries an absolute-positioned 1px line that points
+           back toward the center of the orbital diagram. The line is hidden
+           by default (scaleX(0), transform-origin: 0) and draws toward center
+           when the card is hovered. The keyboard shortcut badge fades in
+           alongside. */
+        .lp-orbit-card .lp-orbit-link {
+          opacity: 0;
+          transform: scaleX(0);
+          transform-origin: 0 50%;
+          transition: opacity 220ms cubic-bezier(0.16, 1, 0.3, 1),
+                      transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lp-orbit-card:hover .lp-orbit-link {
+          opacity: 1;
+          transform: scaleX(1);
+        }
+        .lp-orbit-card .lp-orbit-key {
+          opacity: 0;
+          transform: scale(0.85);
+          transition: opacity 220ms cubic-bezier(0.16, 1, 0.3, 1),
+                      transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lp-orbit-card:hover .lp-orbit-key {
+          opacity: 1;
+          transform: scale(1);
+        }
+        /* ── Footer ECG draw-in (Animate G) ──
+           The Pulse wordmark ECG path stays drawn-out until the footer mark
+           enters view, then sketches itself in. The .lp-reveal/.lp-revealed
+           classes are added to the wrapper by IntersectionObserver (data-reveal
+           opts the wrapper in); the path inherits via descendant selector. */
+        .lp-footer-mark.lp-reveal svg path {
+          stroke-dasharray: 200;
+          stroke-dashoffset: 200;
+          transition: stroke-dashoffset 1200ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lp-footer-mark.lp-revealed svg path {
+          stroke-dashoffset: 0;
+        }
+        /* Reduced motion: clear all reveal-state offsets immediately. */
+        @media (prefers-reduced-motion: reduce) {
+          .lp-reveal, .lp-revealed,
+          .lp-section-divider svg.lp-reveal path,
+          .lp-section-divider svg.lp-reveal line,
+          .lp-footer-mark.lp-reveal svg path {
+            opacity: 1 !important;
+            filter: none !important;
+            transform: none !important;
+            stroke-dashoffset: 0 !important;
+            transition: none !important;
+          }
+          .lp-cta-primary:hover {
+            transform: none !important;
+            box-shadow: 0 0 0 1px #f43f5e !important;
+          }
+          .lp-orbit-card .lp-orbit-link,
+          .lp-orbit-card .lp-orbit-key {
+            opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+          }
         }
         .particle { animation: particle-float 15s ease-in-out infinite; }
         .ecg-draw { animation: ecg-draw 5.5s ease-in-out infinite; }
@@ -689,11 +892,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           to   { opacity: 1; }
         }
         .overlay-in { animation: fade-overlay 0.25s ease forwards; }
-        @keyframes bounce-up {
+        /* DESIGN.md §4 motion: cubic-bezier(0.16, 1, 0.3, 1) ease-out-expo.
+           Replaces the prior ease-in-out bounce (impeccable flagged it as
+           bounce-easing). Same motion, decisive curve. */
+        @keyframes lp-lift {
           0%, 100% { transform: translateY(0); }
           50%       { transform: translateY(-5px); }
         }
-        .bounce-up { animation: bounce-up 1.8s ease-in-out infinite; }
+        .bounce-up { animation: lp-lift 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+        /* Honor prefers-reduced-motion across every always-on animation. */
+        @media (prefers-reduced-motion: reduce) {
+          .bounce-up,
+          .lp-icon-bob, .lp-icon-spin, .lp-icon-throb, .lp-icon-zap, .lp-icon-tilt, .lp-icon-stamp,
+          .lp-orbit-ring, .lp-orbit-g, .lp-orbit-card,
+          .lp-throb-sm, .lp-flash, .lp-rec-dot, .lp-check-draw, .lp-ecg-line,
+          .lp-bar-a, .lp-bar-b, .lp-bar-c, .lp-bar-d, .lp-bar-e,
+          .particle, .ecg-draw,
+          .animate-blur-reveal, .animate-fade-in, .animate-ping {
+            animation: none !important;
+            transition: none !important;
+          }
+          .hero-signal-canvas { display: none; }
+        }
 
         /* === Landing Page Icon Animations === */
         @keyframes icon-bob {
@@ -773,7 +993,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad-nav)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                 </svg>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 bg-clip-text text-transparent">Pulse</span>
+              <span className={`text-xl font-bold ${isDarkMode ? 'text-zinc-50' : 'text-zinc-900'}`}>Pulse</span>
             </button>
 
             {/* QntmEcos badge */}
@@ -1021,7 +1241,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <button
               onClick={onGetStarted}
               type="button"
-              className="hidden sm:block px-5 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 rounded-lg text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-rose-500/50"
+              className="lp-cta-primary hidden sm:block px-5 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 rounded-lg text-sm font-semibold text-white"
             >
               Get Started
             </button>
@@ -1137,17 +1357,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </div>
       </section>
 
-      {/* ── Stats Strip ── */}
-      <div className="bg-zinc-900/80 border-y border-rose-500/15 py-5">
-        <div className="w-full px-6 grid grid-cols-4 sm:grid-cols-8">
-          {STATS.map((stat, i) => (
-            <div key={stat.label} className="flex flex-col items-center py-1 relative">
-              {i > 0 && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-10 bg-rose-500/20" />}
-              <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-pink-500 leading-none">{stat.value}</span>
-              <span className="text-xs text-zinc-500 mt-1 whitespace-nowrap tracking-wide uppercase font-medium">{stat.label}</span>
-            </div>
-          ))}
-        </div>
+      {/* ── Index strip ── one decisive sentence in place of the seven-cell
+          hero-metric template flagged by impeccable's slop test.
+          Same five facts, no grid scaffolding. */}
+      <div className={`border-y py-6 ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/60' : 'bg-stone-100/60 border-stone-200/60'}`}>
+        <p className={`max-w-5xl mx-auto px-6 text-center text-base sm:text-lg leading-relaxed ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
+          5 Relay peers + Triage stream &middot; Glimpse video &middot; War Room with 8 slash commands &middot; 4 native CRMs &middot; Maps and ETA share. <span className="text-rose-500 font-semibold">One surface.</span>
+        </p>
       </div>
 
       {/* ── I: Platform Badge Ticker ── hidden for now */}
@@ -1175,11 +1391,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 text-rose-400 text-xs font-bold uppercase tracking-widest mb-4">
                 <Mic /> Relay
               </div>
-              <h2 className="text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-rose-100 to-pink-200">
-                8 Ways to Speak
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
+                Five peers, one stream.
               </h2>
               <p className="text-zinc-400 text-lg max-w-2xl">
-                Voice messaging reimagined. From async voice drops to live team broadcasts — Relay gives your voice the power it deserves, with AI transcription on every message.
+                Voice messaging, reimagined as triage. Direct, Channel, Broadcast, Notes, Live — every Relay message lands in a single Triage stream with AI transcription, summary, and next action attached.
               </p>
             </div>
 
@@ -1255,12 +1471,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 className={`lp-orbit-ring${orbitPaused ? ' paused' : ''}`}
                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 5 }}
               >
-                {VOX_MODES.map((mode, i) => {
-                  const angleDeg = (360 / VOX_MODES.length) * i - 90;
+                {RELAY_PEERS.map((mode, i) => {
+                  const angleDeg = (360 / RELAY_PEERS.length) * i - 90;
                   const angleRad = angleDeg * (Math.PI / 180);
                   const orbitR = 410;
                   const cx = Math.round(Math.cos(angleRad) * orbitR);
                   const cy = Math.round(Math.sin(angleRad) * orbitR);
+                  // Connector line angle: card sits at (cx,cy) from orbit
+                  // center, so the line drawn from the card's center back
+                  // toward the orbit center has angle = angleDeg + 180.
+                  // It's anchored at the card's center (via top/left 50% with
+                  // transform-origin: 0 50%) and rotated so the line points
+                  // straight at the orbit center.
+                  const linkLength = orbitR - 95; // stop short of the centre card frame
                   return (
                     <div
                       key={mode.name}
@@ -1277,6 +1500,43 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                       onMouseEnter={() => setOrbitPaused(true)}
                       onMouseLeave={() => setOrbitPaused(false)}
                     >
+                      {/* Connector — 1px coral line that draws toward the
+                          centre transcription panel when this card is hovered. */}
+                      <span
+                        className="lp-orbit-link"
+                        aria-hidden="true"
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          width: `${linkLength}px`,
+                          height: '1px',
+                          background: 'linear-gradient(to right, rgba(244,63,94,0.85), rgba(244,63,94,0))',
+                          transformOrigin: '0 50%',
+                          transform: `rotate(${angleDeg + 180}deg) scaleX(0)`,
+                          pointerEvents: 'none',
+                          zIndex: -1,
+                        }}
+                      />
+                      {/* Keyboard shortcut badge — JetBrains Mono per the
+                          DESIGN.md Mono-Label Rule. Fades in on card hover. */}
+                      <span
+                        className="lp-orbit-key uppercase tracking-widest"
+                        aria-hidden="true"
+                        style={{
+                          position: 'absolute',
+                          top: '12px',
+                          right: '12px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: 'rgba(244,63,94,0.12)',
+                          color: '#fda4af',
+                          fontSize: '10px',
+                          letterSpacing: '0.1em',
+                          fontWeight: 500,
+                          border: '1px solid rgba(244,63,94,0.25)',
+                        }}
+                      >{mode.key}</span>
                       <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center mb-3 group-hover:bg-rose-500/20 transition-colors">
                         <span className="text-rose-500">{voxSvg(i)}</span>
                       </div>
@@ -1288,6 +1548,55 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </div>
             </div>
 
+          </div>
+        </section>
+
+        <SectionDivider />
+
+        {/* Section A2 — Glimpse (async video, peer of Relay) */}
+        <section id="section-glimpse" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse at 70% 40%, rgba(244,63,94,0.12) 0%, transparent 55%), radial-gradient(ellipse at 25% 70%, rgba(236,72,153,0.08) 0%, transparent 50%)',
+            }} />
+          </div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="mb-14 animate-fade-in">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-rose-500/10 border border-rose-500/25 text-rose-300' : ' bg-rose-50 border border-rose-200 text-rose-600'}`}>
+                <Video size={12} aria-hidden="true" /> Glimpse
+              </div>
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
+                Video, without the meeting.
+              </h2>
+              <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
+                Async video messaging with face-cam, screen recording, and AI transcripts on every clip. Threading, reactions, full-text search, and AI-drafted replies — so a 30-second video replaces a 30-minute call.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { title: 'Face-cam + screen recording', desc: 'Record yourself, your screen, or both. Crop, trim, and send without leaving Pulse.', tags: ['Webcam', 'Screen', 'PIP'] },
+                { title: 'AI transcripts on every clip', desc: 'Every Glimpse is transcribed, summarised, and indexed so the reader can scan before they watch.', tags: ['Transcript', 'Summary', 'Search'] },
+                { title: 'Threaded conversations', desc: 'Reply with another Glimpse, bookmark moments, and react inline. Full async video conversation with zero context lost.', tags: ['Replies', 'Reactions', 'Bookmarks'] },
+                { title: 'AI reply drafts', desc: 'A draft Glimpse-script appears next to the video. Edit, hit record, send. The reply writes itself.', tags: ['Draft', 'Edit', 'Send'] },
+                { title: 'Full-text search across video', desc: 'Find any moment by transcript. "Where did Sarah mention the Q3 deck?" returns the exact second.', tags: ['Transcript Search', 'Timestamps'] },
+                { title: 'Same audience model as Relay', desc: 'Send to a contact, a channel, or broadcast to the team. Glimpse uses the same triage stream so video and voice live side by side.', tags: ['Direct', 'Channel', 'Broadcast'] },
+              ].map((item, i) => (
+                <div
+                  key={item.title}
+                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-rose-500/40' : ' bg-white border-stone-200 hover:border-rose-400/50 shadow-sm'}`}
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <h3 className={`font-bold mb-2${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>{item.title}</h3>
+                  <p className={`text-sm leading-relaxed mb-4${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{item.desc}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.tags.map(tag => (
+                      <span key={tag} className={`px-2 py-0.5 rounded text-[10px] font-medium${isDarkMode ? ' bg-rose-500/8 border border-rose-500/20 text-rose-300' : ' bg-rose-50 border border-rose-200 text-rose-600'}`}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -1305,7 +1614,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-purple-500/10 border border-purple-500/25 text-purple-400' : ' bg-purple-50 border border-purple-200 text-purple-600'}`}>
                 <Wand2 size={12} /> War Room
               </div>
-              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-purple-100 to-violet-200' : ' bg-gradient-to-r from-zinc-900 via-purple-900 to-violet-800'}`}>
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
                 Your AI War Room
               </h2>
               <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
@@ -1354,7 +1663,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               ].map((item, i) => (
                 <div
                   key={item.title}
-                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-2 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-purple-500/40' : ' bg-white border-stone-200 hover:border-purple-400/50 shadow-sm'}`}
+                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-purple-500/40' : ' bg-white border-stone-200 hover:border-purple-400/50 shadow-sm'}`}
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
                   <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-all duration-300${isDarkMode ? ' bg-purple-500/10 group-hover:bg-purple-500/20 text-purple-400' : ' bg-purple-50 group-hover:bg-purple-100 text-purple-600'}`}>
@@ -1387,8 +1696,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-blue-500/10 border border-blue-500/25 text-blue-400' : ' bg-blue-50 border border-blue-200 text-blue-600'}`}>
                 <i className="fa-solid fa-envelope text-xs" aria-hidden="true"></i> Email
               </div>
-              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-blue-100 to-cyan-200' : ' bg-gradient-to-r from-zinc-900 via-blue-900 to-cyan-800'}`}>
-                Email, Reimagined
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
+                Email, reimagined.
               </h2>
               <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
                 A full email client with AI superpowers — daily briefings, smart compose, campaign builder, and follow-up intelligence. Connected to Gmail with real-time sync.
@@ -1406,7 +1715,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               ].map((item, i) => (
                 <div
                   key={item.title}
-                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-2 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-blue-500/40' : ' bg-white border-stone-200 hover:border-blue-400/50 shadow-sm'}`}
+                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-blue-500/40' : ' bg-white border-stone-200 hover:border-blue-400/50 shadow-sm'}`}
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
                   <h3 className={`font-bold mb-2${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>{item.title}</h3>
@@ -1436,8 +1745,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-indigo-500/10 border border-indigo-500/25 text-indigo-400' : ' bg-indigo-50 border border-indigo-200 text-indigo-600'}`}>
                 <i className="fa-solid fa-comments text-xs" aria-hidden="true"></i> Messaging
               </div>
-              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-indigo-100 to-violet-200' : ' bg-gradient-to-r from-zinc-900 via-indigo-900 to-violet-800'}`}>
-                Conversations That Convert
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
+                Conversations that convert.
               </h2>
               <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
                 Real-time channels, async threads, and AI-powered focus mode — built for teams that communicate fast and stay organized.
@@ -1455,7 +1764,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               ].map((item, i) => (
                 <div
                   key={item.title}
-                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-2 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-indigo-500/40' : ' bg-white border-stone-200 hover:border-indigo-400/50 shadow-sm'}`}
+                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-indigo-500/40' : ' bg-white border-stone-200 hover:border-indigo-400/50 shadow-sm'}`}
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
                   <h3 className={`font-bold mb-2${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>{item.title}</h3>
@@ -1485,8 +1794,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-emerald-500/10 border border-emerald-500/25 text-emerald-400' : ' bg-emerald-50 border border-emerald-200 text-emerald-600'}`}>
                 <i className="fa-solid fa-calendar text-xs" aria-hidden="true"></i> Calendar
               </div>
-              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-emerald-100 to-teal-200' : ' bg-gradient-to-r from-zinc-900 via-emerald-900 to-teal-800'}`}>
-                Time, Orchestrated
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
+                Time, orchestrated.
               </h2>
               <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
                 Google and Outlook sync with an AI assistant that schedules smarter, detects conflicts, and prepares you for every meeting.
@@ -1504,7 +1813,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               ].map((item, i) => (
                 <div
                   key={item.title}
-                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-2 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-emerald-500/40' : ' bg-white border-stone-200 hover:border-emerald-400/50 shadow-sm'}`}
+                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-emerald-500/40' : ' bg-white border-stone-200 hover:border-emerald-400/50 shadow-sm'}`}
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
                   <h3 className={`font-bold mb-2${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>{item.title}</h3>
@@ -1534,8 +1843,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-amber-500/10 border border-amber-500/25 text-amber-400' : ' bg-amber-50 border border-amber-200 text-amber-600'}`}>
                 <i className="fa-solid fa-chart-line text-xs" aria-hidden="true"></i> Analytics
               </div>
-              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-amber-100 to-orange-200' : ' bg-gradient-to-r from-zinc-900 via-amber-900 to-orange-800'}`}>
-                See Everything
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
+                See everything.
               </h2>
               <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
                 8 analytics views with predictive insights, sentiment analysis, and team health monitoring — so you never fly blind.
@@ -1551,7 +1860,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               ].map((item, i) => (
                 <div
                   key={item.title}
-                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-2 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-amber-500/40' : ' bg-white border-stone-200 hover:border-amber-400/50 shadow-sm'}`}
+                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-amber-500/40' : ' bg-white border-stone-200 hover:border-amber-400/50 shadow-sm'}`}
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
                   <h3 className={`font-bold mb-2${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>{item.title}</h3>
@@ -1588,8 +1897,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/25 text-teal-400 text-xs font-bold uppercase tracking-widest mb-4">
                 <Gavel /> Decisions and Tasks
               </div>
-              <h2 className="text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-teal-100 to-cyan-200">
-                From Signal to Action
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
+                From signal to action.
               </h2>
               <p className="text-zinc-400 text-lg max-w-2xl">
                 Turn conversations into accountable decisions. Track tasks with AI priority scoring. Monitor team health before burnout strikes.
@@ -1625,7 +1934,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               ].map((item, i) => (
                 <div
                   key={item.title}
-                  className="group p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800 hover:border-teal-500/40 transition-all duration-300 hover:-translate-y-2 animate-fade-in"
+                  className="group p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800 hover:border-teal-500/40 transition-all duration-300 hover:-translate-y-0.5 animate-fade-in"
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
                   <div className="lp-icon-wrap-teal w-11 h-11 rounded-xl bg-teal-500/10 flex items-center justify-center mb-4 group-hover:bg-teal-500/20 transition-all duration-300">
@@ -1701,8 +2010,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-indigo-500/10 border border-indigo-500/25 text-indigo-400' : ' bg-indigo-50 border border-indigo-200 text-indigo-600'}`}>
                 <Network size={12} /> Relationships and CRM
               </div>
-              <h2 className={`text-5xl sm:text-8xl font-bold mb-5 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-indigo-100 to-violet-200' : ' bg-gradient-to-r from-zinc-900 via-indigo-900 to-violet-800'}`}>
-                Know Your Network
+              <h2 className={`text-5xl sm:text-8xl font-bold mb-5${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
+                Know your network.
               </h2>
               <p className={`text-lg max-w-2xl mx-auto mb-8 leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
                 Deep relationship intelligence with 0–100 health scoring, contact circles, and bidirectional sync with Logos Vision — so every conversation in Pulse keeps your case records current.
@@ -1922,6 +2231,82 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </section>
       </div>
 
+      {/* ── Section E — Maps & Field Operations ── */}
+      <section id="section-maps" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? ' bg-zinc-950/40' : ' bg-stone-50'}`}>
+        <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+          <div className="absolute inset-0" style={{
+            background: 'radial-gradient(ellipse at 25% 35%, rgba(16,185,129,0.12) 0%, transparent 55%), radial-gradient(ellipse at 75% 65%, rgba(20,184,166,0.08) 0%, transparent 50%)',
+          }} />
+        </div>
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="mb-14 animate-fade-in">
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-emerald-500/10 border border-emerald-500/25 text-emerald-300' : ' bg-emerald-50 border border-emerald-200 text-emerald-600'}`}>
+              <MapPin size={12} aria-hidden="true" /> Maps and Field Ops
+            </div>
+            <h2 className={`text-4xl sm:text-6xl font-bold mb-4${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
+              Pulse, in the real world.
+            </h2>
+            <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
+              Your contacts on a map. Live ETA share with a one-tap link. Geofence alerts that log every arrival, with travel buffers padded into your calendar so meetings never run late on traffic.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { title: 'Contact map', desc: 'Plot your network geographically. Filter by tags, health score, or last contact. Spot the cluster you should visit this week.', tags: ['Geocode', 'Filter', 'Cluster'] },
+              { title: 'ETA share', desc: 'Send a live arrival countdown with one tap. The recipient sees real-time progress, no app needed.', tags: ['Live link', 'No app', 'Auto-expire'] },
+              { title: 'Geofence alerts', desc: 'Auto-log arrivals and departures at saved places. Approach detection at 2× radius, throttled against GPS jitter.', tags: ['Enter / Exit', 'Approach', 'Audit log'] },
+              { title: 'Travel buffers', desc: 'Pulse reads your next meeting and pads the calendar with door-to-door travel time, so back-to-backs stop colliding.', tags: ['Auto-buffer', 'Multi-stop'] },
+              { title: 'Live broadcast', desc: 'Optional location share to teammates during a route. The team sees where you are without you switching apps.', tags: ['Opt-in', 'Channel'] },
+              { title: 'Route planning', desc: 'Multi-stop ordering with the Google Directions and Distance Matrix APIs. Optimised by drive time, not as-the-crow-flies.', tags: ['Directions', 'Distance Matrix'] },
+            ].map((item, i) => (
+              <div
+                key={item.title}
+                className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-emerald-500/40' : ' bg-white border-stone-200 hover:border-emerald-400/50 shadow-sm'}`}
+                style={{ animationDelay: `${i * 0.1}s` }}
+              >
+                <h3 className={`font-bold mb-2${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>{item.title}</h3>
+                <p className={`text-sm leading-relaxed mb-4${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{item.desc}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {item.tags.map(tag => (
+                    <span key={tag} className={`px-2 py-0.5 rounded text-[10px] font-medium${isDarkMode ? ' bg-emerald-500/8 border border-emerald-500/20 text-emerald-300' : ' bg-emerald-50 border border-emerald-200 text-emerald-600'}`}>{tag}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <SectionDivider />
+
+      {/* ── Section F — Workspaces (compact band, no card grid) ── */}
+      <section id="section-workspaces" className={`py-16 px-6 relative${isDarkMode ? '' : ' bg-stone-50'}`}>
+        <div className="max-w-5xl mx-auto">
+          <div className={`flex flex-col md:flex-row gap-8 md:gap-12 items-start md:items-center p-8 md:p-10 rounded-2xl border${isDarkMode ? ' bg-zinc-900/60 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}>
+            <div className="flex-shrink-0 flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center${isDarkMode ? ' bg-rose-500/15 border border-rose-500/25' : ' bg-rose-50 border border-rose-200'}`}>
+                <Users size={22} className={isDarkMode ? 'text-rose-300' : 'text-rose-600'} aria-hidden="true" />
+              </div>
+              <div>
+                <p className={`text-[11px] font-semibold uppercase tracking-[0.1em] mb-0.5${isDarkMode ? ' text-rose-300' : ' text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Workspaces</p>
+                <p className={`text-xs${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>Multi-tenant by design</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className={`text-base md:text-lg leading-relaxed${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>
+                Pulse is built around workspaces, not user accounts. Invite the team, assign roles, bill once per org, and keep every signal scoped to the room where it belongs. Switch workspaces without re-logging in; data stays where it should.
+              </p>
+              <div className="flex flex-wrap gap-1.5 mt-4">
+                {['Workspace switcher', 'Role permissions', 'Bulk invites', 'Audit trail', 'Per-org billing'].map(tag => (
+                  <span key={tag} className={`px-2 py-0.5 rounded text-[10px] font-medium${isDarkMode ? ' bg-zinc-800 border border-zinc-700 text-zinc-300' : ' bg-stone-100 border border-stone-200 text-zinc-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{tag}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── B: Integration Logo Wall — hidden until integrations ship ── */}
       {/* TODO: Re-enable this section once platform integrations are live */}
       {/* <section className="py-20 px-6 bg-zinc-900/20 border-y border-zinc-800/30 relative overflow-hidden">
@@ -2093,7 +2478,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <section id="ecosystem" className="py-24 px-6 border-b border-zinc-800/50 relative">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 animate-fade-in">
-            <h2 className="text-3xl sm:text-5xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300">The Trinity of Productivity</h2>
+            <h2 className="text-3xl sm:text-5xl font-bold mb-6 text-zinc-50">The Trinity of Productivity</h2>
             <p className="text-zinc-400 text-lg max-w-3xl mx-auto">
               Three powerful systems working in perfect harmony to handle every aspect of your business operations.
             </p>
@@ -2103,7 +2488,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             {/* Pulse Card */}
             <div className="relative group animate-fade-in animation-delay-200">
               <div className="absolute inset-0 bg-gradient-to-br from-rose-500/30 to-pink-500/25 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"></div>
-              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl hover:border-rose-500/60 transition-all duration-150 flex flex-col hover:-translate-y-2 card-elevated-rose overflow-hidden">
+              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl hover:border-rose-500/60 transition-all duration-150 flex flex-col hover:-translate-y-0.5 card-elevated-rose overflow-hidden">
                 <div className="flex items-center justify-center h-24 bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-transparent border-b border-rose-500/15 group-hover:from-rose-500/15 transition-colors duration-150">
                   <svg viewBox="0 0 64 64" width="52" height="52" fill="none">
                     <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="#f43f5e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
@@ -2112,11 +2497,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <div className="p-8 flex flex-col flex-grow">
                   <h3 className="text-2xl font-bold mb-4 text-white">Pulse</h3>
                   <div className="text-sm font-bold text-rose-500 tracking-wider uppercase mb-4">Communication and Intelligence</div>
-                  <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organization. Real-time messaging, 8 voice modes, AI studio, full email client, calendar, and analytics — all in one interface.</p>
+                  <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organisation. Real-time messaging, 5 Relay peers + Triage stream, Glimpse async video, full email client, calendar, maps, and analytics in one interface.</p>
                   <ul className="space-y-3 text-zinc-300 text-sm">
-                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 8 Relay Modes + AI Transcription</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 5 Relay Peers + Glimpse + AI Transcription</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> War Room with 8 Slash Commands</li>
-                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> Full Email, Messaging, Calendar</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> Full Email, Messaging, Calendar, Maps</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> 7+ AI Models (Gemini, Claude, GPT)</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> Predictive Analytics Dashboard</li>
                   </ul>
@@ -2127,7 +2512,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             {/* Logos Vision Card */}
             <div className="relative group animate-fade-in animation-delay-300">
               <div className="absolute inset-0 bg-gradient-to-br from-teal-400/25 to-teal-500/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"></div>
-              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl hover:border-teal-400/60 transition-all duration-150 flex flex-col hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(34,166,164,0.25)] card-elevated overflow-hidden">
+              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl hover:border-teal-400/60 transition-all duration-150 flex flex-col hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(34,166,164,0.25)] card-elevated overflow-hidden">
                 <div className="flex items-center justify-center h-24 bg-gradient-to-br from-teal-400/10 via-teal-400/5 to-transparent border-b border-teal-400/15 group-hover:from-teal-400/15 transition-colors duration-150">
                   <svg viewBox="0 0 80 80" width="52" height="52" fill="none">
                     <circle cx="40" cy="40" r="38" fill="none" stroke="#b2f5ea" strokeWidth="1.2" opacity="0.35"/>
@@ -2154,7 +2539,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             {/* Entomate Card — brand: Acid Lime #C8FF32 / Vermillion #FF4A1C / Periwinkle #8B8BFF */}
             <div className="relative group animate-fade-in animation-delay-400">
               <div className="absolute inset-0 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]" style={{background: 'radial-gradient(ellipse at 50% 30%, rgba(200,255,50,0.16) 0%, rgba(139,139,255,0.08) 60%, transparent 100%)'}}></div>
-              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl transition-all duration-150 flex flex-col hover:-translate-y-2 card-elevated overflow-hidden" style={{'--tw-border-opacity': '1'} as React.CSSProperties} onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(200,255,50,0.4)', e.currentTarget.style.boxShadow = '0 8px 32px rgba(200,255,50,0.15), 0 0 0 1px rgba(139,139,255,0.08)')} onMouseLeave={e => (e.currentTarget.style.borderColor = '', e.currentTarget.style.boxShadow = '')}>
+              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl transition-all duration-150 flex flex-col hover:-translate-y-0.5 card-elevated overflow-hidden" style={{'--tw-border-opacity': '1'} as React.CSSProperties} onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(200,255,50,0.4)', e.currentTarget.style.boxShadow = '0 8px 32px rgba(200,255,50,0.15), 0 0 0 1px rgba(139,139,255,0.08)')} onMouseLeave={e => (e.currentTarget.style.borderColor = '', e.currentTarget.style.boxShadow = '')}>
                 <div className="flex items-center justify-center h-24 border-b transition-colors duration-150" style={{background: 'linear-gradient(135deg, rgba(200,255,50,0.07) 0%, rgba(139,139,255,0.04) 50%, transparent 100%)', borderColor: 'rgba(200,255,50,0.1)'}}>
                   {/* Entomate — Catalyst Node (Primary Mark) */}
                   <svg viewBox="0 0 64 64" fill="none" width="52" height="52" className="lp-en-catalyst" aria-label="Entomate">
@@ -2202,7 +2587,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <section id="scenarios" className="py-24 px-6 bg-gradient-to-b from-zinc-900/20 to-zinc-950 border-b border-zinc-800/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 animate-fade-in">
-            <h2 className="text-3xl sm:text-5xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-300">See It In Action</h2>
+            <h2 className="text-3xl sm:text-5xl font-bold mb-6 text-zinc-50">See it in action.</h2>
             <p className="text-zinc-400 text-lg mb-8">Real-world workflows powered by the Pulse ecosystem.</p>
 
             {/* Scenario toggle */}
@@ -2230,11 +2615,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className="grid lg:grid-cols-4 gap-6 relative z-10">
                 {[
                   { num: '1', system: 'PULSE', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'text-gradient-rose', borderClass: 'hover:border-rose-500/40', title: 'The Signal', body: 'A high-priority email from a key client lands. Pulse flags it "Urgent", extracts requirements, and routes it to the grants channel with an AI summary.' },
-                  { num: '2', system: 'LOGOS VISION', badgeClass: 'from-blue-500 to-cyan-500', labelClass: 'bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent', borderClass: 'hover:border-blue-500/40', title: 'The Context', body: 'The system links the message to the Client Record — pulling past grant history, success rates, and the assigned relationship manager automatically.' },
-                  { num: '3', system: 'ENTOMATE', badgeClass: 'from-emerald-500 to-teal-500', labelClass: 'bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent', borderClass: 'hover:border-emerald-500/40', title: 'The Action', body: 'An Apply workflow fires. A task is created for the Grant Writer, a kickoff meeting is scheduled based on availability, and an acknowledgment email is drafted.' },
-                  { num: '4', system: 'WAR ROOM', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent', borderClass: 'hover:border-rose-500/40', title: 'The Intelligence', body: 'The War Room researches grant requirements, compares past applications using your uploaded sources, and outputs a polished grant proposal draft in minutes.' },
+                  { num: '2', system: 'LOGOS VISION', badgeClass: 'from-cyan-500 to-cyan-600', labelClass: 'text-cyan-400', borderClass: 'hover:border-cyan-500/40', title: 'The Context', body: 'The system links the message to the Client Record, pulling past grant history, success rates, and the assigned relationship manager automatically.' },
+                  { num: '3', system: 'ENTOMATE', badgeClass: 'from-emerald-500 to-emerald-600', labelClass: 'text-emerald-400', borderClass: 'hover:border-emerald-500/40', title: 'The Action', body: 'An Apply workflow fires. A task is created for the Grant Writer, a kickoff meeting is scheduled based on availability, and an acknowledgment email is drafted.' },
+                  { num: '4', system: 'WAR ROOM', badgeClass: 'from-rose-500 to-rose-600', labelClass: 'text-rose-400', borderClass: 'hover:border-rose-500/40', title: 'The Intelligence', body: 'The War Room researches grant requirements, compares past applications using your uploaded sources, and outputs a polished grant proposal draft in minutes.' },
                 ].map((step) => (
-                  <div key={step.num} className={`bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 p-7 rounded-2xl relative hover:-translate-y-2 transition-all duration-300 card-elevated ${step.borderClass} group animate-fade-in`}>
+                  <div key={step.num} className={`bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 p-7 rounded-2xl relative hover:-translate-y-0.5 transition-all duration-300 card-elevated ${step.borderClass} group animate-fade-in`}>
                     <div className={`absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br ${step.badgeClass} rounded-full flex items-center justify-center text-white font-bold shadow-lg text-sm`}>{step.num}</div>
                     <div className={`font-bold mb-2 text-xs tracking-wider ${step.labelClass}`}>{step.system}</div>
                     <h4 className="text-lg font-bold text-white mb-3">{step.title}</h4>
@@ -2248,11 +2633,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-rose-500/50 to-transparent -translate-y-1/2 z-0"></div>
               <div className="grid lg:grid-cols-3 gap-6 relative z-10">
                 {[
-                  { num: '1', system: 'VOX DROP', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'text-gradient-rose', borderClass: 'hover:border-rose-500/40', title: 'Drop and Go', body: "You're driving. One tap and you're recording a Vox Drop — a scheduled voice message queued to deliver when your recipient is most active." },
-                  { num: '2', system: 'AI TRANSCRIPTION', badgeClass: 'from-blue-500 to-cyan-500', labelClass: 'bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent', borderClass: 'hover:border-blue-500/40', title: 'Instant Intelligence', body: 'On delivery, Pulse transcribes the message, generates a summary, extracts action items, and scores sentiment — all before the recipient presses play.' },
-                  { num: '3', system: 'SMART REPLY', badgeClass: 'from-emerald-500 to-teal-500', labelClass: 'bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent', borderClass: 'hover:border-emerald-500/40', title: 'One-Tap Response', body: 'The recipient sees the transcript and summary, picks a smart reply suggestion, and responds with their own 10-second voice note. Full async conversation, zero context lost.' },
+                  { num: '1', system: 'RELAY DIRECT', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'text-gradient-rose', borderClass: 'hover:border-rose-500/40', title: 'Drop and Go', body: "You're driving. One tap and you're recording a Relay Direct, scheduled to deliver when your recipient is most active." },
+                  { num: '2', system: 'AI TRANSCRIPTION', badgeClass: 'from-cyan-500 to-cyan-600', labelClass: 'text-cyan-400', borderClass: 'hover:border-cyan-500/40', title: 'Instant Intelligence', body: 'On delivery, Pulse transcribes the message, generates a summary, extracts action items, and scores sentiment, all before the recipient presses play.' },
+                  { num: '3', system: 'SMART REPLY', badgeClass: 'from-emerald-500 to-emerald-600', labelClass: 'text-emerald-400', borderClass: 'hover:border-emerald-500/40', title: 'One-tap response', body: 'The recipient sees the transcript and summary, picks a smart reply suggestion, and responds with their own 10-second voice note. Full async conversation, zero context lost.' },
                 ].map((step) => (
-                  <div key={step.num} className={`bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 p-8 rounded-2xl relative hover:-translate-y-2 transition-all duration-300 card-elevated ${step.borderClass} group animate-fade-in`}>
+                  <div key={step.num} className={`bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 p-8 rounded-2xl relative hover:-translate-y-0.5 transition-all duration-300 card-elevated ${step.borderClass} group animate-fade-in`}>
                     <div className={`absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br ${step.badgeClass} rounded-full flex items-center justify-center text-white font-bold shadow-lg text-sm`}>{step.num}</div>
                     <div className={`font-bold mb-2 text-xs tracking-wider ${step.labelClass}`}>{step.system}</div>
                     <h4 className="text-xl font-bold text-white mb-3">{step.title}</h4>
@@ -2268,7 +2653,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       {/* ── Download Section ── */}
       <section id="download" className="py-24 px-6 bg-zinc-900/30">
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-5xl font-bold mb-8 animate-fade-in text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-300">Available Everywhere</h2>
+          <h2 className="text-3xl sm:text-5xl font-bold mb-8 animate-fade-in text-zinc-50">Available everywhere.</h2>
           <p className="text-zinc-400 text-lg mb-12 animate-fade-in animation-delay-200">
             Seamlessly sync your team across all devices. Download the app for your preferred platform.
           </p>
@@ -2486,7 +2871,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <button
                   type="button"
                   onClick={onGetStarted}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 hover:from-fuchsia-500 hover:via-pink-500 hover:to-rose-500 text-white font-semibold text-sm shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                  className="lp-cta-primary w-full py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 hover:from-fuchsia-500 hover:via-pink-500 hover:to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2"
                 >
                   <Rocket size={16} aria-hidden="true" />
                   Start free trial
@@ -2495,18 +2880,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </div>
 
             {/* ─── Pulse Growth ─── */}
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-violet-500/10 flex flex-col">
-              <div className="h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500" aria-hidden="true" />
-              <div className="bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
+            {/* DESIGN.md §2 Coral-As-Signal: Growth differentiates from Team via
+                chrome (deeper surface, mono-label tag), not a competing palette.
+                Replaces the previous violet/purple/indigo gradient stack that
+                detector flagged as the AI-startup anti-reference. */}
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/40 flex flex-col">
+              <div className="h-1 bg-rose-700" aria-hidden="true" />
+              <div className="bg-zinc-950 border-x border-b border-zinc-800 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="text-xs font-bold uppercase tracking-widest text-violet-400">Pulse Growth</p>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">
+                      <p className="text-xs font-bold uppercase tracking-widest text-rose-400">Pulse Growth</p>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
                         For growing orgs
                       </span>
                     </div>
-                    <h3 className="text-2xl sm:text-3xl font-bold text-white">
+                    <h3 className="text-2xl sm:text-3xl font-bold text-zinc-50">
                       ${pricingCycle === 'monthly' ? PULSE_GROWTH_PRICING.monthly : PULSE_GROWTH_PRICING.yearlyMonthlyEquiv}
                       <span className="text-base font-normal text-zinc-400">/mo</span>
                     </h3>
@@ -2516,15 +2905,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         : `$${PULSE_GROWTH_PRICING.yearly.toLocaleString()}/yr · 2 months free · ${PULSE_GROWTH_PRICING.trialDays} days free`}
                     </p>
                   </div>
-                  <div className="hidden sm:flex w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 items-center justify-center flex-shrink-0 shadow-lg shadow-violet-500/30">
-                    <HeartPulse size={26} className="text-white" />
+                  <div className="hidden sm:flex w-14 h-14 rounded-xl bg-zinc-900 border border-zinc-800 items-center justify-center flex-shrink-0">
+                    <HeartPulse size={26} className="text-rose-500" />
                   </div>
                 </div>
 
                 <ul className="space-y-3 pt-2 flex-1">
                   {PULSE_GROWTH_FEATURES.map((feat) => (
                     <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
-                      <Check size={18} className="text-violet-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                      <Check size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
                       <span>{feat}</span>
                     </li>
                   ))}
@@ -2533,7 +2922,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <button
                   type="button"
                   onClick={onGetStarted}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-xl bg-transparent border border-rose-500/40 hover:border-rose-500 hover:bg-rose-500/10 text-rose-300 hover:text-rose-200 font-semibold text-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
                 >
                   <Rocket size={16} aria-hidden="true" />
                   Start with Growth
@@ -2611,15 +3000,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div className="col-span-2">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-[#0f172a] flex items-center justify-center border border-zinc-800">
+                <div className="lp-footer-mark w-8 h-8 rounded-lg bg-[#0f172a] flex items-center justify-center border border-zinc-800" data-reveal>
                   <svg viewBox="0 0 64 64" className="w-5 h-5">
-                    <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad-nav)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad-nav)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </svg>
                 </div>
                 <span className="text-xl font-bold text-white">Pulse</span>
               </div>
               <p className="text-zinc-400 max-w-sm mb-6">
-                AI-powered messaging, email, 8 voice modes, calendar, CRM intelligence, research studio, and predictive analytics — all in one interface for high-performance teams.
+                AI-powered messaging, email, Relay voice, Glimpse video, calendar, maps, CRM intelligence, research studio, and predictive analytics. One interface for high-performance teams.
               </p>
               <div className="flex gap-4 mb-8">
                 <SocialIcon icon="fa-brands fa-github" label="Pulse on GitHub" href="https://github.com/FatherSonOne/Pulse-1" />

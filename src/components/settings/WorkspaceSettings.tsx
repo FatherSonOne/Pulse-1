@@ -38,6 +38,50 @@ export const WorkspaceSettings: React.FC = () => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
+  // Refs + highlight state for deep-linked onboarding focus
+  // (?focus=logo | auto-join | billing-contact). When the onboarding
+  // checklist deep-links here, we scroll to and visually highlight the
+  // specific card so the user doesn't have to hunt through a long settings page.
+  const avatarCardRef = useRef<HTMLDivElement>(null);
+  const autoJoinCardRef = useRef<HTMLDivElement>(null);
+  const billingContactCardRef = useRef<HTMLDivElement>(null);
+  type FocusTarget = 'logo' | 'auto-join' | 'billing-contact';
+  const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const focus = params.get('focus');
+    if (focus !== 'logo' && focus !== 'auto-join' && focus !== 'billing-contact') return;
+
+    setFocusTarget(focus);
+
+    const t = setTimeout(() => {
+      const target =
+        focus === 'logo' ? avatarCardRef.current
+        : focus === 'auto-join' ? autoJoinCardRef.current
+        : billingContactCardRef.current;
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // For `logo`, open the file picker directly — the existing UI hides the
+      // upload behind a hover-revealed Camera button, which is invisible to
+      // someone who didn't already know it was there.
+      if (focus === 'logo') {
+        setTimeout(() => avatarInputRef.current?.click(), 350);
+      }
+    }, 50);
+
+    const fade = setTimeout(() => setFocusTarget(null), 3000);
+
+    params.delete('focus');
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`,
+    );
+
+    return () => { clearTimeout(t); clearTimeout(fade); };
+  }, []);
+
   // Sync local form state when the active workspace changes.
   useEffect(() => {
     if (!currentWorkspace) return;
@@ -254,7 +298,20 @@ export const WorkspaceSettings: React.FC = () => {
       </div>
 
       {/* Avatar + Edit fields */}
+      <div
+        ref={avatarCardRef}
+        className="scroll-mt-4 rounded-2xl transition-shadow"
+        style={{
+          boxShadow: focusTarget === 'logo' ? '0 0 0 3px rgba(244, 63, 94, 0.45)' : 'none',
+        }}
+      >
       <SettingsCard className="space-y-4">
+        {focusTarget === 'logo' && (
+          <div className="flex items-center gap-2 px-3 py-2 -mt-1 mb-1 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-xs text-rose-700 dark:text-rose-300">
+            <Camera className="w-3.5 h-3.5" />
+            <span>Pick an image to use as your organization logo — the avatar block below opens the upload dialog.</span>
+          </div>
+        )}
         {/* Avatar */}
         <div className="flex items-center gap-4">
           <div className="relative group">
@@ -270,7 +327,15 @@ export const WorkspaceSettings: React.FC = () => {
                 type="button"
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                className="absolute inset-0 flex items-center justify-center bg-zinc-950/60 opacity-0 group-hover:opacity-100 rounded-xl transition"
+                aria-label={currentWorkspace.avatar_url ? 'Replace logo' : 'Upload logo'}
+                // Always visible when no avatar is set yet (discoverable for
+                // first-time setup); fades to hover-only after an avatar exists
+                // so it doesn't obscure the real image.
+                className={`absolute inset-0 flex items-center justify-center rounded-xl transition ${
+                  currentWorkspace.avatar_url
+                    ? 'bg-zinc-950/60 opacity-0 group-hover:opacity-100'
+                    : 'bg-zinc-950/40 opacity-100'
+                }`}
               >
                 {isUploadingAvatar ? (
                   <Loader2 className="w-5 h-5 text-white animate-spin" />
@@ -379,9 +444,17 @@ export const WorkspaceSettings: React.FC = () => {
           </div>
         )}
       </SettingsCard>
+      </div>
 
       {/* Membership policy — admin+ */}
       {isAdmin && (
+      <div
+        ref={autoJoinCardRef}
+        className="scroll-mt-4 rounded-2xl transition-shadow"
+        style={{
+          boxShadow: focusTarget === 'auto-join' ? '0 0 0 3px rgba(244, 63, 94, 0.45)' : 'none',
+        }}
+      >
         <SettingsCard className="space-y-4">
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-zinc-500" />
@@ -428,10 +501,18 @@ export const WorkspaceSettings: React.FC = () => {
             </button>
           </div>
         </SettingsCard>
+      </div>
       )}
 
       {/* Billing contact — admin+ */}
       {isAdmin && (
+      <div
+        ref={billingContactCardRef}
+        className="scroll-mt-4 rounded-2xl transition-shadow"
+        style={{
+          boxShadow: focusTarget === 'billing-contact' ? '0 0 0 3px rgba(244, 63, 94, 0.45)' : 'none',
+        }}
+      >
         <SettingsCard className="space-y-4">
           <div className="flex items-center gap-2">
             <Mail className="w-4 h-4 text-zinc-500" />
@@ -462,6 +543,7 @@ export const WorkspaceSettings: React.FC = () => {
             </button>
           </div>
         </SettingsCard>
+      </div>
       )}
 
       {/* Transfer Ownership — owner only */}

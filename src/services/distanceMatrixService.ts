@@ -1,6 +1,6 @@
 // ============================================================
 // distanceMatrixService — batched driving travel-time matrix via
-// Google's Distance Matrix REST API (B4 / #35).
+// the `maps-distance` Supabase edge function (B4 / #35).
 //
 // Why batched: B4's calendar travel-buffer feature computes travel
 // for every consecutive pair of events with locations. With 6 events
@@ -16,7 +16,7 @@
 // quotas are independently capped.
 // ============================================================
 
-const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
+import { supabase } from './supabase';
 
 const CACHE_KEY = 'pulse:distance-matrix:v1';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -94,18 +94,6 @@ async function acquireToken(): Promise<void> {
   if (wait > 0) await new Promise(r => setTimeout(r, wait));
 }
 
-interface DistanceMatrixResponse {
-  status: string;
-  error_message?: string;
-  rows?: Array<{
-    elements?: Array<{
-      status: string;
-      duration?: { value?: number };
-      distance?: { value?: number };
-    }>;
-  }>;
-}
-
 interface PairInput {
   from: { lat: number; lng: number };
   to: { lat: number; lng: number };
@@ -118,12 +106,16 @@ interface PairInput {
  * index i if that leg couldn't be computed (no route, geocode
  * collision, persistent API failure). Successful legs are cached
  * for 7 days keyed by day-of-week.
+ *
+ * Hits the `maps-distance` edge function which sends a single
+ * batched Distance Matrix request server-side and returns just the
+ * diagonal we use.
  */
 export async function getTravelTimesForPairs(
   pairs: PairInput[],
 ): Promise<Array<MatrixCell | null>> {
   const out: Array<MatrixCell | null> = new Array(pairs.length).fill(null);
-  if (pairs.length === 0 || !API_KEY) return out;
+  if (pairs.length === 0) return out;
 
   // First pass — cache hits.
   const uncachedIndices: number[] = [];
@@ -139,20 +131,13 @@ export async function getTravelTimesForPairs(
   }
   if (uncachedIndices.length === 0) return out;
 
-  // Single batched request — full matrix, but we read only the diagonal
-  // (origin[k] → destination[k]).
-  const origins = uncachedIndices
-    .map(i => `${pairs[i].from.lat},${pairs[i].from.lng}`)
-    .join('|');
-  const destinations = uncachedIndices
-    .map(i => `${pairs[i].to.lat},${pairs[i].to.lng}`)
-    .join('|');
-  const url =
-    `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origins)}` +
-    `&destinations=${encodeURIComponent(destinations)}&mode=driving&key=${API_KEY}`;
+  const proxyPairs = uncachedIndices.map(i => ({
+    from: pairs[i].from,
+    to: pairs[i].to,
+  }));
 
   let lastErr: unknown;
-  let response: DistanceMatrixResponse | null = null;
+  let results: Array<{ minutes: number; distanceMeters: number } | null> | null = null;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     if (attempt > 0) {
       const base = Math.min(2000, 250 * Math.pow(2, attempt - 1));
@@ -161,51 +146,58 @@ export async function getTravelTimesForPairs(
     }
     await acquireToken();
 
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
     try {
-      const res = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(timer);
-      if (res.status === 429 || (res.status >= 500 && res.status < 600)) {
-        lastErr = new Error(`distancematrix http ${res.status}`);
-        continue;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+      try {
+        const { data, error } = await supabase.functions.invoke('maps-distance', {
+          body: { pairs: proxyPairs },
+        });
+        clearTimeout(timer);
+        if (error) {
+          lastErr = error;
+          continue;
+        }
+        const payload = data as {
+          results?: Array<{ minutes: number; distanceMeters: number } | null>;
+          error?: string;
+        };
+        if (payload.error) {
+          // invalid_input / maps_not_configured / no_pairs / too_many_pairs
+          // are terminal — no retry.
+          const terminal = ['invalid_input', 'maps_not_configured', 'no_pairs', 'too_many_pairs'];
+          if (terminal.includes(payload.error)) {
+            console.error('[distanceMatrixService] terminal error:', payload.error);
+            return out;
+          }
+          lastErr = new Error(`maps-distance ${payload.error}`);
+          continue;
+        }
+        results = payload.results ?? null;
+        break;
+      } finally {
+        clearTimeout(timer);
       }
-      const data = (await res.json()) as DistanceMatrixResponse;
-      if (data.status === 'OVER_QUERY_LIMIT' || data.status === 'UNKNOWN_ERROR') {
-        lastErr = new Error(`distancematrix google ${data.status}`);
-        continue;
-      }
-      if (data.status !== 'OK') {
-        // REQUEST_DENIED / INVALID_REQUEST / MAX_*_EXCEEDED — terminal.
-        return out;
-      }
-      response = data;
-      break;
     } catch (err) {
-      clearTimeout(timer);
       lastErr = err;
     }
   }
 
-  if (!response) {
+  if (!results) {
     if (lastErr) console.error('[distanceMatrixService] batch failed:', lastErr);
     return out;
   }
 
   for (let k = 0; k < uncachedIndices.length; k++) {
+    const cell = results[k];
+    if (!cell) continue;
     const i = uncachedIndices[k];
-    const cell = response.rows?.[k]?.elements?.[k];
-    if (!cell || cell.status !== 'OK') continue;
-    const seconds = cell.duration?.value;
-    const meters = cell.distance?.value;
-    if (seconds == null || meters == null) continue;
-    const minutes = Math.round(seconds / 60);
     const dow = dayOfWeek(pairs[i].day ?? new Date());
     const key = pairKey(pairs[i].from, pairs[i].to, dow);
-    const entry: CacheEntry = { minutes, distanceMeters: meters, ts: Date.now(), dow };
+    const entry: CacheEntry = { minutes: cell.minutes, distanceMeters: cell.distanceMeters, ts: Date.now(), dow };
     memoryCache.set(key, entry);
     persistCacheEntry(key, entry);
-    out[i] = { minutes, distanceMeters: meters };
+    out[i] = { minutes: cell.minutes, distanceMeters: cell.distanceMeters };
   }
 
   return out;

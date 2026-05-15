@@ -4,7 +4,7 @@
 // Shows prioritized action items derived from relationship intelligence.
 // ============================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../services/supabase';
 import {
   generateTodayFeed,
@@ -25,8 +25,16 @@ import { TodayFeedCard } from './TodayFeedCard';
 import { TodayEmptyState } from './TodayEmptyState';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
 import TodayRouteStrip from './TodayRouteStrip';
+import { getCurrentUserLocation } from '../../services/locationService';
+import {
+  clusterFeedItems,
+  enrichClusterLabels,
+  loadPlaceCoordsForItems,
+  formatClusterDistance,
+  FeedCluster,
+} from '../../services/todayClusterService';
 
-import { AlertCircle, Check, Clock } from 'lucide-react';
+import { AlertCircle, Check, Clock, Clock3, MapPin } from 'lucide-react';
 
 // ==================== TYPES ====================
 
@@ -57,6 +65,8 @@ function mapToContactAction(action: TodayFeedSuggestedAction): 'message' | 'vox'
 
 // ==================== COMPONENT ====================
 
+type ViewMode = 'time' | 'route';
+
 export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] }) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [items, setItems] = useState<TodayFeedItem[]>([]);
@@ -65,6 +75,12 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
   const [filter, setFilter] = useState<FilterChip>('all');
   const [showAll, setShowAll] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof localStorage === 'undefined') return 'time';
+    return (localStorage.getItem('pulse:today:view-mode') as ViewMode) || 'time';
+  });
+  const [clusters, setClusters] = useState<FeedCluster[]>([]);
+  const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
 
   // Resolve userId from Supabase auth
   useEffect(() => {
@@ -156,6 +172,11 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
 
   const handleRefresh = () => setRefreshKey(k => k + 1);
 
+  const handleSetViewMode = useCallback((m: ViewMode) => {
+    setViewMode(m);
+    try { localStorage.setItem('pulse:today:view-mode', m); } catch { /* ignore */ }
+  }, []);
+
   // Computed values
   const activeItems = items.filter(i => i.status === 'active');
   const completedCount = items.filter(i => i.status === 'completed').length;
@@ -167,6 +188,42 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
 
   const visibleItems = showAll ? filteredItems : filteredItems.slice(0, ITEMS_PER_PAGE);
   const hasMore = filteredItems.length > ITEMS_PER_PAGE && !showAll;
+
+  // Lazy fetch user position once route view is requested — we don't ask
+  // for geolocation permission unless the user actually opens route mode.
+  useEffect(() => {
+    if (viewMode !== 'route') return;
+    if (userPosition) return;
+    getCurrentUserLocation()
+      .then(setUserPosition)
+      .catch(() => { /* permission denied — clusters fall back to size sort */ });
+  }, [viewMode, userPosition]);
+
+  // Recompute clusters whenever the inputs change and route mode is active.
+  // Labels load async; the structure renders immediately with `null` labels.
+  const baseClusters = useMemo(
+    () => clusterFeedItems(filteredItems, contacts, new Map(), userPosition),
+    [filteredItems, contacts, userPosition],
+  );
+
+  useEffect(() => {
+    if (viewMode !== 'route') return;
+    let cancelled = false;
+    setClusters(baseClusters);
+
+    (async () => {
+      // Resolve metadata.placeId references in one round-trip, rebuild
+      // clusters with that richer location info, then enrich labels.
+      const placeCoords = await loadPlaceCoordsForItems(filteredItems);
+      if (cancelled) return;
+      const richer = clusterFeedItems(filteredItems, contacts, placeCoords, userPosition);
+      setClusters(richer);
+      const labelled = await enrichClusterLabels(richer);
+      if (!cancelled) setClusters([...labelled]);
+    })();
+
+    return () => { cancelled = true; };
+  }, [viewMode, baseClusters, filteredItems, contacts, userPosition]);
 
   // ==================== RENDER ====================
 
@@ -182,14 +239,46 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
               Relationships that need your attention
             </p>
           </div>
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-40"
-            title="Refresh feed"
-          >
-            <i className={`fa-solid fa-rotate-right text-sm ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Time / Route view mode toggle. Persisted to localStorage so
+                returning users land back in their preferred view. */}
+            <div className="flex rounded-lg overflow-hidden text-xs bg-zinc-100 dark:bg-zinc-800">
+              <button
+                onClick={() => handleSetViewMode('time')}
+                aria-pressed={viewMode === 'time'}
+                title="Sort by priority"
+                className={`flex items-center gap-1 px-2.5 py-1 transition-colors ${
+                  viewMode === 'time'
+                    ? 'bg-indigo-500 text-white'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+              >
+                <Clock3 size={12} />
+                Time
+              </button>
+              <button
+                onClick={() => handleSetViewMode('route')}
+                aria-pressed={viewMode === 'route'}
+                title="Group by location"
+                className={`flex items-center gap-1 px-2.5 py-1 transition-colors ${
+                  viewMode === 'route'
+                    ? 'bg-indigo-500 text-white'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+              >
+                <MapPin size={12} />
+                Route
+              </button>
+            </div>
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-40"
+              title="Refresh feed"
+            >
+              <i className={`fa-solid fa-rotate-right text-sm ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {/* Summary stats */}
@@ -313,8 +402,8 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
           <TodayEmptyState onRefresh={handleRefresh} />
         )}
 
-        {/* Feed items */}
-        {!loading && !error && visibleItems.length > 0 && (
+        {/* Feed items — Time view (default) */}
+        {!loading && !error && viewMode === 'time' && visibleItems.length > 0 && (
           <div className="p-4 space-y-3">
             {visibleItems.map(item => (
               <TodayFeedCard
@@ -339,6 +428,53 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
 
             {/* Completed/snoozed note */}
             {(completedCount > 0 || snoozedCount > 0) && !showAll && (
+              <p className="text-center text-xs text-zinc-400 dark:text-zinc-600 pt-2">
+                {completedCount > 0 && `${completedCount} completed`}
+                {completedCount > 0 && snoozedCount > 0 && ' · '}
+                {snoozedCount > 0 && `${snoozedCount} snoozed`}
+                {' '}this session
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Feed items — Route view: items grouped by geographic cluster */}
+        {!loading && !error && viewMode === 'route' && filteredItems.length > 0 && (
+          <div className="p-4 space-y-5">
+            {clusters.map(c => (
+              <div key={c.id} className="space-y-2">
+                <div className="flex items-baseline justify-between gap-2 px-1">
+                  <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5">
+                    <MapPin size={12} className="text-indigo-500" />
+                    {c.label === null
+                      ? <span className="inline-block w-24 h-3 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
+                      : c.label}
+                    <span className="text-xs font-normal text-zinc-400 dark:text-zinc-500">
+                      · {c.items.length}
+                    </span>
+                  </h3>
+                  {c.distanceM != null && (
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                      {formatClusterDistance(c.distanceM)}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  {c.items.map(item => (
+                    <TodayFeedCard
+                      key={item.id}
+                      item={item}
+                      onAction={handleAction}
+                      onSnooze={handleSnooze}
+                      onDismiss={handleDismiss}
+                      onComplete={handleComplete}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {(completedCount > 0 || snoozedCount > 0) && (
               <p className="text-center text-xs text-zinc-400 dark:text-zinc-600 pt-2">
                 {completedCount > 0 && `${completedCount} completed`}
                 {completedCount > 0 && snoozedCount > 0 && ' · '}

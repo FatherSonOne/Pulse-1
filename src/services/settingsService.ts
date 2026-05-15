@@ -63,6 +63,10 @@ export interface PulseSettings {
   voxKeepRecordingsDays: number;
 
   // Relay General Settings
+  // Landing view when the user opens /relay with no deep-link override.
+  // 'triage' is the default; the rest are the five audience peers.
+  relayDefaultView: 'triage' | 'direct' | 'channel' | 'broadcast' | 'notes' | 'live';
+  /** @deprecated kept for cloud-sync back-compat; the Default landing view dropdown now writes `relayDefaultView`. */
   voxDefaultMode: string | null;
   voxNotificationsEnabled: boolean;
   voxAutoPlayIncoming: boolean;
@@ -250,6 +254,7 @@ const DEFAULT_SETTINGS: PulseSettings = {
   voxKeepRecordingsDays: 30,
 
   // Relay General Settings
+  relayDefaultView: 'triage',
   voxDefaultMode: null,
   voxNotificationsEnabled: true,
   voxAutoPlayIncoming: false,

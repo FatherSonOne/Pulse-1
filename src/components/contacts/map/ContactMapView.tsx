@@ -245,6 +245,7 @@ const ContactMapView: React.FC<ContactMapViewProps> = ({
         onFilterChange={setFilter}
         geoBlocked={geoBlocked && !geoBannerDismissed}
         onDismissGeoBanner={dismissGeoBanner}
+        userId={userId}
       />
 
       {/* Google Map */}

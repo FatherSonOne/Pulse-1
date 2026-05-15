@@ -126,6 +126,45 @@
 }
 
 /* ============================================================
+   Primary button — DESIGN.md §5
+   Solid rose at rest. Hover lifts 1px + paints the coral halo
+   ("alive shadow") via --pulse-shadow-rose. No gradient, no
+   rest-state glow. Coral halo is reserved for this surface and
+   recording/active-call indicators per the Elevation rules.
+   ============================================================ */
+.pulse-btn-primary {
+  background: var(--pulse-rose);
+  transition: transform var(--pulse-duration) var(--pulse-ease),
+              box-shadow var(--pulse-duration) var(--pulse-ease),
+              background var(--pulse-duration) var(--pulse-ease);
+}
+
+.pulse-btn-primary:hover:not(:disabled) {
+  background: var(--pulse-rose-deep);
+  box-shadow: var(--pulse-shadow-rose);
+  transform: translateY(-1px);
+}
+
+.pulse-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.pulse-btn-primary:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-btn-primary {
+    transition: background var(--pulse-duration) var(--pulse-ease);
+  }
+  .pulse-btn-primary:hover:not(:disabled),
+  .pulse-btn-primary:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* ============================================================
    Accessibility data-attribute hooks.
    AccessibilitySettings sets these on <html>; they're consumed below.
    ============================================================ */

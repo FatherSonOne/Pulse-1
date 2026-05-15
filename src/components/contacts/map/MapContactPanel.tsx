@@ -6,6 +6,7 @@ import {
   Home,
   MapPin,
   MessageSquare,
+  Navigation,
   Radio,
   Share2,
   Video,
@@ -17,6 +18,7 @@ import { LIVE_LOCATION_COLOR, MAP_STATUS_COLORS } from '../../../services/mapSer
 import { UserLocation, distanceMiles, formatDistance } from '../../../services/locationService';
 import LocationEditModal from './LocationEditModal';
 import LocationSharePanel from './LocationSharePanel';
+import EtaShareModal from './EtaShareModal';
 
 interface MapContactPanelProps {
   contact: Contact;
@@ -45,7 +47,12 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
 }) => {
   const [showLocationEdit, setShowLocationEdit] = useState(false);
   const [showSharePanel, setShowSharePanel] = useState(false);
+  const [showEtaShare, setShowEtaShare] = useState(false);
   const [activeLocType, setActiveLocType] = useState<'home' | 'work'>(locationType);
+
+  const hasAnyLocation =
+    (contact.homeLat != null && contact.homeLng != null) ||
+    (contact.workLat != null && contact.workLng != null);
 
   const bg = isDarkMode ? 'bg-black/90 backdrop-blur-xl border-white/10' : 'bg-white/90 backdrop-blur-xl border-gray-200';
   const text = isDarkMode ? 'text-white' : 'text-gray-900';
@@ -180,6 +187,17 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
             <MapPin size={11} />
             {address ? 'Edit Location' : 'Set Location'}
           </button>
+
+          {/* Share Live ETA — only meaningful when the contact has a destination */}
+          {hasAnyLocation && (
+            <button
+              onClick={() => setShowEtaShare(true)}
+              className="w-full py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 bg-rose-500 text-white hover:bg-rose-600 inline-flex items-center justify-center gap-1.5"
+            >
+              <Navigation size={11} />
+              Share Live ETA
+            </button>
+          )}
         </div>
 
         {/* Circles */}
@@ -281,6 +299,15 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
             onContactUpdated(updated);
             setShowLocationEdit(false);
           }}
+        />
+      )}
+
+      {showEtaShare && (
+        <EtaShareModal
+          contact={contact}
+          isOpen={showEtaShare}
+          isDarkMode={isDarkMode}
+          onClose={() => setShowEtaShare(false)}
         />
       )}
     </>

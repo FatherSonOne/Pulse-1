@@ -1,6 +1,8 @@
-import React from 'react';
-import { Briefcase, Globe, Home, Search, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import { Briefcase, Globe, Home, Radio, Search, X } from 'lucide-react';
 import { ContactCircle } from '../../../types/contactCircleTypes';
+import { startLocationBroadcast, stopLocationBroadcast } from '../../../services/locationService';
 
 export interface MapFilter {
   circles: string[];
@@ -16,7 +18,12 @@ interface MapFilterBarProps {
   onFilterChange: (f: MapFilter) => void;
   geoBlocked?: boolean;
   onDismissGeoBanner?: () => void;
+  /** Logged-in user id — drives the personal Live Location broadcast toggle. */
+  userId: string;
 }
+
+// Cached so the broadcast resumes on reload if the user had it enabled.
+const LIVE_LOCATION_LS_KEY = 'pulse:map:live-location-on';
 
 const STATUS_OPTIONS: { value: MapFilter['status'][number]; label: string; color: string }[] = [
   { value: 'online',  label: 'Online',  color: '#22c55e' },
@@ -32,10 +39,46 @@ const LOCATION_OPTIONS = [
 ];
 
 const MapFilterBar: React.FC<MapFilterBarProps> = ({
-  filter, circles, isDarkMode, onFilterChange, geoBlocked, onDismissGeoBanner,
+  filter, circles, isDarkMode, onFilterChange, geoBlocked, onDismissGeoBanner, userId,
 }) => {
   const bg = isDarkMode ? 'bg-black/75 border-white/10' : 'bg-white/90 border-gray-200';
   const text = isDarkMode ? 'text-white' : 'text-gray-900';
+
+  // Personal Live Location toggle — controls own broadcast + geofence
+  // detection. Persisted so a refresh resumes the previous state.
+  const [liveOn, setLiveOn] = useState<boolean>(() => {
+    if (typeof localStorage === 'undefined') return false;
+    return localStorage.getItem(LIVE_LOCATION_LS_KEY) === '1';
+  });
+
+  useEffect(() => {
+    if (!userId) return;
+    if (liveOn) {
+      startLocationBroadcast(userId, err => {
+        if (err.code === err.PERMISSION_DENIED) {
+          toast.error('Location permission denied. Enable it to use arrival alerts.');
+          setLiveOn(false);
+        }
+      });
+    } else {
+      stopLocationBroadcast();
+    }
+    // Tear down on unmount only — toggling off above handles state changes.
+    return () => {
+      if (!liveOn) stopLocationBroadcast();
+    };
+  }, [liveOn, userId]);
+
+  const handleToggleLive = () => {
+    const next = !liveOn;
+    setLiveOn(next);
+    try { localStorage.setItem(LIVE_LOCATION_LS_KEY, next ? '1' : '0'); } catch { /* ignore */ }
+    if (next) {
+      toast('Live location on — arrival alerts active', { icon: '📡', duration: 3000 });
+    } else {
+      toast('Live location off', { icon: '⏸', duration: 2000 });
+    }
+  };
 
   const toggleStatus = (s: MapFilter['status'][number]) => {
     const next = filter.status.includes(s)
@@ -122,6 +165,32 @@ const MapFilterBar: React.FC<MapFilterBarProps> = ({
             );
           })}
         </div>
+
+        {/* Live Location toggle — starts the personal broadcast which
+            powers arrival/exit alerts on geofenced places. Rose pulse-dot
+            when on; muted when off. */}
+        <button
+          onClick={handleToggleLive}
+          aria-pressed={liveOn}
+          title={liveOn ? 'Live location on — tap to stop' : 'Turn on live location for arrival alerts'}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+            liveOn
+              ? 'bg-rose-500 text-white'
+              : isDarkMode
+                ? 'bg-white/10 text-gray-300 hover:bg-white/15'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          {liveOn ? (
+            <span className="relative inline-flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-white/70 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+            </span>
+          ) : (
+            <Radio size={12} />
+          )}
+          {liveOn ? 'Live' : 'Go Live'}
+        </button>
 
         {/* Status filters — muted at rest, color-on-active. Matches the
             People sidebar tag-dot pattern: chroma earns its appearance. */}

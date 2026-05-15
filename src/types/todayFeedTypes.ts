@@ -13,6 +13,9 @@ export type TodayFeedItemType =
   | 'vip_alert'
   | 'reconnect'
   | 'introduction'
+  | 'geofence_arrival'
+  | 'geofence_approach'
+  | 'geofence_exit'
   | 'custom';
 
 export type TodayFeedSuggestedAction =
@@ -69,6 +72,9 @@ export const FEED_ITEM_TYPE_CONFIG: Record<TodayFeedItemType, FeedItemTypeConfig
   vip_alert:         { icon: '⭐', label: 'VIP Alert',        colorClass: 'border-yellow-400 dark:border-yellow-500' },
   reconnect:         { icon: '🔄', label: 'Reconnect',        colorClass: 'border-purple-400 dark:border-purple-500' },
   introduction:      { icon: '🤝', label: 'Introduction',     colorClass: 'border-emerald-400 dark:border-emerald-500' },
+  geofence_arrival:  { icon: '📍', label: 'Arrived',           colorClass: 'border-rose-400 dark:border-rose-500' },
+  geofence_approach: { icon: '🧭', label: 'Approaching',       colorClass: 'border-rose-300 dark:border-rose-400' },
+  geofence_exit:     { icon: '🚪', label: 'Left',              colorClass: 'border-zinc-400 dark:border-zinc-500' },
   custom:            { icon: '💡', label: 'Action',           colorClass: 'border-zinc-400 dark:border-zinc-500' },
 };
 

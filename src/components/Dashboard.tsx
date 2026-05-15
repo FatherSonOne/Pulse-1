@@ -21,11 +21,13 @@ import RelayUnheardStrip from './Dashboard/strips/RelayUnheardStrip';
 import SummitLastCaptureStrip from './Dashboard/strips/SummitLastCaptureStrip';
 import TeamDecisionsWaitingStrip from './Dashboard/strips/TeamDecisionsWaitingStrip';
 import WeekCapturesStrip from './Dashboard/strips/WeekCapturesStrip';
+import PulseNudgesWidget from './Dashboard/PulseNudgesWidget';
 import { attachStripKeyboardNav } from './Dashboard/strips/stripNavigation';
 import { captureService, type CaptureNote } from '../services/captureService';
 import AttentionDensityTile from './Dashboard/tiles/AttentionDensityTile';
 import DecisionVelocityTile from './Dashboard/tiles/DecisionVelocityTile';
-import RelayPulseTile from './Dashboard/tiles/RelayPulseTile';
+import TeamRadarTile from './Dashboard/tiles/TeamRadarTile';
+import RelayQuickRecorderStrip from './Dashboard/RelayQuickRecorderStrip';
 import TodaysCaptureTile from './Dashboard/tiles/TodaysCaptureTile';
 import { pulseService, SearchUserResult } from '../services/pulseService';
 import { calculateTeamHealthMetrics, TeamHealthMetrics } from '../services/teamHealthService';
@@ -422,6 +424,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
   const [pulseAiFocused, setPulseAiFocused] = useState(false);
 
   // Unread Pulse State
+  // Primary-only unread (Gmail Primary tab semantics). Excludes Social,
+  // Promotions, Updates, Forums — newsletters at 1k+ aren't "attention,"
+  // they're noise, and the AttentionDensityTile is supposed to surface the
+  // actionable surface only.
   const [emailUnreadCount, setEmailUnreadCount] = useState(0);
   const [voxUnreadCount, setVoxUnreadCount] = useState(0);
 
@@ -497,13 +503,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
       setPriorities(prioritiesData);
       setWeeklyData(weeklyDataResult);
 
-      // Fetch unread counts for Unread Pulse widget
+      // Fetch unread counts for the AttentionDensityTile. We use the
+      // category-aware fetcher and pass only `primary` so newsletters,
+      // promotions, and notifications don't inflate the attention number into
+      // four-digit nonsense.
       try {
-        const [emailUnread, voxRecordings] = await Promise.all([
-          emailSyncService.getUnreadCount('inbox'),
+        const [emailCategories, voxRecordings] = await Promise.all([
+          emailSyncService.getCategoryUnreadCounts(),
           dataService.getVoxerRecordings(),
         ]);
-        setEmailUnreadCount(emailUnread);
+        setEmailUnreadCount(emailCategories.primary);
         setVoxUnreadCount(voxRecordings.filter((r: any) => !r.played).length);
       } catch {
         // Non-critical — leave counts at 0
@@ -1254,6 +1263,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
     return items.sort((a, b) => b.receivedAt - a.receivedAt).slice(0, 5);
   }, [threads]);
 
+  // Pulse Nudges expects the oldest awaiting-reply thread expressed in days,
+  // and only cares when it's >= 3 days old. Derived from awaitingReply so the
+  // nudges widget doesn't re-fetch the same threads.
+  const staleAwaitingReplyForNudges = useMemo(() => {
+    if (awaitingReply.length === 0) return null;
+    const oldest = awaitingReply.reduce((a, b) => (a.receivedAt < b.receivedAt ? a : b));
+    const ageDays = Math.floor(oldest.ageMin / (60 * 24));
+    if (ageDays < 3) return null;
+    return { contactName: oldest.contactName, ageDays, threadId: oldest.threadId };
+  }, [awaitingReply]);
+
   const formatAwaitingAge = useCallback((ageMin: number) => {
     if (ageMin < 1) return 'now';
     if (ageMin < 60) return `${ageMin}m`;
@@ -1555,8 +1575,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
             onResume={() => setView(AppView.LIVE_AI)}
           />
 
-          {/* Glance tiles — instrument-grade state at a glance. Each renders null when its data is empty. */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Glance tiles — instrument-grade state at a glance. Each renders null when its data is empty.
+              RelayPulseTile escaped the grid (Phase 3) into the full-width
+              RelayQuickRecorderStrip below — operators record directly from
+              the dashboard without bouncing into the Relay section. */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             <AttentionDensityTile
               messages={awaitingReply.length}
               email={emailUnreadCount}
@@ -1569,16 +1592,25 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
               workspaceId={currentWorkspace?.id}
               onClick={() => setView(AppView.DECISIONS_TASKS)}
             />
-            <RelayPulseTile
-              workspaceId={currentWorkspace?.id}
-              authUserId={user?.id}
-              onClick={() => setView(AppView.RELAY)}
-            />
             <TodaysCaptureTile
               workspaceId={currentWorkspace?.id}
               onClick={() => setView(AppView.ARCHIVES)}
             />
+            <TeamRadarTile
+              workspaceId={currentWorkspace?.id}
+              authUserId={user?.id}
+              onClick={() => setView(AppView.CONTACTS)}
+            />
           </div>
+
+          {/* Full-width Relay quick-record strip — replaces the old narrow
+              RelayPulseTile. Stats live in the mono header; recording is a
+              real Web Audio waveform; recipient is required only on send. */}
+          <RelayQuickRecorderStrip
+            workspaceId={currentWorkspace?.id}
+            authUserId={user?.id}
+            setView={setView}
+          />
 
         </div>
       )}
@@ -1764,65 +1796,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
             </section>
           )}
 
-          {/* Mini Pulse AI */}
-          <div className="bg-white dark:bg-white/[0.03] rounded-xl p-5 border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Ask Pulse AI</h3>
-              <ProvenanceChip provider="pulse" kind="ASSIST" />
-            </div>
-            {/* Quick chips — shrink + fade when the input is focused so the AI feels like it's listening harder */}
-            <div
-              className={`flex flex-wrap gap-1.5 mb-3 origin-left transition-all duration-200 ease-out ${
-                pulseAiFocused
-                  ? 'scale-90 opacity-50 pointer-events-none'
-                  : 'scale-100 opacity-100'
-              }`}
-              style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
-            >
-              {["Summarize my day", "What's urgent?", "Draft a reply"].map(chip => (
-                <button
-                  key={chip}
-                  onClick={() => handlePulseAiQuery(chip)}
-                  className="text-xs px-3 py-1 rounded-full bg-zinc-50 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
-                >
-                  {chip}
-                </button>
-              ))}
-            </div>
-            {/* Input — height grows on focus to signal the AI is listening harder */}
-            <form onSubmit={(e) => { e.preventDefault(); handlePulseAiQuery(pulseAiQuery); }}>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={pulseAiQuery}
-                  onChange={(e) => setPulseAiQuery(e.target.value)}
-                  onFocus={() => setPulseAiFocused(true)}
-                  onBlur={() => { if (!pulseAiQuery.trim()) setPulseAiFocused(false); }}
-                  placeholder="Ask anything"
-                  className={`w-full bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] rounded-lg px-3 text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-all pr-9 ${
-                    pulseAiFocused ? 'py-5' : 'py-2'
-                  }`}
-                  style={{ transitionDuration: '200ms', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
-                />
-                <button type="submit" disabled={loadingPulseAi || !pulseAiQuery.trim()} className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 disabled:opacity-40 transition-colors">
-                  {loadingPulseAi ? <Loader2 className="animate-spin w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-                </button>
-              </div>
-            </form>
-            {/* Response */}
-            {pulseAiResponse && (
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/[0.06] animate-fade-in">
-                <ProvenanceChip provider="pulse" kind="ANSWER" className="mb-2" />
-                <p className="text-xs leading-relaxed text-zinc-700 dark:text-zinc-300 line-clamp-4">{pulseAiResponse}</p>
-                <div className="flex items-center justify-between mt-2.5">
-                  <button onClick={() => setView(AppView.LIVE_AI)} className="pulse-label text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors">
-                    OPEN PULSE AI →
-                  </button>
-                  <button onClick={() => setPulseAiResponse(null)} className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">CLEAR</button>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Pulse Nudges — receive-surface. Proactive signals synthesized from
+              existing dashboard data (frictions, awaiting reply, decisions,
+              focus). The duplicate send-surface (3 hardcoded chips + free-text
+              input) is gone; a small inline input remains as a fallback ask. */}
+          <PulseNudgesWidget
+            workspaceId={currentWorkspace?.id}
+            authUserId={user?.id}
+            staleAwaitingReply={staleAwaitingReplyForNudges}
+            setView={setView}
+            askQuery={pulseAiQuery}
+            setAskQuery={setPulseAiQuery}
+            askResponse={pulseAiResponse}
+            setAskResponse={setPulseAiResponse}
+            askLoading={loadingPulseAi}
+            onAsk={() => handlePulseAiQuery(pulseAiQuery)}
+          />
 
           {/* Upcoming widget removed — duplicated Quick Scheduler's "Today's Schedule" list.
               Cross-day previews live in the AppView.CALENDAR section. */}
@@ -2131,9 +2120,23 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
       </div>
       )}
 
-      {/* ===== TEAM PANEL ===== */}
+      {/* ===== TEAM PANEL =====
+          Stacked layout (no inner grid). The 2-col grid was originally meant
+          to pair Team Activity with a Team Workload tile, but we pivoted that
+          slot to a full-width Team Decisions Waiting strip — strips are peer
+          signals, not grid cells. Stacking is also consistent with the Today
+          tab pattern and removes the empty-col-2 asymmetry when the strip
+          legitimately renders null. */}
       {activeTab === 'team' && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 dashboard-stagger">
+      <div className="space-y-4 sm:space-y-6 dashboard-stagger">
+
+        {/* Team Decisions Waiting — surfaced first, peer-level signal. Quiet
+            when nothing's waiting on the operator. */}
+        <TeamDecisionsWaitingStrip
+          workspaceId={currentWorkspace?.id}
+          authUserId={user?.id}
+          setView={setView}
+        />
 
         {/* Team Activity */}
         <CollapsibleWidget
@@ -2270,17 +2273,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
           })()}
         </CollapsibleWidget>
 
-        {/* Team Decisions Waiting — bare strip, occupies col 2 of the first
-            grid row so Team Health stays full-width below. Renders null when
-            nothing is waiting (and the workspace has never seen one). */}
-        <div className="lg:pt-1">
-          <TeamDecisionsWaitingStrip
-            workspaceId={currentWorkspace?.id}
-            authUserId={user?.id}
-            setView={setView}
-          />
-        </div>
-
         {/* Team Health Dashboard */}
         {teamMembers.length > 0 && (
           <CollapsibleWidget
@@ -2289,7 +2281,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
             icon="fa-heart-pulse"
             iconColor="text-rose-400"
             isExpanded={expandedWidgets.has('team-health')}
-            className="lg:col-span-2 animate-spring-enter"
+            className="animate-spring-enter"
             onToggle={toggleWidget}
           >
             {loadingTeamHealth ? (

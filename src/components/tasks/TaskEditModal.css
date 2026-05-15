@@ -1,40 +1,51 @@
-/* TaskEditModal Component Styles */
+/* ============================================================
+   TaskEditModal — Coral Cockpit pass
+   Migrated off the legacy --hub-*/--dt-* token namespace onto
+   the canonical --pulse-* system. Coral is the only accent;
+   status colors stay status. The AI Risk section was demoted
+   from a peacock gradient card to a quiet disclosure that
+   borrows nothing from the gradient-startup template.
+   ============================================================ */
+
+/* ─── Scrim ──────────────────────────────────────────────── */
 
 .task-edit-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  inset: 0;
+  /* Tinted scrim — no pure black. Light enough to keep the canvas
+     felt; the modal carries the actual surface. */
+  background: rgba(15, 15, 15, 0.55);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
+  animation: pulse-modal-fade-in 200ms var(--pulse-ease);
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+.dark .task-edit-modal-overlay {
+  background: rgba(0, 0, 0, 0.65);
 }
+
+@keyframes pulse-modal-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─── Modal shell ────────────────────────────────────────── */
 
 .task-edit-modal {
-  background: var(--hub-bg);
-  border: 1px solid var(--hub-border);
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
   border-radius: 12px;
   width: 90%;
   max-width: 600px;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  animation: slideIn 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--pulse-shadow-md);
+  animation: pulse-modal-slide-in var(--pulse-duration) var(--pulse-ease);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -43,10 +54,10 @@
   }
 }
 
-@keyframes slideIn {
+@keyframes pulse-modal-slide-in {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(20px);
+    transform: scale(0.98) translateY(8px);
   }
   to {
     opacity: 1;
@@ -58,39 +69,58 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--hub-border);
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--pulse-border);
 }
 
 .task-edit-modal-title {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 600;
-  color: var(--hub-text-primary);
+  font-family: var(--pulse-font);
+  color: var(--pulse-ink);
   margin: 0;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.task-edit-dirty-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pulse-rose);
+  box-shadow: 0 0 0 3px var(--pulse-rose-soft);
 }
 
 .task-edit-modal-close {
   background: transparent;
   border: none;
-  color: var(--hub-text-secondary);
+  color: var(--pulse-ink-2);
   cursor: pointer;
   padding: 0.375rem;
-  border-radius: 6px;
-  transition: all var(--dt-transition-base);
+  border-radius: 8px;
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              color var(--pulse-duration) var(--pulse-ease);
 }
 
 .task-edit-modal-close:hover {
-  background: var(--hub-card-hover);
-  color: var(--hub-text-primary);
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink);
 }
 
-/* Tab Navigation */
+.task-edit-modal-close:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
+/* ─── Tabs ───────────────────────────────────────────────── */
+
 .task-edit-tabs {
   display: flex;
   gap: 2px;
   padding: 0 24px;
-  background: var(--dt-border, #e2e8f0);
-  border-bottom: 1px solid var(--dt-border, #e2e8f0);
+  border-bottom: 1px solid var(--pulse-border);
 }
 
 .task-edit-tabs button {
@@ -101,27 +131,147 @@
   border-bottom: 2px solid transparent;
   font-size: 14px;
   font-weight: 500;
-  color: var(--dt-text-secondary, #64748b);
+  font-family: var(--pulse-font);
+  color: var(--pulse-ink-2);
   cursor: pointer;
-  transition: all var(--dt-transition-base);
+  transition: color var(--pulse-duration) var(--pulse-ease),
+              border-color var(--pulse-duration) var(--pulse-ease);
 }
 
 .task-edit-tabs button:hover {
-  color: var(--dt-text-primary, #0f172a);
-  background: rgba(0, 0, 0, 0.02);
+  color: var(--pulse-ink);
 }
 
 .task-edit-tabs button.active {
-  color: var(--dt-accent, #e11d48);
-  border-bottom-color: var(--dt-accent, #e11d48);
-  background: white;
+  color: var(--pulse-rose);
+  border-bottom-color: var(--pulse-rose);
 }
 
-/* Tab Content */
+.task-edit-tabs button:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: -4px;
+  border-radius: 4px;
+}
+
+.task-edit-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.task-edit-tab-hint {
+  font-family: var(--pulse-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.05em;
+  padding: 0.0625rem 0.375rem;
+  border-radius: 4px;
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink-3);
+  opacity: 0;
+  transition: opacity var(--pulse-duration) var(--pulse-ease);
+}
+
+.task-edit-tabs button:hover .task-edit-tab-hint,
+.task-edit-tabs button.active .task-edit-tab-hint {
+  opacity: 1;
+}
+
+.task-edit-button-hint {
+  font-family: var(--pulse-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.05em;
+  margin-left: 0.5rem;
+  padding: 0.0625rem 0.3125rem;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.task-edit-button-secondary .task-edit-button-hint {
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink-3);
+}
+
+.task-edit-discard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.625rem 0.875rem;
+  background: var(--pulse-rose-soft);
+  border: 1px solid var(--pulse-rose);
+  border-radius: 8px;
+  color: var(--pulse-ink);
+  font-size: 0.8125rem;
+  flex-wrap: wrap;
+}
+
+.task-edit-discard-label {
+  font-family: var(--pulse-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pulse-rose-deep);
+}
+
+.dark .task-edit-discard-label {
+  color: var(--pulse-rose-bright);
+}
+
+.task-edit-discard-help {
+  color: var(--pulse-ink-2);
+  flex: 1;
+  min-width: 14ch;
+}
+
+.task-edit-discard-help kbd {
+  font-family: var(--pulse-font-mono);
+  font-size: 0.625rem;
+  padding: 0.0625rem 0.3125rem;
+  border-radius: 3px;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  color: var(--pulse-ink-2);
+  margin: 0 0.0625rem;
+}
+
+.task-edit-discard-action {
+  font-family: var(--pulse-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.375rem 0.625rem;
+  border-radius: 6px;
+  border: 1px solid var(--pulse-border);
+  background: var(--pulse-surface);
+  color: var(--pulse-ink);
+  cursor: pointer;
+  transition: background var(--pulse-duration) var(--pulse-ease);
+}
+
+.task-edit-discard-action:hover {
+  background: var(--pulse-surface-raised);
+}
+
+.task-edit-discard-action-keep {
+  background: var(--pulse-rose);
+  border-color: var(--pulse-rose);
+  color: #ffffff;
+}
+
+.task-edit-discard-action-keep:hover {
+  background: var(--pulse-rose-deep);
+}
+
+/* ─── Content / form ─────────────────────────────────────── */
+
 .task-edit-content {
   flex: 1;
   overflow-y: auto;
-  min-height: 0; /* Allow proper flexbox scrolling */
+  min-height: 0;
 }
 
 .task-edit-modal-form {
@@ -133,10 +283,10 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--pulse-tone-overdue-soft);
+  border: 1px solid var(--pulse-tone-overdue);
   border-radius: 8px;
-  color: #ef4444;
+  color: var(--pulse-tone-overdue);
   font-size: 0.875rem;
   margin-bottom: 1rem;
 }
@@ -157,14 +307,17 @@
 
 .task-edit-label {
   display: block;
-  font-size: 0.875rem;
+  font-size: 0.6875rem;
   font-weight: 500;
-  color: var(--hub-text-primary);
+  font-family: var(--pulse-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pulse-ink-2);
   margin-bottom: 0.5rem;
 }
 
 .task-edit-label .required {
-  color: #ef4444;
+  color: var(--pulse-tone-overdue);
   margin-left: 0.125rem;
 }
 
@@ -173,31 +326,47 @@
 .task-edit-select {
   width: 100%;
   padding: 0.625rem 0.875rem;
-  background: var(--hub-card-bg);
-  border: 1px solid var(--hub-border);
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
   border-radius: 8px;
-  color: var(--hub-text-primary);
+  color: var(--pulse-ink);
   font-size: 0.875rem;
-  font-family: inherit;
-  transition: all var(--dt-transition-base);
+  font-family: var(--pulse-font);
+  transition: border-color var(--pulse-duration) var(--pulse-ease),
+              box-shadow var(--pulse-duration) var(--pulse-ease);
+}
+
+.dark .task-edit-input,
+.dark .task-edit-textarea,
+.dark .task-edit-select {
+  background: var(--pulse-surface-raised);
+}
+
+.task-edit-input::placeholder,
+.task-edit-textarea::placeholder {
+  color: var(--pulse-ink-3);
 }
 
 .task-edit-input:focus,
 .task-edit-textarea:focus,
 .task-edit-select:focus {
   outline: none;
-  border-color: var(--hub-accent);
-  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+  border-color: var(--pulse-rose);
+  box-shadow: 0 0 0 3px var(--pulse-rose-soft);
 }
 
 .task-edit-textarea {
   resize: vertical;
   min-height: 80px;
+  font-family: var(--pulse-font);
+  line-height: 1.55;
 }
 
 .task-edit-select {
   cursor: pointer;
 }
+
+/* ─── Footer ─────────────────────────────────────────────── */
 
 .task-edit-modal-footer {
   display: flex;
@@ -206,7 +375,7 @@
   gap: 0.75rem;
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--hub-border);
+  border-top: 1px solid var(--pulse-border);
 }
 
 .task-edit-button {
@@ -216,10 +385,13 @@
   padding: 0.625rem 1.25rem;
   font-size: 0.875rem;
   font-weight: 500;
+  font-family: var(--pulse-font);
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  transition: all var(--dt-transition-base);
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              transform var(--pulse-duration) var(--pulse-ease),
+              box-shadow var(--pulse-duration) var(--pulse-ease);
 }
 
 .task-edit-button:disabled {
@@ -227,248 +399,408 @@
   cursor: not-allowed;
 }
 
+.task-edit-button:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
 .task-edit-button-secondary {
   background: transparent;
-  color: var(--hub-text-secondary);
-  border: 1px solid var(--hub-border);
+  color: var(--pulse-ink-2);
+  border: 1px solid var(--pulse-border);
 }
 
 .task-edit-button-secondary:hover:not(:disabled) {
-  background: var(--hub-card-hover);
-  color: var(--hub-text-primary);
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink);
 }
 
 .task-edit-button-primary {
-  background: var(--hub-accent);
-  color: white;
+  background: var(--pulse-rose);
+  color: #ffffff;
 }
 
 .task-edit-button-primary:hover:not(:disabled) {
-  background: var(--hub-accent-hover);
+  background: var(--pulse-rose-deep);
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(236, 72, 153, 0.2);
+  box-shadow: var(--pulse-shadow-rose);
 }
 
-/* Dark mode - solid, readable backgrounds */
-:root.dark .task-edit-modal {
-  background: #1c1c1c;
-  border: 1px solid #333;
+.task-edit-button-primary:active:not(:disabled) {
+  transform: translateY(0);
 }
 
-:root.dark .task-edit-tabs {
-  background: #2a2a2a;
-  border-bottom: 1px solid #444;
-}
+/* ============================================================
+   Risk Read disclosure
+   Replaces the old orange-gradient + side-stripe blocker panel
+   (~/.claude/.../impeccable critique flagged it as canonical
+   GPT-startup slop). New surface: a quiet <details>-shape with
+   a mono RISK label header, lazy-fired on expand only.
+   ============================================================ */
 
-:root.dark .task-edit-tabs button {
-  color: #888;
-}
-
-:root.dark .task-edit-tabs button:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-:root.dark .task-edit-tabs button.active {
-  color: #e11d48;
-  background: #1c1c1c;
-}
-
-:root.dark .task-edit-input,
-:root.dark .task-edit-textarea,
-:root.dark .task-edit-select {
-  background: #2a2a2a;
-  color: #ffffff;
-  border: 1px solid #444;
-}
-
-:root.dark .task-edit-label {
-  color: #ffffff;
-}
-
-:root.dark .task-edit-input::placeholder,
-:root.dark .task-edit-textarea::placeholder {
-  color: #888;
-}
-
-/* Light mode - ensure solid background */
-.task-edit-modal {
-  background: #ffffff;
-}
-
-.task-edit-input,
-.task-edit-textarea,
-.task-edit-select {
-  background: #ffffff;
-  color: #1f2937;
-}
-
-/* Phase 5: Blocker Predictions */
-.blocker-predictions-section {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: linear-gradient(135deg, rgba(251, 146, 60, 0.08), rgba(251, 191, 36, 0.08));
-  border: 1px solid rgba(251, 146, 60, 0.3);
+.risk-read {
+  margin-bottom: 1rem;
+  border: 1px solid var(--pulse-border);
   border-radius: 10px;
-  animation: fadeInSlide 0.4s ease-out;
+  background: var(--pulse-canvas-soft);
+  overflow: hidden;
 }
 
-.blocker-predictions-header {
+.risk-read[data-open="true"] {
+  border-color: var(--pulse-border-strong);
+}
+
+.risk-read-trigger {
+  width: 100%;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 1rem;
-  color: #f97316;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--pulse-font);
+  color: var(--pulse-ink);
+  text-align: left;
+  transition: background var(--pulse-duration) var(--pulse-ease);
 }
 
-.blocker-predictions-header svg {
-  flex-shrink: 0;
+.risk-read-trigger:hover {
+  background: var(--pulse-surface-raised);
 }
 
-.blocker-predictions-header h3 {
-  margin: 0;
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-.blocker-prediction {
-  padding: 0.875rem;
-  background: rgba(255, 255, 255, 0.6);
+.risk-read-trigger:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: -2px;
   border-radius: 8px;
-  margin-bottom: 0.75rem;
-  border-left: 3px solid transparent;
-  transition: all var(--dt-transition-base);
 }
 
-.blocker-prediction:last-child {
-  margin-bottom: 0;
-}
-
-.blocker-prediction:hover {
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.blocker-prediction.blocker-confidence-high {
-  border-left-color: #dc2626;
-}
-
-.blocker-prediction.blocker-confidence-medium {
-  border-left-color: #f59e0b;
-}
-
-.blocker-prediction.blocker-confidence-low {
-  border-left-color: #6b7280;
-}
-
-.blocker-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-}
-
-.blocker-confidence-badge {
+.risk-read-label-group {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.625rem;
-  border-radius: 6px;
-  font-family: var(--dt-font-family-mono);
-  font-size: var(--dt-label-size-sm);
-  font-weight: var(--dt-label-weight);
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.risk-read-label {
+  font-family: var(--pulse-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  letter-spacing: var(--dt-label-tracking);
+  color: var(--pulse-ink-2);
+}
+
+.risk-read-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--pulse-rose-soft);
+  color: var(--pulse-rose-deep);
+  font-family: var(--pulse-font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.dark .risk-read-count {
+  color: var(--pulse-rose-bright);
+}
+
+.risk-read-summary {
+  font-size: 0.8125rem;
+  color: var(--pulse-ink-2);
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.risk-read-chevron {
+  flex-shrink: 0;
+  color: var(--pulse-ink-3);
+  transition: transform var(--pulse-duration) var(--pulse-ease);
+}
+
+.risk-read[data-open="true"] .risk-read-chevron {
+  transform: rotate(180deg);
+}
+
+.risk-read-body {
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--pulse-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.risk-read-empty {
+  font-size: 0.8125rem;
+  color: var(--pulse-ink-3);
+  padding: 0.5rem 0;
+}
+
+.risk-read-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--pulse-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pulse-ink-3);
+  padding: 0.5rem 0;
+}
+
+.risk-read-loading-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pulse-rose);
+  opacity: 0.65;
+  animation: risk-read-pulse 1.2s var(--pulse-ease) infinite;
+}
+
+@keyframes risk-read-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .risk-read-loading-dot { animation: none; opacity: 0.7; }
+}
+
+.risk-read-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 0.75rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  border-radius: 8px;
+}
+
+.risk-read-item-confidence {
+  grid-column: 1;
+  grid-row: 1;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-family: var(--pulse-font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  align-self: flex-start;
+  margin-top: 0.125rem;
+  white-space: nowrap;
+}
+
+.risk-read-item-confidence[data-level="high"] {
+  background: var(--pulse-tone-overdue-soft);
+  color: var(--pulse-tone-overdue);
+}
+
+.risk-read-item-confidence[data-level="medium"] {
+  background: var(--pulse-tone-warning-soft);
+  color: var(--pulse-tone-warning);
+}
+
+.risk-read-item-confidence[data-level="low"] {
+  background: var(--pulse-tone-neutral-soft);
+  color: var(--pulse-tone-neutral);
+}
+
+.risk-read-item-blocker {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pulse-ink);
+  line-height: 1.45;
+}
+
+.risk-read-item-mitigation {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 0.8125rem;
+  color: var(--pulse-ink-2);
+  line-height: 1.55;
+}
+
+.risk-read-item-mitigation::before {
+  content: "Mitigation · ";
+  font-family: var(--pulse-font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pulse-ink-3);
+}
+
+.risk-read-reanalyze {
+  align-self: flex-start;
+  padding: 0.375rem 0.625rem;
+  margin-top: 0.25rem;
+  border-radius: 6px;
+  border: 1px solid var(--pulse-border);
+  background: transparent;
+  color: var(--pulse-ink-2);
+  font-family: var(--pulse-font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              color var(--pulse-duration) var(--pulse-ease);
+}
+
+.risk-read-reanalyze:hover:not(:disabled) {
+  background: var(--pulse-rose-soft);
+  color: var(--pulse-rose-deep);
+}
+
+.dark .risk-read-reanalyze:hover:not(:disabled) {
+  color: var(--pulse-rose-bright);
+}
+
+.risk-read-reanalyze:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.risk-read-reanalyze:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   Segmented pill controls — Priority + Status
+   Replaces the native <select> with emoji-prefixed options that
+   the critique flagged as Slack/Asana template. Mono-uppercase
+   labels carry the Pulse instrument aesthetic; status pills
+   carry a leading status-color dot per DESIGN.md §2 Status-
+   Stays-Status (color is a co-signal, never a replacement).
+   ============================================================ */
+
+.task-edit-segmented {
+  display: inline-flex;
+  gap: 0.375rem;
+  flex-wrap: nowrap;
+}
+
+.task-edit-segmented-wrap {
+  flex-wrap: wrap;
+}
+
+.task-edit-segmented-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4375rem 0.75rem;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  border-radius: 9999px;
+  color: var(--pulse-ink-2);
+  font-family: var(--pulse-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              border-color var(--pulse-duration) var(--pulse-ease),
+              color var(--pulse-duration) var(--pulse-ease);
+}
+
+.task-edit-segmented-pill:hover {
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink);
+}
+
+.task-edit-segmented-pill.is-active {
+  background: var(--pulse-rose-soft);
+  border-color: var(--pulse-rose);
+  color: var(--pulse-rose-deep);
+}
+
+.dark .task-edit-segmented-pill.is-active {
+  color: var(--pulse-rose-bright);
+}
+
+.task-edit-segmented-pill:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
+.task-edit-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  padding: 0.4375rem 0.75rem 0.4375rem 0.625rem;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  border-radius: 9999px;
+  color: var(--pulse-ink-2);
+  font-family: var(--pulse-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              border-color var(--pulse-duration) var(--pulse-ease),
+              color var(--pulse-duration) var(--pulse-ease);
+}
+
+.task-edit-status-pill:hover {
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink);
+}
+
+.task-edit-status-pill:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
+.task-edit-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
   flex-shrink: 0;
 }
 
-.blocker-confidence-badge.high {
-  background: rgba(220, 38, 38, 0.15);
-  color: #dc2626;
-  border: 1px solid rgba(220, 38, 38, 0.3);
-}
+/* Status-color mapping — leading dot uses the status hue, the active pill
+   paints its background and text in the same family. Inactive pills keep
+   the dot at the status color so color always pairs with the label. */
+.task-edit-status-pill[data-status="todo"]        { color: #6b7280; }
+.task-edit-status-pill[data-status="in_progress"] { color: #3b82f6; }
+.task-edit-status-pill[data-status="in_review"]   { color: #a855f7; }
+.task-edit-status-pill[data-status="blocked"]     { color: #f97316; }
+.task-edit-status-pill[data-status="done"]        { color: #22c55e; }
+.task-edit-status-pill[data-status="cancelled"]   { color: #6b7280; }
 
-.blocker-confidence-badge.medium {
-  background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-}
+.task-edit-status-pill.is-active[data-status="todo"]        { background: rgba(107,114,128,0.10); border-color: #6b7280; }
+.task-edit-status-pill.is-active[data-status="in_progress"] { background: rgba(59,130,246,0.10); border-color: #3b82f6; }
+.task-edit-status-pill.is-active[data-status="in_review"]   { background: rgba(168,85,247,0.10); border-color: #a855f7; }
+.task-edit-status-pill.is-active[data-status="blocked"]     { background: rgba(249,115,22,0.10); border-color: #f97316; }
+.task-edit-status-pill.is-active[data-status="done"]        { background: rgba(34,197,94,0.10); border-color: #22c55e; }
+.task-edit-status-pill.is-active[data-status="cancelled"]   { background: rgba(107,114,128,0.10); border-color: #6b7280; }
 
-.blocker-confidence-badge.low {
-  background: rgba(107, 114, 128, 0.15);
-  color: #6b7280;
-  border: 1px solid rgba(107, 114, 128, 0.3);
-}
+.dark .task-edit-status-pill.is-active[data-status="todo"]        { background: rgba(107,114,128,0.16); }
+.dark .task-edit-status-pill.is-active[data-status="in_progress"] { background: rgba(59,130,246,0.16); }
+.dark .task-edit-status-pill.is-active[data-status="in_review"]   { background: rgba(168,85,247,0.16); }
+.dark .task-edit-status-pill.is-active[data-status="blocked"]     { background: rgba(249,115,22,0.16); }
+.dark .task-edit-status-pill.is-active[data-status="done"]        { background: rgba(34,197,94,0.16); }
+.dark .task-edit-status-pill.is-active[data-status="cancelled"]   { background: rgba(107,114,128,0.16); }
 
-.blocker-description {
-  flex: 1;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--hub-text-primary);
-  line-height: 1.5;
-}
+/* ─── Mobile ─────────────────────────────────────────────── */
 
-.blocker-mitigation {
-  font-size: 0.8125rem;
-  color: var(--hub-text-secondary);
-  line-height: 1.6;
-  padding-left: 0.5rem;
-  border-left: 2px solid rgba(251, 146, 60, 0.3);
-}
-
-.blocker-mitigation strong {
-  color: var(--hub-text-primary);
-  font-weight: 600;
-}
-
-@keyframes fadeInSlide {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Dark mode adjustments for blocker predictions */
-:root.dark .blocker-predictions-section {
-  background: linear-gradient(135deg, rgba(251, 146, 60, 0.12), rgba(251, 191, 36, 0.12));
-  border-color: rgba(251, 146, 60, 0.4);
-}
-
-:root.dark .blocker-predictions-header {
-  color: #fb923c;
-}
-
-:root.dark .blocker-prediction {
-  background: rgba(42, 42, 42, 0.6);
-}
-
-:root.dark .blocker-prediction:hover {
-  background: rgba(42, 42, 42, 0.8);
-}
-
-:root.dark .blocker-confidence-badge.high {
-  background: rgba(220, 38, 38, 0.25);
-  color: #f87171;
-}
-
-:root.dark .blocker-confidence-badge.medium {
-  background: rgba(245, 158, 11, 0.25);
-  color: #fbbf24;
-}
-
-:root.dark .blocker-confidence-badge.low {
-  background: rgba(107, 114, 128, 0.25);
-  color: #9ca3af;
-}
-
-:root.dark .blocker-mitigation {
-  border-left-color: rgba(251, 146, 60, 0.4);
-}
-
-/* Mobile responsive */
 @media (max-width: 768px) {
   .task-edit-modal {
     width: 95%;

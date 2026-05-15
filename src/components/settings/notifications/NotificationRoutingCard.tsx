@@ -117,56 +117,105 @@ export const NotificationRoutingCard: React.FC = () => {
       )}
 
       {!isLoading && (
-        <div className="overflow-x-auto -mx-2 px-2">
-          <table className="w-full min-w-[480px] text-xs border-separate border-spacing-0">
-            <thead>
-              <tr>
-                <th className="text-left font-semibold text-zinc-500 dark:text-zinc-400 pb-2 pr-3">Channel</th>
-                {MODES.map(m => {
-                  const Icon = m.icon;
+        <>
+          {/* Desktop: table layout */}
+          <div className="hidden md:block">
+            <table className="w-full text-xs border-separate border-spacing-0">
+              <thead>
+                <tr>
+                  <th className="text-left font-semibold text-zinc-500 dark:text-zinc-400 pb-2 pr-3">Channel</th>
+                  {MODES.map(m => {
+                    const Icon = m.icon;
+                    return (
+                      <th key={m.key} className="font-semibold text-zinc-500 dark:text-zinc-400 pb-2 px-2 text-center" style={{ minWidth: 60 }}>
+                        <span className="inline-flex flex-col items-center gap-1">
+                          <Icon className="w-4 h-4" />
+                          <span>{m.label}</span>
+                        </span>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {CHANNELS.map((ch, idx) => {
+                  const Icon = ch.icon;
+                  const route = routing[ch.key] ?? DEFAULT_ROUTE;
                   return (
-                    <th key={m.key} className="font-semibold text-zinc-500 dark:text-zinc-400 pb-2 px-2 text-center" style={{ minWidth: 60 }}>
-                      <span className="inline-flex flex-col items-center gap-1">
-                        <Icon className="w-4 h-4" />
-                        <span>{m.label}</span>
-                      </span>
-                    </th>
+                    <tr key={ch.key} className={idx > 0 ? 'border-t border-zinc-100 dark:border-zinc-800' : ''}>
+                      <td className="py-2.5 pr-3 align-top">
+                        <div className="flex items-start gap-2">
+                          <Icon className="w-3.5 h-3.5 text-zinc-400 mt-0.5 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-zinc-900 dark:text-white font-medium">{ch.label}</p>
+                            <p className="text-[10px] text-zinc-400 mt-0.5">{ch.description}</p>
+                          </div>
+                        </div>
+                      </td>
+                      {MODES.map(m => (
+                        <td key={m.key} className="py-2.5 px-2 align-middle text-center">
+                          <input
+                            type="checkbox"
+                            checked={route[m.key]}
+                            onChange={() => toggle(ch.key, m.key)}
+                            aria-label={`${ch.label} via ${m.label}`}
+                            className="w-4 h-4 text-rose-500 border-zinc-300 rounded focus:ring-rose-500"
+                          />
+                        </td>
+                      ))}
+                    </tr>
                   );
                 })}
-              </tr>
-            </thead>
-            <tbody>
-              {CHANNELS.map((ch, idx) => {
-                const Icon = ch.icon;
-                const route = routing[ch.key] ?? DEFAULT_ROUTE;
-                return (
-                  <tr key={ch.key} className={idx > 0 ? 'border-t border-zinc-100 dark:border-zinc-800' : ''}>
-                    <td className="py-2.5 pr-3 align-top">
-                      <div className="flex items-start gap-2">
-                        <Icon className="w-3.5 h-3.5 text-zinc-400 mt-0.5 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-zinc-900 dark:text-white font-medium">{ch.label}</p>
-                          <p className="text-[10px] text-zinc-400 mt-0.5">{ch.description}</p>
-                        </div>
-                      </div>
-                    </td>
-                    {MODES.map(m => (
-                      <td key={m.key} className="py-2.5 px-2 align-middle text-center">
-                        <input
-                          type="checkbox"
-                          checked={route[m.key]}
-                          onChange={() => toggle(ch.key, m.key)}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile: stacked card list with pill toggles */}
+          <div className="md:hidden space-y-2">
+            {CHANNELS.map((ch) => {
+              const Icon = ch.icon;
+              const route = routing[ch.key] ?? DEFAULT_ROUTE;
+              return (
+                <div
+                  key={ch.key}
+                  className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 bg-white dark:bg-zinc-900"
+                >
+                  <div className="flex items-start gap-2 mb-2.5">
+                    <Icon className="w-4 h-4 text-zinc-400 mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-zinc-900 dark:text-white font-medium leading-tight">{ch.label}</p>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">{ch.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {MODES.map(m => {
+                      const ModeIcon = m.icon;
+                      const isActive = route[m.key];
+                      return (
+                        <button
+                          key={m.key}
+                          type="button"
+                          role="switch"
+                          aria-checked={isActive}
                           aria-label={`${ch.label} via ${m.label}`}
-                          className="w-4 h-4 text-rose-500 border-zinc-300 rounded focus:ring-rose-500"
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                          onClick={() => toggle(ch.key, m.key)}
+                          className={`flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-md text-xs font-medium transition border ${
+                            isActive
+                              ? 'bg-rose-500 text-white border-rose-500'
+                              : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'
+                          }`}
+                        >
+                          <ModeIcon className="w-3.5 h-3.5 shrink-0" />
+                          <span>{m.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <div className="flex justify-end">

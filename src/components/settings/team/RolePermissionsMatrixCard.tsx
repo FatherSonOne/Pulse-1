@@ -105,9 +105,9 @@ export const RolePermissionsMatrixCard: React.FC = () => {
             this serves as the canonical reference until they are.
           </p>
 
-          {/* Header row */}
-          <div className="overflow-x-auto -mx-4 px-4">
-            <table className="w-full min-w-[480px] text-xs">
+          {/* Desktop: full matrix table */}
+          <div className="hidden md:block">
+            <table className="w-full text-xs">
               <thead>
                 <tr className="text-left">
                   <th className="font-semibold text-zinc-500 dark:text-zinc-400 pb-2 pr-4">Permission</th>
@@ -143,6 +143,49 @@ export const RolePermissionsMatrixCard: React.FC = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile: stacked cards grouped by category, 3 role chips per row */}
+          <div className="md:hidden space-y-4">
+            {CATEGORIES.map(cat => (
+              <div key={cat}>
+                <div className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 mb-2">
+                  {cat}
+                </div>
+                <div className="space-y-2">
+                  {PERMISSIONS.filter(p => p.category === cat).map((p, i) => (
+                    <div
+                      key={`${cat}-${i}`}
+                      className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 bg-white dark:bg-zinc-900"
+                    >
+                      <p className="text-xs text-zinc-900 dark:text-white font-medium leading-snug">
+                        {p.label}
+                      </p>
+                      {p.description && (
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
+                          {p.description}
+                        </p>
+                      )}
+                      <div className="flex gap-1.5 mt-2.5">
+                        {(Object.keys(ROLE_LABELS) as RoleKey[]).map(k => (
+                          <div
+                            key={k}
+                            className={`flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-md border text-[11px] font-medium ${
+                              p[k]
+                                ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-900/20'
+                                : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40'
+                            }`}
+                          >
+                            <Cell allowed={p[k]} />
+                            <span className={ROLE_COLORS[k]}>{ROLE_LABELS[k]}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

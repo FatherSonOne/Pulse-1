@@ -161,6 +161,7 @@
     "pdfjs-dist": "^5.4.149",
     "pg": "^8.18.0",
     "pipedrive": "^30.8.0",
+    "posthog-js": "^1.373.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.6.0",

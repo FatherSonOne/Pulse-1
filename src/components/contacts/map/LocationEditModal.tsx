@@ -12,6 +12,22 @@ interface LocationEditModalProps {
   onSave: (updated: Contact) => void;
 }
 
+// Sensible defaults so first-time users get geofence behaviour without
+// touching the slider. Home is tighter than work because home is more
+// precise (apartment vs. office building footprint).
+const DEFAULT_RADIUS_M: Record<'home' | 'work', number> = {
+  home: 75,
+  work: 150,
+};
+
+const RADIUS_MIN_M = 25;
+const RADIUS_MAX_M = 1000;
+
+function formatRadius(m: number): string {
+  if (m < 1000) return `${m} m`;
+  return `${(m / 1000).toFixed(1)} km`;
+}
+
 const LocationEditModal: React.FC<LocationEditModalProps> = ({
   contact,
   isOpen,
@@ -29,6 +45,13 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
 
   const [homePending, setHomePending] = useState<{ lat: number; lng: number; address: string } | null>(null);
   const [workPending, setWorkPending] = useState<{ lat: number; lng: number; address: string } | null>(null);
+
+  // Geofence toggles + radii (per location). Default ON so newly-saved
+  // locations come with arrival detection by default.
+  const [homeGeofenceOn, setHomeGeofenceOn] = useState(true);
+  const [workGeofenceOn, setWorkGeofenceOn] = useState(true);
+  const [homeRadius, setHomeRadius] = useState(DEFAULT_RADIUS_M.home);
+  const [workRadius, setWorkRadius] = useState(DEFAULT_RADIUS_M.work);
 
   if (!isOpen) return null;
 
@@ -65,13 +88,34 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
     try {
       let updated = { ...contact };
       if (homePending) {
-        await saveContactLocation(contact.id, 'home', homePending.lat, homePending.lng, homePending.address);
+        await saveContactLocation(
+          contact.id,
+          'home',
+          homePending.lat,
+          homePending.lng,
+          homePending.address,
+          homeGeofenceOn ? homeRadius : null
+        );
         updated = { ...updated, homeLat: homePending.lat, homeLng: homePending.lng, homeAddress: homePending.address };
       }
       if (workPending) {
-        await saveContactLocation(contact.id, 'work', workPending.lat, workPending.lng, workPending.address);
+        await saveContactLocation(
+          contact.id,
+          'work',
+          workPending.lat,
+          workPending.lng,
+          workPending.address,
+          workGeofenceOn ? workRadius : null
+        );
         updated = { ...updated, workLat: workPending.lat, workLng: workPending.lng, workAddress: workPending.address };
       }
+      // Trigger geofence cache refresh so the new place is picked up on
+      // the next location tick. Lazy import — service may not be loaded
+      // yet if the user never opened sharing.
+      try {
+        const mod = await import('../../../services/geofenceService');
+        await mod.refreshGeofences();
+      } catch { /* geofence service inactive — no-op */ }
       onSave(updated);
     } catch (e) {
       setError('Failed to save location. Please try again.');
@@ -90,6 +134,77 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
     } catch (e) {
       setError('Failed to clear location.');
     }
+  };
+
+  const GeofenceControl = ({
+    kind,
+    isOn,
+    radius,
+    isDarkMode: dark,
+    onToggle,
+    onRadiusChange,
+  }: {
+    kind: 'home' | 'work';
+    isOn: boolean;
+    radius: number;
+    isDarkMode: boolean;
+    onToggle: (v: boolean) => void;
+    onRadiusChange: (m: number) => void;
+  }) => {
+    const subLabel = dark ? 'text-gray-400' : 'text-gray-500';
+    return (
+      <div
+        className={`rounded-lg px-3 py-2 ${
+          dark ? 'bg-white/5' : 'bg-rose-50/50 border border-rose-100/60'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <label className={`text-xs font-semibold flex items-center gap-1.5 ${dark ? 'text-gray-200' : 'text-gray-700'}`}>
+            <span aria-hidden>📍</span>
+            Arrival alerts
+          </label>
+          <button
+            type="button"
+            onClick={() => onToggle(!isOn)}
+            aria-pressed={isOn}
+            className={`relative h-5 w-9 rounded-full transition-colors ${
+              isOn ? 'bg-rose-500' : dark ? 'bg-white/15' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                isOn ? 'translate-x-4' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+        </div>
+        {isOn && (
+          <div className="mt-2 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] uppercase tracking-wider ${subLabel}`}>
+                Radius
+              </span>
+              <span className={`text-xs font-medium ${dark ? 'text-gray-200' : 'text-gray-700'}`}>
+                {formatRadius(radius)}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={RADIUS_MIN_M}
+              max={RADIUS_MAX_M}
+              step={25}
+              value={radius}
+              onChange={e => onRadiusChange(Number(e.target.value))}
+              className="w-full accent-rose-500"
+              aria-label={`${kind} geofence radius in meters`}
+            />
+            <p className={`text-[10px] ${subLabel}`}>
+              You'll be notified when entering, approaching, or leaving this area.
+            </p>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const LocationField = ({
@@ -143,7 +258,7 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
       <div className={`w-full max-w-md rounded-2xl border shadow-2xl ${bg}`}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
@@ -164,20 +279,41 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
 
         {/* Fields */}
         <div className="p-5 space-y-5">
-          <LocationField
-            type="home"
-            label="Home"
-            currentAddress={contact.homeAddress}
-            autocompleteRef={homeRef}
-            inputRef={homeInputRef}
-          />
-          <LocationField
-            type="work"
-            label="Work"
-            currentAddress={contact.workAddress}
-            autocompleteRef={workRef}
-            inputRef={workInputRef}
-          />
+          <div className="space-y-2">
+            <LocationField
+              type="home"
+              label="Home"
+              currentAddress={contact.homeAddress}
+              autocompleteRef={homeRef}
+              inputRef={homeInputRef}
+            />
+            <GeofenceControl
+              kind="home"
+              isOn={homeGeofenceOn}
+              radius={homeRadius}
+              isDarkMode={isDarkMode}
+              onToggle={setHomeGeofenceOn}
+              onRadiusChange={setHomeRadius}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <LocationField
+              type="work"
+              label="Work"
+              currentAddress={contact.workAddress}
+              autocompleteRef={workRef}
+              inputRef={workInputRef}
+            />
+            <GeofenceControl
+              kind="work"
+              isOn={workGeofenceOn}
+              radius={workRadius}
+              isDarkMode={isDarkMode}
+              onToggle={setWorkGeofenceOn}
+              onRadiusChange={setWorkRadius}
+            />
+          </div>
 
           {error && (
             <p className="text-xs text-red-500 bg-red-500/10 rounded-lg px-3 py-2">{error}</p>

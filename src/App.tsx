@@ -47,6 +47,7 @@ import GoogleAccountSelector from './components/GoogleAccountSelector';
 import { ExtensionLogin, ExtensionOAuthCallback, ExtensionCallback, ExtensionError } from './components/ExtensionAuth';
 import { MicrosoftCalendarCallback } from './components/MicrosoftCalendarCallback';
 import { ApiDocumentation } from './components/ApiKeys';
+import EtaSharePage from './components/EtaSharePage';
 import PulseVoiceLogo from './components/PulseVoiceLogo';
 import { voiceCommandService } from './services/voiceCommandService';
 import PermissionRequestModal from './components/PermissionRequestModal';
@@ -54,7 +55,9 @@ import { usePermissions } from './hooks/usePermissions';
 import { settingsService } from './services/settingsService';
 import { archiveService } from './services/archiveService';
 import { usePresence } from './hooks/usePresence';
+import { useAndroidBackButton } from './hooks/useAndroidBackButton';
 import { Sidebar } from './components/Sidebar';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import { useAuth } from './hooks/useAuth';
 import PulseAssistant from './components/PulseAssistant/PulseAssistant';
 import { PulseAssistantButton } from './components/PulseAssistant/PulseAssistantButton';
@@ -295,6 +298,13 @@ const App: React.FC = () => {
     return <PulseRoomPage roomName={roomName} />;
   }
 
+  // Live ETA share — public viewer. Token is the 32-char hex from
+  // createEtaShare (UUID with hyphens stripped). No auth required.
+  const etaShareMatch = path.match(/^\/eta\/([a-f0-9]{32})$/i);
+  if (etaShareMatch) {
+    return <EtaSharePage token={etaShareMatch[1]} />;
+  }
+
   // Check for meeting link (e.g., /meeting/abc-defg-hij)
   const meetingMatch = path.match(/^\/meeting\/([a-z0-9-]+)$/i);
   const initialMeetingCode = meetingMatch ? meetingMatch[1] : null;
@@ -306,6 +316,7 @@ const App: React.FC = () => {
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
 
   const [view, setView] = useState<AppView>(initialMeetingCode ? AppView.MEETINGS : AppView.DASHBOARD);
+  useAndroidBackButton({ view, setView });
   const [showPulseAI, setShowPulseAI] = useState(false);
   const [hasPulseAISuggestion, setHasPulseAISuggestion] = useState(false);
   const [proactiveFindings, setProactiveFindings] = useState<string | undefined>(undefined);
@@ -1098,13 +1109,23 @@ const App: React.FC = () => {
       />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden relative transition-colors duration-500 w-full safe-area-bottom">
+      <main className="flex-1 overflow-hidden relative transition-colors duration-500 w-full safe-area-bottom pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
         <div className={`h-full w-full flex flex-col ${view === AppView.MESSAGES || view === AppView.CALENDAR ? 'overflow-hidden' : 'overflow-auto mobile-scroll p-2 sm:p-3 md:p-4 lg:p-6'}`}>
           <div className={`w-full ${view === AppView.MESSAGES || view === AppView.CALENDAR ? 'h-full min-h-0 flex flex-col' : 'min-h-full max-w-[1600px] mx-auto flex flex-col'} animate-fade-in`}>
             {renderContent()}
           </div>
         </div>
       </main>
+
+      <MobileBottomNav
+        view={view}
+        onNavigate={(next) => {
+          setView(next);
+          setIsMobileMenuOpen(false);
+        }}
+        onOpenMore={() => setIsMobileMenuOpen(true)}
+        isDarkMode={isDarkMode}
+      />
 
       {/* Logo Preview Modal */}
       {showLogoPreview && (

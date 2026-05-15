@@ -1,8 +1,9 @@
 import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import { CalendarEvent } from '../types';
 import { getEventTypeMeta } from '../services/customEventTypesService';
+import { useCalendarTravelBuffers, bufferChipCopy, BufferInfo } from '../hooks/useCalendarTravelBuffers';
 
-import { ChevronLeft, ChevronRight, Ellipsis, MapPin, Sun } from 'lucide-react';
+import { Car, ChevronLeft, ChevronRight, Ellipsis, MapPin, Sun } from 'lucide-react';
 
 // ============================================
 // SHARED TYPES & UTILITIES
@@ -837,6 +838,32 @@ export const WeekView: React.FC<ViewProps> = ({
 };
 
 // ============================================
+// TRAVEL BUFFER CHIP
+//
+// Tiny inline chip rendered under each calendar event card when there
+// isn't enough time to drive from the previous located event. Hidden
+// for comfortable buffers so the day view stays calm — only surfaces
+// when the user genuinely needs to leave earlier.
+// ============================================
+
+const TravelBufferChip: React.FC<{ info: BufferInfo | undefined }> = ({ info }) => {
+  if (!info) return null;
+  if (info.severity === 'comfortable') return null;
+  const tone = info.severity === 'late'
+    ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+    : 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800';
+  return (
+    <div
+      className={`cal-day-event-buffer inline-flex items-center gap-1 px-1.5 py-0.5 mt-0.5 rounded-full text-[10px] font-medium border ${tone}`}
+      title={`${info.driveMinutes}-min drive from ${info.fromTitle} · ${info.gapMinutes}-min gap`}
+    >
+      <Car size={10} />
+      {bufferChipCopy(info)}
+    </div>
+  );
+};
+
+// ============================================
 // DAY VIEW COMPONENT
 // ============================================
 
@@ -864,6 +891,11 @@ export const DayView: React.FC<ViewProps> = ({
 
   const allDayEvents = dayEvents.filter(e => e.allDay);
   const timedEvents = dayEvents.filter(e => !e.allDay);
+
+  // Driving buffer between consecutive events with locations. Keyed by
+  // the arriving event's id — comfortable buffers are also recorded
+  // but only `tight` / `late` get a chip to keep the day view calm.
+  const travelBuffers = useCalendarTravelBuffers(timedEvents);
 
   // Current time position (60px per hour)
   const currentTimePosition = useMemo(() => {
@@ -1016,6 +1048,7 @@ export const DayView: React.FC<ViewProps> = ({
                     {ev.location}
                   </div>
                 )}
+                <TravelBufferChip info={travelBuffers.get(ev.id)} />
               </div>
             );
           })}

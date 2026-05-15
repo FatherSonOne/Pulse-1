@@ -68,24 +68,27 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
 
     // === TASKS BY STATUS ===
 
-    // Overdue tasks (not done/cancelled and past deadline)
+    // Bucket priority is strict so every task lands in exactly one section:
+    //   BLOCKED > OVERDUE > IN_REVIEW > IN_PROGRESS > TODO > DONE
+    // Cards in higher-priority buckets still surface their secondary state
+    // (e.g. an OVERDUE deadline stamp inside a BLOCKED card) — only the
+    // *section placement* is exclusive.
+    const blocked = tasks.filter(t => t.status === 'blocked');
+
     const overdue = tasks.filter(t =>
       t.deadline &&
       new Date(t.deadline) < now &&
-      !['done', 'cancelled'].includes(t.status)
+      !['done', 'cancelled', 'blocked'].includes(t.status)
     );
+    const overdueIds = new Set(overdue.map(t => t.id));
 
-    // Blocked tasks
-    const blocked = tasks.filter(t => t.status === 'blocked');
-
-    // In Review tasks
-    const inReview = tasks.filter(t => t.status === 'in_review');
-
-    // In Progress tasks
-    const inProgress = tasks.filter(t => t.status === 'in_progress');
-
-    // To Do tasks
-    const todo = tasks.filter(t => t.status === 'todo' || t.status === 'pending');
+    // The remaining status buckets exclude anything already promoted to
+    // OVERDUE so a single task never renders twice.
+    const inReview = tasks.filter(t => t.status === 'in_review' && !overdueIds.has(t.id));
+    const inProgress = tasks.filter(t => t.status === 'in_progress' && !overdueIds.has(t.id));
+    const todo = tasks.filter(t =>
+      (t.status === 'todo' || t.status === 'pending') && !overdueIds.has(t.id)
+    );
 
     // Recently completed (done within last 48 hours, not archived)
     const recentlyDone = tasks.filter(t => {

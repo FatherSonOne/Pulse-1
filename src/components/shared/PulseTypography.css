@@ -373,6 +373,44 @@
 }
 
 /* ============================================
+   AI PROVENANCE CHIP — DESIGN.md §5 signature
+   Reserved for AI-generated artifacts (summary, draft, suggestion).
+   JetBrains Mono uppercase on translucent rose so origin is unmistakable.
+   Token-driven; flips automatically with light/dark.
+   ============================================ */
+
+.pulse-provenance-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  font-family: var(--pulse-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+  background: var(--pulse-rose-soft);
+  color: var(--pulse-rose-deep);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.pulse-provenance-chip::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--pulse-rose);
+  flex-shrink: 0;
+}
+
+.dark .pulse-provenance-chip {
+  color: var(--pulse-rose-bright);
+}
+
+/* ============================================
    DATE HEADERS (Archives Style)
    ============================================ */
 
@@ -454,6 +492,45 @@
   font-size: var(--pulse-text-xs);
   line-height: var(--pulse-leading-relaxed);
   color: var(--text-secondary);
+}
+
+/* ============================================
+   ACTIVATION COUNTERS
+   Live counters for the post-Stripe onboarding surface
+   (docs/onboarding-redesign.md §5.3.2). The number stays Inter
+   for at-a-glance reading; the label is the JetBrains Mono
+   signature. Number flashes coral on tick, then settles.
+   ============================================ */
+
+.pulse-counter-number {
+  font-family: var(--pulse-font-display);
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--pulse-ink);
+  font-variant-numeric: var(--pulse-mono-numeric, tabular-nums);
+  transition: color var(--pulse-duration, 220ms) var(--pulse-ease, ease-out);
+}
+
+.pulse-counter-number[data-ticking="true"] {
+  color: var(--pulse-rose);
+}
+
+.pulse-counter-label {
+  font-family: var(--pulse-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pulse-ink-2);
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-counter-number {
+    transition: none;
+  }
 }
 
 /* ============================================

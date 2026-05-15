@@ -256,8 +256,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Backdrop */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+          className="pulse-modal-scrim fixed inset-0 z-40 md:hidden"
           onClick={onMobileClose}
+          aria-hidden="true"
         />
       )}
 
@@ -393,7 +394,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Billing Alert Banner */}
         {showBillingAlert && !isCollapsed && (
           <button
-            onClick={() => handleNavClick(AppView.SETTINGS)}
+            onClick={() => {
+              // Deep-link into Plan & Billing and scroll to the usage section
+              // when the alert is about hitting a usage limit. Trial-ending
+              // alerts open the plan page without focusing usage.
+              const focus = !isTrialing ? 'usage' : 'plan';
+              const params = new URLSearchParams(window.location.search);
+              params.set('settings', 'billing');
+              params.set('billing_focus', focus);
+              window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+              handleNavClick(AppView.SETTINGS);
+            }}
             className="mx-3 mb-2 p-2.5 rounded-lg text-left transition-opacity hover:opacity-90"
             style={{
               background: isTrialing ? 'var(--pulse-tone-warning-soft)' : 'var(--pulse-tone-overdue-soft)',
