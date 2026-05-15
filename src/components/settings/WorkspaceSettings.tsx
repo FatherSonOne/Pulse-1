@@ -38,28 +38,41 @@ export const WorkspaceSettings: React.FC = () => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
+  // Transfer state (declared early so the focus useEffect below can
+  // auto-expand the form when ?focus=transfer deep-links into this section).
+  const [showTransfer, setShowTransfer] = useState(false);
+
   // Refs + highlight state for deep-linked onboarding focus
-  // (?focus=logo | auto-join | billing-contact). When the onboarding
-  // checklist deep-links here, we scroll to and visually highlight the
-  // specific card so the user doesn't have to hunt through a long settings page.
+  // (?focus=logo | auto-join | billing-contact | transfer). When another
+  // section deep-links here (onboarding checklist; Team Settings "Transfer →"
+  // on the owner's own row), scroll to and visually highlight the card so
+  // the user doesn't have to hunt through a long settings page.
   const avatarCardRef = useRef<HTMLDivElement>(null);
   const autoJoinCardRef = useRef<HTMLDivElement>(null);
   const billingContactCardRef = useRef<HTMLDivElement>(null);
-  type FocusTarget = 'logo' | 'auto-join' | 'billing-contact';
+  const transferCardRef = useRef<HTMLDivElement>(null);
+  type FocusTarget = 'logo' | 'auto-join' | 'billing-contact' | 'transfer';
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const focus = params.get('focus');
-    if (focus !== 'logo' && focus !== 'auto-join' && focus !== 'billing-contact') return;
+    if (focus !== 'logo' && focus !== 'auto-join' && focus !== 'billing-contact' && focus !== 'transfer') return;
 
     setFocusTarget(focus);
+
+    // For `transfer`, auto-expand the collapsed transfer form so the user
+    // lands on the member select instead of a button they still need to click.
+    if (focus === 'transfer') {
+      setShowTransfer(true);
+    }
 
     const t = setTimeout(() => {
       const target =
         focus === 'logo' ? avatarCardRef.current
         : focus === 'auto-join' ? autoJoinCardRef.current
-        : billingContactCardRef.current;
+        : focus === 'billing-contact' ? billingContactCardRef.current
+        : transferCardRef.current;
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
       // For `logo`, open the file picker directly — the existing UI hides the
@@ -95,8 +108,7 @@ export const WorkspaceSettings: React.FC = () => {
     setAutoJoinEnabled(currentWorkspace.auto_join_enabled ?? false);
   }, [currentWorkspace?.id]);
 
-  // Transfer state
-  const [showTransfer, setShowTransfer] = useState(false);
+  // Transfer state (showTransfer declared above for focus-deep-link access)
   const [transferTargetId, setTransferTargetId] = useState('');
   const [isTransferring, setIsTransferring] = useState(false);
 
@@ -548,7 +560,20 @@ export const WorkspaceSettings: React.FC = () => {
 
       {/* Transfer Ownership — owner only */}
       {isOwner && nonOwnerMembers.length > 0 && (
+      <div
+        ref={transferCardRef}
+        className="scroll-mt-4 rounded-2xl transition-shadow"
+        style={{
+          boxShadow: focusTarget === 'transfer' ? '0 0 0 3px rgba(244, 63, 94, 0.45)' : 'none',
+        }}
+      >
         <SettingsCard className="space-y-4">
+          {focusTarget === 'transfer' && (
+            <div className="flex items-center gap-2 px-3 py-2 -mt-1 mb-1 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-xs text-rose-700 dark:text-rose-300">
+              <ArrowRightLeft className="w-3.5 h-3.5" />
+              <span>Pick a member to transfer ownership to — you'll be demoted to admin once confirmed.</span>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ArrowRightLeft className="w-4 h-4 text-zinc-500" />
@@ -591,6 +616,7 @@ export const WorkspaceSettings: React.FC = () => {
             </div>
           )}
         </SettingsCard>
+      </div>
       )}
 
       {/* Audit Log — admin+ */}
