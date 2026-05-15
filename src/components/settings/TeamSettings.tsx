@@ -191,110 +191,9 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
         </p>
       </div>
 
-      {/* Invite Form — admin+ only */}
-      {canManageMembers && (
-      <div
-        ref={inviteCardRef}
-        className="scroll-mt-4 rounded-2xl transition-shadow"
-        style={{
-          boxShadow: inviteFocused ? '0 0 0 3px rgba(244, 63, 94, 0.45)' : 'none',
-        }}
-      >
-        <SettingsCard>
-          <MonoLabel className="mb-6">Invite New Member</MonoLabel>
-          <div className="flex gap-2">
-            <input
-              ref={inviteEmailInputRef}
-              type="email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="colleague@company.com"
-              className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500"
-              onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
-            />
-            <select
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value as 'admin' | 'member' | 'viewer')}
-              aria-label="Invite role"
-              className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 dark:text-white text-zinc-900 text-sm focus:outline-none focus:border-rose-500"
-            >
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-              <option value="viewer">Viewer</option>
-            </select>
-            <button
-              type="button"
-              onClick={handleInvite}
-              disabled={!inviteEmail || isInviting}
-              className="px-6 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"
-            >
-              {isInviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Send
-            </button>
-          </div>
-        </SettingsCard>
-      </div>
-      )}
-
-      {/* Bulk invite — admin+ only */}
-      {canManageMembers && workspaceId && (
-        <BulkInviteCard
-          workspaceId={workspaceId}
-          workspaceName={currentWorkspace.name}
-          onInvitesSent={loadInvites}
-        />
-      )}
-
-      {/* Pending Invitations — admin+ only */}
-      {canManageMembers && pendingInvites.length > 0 && (
-        <SettingsCard padded={false} className="overflow-hidden">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
-            <MonoLabel className="flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-zinc-400" />
-              Pending Invitations ({pendingInvites.length})
-            </MonoLabel>
-          </div>
-          <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
-            {pendingInvites.map((invite) => (
-              <div key={invite.id} className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-zinc-500">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium dark:text-white text-zinc-900">{invite.email}</p>
-                    <p className="text-xs text-zinc-500">
-                      {invite.role} &middot; expires {new Date(invite.expires_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    className="text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center gap-1"
-                    onClick={() => handleCopyInviteLink(invite)}
-                    aria-label={`Copy invite link for ${invite.email}`}
-                  >
-                    {copiedInviteId === invite.id
-                      ? <><Check className="w-3 h-3" /> Copied</>
-                      : <><Copy className="w-3 h-3" /> Copy link</>}
-                  </button>
-                  <button
-                    type="button"
-                    className="text-xs font-medium text-red-500 hover:text-red-600 flex items-center gap-1"
-                    onClick={() => handleRevokeInvite(invite)}
-                    aria-label={`Revoke invite for ${invite.email}`}
-                  >
-                    <X className="w-3 h-3" /> Revoke
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </SettingsCard>
-      )}
-
-      {/* Current Members */}
+      {/* Current Members — promoted above Invite by daily-task-priority
+          (audit #41 C6-promote: by day 2 of any workspace, roster management
+          is the dominant task; cold-open invite UX moves below). */}
       <SettingsCard padded={false} className="overflow-hidden">
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
           <MonoLabel>
@@ -405,6 +304,109 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
           )}
         </div>
       </SettingsCard>
+
+      {/* Invite Form — admin+ only */}
+      {canManageMembers && (
+      <div
+        ref={inviteCardRef}
+        className="scroll-mt-4 rounded-2xl transition-shadow"
+        style={{
+          boxShadow: inviteFocused ? '0 0 0 3px rgba(244, 63, 94, 0.45)' : 'none',
+        }}
+      >
+        <SettingsCard>
+          <MonoLabel className="mb-6">Invite New Member</MonoLabel>
+          <div className="flex gap-2">
+            <input
+              ref={inviteEmailInputRef}
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="colleague@company.com"
+              className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500"
+              onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
+            />
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value as 'admin' | 'member' | 'viewer')}
+              aria-label="Invite role"
+              className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 dark:text-white text-zinc-900 text-sm focus:outline-none focus:border-rose-500"
+            >
+              <option value="member">Member</option>
+              <option value="admin">Admin</option>
+              <option value="viewer">Viewer</option>
+            </select>
+            <button
+              type="button"
+              onClick={handleInvite}
+              disabled={!inviteEmail || isInviting}
+              className="px-6 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"
+            >
+              {isInviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Send
+            </button>
+          </div>
+        </SettingsCard>
+      </div>
+      )}
+
+      {/* Bulk invite — admin+ only */}
+      {canManageMembers && workspaceId && (
+        <BulkInviteCard
+          workspaceId={workspaceId}
+          workspaceName={currentWorkspace.name}
+          onInvitesSent={loadInvites}
+        />
+      )}
+
+      {/* Pending Invitations — admin+ only */}
+      {canManageMembers && pendingInvites.length > 0 && (
+        <SettingsCard padded={false} className="overflow-hidden">
+          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
+            <MonoLabel className="flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-zinc-400" />
+              Pending Invitations ({pendingInvites.length})
+            </MonoLabel>
+          </div>
+          <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
+            {pendingInvites.map((invite) => (
+              <div key={invite.id} className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-zinc-500">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium dark:text-white text-zinc-900">{invite.email}</p>
+                    <p className="text-xs text-zinc-500">
+                      {invite.role} &middot; expires {new Date(invite.expires_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center gap-1"
+                    onClick={() => handleCopyInviteLink(invite)}
+                    aria-label={`Copy invite link for ${invite.email}`}
+                  >
+                    {copiedInviteId === invite.id
+                      ? <><Check className="w-3 h-3" /> Copied</>
+                      : <><Copy className="w-3 h-3" /> Copy link</>}
+                  </button>
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-red-500 hover:text-red-600 flex items-center gap-1"
+                    onClick={() => handleRevokeInvite(invite)}
+                    aria-label={`Revoke invite for ${invite.email}`}
+                  >
+                    <X className="w-3 h-3" /> Revoke
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </SettingsCard>
+      )}
 
       {/* Groups & departments — see showGroups flag declaration above. */}
       {workspaceId && showGroups && (
