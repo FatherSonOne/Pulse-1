@@ -3,9 +3,12 @@ import { ShieldCheck, Check, Minus, ChevronDown, ChevronRight } from 'lucide-rea
 import { SettingsCard } from '../shared/SettingsCard';
 import { MonoLabel } from '../shared/MonoLabel';
 
-type RoleKey = 'owner' | 'admin' | 'member';
+// Exported so other surfaces (RoleHelpPopover next to the Invite role select)
+// read from the same source as the matrix card. Whenever this matrix becomes
+// fictional (#42 epic), one consumer breaks both surfaces — that's the goal.
+export type RoleKey = 'owner' | 'admin' | 'member';
 
-interface PermissionRow {
+export interface PermissionRow {
   category: string;
   label: string;
   description?: string;
@@ -28,7 +31,7 @@ const ROLE_COLORS: Record<RoleKey, string> = {
 
 // Truth table — what each role can do today.
 // To add a custom role, extend this matrix and add a column to the table.
-const PERMISSIONS: PermissionRow[] = [
+export const PERMISSIONS: PermissionRow[] = [
   // Use product
   { category: 'Use product',    label: 'Sign in and use the workspace',  owner: true,  admin: true,  member: true },
   { category: 'Use product',    label: 'Send messages, voxes, and use AI', owner: true,  admin: true,  member: true },
