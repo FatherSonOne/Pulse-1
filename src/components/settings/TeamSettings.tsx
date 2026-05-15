@@ -7,6 +7,7 @@ import { BulkInviteCard } from './team/BulkInviteCard';
 import { GroupsManagementCard } from './team/GroupsManagementCard';
 import { RolePermissionsMatrixCard } from './team/RolePermissionsMatrixCard';
 import { RoleHelpPopover } from './team/RoleHelpPopover';
+import { ConfirmActionDialog } from './team/ConfirmActionDialog';
 import { SettingsCard } from './shared/SettingsCard';
 import { MonoLabel } from './shared/MonoLabel';
 import { useFeatureFlag } from '../../lib/featureFlags';
@@ -33,6 +34,16 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
   const [isLoadingInvites, setIsLoadingInvites] = useState(false);
   // Which pending-invite row was just copied? Drives the 1.5s Check icon.
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
+
+  // Two-step confirmation for destructive actions (member remove / invite
+  // revoke). Replaces native confirm() with a role-aware dialog so the user
+  // gets the differentiated copy DESIGN.md asks for.
+  type PendingConfirm =
+    | { kind: 'remove'; member: WorkspaceMember }
+    | { kind: 'revoke'; invite: WorkspaceInvite }
+    | null;
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   // Deep-link focus (?focus=invite) — scroll + highlight the invite form
   // and put the cursor in the email field.
@@ -121,16 +132,11 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
     setRoleDropdownOpen(null);
   };
 
-  const handleRemoveMember = async (member: WorkspaceMember) => {
+  // Triggers — open the confirm dialog with the right target. Execution
+  // happens in handleConfirmPending below once the user clicks through.
+  const handleRemoveMember = (member: WorkspaceMember) => {
     if (!workspaceId) return;
-    if (!confirm(`Remove ${member.name || member.email || 'this member'} from the workspace?`)) return;
-    try {
-      await workspaceService.removeMember(workspaceId, member.user_id);
-      toast.success('Member removed');
-      await refreshMembers();
-    } catch {
-      toast.error('Failed to remove member');
-    }
+    setPendingConfirm({ kind: 'remove', member });
   };
 
   const handleCopyInviteLink = async (invite: WorkspaceInvite) => {
@@ -148,19 +154,33 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
     }
   };
 
-  const handleRevokeInvite = async (invite: WorkspaceInvite) => {
-    if (!confirm(`Revoke invite for ${invite.email}?`)) return;
+  const handleRevokeInvite = (invite: WorkspaceInvite) => {
+    setPendingConfirm({ kind: 'revoke', invite });
+  };
+
+  const handleConfirmPending = async () => {
+    if (!pendingConfirm) return;
+    setIsConfirming(true);
     try {
-      // Delete the invite row directly
-      const { error } = await (await import('../../services/supabase')).supabase
-        .from('workspace_invites')
-        .delete()
-        .eq('id', invite.id);
-      if (error) throw error;
-      toast.success('Invite revoked');
-      await loadInvites();
+      if (pendingConfirm.kind === 'remove') {
+        if (!workspaceId) return;
+        await workspaceService.removeMember(workspaceId, pendingConfirm.member.user_id);
+        toast.success('Member removed');
+        await refreshMembers();
+      } else {
+        const { error } = await (await import('../../services/supabase')).supabase
+          .from('workspace_invites')
+          .delete()
+          .eq('id', pendingConfirm.invite.id);
+        if (error) throw error;
+        toast.success('Invite revoked');
+        await loadInvites();
+      }
+      setPendingConfirm(null);
     } catch {
-      toast.error('Failed to revoke invite');
+      toast.error(pendingConfirm.kind === 'remove' ? 'Failed to remove member' : 'Failed to revoke invite');
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -428,6 +448,51 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
           Contact your workspace admin to manage team members and invitations.
         </p>
       )}
+
+      {/* Confirm dialog — single instance, props derived from pendingConfirm.
+          Replaces two native confirm() calls (member remove + invite revoke)
+          per #41 C8b. Differentiated copy/severity per action. */}
+      <ConfirmActionDialog
+        isOpen={pendingConfirm !== null}
+        isLoading={isConfirming}
+        onCancel={() => { if (!isConfirming) setPendingConfirm(null); }}
+        onConfirm={handleConfirmPending}
+        severity={pendingConfirm?.kind === 'remove' ? 'destructive' : 'warning'}
+        title={
+          pendingConfirm?.kind === 'remove' ? 'Remove member?'
+          : pendingConfirm?.kind === 'revoke' ? 'Revoke pending invite?'
+          : ''
+        }
+        confirmLabel={
+          pendingConfirm?.kind === 'remove' ? 'Remove member'
+          : pendingConfirm?.kind === 'revoke' ? 'Revoke invite'
+          : ''
+        }
+        description={
+          pendingConfirm?.kind === 'remove' ? (
+            <>
+              <strong className="text-zinc-900 dark:text-white">
+                {pendingConfirm.member.name || pendingConfirm.member.email || 'This member'}
+              </strong>{' '}
+              will lose access to <strong>{currentWorkspace.name}</strong> immediately. Their
+              role assignments and group memberships will be removed.
+            </>
+          ) : pendingConfirm?.kind === 'revoke' ? (
+            <>
+              The pending invite for{' '}
+              <strong className="text-zinc-900 dark:text-white">{pendingConfirm.invite.email}</strong>{' '}
+              will be deleted and its link will stop working. You can send a fresh invite at any time.
+            </>
+          ) : null
+        }
+        detail={
+          pendingConfirm?.kind === 'remove'
+            ? 'They can be re-invited later — but any messages, voxes, or tasks they own stay in the workspace.'
+            : pendingConfirm?.kind === 'revoke'
+              ? 'The invitee never had access, so nothing else is affected.'
+              : undefined
+        }
+      />
     </div>
   );
 };
