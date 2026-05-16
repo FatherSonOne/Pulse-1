@@ -1,40 +1,28 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { HelpCircle, Check, Minus } from 'lucide-react';
-import { PERMISSIONS, type PermissionRow, type RoleKey } from './RolePermissionsMatrixCard';
+import { useWorkspaceData } from '../../../contexts/WorkspaceContext';
+import { usePermissionMatrix } from '../../../hooks/usePermissionMatrix';
 
-// 5 highest-signal rows from the canonical matrix — these are the
-// permissions a workspace admin most frequently needs to reason about
-// when picking an invite role. Selected by label-substring match so the
-// popover stays in sync with the matrix card whenever its labels are
-// renamed; if a match disappears the row silently drops out of the
-// popover rather than throwing.
-const HIGH_SIGNAL_LABELS = [
-  'Invite new members',
-  'Change member roles',
-  'Remove members',
-  'View plan & invoices',
-  'Change plan / payment method',
+// 5 highest-signal permission keys an invite-time admin reasons about.
+// Keys (not labels) so the popover stays stable across copy edits.
+const HIGH_SIGNAL_KEYS = [
+  'members.invite',
+  'members.update_role',
+  'members.remove',
+  'billing.read',
+  'billing.write',
 ] as const;
 
-const highSignalRows: PermissionRow[] = HIGH_SIGNAL_LABELS
-  .map(label => PERMISSIONS.find(p => p.label === label))
-  .filter((p): p is PermissionRow => Boolean(p));
-
-// The invite role select offers admin | member | viewer. The matrix card
-// only knows owner | admin | member — viewer isn't in the canonical
-// reference yet (tracked in #42). The popover surfaces admin + member from
-// the matrix, then a hard-coded viewer column noted as read-only, so the
-// asymmetry is visible to the user rather than silently hidden.
-const VISIBLE_ROLES: { key: RoleKey | 'viewer'; label: string; color: string }[] = [
-  { key: 'admin',  label: 'Admin',  color: 'text-amber-500' },
-  { key: 'member', label: 'Member', color: 'text-zinc-500' },
-  { key: 'viewer', label: 'Viewer', color: 'text-zinc-400' },
-];
-
-function hasPermission(row: PermissionRow, roleKey: RoleKey | 'viewer'): boolean {
-  if (roleKey === 'viewer') return false;
-  return row[roleKey];
-}
+// The invite role select offers admin | member | viewer — owner is excluded
+// since owners are minted via Transfer, never invite. We show the same three
+// columns from the catalog matrix so what's in the popover is what the
+// matrix card shows below.
+const VISIBLE_ROLE_KEYS = ['admin', 'member', 'viewer'] as const;
+const ROLE_COLORS: Record<string, string> = {
+  admin:  'text-amber-500',
+  member: 'text-zinc-500',
+  viewer: 'text-zinc-400',
+};
 
 function Cell({ allowed }: { allowed: boolean }): React.ReactElement {
   return allowed ? (
@@ -54,12 +42,29 @@ interface RoleHelpPopoverProps {
  * a compact 5-row × 3-role grid showing what each role can do for the most
  * common admin actions. Closes on outside click and Escape.
  *
- * Wired to the canonical matrix data via PERMISSIONS export, so when the
- * matrix gets re-rooted on the catalog tables in #42, this popover follows.
+ * Reads the same catalog tables (permissions / workspace_roles /
+ * role_permissions) as RolePermissionsMatrixCard, so the popover and the
+ * full matrix can never drift.
  */
 export const RoleHelpPopover: React.FC<RoleHelpPopoverProps> = ({ triggerClassName }) => {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const { currentWorkspace } = useWorkspaceData();
+  const { rows, roles } = usePermissionMatrix(currentWorkspace?.id ?? null);
+
+  const highSignalRows = useMemo(() => {
+    const byKey = new Map(rows.map(r => [r.key, r] as const));
+    return HIGH_SIGNAL_KEYS
+      .map(k => byKey.get(k))
+      .filter((r): r is NonNullable<typeof r> => Boolean(r));
+  }, [rows]);
+
+  const visibleRoles = useMemo(() => {
+    const byKey = new Map(roles.map(r => [r.key, r] as const));
+    return VISIBLE_ROLE_KEYS
+      .map(k => byKey.get(k))
+      .filter((r): r is NonNullable<typeof r> => Boolean(r));
+  }, [roles]);
 
   useEffect(() => {
     if (!open) return;
@@ -105,47 +110,54 @@ export const RoleHelpPopover: React.FC<RoleHelpPopoverProps> = ({ triggerClassNa
             >
               Role help
             </span>
-            <span className="text-[10px] text-zinc-400">5 key actions</span>
+            <span className="text-[10px] text-zinc-400">
+              {highSignalRows.length || 5} key actions
+            </span>
           </div>
 
-          <table className="w-full text-[11px]">
-            <thead>
-              <tr>
-                <th className="text-left font-medium text-zinc-500 dark:text-zinc-400 pb-1.5">
-                  Action
-                </th>
-                {VISIBLE_ROLES.map(r => (
-                  <th
-                    key={r.key}
-                    className={`text-center font-medium pb-1.5 px-1 ${r.color}`}
-                    style={{ width: 36 }}
-                  >
-                    {r.label}
+          {highSignalRows.length === 0 || visibleRoles.length === 0 ? (
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 py-3 text-center">
+              Loading role help…
+            </p>
+          ) : (
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr>
+                  <th className="text-left font-medium text-zinc-500 dark:text-zinc-400 pb-1.5">
+                    Action
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {highSignalRows.map(row => (
-                <tr key={row.label} className="border-t border-zinc-100 dark:border-zinc-800">
-                  <td className="py-1.5 pr-2 text-zinc-700 dark:text-zinc-300 leading-tight">
-                    {row.label}
-                  </td>
-                  {VISIBLE_ROLES.map(r => (
-                    <td key={r.key} className="py-1.5 px-1 text-center">
-                      <div className="flex justify-center">
-                        <Cell allowed={hasPermission(row, r.key)} />
-                      </div>
-                    </td>
+                  {visibleRoles.map(r => (
+                    <th
+                      key={r.key}
+                      className={`text-center font-medium pb-1.5 px-1 ${ROLE_COLORS[r.key] ?? 'text-zinc-500'}`}
+                      style={{ width: 36 }}
+                    >
+                      {r.name}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {highSignalRows.map(row => (
+                  <tr key={row.key} className="border-t border-zinc-100 dark:border-zinc-800">
+                    <td className="py-1.5 pr-2 text-zinc-700 dark:text-zinc-300 leading-tight">
+                      {row.label}
+                    </td>
+                    {visibleRoles.map(r => (
+                      <td key={r.key} className="py-1.5 px-1 text-center">
+                        <div className="flex justify-center">
+                          <Cell allowed={row.roles[r.key] ?? false} />
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
 
           <p className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-500 dark:text-zinc-400 leading-snug">
-            Viewer is read-only across the workspace. See the full Role permissions card
-            below for every action.
+            See the full Role permissions card below for every action.
           </p>
         </div>
       )}
