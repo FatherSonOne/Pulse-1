@@ -369,30 +369,6 @@ export const getSentInvitations = async (userId: string): Promise<TeamInvite[]> 
   }
 };
 
-// Accept an invitation
-export const acceptInvitation = async (inviteToken: string, _userId: string): Promise<InviteResult> => {
-  try {
-    const { error } = await supabase
-      .from('workspace_invites')
-      .update({ accepted_at: new Date().toISOString() })
-      .eq('token', inviteToken)
-      .is('accepted_at', null);
-
-    if (error) throw error;
-
-    return {
-      success: true,
-      message: 'Invitation accepted successfully'
-    };
-  } catch (error: any) {
-    console.error('Accept invitation error:', error);
-    return {
-      success: false,
-      message: error.message || 'Failed to accept invitation'
-    };
-  }
-};
-
 // Generate a mailto link as fallback when Resend is not configured
 export const generateMailtoLink = (
   recipientEmail: string,
