@@ -94,7 +94,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
         <div className="login-copy-block">
           <div className="login-brand-badge">
             <span className="login-badge-dot"></span>
-            AI-Native Communication
+            Communication and Intelligence
           </div>
 
           <h1 className="login-headline">
@@ -103,20 +103,21 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
           </h1>
 
           <p className="login-subtext">
-            The AI-native dashboard for messaging, email, voice, and team collaboration — built for the way you actually work.
+            Every signal in one inbox. Pulse drafts the replies. You ship them.
           </p>
 
           <ul className="login-bullets">
-            <li className="login-bullet">AI-powered research studio with RAG document intelligence</li>
-            <li className="login-bullet">8 async voice modes, messaging, and email in one place</li>
-            <li className="login-bullet">Integrates with Gmail, Slack, Teams, Outlook, and 4 CRMs</li>
+            <li className="login-bullet">Triage stream + 5 Relay peers + Glimpse async video</li>
+            <li className="login-bullet">Email, messaging, calendar, decisions, and maps in one place</li>
+            <li className="login-bullet">War Room with 8 slash commands and 4 AI personas</li>
+            <li className="login-bullet">Gmail, Slack, Teams, Outlook, and 4 native CRMs</li>
           </ul>
         </div>
 
         {/* Bottom: Product info */}
         <div className="login-social-proof">
           <div className="login-social-proof-text">
-            <p className="login-proof-label">A product by Logos Vision LLC</p>
+            <p className="login-proof-label">A product by Quantum Ecosystems LLC</p>
           </div>
         </div>
       </div>
@@ -129,8 +130,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
 
         <div className="login-card">
           <div className="login-card-header">
-            <h2 className="login-card-title">Welcome Back</h2>
-            <p className="login-card-subtitle">Sign in to continue to Pulse</p>
+            <h2 className="login-card-title">Sign in</h2>
+            <p className="login-card-subtitle">Pick how you want to continue.</p>
           </div>
 
           {error && (

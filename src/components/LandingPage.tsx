@@ -4194,7 +4194,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
           <div className="border-t border-zinc-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-zinc-500">
-              &copy; {new Date().getFullYear()} Quantum Ecosystems (QntmEcos) · Logos Vision LLC. All rights reserved.
+              &copy; {new Date().getFullYear()} Quantum Ecosystems LLC. All rights reserved.
             </p>
             <div className="flex items-center gap-2 text-sm text-zinc-600">
               <span>Built with</span>

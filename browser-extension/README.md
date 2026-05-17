@@ -128,4 +128,4 @@ convert icons/icon.svg -resize 128x128 icons/icon-128.png
 
 ## License
 
-Copyright © 2026 Logos Vision LLC. All rights reserved.
+Copyright © 2026 Quantum Ecosystems LLC. All rights reserved.
