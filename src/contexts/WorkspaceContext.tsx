@@ -12,6 +12,7 @@ import { useAuth } from '../hooks/useAuth';
 import { workspaceService, Workspace, WorkspaceMember, WorkspacePlan, WorkspaceUpdatableFields } from '../services/workspaceService';
 import { supabase } from '../services/supabase';
 import { emitWorkspaceChanged, emitWorkspaceCleared } from '../services/workspaceEvents';
+import { usePermissionMatrix } from '../hooks/usePermissionMatrix';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -52,6 +53,16 @@ export interface WorkspacePermissionsContextType {
   isOwner: boolean;
   isAdmin: boolean;
   canManageMembers: boolean;
+  /**
+   * Catalog-backed permission check. Returns true when the current user's
+   * role has `key` granted in the workspace's permission catalog. Fail-closed
+   * during catalog load and when the user is not a workspace member.
+   *
+   * Does not yet consult group_grants (#42 Sub-PR 5 substrate exists; UI/read
+   * consumer lands in a follow-up). For workspace-wide role grants — which is
+   * the entire production surface today — this is the authoritative API.
+   */
+  hasPermission: (key: string) => boolean;
 }
 
 /**
@@ -319,6 +330,23 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
   const isAdmin = currentRole === 'owner' || currentRole === 'admin';
   const canManageMembers = isAdmin;
 
+  // Catalog-backed permission check. Loads the permission matrix for the
+  // current workspace once per workspace switch and derives a Set<key> of
+  // permissions granted to the current role.
+  const matrix = usePermissionMatrix(currentWorkspace?.id ?? null);
+  const grantedPermissions = useMemo<Set<string>>(() => {
+    if (!currentRole || matrix.isLoading || matrix.error) return new Set();
+    const set = new Set<string>();
+    for (const row of matrix.rows) {
+      if (row.roles[currentRole]) set.add(row.key);
+    }
+    return set;
+  }, [currentRole, matrix.rows, matrix.isLoading, matrix.error]);
+  const hasPermission = useCallback(
+    (key: string) => grantedPermissions.has(key),
+    [grantedPermissions],
+  );
+
   // ---------------------------------------------------------------------------
   // Actions (stable unless their deps change)
   // ---------------------------------------------------------------------------
@@ -451,7 +479,8 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
     isOwner,
     isAdmin,
     canManageMembers,
-  }), [isOwner, isAdmin, canManageMembers]);
+    hasPermission,
+  }), [isOwner, isAdmin, canManageMembers, hasPermission]);
 
   const mutationLockValue = useMemo<WorkspaceMutationLockContextType>(() => ({
     isMutating: mutationLockCount > 0,
