@@ -1,77 +1,27 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Check, Minus, ChevronDown, ChevronRight } from 'lucide-react';
+import { ShieldCheck, Check, Minus, ChevronDown, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { SettingsCard } from '../shared/SettingsCard';
 import { MonoLabel } from '../shared/MonoLabel';
+import { useWorkspaceData } from '../../../contexts/WorkspaceContext';
+import {
+  usePermissionMatrix,
+  type PermissionMatrixRow,
+  type PermissionMatrixRole,
+} from '../../../hooks/usePermissionMatrix';
 
-// Exported so other surfaces (RoleHelpPopover next to the Invite role select)
-// read from the same source as the matrix card. Whenever this matrix becomes
-// fictional (#42 epic), one consumer breaks both surfaces — that's the goal.
-export type RoleKey = 'owner' | 'admin' | 'member';
+// Re-exported so RoleHelpPopover and any future consumers can share types
+// without re-importing from the hook directly.
+export type { PermissionMatrixRow as PermissionRow, PermissionMatrixRole };
+export type RoleKey = string;
 
-export interface PermissionRow {
-  category: string;
-  label: string;
-  description?: string;
-  owner: boolean;
-  admin: boolean;
-  member: boolean;
-}
-
-const ROLE_LABELS: Record<RoleKey, string> = {
-  owner:  'Owner',
-  admin:  'Admin',
-  member: 'Member',
-};
-
-const ROLE_COLORS: Record<RoleKey, string> = {
+const ROLE_COLORS: Record<string, string> = {
   owner:  'text-rose-500',
   admin:  'text-amber-500',
   member: 'text-zinc-500',
+  viewer: 'text-zinc-400',
 };
 
-// Truth table — what each role can do today.
-// To add a custom role, extend this matrix and add a column to the table.
-export const PERMISSIONS: PermissionRow[] = [
-  // Use product
-  { category: 'Use product',    label: 'Sign in and use the workspace',  owner: true,  admin: true,  member: true },
-  { category: 'Use product',    label: 'Send messages, voxes, and use AI', owner: true,  admin: true,  member: true },
-  { category: 'Use product',    label: 'Connect personal integrations',   owner: true,  admin: true,  member: true,
-    description: 'Per-user OAuth connections (Gmail, Calendar, etc.)' },
-
-  // Members & invites
-  { category: 'Members',        label: 'View team roster',                owner: true,  admin: true,  member: true },
-  { category: 'Members',        label: 'Invite new members',              owner: true,  admin: true,  member: false },
-  { category: 'Members',        label: 'Bulk invite via CSV',             owner: true,  admin: true,  member: false },
-  { category: 'Members',        label: 'Change member roles',             owner: true,  admin: true,  member: false,
-    description: 'Cannot change owner role — only the owner can transfer ownership.' },
-  { category: 'Members',        label: 'Remove members',                  owner: true,  admin: true,  member: false },
-  { category: 'Members',        label: 'Create / manage groups',          owner: true,  admin: true,  member: false },
-
-  // Org settings
-  { category: 'Organization',   label: 'Edit org profile (name, logo, etc.)', owner: true, admin: true, member: false },
-  { category: 'Organization',   label: 'Manage membership policy (auto-join)', owner: true, admin: true, member: false },
-  { category: 'Organization',   label: 'Manage shared integrations',      owner: true,  admin: true,  member: false },
-  { category: 'Organization',   label: 'Archive (soft-delete) workspace', owner: true,  admin: true,  member: false },
-  { category: 'Organization',   label: 'Transfer ownership',              owner: true,  admin: false, member: false },
-  { category: 'Organization',   label: 'Permanently delete workspace',    owner: true,  admin: false, member: false,
-    description: 'Blocked while legal hold is active.' },
-
-  // Security
-  { category: 'Security',       label: 'View sign-in activity (all members)', owner: true, admin: true, member: false },
-  { category: 'Security',       label: 'Configure 2FA / session / IP allowlist', owner: true, admin: true, member: false },
-  { category: 'Security',       label: 'Enroll personal 2FA',             owner: true,  admin: true,  member: true },
-
-  // Billing
-  { category: 'Billing',        label: 'View plan & invoices',            owner: true,  admin: true,  member: false },
-  { category: 'Billing',        label: 'Change plan / payment method',    owner: true,  admin: false, member: false },
-
-  // Compliance
-  { category: 'Compliance',     label: 'View audit log',                  owner: true,  admin: true,  member: false },
-  { category: 'Compliance',     label: 'Export audit log (CSV)',          owner: true,  admin: true,  member: false },
-  { category: 'Compliance',     label: 'Toggle legal hold',               owner: true,  admin: false, member: false },
-];
-
-const CATEGORIES: string[] = Array.from(new Set(PERMISSIONS.map(p => p.category)));
+const roleColor = (key: string): string => ROLE_COLORS[key] ?? 'text-zinc-500';
 
 function Cell({ allowed }: { allowed: boolean }): React.ReactElement {
   return allowed ? (
@@ -83,6 +33,10 @@ function Cell({ allowed }: { allowed: boolean }): React.ReactElement {
 
 export const RolePermissionsMatrixCard: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
+  const { currentWorkspace } = useWorkspaceData();
+  const { rows, roles, isLoading, error } = usePermissionMatrix(currentWorkspace?.id ?? null);
+
+  const categories: string[] = Array.from(new Set(rows.map(r => r.category)));
 
   return (
     <SettingsCard padded={false} className="overflow-hidden">
@@ -104,92 +58,122 @@ export const RolePermissionsMatrixCard: React.FC = () => {
       {expanded && (
         <div className="border-t border-zinc-200 dark:border-zinc-800 p-4 space-y-4">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Read-only summary of what each role can do today. Custom roles aren't supported yet —
-            this serves as the canonical reference until they are.
+            Read-only summary of what each role can do in this workspace. Loaded from the
+            permission catalog — drift between this matrix and what the database enforces
+            should never appear here.
           </p>
 
-          {/* Desktop: full matrix table */}
-          <div className="hidden md:block">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-left">
-                  <th className="font-semibold text-zinc-500 dark:text-zinc-400 pb-2 pr-4">Permission</th>
-                  {(Object.keys(ROLE_LABELS) as RoleKey[]).map(k => (
-                    <th key={k} className={`font-semibold pb-2 px-2 text-center ${ROLE_COLORS[k]}`} style={{ minWidth: 60 }}>
-                      {ROLE_LABELS[k]}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {CATEGORIES.map(cat => (
-                  <React.Fragment key={cat}>
-                    <tr>
-                      <td colSpan={4} className="pt-3 pb-1 text-[10px] uppercase tracking-widest font-bold text-zinc-400">
-                        {cat}
-                      </td>
-                    </tr>
-                    {PERMISSIONS.filter(p => p.category === cat).map((p, i) => (
-                      <tr key={`${cat}-${i}`} className="border-t border-zinc-100 dark:border-zinc-800">
-                        <td className="py-2 pr-4 text-zinc-700 dark:text-zinc-300">
-                          {p.label}
-                          {p.description && (
-                            <span className="block text-[10px] text-zinc-400 font-normal mt-0.5">{p.description}</span>
-                          )}
-                        </td>
-                        <td className="py-2 px-2 text-center"><div className="flex justify-center"><Cell allowed={p.owner} /></div></td>
-                        <td className="py-2 px-2 text-center"><div className="flex justify-center"><Cell allowed={p.admin} /></div></td>
-                        <td className="py-2 px-2 text-center"><div className="flex justify-center"><Cell allowed={p.member} /></div></td>
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {isLoading && rows.length === 0 && (
+            <div className="flex items-center gap-2 text-xs text-zinc-500 py-6 justify-center">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Loading role permissions…</span>
+            </div>
+          )}
 
-          {/* Mobile: stacked cards grouped by category, 3 role chips per row */}
-          <div className="md:hidden space-y-4">
-            {CATEGORIES.map(cat => (
-              <div key={cat}>
-                <div className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 mb-2">
-                  {cat}
-                </div>
-                <div className="space-y-2">
-                  {PERMISSIONS.filter(p => p.category === cat).map((p, i) => (
-                    <div
-                      key={`${cat}-${i}`}
-                      className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 bg-white dark:bg-zinc-900"
-                    >
-                      <p className="text-xs text-zinc-900 dark:text-white font-medium leading-snug">
-                        {p.label}
-                      </p>
-                      {p.description && (
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
-                          {p.description}
-                        </p>
-                      )}
-                      <div className="flex gap-1.5 mt-2.5">
-                        {(Object.keys(ROLE_LABELS) as RoleKey[]).map(k => (
-                          <div
-                            key={k}
-                            className={`flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-md border text-[11px] font-medium ${
-                              p[k]
-                                ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-900/20'
-                                : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40'
-                            }`}
-                          >
-                            <Cell allowed={p[k]} />
-                            <span className={ROLE_COLORS[k]}>{ROLE_LABELS[k]}</span>
-                          </div>
+          {error && (
+            <div className="flex items-start gap-2 text-xs text-rose-600 dark:text-rose-400 bg-rose-50/60 dark:bg-rose-900/10 border border-rose-200/60 dark:border-rose-900/40 rounded-md p-3">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>Couldn't load role permissions: {error}</span>
+            </div>
+          )}
+
+          {!isLoading && !error && rows.length > 0 && (
+            <>
+              {/* Desktop: full matrix table */}
+              <div className="hidden md:block">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-left">
+                      <th className="font-semibold text-zinc-500 dark:text-zinc-400 pb-2 pr-4">Permission</th>
+                      {roles.map(r => (
+                        <th
+                          key={r.key}
+                          className={`font-semibold pb-2 px-2 text-center ${roleColor(r.key)}`}
+                          style={{ minWidth: 60 }}
+                        >
+                          {r.name}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categories.map(cat => (
+                      <React.Fragment key={cat}>
+                        <tr>
+                          <td colSpan={1 + roles.length} className="pt-3 pb-1 text-[10px] uppercase tracking-widest font-bold text-zinc-400">
+                            {cat}
+                          </td>
+                        </tr>
+                        {rows.filter(r => r.category === cat).map(row => (
+                          <tr key={row.key} className="border-t border-zinc-100 dark:border-zinc-800">
+                            <td className="py-2 pr-4 text-zinc-700 dark:text-zinc-300">
+                              {row.label}
+                              {row.description && (
+                                <span className="block text-[10px] text-zinc-400 font-normal mt-0.5">{row.description}</span>
+                              )}
+                            </td>
+                            {roles.map(r => (
+                              <td key={r.key} className="py-2 px-2 text-center">
+                                <div className="flex justify-center">
+                                  <Cell allowed={row.roles[r.key] ?? false} />
+                                </div>
+                              </td>
+                            ))}
+                          </tr>
                         ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
+
+              {/* Mobile: stacked cards grouped by category, role chips per row */}
+              <div className="md:hidden space-y-4">
+                {categories.map(cat => (
+                  <div key={cat}>
+                    <div className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 mb-2">
+                      {cat}
+                    </div>
+                    <div className="space-y-2">
+                      {rows.filter(r => r.category === cat).map(row => (
+                        <div
+                          key={row.key}
+                          className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 bg-white dark:bg-zinc-900"
+                        >
+                          <p className="text-xs text-zinc-900 dark:text-white font-medium leading-snug">
+                            {row.label}
+                          </p>
+                          {row.description && (
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
+                              {row.description}
+                            </p>
+                          )}
+                          <div className="flex gap-1.5 mt-2.5">
+                            {roles.map(r => {
+                              const allowed = row.roles[r.key] ?? false;
+                              return (
+                                <div
+                                  key={r.key}
+                                  className={`flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-md border text-[11px] font-medium ${
+                                    allowed
+                                      ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-900/20'
+                                      : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40'
+                                  }`}
+                                >
+                                  <Cell allowed={allowed} />
+                                  <span className={roleColor(r.key)}>{r.name}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
     </SettingsCard>
