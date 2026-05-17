@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Circle, GoogleMap, Polygon, Polyline } from '@react-google-maps/api';
+import { GoogleMap } from '@react-google-maps/api';
 import { AlertTriangle, MapPinned, Users } from 'lucide-react';
 import { AppView, CalendarEvent, Contact } from '../../types';
 import { ContactCircle } from '../../types/contactCircleTypes';
-import { convexHull, getMapOptions } from '../../services/mapService';
+import { getMapOptions } from '../../services/mapService';
 import { UserLocation } from '../../services/locationService';
 import MapFilterBar, { MapFilter } from './MapFilterBar';
 import MapContactMarker from './contacts/MapContactMarker';
@@ -16,8 +16,6 @@ import ImAtFAB from './sub/ImAtFAB';
 import {
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
-  LENS_OPTIONS,
-  MAP_VIEW_OPTIONS,
   type MapLens,
 } from './sub/mapLens';
 import { AiStrip } from './sub/AiStrip';
@@ -36,6 +34,10 @@ import { useGoogleMapsLoader } from './hooks/useGoogleMapsLoader';
 import { useSrAnnouncer } from './hooks/useSrAnnouncer';
 import { useFitBounds } from './hooks/useFitBounds';
 import { useMapKeyboardShortcuts } from './hooks/useMapKeyboardShortcuts';
+import { MapLensRow } from './sub/MapLensRow';
+import { AtlasHalos } from './overlays/AtlasHalos';
+import { AtlasTerritories } from './overlays/AtlasTerritories';
+import { AcceptedRoutePolyline } from './overlays/AcceptedRoutePolyline';
 
 interface PulseMapViewProps {
   contacts: Contact[];
@@ -226,27 +228,6 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
     onContactUpdated?.(updated, previousId);
   }, [onContactUpdated]);
 
-  // Atlas density halos — one soft rose Circle per pinned location.
-  // Overlapping halos sum optically to produce a heat-map feel without
-  // relying on Google's deprecated HeatmapLayer. Recomputed only when the
-  // underlying contact pin set changes; not affected by lens or filter
-  // (Atlas lens decides whether to render them at all).
-  const atlasDensityHalos = useMemo(() => {
-    const halos: Array<{ key: string; lat: number; lng: number; radiusM: number; opacity: number }> = [];
-    for (const c of localContacts) {
-      const strong = c.pulseUserId || c.isTeamMember;
-      const baseOpacity = strong ? 0.09 : 0.06;
-      const radiusM = strong ? 1200 : 1000;
-      if (c.homeLat != null && c.homeLng != null) {
-        halos.push({ key: `halo-${c.id}-home`, lat: c.homeLat, lng: c.homeLng, radiusM, opacity: baseOpacity });
-      }
-      if (c.workLat != null && c.workLng != null) {
-        halos.push({ key: `halo-${c.id}-work`, lat: c.workLat, lng: c.workLng, radiusM, opacity: baseOpacity });
-      }
-    }
-    return halos;
-  }, [localContacts]);
-
   // Live broadcasters across all linked contacts — drives the corner chip
   // that replaces the old LIVE TEAM peer lens.
   const liveBroadcasters = useMemo(() => {
@@ -368,95 +349,14 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 
       {/* Lens row — the section's identity. TODAY is default and most-built;
           ATLAS demotes the old address-book-on-a-map to a tertiary lens.
-          View toggle (right) flips base tiles (4=Map, 5=Sat, 6=Terr, 7=Hyb).
-          The two groups share styling so they read as siblings, not strangers. */}
-      <div
-        className={`flex items-center justify-between gap-2 px-3 py-2 border-b ${
-          isDarkMode ? 'bg-zinc-900/40 border-white/5' : 'bg-white border-gray-200'
-        }`}
-      >
-        <div
-          role="group"
-          aria-label="Map lens"
-          className="flex items-center gap-1"
-        >
-          {LENS_OPTIONS.map(({ id, label, Icon }) => {
-            const active = lens === id;
-            const hotkey = id === 'today' ? '1' : id === 'week' ? '2' : '3';
-            return (
-              <button
-                key={id}
-                type="button"
-                aria-pressed={active}
-                aria-keyshortcuts={hotkey}
-                onClick={() => setLens(id)}
-                title={`${label} lens — press ${hotkey}`}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
-                  active
-                    ? `text-rose-500 ${isDarkMode ? 'bg-rose-500/10' : 'bg-rose-50'}`
-                    : `${isDarkMode ? 'text-gray-400 hover:bg-white/5' : 'text-gray-500 hover:bg-gray-100'}`
-                }`}
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-              >
-                <Icon size={11} aria-hidden="true" />
-                <span>{label}</span>
-                <kbd
-                  aria-hidden="true"
-                  className={`ml-0.5 px-1 rounded text-[9px] leading-none font-normal ${
-                    active
-                      ? isDarkMode ? 'bg-rose-500/20 text-rose-300' : 'bg-rose-100 text-rose-600'
-                      : isDarkMode ? 'bg-white/5 text-gray-500' : 'bg-gray-100 text-gray-400'
-                  }`}
-                >
-                  {hotkey}
-                </kbd>
-              </button>
-            );
-          })}
-        </div>
-
-        <div
-          role="group"
-          aria-label="Map view mode"
-          className={`flex items-center gap-0.5 rounded-md p-0.5 ${
-            isDarkMode ? 'bg-white/[0.03]' : 'bg-gray-50'
-          }`}
-        >
-          {MAP_VIEW_OPTIONS.map(({ id, label, Icon, hotkey }) => {
-            const active = viewMode === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                aria-pressed={active}
-                aria-keyshortcuts={hotkey}
-                aria-label={`${label} view`}
-                onClick={() => changeViewMode(id)}
-                title={`${label} view — press ${hotkey}`}
-                className={`flex items-center gap-1.5 px-2 py-1 rounded text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
-                  active
-                    ? `text-rose-500 ${isDarkMode ? 'bg-rose-500/10' : 'bg-white shadow-sm'}`
-                    : `${isDarkMode ? 'text-gray-400 hover:bg-white/5' : 'text-gray-500 hover:bg-white/60'}`
-                }`}
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-              >
-                <Icon size={11} aria-hidden="true" />
-                <span className="hidden sm:inline" aria-hidden="true">{label}</span>
-                <kbd
-                  aria-hidden="true"
-                  className={`ml-0.5 px-1 rounded text-[9px] leading-none font-normal ${
-                    active
-                      ? isDarkMode ? 'bg-rose-500/20 text-rose-300' : 'bg-rose-100 text-rose-600'
-                      : isDarkMode ? 'bg-white/5 text-gray-500' : 'bg-gray-200 text-gray-500'
-                  }`}
-                >
-                  {hotkey}
-                </kbd>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+          View toggle (right) flips base tiles (4=Map, 5=Sat, 6=Terr, 7=Hyb). */}
+      <MapLensRow
+        lens={lens}
+        viewMode={viewMode}
+        isDarkMode={isDarkMode}
+        onLensChange={setLens}
+        onViewModeChange={changeViewMode}
+      />
 
       {/* AI strip — driven by aiState + acceptedRoute. Committed-coral band
           is the one place coral exceeds the ≤10% rule on this surface,
@@ -570,84 +470,20 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               );
             })}
 
-          {/* Accepted-route polyline. Coral with shadow stroke for legibility
-              on light + dark map tiles. Click → opens system maps on the
-              first leg. */}
           {acceptedRoute && (
-            <Polyline
-              path={acceptedRoute.path}
-              onClick={handleOpenInSystemMaps}
-              options={{
-                strokeColor: '#f43f5e',
-                strokeOpacity: 0.95,
-                strokeWeight: 5,
-                clickable: true,
-                geodesic: false,
-                zIndex: 5,
-                icons: [{
-                  icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },
-                  offset: '0',
-                  repeat: '14px',
-                }],
-              }}
+            <AcceptedRoutePolyline path={acceptedRoute.path} onClick={handleOpenInSystemMaps} />
+          )}
+
+          {lens === 'atlas' && (
+            <AtlasTerritories
+              circles={circles}
+              contacts={localContacts}
+              selectedCircleId={selectedCircleId}
+              onSelectCircle={setSelectedCircleId}
             />
           )}
 
-          {/* Atlas-only — Circle territory polygons (convex hull over members
-              who have at least one pinned location). Each territory wears
-              the circle's own colour at low opacity so multiple territories
-              read without fighting for the same coral. */}
-          {lens === 'atlas' && circles.map(circle => {
-            const members = localContacts.filter(c =>
-              circle.memberContactIds.includes(c.id) && (c.homeLat != null || c.workLat != null),
-            );
-            const points: Array<{ lat: number; lng: number }> = [];
-            for (const m of members) {
-              if (m.homeLat != null && m.homeLng != null) points.push({ lat: m.homeLat, lng: m.homeLng });
-              if (m.workLat != null && m.workLng != null) points.push({ lat: m.workLat, lng: m.workLng });
-            }
-            if (points.length < 3) return null;
-            const hull = convexHull(points);
-            const isFocused = selectedCircleId === circle.id;
-            return (
-              <Polygon
-                key={`territory-${circle.id}`}
-                paths={hull}
-                onClick={() => setSelectedCircleId(isFocused ? null : circle.id)}
-                options={{
-                  fillColor: circle.color,
-                  fillOpacity: isFocused ? 0.18 : 0.08,
-                  strokeColor: circle.color,
-                  strokeOpacity: isFocused ? 0.9 : 0.4,
-                  strokeWeight: isFocused ? 2 : 1,
-                  clickable: true,
-                  zIndex: 1,
-                }}
-              />
-            );
-          })}
-
-          {/* Atlas-only — density rendering via overlapping rose-tinted
-              circles. Each pinned point contributes a soft 1km halo; where
-              points cluster, the halos sum optically and produce a heat-map
-              feel without depending on Google's deprecated HeatmapLayer
-              (sunset May 2026, warning hot today). Pulse-linked + team
-              members render slightly stronger so the active network reads
-              through the rest of the dots. */}
-          {lens === 'atlas' && atlasDensityHalos.map(halo => (
-            <Circle
-              key={halo.key}
-              center={{ lat: halo.lat, lng: halo.lng }}
-              radius={halo.radiusM}
-              options={{
-                fillColor: '#f43f5e',
-                fillOpacity: halo.opacity,
-                strokeOpacity: 0,
-                clickable: false,
-                zIndex: 0,
-              }}
-            />
-          ))}
+          {lens === 'atlas' && <AtlasHalos contacts={localContacts} />}
         </GoogleMap>
 
         {hasNoLocations && (
