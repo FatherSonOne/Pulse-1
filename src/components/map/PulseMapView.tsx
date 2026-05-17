@@ -1,19 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Circle, GoogleMap, Polygon, Polyline, useJsApiLoader } from '@react-google-maps/api';
 import { AlertTriangle, MapPinned, Users } from 'lucide-react';
-import { AppView, CalendarEvent, Contact, Thread } from '../../types';
+import { AppView, CalendarEvent, Contact } from '../../types';
 import { ContactCircle } from '../../types/contactCircleTypes';
 import { GOOGLE_MAPS_LIBRARIES, convexHull, getMapOptions, computeBounds } from '../../services/mapService';
 import {
-  geocodeAddress,
   getCurrentUserLocation,
   geocodeContactsBatch,
   saveContactLocation,
   subscribeToUserLocation,
   UserLocation,
 } from '../../services/locationService';
-import { dataService } from '../../services/dataService';
-import { supabase } from '../../services/supabase';
 import {
   getAiPausedUntil,
   proposeAtlasInsight,
@@ -36,7 +33,6 @@ import {
   LENS_OPTIONS,
   MAP_VIEW_LS_KEY,
   MAP_VIEW_OPTIONS,
-  WEEK_MS,
   type MapLens,
   type MapViewMode,
 } from './sub/mapLens';
@@ -45,6 +41,9 @@ import { AiStrip } from './sub/AiStrip';
 import { LensEmptyState } from './sub/LensEmptyState';
 import { LiveBroadcastSheet } from './sub/LiveBroadcastSheet';
 import { ContactLocationPickerOverlay } from './sub/ContactLocationPickerOverlay';
+import { useGeoRelevanceSignals, lensIncludesContact } from './hooks/useGeoRelevanceSignals';
+import { useMeetingMarkers } from './hooks/useMeetingMarkers';
+import { useVisitedStops } from './hooks/useVisitedStops';
 
 interface PulseMapViewProps {
   contacts: Contact[];
@@ -70,69 +69,6 @@ interface PulseMapViewProps {
 }
 
 type MarkerData = { contact: Contact; locType: 'home' | 'work'; lat: number; lng: number };
-type MeetingMarkerData = { event: CalendarEvent; lat: number; lng: number };
-
-// ─── Geo-relevance signals (Phase 5) ────────────────────────────────────────
-// Wraps the inputs lensIncludesContact and the AI prompt builder need. Lifted
-// to module scope so the helper is pure & testable without the component.
-interface GeoSignals {
-  todayEvents: CalendarEvent[];
-  weekEvents: CalendarEvent[];
-  recentMessageContactIds: Set<string>;
-  /** True when at least one source returned non-empty data; tells the lens
-   *  helper to switch from the legacy proxy to real signals. */
-  hasRealSignals: boolean;
-}
-
-// Email-lookup helper: an event's attendees array is usually email addresses
-// (Google/Outlook) or display names. Returns true if any attendee matches
-// this contact by email (case-insensitive) or, failing that, by display name.
-function contactAttendsEvent(c: Contact, e: CalendarEvent): boolean {
-  if (!e.attendees || e.attendees.length === 0) return false;
-  const contactEmail = c.email?.toLowerCase().trim();
-  const contactName = c.name?.toLowerCase().trim();
-  for (const att of e.attendees) {
-    const lower = (att || '').toLowerCase().trim();
-    if (!lower) continue;
-    if (contactEmail && lower === contactEmail) return true;
-    if (contactName && lower === contactName) return true;
-    // Detailed attendees with embedded "Name <email>" formatting.
-    if (contactEmail && lower.includes(contactEmail)) return true;
-  }
-  return false;
-}
-
-// Real-signal predicate. Atlas always shows everything pinned. TODAY/WEEK
-// admit a contact when ANY of: they're in recentMessageContactIds, they
-// attend an event in the lens window, OR (defensive) the legacy proxy still
-// places them in the window. The fallback keeps a freshly-installed Pulse
-// (no calendar yet, no message history yet) from looking empty.
-function lensIncludesContact(
-  c: Contact,
-  lens: MapLens,
-  now: number,
-  signals: GeoSignals,
-): boolean {
-  if (lens === 'atlas') return true;
-
-  if (signals.hasRealSignals) {
-    if (signals.recentMessageContactIds.has(c.id)) return true;
-    const eventList = lens === 'today' ? signals.todayEvents : signals.weekEvents;
-    if (eventList.some(e => contactAttendsEvent(c, e))) return true;
-    // Real signals exist but this contact isn't tied to them. Still honour
-    // the team/pulse-user override so the operator's own circle is visible
-    // even on quiet days.
-    if (c.isTeamMember || c.pulseUserId) return true;
-    return false;
-  }
-
-  // Legacy proxy — no real signals yet (Google Calendar not connected,
-  // no thread history, etc.). Keeps the section usable for fresh installs.
-  if (c.isTeamMember || c.pulseUserId) return true;
-  const seen = c.lastSeen ? c.lastSeen.getTime() : 0;
-  const window = lens === 'today' ? DAY_MS : WEEK_MS;
-  return now - seen <= window;
-}
 
 const PulseMapView: React.FC<PulseMapViewProps> = ({
   contacts,
@@ -212,153 +148,17 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 
   useEffect(() => { setLocalContacts(contacts); }, [contacts]);
 
-  // ─── Phase 5 — geo-relevance signals ──────────────────────────────────────
-  // When the parent doesn't supply pre-computed signals, fetch a small slice
-  // from dataService on mount. Cheap (DB reads with internal caching) and
-  // self-contained — lets PulseMapView graduate from the lastSeen proxy
-  // without forcing App.tsx to lift Dashboard's data layer up.
-  const [fetchedEvents, setFetchedEvents] = useState<CalendarEvent[]>([]);
-  const [fetchedThreads, setFetchedThreads] = useState<Thread[]>([]);
-  const needsSelfFetch =
-    todayEventsProp === undefined &&
-    weekEventsProp === undefined &&
-    recentMessageContactIdsProp === undefined;
-  useEffect(() => {
-    if (!needsSelfFetch) return;
-    let cancelled = false;
-    const now = new Date();
-    const weekEnd = new Date(now.getTime() + WEEK_MS);
-    Promise.all([
-      dataService.getEvents(now, weekEnd).catch(() => [] as CalendarEvent[]),
-      dataService.getThreads().catch(() => [] as Thread[]),
-    ]).then(([events, threads]) => {
-      if (cancelled) return;
-      setFetchedEvents(events);
-      setFetchedThreads(threads);
-    });
-    return () => { cancelled = true; };
-  }, [needsSelfFetch]);
-
-  // Compose the signal bundle from whichever source has data — props win when
-  // the parent supplied them, otherwise the self-fetch results are used.
-  const geoSignals = useMemo<GeoSignals>(() => {
-    const now = Date.now();
-    const dayCutoff = now - DAY_MS;
-    const weekCutoff = now + WEEK_MS;
-
-    const events = todayEventsProp !== undefined || weekEventsProp !== undefined
-      ? [...(todayEventsProp ?? []), ...(weekEventsProp ?? [])]
-      : fetchedEvents;
-
-    const todayEvents = todayEventsProp ?? events.filter(e => {
-      const t = e.start instanceof Date ? e.start.getTime() : new Date(e.start).getTime();
-      return Number.isFinite(t) && t >= now - DAY_MS && t < now + DAY_MS;
-    });
-    const weekEvents = weekEventsProp ?? events.filter(e => {
-      const t = e.start instanceof Date ? e.start.getTime() : new Date(e.start).getTime();
-      return Number.isFinite(t) && t >= dayCutoff && t < weekCutoff;
-    });
-
-    let recentMessageContactIds = recentMessageContactIdsProp;
-    if (recentMessageContactIds === undefined) {
-      const ids = new Set<string>();
-      for (const thread of fetchedThreads) {
-        const lastMsg = thread.messages?.[thread.messages.length - 1];
-        const ts = lastMsg?.timestamp instanceof Date
-          ? lastMsg.timestamp.getTime()
-          : lastMsg?.timestamp ? new Date(lastMsg.timestamp).getTime() : 0;
-        if (ts >= dayCutoff) ids.add(thread.contactId);
-      }
-      recentMessageContactIds = ids;
-    }
-
-    const hasRealSignals =
-      todayEvents.length > 0 ||
-      weekEvents.length > 0 ||
-      recentMessageContactIds.size > 0;
-
-    return { todayEvents, weekEvents, recentMessageContactIds, hasRealSignals };
-  }, [todayEventsProp, weekEventsProp, recentMessageContactIdsProp, fetchedEvents, fetchedThreads]);
-
-  // ─── Phase 6 — visited-stops feed for the AI proposal ─────────────────────
-  // Pulls today's geofence enter events for the operator and maps each
-  // place_id to its matching stop id (contact-home/work). Fed to
-  // proposeRoute as visitedIds so the model doesn't re-propose stops the
-  // operator already arrived at. Refreshes on any geofence event surfaced
-  // by geofenceNotificationService — listening here keeps the prompt
-  // current without a polling loop.
-  const [visitedStopIds, setVisitedStopIds] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    let cancelled = false;
-    const loadVisited = async () => {
-      const dayStart = new Date();
-      dayStart.setHours(0, 0, 0, 0);
-      const { data, error } = await supabase
-        .from('geofence_events')
-        .select('place_id, entity_type, entity_id, event_type, occurred_at')
-        .eq('event_type', 'enter')
-        .gte('occurred_at', dayStart.toISOString());
-      if (error || cancelled || !data) return;
-
-      // Map place_id → contact stop id via entity_type='contact' rows. A
-      // place may be reachable both via its own id and via the contact's
-      // home/work role; the role on entity_places tells us which side it's
-      // bound to. We don't query entity_places here — the row already
-      // carries entity_type + entity_id (geofenceService denormalises).
-      const ids = new Set<string>();
-      for (const row of data) {
-        const r = row as { entity_type?: string; entity_id?: string; place_id?: string };
-        if (r.entity_type === 'contact' && r.entity_id) {
-          // Conservative: mark BOTH home and work as visited when the row
-          // doesn't carry a role hint. Geofences are usually role-specific
-          // so this rarely over-counts, and over-counting just means the
-          // model treats one role as done — handled gracefully downstream.
-          ids.add(markerKey(r.entity_id, 'home'));
-          ids.add(markerKey(r.entity_id, 'work'));
-        }
-      }
-      setVisitedStopIds(ids);
-    };
-    loadVisited();
-    return () => { cancelled = true; };
-  }, [lens]);
-
-  // ─── Meeting marker geocoding ─────────────────────────────────────────────
-  // Geocode the location text on calendar events lazily; the geocode cache
-  // dedupes across runs so re-renders are cheap. Events without a location
-  // string are skipped (no marker, but still count toward lensIncludesContact
-  // via attendees). Failed geocodes are recorded so we don't retry in a loop.
-  const [meetingMarkers, setMeetingMarkers] = useState<MeetingMarkerData[]>([]);
-  const geocodedEventsRef = useRef<Map<string, { lat: number; lng: number } | null>>(new Map());
-  useEffect(() => {
-    const sourceEvents = lens === 'today' ? geoSignals.todayEvents : geoSignals.weekEvents;
-    const eventsToTry = sourceEvents.filter(e => !!e.location?.trim());
-    if (eventsToTry.length === 0) {
-      if (meetingMarkers.length > 0) setMeetingMarkers([]);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      const next: MeetingMarkerData[] = [];
-      for (const e of eventsToTry) {
-        const cached = geocodedEventsRef.current.get(e.id);
-        if (cached === null) continue; // known-failed
-        let coords = cached;
-        if (!coords) {
-          const result = await geocodeAddress(e.location!).catch(() => null);
-          geocodedEventsRef.current.set(e.id, result);
-          if (!result) continue;
-          coords = result;
-        }
-        next.push({ event: e, lat: coords.lat, lng: coords.lng });
-      }
-      if (!cancelled) setMeetingMarkers(next);
-    })();
-    return () => { cancelled = true; };
-    // meetingMarkers intentionally NOT in deps — setting it inside the effect
-    // would loop. Re-evaluation triggers on real input changes only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lens, geoSignals.todayEvents, geoSignals.weekEvents]);
+  // Phase 5 geo-relevance signals, Phase 6 visited stops, and meeting-marker
+  // geocoding all live in dedicated hooks under ./hooks/. They preserve the
+  // exact prior behaviour — same effect deps, same memo composition — and
+  // return the same shapes the rest of the component consumes.
+  const geoSignals = useGeoRelevanceSignals({
+    todayEventsProp,
+    weekEventsProp,
+    recentMessageContactIdsProp,
+  });
+  const visitedStopIds = useVisitedStops(lens);
+  const meetingMarkers = useMeetingMarkers(lens, geoSignals.todayEvents, geoSignals.weekEvents);
 
   useEffect(() => {
     getCurrentUserLocation()
