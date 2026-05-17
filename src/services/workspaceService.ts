@@ -157,6 +157,16 @@ export interface WorkspaceGroupMember {
   added_by: string | null;
 }
 
+export interface GroupGrant {
+  id: string;
+  group_id: string;
+  permission_key: string;
+  resource_type: string | null;
+  resource_id: string | null;
+  created_at: string;
+  created_by: string | null;
+}
+
 export type IntegrationKey =
   | 'slack' | 'gmail' | 'google_calendar' | 'google_drive'
   | 'microsoft' | 'twilio' | 'zapier';
@@ -1004,6 +1014,62 @@ export const workspaceService = {
       .eq('user_id', userId);
 
     assertNoError(error, 'removeGroupMember');
+  },
+
+  // -------------------------------------------------------------------------
+  // Group grants — workspace-wide permission assignments to groups.
+  //
+  // First consumer of the public.group_grants table (added in Sub-PR 5,
+  // migration 20260522000000_permissions_group_grants.sql). This pass ships
+  // workspace-wide grants only — resource-scoped grants (resource_type +
+  // resource_id NOT NULL) are deferred until a feature surface exists that
+  // needs them.
+  //
+  // NOTE: client-side hasPermission() on WorkspaceContext is matrix-only and
+  // does NOT yet merge group grants. RLS on the server is authoritative;
+  // bringing the client-side gate into agreement is a follow-up.
+  // -------------------------------------------------------------------------
+
+  async listGroupGrants(groupId: string): Promise<GroupGrant[]> {
+    const { data, error } = await supabase
+      .from('group_grants')
+      .select('*')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: true });
+
+    assertNoError(error, 'listGroupGrants');
+    return (data ?? []) as GroupGrant[];
+  },
+
+  /** Grant a workspace-wide permission to a group. Requires groups.manage. */
+  async grantGroupPermission(
+    groupId: string,
+    permissionKey: string,
+  ): Promise<GroupGrant> {
+    const userId = await getCurrentUserId();
+    const { data, error } = await supabase
+      .from('group_grants')
+      .insert({
+        group_id: groupId,
+        permission_key: permissionKey,
+        resource_type: null,
+        resource_id: null,
+        created_by: userId,
+      })
+      .select()
+      .single();
+
+    assertNoError(error, 'grantGroupPermission');
+    return data as GroupGrant;
+  },
+
+  async revokeGroupGrant(grantId: string): Promise<void> {
+    const { error } = await supabase
+      .from('group_grants')
+      .delete()
+      .eq('id', grantId);
+
+    assertNoError(error, 'revokeGroupGrant');
   },
 
   // -------------------------------------------------------------------------
