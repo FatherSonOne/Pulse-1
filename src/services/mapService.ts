@@ -63,13 +63,16 @@ export const MAP_STYLE_LIGHT: google.maps.MapTypeStyle[] = [
   { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#ece8e3' }] },
 
   // Roads — the city's structural lines. Local roads near-white, arterial
-  // a half-step darker, highways carry the rose accent.
+  // a half-step darker, highways carry a quiet rose accent. The bright
+  // stroke (was #f43f5e w0.6) turned every freeway into a spiderweb at
+  // country-level zoom; softer fill + lighter stroke preserves the "rose
+  // marks the backbone" intent without dominating the canvas.
   { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#52525b' }] },
   { featureType: 'road', elementType: 'labels.text.stroke', stylers: [{ color: '#fafafa' }] },
   { featureType: 'road.local', elementType: 'geometry.fill', stylers: [{ color: '#fafafa' }] },
   { featureType: 'road.arterial', elementType: 'geometry.fill', stylers: [{ color: '#ebe7e3' }] },
-  { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#fecdd3' }] },
-  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#f43f5e' }, { weight: 0.6 }] },
+  { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#fde2e6' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#fda4af' }, { weight: 0.3 }] },
 
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
   { featureType: 'administrative', elementType: 'labels.text.fill', stylers: [{ color: '#78716c' }] },
@@ -93,13 +96,15 @@ export const MAP_STYLE_DARK: google.maps.MapTypeStyle[] = [
   { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#0f0f0f' }] },
   { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#0d0d0d' }] },
 
-  // Roads against true-black: local roads barely lift, highways glow rose
+  // Roads against true-black: local roads barely lift, highways carry a
+  // quiet rose accent. Stroke softened (was #f43f5e w0.5) to keep highways
+  // legible at city zoom without the country-zoom spiderweb effect.
   { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#a1a1aa' }] },
   { featureType: 'road', elementType: 'labels.text.stroke', stylers: [{ color: '#0a0a0a' }] },
   { featureType: 'road.local', elementType: 'geometry', stylers: [{ color: '#171717' }] },
   { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#1f1f1f' }] },
-  { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#3f0d18' }] },
-  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#f43f5e' }, { weight: 0.5 }] },
+  { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#2a0710' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#9f1239' }, { weight: 0.3 }] },
 
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
   { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#27272a' }] },

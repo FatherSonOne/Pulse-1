@@ -2160,3 +2160,9 @@ const ContactLocationPickerOverlay: React.FC<ContactLocationPickerOverlayProps> 
 };
 
 export default PulseMapView;
+
+// Named exports for E2E test harnesses (e2e/harness/MapTestHarness.tsx).
+// These components are otherwise internal — exporting them avoids the harness
+// having to recreate dialog/reorder UI to test focus management and a11y.
+export { AiStrip, LiveBroadcastSheet };
+export type { AiState, AcceptedRoute };

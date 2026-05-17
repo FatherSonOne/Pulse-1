@@ -97,6 +97,7 @@ docs/archive/scripts/
 .claude/security_warnings_*.json
 .claude/paste-cache/
 .claude/ide/
+.claude/compass-cache.md
 .claude/debug/
 .claude/agents/
 .claude/plugins/
