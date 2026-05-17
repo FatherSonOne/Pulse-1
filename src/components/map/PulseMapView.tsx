@@ -8,10 +8,14 @@ import {
   ChevronRight,
   Globe,
   Home,
+  Layers,
+  Map as MapIcon,
   MapPin,
   MapPinned,
+  Mountain,
   Navigation,
   Radio,
+  Satellite,
   Sparkles,
   Sun,
   Upload,
@@ -85,6 +89,20 @@ const LENS_OPTIONS: { id: MapLens; label: string; Icon: typeof Sun }[] = [
   { id: 'week',  label: 'Week',  Icon: CalendarRange },
   { id: 'atlas', label: 'Atlas', Icon: Globe },
 ];
+
+// Google Maps base-tile mode. Roadmap is the styled Coral Cockpit canvas;
+// Satellite + Terrain + Hybrid all bypass our custom styling (Google ignores
+// `styles` on non-roadmap modes), so the look-and-feel jumps deliberately.
+type MapViewMode = 'roadmap' | 'satellite' | 'terrain' | 'hybrid';
+
+const MAP_VIEW_OPTIONS: { id: MapViewMode; label: string; Icon: typeof Sun; hotkey: string }[] = [
+  { id: 'roadmap',   label: 'Map',    Icon: MapIcon,   hotkey: '4' },
+  { id: 'satellite', label: 'Sat',    Icon: Satellite, hotkey: '5' },
+  { id: 'terrain',   label: 'Terr',   Icon: Mountain,  hotkey: '6' },
+  { id: 'hybrid',    label: 'Hybrid', Icon: Layers,    hotkey: '7' },
+];
+
+const MAP_VIEW_LS_KEY = 'pulse:map:view-mode';
 
 // ─── AI strip + accepted-route shared types ─────────────────────────────────
 // Hoisted out of the component so the AiStrip sub-component can reference
@@ -187,6 +205,24 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 }) => {
   const [lens, setLens] = useState<MapLens>('today');
   const [showLiveSheet, setShowLiveSheet] = useState(false);
+  // Visually-hidden announcer for keyboard / SR users — lens + view-mode
+  // swaps are otherwise silent. Driven by effects after visibleMarkers is
+  // computed, so it can include the up-to-date marker count.
+  const [srAnnouncement, setSrAnnouncement] = useState('');
+
+  // Base-tile mode. Persisted so the user's pick survives reloads. Default
+  // roadmap (the Coral Cockpit canvas the rest of the section is tuned to).
+  const [viewMode, setViewMode] = useState<MapViewMode>(() => {
+    if (typeof localStorage === 'undefined') return 'roadmap';
+    const saved = localStorage.getItem(MAP_VIEW_LS_KEY);
+    return (['roadmap', 'satellite', 'terrain', 'hybrid'] as const).includes(saved as MapViewMode)
+      ? (saved as MapViewMode)
+      : 'roadmap';
+  });
+  const changeViewMode = useCallback((next: MapViewMode) => {
+    setViewMode(next);
+    try { localStorage.setItem(MAP_VIEW_LS_KEY, next); } catch { /* ignore */ }
+  }, []);
 
   // AI strip state machine (idle → fetching → ready/none). See the hoisted
   // types above the component for the proposal shape.
@@ -480,6 +516,21 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
       return markers;
     });
   }, [localContacts, filter, circles, lens]);
+
+  // Lens / view-mode swap announcer — fires on lens or marker-count change
+  // (lens swap usually changes both) and on viewMode change. Skips the
+  // initial mount so SR users don't get spammed with a "Today lens" message
+  // they didn't trigger; the empty initial string serves as that gate.
+  useEffect(() => {
+    const lensLabel = LENS_OPTIONS.find(o => o.id === lens)?.label ?? lens;
+    const count = visibleMarkers.length;
+    setSrAnnouncement(`${lensLabel} lens, ${count} ${count === 1 ? 'contact' : 'contacts'} on map`);
+  }, [lens, visibleMarkers.length]);
+
+  useEffect(() => {
+    const viewLabel = MAP_VIEW_OPTIONS.find(o => o.id === viewMode)?.label ?? viewMode;
+    setSrAnnouncement(`${viewLabel} view`);
+  }, [viewMode]);
 
   // Fit bounds when the marker set changes (lens switch, filter change).
   // With 0 markers we DON'T refit — that produces a degenerate 1-point fit
@@ -825,6 +876,10 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
       if (e.key === '1') { setLens('today'); e.preventDefault(); return; }
       if (e.key === '2') { setLens('week');  e.preventDefault(); return; }
       if (e.key === '3') { setLens('atlas'); e.preventDefault(); return; }
+      if (e.key === '4') { changeViewMode('roadmap');   e.preventDefault(); return; }
+      if (e.key === '5') { changeViewMode('satellite'); e.preventDefault(); return; }
+      if (e.key === '6') { changeViewMode('terrain');   e.preventDefault(); return; }
+      if (e.key === '7') { changeViewMode('hybrid');    e.preventDefault(); return; }
       if (e.key === '/') {
         searchInputRef.current?.focus();
         e.preventDefault();
@@ -833,13 +888,16 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [showLiveSheet, selectedContactId, selectedMeetingId, selectedCircleId, showAddLocationPicker]);
+  }, [showLiveSheet, selectedContactId, selectedMeetingId, selectedCircleId, showAddLocationPicker, changeViewMode]);
 
   if (loadError) {
     return (
-      <div className={`flex flex-col items-center justify-center h-full gap-3 text-sm ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>
+      <div
+        role="alert"
+        className={`flex flex-col items-center justify-center h-full gap-3 text-sm ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}
+      >
         <div className="flex items-center gap-2">
-          <AlertTriangle size={16} />
+          <AlertTriangle size={16} aria-hidden="true" />
           Map's offline — check API key in Settings → Integrations.
         </div>
         <button
@@ -857,8 +915,12 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 
   if (!isLoaded) {
     return (
-      <div className={`flex flex-col items-center justify-center h-full gap-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-        <MapPinned size={32} className="text-rose-500 motion-safe:animate-pulse" />
+      <div
+        role="status"
+        aria-live="polite"
+        className={`flex flex-col items-center justify-center h-full gap-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
+      >
+        <MapPinned size={32} className="text-rose-500 motion-safe:animate-pulse" aria-hidden="true" />
         <p className="text-sm">Loading map…</p>
       </div>
     );
@@ -873,7 +935,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   const atlasHasAnyPinned = localContacts.some(c => c.homeLat != null || c.workLat != null);
 
   return (
-    <div className="flex flex-col w-full h-full">
+    <div className={`flex flex-col w-full h-full rounded-xl overflow-hidden border ${
+      isDarkMode ? 'border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.35)]' : 'border-gray-200 shadow-sm'
+    }`}>
       <style>{`
         @keyframes contactsMapPanelEnter {
           from { opacity: 0; transform: translateX(16px); }
@@ -895,26 +959,38 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
         }
       `}</style>
 
+      {/* SR-only live region — announces lens / view-mode swaps and marker
+          count for keyboard and screen-reader users. Empty on mount so the
+          initial render doesn't fire an announcement. */}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {srAnnouncement}
+      </div>
+
       {/* Lens row — the section's identity. TODAY is default and most-built;
-          ATLAS demotes the old address-book-on-a-map to a tertiary lens. */}
+          ATLAS demotes the old address-book-on-a-map to a tertiary lens.
+          View toggle (right) flips base tiles (4=Map, 5=Sat, 6=Terr, 7=Hyb).
+          The two groups share styling so they read as siblings, not strangers. */}
       <div
         className={`flex items-center justify-between gap-2 px-3 py-2 border-b ${
           isDarkMode ? 'bg-zinc-900/40 border-white/5' : 'bg-white border-gray-200'
         }`}
-        role="tablist"
-        aria-label="Map lens"
       >
-        <div className="flex items-center gap-1">
+        <div
+          role="group"
+          aria-label="Map lens"
+          className="flex items-center gap-1"
+        >
           {LENS_OPTIONS.map(({ id, label, Icon }) => {
             const active = lens === id;
+            const hotkey = id === 'today' ? '1' : id === 'week' ? '2' : '3';
             return (
               <button
                 key={id}
                 type="button"
-                role="tab"
-                aria-selected={active}
+                aria-pressed={active}
+                aria-keyshortcuts={hotkey}
                 onClick={() => setLens(id)}
-                title={`${label} (${id === 'today' ? '1' : id === 'week' ? '2' : '3'})`}
+                title={`${label} lens — press ${hotkey}`}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
                   active
                     ? `text-rose-500 ${isDarkMode ? 'bg-rose-500/10' : 'bg-rose-50'}`
@@ -922,8 +998,60 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                 }`}
                 style={{ fontFamily: "'JetBrains Mono', monospace" }}
               >
-                <Icon size={11} />
+                <Icon size={11} aria-hidden="true" />
                 <span>{label}</span>
+                <kbd
+                  aria-hidden="true"
+                  className={`ml-0.5 px-1 rounded text-[9px] leading-none font-normal ${
+                    active
+                      ? isDarkMode ? 'bg-rose-500/20 text-rose-300' : 'bg-rose-100 text-rose-600'
+                      : isDarkMode ? 'bg-white/5 text-gray-500' : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
+                  {hotkey}
+                </kbd>
+              </button>
+            );
+          })}
+        </div>
+
+        <div
+          role="group"
+          aria-label="Map view mode"
+          className={`flex items-center gap-0.5 rounded-md p-0.5 ${
+            isDarkMode ? 'bg-white/[0.03]' : 'bg-gray-50'
+          }`}
+        >
+          {MAP_VIEW_OPTIONS.map(({ id, label, Icon, hotkey }) => {
+            const active = viewMode === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={active}
+                aria-keyshortcuts={hotkey}
+                aria-label={`${label} view`}
+                onClick={() => changeViewMode(id)}
+                title={`${label} view — press ${hotkey}`}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
+                  active
+                    ? `text-rose-500 ${isDarkMode ? 'bg-rose-500/10' : 'bg-white shadow-sm'}`
+                    : `${isDarkMode ? 'text-gray-400 hover:bg-white/5' : 'text-gray-500 hover:bg-white/60'}`
+                }`}
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
+                <Icon size={11} aria-hidden="true" />
+                <span className="hidden sm:inline" aria-hidden="true">{label}</span>
+                <kbd
+                  aria-hidden="true"
+                  className={`ml-0.5 px-1 rounded text-[9px] leading-none font-normal ${
+                    active
+                      ? isDarkMode ? 'bg-rose-500/20 text-rose-300' : 'bg-rose-100 text-rose-600'
+                      : isDarkMode ? 'bg-white/5 text-gray-500' : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  {hotkey}
+                </kbd>
               </button>
             );
           })}
@@ -955,7 +1083,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           expensive to rebuild and Atlas markers vanish off-screen if we
           force a remount. The lens-change fade lives on the AI strip
           + empty-state card instead, where it carries actual signal. */}
-      <div className="relative flex-1 overflow-hidden rounded-b-xl">
+      <div className="relative flex-1 overflow-hidden">
         <MapFilterBar
           filter={filter}
           circles={circles}
@@ -972,6 +1100,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           mapContainerClassName="w-full h-full"
           center={userPosition ?? DEFAULT_CENTER}
           zoom={DEFAULT_ZOOM}
+          mapTypeId={viewMode}
           options={getMapOptions(isDarkMode)}
           onLoad={onMapLoad}
           onClick={() => { setSelectedContactId(null); setSelectedCircleId(null); setSelectedMeetingId(null); }}
@@ -1172,8 +1301,8 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             }`}
             aria-label={`${liveBroadcasters.length} broadcasting — open list`}
           >
-            <span className="relative inline-flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-rose-500/70 animate-ping" />
+            <span className="relative inline-flex h-2 w-2" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-rose-500/70 motion-safe:animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
             </span>
             <span>{liveBroadcasters.length} broadcasting</span>
@@ -1351,11 +1480,11 @@ const AiStrip: React.FC<AiStripProps> = ({
             type="button"
             onClick={onDismissRoute}
             aria-label="Dismiss route"
-            className={`p-1 rounded transition-colors ${
+            className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
               isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-rose-500/10 text-gray-500'
             }`}
           >
-            <X size={12} />
+            <X size={12} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -1503,13 +1632,14 @@ const AiStrip: React.FC<AiStripProps> = ({
                   onClick={() => setWhyExpanded(v => !v)}
                   aria-expanded={whyExpanded}
                   aria-controls="pulse-ai-rationale"
-                  className={`inline-flex items-center gap-0.5 px-1.5 py-1 rounded text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
+                  className={`inline-flex items-center gap-0.5 px-2 py-1.5 rounded text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
                     isDarkMode ? 'text-gray-400 hover:text-rose-300 hover:bg-white/5' : 'text-gray-500 hover:text-rose-600 hover:bg-rose-500/5'
                   }`}
                 >
                   Why?
                   <ChevronDown
                     size={11}
+                    aria-hidden="true"
                     className={`transition-transform ${whyExpanded ? 'rotate-180' : ''}`}
                   />
                 </button>
@@ -1795,7 +1925,7 @@ const LiveBroadcastSheet: React.FC<LiveBroadcastSheetProps> = ({
     >
       <div className={`flex items-center justify-between px-4 py-3 border-b ${isDarkMode ? 'border-white/10' : 'border-gray-100'}`}>
         <div className="flex items-center gap-2">
-          <Radio size={14} className="text-rose-500" />
+          <Radio size={14} className="text-rose-500" aria-hidden="true" />
           <span
             className="text-[11px] tracking-[0.1em] uppercase"
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -1807,11 +1937,11 @@ const LiveBroadcastSheet: React.FC<LiveBroadcastSheetProps> = ({
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className={`p-1 rounded transition-colors ${
+          className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
             isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'
           }`}
         >
-          <X size={14} />
+          <X size={14} aria-hidden="true" />
         </button>
       </div>
       <div className="h-[60vh] overflow-y-auto">
@@ -1888,7 +2018,7 @@ const ContactLocationPickerOverlay: React.FC<ContactLocationPickerOverlayProps> 
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Pick a contact to locate"
+      aria-labelledby="contact-picker-title"
     >
       <div
         ref={containerRef}
@@ -1898,7 +2028,10 @@ const ContactLocationPickerOverlay: React.FC<ContactLocationPickerOverlayProps> 
         onClick={e => e.stopPropagation()}
       >
         <div className={`px-5 py-4 border-b ${isDarkMode ? 'border-white/10' : 'border-gray-100'}`}>
-          <h3 className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          <h3
+            id="contact-picker-title"
+            className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+          >
             Pick a contact to locate
           </h3>
           <input
@@ -1907,6 +2040,7 @@ const ContactLocationPickerOverlay: React.FC<ContactLocationPickerOverlayProps> 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name…"
+            aria-label="Search contacts by name"
             className={`mt-3 w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors ${
               isDarkMode
                 ? 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-rose-500'
@@ -1923,12 +2057,14 @@ const ContactLocationPickerOverlay: React.FC<ContactLocationPickerOverlayProps> 
             filtered.map(c => (
               <button
                 key={c.id}
+                type="button"
                 onClick={() => onPick(c.id)}
-                className={`w-full flex items-center gap-3 px-5 py-2.5 text-left transition-colors ${
+                className={`w-full flex items-center gap-3 px-5 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:bg-rose-500/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-500 ${
                   isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'
                 }`}
               >
                 <div
+                  aria-hidden="true"
                   className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
                   style={{ backgroundColor: c.avatarColor || '#f43f5e' }}
                 >
