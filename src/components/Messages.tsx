@@ -1715,6 +1715,46 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     }
   }, [initialContactId, contacts]);
 
+  // ─── External draft prefill (e.g. Map's "I'm at…" FAB) ─────────────────────
+  // Listens for `pulse:messages:draft` with { contactId, body, source }. Opens
+  // the matching thread (or creates one) and prefills the compose input with
+  // body. Dispatches `pulse:messages:draft:accepted` back so the sender can
+  // swap its "copied to clipboard" toast for an "opened in Messages" toast.
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{
+        contactId?: string;
+        body?: string;
+        source?: string;
+      }>).detail;
+      if (!detail?.contactId || !detail.body) return;
+
+      const existingThread = threads.find(t => t.contactId === detail.contactId);
+      if (existingThread) {
+        setActiveThreadId(existingThread.id);
+        setActivePulseConversation(null);
+        setMobileView('chat');
+      } else {
+        const contact = contacts.find(c => c.id === detail.contactId);
+        if (contact) createNewThread(contact);
+      }
+      setInputText(detail.body);
+
+      window.dispatchEvent(new CustomEvent('pulse:messages:draft:accepted', {
+        detail: {
+          contactId: detail.contactId,
+          source: detail.source ?? 'unknown',
+        },
+      }));
+    };
+    window.addEventListener('pulse:messages:draft', handler);
+    return () => window.removeEventListener('pulse:messages:draft', handler);
+    // createNewThread is captured by closure — same forward-reference pattern
+    // the initialContactId effect above uses. Re-binding on threads + contacts
+    // is enough; createNewThread's own deps already pick up threads.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threads, contacts]);
+
   const createNewThread = useCallback(async (contact: Contact) => {
       // Check if thread already exists for this contact
       const existingThread = threads.find(t => t.contactId === contact.id);

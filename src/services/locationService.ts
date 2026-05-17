@@ -278,8 +278,72 @@ export async function geocodeContactsBatch(
 // Persistence
 // ============================================================
 
+// Strict UUID v4-ish detector — matches the format Supabase emits for
+// `uuid_generate_v4()`. Used to tell a real DB-rooted contact from a
+// virtual one (Google contacts get ids like `google_c123…`, never UUIDs).
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isContactUuid(id: string): boolean { return UUID_RE.test(id); }
+
+/** Make sure the contact has a row in the public.contacts table and return
+ *  its canonical UUID id. Google-sourced contacts (id prefix `google_…`)
+ *  live only in client memory until they earn a write — this is where they
+ *  get promoted, with `external_id` preserving the Google resource id and
+ *  `source = 'google'` recording the origin.
+ *
+ *  Callers must propagate the returned id back into their local state when
+ *  it differs from `contact.id`, otherwise subsequent writes will keep
+ *  re-promoting the same contact.
+ */
+export async function ensureContactInDB(contact: Contact): Promise<string> {
+  if (isContactUuid(contact.id)) return contact.id;
+
+  const { data: { user }, error: userErr } = await supabase.auth.getUser();
+  if (userErr || !user) {
+    throw new Error('ensureContactInDB: not authenticated');
+  }
+
+  // Strip the `google_` (or other) prefix so external_id holds just the
+  // upstream resource id. Falls back to the full original id when there's
+  // no recognised prefix.
+  const externalId = contact.id.replace(/^(google_|vision_)/, '');
+
+  const insertPayload = {
+    user_id: user.id,
+    name: contact.name,
+    role: contact.role || 'Contact',
+    company: contact.company ?? null,
+    avatar_color: contact.avatarColor || '#6366f1',
+    // Status column has a check constraint; the in-memory Contact already
+    // narrows to these values, but be defensive in case a Google sync
+    // produced something unexpected.
+    status: (['online', 'offline', 'busy', 'away'] as const).includes(contact.status as any)
+      ? contact.status
+      : 'offline',
+    email: contact.email || '',
+    phone: contact.phone ?? null,
+    address: contact.address ?? null,
+    notes: contact.notes ?? null,
+    source: (contact.source === 'google' || contact.source === 'vision') ? contact.source : 'local',
+    external_id: externalId,
+    platform: 'web',
+  };
+
+  const { data, error } = await supabase
+    .from('contacts')
+    .insert(insertPayload)
+    .select('id')
+    .single();
+
+  if (error || !data) {
+    console.error('[locationService] ensureContactInDB insert failed:', error);
+    throw error ?? new Error('ensureContactInDB: no row returned');
+  }
+
+  return data.id as string;
+}
+
 export async function saveContactLocation(
-  contactId: string,
+  contact: Contact,
   locationType: 'home' | 'work',
   lat: number,
   lng: number,
@@ -288,7 +352,11 @@ export async function saveContactLocation(
   // approach events fire as the user crosses the radius. Null disables
   // the geofence on this place.
   geofenceRadiusM: number | null = null
-): Promise<void> {
+): Promise<string> {
+  // Step 1: resolve to a real DB row. Promotes Google/Vision contacts
+  // on demand so PATCH-by-id can run against a valid UUID.
+  const canonicalId = await ensureContactInDB(contact);
+
   const column = locationType === 'home'
     ? { lat: 'home_lat', lng: 'home_lng', addr: 'home_address' }
     : { lat: 'work_lat', lng: 'work_lng', addr: 'work_address' };
@@ -306,7 +374,7 @@ export async function saveContactLocation(
       geo_accuracy: 'precise',
       location_updated_at: new Date().toISOString(),
     })
-    .eq('id', contactId);
+    .eq('id', canonicalId);
 
   if (error) {
     console.error('[locationService] saveContactLocation error:', error);
@@ -316,16 +384,32 @@ export async function saveContactLocation(
   // Mirror to the universal Place schema. Failures here are logged but
   // not thrown — the legacy columns remain authoritative until cutover.
   try {
-    await upsertContactPlace(contactId, locationType, lat, lng, address, geofenceRadiusM);
+    await upsertContactPlace(canonicalId, locationType, lat, lng, address, geofenceRadiusM);
   } catch (placeErr) {
     console.error('[locationService] upsertContactPlace mirror failed:', placeErr);
   }
+
+  return canonicalId;
 }
 
 export async function clearContactLocation(
   contactId: string,
   locationType: 'home' | 'work'
 ): Promise<void> {
+  // Mirror saveContactLocation's UUID handling: a virtual contact (Google /
+  // Vision, id prefix like `google_…`) has nothing in the DB to clear yet,
+  // so a clear-by-id would hit zero rows and silently no-op. Skip the round
+  // trip and let the caller refresh its local state. This is the symmetric
+  // guard the empty-state flow needs once it lets users open the edit modal
+  // for an un-promoted contact and click Clear.
+  if (!isContactUuid(contactId)) {
+    console.warn(
+      '[locationService] clearContactLocation called with non-UUID id; nothing to clear in DB:',
+      contactId,
+    );
+    return;
+  }
+
   const update = locationType === 'home'
     ? { home_lat: null, home_lng: null, home_address: null }
     : { work_lat: null, work_lng: null, work_address: null };
@@ -855,4 +939,92 @@ export async function upsertLocationConsent(
     updated_at: new Date().toISOString(),
   });
   if (error) throw error;
+}
+
+// ============================================================
+// Phase 7 — Multi-recipient broadcast
+//
+// The spec called for a new `live_location_recipients` table; in practice
+// Pulse already has the same shape under `location_share_consents` (Phase 3
+// bilateral consent). These helpers wrap the bulk grant/revoke flow the
+// BROADCAST chip drives so the consent table doesn't sprout ad-hoc upserts
+// across the codebase.
+//
+// Session set: the recipients picked for the current broadcast live in
+// module state so the stop handler knows which consents to revoke (without
+// touching long-standing manual grants the user set elsewhere).
+// ============================================================
+
+let currentBroadcastRecipients = new Set<string>();
+
+/** Active recipients viewer ids visible to the current process. Empty when
+ *  no broadcast is running or the user is broadcasting to nobody. */
+export function getActiveBroadcastRecipientIds(): string[] {
+  return Array.from(currentBroadcastRecipients);
+}
+
+/** Replace the current broadcast recipient set. Grants new ids (upserts
+ *  with is_granted=true), revokes ids dropped from the set (is_granted=false),
+ *  preserves any consent rows the user added manually outside this session. */
+export async function setBroadcastRecipients(
+  broadcasterUserId: string,
+  recipientUserIds: string[],
+  shareLevel: 'precise' | 'approximate' | 'city_only' = 'precise',
+): Promise<void> {
+  const nextSet = new Set(recipientUserIds);
+  const prevSet = currentBroadcastRecipients;
+
+  const toGrant = recipientUserIds.filter(id => !prevSet.has(id));
+  const toRevoke = Array.from(prevSet).filter(id => !nextSet.has(id));
+
+  const updatedAt = new Date().toISOString();
+
+  if (toGrant.length > 0) {
+    const { error } = await supabase.from('location_share_consents').upsert(
+      toGrant.map(viewerId => ({
+        subject_user_id: broadcasterUserId,
+        viewer_user_id: viewerId,
+        is_granted: true,
+        share_level: shareLevel,
+        expires_at: null,
+        updated_at: updatedAt,
+      })),
+    );
+    if (error) throw error;
+  }
+
+  if (toRevoke.length > 0) {
+    // Mark previously-this-session grants as revoked. Bulk update keyed by
+    // (subject_user_id, viewer_user_id). Supabase's update doesn't take a
+    // composite-key array natively, so iterate — usually a handful of rows.
+    for (const viewerId of toRevoke) {
+      const { error } = await supabase
+        .from('location_share_consents')
+        .update({ is_granted: false, updated_at: updatedAt })
+        .eq('subject_user_id', broadcasterUserId)
+        .eq('viewer_user_id', viewerId);
+      if (error) throw error;
+    }
+  }
+
+  currentBroadcastRecipients = nextSet;
+}
+
+/** Revoke all session-granted consents and clear the in-memory set. Called
+ *  when the user toggles BROADCAST off. Pre-existing consents granted from
+ *  the LocationSharePanel (per-contact) are intentionally untouched —
+ *  they were never part of this session's set. */
+export async function endBroadcastRecipients(broadcasterUserId: string): Promise<void> {
+  const recipients = Array.from(currentBroadcastRecipients);
+  currentBroadcastRecipients = new Set();
+  if (recipients.length === 0) return;
+  const updatedAt = new Date().toISOString();
+  for (const viewerId of recipients) {
+    await supabase
+      .from('location_share_consents')
+      .update({ is_granted: false, updated_at: updatedAt })
+      .eq('subject_user_id', broadcasterUserId)
+      .eq('viewer_user_id', viewerId)
+      .then(() => {}, () => {}); // swallow per-recipient errors — best effort
+  }
 }

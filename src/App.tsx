@@ -27,7 +27,7 @@ const Meetings = lazy(() => import('./components/Meetings').then(module => ({ de
 const Contacts = lazy(() => import('./components/Contacts'));
 // Top-level Map section (Phase 3 IA promotion). Same component the Contacts
 // 'Map' tab used to mount; now also addressable from the Sidebar directly.
-const ContactMapView = lazy(() => import('./components/contacts/map/ContactMapView'));
+const PulseMapView = lazy(() => import('./components/map/PulseMapView'));
 const Archives = lazy(() => import('./components/Archives'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const MessageAnalytics = lazy(() => import('./components/MessageAnalytics'));
@@ -71,6 +71,7 @@ import { FeatureProvider } from './contexts/FeatureContext';
 import { PulseAIProvider } from './contexts/PulseAIContext';
 import { CommandPaletteProvider, useCommandPalette, useRegisterCommands, Command } from './contexts/CommandPaletteContext';
 import { GlobalCommandPalette } from './components/GlobalCommandPalette';
+import KeyboardChordsLayer from './components/KeyboardChordsLayer';
 import CaptureModal from './components/Capture/CaptureModal';
 import { WorkspaceProvider, useWorkspaceData, useWorkspaceActions } from './contexts/WorkspaceContext';
 import { TrialGate } from './components/billing/TrialGate';
@@ -193,6 +194,7 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
       { id: 'nav-calendar', label: 'Calendar', desc: 'Schedule and tasks', view: AppView.CALENDAR, icon: 'fa-calendar', keywords: ['schedule', 'events', 'tasks', 'meeting'] },
       { id: 'nav-relay', label: 'Relay', desc: 'Voice messages and notes', view: AppView.RELAY, icon: 'fa-microphone', keywords: ['vox', 'voice', 'audio'] },
       { id: 'nav-contacts', label: 'Contacts', desc: 'People and teams', view: AppView.CONTACTS, icon: 'fa-users', keywords: ['people', 'crm'] },
+      { id: 'nav-map', label: 'Map', desc: 'Spatial layer — contacts, places, geofences', view: AppView.MAP, icon: 'fa-location-dot', keywords: ['location', 'geo', 'team radar', 'places', 'broadcast'] },
       { id: 'nav-archives', label: 'Memory', desc: 'Every word, every voice — find any conversation', view: AppView.ARCHIVES, icon: 'fa-box-archive', keywords: ['archives', 'history'] },
       { id: 'nav-search', label: 'Search', desc: 'Search across Pulse', view: AppView.MULTI_MODAL, icon: 'fa-magnifying-glass', keywords: ['find', 'global'] },
       { id: 'nav-decisions', label: 'Decisions & Tasks', desc: 'Decision hub and task board', view: AppView.DECISIONS_TASKS, icon: 'fa-list-check', keywords: ['todo', 'task'] },
@@ -721,7 +723,10 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleNavigate = (e: Event) => {
       const { view: targetView, section } =
-        (e as CustomEvent<{ view: AppView; section?: string }>).detail ?? {};
+        (e as CustomEvent<{
+          view: AppView;
+          section?: string;
+        }>).detail ?? {};
       if (!targetView) return;
       if (targetView === AppView.SETTINGS && section) {
         setSettingsSection(section);
@@ -798,9 +803,18 @@ const App: React.FC = () => {
     await loadContacts();
   }, [contacts, loadContacts]);
 
-  const handleUpdateContact = useCallback(async (updatedContact: Contact) => {
+  // `previousId` is supplied when the save promoted a virtual contact (e.g.
+  // `google_…` → UUID via Map's saveContactLocation). Match by previousId so
+  // the App-level contact cache finds the row to replace instead of stale
+  // duplicates piling up. Also re-pin selectedContactId if the user had the
+  // promoted contact open in another section.
+  const handleUpdateContact = useCallback(async (updatedContact: Contact, previousId?: string) => {
     await dataService.updateContact(updatedContact.id, updatedContact);
-    setContacts(prev => prev.map(c => c.id === updatedContact.id ? updatedContact : c));
+    const matchId = previousId ?? updatedContact.id;
+    setContacts(prev => prev.map(c => c.id === matchId ? updatedContact : c));
+    if (previousId && previousId !== updatedContact.id) {
+      setSelectedContactId(prev => (prev === previousId ? updatedContact.id : prev));
+    }
   }, []);
 
   const handleAddContact = useCallback(async (contact: Omit<Contact, 'id'>) => {
@@ -886,15 +900,12 @@ const App: React.FC = () => {
             case AppView.CONTACTS:
               return <Contacts contacts={contacts} onAction={handleContactAction} onSyncComplete={handleSyncContacts} onUpdateContact={handleUpdateContact} onAddContact={handleAddContact} onDeleteContact={handleDeleteContact} openAddContact={openAddContact} isDarkMode={isDarkMode} userId={user?.id} />;
             case AppView.MAP:
-              // Map is now a top-level section (Phase 3 IA promotion). The
-              // surface still uses ContactMapView under the hood; the move is
-              // purely about discoverability and IA truth, since the maps
-              // stack now powers Calendar travel chips, Today geo-clusters,
-              // War Room Team Radar, and Decisions/Tasks geofences — none of
-              // which are contact-relationship features.
+              // Map is a top-level section. The TODAY / WEEK / ATLAS lens
+              // hybrid replaced the old entity-type identity row; deep-link
+              // `intent` plumbing was retired alongside that change.
               return (
                 <div className="w-full h-full p-3 bg-zinc-50 dark:bg-zinc-950">
-                  <ContactMapView
+                  <PulseMapView
                     contacts={contacts}
                     circles={[]}
                     isDarkMode={isDarkMode}
@@ -1011,6 +1022,11 @@ const App: React.FC = () => {
           palette aggregates Pulse-wide actions and section-specific ones. */}
       <GlobalCommandPalette />
       <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} />
+
+      {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
+          (g m → Map, g c → Contacts, …) plus a `?` overlay listing them
+          all. Mounted at App root so chords work from any section. */}
+      <KeyboardChordsLayer />
 
       {/* Single global Capture modal — opened by Cmd+J from anywhere. Mirrors
           the GlobalCommandPalette pattern. Tags captures with the current view. */}

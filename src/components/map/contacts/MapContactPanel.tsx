@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Bell,
+  BellOff,
   Briefcase,
   ChevronDown,
   ChevronUp,
@@ -15,10 +17,24 @@ import {
 import { Contact } from '../../../types';
 import { ContactCircle } from '../../../types/contactCircleTypes';
 import { LIVE_LOCATION_COLOR, MAP_STATUS_COLORS } from '../../../services/mapService';
-import { UserLocation, distanceMiles, formatDistance } from '../../../services/locationService';
+import {
+  UserLocation,
+  distanceMiles,
+  formatDistance,
+  getPlacesForEntity,
+  setPlaceGeofence,
+} from '../../../services/locationService';
 import LocationEditModal from './LocationEditModal';
 import LocationSharePanel from './LocationSharePanel';
 import EtaShareModal from './EtaShareModal';
+
+// Defaults match LocationEditModal's GeofenceControl. Pulled here so the
+// quick toggle picks a sensible radius when promoting a place from "no
+// geofence" to "alert on arrival" without forcing the user into the slider.
+const DEFAULT_QUICK_RADIUS_M: Record<'home' | 'work', number> = {
+  home: 75,
+  work: 150,
+};
 
 interface MapContactPanelProps {
   contact: Contact;
@@ -30,7 +46,7 @@ interface MapContactPanelProps {
   isDarkMode: boolean;
   onClose: () => void;
   onAction: (action: 'message' | 'vox' | 'meet', contactId: string) => void;
-  onContactUpdated: (updated: Contact) => void;
+  onContactUpdated: (updated: Contact, previousId?: string) => void;
 }
 
 const MapContactPanel: React.FC<MapContactPanelProps> = ({
@@ -49,6 +65,49 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
   const [showSharePanel, setShowSharePanel] = useState(false);
   const [showEtaShare, setShowEtaShare] = useState(false);
   const [activeLocType, setActiveLocType] = useState<'home' | 'work'>(locationType);
+
+  // ─── Phase 6 — quick geofence toggle ──────────────────────────────────────
+  // Fetches the place attached to this contact in the active role and reads
+  // its geofence_radius_m. The toggle just flips between null and the role
+  // default (the slider for fine-tuning stays in LocationEditModal). Lazy:
+  // re-runs only when the contact or active role changes.
+  const [activePlaceId, setActivePlaceId] = useState<string | null>(null);
+  const [activeRadius, setActiveRadius] = useState<number | null>(null);
+  const [geofenceSaving, setGeofenceSaving] = useState(false);
+  const placeFetchRef = useRef<{ contactId: string; role: 'home' | 'work' } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    placeFetchRef.current = { contactId: contact.id, role: activeLocType };
+    setActivePlaceId(null);
+    setActiveRadius(null);
+    getPlacesForEntity('contact', contact.id)
+      .then(places => {
+        if (cancelled) return;
+        const match = places.find(p => p.role === activeLocType);
+        if (!match) return;
+        setActivePlaceId(match.id);
+        setActiveRadius(match.geofenceRadiusM ?? null);
+      })
+      .catch(() => { /* swallow — toggle hides itself when activePlaceId is null */ });
+    return () => { cancelled = true; };
+  }, [contact.id, activeLocType]);
+
+  const handleToggleGeofence = async () => {
+    if (!activePlaceId || geofenceSaving) return;
+    setGeofenceSaving(true);
+    const next = activeRadius == null ? DEFAULT_QUICK_RADIUS_M[activeLocType] : null;
+    try {
+      await setPlaceGeofence(activePlaceId, next);
+      setActiveRadius(next);
+      // Tell the geofence service to re-fetch so the new state is picked up
+      // on the very next location tick, not after the 5-min cache window.
+      try {
+        const mod = await import('../../../services/geofenceService');
+        await mod.refreshGeofences();
+      } catch { /* geofence service inactive — no-op */ }
+    } catch { /* leave state as-is — user can retry */ }
+    finally { setGeofenceSaving(false); }
+  };
 
   const hasAnyLocation =
     (contact.homeLat != null && contact.homeLng != null) ||
@@ -72,6 +131,28 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
   const liveAgeMin = liveLocation
     ? Math.round((Date.now() - liveLocation.updatedAt.getTime()) / 60000)
     : null;
+
+  // Cockpit readout — mono dot-separated string showing the metadata
+  // a fluent operator wants at a glance. ETA wires up in Phase 2 alongside
+  // the AI route engine.
+  const lastSeenLabel = (() => {
+    if (liveLocation) return 'LIVE';
+    if (!contact.lastSeen) return '—';
+    const diffMs = Date.now() - contact.lastSeen.getTime();
+    const min = Math.floor(diffMs / 60000);
+    if (min < 1) return 'JUST NOW';
+    if (min < 60) return `${min}M`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}H`;
+    const day = Math.floor(hr / 24);
+    return `${day}D`;
+  })();
+  const readoutCells: string[] = [
+    contact.name.split(' ')[0].toUpperCase(),
+    activeLocType.toUpperCase(),
+    distance ? distance.toUpperCase() : '—',
+    `SEEN ${lastSeenLabel}`,
+  ];
 
   return (
     <>
@@ -132,6 +213,19 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
 
         <div className={`border-t ${divider}`} />
 
+        {/* Cockpit readout — mono uppercase dot-separated strip. The
+            section's "instrument feeling" lives here. */}
+        <div
+          className={`px-4 py-1.5 text-[10px] tracking-[0.1em] uppercase truncate ${
+            isDarkMode ? 'bg-white/[0.02] text-gray-400' : 'bg-gray-50 text-gray-500'
+          }`}
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        >
+          {readoutCells.join(' · ')}
+        </div>
+
+        <div className={`border-t ${divider}`} />
+
         {/* Location section */}
         <div className="p-4 space-y-3">
           {/* Home / Work toggle */}
@@ -178,6 +272,39 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
             <div className={`rounded-lg p-3 text-center ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
               <p className={`text-sm ${sub}`}>No {activeLocType} location set</p>
             </div>
+          )}
+
+          {/* Quick geofence toggle. Only renders when a place is actually
+              attached for this role — without a place row, there's nothing
+              to flip. The fine-tune slider stays in LocationEditModal. */}
+          {activePlaceId && (
+            <button
+              type="button"
+              onClick={handleToggleGeofence}
+              disabled={geofenceSaving}
+              aria-pressed={activeRadius != null}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 disabled:opacity-60 ${
+                activeRadius != null
+                  ? (isDarkMode
+                      ? 'bg-rose-500/15 text-rose-200 border border-rose-500/30 hover:bg-rose-500/20'
+                      : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100')
+                  : (isDarkMode
+                      ? 'bg-white/5 text-gray-300 border border-white/10 hover:border-rose-500/30'
+                      : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-rose-500/30')
+              }`}
+            >
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                {activeRadius != null
+                  ? <Bell size={11} className="text-rose-500" />
+                  : <BellOff size={11} />}
+                Arrival alerts
+              </span>
+              <span className={`text-[10px] uppercase tracking-[0.1em] ${
+                activeRadius != null ? 'text-rose-500' : sub
+              }`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                {activeRadius != null ? `ON · ${activeRadius}M` : 'OFF'}
+              </span>
+            </button>
           )}
 
           <button
@@ -295,8 +422,8 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
           isOpen={showLocationEdit}
           isDarkMode={isDarkMode}
           onClose={() => setShowLocationEdit(false)}
-          onSave={updated => {
-            onContactUpdated(updated);
+          onSave={(updated, previousId) => {
+            onContactUpdated(updated, previousId);
             setShowLocationEdit(false);
           }}
         />

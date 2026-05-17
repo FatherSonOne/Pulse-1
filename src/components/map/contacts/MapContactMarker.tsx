@@ -14,6 +14,10 @@ interface MapContactMarkerProps {
   isLive?: boolean;
   liveLocation?: UserLocation;
   onClick: () => void;
+  /** 1-indexed route order. When set, shows a coral sequence badge on the
+   *  top-left of the marker. Set by PulseMapView after an AI route is
+   *  accepted; un-set returns the marker to its standalone identity. */
+  sequenceNumber?: number;
 }
 
 function getInitials(name: string): string {
@@ -29,6 +33,7 @@ const MapContactMarker: React.FC<MapContactMarkerProps> = ({
   isLive = false,
   liveLocation,
   onClick,
+  sequenceNumber,
 }) => {
   const pos = liveLocation ? { lat: liveLocation.lat, lng: liveLocation.lng } : { lat, lng };
   const initials = getInitials(contact.name);
@@ -109,6 +114,28 @@ const MapContactMarker: React.FC<MapContactMarkerProps> = ({
           >
             <LocationIcon size={9} color="#fff" strokeWidth={2.5} />
           </div>
+
+          {/* Route-sequence badge (top-left). Coral pill with the 1-indexed
+              order; appears only when the AI route has been accepted. */}
+          {typeof sequenceNumber === 'number' && (
+            <div
+              className="absolute -top-2 -left-2 rounded-full flex items-center justify-center font-mono"
+              style={{
+                minWidth: 20,
+                height: 20,
+                padding: '0 6px',
+                backgroundColor: '#f43f5e',
+                color: '#fafafa',
+                fontSize: 11,
+                lineHeight: 1,
+                border: '2px solid #fafafa',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.30)',
+              }}
+              aria-label={`Stop ${sequenceNumber} on accepted route`}
+            >
+              {sequenceNumber}
+            </div>
+          )}
         </div>
 
         {/* Name label */}

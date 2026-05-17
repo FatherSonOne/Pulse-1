@@ -24,7 +24,9 @@ import { getUpcomingActions } from '../../services/contactGoalService';
 import { TodayFeedCard } from './TodayFeedCard';
 import { TodayEmptyState } from './TodayEmptyState';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
-import TodayRouteStrip from './TodayRouteStrip';
+// TodayRouteStrip lives under map/sub/ — it's a maps-stack consumer, not a
+// contact-relationship feature. Phase 3 IA cleanup.
+import TodayRouteStrip from '../map/sub/TodayRouteStrip';
 import { getCurrentUserLocation } from '../../services/locationService';
 import {
   clusterFeedItems,

@@ -14,11 +14,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { Car, MapPin } from 'lucide-react';
-import { dataService } from '../../services/dataService';
-import { geocodeAddress } from '../../services/locationService';
-import { getTravelTime, formatTravelTime, type TravelTime } from '../../services/directionsService';
-import MapPreview from '../map/MapPreview';
-import type { CalendarEvent } from '../../types';
+import { dataService } from '../../../services/dataService';
+import { geocodeAddress } from '../../../services/locationService';
+import { getTravelTime, formatTravelTime, type TravelTime } from '../../../services/directionsService';
+import MapPreview from '../MapPreview';
+import { AppView, type CalendarEvent } from '../../../types';
 import './TodayRouteStrip.css';
 
 interface Stop {
@@ -104,7 +104,29 @@ const TodayRouteStrip: React.FC<TodayRouteStripProps> = ({ isDarkMode = false })
       className={`today-route-strip ${isDarkMode ? 'today-route-strip--dark' : ''}`}
       aria-label="Today's route"
     >
-      <div className="today-route-strip__label">Today's route</div>
+      <div className="today-route-strip__header">
+        {/* Mono uppercase per Coral Cockpit signature; was Inter title-case. */}
+        <span
+          className="today-route-strip__label"
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        >
+          Today's route
+        </span>
+        {/* Forward-link to the Map section. Opens to the TODAY lens by
+            default — the right answer for a TodayRouteStrip ascent. */}
+        <button
+          type="button"
+          className="today-route-strip__open-map"
+          onClick={() => window.dispatchEvent(new CustomEvent('pulse:navigate', {
+            detail: { view: AppView.MAP },
+          }))}
+          title="Open Map"
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        >
+          <MapPin size={11} />
+          <span>View on Map</span>
+        </button>
+      </div>
       <div className="today-route-strip__flow">
         {stops.map((stop, i) => {
           const expanded = expandedIdx === i;

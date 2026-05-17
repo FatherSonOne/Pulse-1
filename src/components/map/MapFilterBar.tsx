@@ -1,12 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Briefcase, Globe, Home, Radio, Search, X } from 'lucide-react';
-import { ContactCircle } from '../../../types/contactCircleTypes';
-import { startLocationBroadcast, stopLocationBroadcast } from '../../../services/locationService';
+import { Contact } from '../../types';
+import { ContactCircle } from '../../types/contactCircleTypes';
+import {
+  startLocationBroadcast,
+  stopLocationBroadcast,
+  setBroadcastRecipients,
+  endBroadcastRecipients,
+  getActiveBroadcastRecipientIds,
+} from '../../services/locationService';
+import BroadcastRecipientPicker from './sub/BroadcastRecipientPicker';
 
 export interface MapFilter {
   circles: string[];
-  status: ('online' | 'offline' | 'busy' | 'away')[];
   locationType: 'all' | 'home' | 'work';
   searchQuery: string;
 }
@@ -20,28 +27,26 @@ interface MapFilterBarProps {
   onDismissGeoBanner?: () => void;
   /** Logged-in user id — drives the personal Live Location broadcast toggle. */
   userId: string;
+  /** Optional ref so the parent can focus the search input via `/`. */
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
+  /** Contacts the broadcaster can pick from. Phase 7 — required for the
+   *  recipient picker. Filtered to Pulse-linked contacts inside the picker. */
+  contacts: Contact[];
 }
 
 // Cached so the broadcast resumes on reload if the user had it enabled.
 const LIVE_LOCATION_LS_KEY = 'pulse:map:live-location-on';
 
-const STATUS_OPTIONS: { value: MapFilter['status'][number]; label: string; color: string }[] = [
-  { value: 'online',  label: 'Online',  color: '#22c55e' },
-  { value: 'busy',    label: 'Busy',    color: '#ef4444' },
-  { value: 'away',    label: 'Away',    color: '#f59e0b' },
-  { value: 'offline', label: 'Offline', color: '#6b7280' },
-];
-
 const LOCATION_OPTIONS = [
-  { value: 'all'  as const, label: 'All',  Icon: Globe },
-  { value: 'home' as const, label: 'Home', Icon: Home },
+  { value: 'all'  as const, label: 'All',  Icon: Globe     },
+  { value: 'home' as const, label: 'Home', Icon: Home      },
   { value: 'work' as const, label: 'Work', Icon: Briefcase },
 ];
 
 const MapFilterBar: React.FC<MapFilterBarProps> = ({
-  filter, circles, isDarkMode, onFilterChange, geoBlocked, onDismissGeoBanner, userId,
+  filter, circles, isDarkMode, onFilterChange, geoBlocked, onDismissGeoBanner, userId, searchInputRef, contacts,
 }) => {
-  const bg = isDarkMode ? 'bg-black/75 border-white/10' : 'bg-white/90 border-gray-200';
+  const bg = isDarkMode ? 'bg-zinc-900/95 border-white/10' : 'bg-white/95 border-zinc-200';
   const text = isDarkMode ? 'text-white' : 'text-gray-900';
 
   // Personal Live Location toggle — controls own broadcast + geofence
@@ -51,41 +56,75 @@ const MapFilterBar: React.FC<MapFilterBarProps> = ({
     return localStorage.getItem(LIVE_LOCATION_LS_KEY) === '1';
   });
 
+  // Recipient-picker state. Opens when the user flips the BROADCAST chip ON;
+  // confirm bulk-grants consent and starts the broadcast in a single hop.
+  const [showRecipientPicker, setShowRecipientPicker] = useState(false);
+  const [viewerCount, setViewerCount] = useState<number>(() => getActiveBroadcastRecipientIds().length);
+
   useEffect(() => {
     if (!userId) return;
     if (liveOn) {
       startLocationBroadcast(userId, err => {
         if (err.code === err.PERMISSION_DENIED) {
-          toast.error('Location permission denied. Enable it to use arrival alerts.');
+          toast.error('Location permission denied. Enable it to broadcast.');
           setLiveOn(false);
         }
       });
     } else {
       stopLocationBroadcast();
     }
-    // Tear down on unmount only — toggling off above handles state changes.
-    return () => {
-      if (!liveOn) stopLocationBroadcast();
-    };
+    return () => { stopLocationBroadcast(); };
   }, [liveOn, userId]);
 
   const handleToggleLive = () => {
-    const next = !liveOn;
-    setLiveOn(next);
-    try { localStorage.setItem(LIVE_LOCATION_LS_KEY, next ? '1' : '0'); } catch { /* ignore */ }
-    if (next) {
-      toast('Live location on — arrival alerts active', { icon: '📡', duration: 3000 });
-    } else {
-      toast('Live location off', { icon: '⏸', duration: 2000 });
+    if (!liveOn) {
+      // Going from OFF → ON: route through the recipient picker first so the
+      // operator declares an audience before the broadcast actually starts.
+      setShowRecipientPicker(true);
+      return;
     }
+    // Going from ON → OFF: revoke session consents and stop. Pre-existing
+    // (non-session) consents elsewhere stay intact.
+    void endBroadcastRecipients(userId).catch(() => { /* best effort */ });
+    setViewerCount(0);
+    setLiveOn(false);
+    try { localStorage.setItem(LIVE_LOCATION_LS_KEY, '0'); } catch { /* ignore */ }
+    toast('Broadcast off', { icon: '⏸', duration: 2000 });
   };
 
-  const toggleStatus = (s: MapFilter['status'][number]) => {
-    const next = filter.status.includes(s)
-      ? filter.status.filter(x => x !== s)
-      : [...filter.status, s];
-    onFilterChange({ ...filter, status: next });
+  const handleRecipientConfirm = async (recipientUserIds: string[]) => {
+    setShowRecipientPicker(false);
+    try {
+      await setBroadcastRecipients(userId, recipientUserIds);
+    } catch (e) {
+      toast.error('Could not grant viewer access. Try again.');
+      return;
+    }
+    setViewerCount(recipientUserIds.length);
+    setLiveOn(true);
+    try { localStorage.setItem(LIVE_LOCATION_LS_KEY, '1'); } catch { /* ignore */ }
+    toast(`Broadcasting to ${recipientUserIds.length}`, { icon: '📡', duration: 3000 });
   };
+
+  // Listen for the global `B` shortcut from PulseMapView's keyboard layer.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const inField = target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      );
+      if (inField) return;
+      if (e.key === 'b' || e.key === 'B') {
+        handleToggleLive();
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveOn]);
 
   const toggleCircle = (id: string) => {
     const next = filter.circles.includes(id)
@@ -94,13 +133,8 @@ const MapFilterBar: React.FC<MapFilterBarProps> = ({
     onFilterChange({ ...filter, circles: next });
   };
 
-  // No status filter active = "show all" (matches the !active = full-list contract below)
-  const noStatusFilter = filter.status.length === 0;
-
   return (
-    <div className={`absolute top-3 left-3 right-3 z-10 rounded-xl border backdrop-blur-2xl shadow-lg ${bg}`}>
-      {/* Geolocation-denied banner (A4). Status-color amber #f59e0b is paired
-          with a label so colour isn't the only signal. */}
+    <div className={`absolute top-3 left-3 right-3 z-10 rounded-xl border shadow-md ${bg}`}>
       {geoBlocked && (
         <div
           role="status"
@@ -114,7 +148,7 @@ const MapFilterBar: React.FC<MapFilterBarProps> = ({
         >
           <span className="flex items-center gap-1.5">
             <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
-            Location blocked — enable to see distances.
+            Location blocked — enable to see distances and broadcast.
           </span>
           {onDismissGeoBanner && (
             <button
@@ -130,13 +164,14 @@ const MapFilterBar: React.FC<MapFilterBarProps> = ({
           )}
         </div>
       )}
+
       <div className="flex items-center gap-2 p-2 flex-wrap">
-        {/* Search */}
-        <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
+        <div className="flex items-center gap-1.5 flex-1 min-w-[160px]">
           <Search size={14} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} />
           <input
+            ref={searchInputRef}
             type="text"
-            placeholder="Search contacts..."
+            placeholder="Search names…"
             value={filter.searchQuery}
             onChange={e => onFilterChange({ ...filter, searchQuery: e.target.value })}
             className={`text-sm outline-none bg-transparent ${text} w-full`}
@@ -145,7 +180,8 @@ const MapFilterBar: React.FC<MapFilterBarProps> = ({
 
         <div className={`w-px h-5 ${isDarkMode ? 'bg-white/15' : 'bg-gray-200'}`} />
 
-        {/* Location type toggle */}
+        {/* Location-type toggle (All / Home / Work) — the one filter chip
+            that earns its place in Phase 1. */}
         <div className={`flex rounded-lg overflow-hidden text-xs ${isDarkMode ? 'bg-white/10' : 'bg-gray-100'}`}>
           {LOCATION_OPTIONS.map(({ value, label, Icon }) => {
             const active = filter.locationType === value;
@@ -166,20 +202,19 @@ const MapFilterBar: React.FC<MapFilterBarProps> = ({
           })}
         </div>
 
-        {/* Live Location toggle — starts the personal broadcast which
-            powers arrival/exit alerts on geofenced places. Rose pulse-dot
-            when on; muted when off. */}
+        {/* BROADCAST toggle — was "Go Live"; mono-uppercase per the redesign. */}
         <button
           onClick={handleToggleLive}
           aria-pressed={liveOn}
-          title={liveOn ? 'Live location on — tap to stop' : 'Turn on live location for arrival alerts'}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+          title={liveOn ? 'Broadcast on — press B to stop' : 'Press B to broadcast your location'}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
             liveOn
               ? 'bg-rose-500 text-white'
               : isDarkMode
                 ? 'bg-white/10 text-gray-300 hover:bg-white/15'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
         >
           {liveOn ? (
             <span className="relative inline-flex h-2 w-2">
@@ -189,34 +224,19 @@ const MapFilterBar: React.FC<MapFilterBarProps> = ({
           ) : (
             <Radio size={12} />
           )}
-          {liveOn ? 'Live' : 'Go Live'}
+          {liveOn ? (viewerCount > 0 ? `Live · ${viewerCount}` : 'Live') : 'Broadcast'}
         </button>
 
-        {/* Status filters — muted at rest, color-on-active. Matches the
-            People sidebar tag-dot pattern: chroma earns its appearance. */}
-        <div className="flex gap-1">
-          {STATUS_OPTIONS.map(s => {
-            const active = noStatusFilter || filter.status.includes(s.value);
-            return (
-              <button
-                key={s.value}
-                onClick={() => toggleStatus(s.value)}
-                title={s.label}
-                aria-label={`${s.label} status filter`}
-                aria-pressed={active}
-                className={`w-5 h-5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
-                  active ? '' : 'opacity-30'
-                }`}
-                style={{
-                  backgroundColor: active ? s.color : 'currentColor',
-                  color: isDarkMode ? '#52525b' : '#a1a1aa',
-                }}
-              />
-            );
-          })}
-        </div>
+        {showRecipientPicker && (
+          <BroadcastRecipientPicker
+            contacts={contacts}
+            initialSelectedUserIds={getActiveBroadcastRecipientIds()}
+            isDarkMode={isDarkMode}
+            onCancel={() => setShowRecipientPicker(false)}
+            onConfirm={handleRecipientConfirm}
+          />
+        )}
 
-        {/* Circle chips */}
         {circles.length > 0 && (
           <>
             <div className={`w-px h-5 ${isDarkMode ? 'bg-white/15' : 'bg-gray-200'}`} />

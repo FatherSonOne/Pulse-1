@@ -347,12 +347,14 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
               />
               {duplicateCount > 0 && (
                 <span
-                  // Coral-as-signal: duplicate-hidden is a soft data-quality signal,
-                  // not an error. Mono-uppercase tracked label per the signature.
+                  // Tinted-neutral, not coral. Duplicate-hidden is a benign
+                  // data-quality signal — coral is reserved for state and
+                  // urgency (CTA, unread, active, focus). Earlier pass used
+                  // rose here; that was coral-as-decoration. Pass-3 fix.
                   className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium tracking-[0.1em] uppercase ${
                     isDarkMode
-                      ? 'bg-rose-500/10 text-rose-300'
-                      : 'bg-rose-50 text-rose-600'
+                      ? 'bg-white/[0.04] text-zinc-400 border border-white/5'
+                      : 'bg-zinc-100 text-zinc-500 border border-zinc-200/60'
                   }`}
                   style={{ fontFamily: "'JetBrains Mono', monospace" }}
                   title={`${duplicateCount} duplicate${duplicateCount === 1 ? '' : 's'} hidden from this list. Edit each from its own row to consolidate.`}
