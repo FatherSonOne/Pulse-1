@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Contact } from '../../types';
-import LocationEditModal from './map/LocationEditModal';
+import LocationEditModal from '../map/contacts/LocationEditModal';
 import toast from 'react-hot-toast';
 
 import { Check, Loader2, UserPen, X } from 'lucide-react';

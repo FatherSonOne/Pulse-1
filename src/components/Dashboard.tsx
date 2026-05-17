@@ -1599,7 +1599,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
             <TeamRadarTile
               workspaceId={currentWorkspace?.id}
               authUserId={user?.id}
-              onClick={() => setView(AppView.CONTACTS)}
+              // Team Radar is a spatial signal — route to Map. Map opens to
+              // its TODAY lens by default, which matches the tile's intent
+              // ("see your team's geographic positions right now").
+              onClick={() => window.dispatchEvent(new CustomEvent('pulse:navigate', {
+                detail: { view: AppView.MAP },
+              }))}
             />
           </div>
 

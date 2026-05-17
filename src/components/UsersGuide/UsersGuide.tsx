@@ -571,7 +571,7 @@ const Sidebar: React.FC<{
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-const UsersGuide: React.FC<UsersGuideProps> = (_props) => {
+const UsersGuide: React.FC<UsersGuideProps> = ({ isDarkMode = false }) => {
   const [activeId, setActiveId] = useState<string>(guideSections[0].id);
   const [query, setQuery] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
@@ -608,7 +608,7 @@ const UsersGuide: React.FC<UsersGuideProps> = (_props) => {
   }, []);
 
   return (
-    <div className="users-guide">
+    <div className={`users-guide${isDarkMode ? ' dark' : ''}`}>
 
       {/* ── Header ── */}
       <div className="ug-header">

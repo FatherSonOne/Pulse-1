@@ -13,6 +13,8 @@ import PlacePicker from '../map/PlacePicker';
 import MapPreview from '../map/MapPreview';
 import { Place } from '../../types/placeTypes';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
+import AssigneePicker from './AssigneePicker';
+import DueDatePicker from './DueDatePicker';
 import './TaskEditModal.css';
 
 interface TaskEditModalProps {
@@ -426,35 +428,23 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
 
               <div className="task-edit-row">
                 <div className="task-edit-field">
-                  <label htmlFor="task-assignee" className="task-edit-label">
-                    Assignee
-                  </label>
-                  <select
-                    id="task-assignee"
-                    className="task-edit-select"
+                  <label className="task-edit-label">Assignee</label>
+                  {/* Pulse-native popover. Replaces the native <select> that
+                      rendered as OS chrome on Chrome Windows (banned by
+                      DESIGN.md "shadcn-as-shipped" rule). */}
+                  <AssigneePicker
                     value={assigneeId}
-                    onChange={e => setAssigneeId(e.target.value)}
-                  >
-                    <option value="">Unassigned</option>
-                    {workspaceMembers.map(member => (
-                      <option key={member.id} value={member.id}>
-                        {member.full_name || member.email}
-                      </option>
-                    ))}
-                  </select>
+                    members={workspaceMembers}
+                    onChange={setAssigneeId}
+                  />
                 </div>
 
                 <div className="task-edit-field">
-                  <label htmlFor="task-deadline" className="task-edit-label">
-                    Due Date
-                  </label>
-                  <input
-                    id="task-deadline"
-                    type="date"
-                    className="task-edit-input"
-                    value={deadline}
-                    onChange={e => setDeadline(e.target.value)}
-                  />
+                  <label className="task-edit-label">Due Date</label>
+                  {/* Pulse-native calendar popover with quick-pick row.
+                      Replaces native <input type="date"> for the same reason
+                      Assignee was de-natived. */}
+                  <DueDatePicker value={deadline} onChange={setDeadline} />
                 </div>
               </div>
 

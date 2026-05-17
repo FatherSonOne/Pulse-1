@@ -5,7 +5,7 @@
 // Phase 5: keyboard shortcuts + first-visit onboarding tour.
 // ============================================
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { AppView, Contact } from '../../types';
 import { ContactsRedesigned } from './ContactsRedesigned';
@@ -75,19 +75,29 @@ const TABS: ModeTab[] = [
 export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
   const [activeMode, setActiveMode] = useState<ContactsMode>(props.initialMode ?? 'today');
   const [showTour, setShowTour] = useState(() => shouldShowContactsTour());
+  // Defers the search-focus until after the People tab has actually rendered,
+  // instead of the previous setTimeout(..., 100) race. Cleared once consumed.
+  const pendingSearchFocusRef = useRef(false);
 
-  // Focus the People tab's search input (via data attribute selector)
+  // Focus the People tab's search input (selector via data attribute).
   const handleSearchFocus = useCallback(() => {
+    const el = document.querySelector<HTMLInputElement>('[data-contacts-search]');
     if (activeMode !== 'people') {
+      // Tab not mounted yet; switch and let the post-render effect focus.
+      pendingSearchFocusRef.current = true;
       setActiveMode('people');
-      // Brief delay for the tab to mount before focusing
-      setTimeout(() => {
-        const el = document.querySelector<HTMLInputElement>('[data-contacts-search]');
-        el?.focus();
-      }, 100);
     } else {
-      const el = document.querySelector<HTMLInputElement>('[data-contacts-search]');
       el?.focus();
+    }
+  }, [activeMode]);
+
+  // Honors a pending focus once People has actually mounted the input.
+  useEffect(() => {
+    if (activeMode !== 'people' || !pendingSearchFocusRef.current) return;
+    const el = document.querySelector<HTMLInputElement>('[data-contacts-search]');
+    if (el) {
+      el.focus();
+      pendingSearchFocusRef.current = false;
     }
   }, [activeMode]);
 
@@ -145,7 +155,9 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
               users who reached it via Contacts → Map. */}
           <div className="ml-auto flex items-center gap-1.5 pr-2 pb-1">
             <button
-              onClick={() => window.dispatchEvent(new CustomEvent('pulse:navigate', { detail: { view: AppView.MAP } }))}
+              onClick={() => window.dispatchEvent(new CustomEvent('pulse:navigate', {
+                detail: { view: AppView.MAP },
+              }))}
               className="hidden sm:flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400 rounded border border-zinc-200 dark:border-zinc-700 hover:border-rose-300 hover:text-rose-500 dark:hover:border-rose-400/40 dark:hover:text-rose-300 transition-colors"
               title="Open Map (top-level section)"
               style={{ fontFamily: "'JetBrains Mono', monospace" }}
