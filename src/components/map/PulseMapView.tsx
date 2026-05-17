@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Circle, GoogleMap, Polygon, Polyline, useJsApiLoader } from '@react-google-maps/api';
+import { Circle, GoogleMap, Polygon, Polyline } from '@react-google-maps/api';
 import { AlertTriangle, MapPinned, Users } from 'lucide-react';
 import { AppView, CalendarEvent, Contact } from '../../types';
 import { ContactCircle } from '../../types/contactCircleTypes';
-import { GOOGLE_MAPS_LIBRARIES, convexHull, getMapOptions, computeBounds } from '../../services/mapService';
+import { convexHull, getMapOptions } from '../../services/mapService';
 import { UserLocation } from '../../services/locationService';
 import MapFilterBar, { MapFilter } from './MapFilterBar';
 import MapContactMarker from './contacts/MapContactMarker';
@@ -17,10 +17,8 @@ import {
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
   LENS_OPTIONS,
-  MAP_VIEW_LS_KEY,
   MAP_VIEW_OPTIONS,
   type MapLens,
-  type MapViewMode,
 } from './sub/mapLens';
 import { AiStrip } from './sub/AiStrip';
 import { LensEmptyState } from './sub/LensEmptyState';
@@ -33,6 +31,11 @@ import { useUserPosition } from './hooks/useUserPosition';
 import { useContactGeocoding } from './hooks/useContactGeocoding';
 import { useLivePresence } from './hooks/useLivePresence';
 import { useMapAiProposals } from './hooks/useMapAiProposals';
+import { useMapViewMode } from './hooks/useMapViewMode';
+import { useGoogleMapsLoader } from './hooks/useGoogleMapsLoader';
+import { useSrAnnouncer } from './hooks/useSrAnnouncer';
+import { useFitBounds } from './hooks/useFitBounds';
+import { useMapKeyboardShortcuts } from './hooks/useMapKeyboardShortcuts';
 
 interface PulseMapViewProps {
   contacts: Contact[];
@@ -72,30 +75,8 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 }) => {
   const [lens, setLens] = useState<MapLens>('today');
   const [showLiveSheet, setShowLiveSheet] = useState(false);
-  // Visually-hidden announcer for keyboard / SR users — lens + view-mode
-  // swaps are otherwise silent. Driven by effects after visibleMarkers is
-  // computed, so it can include the up-to-date marker count.
-  const [srAnnouncement, setSrAnnouncement] = useState('');
-
-  // Base-tile mode. Persisted so the user's pick survives reloads. Default
-  // roadmap (the Coral Cockpit canvas the rest of the section is tuned to).
-  const [viewMode, setViewMode] = useState<MapViewMode>(() => {
-    if (typeof localStorage === 'undefined') return 'roadmap';
-    const saved = localStorage.getItem(MAP_VIEW_LS_KEY);
-    return (['roadmap', 'satellite', 'terrain', 'hybrid'] as const).includes(saved as MapViewMode)
-      ? (saved as MapViewMode)
-      : 'roadmap';
-  });
-  const changeViewMode = useCallback((next: MapViewMode) => {
-    setViewMode(next);
-    try { localStorage.setItem(MAP_VIEW_LS_KEY, next); } catch { /* ignore */ }
-  }, []);
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'pulse-google-maps',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
-    libraries: GOOGLE_MAPS_LIBRARIES,
-  });
+  const { viewMode, changeViewMode } = useMapViewMode();
+  const { isLoaded, loadError } = useGoogleMapsLoader();
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -175,47 +156,8 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
     });
   }, [localContacts, filter, circles, lens]);
 
-  // Lens / view-mode swap announcer — fires on lens or marker-count change
-  // (lens swap usually changes both) and on viewMode change. Skips the
-  // initial mount so SR users don't get spammed with a "Today lens" message
-  // they didn't trigger; the empty initial string serves as that gate.
-  useEffect(() => {
-    const lensLabel = LENS_OPTIONS.find(o => o.id === lens)?.label ?? lens;
-    const count = visibleMarkers.length;
-    setSrAnnouncement(`${lensLabel} lens, ${count} ${count === 1 ? 'contact' : 'contacts'} on map`);
-  }, [lens, visibleMarkers.length]);
-
-  useEffect(() => {
-    const viewLabel = MAP_VIEW_OPTIONS.find(o => o.id === viewMode)?.label ?? viewMode;
-    setSrAnnouncement(`${viewLabel} view`);
-  }, [viewMode]);
-
-  // Fit bounds when the marker set changes (lens switch, filter change).
-  // With 0 markers we DON'T refit — that produces a degenerate 1-point fit
-  // that zooms to maxZoom and feels broken. Instead, pan to userPosition
-  // gently so the empty state card sits over a useful neighbourhood. Fit
-  // includes meeting markers too, so a meeting in a different neighbourhood
-  // doesn't fall off-screen when the lens switches to TODAY.
-  useEffect(() => {
-    if (!mapRef.current || !isLoaded) return;
-    const points: Array<{ lat: number; lng: number }> = [
-      ...visibleMarkers.map(m => ({ lat: m.lat, lng: m.lng })),
-      ...meetingMarkers.map(m => ({ lat: m.lat, lng: m.lng })),
-    ];
-    if (points.length === 0) {
-      if (userPosition) mapRef.current.panTo(userPosition);
-      return;
-    }
-    if (userPosition) points.push(userPosition);
-    const bounds = computeBounds(points);
-    if (!bounds) return;
-    if (points.length === 1) {
-      mapRef.current.panTo(points[0]);
-      mapRef.current.setZoom(13);
-      return;
-    }
-    mapRef.current.fitBounds(bounds, 80);
-  }, [isLoaded, visibleMarkers, meetingMarkers, userPosition]);
+  const srAnnouncement = useSrAnnouncer(lens, visibleMarkers.length, viewMode);
+  useFitBounds(mapRef, isLoaded, visibleMarkers, meetingMarkers, userPosition);
 
   // Stable marker key used by the AI proposal and the accepted-route mapping.
   const markerKey = (contactId: string, locType: 'home' | 'work') => `${contactId}-${locType}`;
@@ -325,41 +267,21 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
     [localContacts]
   );
 
-  // Keyboard shortcuts — 1/2/3 lens, B broadcast (delegates to MapFilterBar),
-  // / focus search, Esc closes panels. Skip when typing in inputs.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const inField = target && (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      );
-      if (e.key === 'Escape') {
-        if (showLiveSheet) { setShowLiveSheet(false); return; }
-        if (selectedContactId) { setSelectedContactId(null); return; }
-        if (selectedMeetingId) { setSelectedMeetingId(null); return; }
-        if (selectedCircleId) { setSelectedCircleId(null); return; }
-        if (showAddLocationPicker) { setShowAddLocationPicker(false); return; }
-        return;
-      }
-      if (inField) return;
-      if (e.key === '1') { setLens('today'); e.preventDefault(); return; }
-      if (e.key === '2') { setLens('week');  e.preventDefault(); return; }
-      if (e.key === '3') { setLens('atlas'); e.preventDefault(); return; }
-      if (e.key === '4') { changeViewMode('roadmap');   e.preventDefault(); return; }
-      if (e.key === '5') { changeViewMode('satellite'); e.preventDefault(); return; }
-      if (e.key === '6') { changeViewMode('terrain');   e.preventDefault(); return; }
-      if (e.key === '7') { changeViewMode('hybrid');    e.preventDefault(); return; }
-      if (e.key === '/') {
-        searchInputRef.current?.focus();
-        e.preventDefault();
-        return;
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [showLiveSheet, selectedContactId, selectedMeetingId, selectedCircleId, showAddLocationPicker, changeViewMode]);
+  useMapKeyboardShortcuts({
+    setLens,
+    changeViewMode,
+    searchInputRef,
+    showLiveSheet,
+    setShowLiveSheet,
+    selectedContactId,
+    setSelectedContactId,
+    selectedMeetingId,
+    setSelectedMeetingId,
+    selectedCircleId,
+    setSelectedCircleId,
+    showAddLocationPicker,
+    setShowAddLocationPicker,
+  });
 
   if (loadError) {
     return (
