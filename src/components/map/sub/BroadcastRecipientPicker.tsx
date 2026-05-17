@@ -9,9 +9,10 @@
 // receiver loses access the moment the broadcaster goes quiet.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Check, Radio, Users, X } from 'lucide-react';
 import { Contact } from '../../../types';
+import { useDialogA11y } from './useDialogA11y';
 
 interface BroadcastRecipientPickerProps {
   contacts: Contact[];
@@ -37,6 +38,7 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Set<string>>(() => new Set(initialSelectedUserIds));
   const sheetRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -44,27 +46,10 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
     return eligible.filter(c => c.name.toLowerCase().includes(q));
   }, [eligible, query]);
 
-  // Focus trap + Esc close. Same pattern other Map sheets use so the keyboard
-  // story stays consistent across overlays.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); onCancel(); return; }
-      if (e.key !== 'Tab') return;
-      const root = sheetRef.current;
-      if (!root) return;
-      const focusables = Array.from(
-        root.querySelectorAll<HTMLElement>('input, button, [tabindex]:not([tabindex="-1"])'),
-      ).filter(el => !el.hasAttribute('disabled'));
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-      if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  // Shared dialog a11y — focus trap, Escape, restore focus to trigger on
+  // unmount. Initial focus goes to the search input (the most useful entry
+  // point — operator usually starts typing a name to narrow the list).
+  useDialogA11y({ containerRef: sheetRef, onClose: onCancel, initialFocusRef: searchInputRef });
 
   const toggleContact = (userId: string) => {
     setSelected(prev => {
@@ -120,7 +105,7 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
 
         <div className="px-4 py-3 space-y-3">
           <input
-            autoFocus
+            ref={searchInputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

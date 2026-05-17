@@ -6,6 +6,7 @@ import {
   CalendarRange,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Globe,
   Home,
   Layers,
@@ -53,6 +54,7 @@ import MapMeetingMarker from './contacts/MapMeetingMarker';
 import LocationEditModal from './contacts/LocationEditModal';
 import ImAtFAB from './sub/ImAtFAB';
 import LiveTeamView from './sub/LiveTeamView';
+import { useDialogA11y } from './sub/useDialogA11y';
 
 interface PulseMapViewProps {
   contacts: Contact[];
@@ -935,7 +937,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   const atlasHasAnyPinned = localContacts.some(c => c.homeLat != null || c.workLat != null);
 
   return (
-    <div className={`flex flex-col w-full h-full rounded-xl overflow-hidden border ${
+    <div className={`pulse-map-section flex flex-col w-full h-full rounded-xl overflow-hidden border ${
       isDarkMode ? 'border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.35)]' : 'border-gray-200 shadow-sm'
     }`}>
       <style>{`
@@ -956,6 +958,13 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
         @media (prefers-reduced-motion: reduce) {
           .contacts-map-panel-enter,
           .map-sheet-up { animation: none; }
+        }
+        /* WCAG 2.2 SC 2.4.11 — keep focused controls clear of the sticky
+           lens row + AI strip above and the FAB / chip below. ~96px tops
+           covers both bars at their tallest; 80px bottom clears ImAtFAB. */
+        .pulse-map-section :focus-visible {
+          scroll-margin-top: 96px;
+          scroll-margin-bottom: 80px;
         }
       `}</style>
 
@@ -1433,6 +1442,10 @@ const AiStrip: React.FC<AiStripProps> = ({
   // indicator without depending on browser-specific DragEvent.dataTransfer
   // behaviour. Null when nothing is being hovered.
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  // Ref to the reorder <ul> — keyboard moves use it to re-focus the row at
+  // the new index after React commits, so consecutive ArrowDown presses
+  // keep moving the SAME stop instead of whoever ends up at that position.
+  const reorderListRef = useRef<HTMLUListElement>(null);
 
   const stripCls = `flex items-center gap-3 px-3 py-2 ${
     isDarkMode
@@ -1491,28 +1504,40 @@ const AiStrip: React.FC<AiStripProps> = ({
     );
   }
 
-  // 2. Reorder mode — drag-to-reorder draggable list, header replaces the
-  //    usual summary row. Drop handler swaps positions; Accept replays
-  //    DirectionsService against the new sequence; Cancel reverts. ────────────
+  // 2. Reorder mode — drag-to-reorder OR keyboard ArrowUp/Down via per-row
+  //    buttons. Drop / keyboard / button paths all route through moveStop so
+  //    behaviour stays one shape. Accept replays DirectionsService against
+  //    the new sequence; Cancel reverts. ────────────────────────────────────
   if (aiState.status === 'reordering') {
+    const moveStop = (fromIdx: number, toIdx: number) => {
+      if (fromIdx === toIdx) return;
+      if (toIdx < 0 || toIdx >= aiState.orderedIds.length) return;
+      const next = aiState.orderedIds.slice();
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      onReorderChange(next);
+    };
     const handleDrop = (toIdx: number) => {
-      if (dragFromIdx == null || dragFromIdx === toIdx) {
-        setDragFromIdx(null);
+      if (dragFromIdx == null) {
         setDragOverIdx(null);
         return;
       }
-      const next = aiState.orderedIds.slice();
-      const [moved] = next.splice(dragFromIdx, 1);
-      next.splice(toIdx, 0, moved);
-      onReorderChange(next);
+      moveStop(dragFromIdx, toIdx);
       setDragFromIdx(null);
       setDragOverIdx(null);
+    };
+    // Re-focus the same row after a keyboard move so consecutive ArrowDown
+    // presses continue moving the SAME stop, not the one now at that index.
+    const focusRowByIdx = (listEl: HTMLUListElement | null, idx: number) => {
+      if (!listEl) return;
+      const rows = listEl.querySelectorAll<HTMLLIElement>('li[data-reorder-row="1"]');
+      rows[idx]?.focus();
     };
     const validCount = aiState.orderedIds.filter(id => stops.some(s => s.id === id)).length;
     return (
       <div className={wrapperBorderCls}>
         <div className={stripCls} role="status" aria-live="polite">
-          <ArrowUpDown size={14} className="text-rose-500 flex-shrink-0" />
+          <ArrowUpDown size={14} className="text-rose-500 flex-shrink-0" aria-hidden="true" />
           <span
             className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0"
             style={monoStyle}
@@ -1520,7 +1545,7 @@ const AiStrip: React.FC<AiStripProps> = ({
             PULSE AI · REORDER
           </span>
           <span className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-            Drag to reorder, then Accept.
+            Drag or use arrow keys, then Accept.
           </span>
           <div className="flex items-center gap-1 flex-shrink-0">
             <button
@@ -1542,20 +1567,50 @@ const AiStrip: React.FC<AiStripProps> = ({
             </button>
           </div>
         </div>
+        <p id="reorder-instructions" className="sr-only">
+          Use the up and down buttons or press ArrowUp / ArrowDown while a row
+          is focused to reorder. Home jumps to the first stop, End to the last.
+          Then press Accept to apply.
+        </p>
         <ul
           className={`px-3 pb-2 pt-1 space-y-1 ${
             isDarkMode ? 'bg-rose-500/[0.04]' : 'bg-rose-50/40'
           }`}
           aria-label="Reorder stops"
+          aria-describedby="reorder-instructions"
+          ref={reorderListRef}
         >
           {aiState.orderedIds.map((id, idx) => {
             const stop = stops.find(s => s.id === id);
             if (!stop) return null;
             const isDragging = dragFromIdx === idx;
             const isOver = dragOverIdx === idx && dragFromIdx !== idx;
+            const total = aiState.orderedIds.length;
+            const atTop = idx === 0;
+            const atBottom = idx === total - 1;
+            const handleKey = (e: React.KeyboardEvent<HTMLLIElement>) => {
+              // Ignore key events bubbling from the Up/Down buttons — they
+              // handle their own click via Enter/Space natively.
+              if ((e.target as HTMLElement).tagName === 'BUTTON') return;
+              let target: number | null = null;
+              if (e.key === 'ArrowUp' && !atTop) target = idx - 1;
+              else if (e.key === 'ArrowDown' && !atBottom) target = idx + 1;
+              else if (e.key === 'Home' && !atTop) target = 0;
+              else if (e.key === 'End' && !atBottom) target = total - 1;
+              if (target == null) return;
+              e.preventDefault();
+              moveStop(idx, target);
+              // Defer focus to after React commits the new order.
+              requestAnimationFrame(() => focusRowByIdx(reorderListRef.current, target));
+            };
             return (
               <li
                 key={id}
+                data-reorder-row="1"
+                tabIndex={0}
+                role="listitem"
+                aria-label={`Stop ${idx + 1} of ${total}: ${stop.label}`}
+                onKeyDown={handleKey}
                 draggable
                 onDragStart={(e) => {
                   setDragFromIdx(idx);
@@ -1579,7 +1634,7 @@ const AiStrip: React.FC<AiStripProps> = ({
                   setDragFromIdx(null);
                   setDragOverIdx(null);
                 }}
-                className={`flex items-center gap-2.5 px-2 py-1.5 rounded cursor-grab active:cursor-grabbing select-none transition-all ${
+                className={`flex items-center gap-2.5 px-2 py-1.5 rounded cursor-grab active:cursor-grabbing select-none transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
                   isDarkMode
                     ? 'bg-zinc-900/60 border border-white/5 hover:border-rose-500/30'
                     : 'bg-white border border-rose-100 hover:border-rose-300'
@@ -1590,13 +1645,44 @@ const AiStrip: React.FC<AiStripProps> = ({
                     isDarkMode ? 'bg-rose-500/15' : 'bg-rose-100'
                   }`}
                   style={monoStyle}
-                  aria-hidden
+                  aria-hidden="true"
                 >
                   {idx + 1}
                 </span>
-                <span className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                <span
+                  className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}
+                  aria-hidden="true"
+                >
                   {stop.label}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    moveStop(idx, idx - 1);
+                    requestAnimationFrame(() => focusRowByIdx(reorderListRef.current, idx - 1));
+                  }}
+                  disabled={atTop}
+                  aria-label={`Move ${stop.label} up`}
+                  className={`p-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-30 disabled:cursor-not-allowed ${
+                    isDarkMode ? 'text-gray-400 hover:bg-white/10 hover:text-rose-300' : 'text-gray-500 hover:bg-rose-500/10 hover:text-rose-600'
+                  }`}
+                >
+                  <ChevronUp size={12} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    moveStop(idx, idx + 1);
+                    requestAnimationFrame(() => focusRowByIdx(reorderListRef.current, idx + 1));
+                  }}
+                  disabled={atBottom}
+                  aria-label={`Move ${stop.label} down`}
+                  className={`p-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-30 disabled:cursor-not-allowed ${
+                    isDarkMode ? 'text-gray-400 hover:bg-white/10 hover:text-rose-300' : 'text-gray-500 hover:bg-rose-500/10 hover:text-rose-600'
+                  }`}
+                >
+                  <ChevronDown size={12} aria-hidden="true" />
+                </button>
               </li>
             );
           })}
@@ -1907,54 +1993,63 @@ const LiveBroadcastSheet: React.FC<LiveBroadcastSheetProps> = ({
   isDarkMode,
   onClose,
   onContactAction,
-}) => (
-  <div
-    className="absolute inset-0 z-30 flex items-end justify-center"
-    style={{ background: 'rgba(0,0,0,0.45)' }}
-    onClick={onClose}
-    role="dialog"
-    aria-modal="true"
-    aria-label="Live broadcasters"
-  >
+}) => {
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  useDialogA11y({ containerRef: sheetRef, onClose, initialFocusRef: closeBtnRef });
+
+  return (
     <div
-      className={`w-full max-w-2xl rounded-t-2xl border-t border-x shadow-2xl overflow-hidden map-sheet-up ${
-        isDarkMode ? 'bg-zinc-950 border-white/10' : 'bg-white border-gray-200'
-      }`}
-      style={{ maxHeight: '70%' }}
-      onClick={(e) => e.stopPropagation()}
+      className="absolute inset-0 z-30 flex items-end justify-center"
+      style={{ background: 'rgba(0,0,0,0.45)' }}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="live-broadcasters-title"
     >
-      <div className={`flex items-center justify-between px-4 py-3 border-b ${isDarkMode ? 'border-white/10' : 'border-gray-100'}`}>
-        <div className="flex items-center gap-2">
-          <Radio size={14} className="text-rose-500" aria-hidden="true" />
-          <span
-            className="text-[11px] tracking-[0.1em] uppercase"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+      <div
+        ref={sheetRef}
+        className={`w-full max-w-2xl rounded-t-2xl border-t border-x shadow-2xl overflow-hidden map-sheet-up ${
+          isDarkMode ? 'bg-zinc-950 border-white/10' : 'bg-white border-gray-200'
+        }`}
+        style={{ maxHeight: '70%' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDarkMode ? 'border-white/10' : 'border-gray-100'}`}>
+          <div className="flex items-center gap-2">
+            <Radio size={14} className="text-rose-500" aria-hidden="true" />
+            <span
+              id="live-broadcasters-title"
+              className="text-[11px] tracking-[0.1em] uppercase"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
+            >
+              Broadcasting now
+            </span>
+          </div>
+          <button
+            ref={closeBtnRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
+              isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'
+            }`}
           >
-            Broadcasting now
-          </span>
+            <X size={14} aria-hidden="true" />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
-            isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'
-          }`}
-        >
-          <X size={14} aria-hidden="true" />
-        </button>
-      </div>
-      <div className="h-[60vh] overflow-y-auto">
-        <LiveTeamView
-          contacts={contacts}
-          liveLocations={liveLocations}
-          isDarkMode={isDarkMode}
-          onContactAction={onContactAction}
-        />
+        <div className="h-[60vh] overflow-y-auto">
+          <LiveTeamView
+            contacts={contacts}
+            liveLocations={liveLocations}
+            isDarkMode={isDarkMode}
+            onContactAction={onContactAction}
+          />
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ============================================================
 // Contact picker overlay (empty-state path). Inline because it's
@@ -1980,36 +2075,11 @@ const ContactLocationPickerOverlay: React.FC<ContactLocationPickerOverlayProps> 
   );
 
   const containerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-      if (e.key !== 'Tab') return;
-      const root = containerRef.current;
-      if (!root) return;
-      const focusables = Array.from(
-        root.querySelectorAll<HTMLElement>(
-          'input, button, [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter(el => !el.hasAttribute('disabled'));
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-      if (e.shiftKey && active === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [onClose]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  // Shared dialog a11y — focus trap, Escape, restore focus to trigger on
+  // unmount. Initial focus goes to the search field so the operator can
+  // immediately filter the contact list.
+  useDialogA11y({ containerRef, onClose, initialFocusRef: searchInputRef });
 
   return (
     <div
@@ -2035,7 +2105,7 @@ const ContactLocationPickerOverlay: React.FC<ContactLocationPickerOverlayProps> 
             Pick a contact to locate
           </h3>
           <input
-            autoFocus
+            ref={searchInputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
