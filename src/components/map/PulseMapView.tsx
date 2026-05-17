@@ -4,13 +4,7 @@ import { AlertTriangle, MapPinned, Users } from 'lucide-react';
 import { AppView, CalendarEvent, Contact } from '../../types';
 import { ContactCircle } from '../../types/contactCircleTypes';
 import { GOOGLE_MAPS_LIBRARIES, convexHull, getMapOptions, computeBounds } from '../../services/mapService';
-import {
-  getCurrentUserLocation,
-  geocodeContactsBatch,
-  saveContactLocation,
-  subscribeToUserLocation,
-  UserLocation,
-} from '../../services/locationService';
+import { UserLocation } from '../../services/locationService';
 import {
   getAiPausedUntil,
   proposeAtlasInsight,
@@ -44,6 +38,9 @@ import { ContactLocationPickerOverlay } from './sub/ContactLocationPickerOverlay
 import { useGeoRelevanceSignals, lensIncludesContact } from './hooks/useGeoRelevanceSignals';
 import { useMeetingMarkers } from './hooks/useMeetingMarkers';
 import { useVisitedStops } from './hooks/useVisitedStops';
+import { useUserPosition } from './hooks/useUserPosition';
+import { useContactGeocoding } from './hooks/useContactGeocoding';
+import { useLivePresence } from './hooks/useLivePresence';
 
 interface PulseMapViewProps {
   contacts: Contact[];
@@ -119,13 +116,11 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedLocType, setSelectedLocType] = useState<'home' | 'work'>('home');
   const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
   const [localContacts, setLocalContacts] = useState<Contact[]>(contacts);
-  const [liveLocations, setLiveLocations] = useState<Map<string, UserLocation>>(new Map());
   const [filter, setFilter] = useState<MapFilter>({
     circles: [],
     locationType: 'all',
@@ -133,7 +128,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   });
   const [showAddLocationPicker, setShowAddLocationPicker] = useState(false);
   const [pickerContactId, setPickerContactId] = useState<string | null>(null);
-  const [geoBlocked, setGeoBlocked] = useState(false);
+
+  const { userPosition, geoBlocked } = useUserPosition();
+  const liveLocations = useLivePresence(localContacts);
   const [geoBannerDismissed, setGeoBannerDismissed] = useState<boolean>(() => {
     if (typeof localStorage === 'undefined') return false;
     return localStorage.getItem('pulse:map:geo-banner-dismissed') === '1';
@@ -159,71 +156,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   });
   const visitedStopIds = useVisitedStops(lens);
   const meetingMarkers = useMeetingMarkers(lens, geoSignals.todayEvents, geoSignals.weekEvents);
-
-  useEffect(() => {
-    getCurrentUserLocation()
-      .then(pos => setUserPosition(pos))
-      .catch((err: unknown) => {
-        if (
-          err && typeof err === 'object' && 'code' in err &&
-          (err as GeolocationPositionError).code === 1
-        ) {
-          setGeoBlocked(true);
-        }
-      });
-  }, []);
-
-  // Batch geocode contacts that have address text but no lat/lng. The ref
-  // de-dupes inflight requests so the deps array can stay correct.
-  const geocodeRequestedRef = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const needsGeocode = localContacts.filter(c =>
-      (c.address || c.homeAddress)
-      && !c.homeLat
-      && !c.workLat
-      && !geocodeRequestedRef.current.has(c.id)
-    );
-    if (needsGeocode.length === 0) return;
-
-    needsGeocode.forEach(c => geocodeRequestedRef.current.add(c.id));
-
-    geocodeContactsBatch(needsGeocode).then(results => {
-      results.forEach(async (coords, contactId) => {
-        const contact = needsGeocode.find(c => c.id === contactId);
-        if (!contact) return;
-        const address = contact.homeAddress || contact.address || '';
-        try {
-          // saveContactLocation may promote a Google/Vision contact, in which
-          // case the canonical id differs from the cached one — update local
-          // state by the OLD id and write the new id into the row.
-          const canonicalId = await saveContactLocation(contact, 'home', coords.lat, coords.lng, address);
-          setLocalContacts(prev =>
-            prev.map(c => c.id === contactId
-              ? { ...c, id: canonicalId, homeLat: coords.lat, homeLng: coords.lng, homeAddress: address }
-              : c
-            )
-          );
-        } catch {
-          // Promotion / write failed (auth, RLS, schema). Surface in the
-          // request set so we don't loop on a dead contact and keep the
-          // user's UI usable.
-          geocodeRequestedRef.current.add(contactId);
-        }
-      });
-    });
-  }, [localContacts]);
-
-  useEffect(() => {
-    const linked = localContacts.filter(c => c.pulseUserId);
-    const unsubs: Array<() => void> = [];
-    linked.forEach(c => {
-      const unsub = subscribeToUserLocation(c.pulseUserId!, loc => {
-        setLiveLocations(prev => new Map(prev).set(c.id, loc));
-      });
-      unsubs.push(unsub);
-    });
-    return () => unsubs.forEach(fn => fn());
-  }, [localContacts]);
+  const { resetRequested: resetContactGeocoding } = useContactGeocoding(localContacts, setLocalContacts);
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -1008,9 +941,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             canAddLocation={contactsWithoutLocations.length > 0}
             onOpenAtlas={() => setLens('atlas')}
             onAutoGeocode={() => {
-              // Force a re-run: pretend the request set is empty so the
-              // useEffect picks them up.
-              geocodeRequestedRef.current.clear();
+              // Force a re-run: clear the in-flight cache and trigger the
+              // useContactGeocoding effect by handing it a fresh array ref.
+              resetContactGeocoding();
               setLocalContacts(prev => [...prev]);
             }}
             onPinWhereIAm={() => {
