@@ -3,20 +3,15 @@ import { Circle, GoogleMap, Polygon, Polyline, useJsApiLoader } from '@react-goo
 import {
   AlertTriangle,
   ArrowUpDown,
-  CalendarRange,
   ChevronDown,
   ChevronRight,
   ChevronUp,
   Globe,
   Home,
-  Layers,
-  Map as MapIcon,
   MapPin,
   MapPinned,
-  Mountain,
   Navigation,
   Radio,
-  Satellite,
   Sparkles,
   Sun,
   Upload,
@@ -37,13 +32,11 @@ import {
 import { dataService } from '../../services/dataService';
 import { supabase } from '../../services/supabase';
 import {
-  AtlasProposal,
   getAiPausedUntil,
   proposeAtlasInsight,
   proposeRoute,
   proposeWeekPlan,
   RouteProposal,
-  WeekProposal,
 } from '../../services/mapAIService';
 import MapFilterBar, { MapFilter } from './MapFilterBar';
 import MapContactMarker from './contacts/MapContactMarker';
@@ -55,6 +48,18 @@ import LocationEditModal from './contacts/LocationEditModal';
 import ImAtFAB from './sub/ImAtFAB';
 import LiveTeamView from './sub/LiveTeamView';
 import { useDialogA11y } from './sub/useDialogA11y';
+import {
+  DAY_MS,
+  DEFAULT_CENTER,
+  DEFAULT_ZOOM,
+  LENS_OPTIONS,
+  MAP_VIEW_LS_KEY,
+  MAP_VIEW_OPTIONS,
+  WEEK_MS,
+  type MapLens,
+  type MapViewMode,
+} from './sub/mapLens';
+import type { AcceptedRoute, AiProposal, AiState } from './sub/aiTypes';
 
 interface PulseMapViewProps {
   contacts: Contact[];
@@ -79,56 +84,6 @@ interface PulseMapViewProps {
   recentMessageContactIds?: Set<string>;
 }
 
-type MapLens = 'today' | 'week' | 'atlas';
-
-const DEFAULT_CENTER = { lat: 37.7749, lng: -122.4194 };
-const DEFAULT_ZOOM = 11;
-const DAY_MS = 24 * 60 * 60 * 1000;
-const WEEK_MS = 7 * DAY_MS;
-
-const LENS_OPTIONS: { id: MapLens; label: string; Icon: typeof Sun }[] = [
-  { id: 'today', label: 'Today', Icon: Sun },
-  { id: 'week',  label: 'Week',  Icon: CalendarRange },
-  { id: 'atlas', label: 'Atlas', Icon: Globe },
-];
-
-// Google Maps base-tile mode. Roadmap is the styled Coral Cockpit canvas;
-// Satellite + Terrain + Hybrid all bypass our custom styling (Google ignores
-// `styles` on non-roadmap modes), so the look-and-feel jumps deliberately.
-type MapViewMode = 'roadmap' | 'satellite' | 'terrain' | 'hybrid';
-
-const MAP_VIEW_OPTIONS: { id: MapViewMode; label: string; Icon: typeof Sun; hotkey: string }[] = [
-  { id: 'roadmap',   label: 'Map',    Icon: MapIcon,   hotkey: '4' },
-  { id: 'satellite', label: 'Sat',    Icon: Satellite, hotkey: '5' },
-  { id: 'terrain',   label: 'Terr',   Icon: Mountain,  hotkey: '6' },
-  { id: 'hybrid',    label: 'Hybrid', Icon: Layers,    hotkey: '7' },
-];
-
-const MAP_VIEW_LS_KEY = 'pulse:map:view-mode';
-
-// ─── AI strip + accepted-route shared types ─────────────────────────────────
-// Hoisted out of the component so the AiStrip sub-component can reference
-// them in its props without circular-scope contortions.
-type AiProposal =
-  | { kind: 'route';   proposal: RouteProposal }
-  | { kind: 'plan';    proposal: WeekProposal }
-  | { kind: 'insight'; proposal: AtlasProposal };
-type AiState =
-  | { status: 'idle' }
-  | { status: 'fetching' }
-  | { status: 'ready'; data: AiProposal }
-  | { status: 'none' }
-  | { status: 'paused'; until: number }
-  // Reorder mode is entered from a 'ready' route proposal. orderedIds is a
-  // working draft the user mutates via drag; baseProposal is the snapshot we
-  // revert to on Cancel without losing the AI's original rationale.
-  | { status: 'reordering'; orderedIds: string[]; baseProposal: RouteProposal };
-interface AcceptedRoute {
-  orderedMarkerKeys: string[];
-  path: google.maps.LatLngLiteral[];
-  durationMin: number;
-  arrivesAt: Date;
-}
 type MarkerData = { contact: Contact; locType: 'home' | 'work'; lat: number; lng: number };
 type MeetingMarkerData = { event: CalendarEvent; lat: number; lng: number };
 
