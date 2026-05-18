@@ -83,6 +83,7 @@ import { TranslationWidget } from './MessageEnhancements/TranslationWidget';
 // TypingIndicator moved to Phase 4 component (Messages/TypingIndicator.tsx)
 // Hover-triggered reactions - shows reaction bar on 300ms hover (desktop) or long-press (mobile)
 import { HoverReactionTrigger } from './MessageEnhancements/HoverReactionTrigger';
+import { EmojiPicker as FullEmojiPicker } from './MessageEnhancements/EmojiReactions';
 import { useMessageEnhancements } from '../hooks/useMessageEnhancements';
 import { FeatureSkeleton } from './MessageEnhancements/FeatureSkeleton';
 
@@ -660,6 +661,23 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // Extended emoji picker
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiPickerMessageId, setEmojiPickerMessageId] = useState<string | null>(null);
+  // PR 2: full emoji picker opened from the context-menu quick-reactions
+  // "+" button (or the React… overflow item). Distinct from the legacy
+  // `showEmojiPicker` state above which is owned by the legacy compose path.
+  const [fullEmojiPicker, setFullEmojiPicker] = useState<{
+    open: boolean;
+    messageId: string | null;
+    x: number;
+    y: number;
+  }>({ open: false, messageId: null, x: 0, y: 0 });
+  const [recentReactionEmojis, setRecentReactionEmojis] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('pulse_recent_reaction_emojis');
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((e: unknown): e is string => typeof e === 'string') : [];
+    } catch { return []; }
+  });
   
   // Attachment menu
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
@@ -4595,22 +4613,22 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   handlePulseReaction(targetMsg.id, emoji);
                 }}
                 onOpenMorePicker={() => {
-                  // Quick-reactions "+" button → open the existing radial
-                  // picker centered on the bubble. PR 2 doesn't ship a new
-                  // full picker; this is the same fallback the `react`
-                  // overflow action uses (see handlePulseV2Action 'react').
+                  // Quick-reactions "+" button → open the full emoji
+                  // picker (smileys / gestures / hearts / etc) centered
+                  // on the bubble. Replaces the earlier radial fallback,
+                  // which only carried ~6 emojis. EmojiPicker remembers
+                  // recently-used emojis via localStorage.
                   try {
                     const el = document.querySelector(
                       `[data-message-id="${targetMsg.id}"]`,
                     ) as HTMLElement | null;
-                    if (el) {
-                      const rect = el.getBoundingClientRect();
-                      radialMenu.open(
-                        rect.left + rect.width / 2,
-                        rect.top + rect.height / 2,
-                      );
-                      setRadialMenuMessageId(targetMsg.id);
-                    }
+                    const rect = el?.getBoundingClientRect();
+                    setFullEmojiPicker({
+                      open: true,
+                      messageId: targetMsg.id,
+                      x: rect ? rect.left + rect.width / 2 : window.innerWidth / 2,
+                      y: rect ? rect.top + rect.height / 2 : window.innerHeight / 2,
+                    });
                   } catch { /* no-op */ }
                   pulseCtxMenu.close();
                 }}
@@ -4630,6 +4648,28 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               {pulseEditToast}
             </div>
           ) : null}
+
+          {/* PR 2 — full emoji picker for the context-menu "+" / React…
+              actions. Replaces the radial fallback. Persists recent emoji
+              choices to localStorage so the Recent tab is useful. */}
+          <FullEmojiPicker
+            isOpen={fullEmojiPicker.open}
+            onClose={() => setFullEmojiPicker(prev => ({ ...prev, open: false }))}
+            onSelect={(emoji) => {
+              if (fullEmojiPicker.messageId) {
+                handlePulseReaction(fullEmojiPicker.messageId, emoji);
+              }
+              setRecentReactionEmojis(prev => {
+                const next = [emoji, ...prev.filter(e => e !== emoji)].slice(0, 16);
+                try {
+                  localStorage.setItem('pulse_recent_reaction_emojis', JSON.stringify(next));
+                } catch { /* localStorage full / blocked — ignore */ }
+                return next;
+              });
+            }}
+            position={{ x: fullEmojiPicker.x, y: fullEmojiPicker.y }}
+            recentEmojis={recentReactionEmojis}
+          />
 
           {/* Phase 3: New ContextMenu (will replace old one) */}
           {contextMenuMessageId && contextMenu.isOpen && (
