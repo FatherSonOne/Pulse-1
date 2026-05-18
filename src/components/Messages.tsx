@@ -121,6 +121,7 @@ import MessageInput from './MessageInput';
 // Gated on the `pulseComposerV2` feature flag; falls back to the legacy
 // `MessageInput` when off. See docs/messages-tools-redesign.md.
 import PulseComposer from './PulseComposer';
+import { ToolsMenuV2 } from './ToolsMenuV2';
 // PR 2 — Messages Tools Redesign · Surface 2 (message context-menu).
 // Gated on the `messageContextMenuV2` feature flag; falls back to the
 // legacy right-click menu when off. See docs/messages-tools-redesign.md.
@@ -931,6 +932,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [showQuickActionsBar, setShowQuickActionsBar] = useState(true);
   const [showAchievements, setShowAchievements] = useState(true);
   const [showToolsDrawer, setShowToolsDrawer] = useState(false);
+  // Messages Tools Redesign — when `toolsMenuV2` flag is on, the header
+  // tools button opens this dialog instead of the legacy drawer above.
+  const [showToolsMenuV2, setShowToolsMenuV2] = useState(false);
   const [advancedMode, setAdvancedMode] = useState(false); // Phase 1: Simple/Advanced toggle
 
   // Focus AI nudge when navigated from Daily Overview
@@ -3785,6 +3789,23 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             })()}
           </AnimatePresence>
 
+          {/* Tools Menu V2 — new slim 4-tile menu. Renders when
+              `toolsMenuV2` flag is on AND the header tools button was
+              clicked. Replaces the legacy showToolsDrawer flow at the
+              same trigger. threadId / messageCount drive the tile
+              visibility state machine (Summary / Insights / Audit). */}
+          <ToolsMenuV2
+            open={showToolsMenuV2}
+            threadId={activePulseConv?.id ?? activeThread?.id ?? 'unknown-thread'}
+            messageCount={
+              activePulseConv
+                ? pulseMessages.length
+                : activeThread?.messages?.length ?? 0
+            }
+            isDarkMode={typeof document !== 'undefined' && document.documentElement.classList.contains('dark')}
+            onClose={() => setShowToolsMenuV2(false)}
+          />
+
           {/* Theme Picker Popup */}
           {showThemeSelector && (
             <>
@@ -4717,9 +4738,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
           {/* Header Actions - Clean with Tools Drawer */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Tools Drawer Button - Always visible */}
+            {/* Tools Drawer Button - Always visible.
+                Routes to new ToolsMenuV2 dialog when toolsMenuV2 flag is on,
+                else opens the legacy 11-tile drawer. */}
             <button
-              onClick={() => setShowToolsDrawer(true)}
+              onClick={() => {
+                if (features.isFeatureEnabled('toolsMenuV2')) {
+                  setShowToolsMenuV2(true);
+                } else {
+                  setShowToolsDrawer(true);
+                }
+              }}
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
               title="Open Tools Menu"
               aria-label="Open Tools menu"
