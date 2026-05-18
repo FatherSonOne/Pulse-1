@@ -35,6 +35,13 @@ export interface FeatureFlags {
   // Tools menu opener). Legacy `MessageInput` renders when off. Voice and
   // schedule send are deliberately deferred to follow-up PRs.
   pulseComposerV2: boolean;
+
+  // PR 3a — Messages Tools Redesign · Surface 3 (slim Tools menu shell).
+  // Gates the new ToolsMenuV2 (search box + Thread Audit tile + Translate
+  // Settings tile). Renders ToolsMenuPlaceholder when off. Thread Summary
+  // and Insights tiles ship in PR 3b — not visible in PR 3a even when on.
+  // Carries ZERO coral; coral budget is reserved for PR 3b.
+  toolsMenuV2: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -73,6 +80,9 @@ const DEFAULT_FEATURES: FeatureFlags = {
 
   // PR 1 — default off until rollout
   pulseComposerV2: false,
+
+  // PR 3a — default off until rollout
+  toolsMenuV2: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -244,4 +254,5 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   draftManager: 'Draft Manager',
   messageContextMenuV2: 'New Message Context-Menu (Beta)',
   pulseComposerV2: 'New Compose Bar (Beta)',
+  toolsMenuV2: 'New Tools Menu (Beta)',
 };

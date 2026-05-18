@@ -1,34 +1,58 @@
 // src/components/PulseComposer/ToolsMenuPlaceholder.tsx
 // PR 1 — Messages Tools Redesign · Surface 1 · Compose bar.
+// PR 3a — gated swap to the real slim Tools menu (ToolsMenuV2) when the
+//         `toolsMenuV2` feature flag is on. Legacy placeholder stays in
+//         place when the flag is off so PR 1's surface remains shipped
+//         exactly as it landed.
 //
-// Stub modal opened by the Tools menu button. PR 3a/3b will replace this
-// with the real slim tools surface (Thread Summary / Insights / Audit /
-// Translate Settings). Surface 3 is also where the 6-coral-usage budget
-// gets spent — PR 1 carries ZERO coral.
+// Coral budget: ZERO. PR 3a continues PR 1's no-coral discipline. PR 3b
+// will spend the six coral instances inside ToolsMenuV2 (Summary +
+// Insights only). This file MUST stay coral-free.
 
 import React, { useEffect, useRef } from 'react';
 import { Sparkles, X } from 'lucide-react';
+import { useFeatures } from '../../contexts/FeatureContext';
+import { ToolsMenuV2 } from '../ToolsMenuV2';
 
 interface ToolsMenuPlaceholderProps {
   open: boolean;
   isDarkMode: boolean;
   onClose: () => void;
+  /**
+   * Optional — wired by the call site when the active thread id is
+   * available. Falls back to a deterministic placeholder so the V2
+   * panel still mounts in isolation (Storybook / dev review).
+   */
+  threadId?: string;
+  /**
+   * Optional — message count for the active thread. Drives the
+   * `<5 messages` empty-state in Thread Audit. Defaults to 0 (which
+   * triggers the empty-state copy).
+   */
+  messageCount?: number;
 }
 
 export const ToolsMenuPlaceholder: React.FC<ToolsMenuPlaceholderProps> = ({
   open,
   isDarkMode,
   onClose,
+  threadId,
+  messageCount,
 }) => {
+  const { isFeatureEnabled } = useFeatures();
+  const v2Enabled = isFeatureEnabled('toolsMenuV2');
+
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    if (v2Enabled) return; // V2 owns its own focus
     requestAnimationFrame(() => closeBtnRef.current?.focus());
-  }, [open]);
+  }, [open, v2Enabled]);
 
   useEffect(() => {
     if (!open) return;
+    if (v2Enabled) return; // V2 owns its own Esc
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -37,10 +61,25 @@ export const ToolsMenuPlaceholder: React.FC<ToolsMenuPlaceholderProps> = ({
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open, v2Enabled, onClose]);
 
   if (!open) return null;
 
+  // PR 3a — feature-flagged real surface.
+  if (v2Enabled) {
+    return (
+      <ToolsMenuV2
+        open={open}
+        threadId={threadId ?? 'unknown-thread'}
+        messageCount={messageCount ?? 0}
+        isDarkMode={isDarkMode}
+        onClose={onClose}
+      />
+    );
+  }
+
+  // Legacy placeholder (kept verbatim from PR 1 so the off-flag path
+  // remains byte-identical for QA comparison).
   return (
     <div
       role="dialog"
