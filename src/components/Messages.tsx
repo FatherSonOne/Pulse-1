@@ -4026,17 +4026,22 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   // route the hover-bar "..." through the
                                   // new MessageContextMenu (which has
                                   // Reply / Edit / Delete / Forward / Pin /
-                                  // Block / Report). Off-path falls back to
-                                  // the legacy contextMenu system.
+                                  // Block / Report). Anchor at the message
+                                  // bubble (not the floating "..." button)
+                                  // so the menu opens uniformly per bubble
+                                  // — matches the right-click anchor.
                                   e.preventDefault();
                                   e.stopPropagation();
                                   if (features.isFeatureEnabled('messageContextMenuV2')) {
-                                    const btn = e.currentTarget as HTMLElement;
-                                    const rect = btn.getBoundingClientRect();
+                                    const bubble = document.querySelector<HTMLElement>(
+                                      `[data-message-id="${msg.id}"]`,
+                                    );
+                                    const rect = (bubble ?? (e.currentTarget as HTMLElement))
+                                      .getBoundingClientRect();
                                     pulseCtxMenu.openFromLongPress(
                                       rect.left,
-                                      rect.bottom + 4,
-                                      btn,
+                                      rect.top,
+                                      bubble,
                                       msg.id,
                                     );
                                   } else {
