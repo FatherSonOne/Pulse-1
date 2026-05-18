@@ -137,6 +137,19 @@ export const HoverReactionTrigger: React.FC<HoverReactionTriggerProps> = ({
   const longPressStartTime = useRef<number>(0);
   const longPressAnimationRef = useRef<number | null>(null);
 
+  // When `disabled` flips to true while the reaction bar is already
+  // showing (e.g. right-click fires the context menu mid-hover), the
+  // hover-handler guards alone don't close it because the mouse never
+  // left the bubble. Force-hide here so the new menu doesn't render on
+  // top of a stale hover-bar.
+  useEffect(() => {
+    if (disabled && (showReactionBar || isPendingHover)) {
+      setShowReactionBar(false);
+      setIsPendingHover(false);
+      setIsExiting(false);
+    }
+  }, [disabled, showReactionBar, isPendingHover]);
+
   // Calculate optimal position for reaction bar
   const calculatePosition = useCallback(() => {
     if (!containerRef.current) return {};

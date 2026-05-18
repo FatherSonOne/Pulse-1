@@ -400,20 +400,17 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
           : 'bg-white/98 border border-black/10 text-zinc-900',
       ].join(' ')}
     >
-      <div className="px-2 pt-2 pb-1">
-        <QuickReactionsBar
-          onPick={handleQuick}
-          onMore={onOpenMorePicker}
-          myReactions={myReactions}
-          isDarkMode={isDarkMode}
-        />
-      </div>
+      {/* Desktop quick-reactions deliberately omitted — the hover-bar
+          owns emoji-reactions on desktop (you reach it without right-
+          clicking). The right-click menu is for actions only. Mobile
+          long-press still shows the bar above (see line ~328) because
+          there's no hover affordance on touch. */}
       <div
         role="menu"
         aria-label="Message actions"
         className={[
-          'px-1.5 pb-1.5 pt-1 border-t',
-          isDarkMode ? 'border-white/10' : 'border-black/10',
+          'px-1.5 pb-1.5 pt-1',
+          isDarkMode ? '' : '',
         ].join(' ')}
       >
         {renderItems(top5, 0)}

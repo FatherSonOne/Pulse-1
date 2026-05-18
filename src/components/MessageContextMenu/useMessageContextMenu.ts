@@ -74,15 +74,25 @@ export function useMessageContextMenu(
       e.preventDefault();
       lastFocusedSelectorRef.current = focusRestoreSelector(messageId);
       setOpenMessageId(messageId);
-      // Ground the menu at the BUBBLE's top-left corner, not the cursor.
-      // Anchoring at the cursor caused per-click jitter — same bubble could
-      // open the menu in different screen positions depending on exactly
-      // where the right-click landed. The viewport clamp in
-      // MessageContextMenu's clampDesktopPosition() then guarantees the
-      // menu stays on-screen for messages near the right / bottom edges.
+      // Ground the menu at the bubble. Pick the side based on which half
+      // of the viewport the bubble lives in: right-half (own / sent)
+      // bubbles anchor at the BUBBLE's right edge so the menu opens
+      // leftward and never overflows the right side of the viewport;
+      // left-half (received) bubbles anchor at the LEFT edge so the menu
+      // opens rightward. clampDesktopPosition still handles the residual
+      // edge cases for the top/bottom axis.
       const target = e.currentTarget;
       const rect = target.getBoundingClientRect();
-      setAnchor({ x: rect.left, y: rect.top, source: target });
+      if (typeof window === 'undefined') {
+        setAnchor({ x: rect.left, y: rect.top, source: target });
+        return;
+      }
+      const POPOVER_W = 240;
+      const bubbleCenter = rect.left + rect.width / 2;
+      const anchorX = bubbleCenter > window.innerWidth / 2
+        ? Math.max(0, rect.right - POPOVER_W)
+        : rect.left;
+      setAnchor({ x: anchorX, y: rect.top, source: target });
     },
     [focusRestoreSelector],
   );

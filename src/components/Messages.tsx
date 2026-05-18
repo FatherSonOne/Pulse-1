@@ -1320,14 +1320,22 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     try {
       const messageId = await pulseService.sendMessage(conversation.other_user.id, messageContent);
 
-      // Small delay to let the database sync
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Swap the optimistic id for the real one so the realtime
+      // subscription's dedup (see line ~1031) recognises this row when
+      // it arrives and skips re-appending it. Avoids the previous
+      // bug where we'd refetch the full message list after every send —
+      // that refetch:
+      //   (a) raced with realtime and made messages appear/disappear,
+      //   (b) overwrote local state with the most-recent 50, losing any
+      //       older messages the user had loaded via "Load older",
+      //   (c) sometimes returned BEFORE the new row was visible and
+      //       briefly dropped the just-sent message from the thread.
+      setPulseMessages(prev => prev.map(m =>
+        m.id === tempId ? { ...m, id: messageId } : m
+      ));
 
-      // Reload messages to get the real message from server
-      const messages = await pulseService.getMessages(activePulseConversation);
-      setPulseMessages(messages);
-
-      // Reload conversations to update preview
+      // Refresh the conversation list so the preview / unread counts
+      // update; the thread itself is owned by the realtime subscription.
       const conversations = await pulseService.getConversations();
       setPulseConversations(conversations);
     } catch (error) {
@@ -1337,7 +1345,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       // Restore the input text so user can retry
       setInputText(messageContent);
     }
-  }, [activePulseConversation, pulseConversations]);
+  }, [activePulseConversation, pulseConversations, currentUser?.id]);
 
   // Get active Pulse conversation details
   const activePulseConv = pulseConversations.find(c => c.id === activePulseConversation);
@@ -3011,10 +3019,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         if (typeof window !== 'undefined' && window.confirm('Delete this message?')) {
           // Optimistic remove from the local list, then persist as a
           // soft-delete on the server (is_deleted=true). If the server
-          // rejects, roll back so the message reappears.
+          // rejects, roll back so the message reappears. Also refresh
+          // the conversation list so its `last_message` preview no
+          // longer shows the deleted body.
           const snapshot = msg;
           setPulseMessages((prev) => prev.filter((m) => m.id !== msg.id));
-          pulseService.deleteMessage(msg.id).catch((err) => {
+          pulseService.deleteMessage(msg.id).then(() => {
+            pulseService.getConversations()
+              .then(setPulseConversations)
+              .catch((err) => console.error('Failed to refresh conversations after delete', err));
+          }).catch((err) => {
             console.error('Failed to delete Pulse message', err);
             setPulseMessages((prev) => {
               if (prev.some((m) => m.id === snapshot.id)) return prev;
@@ -4057,8 +4071,18 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     );
                                     const rect = (bubble ?? (e.currentTarget as HTMLElement))
                                       .getBoundingClientRect();
+                                    // Right-half bubbles (sent) anchor at
+                                    // rect.right - POPOVER_WIDTH; left-half
+                                    // (received) at rect.left. Matches the
+                                    // right-click logic in useMessageContextMenu.
+                                    const POPOVER_W = 240;
+                                    const bubbleCenter = rect.left + rect.width / 2;
+                                    const anchorX = typeof window !== 'undefined'
+                                      && bubbleCenter > window.innerWidth / 2
+                                      ? Math.max(0, rect.right - POPOVER_W)
+                                      : rect.left;
                                     pulseCtxMenu.openFromLongPress(
-                                      rect.left,
+                                      anchorX,
                                       rect.top,
                                       bubble,
                                       msg.id,
