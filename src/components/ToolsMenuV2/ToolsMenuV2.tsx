@@ -1,18 +1,24 @@
 // src/components/ToolsMenuV2/ToolsMenuV2.tsx
-// PR 3a — Messages Tools Redesign · Surface 3 · slim Tools menu shell.
+// PR 3a + 3b — Messages Tools Redesign · Surface 3 · slim Tools menu shell.
 //
 // Scope (per docs/messages-tools-redesign.md §3 + Implementation Roadmap):
 //   IN:  desktop 380px right-side panel (pin-open), mobile 60vh bottom
-//        sheet with drag handle, search box, 2 tiles (Thread Audit +
-//        Translate Settings), inline accordion expansion on tile activate,
-//        role="dialog" wrapping, Esc / outside close, focus management,
-//        dark/light parity.
-//   OUT: Thread Summary tile, Insights tile (both PR 3b). Any coral.
-//        Backend wiring beyond per-thread localStorage.
+//        sheet with drag handle, search box, 4 tiles (Thread Summary +
+//        Insights + Thread Audit + Translate Settings) with message-count
+//        gating per spec mock 3.3 / "Empty/Loading/Error States" row,
+//        inline accordion expansion on tile activate, role="dialog"
+//        wrapping, Esc / outside close, focus management, dark/light
+//        parity.
+//   OUT: Real Gemini wiring (PR 3b ships a stub provider behind the
+//        same shape — see ThreadSummary/useThreadSummary.ts header).
 //
-// Coral budget: ZERO in PR 3a. PR 3b adds the only six coral instances
-// in the whole redesign (Summary + Insights tile chips and output
-// cards). Reviewer rejects any coral in this file or its siblings.
+// Coral budget (locked): EXACTLY 4 coral consumers across the whole
+// redesign. PR 3b sources all of them in this directory:
+//   1. Summary tile chip (tile grid, here)
+//   2. Insights tile chip (tile grid, here)
+//   3. Summary output card chip (ThreadSummary.tsx)
+//   4. Insights output card chip (Insights.tsx)
+// Reviewer rejects any coral outside these four sites.
 
 import React, {
   useCallback,
@@ -21,16 +27,31 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { ChevronLeft, Globe, Pin, PinOff, Search, Sparkles, X } from 'lucide-react';
-import { Activity } from 'lucide-react';
+import {
+  Activity,
+  ChevronLeft,
+  Globe,
+  Pin,
+  PinOff,
+  Search,
+  Sparkles,
+  TrendingUp,
+  X,
+} from 'lucide-react';
 import ToolsMenuTile from './ToolsMenuTile';
+import AiChip from './AiChip';
 import ThreadAudit from './ThreadAudit/ThreadAudit';
 import TranslateSettings from './TranslateSettings/TranslateSettings';
+import ThreadSummary from './ThreadSummary/ThreadSummary';
+import Insights from './Insights/Insights';
 import { useToolsMenu } from './useToolsMenu';
 import {
   DESKTOP_BREAKPOINT,
   DESKTOP_PANEL_WIDTH,
+  INSIGHTS_HIDE_BELOW,
   MOBILE_SHEET_VH,
+  SUMMARY_ACTIVE_AT,
+  SUMMARY_HIDE_BELOW,
   TOUCH_TARGET_PX,
 } from './types';
 import type {
@@ -40,11 +61,25 @@ import type {
 } from './types';
 
 /**
- * Tile catalogue for PR 3a. Order matches the spec mock 3.1/3.2 (Audit
- * before Translate Settings once Summary/Insights are removed in this
- * PR). When PR 3b ships Summary + Insights, they prepend onto this array.
+ * Tile catalogue. Order matches spec mock 3.1 / 3.2 (Summary → Insights
+ * → Audit → Translate Settings). Summary + Insights are message-count
+ * gated below; the shell filters tiles before rendering.
  */
 const TILES: ReadonlyArray<ToolsMenuTileDescriptor> = [
+  {
+    id: 'thread-summary',
+    title: 'Thread Summary',
+    purpose: 'Recap long threads',
+    icon: Sparkles,
+    ariaLabel: 'Thread Summary — AI generated. Recap long threads.',
+  },
+  {
+    id: 'insights',
+    title: 'Insights',
+    purpose: 'Patterns and highlights',
+    icon: TrendingUp,
+    ariaLabel: 'Insights — AI generated. Patterns and highlights.',
+  },
   {
     id: 'thread-audit',
     title: 'Thread Audit',
@@ -58,6 +93,51 @@ const TILES: ReadonlyArray<ToolsMenuTileDescriptor> = [
     icon: Globe,
   },
 ];
+
+/**
+ * Message-count visibility gate per spec "Empty/Loading/Error States".
+ * Returns false when the tile must be hidden ENTIRELY (chip + all).
+ *   Summary  : <10 hidden, 10-49 disabled, 50+ active
+ *   Insights : <20 hidden, 20+ active
+ *   Audit    : always rendered (5+ active, <5 disabled inside body)
+ *   Translate: always rendered
+ */
+function tileVisibleFor(
+  id: ToolsMenuTileId,
+  messageCount: number,
+): boolean {
+  if (id === 'thread-summary') return messageCount >= SUMMARY_HIDE_BELOW;
+  if (id === 'insights') return messageCount >= INSIGHTS_HIDE_BELOW;
+  return true;
+}
+
+function tileDisabledFor(
+  id: ToolsMenuTileId,
+  messageCount: number,
+): boolean {
+  if (id === 'thread-summary') {
+    return (
+      messageCount >= SUMMARY_HIDE_BELOW && messageCount < SUMMARY_ACTIVE_AT
+    );
+  }
+  return false;
+}
+
+function purposeOverrideFor(
+  id: ToolsMenuTileId,
+  messageCount: number,
+  defaultPurpose: string,
+): string {
+  // Disabled-Summary tile gets the locked spec copy.
+  if (
+    id === 'thread-summary' &&
+    messageCount >= SUMMARY_HIDE_BELOW &&
+    messageCount < SUMMARY_ACTIVE_AT
+  ) {
+    return `Summary unlocks at ${SUMMARY_ACTIVE_AT} messages`;
+  }
+  return defaultPurpose;
+}
 
 function tileMatches(tile: ToolsMenuTileDescriptor, query: string): boolean {
   if (!query) return true;
@@ -102,6 +182,24 @@ function TileBody({
   onBack: () => void;
 }): React.ReactElement | null {
   switch (tileId) {
+    case 'thread-summary':
+      return (
+        <ThreadSummary
+          threadId={threadId}
+          messageCount={messageCount}
+          isDarkMode={isDarkMode}
+          onBack={onBack}
+        />
+      );
+    case 'insights':
+      return (
+        <Insights
+          threadId={threadId}
+          messageCount={messageCount}
+          isDarkMode={isDarkMode}
+          onBack={onBack}
+        />
+      );
     case 'thread-audit':
       return (
         <ThreadAudit
@@ -144,8 +242,11 @@ export const ToolsMenuV2: React.FC<ToolsMenuV2Props> = ({
   const firstTileRef = useRef<HTMLButtonElement>(null);
 
   const visibleTiles = useMemo(
-    () => TILES.filter((t) => tileMatches(t, search)),
-    [search],
+    () =>
+      TILES.filter(
+        (t) => tileVisibleFor(t.id, messageCount) && tileMatches(t, search),
+      ),
+    [search, messageCount],
   );
 
   // Reset internal state on (re-)open. Don't clear pin — it persists.
@@ -379,21 +480,38 @@ export const ToolsMenuV2: React.FC<ToolsMenuV2Props> = ({
                 No tools match &ldquo;{search}&rdquo;.
               </p>
             ) : (
-              visibleTiles.map((tile, i) => (
-                <ToolsMenuTile
-                  key={tile.id}
-                  ref={i === 0 ? firstTileRef : undefined}
-                  title={tile.title}
-                  purpose={tile.purpose}
-                  icon={tile.icon}
-                  tileId={tile.id}
-                  isFocused={i === tileFocusIdx}
-                  onActivate={() => openTile(tile.id)}
-                  onFocus={() => setTileFocusIdx(i)}
-                  isDarkMode={isDarkMode}
-                  ariaLabel={tile.ariaLabel}
-                />
-              ))
+              visibleTiles.map((tile, i) => {
+                const isAiTile =
+                  tile.id === 'thread-summary' || tile.id === 'insights';
+                const isDisabled = tileDisabledFor(tile.id, messageCount);
+                // Coral usages #1 (Summary tile) + #2 (Insights tile) live
+                // here. The chip itself is decorative — the parent button's
+                // aria-label already announces "AI generated".
+                const aiChip = isAiTile ? (
+                  <AiChip dim={isDisabled} />
+                ) : null;
+                return (
+                  <ToolsMenuTile
+                    key={tile.id}
+                    ref={i === 0 ? firstTileRef : undefined}
+                    title={tile.title}
+                    purpose={purposeOverrideFor(
+                      tile.id,
+                      messageCount,
+                      tile.purpose,
+                    )}
+                    icon={tile.icon}
+                    tileId={tile.id}
+                    isFocused={i === tileFocusIdx}
+                    onActivate={() => openTile(tile.id)}
+                    onFocus={() => setTileFocusIdx(i)}
+                    isDarkMode={isDarkMode}
+                    ariaLabel={tile.ariaLabel}
+                    disabled={isDisabled}
+                    aiChip={aiChip}
+                  />
+                );
+              })
             )}
           </div>
           <p

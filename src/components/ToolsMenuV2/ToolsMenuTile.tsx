@@ -1,11 +1,11 @@
 // src/components/ToolsMenuV2/ToolsMenuTile.tsx
-// PR 3a — Surface 3 · slim Tools menu · reusable tile primitive.
+// PR 3a + 3b — Surface 3 · slim Tools menu · reusable tile primitive.
 //
 // Renders a single tile in the slim menu grid (desktop 2-col) / stack
 // (mobile 1-col). Tiles are role="button" — the inline accordion that
-// expands when activated is the parent's responsibility. PR 3a keeps
-// every tile coral-free; PR 3b will add an `aiChip` slot for the
-// Summary + Insights tiles.
+// expands when activated is the parent's responsibility. PR 3b adds the
+// `aiChip` slot for the Summary + Insights tiles (the only tiles in the
+// menu that consume coral).
 
 import React from 'react';
 import type { LucideIcon } from 'lucide-react';
@@ -24,6 +24,18 @@ export interface ToolsMenuTileProps {
   isDarkMode?: boolean;
   /** Optional override — defaults to `${title}. ${purpose}`. */
   ariaLabel?: string;
+  /**
+   * Disable the tile (e.g. Summary at 10-49 messages). Renders the tile
+   * with `aria-disabled`, suppresses onActivate, and dims it visually
+   * while keeping the AI chip visible so users learn the identity.
+   */
+  disabled?: boolean;
+  /**
+   * Optional AI provenance chip rendered top-right. Used ONLY by the
+   * Summary + Insights tiles per the coral budget. Tiles that don't
+   * surface AI output must omit this slot.
+   */
+  aiChip?: React.ReactNode;
 }
 
 export const ToolsMenuTile = React.forwardRef<HTMLButtonElement, ToolsMenuTileProps>(
@@ -38,6 +50,8 @@ export const ToolsMenuTile = React.forwardRef<HTMLButtonElement, ToolsMenuTilePr
       onFocus,
       isDarkMode = false,
       ariaLabel,
+      disabled = false,
+      aiChip,
     },
     ref,
   ) => {
@@ -49,16 +63,22 @@ export const ToolsMenuTile = React.forwardRef<HTMLButtonElement, ToolsMenuTilePr
         data-tile-id={tileId}
         tabIndex={isFocused ? 0 : -1}
         aria-label={ariaLabel ?? `${title}. ${purpose}`}
-        onClick={onActivate}
+        aria-disabled={disabled || undefined}
+        onClick={disabled ? undefined : onActivate}
         onFocus={onFocus}
         style={{ minHeight: TILE_MIN_HEIGHT_PX }}
         className={[
-          'w-full text-left rounded-xl border px-4 py-3.5 flex items-start gap-3',
+          'w-full text-left rounded-xl border px-4 py-3.5 flex items-start gap-3 relative',
           'transition-colors duration-150',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+          disabled ? 'opacity-60 cursor-not-allowed' : '',
           isDarkMode
-            ? 'bg-zinc-900/60 border-white/10 hover:bg-zinc-800/80 text-zinc-100'
-            : 'bg-white border-black/10 hover:bg-black/5 text-zinc-900',
+            ? disabled
+              ? 'bg-zinc-900/60 border-white/10 text-zinc-100'
+              : 'bg-zinc-900/60 border-white/10 hover:bg-zinc-800/80 text-zinc-100'
+            : disabled
+              ? 'bg-white border-black/10 text-zinc-900'
+              : 'bg-white border-black/10 hover:bg-black/5 text-zinc-900',
         ].join(' ')}
       >
         <span
@@ -70,7 +90,7 @@ export const ToolsMenuTile = React.forwardRef<HTMLButtonElement, ToolsMenuTilePr
         >
           <Icon size={18} />
         </span>
-        <span className="flex-1 min-w-0">
+        <span className="flex-1 min-w-0 pr-8">
           <span className="block text-sm font-semibold leading-snug">
             {title}
           </span>
@@ -83,6 +103,11 @@ export const ToolsMenuTile = React.forwardRef<HTMLButtonElement, ToolsMenuTilePr
             {purpose}
           </span>
         </span>
+        {aiChip ? (
+          <span className="absolute top-2.5 right-2.5 pointer-events-none">
+            {aiChip}
+          </span>
+        ) : null}
       </button>
     );
   },
