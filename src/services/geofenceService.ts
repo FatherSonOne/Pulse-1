@@ -251,4 +251,38 @@ function toRad(deg: number): number {
   return (deg * Math.PI) / 180;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Read API — today's "visited contact stops".
+//
+// PulseMapView feeds the result to proposeRoute as `visitedIds` so the AI
+// model doesn't re-propose stops the operator already arrived at. Returns
+// a Set of marker keys (`${contactId}-home` / `${contactId}-work`) so the
+// caller can use Set.has() without a second lookup.
+//
+// Conservative: when an `enter` row carries `entity_type='contact'` but no
+// role hint, BOTH home and work are marked visited. Geofences are usually
+// role-specific so this rarely over-counts, and over-counting just means
+// the model treats one role as done — handled gracefully downstream.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function getTodayVisitedContactStops(): Promise<Set<string>> {
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const { data, error } = await supabase
+    .from('geofence_events')
+    .select('place_id, entity_type, entity_id, event_type, occurred_at')
+    .eq('event_type', 'enter')
+    .gte('occurred_at', dayStart.toISOString());
+  if (error || !data) return new Set();
+
+  const ids = new Set<string>();
+  for (const row of data) {
+    const r = row as { entity_type?: string; entity_id?: string; place_id?: string };
+    if (r.entity_type === 'contact' && r.entity_id) {
+      ids.add(`${r.entity_id}-home`);
+      ids.add(`${r.entity_id}-work`);
+    }
+  }
+  return ids;
+}
+
 export type { GeofenceTransition, GeofencedPlace };

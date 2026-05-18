@@ -96,11 +96,6 @@ const getNavSections = (): NavSection[] => {
         { icon: Calendar, label: 'Calendar', view: AppView.CALENDAR },
         { icon: Video, label: 'Meetings', view: AppView.MEETINGS },
         { icon: Users, label: 'Contacts', view: AppView.CONTACTS },
-        // Phase 3 IA promotion: Map is now a peer of Contacts, not a tab
-        // inside it. The maps stack powers cross-section features (calendar
-        // travel chips, today geo-clusters, war room team radar, decision/
-        // task geofences) — promoting reflects that scope.
-        { icon: MapPin, label: 'Map', view: AppView.MAP },
         { icon: ClipboardCheck, label: 'Decisions & Tasks', view: AppView.DECISIONS_TASKS },
       ],
     },
@@ -121,6 +116,12 @@ const getNavSections = (): NavSection[] => {
       collapsible: true,
       items: [
         { icon: MessageSquare, label: 'Summit', view: AppView.LIVE },
+        // Map stack still drives cross-section features (calendar travel
+        // chips, today geo-clusters, war room team radar, decision/task
+        // geofences) but the section itself is mid-refactor (cluster +
+        // spiderfy layer, autopilot stubs) — sit it in Experimental
+        // until the strangler refactor lands on main.
+        { icon: MapPin, label: 'Map', view: AppView.MAP },
       ],
     },
   ];

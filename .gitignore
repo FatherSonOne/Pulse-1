@@ -107,6 +107,7 @@ docs/archive/scripts/
 
 # Test artifacts (screenshots, probes, browser profiles)
 .test-artifacts/
+test-results/
 
 # /git-tracker runtime state (issue number for current branch)
 .claude/.git-tracker-issue
@@ -155,6 +156,20 @@ browser-extension/src/config.js
 !.claude/skills/**/*.md
 !.claude/prompts/**/*.md
 docs/*.md
+# But allowlist the doc patterns we hand-author and keep under review.
+# Match the existing naming conventions in docs/ (redesign specs,
+# handoffs, audits, polish notes, user guide) — generated reports keep
+# falling through the `docs/*.md` rule above.
+!docs/*-redesign.md
+!docs/*-followup.md
+!docs/*-handoff.md
+!docs/*-polish.md
+!docs/*-phase*.md
+!docs/*_HANDOFF_*.md
+!docs/*_AUDIT_*.md
+!docs/*_GUIDE.md
+!docs/USER_GUIDE.md
+!docs/contacts_maps*.md
 
 # Generated helper files
 generate-*.js

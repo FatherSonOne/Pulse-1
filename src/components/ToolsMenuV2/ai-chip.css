@@ -1,0 +1,43 @@
+/* src/components/ToolsMenuV2/ai-chip.css
+ * PR 3b — Messages Tools Redesign · Surface 3 · AI provenance chip.
+ *
+ * Reusable coral chip for AI-generated outputs (Thread Summary + Insights
+ * tiles and their output cards). This is the ONLY surface in the whole
+ * redesign that consumes coral tokens. Reviewer rejects any coral added
+ * outside the four documented instances (Summary tile chip, Insights tile
+ * chip, Summary card chip, Insights card chip).
+ *
+ * Tokens consumed (all defined in src/styles/pulse-tokens.css):
+ *   --pulse-coral         — border (1px)
+ *   --pulse-coral-fg      — chip label colour (auto-flips light/dark)
+ *   --pulse-coral-bg-12   — light-mode background (12% opacity coral)
+ *   --pulse-coral-bg-08   — dark-mode background  (8% opacity coral)
+ */
+
+.pulse-ai-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid var(--pulse-coral);
+  color: var(--pulse-coral-fg);
+  background-color: var(--pulse-coral-bg-12);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.dark .pulse-ai-chip {
+  background-color: var(--pulse-coral-bg-08);
+}
+
+/* Dimmed variant for the disabled Summary tile (10-49 msgs) — chip stays
+ * to preserve identity but reads as "muted" per spec mock 3.3 option B. */
+.pulse-ai-chip--dim {
+  opacity: 0.55;
+}
