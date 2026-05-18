@@ -52,6 +52,19 @@ declare global {
 }
 
 const USER_KEY = 'pulse_user_session';
+const GOOGLE_CONTACTS_READONLY_SCOPE = 'https://www.googleapis.com/auth/contacts.readonly';
+
+/**
+ * Phase A feature flag. When true:
+ * - syncGoogleContacts() auto-fire is neutered (becomes a no-op with a warn)
+ * - Selective import via ConnectContactsModal (shipping in a later call) is the new path
+ * - Trim wizard, INVALID_GRANT banner, scope-loss toast are wired up
+ *
+ * Set to true in .env.local to enable Phase A locally. Production rollout
+ * via env config when shipping.
+ */
+export const CONTACTS_PHASE_A_ENABLED =
+  import.meta.env.VITE_CONTACTS_PHASE_A_ENABLED === 'true';
 
 // "Keep me logged in" sentinel: if the user has opted out of persistent sessions,
 // auto-logout when the browser is restarted (sessionStorage is cleared on close).
@@ -138,6 +151,57 @@ const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/contacts.readonly', // Google People API for contacts
   'https://www.googleapis.com/auth/drive.file', // Google Drive API for archive export (only files created by app)
 ].join(' ');
+
+const scopeValueToString = (value: unknown): string => {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value.join(' ');
+  return '';
+};
+
+/**
+ * Returns true if the current session's Google OAuth scope set includes
+ * the contacts.readonly scope. Google's January 2026 granular consent
+ * rollout means users can decline this scope mid-auth while still granting
+ * Gmail/Drive/Calendar — Pulse must check post-callback rather than
+ * assuming the scope is present.
+ *
+ * The provider scope is stored on the session's metadata. Format varies
+ * between provider responses; this helper handles space-delimited and
+ * comma-delimited forms.
+ */
+export function hasContactsScope(session: Session | null | undefined): boolean {
+  if (!session) return false;
+
+  const sessionWithProviderMeta = session as Session & {
+    provider_token_metadata?: { scope?: unknown };
+    scope?: unknown;
+  };
+  const meta =
+    session.user.app_metadata?.scope ??
+    session.user.user_metadata?.scope ??
+    sessionWithProviderMeta.provider_token_metadata?.scope ??
+    sessionWithProviderMeta.scope ??
+    '';
+  const scopes = scopeValueToString(meta).split(/[\s,]+/).filter(Boolean);
+  return scopes.includes(GOOGLE_CONTACTS_READONLY_SCOPE);
+}
+
+const hasGoogleProvider = (session: Session): boolean => {
+  const provider = session.user.app_metadata?.provider;
+  const identities = session.user.identities ?? [];
+  return provider === 'google' || identities.some(identity => identity.provider === 'google');
+};
+
+const dispatchContactsScopeMissingIfNeeded = (session: Session | null): void => {
+  if (
+    session &&
+    hasGoogleProvider(session) &&
+    typeof window !== 'undefined' &&
+    !hasContactsScope(session)
+  ) {
+    window.dispatchEvent(new CustomEvent('pulse:contacts:scope-missing'));
+  }
+};
 
 // Real Google OAuth Login via Supabase
 // Using 'offline' access_type ensures we get a refresh token for long-lived sessions
@@ -549,6 +613,7 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
       import('./googleCalendarService')
         .then(m => m.resetGoogleCalendarTokenCache?.())
         .catch(() => {});
+      dispatchContactsScopeMissingIfNeeded(session);
     }
 
     if (session?.user) {
@@ -649,6 +714,14 @@ export const connectProvider = async (provider: 'google' | 'microsoft' | 'icloud
 let inFlightSync: Promise<Contact[]> | null = null;
 
 export const syncGoogleContacts = async (): Promise<Contact[]> => {
+  if (CONTACTS_PHASE_A_ENABLED) {
+    console.warn(
+      '[contacts] syncGoogleContacts is deprecated under Phase A. ' +
+      'Use ConnectContactsModal / importSelectedLabels() instead.'
+    );
+    return [];
+  }
+
   // Dedupe concurrent calls (e.g. React StrictMode double-mount in dev)
   if (inFlightSync) return inFlightSync;
 

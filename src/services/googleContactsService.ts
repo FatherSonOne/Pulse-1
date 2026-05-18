@@ -6,6 +6,13 @@
 import { supabase } from './supabase';
 import { Contact } from '../types';
 
+export class WorkspaceNotBootstrappedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'WorkspaceNotBootstrappedError';
+  }
+}
+
 const GOOGLE_PEOPLE_API = 'https://people.googleapis.com/v1';
 
 // Google People API response types
@@ -82,6 +89,12 @@ interface PeopleConnectionsResponse {
   nextPageToken?: string;
   totalPeople?: number;
   totalItems?: number;
+}
+
+export interface ImportSelectedLabelsResult {
+  imported: number;
+  skipped: number;
+  rejectedFilteredOut: number;
 }
 
 // Avatar color palette
@@ -218,6 +231,17 @@ const getAvatarColor = (email: string): string => {
   return AVATAR_COLORS[colorIndex];
 };
 
+const stripContactGroupPrefix = (labelId: string): string => labelId.replace(/^contactGroups\//, '');
+
+const getPersonContactGroupIds = (person: GooglePerson): string[] => {
+  const ids = person.memberships
+    ?.map(membership => membership.contactGroupMembership?.contactGroupId)
+    .filter((id): id is string => Boolean(id))
+    .map(stripContactGroupPrefix) ?? [];
+
+  return Array.from(new Set(ids));
+};
+
 // Convert Google Person to Contact
 const googlePersonToContact = (person: GooglePerson): Contact => {
   // Get primary or first name
@@ -279,7 +303,7 @@ const googlePersonToContact = (person: GooglePerson): Contact => {
     status: 'offline',
     source: 'google',
     lastSynced: new Date(),
-    groups: [],
+    groups: getPersonContactGroupIds(person),
   };
 };
 
@@ -434,7 +458,13 @@ class GoogleContactsService {
     }
   }
 
-  // Get contact groups (labels)
+  /**
+   * Get contact groups (labels).
+   *
+   * Google returns full resource names (`contactGroups/<id>`), but Pulse stores
+   * and compares the bare `<id>` form everywhere downstream, including
+   * `rejected_import_labels.label_id`.
+   */
   async getContactGroups(): Promise<Array<{ id: string; name: string; memberCount: number }>> {
     try {
       const response = await this.apiRequest<{
@@ -468,3 +498,104 @@ class GoogleContactsService {
 
 // Export singleton instance
 export const googleContactsService = new GoogleContactsService();
+
+export const importSelectedLabels = async (
+  labelIds: string[],
+  workspaceId: string
+): Promise<ImportSelectedLabelsResult> => {
+  const canonicalLabelIds = Array.from(new Set(labelIds.map(stripContactGroupPrefix)));
+  if (canonicalLabelIds.length === 0) {
+    return { imported: 0, skipped: 0, rejectedFilteredOut: 0 };
+  }
+
+  const { data: hasAccess, error: accessError } = await supabase.rpc('user_has_workspace_access', {
+    ws_id: workspaceId,
+  });
+
+  if (accessError) {
+    throw accessError;
+  }
+
+  if (!hasAccess) {
+    throw new WorkspaceNotBootstrappedError(
+      `Workspace not bootstrapped or user not a member: ${workspaceId}`
+    );
+  }
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) {
+    throw userError;
+  }
+
+  if (!user) {
+    throw new Error('Cannot import Google contacts without an authenticated user');
+  }
+
+  const { data: rejectedRows, error: rejectedError } = await supabase
+    .from('rejected_import_labels')
+    .select('label_id')
+    .eq('user_id', user.id)
+    .eq('workspace_id', workspaceId)
+    .eq('source', 'google');
+
+  if (rejectedError) {
+    throw rejectedError;
+  }
+
+  const rejectedLabelIds = new Set((rejectedRows ?? []).map(row => row.label_id));
+  const survivingLabelIds = canonicalLabelIds.filter(labelId => !rejectedLabelIds.has(labelId));
+  const rejectedFilteredOut = canonicalLabelIds.length - survivingLabelIds.length;
+
+  if (survivingLabelIds.length === 0) {
+    return { imported: 0, skipped: 0, rejectedFilteredOut };
+  }
+
+  const survivingLabelSet = new Set(survivingLabelIds);
+  const allContacts = await googleContactsService.getAllContacts();
+  const matchingContacts = allContacts
+    .map(contact => ({
+      contact,
+      importLabels: (contact.groups ?? []).filter(groupId => survivingLabelSet.has(groupId)),
+    }))
+    .filter(({ importLabels }) => importLabels.length > 0);
+
+  if (matchingContacts.length === 0) {
+    return { imported: 0, skipped: allContacts.length, rejectedFilteredOut };
+  }
+
+  const rows = matchingContacts.map(({ contact, importLabels }) => ({
+    user_id: user.id,
+    platform: 'google',
+    external_id: contact.id.replace(/^google_/, ''),
+    name: contact.name,
+    role: contact.role || 'Contact',
+    company: contact.company,
+    avatar_color: contact.avatarColor,
+    status: contact.status,
+    email: contact.email,
+    phone: contact.phone,
+    address: contact.address,
+    notes: contact.notes,
+    website: contact.website,
+    birthday: contact.birthday,
+    groups: contact.groups ?? [],
+    source: 'google',
+    last_synced: new Date().toISOString(),
+    import_source: 'google',
+    import_label: importLabels,
+  }));
+
+  const { error: upsertError } = await supabase
+    .from('contacts')
+    .upsert(rows, { onConflict: 'user_id,platform,external_id' });
+
+  if (upsertError) {
+    throw upsertError;
+  }
+
+  return {
+    imported: rows.length,
+    skipped: allContacts.length - rows.length,
+    rejectedFilteredOut,
+  };
+};
