@@ -5,7 +5,7 @@ import { AppView, CalendarEvent, Contact } from '../../types';
 import { ContactCircle } from '../../types/contactCircleTypes';
 import { getMapOptions } from '../../services/mapService';
 import { UserLocation } from '../../services/locationService';
-import MapFilterBar, { MapFilter } from './MapFilterBar';
+import MapFilterAccessories, { MapFilter, MapFilterControls } from './MapFilterBar';
 import MapContactMarker from './contacts/MapContactMarker';
 import MapRadiusRings from './contacts/MapRadiusRings';
 import MapContactPanel from './contacts/MapContactPanel';
@@ -34,7 +34,11 @@ import { useGoogleMapsLoader } from './hooks/useGoogleMapsLoader';
 import { useSrAnnouncer } from './hooks/useSrAnnouncer';
 import { useFitBounds } from './hooks/useFitBounds';
 import { useMapKeyboardShortcuts } from './hooks/useMapKeyboardShortcuts';
+import { useMarkerOffsets, type OffsetableMarker } from './hooks/useMarkerOffsets';
+import { useMarkerClusters, type ClusterCentroid } from './hooks/useMarkerClusters';
 import { MapLensRow } from './sub/MapLensRow';
+import { MapViewPicker } from './sub/MapViewPicker';
+import MapClusterMarker from './sub/MapClusterMarker';
 import { AtlasHalos } from './overlays/AtlasHalos';
 import { AtlasTerritories } from './overlays/AtlasTerritories';
 import { AcceptedRoutePolyline } from './overlays/AcceptedRoutePolyline';
@@ -94,6 +98,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   });
   const [showAddLocationPicker, setShowAddLocationPicker] = useState(false);
   const [pickerContactId, setPickerContactId] = useState<string | null>(null);
+  // Tracked zoom for the cluster hook. null until onLoad fires; the hook
+  // treats null as "render normally" so first paint isn't blocked.
+  const [zoom, setZoom] = useState<number | null>(null);
 
   const { userPosition, geoBlocked } = useUserPosition();
   const liveLocations = useLivePresence(localContacts);
@@ -126,6 +133,17 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
+    const z = map.getZoom();
+    if (typeof z === 'number') setZoom(z);
+  }, []);
+
+  // Zoom-change handler — gates cluster vs spiderfy vs normal regimes inside
+  // useMarkerClusters. The event fires without a payload so we re-read.
+  const onZoomChanged = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const z = map.getZoom();
+    if (typeof z === 'number') setZoom(z);
   }, []);
 
   const visibleMarkers = useMemo<MarkerData[]>(() => {
@@ -190,6 +208,64 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
     },
     [visibleMarkers, meetingMarkers, geoSignals.todayEvents, geoSignals.weekEvents],
   );
+
+  // Marker disambiguation — group near-coord markers and assign a per-marker
+  // CSS-pixel offset so two contacts pinned at the same office park no
+  // longer stack into a single tappable pile. Includes meeting markers so
+  // a meeting at the same address as a contact also fans out.
+  const offsetableMarkers = useMemo<OffsetableMarker[]>(() => {
+    const list: OffsetableMarker[] = visibleMarkers.map(m => ({
+      key: markerKey(m.contact.id, m.locType),
+      lat: m.lat,
+      lng: m.lng,
+    }));
+    if (lens !== 'atlas') {
+      const events = lens === 'today' ? geoSignals.todayEvents : geoSignals.weekEvents;
+      for (const mm of meetingMarkers) {
+        if (!events.some(e => e.id === mm.event.id)) continue;
+        list.push({ key: meetingKey(mm.event.id), lat: mm.lat, lng: mm.lng });
+      }
+    }
+    return list;
+  }, [visibleMarkers, meetingMarkers, lens, geoSignals.todayEvents, geoSignals.weekEvents]);
+
+  const markerOffsets = useMarkerOffsets(offsetableMarkers);
+
+  // Cluster + spiderfy layer composing over useMarkerOffsets. Tags every
+  // marker key with a mode (normal | cluster-member | spider-anchor |
+  // spider-leg) and emits cluster centroids for the disc layer.
+  // `expandedAnchorKey` is intentionally retained on the destructure so
+  // /flow can pick it up later as an animation-phase signal without a
+  // surprise rebind.
+  const {
+    entries: clusterEntries,
+    clusters,
+    expandedAnchorKey: _expandedAnchorKey,
+    toggleAnchor,
+    collapseAll: collapseSpiders,
+  } = useMarkerClusters(offsetableMarkers, zoom, mapRef);
+  void _expandedAnchorKey;
+
+  // Cluster-disc click → zoom to the cluster's bbox. Same-point clusters
+  // (bounds collapsed to a coord) get a controlled +2 zoom step so
+  // spiderfy at zoom ≥17 takes over without the "fitBounds to a
+  // zero-area rect" snap.
+  const handleClusterClick = useCallback((cluster: ClusterCentroid) => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (cluster.bounds.north === cluster.bounds.south &&
+        cluster.bounds.east === cluster.bounds.west) {
+      map.panTo({ lat: cluster.lat, lng: cluster.lng });
+      const z = map.getZoom() ?? 14;
+      map.setZoom(Math.min(z + 2, 18));
+      return;
+    }
+    const bounds = new google.maps.LatLngBounds(
+      { lat: cluster.bounds.south, lng: cluster.bounds.west },
+      { lat: cluster.bounds.north, lng: cluster.bounds.east },
+    );
+    map.fitBounds(bounds, { top: 60, right: 60, bottom: 60, left: 60 });
+  }, []);
 
   // AI proposal FSM + accept/reorder/dismiss/open-in-maps handlers all live
   // in useMapAiProposals. The hook owns aiState, acceptedRoute, and
@@ -272,7 +348,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
       >
         <div className="flex items-center gap-2">
           <AlertTriangle size={16} aria-hidden="true" />
-          Map's offline — check API key in Settings → Integrations.
+          Map offline. Check the API key in Settings → Integrations.
         </div>
         <button
           type="button"
@@ -332,11 +408,14 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           .map-sheet-up { animation: none; }
         }
         /* WCAG 2.2 SC 2.4.11 — keep focused controls clear of the sticky
-           lens row + AI strip above and the FAB / chip below. ~96px tops
-           covers both bars at their tallest; 80px bottom clears ImAtFAB. */
+           chrome above and the FAB / chips below. After the distill pass
+           the chrome collapsed to a single 40px lens-row + optional 32px
+           accessory row + optional 40px AI strip — ~112px tops with all
+           three present. Bottom must clear ImAtFAB (~64px) + the view
+           picker stacked above it (~96px). */
         .pulse-map-section :focus-visible {
-          scroll-margin-top: 96px;
-          scroll-margin-bottom: 80px;
+          scroll-margin-top: 112px;
+          scroll-margin-bottom: 96px;
         }
       `}</style>
 
@@ -347,15 +426,33 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
         {srAnnouncement}
       </div>
 
-      {/* Lens row — the section's identity. TODAY is default and most-built;
-          ATLAS demotes the old address-book-on-a-map to a tertiary lens.
-          View toggle (right) flips base tiles (4=Map, 5=Sat, 6=Terr, 7=Hyb). */}
+      {/* Chrome — lens triad (left) + inline filter controls (right) share a
+          single 40px band. View-mode picker lives as a floating chip at the
+          map's bottom-right (see MapViewPicker below). The geo-blocked
+          banner and circle filter chips appear as accessory rows beneath
+          when they have something to say. */}
       <MapLensRow
         lens={lens}
-        viewMode={viewMode}
         isDarkMode={isDarkMode}
         onLensChange={setLens}
-        onViewModeChange={changeViewMode}
+        right={
+          <MapFilterControls
+            filter={filter}
+            isDarkMode={isDarkMode}
+            onFilterChange={setFilter}
+            userId={userId}
+            searchInputRef={searchInputRef}
+            contacts={localContacts}
+          />
+        }
+      />
+      <MapFilterAccessories
+        filter={filter}
+        circles={circles}
+        isDarkMode={isDarkMode}
+        onFilterChange={setFilter}
+        geoBlocked={geoBlocked && !geoBannerDismissed}
+        onDismissGeoBanner={dismissGeoBanner}
       />
 
       {/* AI strip — driven by aiState + acceptedRoute. Committed-coral band
@@ -384,18 +481,6 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           force a remount. The lens-change fade lives on the AI strip
           + empty-state card instead, where it carries actual signal. */}
       <div className="relative flex-1 overflow-hidden">
-        <MapFilterBar
-          filter={filter}
-          circles={circles}
-          isDarkMode={isDarkMode}
-          onFilterChange={setFilter}
-          geoBlocked={geoBlocked && !geoBannerDismissed}
-          onDismissGeoBanner={dismissGeoBanner}
-          userId={userId}
-          searchInputRef={searchInputRef}
-          contacts={localContacts}
-        />
-
         <GoogleMap
           mapContainerClassName="w-full h-full"
           center={userPosition ?? DEFAULT_CENTER}
@@ -403,7 +488,15 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           mapTypeId={viewMode}
           options={getMapOptions(isDarkMode)}
           onLoad={onMapLoad}
-          onClick={() => { setSelectedContactId(null); setSelectedCircleId(null); setSelectedMeetingId(null); }}
+          onZoomChanged={onZoomChanged}
+          onClick={() => {
+            setSelectedContactId(null);
+            setSelectedCircleId(null);
+            setSelectedMeetingId(null);
+            // Map-click also collapses any expanded spider — keeps the
+            // dismiss surface consistent with selection clearing.
+            collapseSpiders();
+          }}
         >
           {userPosition && (
             <MapRadiusRings center={userPosition} isDarkMode={isDarkMode} />
@@ -425,7 +518,29 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           {visibleMarkers.map(({ contact, locType, lat, lng }) => {
             const live = liveLocations.get(contact.id);
             const key = markerKey(contact.id, locType);
+            const cluster = clusterEntries.get(key);
+            // 'cluster-member' → represented by a disc / anchor; skip.
+            if (cluster?.mode === 'cluster-member') return null;
+
             const seqIdx = acceptedRoute ? acceptedRoute.orderedMarkerKeys.indexOf(key) : -1;
+            const baseOffset = markerOffsets.get(key);
+
+            const isSpiderLeg = cluster?.mode === 'spider-leg';
+            const isSpiderAnchor = cluster?.mode === 'spider-anchor';
+            const offX = isSpiderLeg ? cluster.offsetX ?? 0 : isSpiderAnchor ? 0 : baseOffset?.offsetX;
+            const offY = isSpiderLeg ? cluster.offsetY ?? 0 : isSpiderAnchor ? 0 : baseOffset?.offsetY;
+            const showLabel = isSpiderLeg ? false : isSpiderAnchor ? true : (baseOffset?.showLabel ?? true);
+
+            const handleMarkerClick = () => {
+              if (isSpiderAnchor && cluster?.anchorBucketKey) {
+                toggleAnchor(cluster.anchorBucketKey);
+                return;
+              }
+              setSelectedContactId(contact.id);
+              setSelectedLocType(locType);
+              setSelectedMeetingId(null);
+            };
+
             return (
               <MapContactMarker
                 key={key}
@@ -436,12 +551,12 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                 isSelected={selectedContactId === contact.id && selectedLocType === locType}
                 isLive={!!live && live.isSharing}
                 liveLocation={live}
-                onClick={() => {
-                  setSelectedContactId(contact.id);
-                  setSelectedLocType(locType);
-                  setSelectedMeetingId(null);
-                }}
+                onClick={handleMarkerClick}
                 sequenceNumber={seqIdx >= 0 ? seqIdx + 1 : undefined}
+                offsetX={offX}
+                offsetY={offY}
+                showLabel={showLabel}
+                mode={isSpiderLeg ? 'spider-leg' : 'normal'}
               />
             );
           })}
@@ -453,7 +568,26 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               .some(e => e.id === mm.event.id))
             .map(mm => {
               const key = meetingKey(mm.event.id);
+              const cluster = clusterEntries.get(key);
+              if (cluster?.mode === 'cluster-member') return null;
+
               const seqIdx = acceptedRoute ? acceptedRoute.orderedMarkerKeys.indexOf(key) : -1;
+              const baseOffset = markerOffsets.get(key);
+              const isSpiderLeg = cluster?.mode === 'spider-leg';
+              const isSpiderAnchor = cluster?.mode === 'spider-anchor';
+              const offX = isSpiderLeg ? cluster.offsetX ?? 0 : isSpiderAnchor ? 0 : baseOffset?.offsetX;
+              const offY = isSpiderLeg ? cluster.offsetY ?? 0 : isSpiderAnchor ? 0 : baseOffset?.offsetY;
+              const showLabel = isSpiderLeg ? false : isSpiderAnchor ? true : (baseOffset?.showLabel ?? true);
+
+              const handleMarkerClick = () => {
+                if (isSpiderAnchor && cluster?.anchorBucketKey) {
+                  toggleAnchor(cluster.anchorBucketKey);
+                  return;
+                }
+                setSelectedMeetingId(prev => (prev === mm.event.id ? null : mm.event.id));
+                setSelectedContactId(null);
+              };
+
               return (
                 <MapMeetingMarker
                   key={key}
@@ -461,14 +595,26 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                   lat={mm.lat}
                   lng={mm.lng}
                   isSelected={selectedMeetingId === mm.event.id}
-                  onClick={() => {
-                    setSelectedMeetingId(prev => (prev === mm.event.id ? null : mm.event.id));
-                    setSelectedContactId(null);
-                  }}
+                  onClick={handleMarkerClick}
                   sequenceNumber={seqIdx >= 0 ? seqIdx + 1 : undefined}
+                  offsetX={offX}
+                  offsetY={offY}
+                  showLabel={showLabel}
+                  mode={isSpiderLeg ? 'spider-leg' : 'normal'}
                 />
               );
             })}
+
+          {/* Cluster discs — drawn after individual markers so the disc
+              wins the click target above any sliver of marker that might
+              poke through at the same coord. Empty at zoom ≥ 16. */}
+          {clusters.map(cluster => (
+            <MapClusterMarker
+              key={cluster.id}
+              cluster={cluster}
+              onClick={handleClusterClick}
+            />
+          ))}
 
           {acceptedRoute && (
             <AcceptedRoutePolyline path={acceptedRoute.path} onClick={handleOpenInSystemMaps} />
@@ -526,35 +672,47 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           />
         )}
 
+        {/* View-mode picker — floats at the map's bottom-right. Lives where
+            Google Maps' own zoom + attribution chrome lives, so it reads as
+            "how the map renders," not as part of the top navigation. */}
+        <MapViewPicker
+          viewMode={viewMode}
+          isDarkMode={isDarkMode}
+          onViewModeChange={changeViewMode}
+        />
+
         {/* Live presence chip — bottom-left. Replaces the old peer-lens
             LiveTeamView entry point. Tap opens the sheet. */}
         {liveBroadcasters.length > 0 && (
           <button
             type="button"
             onClick={() => setShowLiveSheet(true)}
-            className={`absolute bottom-4 left-4 px-3 py-1.5 rounded-full text-xs font-semibold shadow backdrop-blur-sm flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 transition-colors ${
-              isDarkMode ? 'bg-zinc-900/80 text-gray-200 hover:bg-zinc-900' : 'bg-white/85 text-gray-700 hover:bg-white'
+            className={`absolute bottom-4 left-4 px-2.5 py-1 rounded-md text-[10px] tracking-[0.1em] uppercase shadow-md backdrop-blur-sm flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 transition-colors ${
+              isDarkMode ? 'bg-zinc-900/85 text-gray-200 hover:bg-zinc-900 border border-white/10' : 'bg-white/90 text-gray-700 hover:bg-white border border-gray-200'
             }`}
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
             aria-label={`${liveBroadcasters.length} broadcasting — open list`}
           >
             <span className="relative inline-flex h-2 w-2" aria-hidden="true">
               <span className="absolute inline-flex h-full w-full rounded-full bg-rose-500/70 motion-safe:animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
             </span>
-            <span>{liveBroadcasters.length} broadcasting</span>
+            <span>{liveBroadcasters.length} live</span>
           </button>
         )}
 
         {/* Marker count badge — bottom-left when no broadcasters, otherwise
-            tucked right of the live chip. */}
+            tucked right of the live chip. Mono uppercase to match the lens
+            row + view picker + broadcast pill. */}
         {liveBroadcasters.length === 0 && (
           <div
-            className={`absolute bottom-4 left-4 px-3 py-1.5 rounded-full text-xs font-semibold shadow backdrop-blur-sm flex items-center gap-1.5 ${
-              isDarkMode ? 'bg-zinc-900/80 text-gray-300' : 'bg-white/85 text-gray-600'
+            className={`absolute bottom-4 left-4 px-2.5 py-1 rounded-md text-[10px] tracking-[0.1em] uppercase shadow-md backdrop-blur-sm flex items-center gap-1.5 ${
+              isDarkMode ? 'bg-zinc-900/85 text-gray-300 border border-white/10' : 'bg-white/90 text-gray-600 border border-gray-200'
             }`}
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
           >
-            <Users size={12} className="text-rose-500" />
-            {visibleMarkers.length} on map
+            <Users size={11} className="text-rose-500" aria-hidden="true" />
+            {visibleMarkers.length} pinned
           </div>
         )}
 

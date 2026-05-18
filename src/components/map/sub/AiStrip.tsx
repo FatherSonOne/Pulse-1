@@ -383,19 +383,21 @@ export const AiStrip: React.FC<AiStripProps> = ({
               aria-hidden={!whyExpanded}
               className={isDarkMode ? 'bg-rose-500/[0.04]' : 'bg-rose-50/40'}
               style={{
-                maxHeight: whyExpanded ? 240 : 0,
-                overflow: 'hidden',
-                transition: 'max-height 220ms cubic-bezier(0.16, 1, 0.3, 1)',
+                display: 'grid',
+                gridTemplateRows: whyExpanded ? '1fr' : '0fr',
+                transition: 'grid-template-rows 220ms cubic-bezier(0.16, 1, 0.3, 1)',
               }}
             >
-              <p
-                className={`px-3 py-2 text-xs leading-relaxed ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}
-                style={{ maxWidth: '70ch' }}
-              >
-                {rationale}
-              </p>
+              <div style={{ overflow: 'hidden' }}>
+                <p
+                  className={`px-3 py-2 text-xs leading-relaxed ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}
+                  style={{ maxWidth: '70ch' }}
+                >
+                  {rationale}
+                </p>
+              </div>
             </div>
           )}
         </div>
