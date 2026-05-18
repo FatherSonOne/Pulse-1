@@ -23,6 +23,7 @@ const stripe = STRIPE_SECRET_KEY
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+const PORTAL_CONFIG_ID = Deno.env.get('STRIPE_CUSTOMER_PORTAL_ID');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -192,10 +193,16 @@ serve(async (req) => {
         requested_plan: plan_id,
       });
       step = 'stripe-portal-create';
-      const portalSession = await stripe.billingPortal.sessions.create({
+      const portalParams: Stripe.BillingPortal.SessionCreateParams = {
         customer: customerId,
         return_url: success_url,
-      });
+      };
+
+      if (PORTAL_CONFIG_ID) {
+        portalParams.configuration = PORTAL_CONFIG_ID;
+      }
+
+      const portalSession = await stripe.billingPortal.sessions.create(portalParams);
       // 200 with portal URL in `checkout_url` so the client redirects there
       // unchanged. `action: 'portal'` lets future clients distinguish if needed.
       return json({
