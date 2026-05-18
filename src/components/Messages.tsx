@@ -4062,6 +4062,37 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   {emoji}
                                 </motion.button>
                               ))}
+                              {/* "+" → full emoji picker (same picker the
+                                  context-menu "+" opens). Lets desktop
+                                  users reach the full catalogue without
+                                  right-clicking. Mobile path is the
+                                  native keyboard. */}
+                              <motion.button
+                                initial={{ opacity: 0, scale: 0.5 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.15, delay: COMMON_REACTIONS.length * 0.03 }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const bubble = document.querySelector<HTMLElement>(
+                                    `[data-message-id="${msg.id}"]`,
+                                  );
+                                  const rect = bubble?.getBoundingClientRect();
+                                  setFullEmojiPicker({
+                                    open: true,
+                                    messageId: msg.id,
+                                    x: rect ? rect.left + rect.width / 2 : window.innerWidth / 2,
+                                    y: rect ? rect.top + rect.height / 2 : window.innerHeight / 2,
+                                  });
+                                }}
+                                className="w-8 h-8 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors text-zinc-500 text-base"
+                                title="More reactions"
+                                aria-label="More reactions"
+                                whileHover={{ scale: 1.15 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                +
+                              </motion.button>
                               <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
