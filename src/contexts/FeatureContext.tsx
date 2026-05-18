@@ -23,6 +23,11 @@ export interface FeatureFlags {
   toneAnalysis: boolean;
   scheduledMessages: boolean;
   draftManager: boolean;
+
+  // PR 2 — Messages Tools Redesign · Surface 2 (message context-menu).
+  // Gates the new long-press / right-click menu, quick-reactions bar,
+  // and "edited" badge tooltip. Legacy menu renders when off.
+  messageContextMenuV2: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -55,6 +60,9 @@ const DEFAULT_FEATURES: FeatureFlags = {
   toneAnalysis: false,
   scheduledMessages: false,
   draftManager: false,
+
+  // PR 2 — default off until rollout
+  messageContextMenuV2: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -224,4 +232,5 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   toneAnalysis: 'Tone Analysis',
   scheduledMessages: 'Scheduled Messages',
   draftManager: 'Draft Manager',
+  messageContextMenuV2: 'New Message Context-Menu (Beta)',
 };
