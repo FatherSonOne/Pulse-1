@@ -1,6 +1,10 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 import { Plus } from 'lucide-react';
+// Full Unicode emoji catalog grouped by CLDR. ~1914 base emojis across
+// 9 official groups. Replaces the hand-curated lists below.
+import unicodeEmojis from 'unicode-emoji-json';
 
 // Types
 interface Reaction {
@@ -33,9 +37,69 @@ interface EmojiPickerProps {
   recentEmojis?: string[];
 }
 
-// Emoji categories — full catalog covering all major Unicode emoji groups.
-// Order matches the standard picker convention (Apple / Slack / Discord).
+// Per-group representative icon for the category tab bar. Picked to be
+// the canonical "first thought" emoji for each CLDR group.
+const GROUP_ICONS: Record<string, string> = {
+  'Smileys & Emotion': '😀',
+  'People & Body': '👋',
+  'Animals & Nature': '🐶',
+  'Food & Drink': '🍕',
+  'Travel & Places': '✈️',
+  'Activities': '⚽',
+  'Objects': '💡',
+  'Symbols': '🔣',
+  'Flags': '🏳️',
+};
+
+// CLDR group order (matches Apple / iOS picker convention).
+const CLDR_GROUP_ORDER = [
+  'Smileys & Emotion',
+  'People & Body',
+  'Animals & Nature',
+  'Food & Drink',
+  'Travel & Places',
+  'Activities',
+  'Objects',
+  'Symbols',
+  'Flags',
+];
+
+interface UnicodeEmojiEntry {
+  name: string;
+  slug?: string;
+  group: string;
+  emoji_version?: string;
+  unicode_version?: string;
+  skin_tone_support?: boolean;
+}
+
+// Flatten the unicode-emoji-json object into an array we can search by name.
+// Built once at module load.
+const ALL_EMOJI_ENTRIES: Array<{ emoji: string; name: string; group: string }> =
+  Object.entries(unicodeEmojis as Record<string, UnicodeEmojiEntry>).map(
+    ([emoji, meta]) => ({ emoji, name: meta.name, group: meta.group }),
+  );
+
+// Slugify a group name for a stable category id.
+const groupSlug = (g: string) => g.toLowerCase().replace(/[^a-z]+/g, '-');
+
+// Emoji categories — derived from the Unicode CLDR catalog so the picker
+// always carries the full set. Recent stays at the head for fast access.
 const emojiCategories: EmojiCategory[] = [
+  { id: 'recent', name: 'Recent', icon: '🕐', emojis: [] },
+  ...CLDR_GROUP_ORDER.map((g): EmojiCategory => ({
+    id: groupSlug(g),
+    name: g,
+    icon: GROUP_ICONS[g] ?? '⬜',
+    emojis: ALL_EMOJI_ENTRIES.filter(e => e.group === g).map(e => e.emoji),
+  })),
+];
+
+// Legacy hand-curated lists kept below as `LEGACY_EMOJI_CATEGORIES` for
+// reference only — no longer wired. Safe to delete once no consumer
+// imports them (none currently do; checked via grep).
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const LEGACY_EMOJI_CATEGORIES: EmojiCategory[] = [
   { id: 'recent', name: 'Recent', icon: '🕐', emojis: [] },
   {
     id: 'smileys',
@@ -128,14 +192,18 @@ function useIsDarkMode(): boolean {
 // Clamp a desired picker top-left so the 320×440 panel stays inside the
 // viewport with VIEWPORT_PAD edge padding. Called with the caller's
 // position prop (which typically points at the bubble's center).
+//
+// Right-half bubbles (own / sent messages) anchor at the RIGHT edge of
+// the supplied position so the picker opens leftward — mirrors the
+// MessageContextMenu anchor logic and prevents the picker from extending
+// past the right viewport edge for right-aligned message bubbles.
 function clampPickerPosition(x: number, y: number) {
   if (typeof window === 'undefined') return { top: y, left: x };
-  // Center the picker horizontally on the supplied x (caller hands us
-  // the bubble centre) and open above the supplied y by default. If the
-  // result would clip, the Math.max/Math.min clamps slide it back into
-  // view from either edge.
-  const desiredLeft = x - PICKER_WIDTH / 2;
-  const desiredTop = y - PICKER_HEIGHT - 8;
+  const isRightHalf = x > window.innerWidth / 2;
+  const desiredLeft = isRightHalf
+    ? x - PICKER_WIDTH + VIEWPORT_PAD      // anchor right edge near x
+    : x - PICKER_WIDTH / 2;                 // centre on x
+  const desiredTop = y - PICKER_HEIGHT - 8; // open above by default
   const maxLeft = window.innerWidth - PICKER_WIDTH - VIEWPORT_PAD;
   const maxTop = window.innerHeight - PICKER_HEIGHT - VIEWPORT_PAD;
   return {
@@ -148,18 +216,27 @@ function clampPickerPosition(x: number, y: number) {
 // the component. Original dark-only inline styles are preserved as the
 // dark branch verbatim; light-mode values mirror Pulse's surface tokens.
 function makeStyles(isDarkMode: boolean) {
-  const panelBg = isDarkMode ? '#1a1a24' : '#ffffff';
-  const panelBorder = isDarkMode ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.10)';
+  // Pulse design-system colours. Dark surfaces use translucent layers
+  // over the true-black canvas per the Translucency-Over-Tinting Rule;
+  // light surfaces stay on paper-pure. Active state uses --pulse-rose
+  // (coral) per the Coral-As-Signal Rule — never the purple
+  // status-proposed colour. Tinted neutrals only, never #000 / #fff.
+  const panelBg = isDarkMode ? 'rgba(255, 255, 255, 0.055)' : '#ffffff';
+  const panelBorder = isDarkMode ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.08)';
   const dividerBorder = isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
   const fieldBg = isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)';
   const fieldBorder = isDarkMode ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.08)';
-  const fieldText = isDarkMode ? '#e2e8f0' : '#1f2937';
-  const mutedText = isDarkMode ? '#94a3b8' : '#6b7280';
-  const subtleText = isDarkMode ? '#64748b' : '#9ca3af';
+  const fieldText = isDarkMode ? '#fafafa' : '#0f0f0f';      // ink — half-step, not #fff / #000
+  const mutedText = isDarkMode ? '#b4b4b8' : '#52525b';
+  const subtleText = isDarkMode ? '#6b7280' : '#6b7280';
   const hoverBg = isDarkMode ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.06)';
-  const accentBg = isDarkMode ? 'rgba(139, 92, 246, 0.20)' : 'rgba(139, 92, 246, 0.12)';
-  const accentBorder = isDarkMode ? 'rgba(139, 92, 246, 0.40)' : 'rgba(139, 92, 246, 0.30)';
+  // Coral active state — Pulse's only sanctioned colour for selection.
+  const accentBg = isDarkMode ? 'rgba(244, 63, 94, 0.12)' : 'rgba(244, 63, 94, 0.10)';
+  const accentBorder = isDarkMode ? 'rgba(244, 63, 94, 0.40)' : 'rgba(244, 63, 94, 0.30)';
+  const accentText = isDarkMode ? '#fb7185' : '#e11d48';
   const dashedBorder = isDarkMode ? 'rgba(255, 255, 255, 0.20)' : 'rgba(0, 0, 0, 0.20)';
+  // Pulse motion signature: 220ms cubic-bezier(0.16, 1, 0.3, 1).
+  const transition = 'all var(--pulse-duration, 220ms) var(--pulse-ease, cubic-bezier(0.16, 1, 0.3, 1))';
   return {
   container: {
     display: 'flex',
@@ -177,7 +254,7 @@ function makeStyles(isDarkMode: boolean) {
     backgroundColor: fieldBg,
     color: fieldText,
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
+    transition: transition,
     fontSize: '14px'
   },
   reactionActive: {
@@ -201,17 +278,23 @@ function makeStyles(isDarkMode: boolean) {
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '12px',
-    transition: 'all 0.2s ease'
+    transition: transition
   },
   picker: {
     position: 'fixed' as const,
     backgroundColor: panelBg,
     color: fieldText,
-    borderRadius: '16px',
+    // 12px = Pulse default popover radius. 16-20px is for modals/sheets,
+    // not floating panels.
+    borderRadius: '12px',
     border: `1px solid ${panelBorder}`,
+    // Modal-tier shadow per the Elevation vocabulary. Glass-on-purpose:
+    // backdrop-filter is allowed on floating panels (modal/menu/dropdown).
+    backdropFilter: isDarkMode ? 'blur(24px)' : 'blur(12px)',
+    WebkitBackdropFilter: isDarkMode ? 'blur(24px)' : 'blur(12px)',
     boxShadow: isDarkMode
-      ? '0 20px 60px rgba(0, 0, 0, 0.5)'
-      : '0 20px 60px rgba(0, 0, 0, 0.15)',
+      ? '0 20px 25px -5px rgba(0, 0, 0, 0.50), 0 10px 10px -5px rgba(0, 0, 0, 0.30)'
+      : '0 20px 25px -5px rgba(0, 0, 0, 0.10), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
     width: `${PICKER_WIDTH}px`,
     maxHeight: `${PICKER_HEIGHT}px`,
     display: 'flex',
@@ -250,7 +333,7 @@ function makeStyles(isDarkMode: boolean) {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'all 0.2s ease'
+    transition: transition
   },
   categoryTabs: {
     display: 'flex',
@@ -270,11 +353,13 @@ function makeStyles(isDarkMode: boolean) {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'all 0.2s ease',
+    transition: transition,
     flexShrink: 0
   },
   categoryTabActive: {
-    backgroundColor: accentBg
+    backgroundColor: accentBg,
+    color: accentText,
+    boxShadow: `inset 0 -2px 0 ${accentBorder}`,
   },
   emojiGrid: {
     display: 'grid',
@@ -296,15 +381,19 @@ function makeStyles(isDarkMode: boolean) {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'all 0.15s ease'
+    transition: transition
   },
   categoryTitle: {
+    // Pulse mono label — the system's signature. Inter-uppercase
+    // collapses the picker into Generic SaaS. Mono-uppercase keeps it
+    // instrument-grade.
     gridColumn: '1 / -1',
+    fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
     fontSize: '11px',
-    fontWeight: 600,
-    color: subtleText,
+    fontWeight: 500,
+    color: mutedText,
     textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px',
+    letterSpacing: '0.1em',
     padding: '8px 0 4px'
   },
   tooltip: {
@@ -334,6 +423,16 @@ function makeStyles(isDarkMode: boolean) {
 const styles = makeStyles(true);
 
 // Emoji Picker Component
+//
+// /impeccable critique cleanup (2026-05-18):
+//   - dropped the redundant 8-emoji "quickReactions" row (Recent category
+//     does the favourites job; two horizontal bars confused users)
+//   - search now matches the emoji NAME from CLDR data (was matching the
+//     query string against the emoji codepoint, which is broken)
+//   - portal-rendered at document.body so no ancestor overflow can clip
+//   - roving tabindex on the grid (arrow keys move between emojis)
+//   - section title uses JetBrains Mono per the Mono-Label Rule
+//   - active state uses coral, not purple (Status-Stays-Status Rule)
 export const EmojiPicker: React.FC<EmojiPickerProps> = ({
   isOpen,
   onClose,
@@ -342,8 +441,13 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
   recentEmojis = []
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('smileys');
+  // Default to the first real category (smileys-emotion) after the
+  // emojiCategories slug change.
+  const [activeCategory, setActiveCategory] = useState(groupSlug(CLDR_GROUP_ORDER[0]));
+  // Roving tabindex — which emoji button is currently keyboard-focused.
+  const [focusedIndex, setFocusedIndex] = useState(0);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   // Theme + per-render styles factory. Recomputed when isDarkMode flips
   // so the picker tracks live theme toggles.
   const isDarkMode = useIsDarkMode();
@@ -357,12 +461,28 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
     return cats;
   }, [recentEmojis]);
 
+  // Search across the full CLDR catalog by NAME (not by codepoint match
+  // — that was the prior bug that made search return nothing for plain
+  // English queries like "smile" or "thumbs").
   const filteredEmojis = useMemo(() => {
     if (!searchQuery) return null;
-    const query = searchQuery.toLowerCase();
-    const allEmojis = categories.flatMap(c => c.emojis);
-    return allEmojis.filter(emoji => emoji.includes(query));
-  }, [searchQuery, categories]);
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return null;
+    return ALL_EMOJI_ENTRIES
+      .filter(entry => entry.name.toLowerCase().includes(q))
+      .map(entry => entry.emoji);
+  }, [searchQuery]);
+
+  // The currently visible flat list of emojis (search results OR the
+  // active category). Drives the roving-tabindex math.
+  const visibleEmojis = useMemo(() => {
+    if (filteredEmojis) return filteredEmojis;
+    const cat = categories.find(c => c.id === activeCategory);
+    return cat ? cat.emojis : [];
+  }, [filteredEmojis, categories, activeCategory]);
+
+  // Reset focus when the visible set changes (new search, new category).
+  useEffect(() => { setFocusedIndex(0); }, [searchQuery, activeCategory]);
 
   const handleSelect = useCallback((emoji: string) => {
     onSelect(emoji);
@@ -382,12 +502,43 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose]);
 
+  // Arrow-key navigation across the emoji grid (8 cols). Enter / Space
+  // selects, Esc closes (handled by parent click-outside).
+  const handleGridKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (visibleEmojis.length === 0) return;
+    const COLS = 8;
+    let next = focusedIndex;
+    switch (e.key) {
+      case 'ArrowRight': next = Math.min(focusedIndex + 1, visibleEmojis.length - 1); break;
+      case 'ArrowLeft':  next = Math.max(focusedIndex - 1, 0); break;
+      case 'ArrowDown':  next = Math.min(focusedIndex + COLS, visibleEmojis.length - 1); break;
+      case 'ArrowUp':    next = Math.max(focusedIndex - COLS, 0); break;
+      case 'Home':       next = 0; break;
+      case 'End':        next = visibleEmojis.length - 1; break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        handleSelect(visibleEmojis[focusedIndex]);
+        return;
+      case 'Escape':
+        e.preventDefault();
+        onClose();
+        return;
+      default:
+        return;
+    }
+    e.preventDefault();
+    setFocusedIndex(next);
+    // Move focus to the new button so screen readers track it.
+    const buttons = gridRef.current?.querySelectorAll<HTMLButtonElement>('button[data-emoji-btn="true"]');
+    buttons?.[next]?.focus();
+  }, [visibleEmojis, focusedIndex, handleSelect, onClose]);
+
   if (!isOpen) return null;
 
   // Clamp to viewport when a position is supplied; centre on screen
-  // otherwise. The clamp keeps the 320×440 panel inside the viewport
-  // for bubbles near any edge (previously the picker could extend past
-  // the bottom of the screen and clip the catalogue).
+  // otherwise. Right-half bubbles anchor the picker's right edge near
+  // the supplied x so it opens leftward (mirrors MessageContextMenu).
   const clamped = position ? clampPickerPosition(position.x, position.y) : null;
   const pickerStyle: React.CSSProperties = {
     ...s.picker,
@@ -403,50 +554,41 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
     (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
   };
 
-  return (
-    <div ref={pickerRef} style={pickerStyle}>
+  // Find the meta for a given emoji to surface its name as aria-label /
+  // title. Falls back to the codepoint if the emoji isn't in CLDR.
+  const lookupName = (emoji: string): string => {
+    const entry = ALL_EMOJI_ENTRIES.find(e => e.emoji === emoji);
+    return entry?.name ?? emoji;
+  };
+
+  const picker = (
+    <div ref={pickerRef} style={pickerStyle} role="dialog" aria-label="Emoji picker">
       <div style={s.pickerHeader}>
         <input
           type="text"
-          placeholder="Search emoji..."
+          placeholder="Search emoji…"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           style={s.searchInput}
           autoFocus
+          aria-label="Search emoji by name"
         />
       </div>
 
-      <div style={s.quickBar}>
-        {quickReactions.map(emoji => (
-          <button
-            key={emoji}
-            style={s.quickEmoji}
-            onClick={() => handleSelect(emoji)}
-            onMouseEnter={e => {
-              (e.target as HTMLButtonElement).style.backgroundColor = s._hoverBg;
-              (e.target as HTMLButtonElement).style.transform = 'scale(1.2)';
-            }}
-            onMouseLeave={e => {
-              (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-              (e.target as HTMLButtonElement).style.transform = 'scale(1)';
-            }}
-          >
-            {emoji}
-          </button>
-        ))}
-      </div>
-
       {!searchQuery && (
-        <div style={s.categoryTabs}>
+        <div style={s.categoryTabs} role="tablist" aria-label="Emoji categories">
           {categories.filter(c => c.emojis.length > 0 || c.id !== 'recent').map(category => (
             <button
               key={category.id}
+              role="tab"
+              aria-selected={activeCategory === category.id}
               style={{
                 ...s.categoryTab,
                 ...(activeCategory === category.id ? s.categoryTabActive : {})
               }}
               onClick={() => setActiveCategory(category.id)}
               title={category.name}
+              aria-label={category.name}
             >
               {category.icon}
             </button>
@@ -454,16 +596,28 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
         </div>
       )}
 
-      <div style={s.emojiGrid}>
+      <div
+        ref={gridRef}
+        style={s.emojiGrid}
+        role="grid"
+        aria-label={searchQuery ? `Emoji search results for ${searchQuery}` : activeCategory}
+        onKeyDown={handleGridKeyDown}
+      >
         {searchQuery ? (
           filteredEmojis && filteredEmojis.length > 0 ? (
-            filteredEmojis.map(emoji => (
+            filteredEmojis.map((emoji, idx) => (
               <button
                 key={emoji}
+                data-emoji-btn="true"
+                role="gridcell"
+                aria-label={lookupName(emoji)}
+                title={lookupName(emoji)}
+                tabIndex={idx === focusedIndex ? 0 : -1}
                 style={s.emojiButton}
                 onClick={() => handleSelect(emoji)}
                 onMouseEnter={hoverIn}
                 onMouseLeave={hoverOut}
+                onFocus={() => setFocusedIndex(idx)}
               >
                 {emoji}
               </button>
@@ -475,27 +629,53 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
           )
         ) : (
           categories
-            .filter(c => c.id === activeCategory && c.emojis.length > 0)
+            .filter(c => c.id === activeCategory)
             .map(category => (
               <React.Fragment key={category.id}>
                 <div style={s.categoryTitle}>{category.name}</div>
-                {category.emojis.map(emoji => (
-                  <button
-                    key={`${category.id}-${emoji}`}
-                    style={s.emojiButton}
-                    onClick={() => handleSelect(emoji)}
-                    onMouseEnter={hoverIn}
-                    onMouseLeave={hoverOut}
-                  >
-                    {emoji}
-                  </button>
-                ))}
+                {category.emojis.length === 0 ? (
+                  <div style={{
+                    gridColumn: '1 / -1',
+                    textAlign: 'center',
+                    padding: '20px',
+                    fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+                    fontSize: '10px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: s._mutedText,
+                  }}>
+                    Most-used reactions land here
+                  </div>
+                ) : (
+                  category.emojis.map((emoji, idx) => (
+                    <button
+                      key={`${category.id}-${emoji}`}
+                      data-emoji-btn="true"
+                      role="gridcell"
+                      aria-label={lookupName(emoji)}
+                      title={lookupName(emoji)}
+                      tabIndex={idx === focusedIndex ? 0 : -1}
+                      style={s.emojiButton}
+                      onClick={() => handleSelect(emoji)}
+                      onMouseEnter={hoverIn}
+                      onMouseLeave={hoverOut}
+                      onFocus={() => setFocusedIndex(idx)}
+                    >
+                      {emoji}
+                    </button>
+                  ))
+                )}
               </React.Fragment>
             ))
         )}
       </div>
     </div>
   );
+
+  // Portal to body so no ancestor's `overflow: hidden` or `transform`
+  // can trap or clip the picker. Required for placement near message
+  // bubbles whose parents may have transformed positioning.
+  return typeof document !== 'undefined' ? createPortal(picker, document.body) : picker;
 };
 
 // Reaction with tooltip
@@ -634,7 +814,7 @@ export const QuickReactionBar: React.FC<{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.15s ease'
+            transition: transition
           }}
           onMouseEnter={e => {
             (e.target as HTMLButtonElement).style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
