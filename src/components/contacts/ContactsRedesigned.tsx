@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Contact } from '../../types';
 import { AddContactModal } from './AddContactModal';
 import { EditContactModal } from './EditContactModal';
-import { syncGoogleContacts } from '../../services/authService';
 import { useRelationshipIntelligence } from '../../hooks/useRelationshipIntelligence';
 import { RelationshipAlertsFeed } from './RelationshipAlertsFeed';
 import { DuplicateDetectionModal } from './DuplicateDetectionModal';
@@ -446,7 +445,6 @@ const ListRow: React.FC<ListRowProps> = ({
 export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   contacts,
   onAction,
-  onSyncComplete,
   onUpdateContact,
   onAddContact,
   onDeleteContact,
@@ -570,10 +568,9 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      const googleContacts = await syncGoogleContacts();
-      if (onSyncComplete) {
-        onSyncComplete(googleContacts);
-      }
+      // Phase A: re-pointed from syncGoogleContacts (legacy bulk path) to the
+      // ConnectContactsModal (selective picker). UI consumer wires up in call 2.
+      window.dispatchEvent(new CustomEvent('pulse:contacts:open-connect-modal'));
     } catch (e) {
       console.error("Sync failed", e);
     } finally {
