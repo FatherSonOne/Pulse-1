@@ -467,13 +467,13 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           .map-sheet-up { animation: none; }
         }
         /* ─── Spider expand/contract animation ────────────────────────
-           The leg's wrapper carries `transform: translate(...)` from
+           The leg wrapper carries a transform:translate from
            useMarkerOffsets — we layer scale + opacity via a separate
-           transform on a CSS variable so the existing transition keeps
-           working. backwards/forwards fill modes let the leg "start
-           hidden" before --spider-delay completes (entering) and "stay
-           hidden" after the exit animation finishes (exiting) while
-           the parent waits to unmount. */
+           animation keyed off a CSS variable so the existing transition
+           keeps working. backwards/forwards fill modes let the leg
+           start hidden before --spider-delay completes (entering) and
+           stay hidden after the exit animation finishes (exiting)
+           while the parent waits to unmount. */
         @keyframes spider-leg-in {
           from { opacity: 0; scale: 0.6; }
           to   { opacity: 1; scale: 1; }
