@@ -38,6 +38,11 @@ interface MapMeetingMarkerProps {
    *    and renders smaller so the fan reads as composed sibling-mass
    *    around the anchor. */
   mode?: 'normal' | 'spider-leg';
+  /** Spider animation phase supplied by useSpiderAnimation. See
+   *  MapContactMarker for the full contract — identical here. */
+  animationPhase?: 'entering' | 'idle' | 'exiting';
+  animationDelayMs?: number;
+  reducedMotion?: boolean;
 }
 
 function formatTime(d: Date): string {
@@ -55,8 +60,16 @@ const MapMeetingMarker: React.FC<MapMeetingMarkerProps> = ({
   offsetY = 0,
   showLabel = true,
   mode = 'normal',
+  animationPhase,
+  animationDelayMs = 0,
+  reducedMotion = false,
 }) => {
   const isSpiderLeg = mode === 'spider-leg';
+  const animationClass = isSpiderLeg && animationPhase === 'entering'
+    ? (reducedMotion ? 'spider-leg-fade-in' : 'spider-leg-enter')
+    : isSpiderLeg && animationPhase === 'exiting'
+    ? (reducedMotion ? 'spider-leg-fade-out' : 'spider-leg-exit')
+    : '';
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     onClick();
@@ -74,10 +87,11 @@ const MapMeetingMarker: React.FC<MapMeetingMarkerProps> = ({
   return (
     <OverlayView position={{ lat, lng }} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}>
       <div
-        className="group relative cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+        className={`group relative cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${animationClass}`}
         style={{
           transform: `translate(calc(-50% + ${offsetX}px), calc(-100% + ${offsetY}px))`,
           transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+          ['--spider-delay' as string]: `${animationDelayMs}ms`,
         }}
         onClick={handleClick}
         onKeyDown={handleKeyDown}

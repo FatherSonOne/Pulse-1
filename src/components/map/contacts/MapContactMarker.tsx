@@ -34,6 +34,17 @@ interface MapContactMarkerProps {
    *    (the anchor owns identity for the group) and renders a thinner
    *    visual so the fan reads as a single composed unit. */
   mode?: 'normal' | 'spider-leg';
+  /** Spider animation phase supplied by useSpiderAnimation.
+   *  - 'entering' (just expanded): runs the spider-leg-in keyframe at
+   *    {animationDelayMs}ms after mount.
+   *  - 'exiting' (just collapsed): runs spider-leg-out and the parent
+   *    unmounts after the animation finishes.
+   *  - 'idle' or undefined: no animation. */
+  animationPhase?: 'entering' | 'idle' | 'exiting';
+  animationDelayMs?: number;
+  /** True when prefers-reduced-motion is on — the marker swaps the scale
+   *  + transform animation for an opacity-only fade. */
+  reducedMotion?: boolean;
 }
 
 function getInitials(name: string): string {
@@ -60,10 +71,20 @@ const MapContactMarker: React.FC<MapContactMarkerProps> = ({
   offsetY = 0,
   showLabel = true,
   mode = 'normal',
+  animationPhase,
+  animationDelayMs = 0,
+  reducedMotion = false,
 }) => {
   const pos = liveLocation ? { lat: liveLocation.lat, lng: liveLocation.lng } : { lat, lng };
   const initials = getInitials(contact.name);
   const isSpiderLeg = mode === 'spider-leg';
+  // Animation class is applied only for spider legs in entering/exiting
+  // phases. Idle / normal markers keep the existing transform transition.
+  const animationClass = isSpiderLeg && animationPhase === 'entering'
+    ? (reducedMotion ? 'spider-leg-fade-in' : 'spider-leg-enter')
+    : isSpiderLeg && animationPhase === 'exiting'
+    ? (reducedMotion ? 'spider-leg-fade-out' : 'spider-leg-exit')
+    : '';
   // Legs render smaller — sibling-mass around an anchor, not the group's
   // identity. Anchor keeps the default 44/56 size from 'normal'.
   const size = isSpiderLeg ? (isSelected ? 40 : 32) : (isSelected ? 56 : 44);
@@ -96,7 +117,7 @@ const MapContactMarker: React.FC<MapContactMarkerProps> = ({
       mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
     >
       <div
-        className="group relative cursor-pointer select-none rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+        className={`group relative cursor-pointer select-none rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${animationClass}`}
         style={{
           // Offset (when supplied by useMarkerOffsets) fans same-coord
           // siblings apart in screen space so each is independently
@@ -104,6 +125,9 @@ const MapContactMarker: React.FC<MapContactMarkerProps> = ({
           // on top of its group.
           transform: `translate(calc(-50% + ${offsetX}px), calc(-100% + ${offsetY}px))`,
           transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+          // Spider-leg keyframes need a per-leg stagger; passing via CSS
+          // variable keeps the keyframe rules generic and cacheable.
+          ['--spider-delay' as string]: `${animationDelayMs}ms`,
         }}
         onClick={handleClick}
         onKeyDown={handleKeyDown}

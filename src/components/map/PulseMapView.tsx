@@ -36,9 +36,11 @@ import { useFitBounds } from './hooks/useFitBounds';
 import { useMapKeyboardShortcuts } from './hooks/useMapKeyboardShortcuts';
 import { useMarkerOffsets, type OffsetableMarker } from './hooks/useMarkerOffsets';
 import { useMarkerClusters, type ClusterCentroid } from './hooks/useMarkerClusters';
+import { useSpiderAnimation } from './hooks/useSpiderAnimation';
 import { MapLensRow } from './sub/MapLensRow';
 import { MapViewPicker } from './sub/MapViewPicker';
 import MapClusterMarker from './sub/MapClusterMarker';
+import SpiderLines from './sub/SpiderLines';
 import { AtlasHalos } from './overlays/AtlasHalos';
 import { AtlasTerritories } from './overlays/AtlasTerritories';
 import { AcceptedRoutePolyline } from './overlays/AcceptedRoutePolyline';
@@ -234,17 +236,42 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   // Cluster + spiderfy layer composing over useMarkerOffsets. Tags every
   // marker key with a mode (normal | cluster-member | spider-anchor |
   // spider-leg) and emits cluster centroids for the disc layer.
-  // `expandedAnchorKey` is intentionally retained on the destructure so
-  // /flow can pick it up later as an animation-phase signal without a
-  // surprise rebind.
   const {
     entries: clusterEntries,
     clusters,
-    expandedAnchorKey: _expandedAnchorKey,
+    expandedAnchorKey,
     toggleAnchor,
     collapseAll: collapseSpiders,
   } = useMarkerClusters(offsetableMarkers, zoom, mapRef);
-  void _expandedAnchorKey;
+
+  // Spider expand/contract choreography. Owns the exit-window timing so
+  // legs the cluster hook has already retagged 'cluster-member' can still
+  // render through their exit animation. exitingKeys gates the unmount
+  // short-circuit below.
+  const {
+    legAnimations,
+    activeSpider,
+    exitingKeys,
+    reducedMotion,
+  } = useSpiderAnimation({ clusterEntries, expandedAnchorKey });
+
+  // Anchor position for SpiderLines — resolved from the visibleMarkers
+  // (or meetingMarkers) entry matching the active spider's anchor key.
+  // Skipped under reduced motion since activeSpider is already null then.
+  const spiderAnchorPos = useMemo(() => {
+    if (!activeSpider) return null;
+    for (const m of visibleMarkers) {
+      if (markerKey(m.contact.id, m.locType) === activeSpider.anchorKey) {
+        return { lat: m.lat, lng: m.lng };
+      }
+    }
+    for (const mm of meetingMarkers) {
+      if (meetingKey(mm.event.id) === activeSpider.anchorKey) {
+        return { lat: mm.lat, lng: mm.lng };
+      }
+    }
+    return null;
+  }, [activeSpider, visibleMarkers, meetingMarkers]);
 
   // Cluster-disc click → zoom to the cluster's bbox. Same-point clusters
   // (bounds collapsed to a coord) get a controlled +2 zoom step so
@@ -407,6 +434,41 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           .contacts-map-panel-enter,
           .map-sheet-up { animation: none; }
         }
+        /* ─── Spider expand/contract animation ────────────────────────
+           The leg's wrapper carries `transform: translate(...)` from
+           useMarkerOffsets — we layer scale + opacity via a separate
+           transform on a CSS variable so the existing transition keeps
+           working. backwards/forwards fill modes let the leg "start
+           hidden" before --spider-delay completes (entering) and "stay
+           hidden" after the exit animation finishes (exiting) while
+           the parent waits to unmount. */
+        @keyframes spider-leg-in {
+          from { opacity: 0; scale: 0.6; }
+          to   { opacity: 1; scale: 1; }
+        }
+        @keyframes spider-leg-out {
+          from { opacity: 1; scale: 1; }
+          to   { opacity: 0; scale: 0.6; }
+        }
+        .spider-leg-enter {
+          animation: spider-leg-in 220ms cubic-bezier(0.16, 1, 0.3, 1)
+                     var(--spider-delay, 0ms) backwards;
+        }
+        .spider-leg-exit {
+          animation: spider-leg-out 180ms cubic-bezier(0.16, 1, 0.3, 1)
+                     var(--spider-delay, 0ms) forwards;
+        }
+        /* Reduced-motion path: 100ms opacity-only fade, no stagger.
+           The marker's wrapper still applies these classes; useSpider-
+           Animation just emits delayMs: 0 so all legs animate together. */
+        @keyframes spider-leg-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes spider-leg-fade-out { from { opacity: 1; } to { opacity: 0; } }
+        .spider-leg-fade-in  { animation: spider-leg-fade-in  100ms linear backwards; }
+        .spider-leg-fade-out { animation: spider-leg-fade-out 100ms linear forwards; }
+        @media (prefers-reduced-motion: reduce) {
+          .spider-leg-enter { animation: spider-leg-fade-in  100ms linear backwards; }
+          .spider-leg-exit  { animation: spider-leg-fade-out 100ms linear forwards; }
+        }
         /* WCAG 2.2 SC 2.4.11 — keep focused controls clear of the sticky
            chrome above and the FAB / chips below. After the distill pass
            the chrome collapsed to a single 40px lens-row + optional 32px
@@ -519,17 +581,32 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             const live = liveLocations.get(contact.id);
             const key = markerKey(contact.id, locType);
             const cluster = clusterEntries.get(key);
-            // 'cluster-member' → represented by a disc / anchor; skip.
-            if (cluster?.mode === 'cluster-member') return null;
+            const exitAnim = exitingKeys.has(key) ? legAnimations.get(key) : undefined;
+            // 'cluster-member' → represented by a disc / anchor; skip
+            // UNLESS the leg is mid-exit, in which case render it
+            // through its exit animation before letting it unmount.
+            if (cluster?.mode === 'cluster-member' && !exitAnim) return null;
 
             const seqIdx = acceptedRoute ? acceptedRoute.orderedMarkerKeys.indexOf(key) : -1;
             const baseOffset = markerOffsets.get(key);
 
-            const isSpiderLeg = cluster?.mode === 'spider-leg';
+            const isSpiderLeg = cluster?.mode === 'spider-leg' || !!exitAnim;
             const isSpiderAnchor = cluster?.mode === 'spider-anchor';
-            const offX = isSpiderLeg ? cluster.offsetX ?? 0 : isSpiderAnchor ? 0 : baseOffset?.offsetX;
-            const offY = isSpiderLeg ? cluster.offsetY ?? 0 : isSpiderAnchor ? 0 : baseOffset?.offsetY;
+            // Exiting legs render at their last-known offset so the exit
+            // animation has a place to fade out from.
+            const offX = exitAnim ? exitAnim.offsetX
+              : isSpiderLeg ? cluster?.offsetX ?? 0
+              : isSpiderAnchor ? 0
+              : baseOffset?.offsetX;
+            const offY = exitAnim ? exitAnim.offsetY
+              : isSpiderLeg ? cluster?.offsetY ?? 0
+              : isSpiderAnchor ? 0
+              : baseOffset?.offsetY;
             const showLabel = isSpiderLeg ? false : isSpiderAnchor ? true : (baseOffset?.showLabel ?? true);
+
+            const animEntry = legAnimations.get(key);
+            const animationPhase = animEntry?.phase;
+            const animationDelayMs = animEntry?.delayMs ?? 0;
 
             const handleMarkerClick = () => {
               if (isSpiderAnchor && cluster?.anchorBucketKey) {
@@ -557,6 +634,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                 offsetY={offY}
                 showLabel={showLabel}
                 mode={isSpiderLeg ? 'spider-leg' : 'normal'}
+                animationPhase={animationPhase}
+                animationDelayMs={animationDelayMs}
+                reducedMotion={reducedMotion}
               />
             );
           })}
@@ -569,15 +649,26 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             .map(mm => {
               const key = meetingKey(mm.event.id);
               const cluster = clusterEntries.get(key);
-              if (cluster?.mode === 'cluster-member') return null;
+              const exitAnim = exitingKeys.has(key) ? legAnimations.get(key) : undefined;
+              if (cluster?.mode === 'cluster-member' && !exitAnim) return null;
 
               const seqIdx = acceptedRoute ? acceptedRoute.orderedMarkerKeys.indexOf(key) : -1;
               const baseOffset = markerOffsets.get(key);
-              const isSpiderLeg = cluster?.mode === 'spider-leg';
+              const isSpiderLeg = cluster?.mode === 'spider-leg' || !!exitAnim;
               const isSpiderAnchor = cluster?.mode === 'spider-anchor';
-              const offX = isSpiderLeg ? cluster.offsetX ?? 0 : isSpiderAnchor ? 0 : baseOffset?.offsetX;
-              const offY = isSpiderLeg ? cluster.offsetY ?? 0 : isSpiderAnchor ? 0 : baseOffset?.offsetY;
+              const offX = exitAnim ? exitAnim.offsetX
+                : isSpiderLeg ? cluster?.offsetX ?? 0
+                : isSpiderAnchor ? 0
+                : baseOffset?.offsetX;
+              const offY = exitAnim ? exitAnim.offsetY
+                : isSpiderLeg ? cluster?.offsetY ?? 0
+                : isSpiderAnchor ? 0
+                : baseOffset?.offsetY;
               const showLabel = isSpiderLeg ? false : isSpiderAnchor ? true : (baseOffset?.showLabel ?? true);
+
+              const animEntry = legAnimations.get(key);
+              const animationPhase = animEntry?.phase;
+              const animationDelayMs = animEntry?.delayMs ?? 0;
 
               const handleMarkerClick = () => {
                 if (isSpiderAnchor && cluster?.anchorBucketKey) {
@@ -601,6 +692,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                   offsetY={offY}
                   showLabel={showLabel}
                   mode={isSpiderLeg ? 'spider-leg' : 'normal'}
+                  animationPhase={animationPhase}
+                  animationDelayMs={animationDelayMs}
+                  reducedMotion={reducedMotion}
                 />
               );
             })}
@@ -615,6 +709,17 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               onClick={handleClusterClick}
             />
           ))}
+
+          {/* Spider tether lines — only rendered when a spider is open
+              AND prefers-reduced-motion is off. Anchored at the spider's
+              centroid; sized to span the leg fan. */}
+          {activeSpider && spiderAnchorPos && (
+            <SpiderLines
+              lat={spiderAnchorPos.lat}
+              lng={spiderAnchorPos.lng}
+              spider={activeSpider}
+            />
+          )}
 
           {acceptedRoute && (
             <AcceptedRoutePolyline path={acceptedRoute.path} onClick={handleOpenInSystemMaps} />
