@@ -26,7 +26,7 @@ import { CircleBubbleChart } from './CircleBubbleChart';
 import { CircleDetail } from './CircleDetail';
 import { NetworkAnalyticsCard } from './NetworkAnalyticsCard';
 
-import { Loader2, Plus, Wand2 } from 'lucide-react';
+import { Info, Loader2, Plus, Wand2 } from 'lucide-react';
 
 // ==================== TYPES ====================
 
@@ -111,6 +111,14 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
   const [showNewModal, setShowNewModal] = useState(false);
   const [suggestions, setSuggestions] = useState<Omit<ContactCircle, 'id' | 'createdAt' | 'updatedAt'>[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  // Session-scoped dismissal of the promoted orphan banner (when >50% of
+  // contacts are uncircled). Persisting to backend is overkill for what is
+  // already an information-dense card — re-shows on next visit.
+  const [orphanBannerDismissed, setOrphanBannerDismissed] = useState(false);
+  // Inline replacement for the previous window.alert() when auto-detect
+  // returns zero suggestions. Drop-in shape mirrors the AI Suggestions
+  // banner so visual rhythm stays consistent.
+  const [noGroupsNotice, setNoGroupsNotice] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [chartSize, setChartSize] = useState({ width: 600, height: 440 });
 
@@ -158,10 +166,14 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
   const handleAutoDetect = useCallback(async () => {
     if (!userId || detecting) return;
     setDetecting(true);
+    // Clear any prior "no groups" notice — this run is fresh signal.
+    setNoGroupsNotice(false);
     try {
       const detected = await autoDetectCircles(userId, contacts);
       if (detected.length === 0) {
-        alert('No groups detected. Try adding company information to your contacts.');
+        // Informative, not error. Inline banner replaces the previous
+        // window.alert() so it can be dismissed without losing context.
+        setNoGroupsNotice(true);
       } else {
         setSuggestions(detected);
         setShowSuggestions(true);
@@ -239,7 +251,9 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Auto-detect */}
+            {/* Group by company — was "Auto-detect" pre-polish. The
+                heuristic is company-name clustering, so naming the action
+                after the input it consumes makes the affordance honest. */}
             <button
               onClick={handleAutoDetect}
               disabled={detecting}
@@ -250,7 +264,7 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
               ) : (
                 <Wand2 className="text-xs" />
               )}
-              {detecting ? 'Detecting…' : 'Auto-detect'}
+              {detecting ? 'Grouping…' : 'Group by company'}
             </button>
             {/* New circle */}
             <button
@@ -291,7 +305,8 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
         )}
       </div>
 
-      {/* AI Suggestions Banner */}
+      {/* AI Suggestions Banner — per-circle [Add] reads as primary action
+          (solid pill); "Accept all" demoted to a quiet outline button. */}
       {showSuggestions && suggestions.length > 0 && (
         <div className="flex-shrink-0 mx-4 mt-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl">
           <div className="flex items-center justify-between mb-2">
@@ -305,7 +320,7 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
               Dismiss
             </button>
           </div>
-          <div className="space-y-1.5 mb-2 max-h-36 overflow-y-auto">
+          <div className="space-y-1.5 mb-3 max-h-36 overflow-y-auto">
             {suggestions.map(s => (
               <div key={s.name} className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -315,7 +330,7 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
                 </div>
                 <button
                   onClick={() => handleAcceptSuggestion(s)}
-                  className="flex-shrink-0 text-xs text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+                  className="flex-shrink-0 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-md transition-colors"
                 >
                   Add
                 </button>
@@ -324,10 +339,78 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
           </div>
           <button
             onClick={handleAcceptAllSuggestions}
-            className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors"
+            className="w-full py-1.5 bg-transparent hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 text-xs font-medium rounded-lg transition-colors"
           >
-            Accept all {suggestions.length} circles
+            Accept all {suggestions.length}
           </button>
+        </div>
+      )}
+
+      {/* No-groups inline notice — informative, replaces window.alert().
+          Tone: info (neutral surface), not warning/danger. */}
+      {noGroupsNotice && (
+        <div className="flex-shrink-0 mx-4 mt-3 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2 min-w-0">
+              <Info className="w-4 h-4 mt-0.5 text-zinc-500 dark:text-zinc-400 flex-shrink-0" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  No groups to suggest yet
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  Pulse needs company names on your contacts to group them. Add a company to a few, then try again.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setNoGroupsNotice(false)}
+              className="flex-shrink-0 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+              aria-label="Dismiss notice"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Promoted orphan banner — when more than half of contacts aren't in
+          any circle, the flow-card sits between header and bubble chart so
+          it's the first thing the eye lands on. Below 50% the existing
+          bottom-positioned banner inside the chart container still works. */}
+      {!loading
+        && contacts.length > 0
+        && orphans.length / contacts.length > 0.5
+        && !orphanBannerDismissed
+        && (
+        <div className="flex-shrink-0 mx-4 mt-3 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-zinc-900 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
+              <Wand2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                {orphans.length} contact{orphans.length !== 1 ? 's' : ''} {orphans.length === 1 ? "isn't" : "aren't"} in a circle yet
+              </p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                Pulse looks at shared company names to suggest starter circles. Preview the groupings before anything is saved.
+              </p>
+              <div className="flex items-center gap-2 mt-3">
+                <button
+                  onClick={handleAutoDetect}
+                  disabled={detecting}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
+                >
+                  {detecting ? 'Grouping…' : 'Preview groups'}
+                </button>
+                <button
+                  onClick={() => setOrphanBannerDismissed(true)}
+                  className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 font-medium transition-colors"
+                >
+                  Skip for now
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -364,15 +447,21 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
           />
         )}
 
-        {/* Orphan contacts banner */}
-        {!loading && orphans.length > 0 && (
+        {/* Orphan contacts banner — bottom-of-chart variant. Only renders
+            when ≤50% of contacts are uncircled. Above that threshold, the
+            promoted flow card above the bubble chart takes over. */}
+        {!loading
+          && orphans.length > 0
+          && contacts.length > 0
+          && orphans.length / contacts.length <= 0.5
+          && (
           <div className="absolute bottom-4 left-4 right-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 shadow-lg flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
                 {orphans.length} contact{orphans.length !== 1 ? 's' : ''} not in any circle
               </p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Use Auto-detect to organise them automatically
+                Use Group by company to organise them automatically
               </p>
             </div>
             <button

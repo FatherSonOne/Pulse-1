@@ -9,6 +9,7 @@ import { DuplicateDetectionModal } from './DuplicateDetectionModal';
 import { SmartListType, RelationshipProfile, LeadScore, getRelationshipHealthColor } from '../../types/relationshipTypes';
 import { ContactDetail } from './ContactDetail';
 import { supabase } from '../../services/supabase';
+import { getContactInitial } from '../../utils/contactInitial';
 import './Contacts.css';
 
 import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronRight, Clock, Copy, Flame, LayoutGrid, List, MessageSquare, Moon, Network, Plus, Radio, RefreshCw, Search, Snowflake, Star, UserX, Users, Video, Wand2, X, Zap } from 'lucide-react';
@@ -165,22 +166,30 @@ const Sidebar: React.FC<SidebarProps> = ({
       })}
     </div>
 
-    {/* Alerts Banner */}
+    {/* Alerts Banner — migrated from legacy orange RGBs to canonical
+        --pulse-tone-warning tokens. Background and border honor light/dark
+        via the same token, and the foreground rides off --pulse-tone-warning. */}
     {alertCount > 0 && (
       <div className="contacts-sidebar-section" style={{ paddingTop: 0 }}>
         <button
           onClick={onViewAlerts}
           className="contacts-filter-btn active"
           style={{
-            background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(234, 179, 8, 0.1))',
-            border: '1px solid rgba(249, 115, 22, 0.2)',
+            background: 'var(--pulse-tone-warning-soft)',
+            border: '1px solid var(--pulse-tone-warning-soft)',
           }}
         >
           <div className="contacts-filter-btn-content">
-            <div className="contacts-filter-btn-icon" style={{ background: 'rgba(249, 115, 22, 0.2)' }}>
+            <div
+              className="contacts-filter-btn-icon"
+              style={{ background: 'var(--pulse-tone-warning-soft)', color: 'var(--pulse-tone-warning)' }}
+            >
               <Bell />
             </div>
-            <span className="contacts-filter-btn-label" style={{ color: '#f97316' }}>
+            <span
+              className="contacts-filter-btn-label"
+              style={{ color: 'var(--pulse-tone-warning)' }}
+            >
               {alertCount} Alert{alertCount !== 1 ? 's' : ''}
             </span>
           </div>
@@ -261,6 +270,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
         <div className="contacts-node-orbit outer" />
         <div
           className="contacts-node-avatar-inner"
+          aria-hidden="true"
           style={{
             backgroundColor: contact.avatarColor || '#6366f1',
             boxShadow: profile
@@ -268,7 +278,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
               : undefined,
           }}
         >
-          {contact.name.charAt(0)}
+          {getContactInitial(contact.name)}
         </div>
         <div className={`contacts-node-status ${contact.status || 'offline'}`} />
         {profile?.isVip && (
@@ -320,16 +330,48 @@ const NodeCard: React.FC<NodeCardProps> = ({
         </div>
       )}
 
-      {/* Quick Actions */}
-      <div className="contacts-node-actions" onClick={(e) => e.stopPropagation()}>
-        <button className="contacts-node-action" onClick={() => onAction('message')}>
-          <MessageSquare />
+      {/* Quick Actions — always visible (dimmed at rest, full on hover/focus)
+          for discoverability + keyboard a11y. Labels are sr-only spans
+          referenced via aria-labelledby so browser translation tools can
+          translate them (aria-label is not translated). */}
+      <div
+        className="contacts-node-actions"
+        role="group"
+        aria-label="Quick actions"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="contacts-node-action"
+          aria-labelledby={`contact-action-msg-${contact.id}`}
+          onClick={() => onAction('message')}
+        >
+          <span id={`contact-action-msg-${contact.id}`} className="sr-only">
+            Message {contact.name}
+          </span>
+          <MessageSquare aria-hidden="true" />
         </button>
-        <button className="contacts-node-action" onClick={() => onAction('vox')}>
-          <Radio />
+        <button
+          type="button"
+          className="contacts-node-action"
+          aria-labelledby={`contact-action-vox-${contact.id}`}
+          onClick={() => onAction('vox')}
+        >
+          <span id={`contact-action-vox-${contact.id}`} className="sr-only">
+            Relay {contact.name}
+          </span>
+          <Radio aria-hidden="true" />
         </button>
-        <button className="contacts-node-action" onClick={() => onAction('meet')}>
-          <Video />
+        <button
+          type="button"
+          className="contacts-node-action"
+          aria-labelledby={`contact-action-meet-${contact.id}`}
+          onClick={() => onAction('meet')}
+        >
+          <span id={`contact-action-meet-${contact.id}`} className="sr-only">
+            Meet with {contact.name}
+          </span>
+          <Video aria-hidden="true" />
         </button>
       </div>
     </div>
@@ -376,6 +418,7 @@ const ListRow: React.FC<ListRowProps> = ({
       <div className="contacts-list-user">
         <div
           className="contacts-list-avatar"
+          aria-hidden="true"
           style={{
             backgroundColor: contact.avatarColor || '#6366f1',
             boxShadow: profile
@@ -383,7 +426,7 @@ const ListRow: React.FC<ListRowProps> = ({
               : undefined,
           }}
         >
-          {contact.name.charAt(0)}
+          {getContactInitial(contact.name)}
           <div
             className="contacts-list-avatar-status"
             style={{

@@ -232,15 +232,11 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
   return (
     <div className="flex flex-col h-full overflow-hidden">
 
-      {/* Header */}
-      <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <h2 className="text-lg font-bold text-zinc-800 dark:text-zinc-100">Your Day</h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Relationships that need your attention
-            </p>
-          </div>
+      {/* Header — H2 dropped (redundant with the active "Today" tab); the
+          previous "Relationships that need your attention" sublabel now
+          rides beneath the summary-stats row as a slim caption (~32px saved). */}
+      <div className="flex-shrink-0 px-4 pt-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center justify-end mb-1">
           <div className="flex items-center gap-1.5">
             {/* Time / Route view mode toggle. Persisted to localStorage so
                 returning users land back in their preferred view. */}
@@ -285,28 +281,33 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
 
         {/* Summary stats */}
         {!loading && (
-          <div className="flex items-center gap-3 mt-2">
-            <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-              <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{activeItems.length}</span>
-              {' '}action{activeItems.length !== 1 ? 's' : ''} today
-            </span>
-            {completedCount > 0 && (
-              <>
-                <span className="text-zinc-300 dark:text-zinc-700">·</span>
-                <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                  <Check className="mr-1" />{completedCount} done
-                </span>
-              </>
-            )}
-            {snoozedCount > 0 && (
-              <>
-                <span className="text-zinc-300 dark:text-zinc-700">·</span>
-                <span className="text-xs text-amber-600 dark:text-amber-400">
-                  <Clock className="mr-1" />{snoozedCount} snoozed
-                </span>
-              </>
-            )}
-          </div>
+          <>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{activeItems.length}</span>
+                {' '}action{activeItems.length !== 1 ? 's' : ''} today
+              </span>
+              {completedCount > 0 && (
+                <>
+                  <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                    <Check className="mr-1" />{completedCount} done
+                  </span>
+                </>
+              )}
+              {snoozedCount > 0 && (
+                <>
+                  <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                  <span className="text-xs text-amber-600 dark:text-amber-400">
+                    <Clock className="mr-1" />{snoozedCount} snoozed
+                  </span>
+                </>
+              )}
+            </div>
+            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1">
+              Relationships that need your attention
+            </p>
+          </>
         )}
       </div>
 

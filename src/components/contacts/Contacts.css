@@ -930,6 +930,9 @@
   padding: 24px;
 }
 
+/* Auto-fill columns — 2-up on narrow, 3-up on 1024–1440, 4-up on 1600+.
+   minmax(280px, 1fr) preserves the card composition density while letting
+   the grid breathe on wide monitors. */
 .contacts-grid-inner {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1145,7 +1148,10 @@
 .contacts-node-lead.C { background: rgba(234, 179, 8, 0.2); color: #eab308; }
 .contacts-node-lead.D { background: rgba(107, 114, 128, 0.2); color: #6b7280; }
 
-/* Quick Actions on Hover */
+/* Quick Actions — always visible (dimmed at rest), full on hover/focus.
+   Drops the previous translateY(8px) entrance so the buttons read as part
+   of the card composition, not a pop-up. WCAG 2.2 ≥24×24 — bumped to 10px
+   padding for a comfortable ≥36px touch target. */
 .contacts-node-actions {
   position: absolute;
   bottom: 16px;
@@ -1153,19 +1159,18 @@
   right: 16px;
   display: flex;
   gap: 8px;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: all 0.3s;
+  opacity: 0.65;
+  transition: opacity 0.2s ease;
 }
 
-.contacts-node:hover .contacts-node-actions {
+.contacts-node:hover .contacts-node-actions,
+.contacts-node:focus-within .contacts-node-actions {
   opacity: 1;
-  transform: translateY(0);
 }
 
 .contacts-node-action {
   flex: 1;
-  padding: 8px;
+  padding: 10px;
   background: var(--cnt-bg-tertiary);
   border: 1px solid var(--cnt-border);
   border-radius: 8px;
@@ -1176,12 +1181,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 36px;
 }
 
-.contacts-node-action:hover {
+.contacts-node-action:hover,
+.contacts-node-action:focus-visible {
   background: var(--cnt-bg-elevated);
   color: var(--cnt-text-primary);
   border-color: var(--cnt-accent-primary);
+  outline: none;
+}
+
+.contacts-node-action:focus-visible {
+  box-shadow: 0 0 0 2px var(--cnt-accent-primary);
 }
 
 /* ============================================
