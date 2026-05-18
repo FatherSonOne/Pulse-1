@@ -3009,7 +3009,21 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         return;
       case 'delete':
         if (typeof window !== 'undefined' && window.confirm('Delete this message?')) {
+          // Optimistic remove from the local list, then persist as a
+          // soft-delete on the server (is_deleted=true). If the server
+          // rejects, roll back so the message reappears.
+          const snapshot = msg;
           setPulseMessages((prev) => prev.filter((m) => m.id !== msg.id));
+          pulseService.deleteMessage(msg.id).catch((err) => {
+            console.error('Failed to delete Pulse message', err);
+            setPulseMessages((prev) => {
+              if (prev.some((m) => m.id === snapshot.id)) return prev;
+              return [...prev, snapshot].sort(
+                (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+              );
+            });
+            setPulseEditToast('Could not delete message — restored');
+          });
         }
         return;
       case 'block':
@@ -3978,6 +3992,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             onReact={(messageId, emoji) => handlePulseReaction(messageId, emoji)}
                             hoverDelay={300}
                             enableMobileLongPress={false}
+                            // Suppress the legacy hover-bar whenever the new
+                            // MessageContextMenu is open. Prevents the dual-
+                            // menu state where both the quick-reactions bar
+                            // and the right-click menu render at once.
+                            disabled={features.isFeatureEnabled('messageContextMenuV2') && pulseCtxMenu.isOpen}
                           renderReactionBar={({ onReact, position, isExiting }) => (
                             <motion.div
                               initial={{ opacity: 0, scale: 0.9, y: 8 }}
@@ -4550,6 +4569,26 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 onAction={(id) => handlePulseV2Action(id, targetMsg)}
                 onQuickReact={(emoji) => {
                   handlePulseReaction(targetMsg.id, emoji);
+                }}
+                onOpenMorePicker={() => {
+                  // Quick-reactions "+" button → open the existing radial
+                  // picker centered on the bubble. PR 2 doesn't ship a new
+                  // full picker; this is the same fallback the `react`
+                  // overflow action uses (see handlePulseV2Action 'react').
+                  try {
+                    const el = document.querySelector(
+                      `[data-message-id="${targetMsg.id}"]`,
+                    ) as HTMLElement | null;
+                    if (el) {
+                      const rect = el.getBoundingClientRect();
+                      radialMenu.open(
+                        rect.left + rect.width / 2,
+                        rect.top + rect.height / 2,
+                      );
+                      setRadialMenuMessageId(targetMsg.id);
+                    }
+                  } catch { /* no-op */ }
+                  pulseCtxMenu.close();
                 }}
                 onClose={pulseCtxMenu.close}
               />
