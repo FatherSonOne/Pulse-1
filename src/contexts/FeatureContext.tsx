@@ -28,6 +28,13 @@ export interface FeatureFlags {
   // Gates the new long-press / right-click menu, quick-reactions bar,
   // and "edited" badge tooltip. Legacy menu renders when off.
   messageContextMenuV2: boolean;
+
+  // PR 1 — Messages Tools Redesign · Surface 1 (compose bar).
+  // Gates the new PulseComposer (attach sheet, Smart Compose ghost-text,
+  // format-on-selection popover, /t templates + / generic slash autocomplete,
+  // Tools menu opener). Legacy `MessageInput` renders when off. Voice and
+  // schedule send are deliberately deferred to follow-up PRs.
+  pulseComposerV2: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -63,6 +70,9 @@ const DEFAULT_FEATURES: FeatureFlags = {
 
   // PR 2 — default off until rollout
   messageContextMenuV2: false,
+
+  // PR 1 — default off until rollout
+  pulseComposerV2: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -233,4 +243,5 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   scheduledMessages: 'Scheduled Messages',
   draftManager: 'Draft Manager',
   messageContextMenuV2: 'New Message Context-Menu (Beta)',
+  pulseComposerV2: 'New Compose Bar (Beta)',
 };

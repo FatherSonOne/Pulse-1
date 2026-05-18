@@ -117,6 +117,10 @@ import type { LiveCollaborator } from '../types/messageEnhancements';
 import { VoiceTextButton } from './shared/VoiceTextButton';
 import { TriageBrief } from './Messages/TriageBrief';
 import MessageInput from './MessageInput';
+// PR 1 — Messages Tools Redesign · Surface 1 (compose bar).
+// Gated on the `pulseComposerV2` feature flag; falls back to the legacy
+// `MessageInput` when off. See docs/messages-tools-redesign.md.
+import PulseComposer from './PulseComposer';
 // PR 2 — Messages Tools Redesign · Surface 2 (message context-menu).
 // Gated on the `messageContextMenuV2` feature flag; falls back to the
 // legacy right-click menu when off. See docs/messages-tools-redesign.md.
@@ -4600,29 +4604,43 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             />
           )}
 
-          {/* Message Input - Rendered in normal flex flow for Pulse conversations */}
+          {/* Message Input - Rendered in normal flex flow for Pulse conversations.
+              PR 1 (Messages Tools Redesign · Surface 1): when the
+              `pulseComposerV2` flag is on we render <PulseComposer>;
+              otherwise the legacy <MessageInput> stays wired. */}
           {activePulseConversation && (
             <MessageInputPortal
               sidebarWidth={0}
               isActive={true}
               usePortal={false}
             >
-              <MessageInput
-                onSend={(text) => {
-                  sendPulseMessage(text);
-                }}
-                onTyping={(isTyping) => {
-                  // Typing indicator for Pulse conversations
-                }}
-                placeholder={`Message ${activePulseConv?.other_user?.display_name || 'user'}...`}
-                aiEnabled={true}
-                voiceEnabled={true}
-                maxLength={2000}
-                channelId={activePulseConv?.id}
-                apiKey={apiKey}
-                disabled={false}
-                setActiveToolOverlay={setActiveToolOverlay}
-              />
+              {features.isFeatureEnabled('pulseComposerV2') ? (
+                <PulseComposer
+                  onSend={({ text }) => {
+                    sendPulseMessage(text);
+                  }}
+                  placeholder={`Message ${activePulseConv?.other_user?.display_name || 'user'}...`}
+                  maxLength={2000}
+                  disabled={false}
+                />
+              ) : (
+                <MessageInput
+                  onSend={(text) => {
+                    sendPulseMessage(text);
+                  }}
+                  onTyping={(isTyping) => {
+                    // Typing indicator for Pulse conversations
+                  }}
+                  placeholder={`Message ${activePulseConv?.other_user?.display_name || 'user'}...`}
+                  aiEnabled={true}
+                  voiceEnabled={true}
+                  maxLength={2000}
+                  channelId={activePulseConv?.id}
+                  apiKey={apiKey}
+                  disabled={false}
+                  setActiveToolOverlay={setActiveToolOverlay}
+                />
+              )}
             </MessageInputPortal>
           )}
         </div>
