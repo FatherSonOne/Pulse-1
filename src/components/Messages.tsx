@@ -4021,7 +4021,28 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 initial={{ opacity: 0, scale: 0.5 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.15, delay: 0.2 }}
-                                onClick={(e) => handleOpenContextMenuFromButton(e as any, msg.id)}
+                                onClick={(e) => {
+                                  // PR 2: when messageContextMenuV2 is on,
+                                  // route the hover-bar "..." through the
+                                  // new MessageContextMenu (which has
+                                  // Reply / Edit / Delete / Forward / Pin /
+                                  // Block / Report). Off-path falls back to
+                                  // the legacy contextMenu system.
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (features.isFeatureEnabled('messageContextMenuV2')) {
+                                    const btn = e.currentTarget as HTMLElement;
+                                    const rect = btn.getBoundingClientRect();
+                                    pulseCtxMenu.openFromLongPress(
+                                      rect.left,
+                                      rect.bottom + 4,
+                                      btn,
+                                      msg.id,
+                                    );
+                                  } else {
+                                    handleOpenContextMenuFromButton(e as any, msg.id);
+                                  }
+                                }}
                                 className="w-8 h-8 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors text-zinc-500"
                                 title="More options"
                                 whileHover={{ scale: 1.1 }}

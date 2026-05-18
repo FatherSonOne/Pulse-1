@@ -253,10 +253,14 @@ export const HoverReactionTrigger: React.FC<HoverReactionTriggerProps> = ({
     }, 300);
   }, []);
 
-  // Use the hover hook with extended callbacks
+  // Use the hover hook with extended callbacks.
+  // unhoverDelay is generous enough for the user's mouse to traverse the
+  // 8px gap from the message bubble up/down to the floating reaction bar.
+  // 100ms was too aggressive — users frequently lost the bar before they
+  // could click a reaction. 450ms matches iMessage / Slack tapback timing.
   const { isHovering, hoverRef, isLongPressed } = useHoverWithDelay({
     hoverDelay,
-    unhoverDelay: 100,
+    unhoverDelay: 450,
     onHoverStart: handleHoverStart,
     onHoverEnd: handleHoverEnd,
     enableLongPress: enableMobileLongPress,
