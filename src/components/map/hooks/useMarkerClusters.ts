@@ -103,11 +103,14 @@ const CLUSTER_ZOOM_MAX = 15;
 const SPIDER_ZOOM_MIN = 17;
 const SPIDER_MIN_GROUP = 4;
 
-// Stub marker shape the algorithm needs — only `getPosition` is read by
-// MarkerUtils. We attach `__key` so we can recover the source key from the
-// cluster's member list without re-bucketing geographically.
+// Stub marker shape the algorithm needs. MarkerUtils calls:
+//   - getPosition() — used to project the marker into cluster space.
+//   - getVisible() — used to count visible cluster members (Cluster.count).
+// We attach __key so we can recover the source key from the cluster's
+// member list without re-bucketing geographically.
 interface KeyedStub {
   getPosition: () => google.maps.LatLng;
+  getVisible: () => boolean;
   __key: string;
 }
 
@@ -176,7 +179,7 @@ export function useMarkerClusters(
 
       const stubs: KeyedStub[] = markers.map(m => {
         const pos = new google.maps.LatLng(m.lat, m.lng);
-        return { getPosition: () => pos, __key: m.key };
+        return { getPosition: () => pos, getVisible: () => true, __key: m.key };
       });
 
       let result;
