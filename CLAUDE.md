@@ -59,13 +59,67 @@ twice to silent branch swaps during parallel sessions.
 
 Multiple Claude sessions may be working in this repo simultaneously
 (e.g. one writing tests on a fix branch while another redesigns a
-feature on a refactor branch). Each session must stay on its own
+feature on a refactor branch). **The strongest defense is to give each
+session its own physical working tree directory** so they can never
+clobber each other (see "Worktree workflow" below).
+
+If two sessions must share a working tree, each must stay on its own
 branch. If you need work from another branch:
 
 - `git merge <other-branch>` (preserve both histories) — preferred
 - `git cherry-pick <commit>` (specific commits only) — surgical
 - NEVER do an in-place `git checkout` swap that abandons the
   current branch's uncommitted state
+
+### Worktree workflow (recommended for parallel sessions):
+
+Instead of switching branches in-place within `f:/pulse1`, spawn an
+isolated working tree at a sibling directory. Each Claude session
+opens its own directory; they share commits via push/fetch, never
+through working-tree state.
+
+Helper script (preferred):
+
+```powershell
+.\scripts\branch-safety\new-worktree.ps1 -Slug fix-message-overflow
+```
+
+```bash
+./scripts/branch-safety/new-worktree.sh fix-message-overflow
+```
+
+Creates `f:/pulse1-fix-message-overflow/` on branch
+`feat/fix-message-overflow`. Open a fresh Claude Code window pointed
+at that directory and the session is fully isolated from any work
+happening in `f:/pulse1/`.
+
+Manual equivalent:
+
+```bash
+git worktree add -b feat/<slug> ../pulse1-<slug> main
+```
+
+When done with a worktree:
+
+```bash
+git worktree remove ../pulse1-<slug>
+```
+
+List active worktrees: `git worktree list`.
+
+### The post-checkout safety banner:
+
+`.git/hooks/post-checkout` is configured to print a loud banner on
+every branch swap, showing:
+- previous → new branch, with short SHAs
+- the new tip commit
+- commit deltas in both directions (lost / gained)
+- a warning if another session might have uncommitted work that just
+  vanished from the working tree
+- count of untracked files at risk of loss on the next swap
+
+If you see that banner unexpectedly, STOP — diagnose with `git reflog`
+before taking further action.
 
 ---
 
