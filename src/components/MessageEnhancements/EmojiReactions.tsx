@@ -167,9 +167,17 @@ const LEGACY_EMOJI_CATEGORIES: EmojiCategory[] = [
 const quickReactions = ['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🎉'];
 
 // Picker dimensions used for viewport clamping. Match the values below.
-const PICKER_WIDTH = 320;
+// 360px width fits all 10 category tabs evenly (no horizontal scroll) and
+// gives the 8-column emoji grid generous breathing room. Height is left
+// at 440 so the grid shows ~5 rows before scroll.
+const PICKER_WIDTH = 360;
 const PICKER_HEIGHT = 440;
 const VIEWPORT_PAD = 8;
+// Re-exported so call sites can compute anchor coordinates that match
+// the picker's actual width (place the picker BESIDE a bubble, not over
+// it). Keep these in sync.
+export const EMOJI_PICKER_WIDTH = PICKER_WIDTH;
+export const EMOJI_PICKER_HEIGHT = PICKER_HEIGHT;
 
 // Detect dark mode from html.dark class with a MutationObserver so the
 // picker re-renders if the user toggles theme while the picker is open.
@@ -189,26 +197,18 @@ function useIsDarkMode(): boolean {
   return isDark;
 }
 
-// Clamp a desired picker top-left so the 320×440 panel stays inside the
-// viewport with VIEWPORT_PAD edge padding. Called with the caller's
-// position prop (which typically points at the bubble's center).
-//
-// Right-half bubbles (own / sent messages) anchor at the RIGHT edge of
-// the supplied position so the picker opens leftward — mirrors the
-// MessageContextMenu anchor logic and prevents the picker from extending
-// past the right viewport edge for right-aligned message bubbles.
+// Treat the supplied (x, y) as the picker's desired top-left and clamp
+// it inside the viewport. Call sites are responsible for choosing the
+// anchor strategy (typically beside the bubble — see Messages.tsx) so
+// the picker mirrors the "..." context-menu's "open next to the target"
+// pattern instead of floating somewhere above with a large gap.
 function clampPickerPosition(x: number, y: number) {
   if (typeof window === 'undefined') return { top: y, left: x };
-  const isRightHalf = x > window.innerWidth / 2;
-  const desiredLeft = isRightHalf
-    ? x - PICKER_WIDTH + VIEWPORT_PAD      // anchor right edge near x
-    : x - PICKER_WIDTH / 2;                 // centre on x
-  const desiredTop = y - PICKER_HEIGHT - 8; // open above by default
   const maxLeft = window.innerWidth - PICKER_WIDTH - VIEWPORT_PAD;
   const maxTop = window.innerHeight - PICKER_HEIGHT - VIEWPORT_PAD;
   return {
-    left: Math.max(VIEWPORT_PAD, Math.min(desiredLeft, maxLeft)),
-    top: Math.max(VIEWPORT_PAD, Math.min(desiredTop > 0 ? desiredTop : y + 8, maxTop)),
+    left: Math.max(VIEWPORT_PAD, Math.min(x, maxLeft)),
+    top: Math.max(VIEWPORT_PAD, Math.min(y, maxTop)),
   };
 }
 
@@ -336,14 +336,20 @@ function makeStyles(isDarkMode: boolean) {
     transition: transition
   },
   categoryTabs: {
+    // Single horizontal row, no scroll — tabs flex-distribute across
+    // the picker width so all 10 categories fit. If the picker is ever
+    // resized below ~280px, the icons start crowding but won't scroll.
     display: 'flex',
     gap: '2px',
     padding: '8px 12px',
     borderBottom: `1px solid ${dividerBorder}`,
-    overflowX: 'auto' as const
   },
   categoryTab: {
-    width: '32px',
+    // `flex: 1` so tabs evenly fill the row; minWidth: 0 lets them
+    // shrink below their content size if needed. fontSize stays at 16px;
+    // the buttons just get a touch narrower at small picker widths.
+    flex: '1 1 0',
+    minWidth: 0,
     height: '32px',
     borderRadius: '8px',
     border: 'none',
@@ -354,7 +360,6 @@ function makeStyles(isDarkMode: boolean) {
     alignItems: 'center',
     justifyContent: 'center',
     transition: transition,
-    flexShrink: 0
   },
   categoryTabActive: {
     backgroundColor: accentBg,

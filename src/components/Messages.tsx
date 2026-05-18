@@ -4078,12 +4078,33 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     `[data-message-id="${msg.id}"]`,
                                   );
                                   const rect = bubble?.getBoundingClientRect();
-                                  setFullEmojiPicker({
-                                    open: true,
-                                    messageId: msg.id,
-                                    x: rect ? rect.left + rect.width / 2 : window.innerWidth / 2,
-                                    y: rect ? rect.top + rect.height / 2 : window.innerHeight / 2,
-                                  });
+                                  // Anchor BESIDE the bubble like the "..."
+                                  // context-menu: right-half bubbles get the
+                                  // picker to their LEFT; left-half bubbles
+                                  // get it to their RIGHT. Mirrors the
+                                  // MessageContextMenu placement so both
+                                  // popovers feel like the same system.
+                                  const PICKER_W = 360;
+                                  const GAP = 8;
+                                  if (rect) {
+                                    const center = rect.left + rect.width / 2;
+                                    const isRightHalf = center > window.innerWidth / 2;
+                                    setFullEmojiPicker({
+                                      open: true,
+                                      messageId: msg.id,
+                                      x: isRightHalf
+                                        ? rect.left - PICKER_W - GAP
+                                        : rect.right + GAP,
+                                      y: rect.top,
+                                    });
+                                  } else {
+                                    setFullEmojiPicker({
+                                      open: true,
+                                      messageId: msg.id,
+                                      x: window.innerWidth / 2 - PICKER_W / 2,
+                                      y: window.innerHeight / 2 - 220,
+                                    });
+                                  }
                                 }}
                                 className="w-8 h-8 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors text-zinc-500 text-base"
                                 title="More reactions"
@@ -4645,21 +4666,35 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 }}
                 onOpenMorePicker={() => {
                   // Quick-reactions "+" button → open the full emoji
-                  // picker (smileys / gestures / hearts / etc) centered
-                  // on the bubble. Replaces the earlier radial fallback,
-                  // which only carried ~6 emojis. EmojiPicker remembers
-                  // recently-used emojis via localStorage.
+                  // picker. Anchor BESIDE the bubble (matches "..."
+                  // context-menu placement); the picker's clamp then
+                  // pulls it into the viewport for edge cases.
                   try {
                     const el = document.querySelector(
                       `[data-message-id="${targetMsg.id}"]`,
                     ) as HTMLElement | null;
                     const rect = el?.getBoundingClientRect();
-                    setFullEmojiPicker({
-                      open: true,
-                      messageId: targetMsg.id,
-                      x: rect ? rect.left + rect.width / 2 : window.innerWidth / 2,
-                      y: rect ? rect.top + rect.height / 2 : window.innerHeight / 2,
-                    });
+                    const PICKER_W = 360;
+                    const GAP = 8;
+                    if (rect) {
+                      const center = rect.left + rect.width / 2;
+                      const isRightHalf = center > window.innerWidth / 2;
+                      setFullEmojiPicker({
+                        open: true,
+                        messageId: targetMsg.id,
+                        x: isRightHalf
+                          ? rect.left - PICKER_W - GAP
+                          : rect.right + GAP,
+                        y: rect.top,
+                      });
+                    } else {
+                      setFullEmojiPicker({
+                        open: true,
+                        messageId: targetMsg.id,
+                        x: window.innerWidth / 2 - PICKER_W / 2,
+                        y: window.innerHeight / 2 - 220,
+                      });
+                    }
                   } catch { /* no-op */ }
                   pulseCtxMenu.close();
                 }}
