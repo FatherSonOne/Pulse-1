@@ -138,6 +138,19 @@ export interface PulseComposerProps {
   isDarkMode?: boolean;
   /** Force mobile (sheet) vs desktop (popover) layout. Defaults to width detection. */
   forceMobile?: boolean;
+  /**
+   * Active thread / conversation id. Forwarded to ToolsMenuPlaceholder so
+   * the slim Tools menu (`toolsMenuV2`) can scope per-thread settings
+   * (Translate Settings localStorage key, Thread Audit Pace stats).
+   * Omit when no thread is active — the menu falls back to a placeholder id.
+   */
+  threadId?: string;
+  /**
+   * Message count for the active thread. Drives the tile visibility state
+   * machine in ToolsMenuV2 (Summary hidden &lt;10 / disabled 10-49 / active 50+;
+   * Insights hidden &lt;20 / active 20+; Thread Audit disabled &lt;5).
+   */
+  messageCount?: number;
 }
 
 /** Touch-target floor per WCAG 2.2 AA + spec. */

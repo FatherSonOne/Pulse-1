@@ -4622,6 +4622,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   placeholder={`Message ${activePulseConv?.other_user?.display_name || 'user'}...`}
                   maxLength={2000}
                   disabled={false}
+                  threadId={activePulseConv?.id}
+                  messageCount={pulseMessages.length}
                 />
               ) : (
                 <MessageInput

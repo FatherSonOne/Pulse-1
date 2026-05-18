@@ -238,6 +238,15 @@ export const FEATURE_CATEGORIES = {
       'scheduledMessages',
       'draftManager'
     ] as (keyof FeatureFlags)[]
+  },
+  messagesRedesign: {
+    name: 'Messages Tools Redesign (Beta)',
+    description: 'New compose bar, context-menu, and slim Tools menu. Toggle independently to A/B against legacy.',
+    features: [
+      'pulseComposerV2',
+      'messageContextMenuV2',
+      'toolsMenuV2'
+    ] as (keyof FeatureFlags)[]
   }
 };
 

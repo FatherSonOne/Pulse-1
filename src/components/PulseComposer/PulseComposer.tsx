@@ -131,6 +131,8 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
   suggestionProvider,
   isDarkMode: isDarkModeProp,
   forceMobile,
+  threadId,
+  messageCount,
 }) => {
   const isMobile = useIsMobile(forceMobile);
   const isDarkMode = useIsDarkMode(isDarkModeProp);
@@ -704,11 +706,15 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
         onPick={handlePickAttachment}
       />
 
-      {/* Tools menu placeholder */}
+      {/* Tools menu placeholder — when toolsMenuV2 flag is on, swaps to
+          the real slim menu. threadId + messageCount drive the
+          tile-visibility state machine (Summary / Insights / Audit). */}
       <ToolsMenuPlaceholder
         open={toolsOpen}
         isDarkMode={isDarkMode}
         onClose={() => setToolsOpen(false)}
+        threadId={threadId}
+        messageCount={messageCount}
       />
     </>
   );
