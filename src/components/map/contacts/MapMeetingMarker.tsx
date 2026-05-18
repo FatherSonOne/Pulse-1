@@ -9,7 +9,7 @@
 // (where you need to be, when). Different semantic, different shape.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useCallback } from 'react';
+import React, { memo, useCallback } from 'react';
 import { OverlayView } from '@react-google-maps/api';
 import { CalendarClock } from 'lucide-react';
 import { CalendarEvent } from '../../../types';
@@ -19,7 +19,10 @@ interface MapMeetingMarkerProps {
   lat: number;
   lng: number;
   isSelected: boolean;
-  onClick: () => void;
+  /** Stable dispatcher. Receives the meeting's eventId so PulseMapView can
+   *  keep ONE handler reference across all markers — prop identity never
+   *  changes, React.memo skips re-render when nothing else moved. */
+  onClick: (eventId: string) => void;
   /** 1-indexed route position. Renders the same coral sequence badge contact
    *  markers use so the accepted-route polyline reads consistently. */
   sequenceNumber?: number;
@@ -72,15 +75,15 @@ const MapMeetingMarker: React.FC<MapMeetingMarkerProps> = ({
     : '';
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onClick();
-  }, [onClick]);
+    onClick(event.id);
+  }, [onClick, event.id]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onClick();
+      onClick(event.id);
     }
-  }, [onClick]);
+  }, [onClick, event.id]);
 
   const size = isSpiderLeg ? (isSelected ? 36 : 28) : (isSelected ? 44 : 36);
 
@@ -161,4 +164,23 @@ const MapMeetingMarker: React.FC<MapMeetingMarkerProps> = ({
   );
 };
 
-export default MapMeetingMarker;
+// See MapContactMarker.areEqual for the rationale on the explicit comparator.
+function areEqual(prev: MapMeetingMarkerProps, next: MapMeetingMarkerProps): boolean {
+  return (
+    prev.event === next.event &&
+    prev.lat === next.lat &&
+    prev.lng === next.lng &&
+    prev.isSelected === next.isSelected &&
+    prev.onClick === next.onClick &&
+    prev.sequenceNumber === next.sequenceNumber &&
+    prev.offsetX === next.offsetX &&
+    prev.offsetY === next.offsetY &&
+    prev.showLabel === next.showLabel &&
+    prev.mode === next.mode &&
+    prev.animationPhase === next.animationPhase &&
+    prev.animationDelayMs === next.animationDelayMs &&
+    prev.reducedMotion === next.reducedMotion
+  );
+}
+
+export default memo(MapMeetingMarker, areEqual);

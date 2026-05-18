@@ -144,24 +144,27 @@ export function useMarkerClusters(
   // initial render without google.maps loaded doesn't crash.
   const algorithm = useRef<SuperClusterAlgorithm | null>(null);
 
-  return useMemo<UseMarkerClustersResult>(() => {
-    const entries = new Map<string, MarkerClusterEntry>();
+  // ─── Step 1: cluster geometry (independent of spider state) ───────────────
+  // This memo runs the SuperCluster pass and the zoom-≥17 bucket pass, but
+  // does NOT apply spider-anchor / spider-leg tagging — that's per-frame
+  // overlay work below. Splitting the two means toggling a spider open at
+  // zoom 14 doesn't re-run the O(N log N) cluster algorithm.
+  const clusterBase = useMemo(() => {
+    const baseEntries = new Map<string, MarkerClusterEntry>();
     const clusters: ClusterCentroid[] = [];
+    let buckets: Map<string, OffsetableMarker[]> | null = null;
 
-    // No zoom yet (first paint before onLoad) → render normally.
     if (zoom == null || markers.length === 0) {
-      for (const m of markers) entries.set(m.key, { mode: 'normal' });
-      return { entries, clusters, expandedAnchorKey, toggleAnchor, collapseAll };
+      for (const m of markers) baseEntries.set(m.key, { mode: 'normal' });
+      return { baseEntries, clusters, buckets };
     }
 
     // ─── ZOOM ≤ 15 → cluster via SuperCluster ──────────────────────────────
     if (zoom <= CLUSTER_ZOOM_MAX) {
       const map = mapRef.current;
-      // Map / google.maps not ready → fall back to normal so we don't drop
-      // pins entirely. Defensive — onLoad should have fired by now.
       if (!map || typeof google === 'undefined' || !google.maps?.LatLng) {
-        for (const m of markers) entries.set(m.key, { mode: 'normal' });
-        return { entries, clusters, expandedAnchorKey, toggleAnchor, collapseAll };
+        for (const m of markers) baseEntries.set(m.key, { mode: 'normal' });
+        return { baseEntries, clusters, buckets };
       }
 
       if (algorithm.current == null) {
@@ -171,9 +174,6 @@ export function useMarkerClusters(
         });
       }
 
-      // Synthesize keyed stubs the algorithm can read. Only getPosition()
-      // is invoked by MarkerUtils.getPosition for legacy markers. We attach
-      // __key so the cluster's member list round-trips back to our keys.
       const stubs: KeyedStub[] = markers.map(m => {
         const pos = new google.maps.LatLng(m.lat, m.lng);
         return { getPosition: () => pos, __key: m.key };
@@ -187,9 +187,8 @@ export function useMarkerClusters(
           mapCanvasProjection: undefined as unknown as google.maps.MapCanvasProjection,
         });
       } catch {
-        // Algorithm threw (typically map zoom unavailable) → graceful fallback.
-        for (const m of markers) entries.set(m.key, { mode: 'normal' });
-        return { entries, clusters, expandedAnchorKey, toggleAnchor, collapseAll };
+        for (const m of markers) baseEntries.set(m.key, { mode: 'normal' });
+        return { baseEntries, clusters, buckets };
       }
 
       for (const c of result.clusters) {
@@ -201,12 +200,11 @@ export function useMarkerClusters(
         const memberKeys = members.map(m => m.__key).filter(Boolean);
 
         if (count === 1 || memberKeys.length === 1) {
-          // Singleton — render normally so useMarkerOffsets applies.
-          if (memberKeys[0]) entries.set(memberKeys[0], { mode: 'normal' });
+          if (memberKeys[0]) baseEntries.set(memberKeys[0], { mode: 'normal' });
           continue;
         }
 
-        for (const k of memberKeys) entries.set(k, { mode: 'cluster-member' });
+        for (const k of memberKeys) baseEntries.set(k, { mode: 'cluster-member' });
 
         const bounds = c.bounds;
         clusters.push({
@@ -226,66 +224,78 @@ export function useMarkerClusters(
         });
       }
 
-      // Defensive: any marker the algorithm didn't include falls back to
-      // normal so it still renders.
       for (const m of markers) {
-        if (!entries.has(m.key)) entries.set(m.key, { mode: 'normal' });
+        if (!baseEntries.has(m.key)) baseEntries.set(m.key, { mode: 'normal' });
       }
-      return { entries, clusters, expandedAnchorKey, toggleAnchor, collapseAll };
+      return { baseEntries, clusters, buckets };
     }
 
-    // ─── ZOOM 16 → dial-back, no clustering, no spiderfy ───────────────────
+    // ─── ZOOM 16 → dial-back ──────────────────────────────────────────────
     if (zoom < SPIDER_ZOOM_MIN) {
-      for (const m of markers) entries.set(m.key, { mode: 'normal' });
-      return { entries, clusters, expandedAnchorKey, toggleAnchor, collapseAll };
+      for (const m of markers) baseEntries.set(m.key, { mode: 'normal' });
+      return { baseEntries, clusters, buckets };
     }
 
-    // ─── ZOOM ≥ 17 → spiderfy candidate ────────────────────────────────────
-    // Bucket by quantized coord. Groups of 4+ become spider candidates; the
-    // expanded one fans, the rest collapse to an anchor that shows total
-    // count. Groups of 2-3 fall through to normal so useMarkerOffsets handles
-    // them with its tighter fan.
-    const buckets = new Map<string, OffsetableMarker[]>();
+    // ─── ZOOM ≥ 17 → pre-bucket for the spider overlay. We don't apply the
+    //                tags here; that's the next memo. Buckets stay as a
+    //                reference so the cheap overlay only iterates groups.
+    buckets = new Map<string, OffsetableMarker[]>();
     for (const m of markers) {
       const bk = coordBucket(m.lat, m.lng);
       const arr = buckets.get(bk);
       if (arr) arr.push(m);
       else buckets.set(bk, [m]);
     }
+    // Provisional 'normal' for every marker — the overlay memo replaces
+    // entries for spider-eligible buckets.
+    for (const m of markers) baseEntries.set(m.key, { mode: 'normal' });
+
+    return { baseEntries, clusters, buckets };
+  }, [markers, zoom, mapRef]);
+
+  // ─── Step 2: spider overlay (cheap; runs on every expandedAnchorKey
+  //            toggle without re-running SuperCluster). Composes
+  //            spider-anchor / spider-leg / cluster-member on top of
+  //            baseEntries for zoom ≥ 17 + bucket size ≥ 4.
+  const entries = useMemo(() => {
+    const { baseEntries, buckets } = clusterBase;
+    if (!buckets) return baseEntries; // zoom ≤ 16 → pass through unchanged.
+
+    // Clone-on-write — only forks the Map if any bucket actually qualifies
+    // for spider tagging. Most renders at zoom ≥ 17 still pass through.
+    let out: Map<string, MarkerClusterEntry> | null = null;
+    const ensure = (): Map<string, MarkerClusterEntry> => {
+      if (out == null) out = new Map(baseEntries);
+      return out;
+    };
 
     for (const [bucketKey, group] of buckets) {
-      if (group.length < SPIDER_MIN_GROUP) {
-        for (const m of group) entries.set(m.key, { mode: 'normal' });
-        continue;
-      }
+      if (group.length < SPIDER_MIN_GROUP) continue;
 
-      // Stable sort by key — same group lays out the same way every render
-      // so the operator's spatial memory holds.
       const sorted = group.slice().sort((a, b) => a.key.localeCompare(b.key));
       const isExpanded = expandedAnchorKey === bucketKey;
+      const target = ensure();
 
       if (!isExpanded) {
-        // Collapsed: anchor (first by key) carries the group; siblings hide.
-        entries.set(sorted[0].key, {
+        target.set(sorted[0].key, {
           mode: 'spider-anchor',
           groupSize: sorted.length,
           anchorBucketKey: bucketKey,
         });
         for (let i = 1; i < sorted.length; i++) {
-          entries.set(sorted[i].key, { mode: 'cluster-member' });
+          target.set(sorted[i].key, { mode: 'cluster-member' });
         }
         continue;
       }
 
-      // Expanded: anchor stays at centroid; legs fan radially.
-      entries.set(sorted[0].key, {
+      target.set(sorted[0].key, {
         mode: 'spider-anchor',
         groupSize: sorted.length,
         anchorBucketKey: bucketKey,
       });
       for (let i = 1; i < sorted.length; i++) {
         const off = spiderLegOffset(i, sorted.length);
-        entries.set(sorted[i].key, {
+        target.set(sorted[i].key, {
           mode: 'spider-leg',
           offsetX: off.x,
           offsetY: off.y,
@@ -293,6 +303,14 @@ export function useMarkerClusters(
       }
     }
 
-    return { entries, clusters, expandedAnchorKey, toggleAnchor, collapseAll };
-  }, [markers, zoom, mapRef, expandedAnchorKey, toggleAnchor, collapseAll]);
+    return out ?? baseEntries;
+  }, [clusterBase, expandedAnchorKey]);
+
+  return {
+    entries,
+    clusters: clusterBase.clusters,
+    expandedAnchorKey,
+    toggleAnchor,
+    collapseAll,
+  };
 }

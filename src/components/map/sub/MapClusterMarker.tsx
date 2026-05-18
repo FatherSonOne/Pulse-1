@@ -11,7 +11,7 @@
 // signals, not identities.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useCallback } from 'react';
+import React, { memo, useCallback } from 'react';
 import { OverlayView } from '@react-google-maps/api';
 import type { ClusterCentroid } from '../hooks/useMarkerClusters';
 
@@ -77,4 +77,21 @@ const MapClusterMarker: React.FC<MapClusterMarkerProps> = ({ cluster, onClick })
   );
 };
 
-export default MapClusterMarker;
+// The cluster *object* identity changes each time useMarkerClusters
+// recomputes (zoom/pan), but the *meaningful* cluster identity is the
+// content tuple — id (derived from sorted member keys), count, and
+// centroid. Comparing those skips re-render across map nudges that
+// re-snapshot clusters without changing what's visible.
+function areEqual(prev: MapClusterMarkerProps, next: MapClusterMarkerProps): boolean {
+  const pc = prev.cluster;
+  const nc = next.cluster;
+  return (
+    pc.id === nc.id &&
+    pc.count === nc.count &&
+    pc.lat === nc.lat &&
+    pc.lng === nc.lng &&
+    prev.onClick === next.onClick
+  );
+}
+
+export default memo(MapClusterMarker, areEqual);

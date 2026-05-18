@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { memo, useCallback } from 'react';
 import { OverlayView } from '@react-google-maps/api';
 import { Briefcase, Home } from 'lucide-react';
 import { Contact } from '../../../types';
@@ -13,7 +13,11 @@ interface MapContactMarkerProps {
   isSelected: boolean;
   isLive?: boolean;
   liveLocation?: UserLocation;
-  onClick: () => void;
+  /** Stable dispatcher. Receives the marker's own (contactId, locType) so
+   *  PulseMapView can keep ONE handler reference across all markers — the
+   *  prop identity never changes, so React.memo skips re-render when nothing
+   *  else changed. */
+  onClick: (contactId: string, locType: 'home' | 'work') => void;
   /** 1-indexed route order. When set, shows a coral sequence badge on the
    *  top-left of the marker. Set by PulseMapView after an AI route is
    *  accepted; un-set returns the marker to its standalone identity. */
@@ -101,15 +105,15 @@ const MapContactMarker: React.FC<MapContactMarkerProps> = ({
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onClick();
-  }, [onClick]);
+    onClick(contact.id, locationType);
+  }, [onClick, contact.id, locationType]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onClick();
+      onClick(contact.id, locationType);
     }
-  }, [onClick]);
+  }, [onClick, contact.id, locationType]);
 
   return (
     <OverlayView
@@ -240,4 +244,43 @@ const MapContactMarker: React.FC<MapContactMarkerProps> = ({
   );
 };
 
-export default MapContactMarker;
+// Custom comparator: with 500 markers, the dominant cost is the per-marker
+// re-render that fires on every PulseMapView render — selection changes,
+// hover, presence pings, spider state. Default React.memo (shallow compare)
+// catches most of it; we add an explicit check on every prop so it's
+// obvious which changes pierce the memo and which don't.
+//
+// Refs that flow through stable upstream state (contact, liveLocation,
+// onClick) get identity comparison — they only change when the source data
+// changes. Primitives get value comparison.
+//
+// Pierces the memo (correct re-render): isSelected flip on this marker,
+// lat/lng change (live-location move), offsetX/offsetY change (cluster
+// state change touched this group), animationPhase change, sequenceNumber
+// change (route accept/dismiss).
+//
+// Does NOT pierce (skipped re-render): other markers' isSelected, presence
+// pings for other contacts, spider toggle on a different group, hover on
+// any marker (CSS group-hover, no React state).
+function areEqual(prev: MapContactMarkerProps, next: MapContactMarkerProps): boolean {
+  return (
+    prev.contact === next.contact &&
+    prev.locationType === next.locationType &&
+    prev.lat === next.lat &&
+    prev.lng === next.lng &&
+    prev.isSelected === next.isSelected &&
+    prev.isLive === next.isLive &&
+    prev.liveLocation === next.liveLocation &&
+    prev.onClick === next.onClick &&
+    prev.sequenceNumber === next.sequenceNumber &&
+    prev.offsetX === next.offsetX &&
+    prev.offsetY === next.offsetY &&
+    prev.showLabel === next.showLabel &&
+    prev.mode === next.mode &&
+    prev.animationPhase === next.animationPhase &&
+    prev.animationDelayMs === next.animationDelayMs &&
+    prev.reducedMotion === next.reducedMotion
+  );
+}
+
+export default memo(MapContactMarker, areEqual);

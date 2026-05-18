@@ -273,6 +273,38 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
     return null;
   }, [activeSpider, visibleMarkers, meetingMarkers]);
 
+  // Stable dispatchers — passed to every marker so React.memo can skip
+  // re-render when nothing else changed. The handlers read live state via
+  // a ref so they themselves never need new identities. Without this, the
+  // memo wraps on the marker components are defeated by inline closures
+  // (every PulseMapView render would create a new onClick per marker and
+  // every marker would re-render anyway — 500 wasted reconciliations).
+  const clusterEntriesRef = useRef(clusterEntries);
+  useEffect(() => { clusterEntriesRef.current = clusterEntries; }, [clusterEntries]);
+
+  const handleContactSelect = useCallback((contactId: string, locType: 'home' | 'work') => {
+    const key = `${contactId}-${locType}`;
+    const cluster = clusterEntriesRef.current.get(key);
+    if (cluster?.mode === 'spider-anchor' && cluster.anchorBucketKey) {
+      toggleAnchor(cluster.anchorBucketKey);
+      return;
+    }
+    setSelectedContactId(contactId);
+    setSelectedLocType(locType);
+    setSelectedMeetingId(null);
+  }, [toggleAnchor]);
+
+  const handleMeetingSelect = useCallback((eventId: string) => {
+    const key = `meeting-${eventId}`;
+    const cluster = clusterEntriesRef.current.get(key);
+    if (cluster?.mode === 'spider-anchor' && cluster.anchorBucketKey) {
+      toggleAnchor(cluster.anchorBucketKey);
+      return;
+    }
+    setSelectedMeetingId(prev => (prev === eventId ? null : eventId));
+    setSelectedContactId(null);
+  }, [toggleAnchor]);
+
   // Cluster-disc click → zoom to the cluster's bbox. Same-point clusters
   // (bounds collapsed to a coord) get a controlled +2 zoom step so
   // spiderfy at zoom ≥17 takes over without the "fitBounds to a
@@ -608,16 +640,6 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             const animationPhase = animEntry?.phase;
             const animationDelayMs = animEntry?.delayMs ?? 0;
 
-            const handleMarkerClick = () => {
-              if (isSpiderAnchor && cluster?.anchorBucketKey) {
-                toggleAnchor(cluster.anchorBucketKey);
-                return;
-              }
-              setSelectedContactId(contact.id);
-              setSelectedLocType(locType);
-              setSelectedMeetingId(null);
-            };
-
             return (
               <MapContactMarker
                 key={key}
@@ -628,7 +650,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                 isSelected={selectedContactId === contact.id && selectedLocType === locType}
                 isLive={!!live && live.isSharing}
                 liveLocation={live}
-                onClick={handleMarkerClick}
+                onClick={handleContactSelect}
                 sequenceNumber={seqIdx >= 0 ? seqIdx + 1 : undefined}
                 offsetX={offX}
                 offsetY={offY}
@@ -670,15 +692,6 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               const animationPhase = animEntry?.phase;
               const animationDelayMs = animEntry?.delayMs ?? 0;
 
-              const handleMarkerClick = () => {
-                if (isSpiderAnchor && cluster?.anchorBucketKey) {
-                  toggleAnchor(cluster.anchorBucketKey);
-                  return;
-                }
-                setSelectedMeetingId(prev => (prev === mm.event.id ? null : mm.event.id));
-                setSelectedContactId(null);
-              };
-
               return (
                 <MapMeetingMarker
                   key={key}
@@ -686,7 +699,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                   lat={mm.lat}
                   lng={mm.lng}
                   isSelected={selectedMeetingId === mm.event.id}
-                  onClick={handleMarkerClick}
+                  onClick={handleMeetingSelect}
                   sequenceNumber={seqIdx >= 0 ? seqIdx + 1 : undefined}
                   offsetX={offX}
                   offsetY={offY}
