@@ -52,6 +52,25 @@ export interface DBContact {
   work_address?: string;
   geo_accuracy?: 'none' | 'approximate' | 'precise';
   location_updated_at?: string;
+  archived_at?: string | null;
+}
+
+export interface GetContactsOptions {
+  includeArchived?: boolean;
+  archivedOnly?: boolean;
+}
+
+export interface BulkResult {
+  succeeded: string[];
+  failed: Array<{ id: string; reason: string }>;
+}
+
+export interface ContactPatch {
+  tags_add?: string[];
+  tags_remove?: string[];
+  vip?: boolean;
+  circle_id?: string | null;
+  import_source?: string;
 }
 
 export interface DBCalendarEvent {
@@ -66,7 +85,7 @@ export interface DBCalendarEvent {
   attendees?: string[];
   calendar_id: string;
   all_day: boolean;
-  event_type: 'event' | 'meet' | 'reminder' | 'call' | 'deadline' | 'focus' | 'personal' | 'travel' | 'social' | 'health' | string;
+  event_type: CalendarEvent['type'];
   created_at: string;
   updated_at: string;
 }
@@ -419,7 +438,7 @@ class DataService {
 
   // ============= CONTACTS =============
 
-  async getContacts(): Promise<Contact[]> {
+  async getContacts(options: GetContactsOptions = {}): Promise<Contact[]> {
     try {
       const userId = this.getUserId();
 
@@ -429,11 +448,18 @@ class DataService {
         return [];
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('contacts')
         .select('*')
-        .eq('user_id', userId)
-        .order('name');
+        .eq('user_id', userId);
+
+      if (options.archivedOnly) {
+        query = query.not('archived_at', 'is', null);
+      } else if (!options.includeArchived) {
+        query = query.is('archived_at', null);
+      }
+
+      const { data, error } = await query.order('name');
 
       if (error) {
         // Check if it's an AbortError (expected during component unmount)
@@ -513,6 +539,90 @@ class DataService {
       return false;
     }
     return true;
+  }
+
+  async archiveContacts(ids: string[]): Promise<BulkResult> {
+    return this.bulkUpdateRaw(ids, { archived_at: new Date().toISOString() });
+  }
+
+  async restoreContacts(ids: string[]): Promise<BulkResult> {
+    return this.bulkUpdateRaw(ids, { archived_at: null });
+  }
+
+  async bulkDeleteContacts(ids: string[]): Promise<BulkResult> {
+    if (ids.length === 0) return { succeeded: [], failed: [] };
+    const CHUNK = 500;
+    const succeeded: string[] = [];
+    const failed: Array<{ id: string; reason: string }> = [];
+
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const chunk = ids.slice(i, i + CHUNK);
+      const { data, error } = await supabase
+        .from('contacts')
+        .delete()
+        .in('id', chunk)
+        .select('id');
+
+      if (error) {
+        chunk.forEach(id => failed.push({ id, reason: error.message }));
+        continue;
+      }
+
+      const returnedIds = new Set((data ?? []).map(r => r.id));
+      for (const id of chunk) {
+        if (returnedIds.has(id)) succeeded.push(id);
+        else failed.push({ id, reason: 'rls_blocked_or_missing' });
+      }
+    }
+
+    return { succeeded, failed };
+  }
+
+  async bulkUpdateContacts(ids: string[], patch: ContactPatch): Promise<BulkResult> {
+    if (ids.length === 0) return { succeeded: [], failed: [] };
+
+    const simpleUpdates: Record<string, unknown> = {};
+    if (patch.vip !== undefined) simpleUpdates.vip = patch.vip;
+    if (patch.circle_id !== undefined) simpleUpdates.circle_id = patch.circle_id;
+    if (patch.import_source !== undefined) simpleUpdates.import_source = patch.import_source;
+
+    if (Object.keys(simpleUpdates).length === 0) {
+      return {
+        succeeded: [],
+        failed: ids.map(id => ({ id, reason: 'tags_bulk_not_yet_supported' })),
+      };
+    }
+
+    return this.bulkUpdateRaw(ids, simpleUpdates);
+  }
+
+  private async bulkUpdateRaw(ids: string[], updates: Record<string, unknown>): Promise<BulkResult> {
+    if (ids.length === 0) return { succeeded: [], failed: [] };
+    const CHUNK = 500;
+    const succeeded: string[] = [];
+    const failed: Array<{ id: string; reason: string }> = [];
+
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const chunk = ids.slice(i, i + CHUNK);
+      const { data, error } = await supabase
+        .from('contacts')
+        .update(updates)
+        .in('id', chunk)
+        .select('id');
+
+      if (error) {
+        chunk.forEach(id => failed.push({ id, reason: error.message }));
+        continue;
+      }
+
+      const returnedIds = new Set((data ?? []).map(r => r.id));
+      for (const id of chunk) {
+        if (returnedIds.has(id)) succeeded.push(id);
+        else failed.push({ id, reason: 'rls_blocked_or_missing' });
+      }
+    }
+
+    return { succeeded, failed };
   }
 
   // ============= CALENDAR EVENTS =============
