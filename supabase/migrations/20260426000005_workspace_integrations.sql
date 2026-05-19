@@ -142,10 +142,13 @@ as $$
 declare
   v_role text;
 begin
-  select role into v_role
-  from public.workspace_members
-  where workspace_id = p_workspace_id
-    and user_id = auth.uid();
+  -- NB: alias + qualify, otherwise `workspace_id` / `user_id` collide with the
+  -- function's OUT parameters (same names in the RETURNS TABLE list) and
+  -- Postgres raises "column reference 'user_id' is ambiguous" at runtime.
+  select wm.role into v_role
+  from public.workspace_members wm
+  where wm.workspace_id = p_workspace_id
+    and wm.user_id = auth.uid();
 
   if v_role is null or v_role not in ('owner', 'admin') then
     raise exception 'forbidden: admin+ required';
@@ -159,7 +162,11 @@ begin
     p.avatar_url                                                            as user_avatar_url,
     wm.role                                                                 as user_role,
     wm.joined_at                                                            as joined_at,
-    coalesce(array_agg(distinct apps.provider) filter (where apps.id is not null), '{}'::text[]) as providers,
+    -- Cast provider to text inside the agg — column is varchar in
+    -- oauth_connected_apps, so the bare array_agg yields varchar[] which
+    -- doesn't match this function's `providers text[]` OUT type and trips
+    -- "structure of query does not match function result type".
+    coalesce(array_agg(distinct apps.provider::text) filter (where apps.id is not null), '{}'::text[]) as providers,
     coalesce(count(apps.id) filter (where apps.is_active is true), 0)::int  as app_count,
     max(apps.last_used_at)                                                  as last_connected_at
   from public.workspace_members wm

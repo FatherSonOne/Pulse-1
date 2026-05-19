@@ -179,14 +179,26 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
     try { localStorage.setItem('pulse:today:view-mode', m); } catch { /* ignore */ }
   }, []);
 
-  // Computed values
-  const activeItems = items.filter(i => i.status === 'active');
-  const completedCount = items.filter(i => i.status === 'completed').length;
-  const snoozedCount = items.filter(i => i.status === 'snoozed').length;
+  // Computed values — memoized so downstream useMemo/useEffect deps stay
+  // referentially stable. Without this, `baseClusters` recomputes every
+  // render and the route-mode effect below thrashes setClusters in a loop.
+  const activeItems = useMemo(
+    () => items.filter(i => i.status === 'active'),
+    [items],
+  );
+  const completedCount = useMemo(
+    () => items.filter(i => i.status === 'completed').length,
+    [items],
+  );
+  const snoozedCount = useMemo(
+    () => items.filter(i => i.status === 'snoozed').length,
+    [items],
+  );
 
-  const filteredItems = filter === 'all'
-    ? activeItems
-    : activeItems.filter(i => i.itemType === filter);
+  const filteredItems = useMemo(
+    () => (filter === 'all' ? activeItems : activeItems.filter(i => i.itemType === filter)),
+    [activeItems, filter],
+  );
 
   const visibleItems = showAll ? filteredItems : filteredItems.slice(0, ITEMS_PER_PAGE);
   const hasMore = filteredItems.length > ITEMS_PER_PAGE && !showAll;

@@ -1918,6 +1918,17 @@ html.dark .pulse-studio,
   flex-shrink: 0;
 }
 
+.ps-provenance-dot[data-source="google"],
+.ps-provenance-dot[data-source="outlook"] {
+  background: var(--pulse-tone-info);
+}
+
+.ps-provenance-dot[data-source="manual"],
+.ps-provenance-dot[data-source="legacy"],
+.ps-provenance-dot:not([data-source]) {
+  background: var(--pulse-tone-neutral);
+}
+
 .ps-provenance-sep {
   opacity: 0.5;
 }

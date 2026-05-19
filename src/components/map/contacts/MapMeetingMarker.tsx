@@ -9,7 +9,7 @@
 // (where you need to be, when). Different semantic, different shape.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useCallback } from 'react';
+import React, { memo, useCallback } from 'react';
 import { OverlayView } from '@react-google-maps/api';
 import { CalendarClock } from 'lucide-react';
 import { CalendarEvent } from '../../../types';
@@ -19,10 +19,33 @@ interface MapMeetingMarkerProps {
   lat: number;
   lng: number;
   isSelected: boolean;
-  onClick: () => void;
+  /** Stable dispatcher. Receives the meeting's eventId so PulseMapView can
+   *  keep ONE handler reference across all markers — prop identity never
+   *  changes, React.memo skips re-render when nothing else moved. */
+  onClick: (eventId: string) => void;
   /** 1-indexed route position. Renders the same coral sequence badge contact
    *  markers use so the accepted-route polyline reads consistently. */
   sequenceNumber?: number;
+  /** CSS-pixel offset from useMarkerOffsets — non-zero when this meeting
+   *  shares a coord with sibling markers (typically a contact pinned at
+   *  the same address). Safe to omit; defaults to (0,0). */
+  offsetX?: number;
+  offsetY?: number;
+  /** Suppresses the resting time/title label when a sibling marker in the
+   *  same offset group owns the label slot. Hover / focus / selected still
+   *  surface the label. */
+  showLabel?: boolean;
+  /** Cluster/spiderfy mode supplied by useMarkerClusters.
+   *  - 'normal' (default): unchanged behavior.
+   *  - 'spider-leg': leg of an expanded spider — suppresses resting label
+   *    and renders smaller so the fan reads as composed sibling-mass
+   *    around the anchor. */
+  mode?: 'normal' | 'spider-leg';
+  /** Spider animation phase supplied by useSpiderAnimation. See
+   *  MapContactMarker for the full contract — identical here. */
+  animationPhase?: 'entering' | 'idle' | 'exiting';
+  animationDelayMs?: number;
+  reducedMotion?: boolean;
 }
 
 function formatTime(d: Date): string {
@@ -36,26 +59,43 @@ const MapMeetingMarker: React.FC<MapMeetingMarkerProps> = ({
   isSelected,
   onClick,
   sequenceNumber,
+  offsetX = 0,
+  offsetY = 0,
+  showLabel = true,
+  mode = 'normal',
+  animationPhase,
+  animationDelayMs = 0,
+  reducedMotion = false,
 }) => {
+  const isSpiderLeg = mode === 'spider-leg';
+  const animationClass = isSpiderLeg && animationPhase === 'entering'
+    ? (reducedMotion ? 'spider-leg-fade-in' : 'spider-leg-enter')
+    : isSpiderLeg && animationPhase === 'exiting'
+    ? (reducedMotion ? 'spider-leg-fade-out' : 'spider-leg-exit')
+    : '';
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onClick();
-  }, [onClick]);
+    onClick(event.id);
+  }, [onClick, event.id]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onClick();
+      onClick(event.id);
     }
-  }, [onClick]);
+  }, [onClick, event.id]);
 
-  const size = isSelected ? 44 : 36;
+  const size = isSpiderLeg ? (isSelected ? 36 : 28) : (isSelected ? 44 : 36);
 
   return (
     <OverlayView position={{ lat, lng }} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}>
       <div
-        className="relative cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
-        style={{ transform: 'translate(-50%, -100%)' }}
+        className={`group relative cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${animationClass}`}
+        style={{
+          transform: `translate(calc(-50% + ${offsetX}px), calc(-100% + ${offsetY}px))`,
+          transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+          ['--spider-delay' as string]: `${animationDelayMs}ms`,
+        }}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         tabIndex={0}
@@ -97,7 +137,17 @@ const MapMeetingMarker: React.FC<MapMeetingMarkerProps> = ({
           )}
         </div>
 
-        <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 pointer-events-none">
+        <div
+          className={`absolute top-full mt-1 left-1/2 -translate-x-1/2 pointer-events-none transition-opacity duration-150 ${
+            isSpiderLeg
+              ? (isSelected
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100')
+              : (showLabel || isSelected
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100')
+          }`}
+        >
           <div
             className="whitespace-nowrap text-[11px] font-semibold px-1.5 py-0.5 rounded shadow"
             style={{
@@ -114,4 +164,23 @@ const MapMeetingMarker: React.FC<MapMeetingMarkerProps> = ({
   );
 };
 
-export default MapMeetingMarker;
+// See MapContactMarker.areEqual for the rationale on the explicit comparator.
+function areEqual(prev: MapMeetingMarkerProps, next: MapMeetingMarkerProps): boolean {
+  return (
+    prev.event === next.event &&
+    prev.lat === next.lat &&
+    prev.lng === next.lng &&
+    prev.isSelected === next.isSelected &&
+    prev.onClick === next.onClick &&
+    prev.sequenceNumber === next.sequenceNumber &&
+    prev.offsetX === next.offsetX &&
+    prev.offsetY === next.offsetY &&
+    prev.showLabel === next.showLabel &&
+    prev.mode === next.mode &&
+    prev.animationPhase === next.animationPhase &&
+    prev.animationDelayMs === next.animationDelayMs &&
+    prev.reducedMotion === next.reducedMotion
+  );
+}
+
+export default memo(MapMeetingMarker, areEqual);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { User } from '../../../types';
-import { loginWithGoogle, revokeGoogleAccess, disconnectGoogleAccount } from '../../../services/authService';
+import { CONTACTS_PHASE_A_ENABLED, loginWithGoogle, revokeGoogleAccess, disconnectGoogleAccount } from '../../../services/authService';
 import {
   Check, AlertTriangle, Info, Plug,
   Lock, Loader2, Unlink, Ban,
@@ -354,7 +354,8 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
                       setContactsTesting(false);
                     }
                   }}
-                  disabled={contactsTesting}
+                  disabled={contactsTesting || CONTACTS_PHASE_A_ENABLED}
+                  title={CONTACTS_PHASE_A_ENABLED ? 'Use Connect Contacts in the Contacts tab' : undefined}
                   className="nothing-btn nothing-btn-primary"
                 >
                   {contactsTesting ? (

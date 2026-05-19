@@ -328,6 +328,71 @@ export async function calculateCircleHealth(
 
 // ==================== AI AUTO-DETECTION ====================
 
+const FREE_EMAIL_PROVIDERS = new Set([
+  'gmail.com', 'outlook.com', 'yahoo.com', 'icloud.com',
+  'hotmail.com', 'proton.me', 'gmx.com', 'aol.com',
+  'mail.com', 'fastmail.com',
+]);
+
+const ROLE_LOCAL_PARTS = new Set([
+  'info', 'support', 'admin', 'noreply', 'no-reply',
+  'sales', 'contact', 'hello', 'team', 'help',
+]);
+
+export interface CircleSuggestion extends Omit<ContactCircle, 'id' | 'createdAt' | 'updatedAt'> {
+  type: 'company' | 'email_domain' | 'rfm_cohort';
+  label: string;
+  contact_ids: string[];
+}
+
+function emailDomainClusterKey(email: string | null | undefined): string | null {
+  if (!email) return null;
+  const at = email.indexOf('@');
+  if (at < 0) return null;
+  const localPart = email.slice(0, at).toLowerCase().split('+')[0];
+  if (ROLE_LOCAL_PARTS.has(localPart)) return null;
+  const domain = email.slice(at + 1).toLowerCase();
+  if (FREE_EMAIL_PROVIDERS.has(domain)) return null;
+  const parts = domain.split('.');
+  if (parts.length >= 2) return parts.slice(-2).join('.');
+  return domain;
+}
+
+type RfmCohort = 'active' | 'warm' | 'cooling' | 'stale' | 'dormant';
+
+function rfmCohortFor(lastSeenIso: string | null | undefined): RfmCohort | null {
+  if (!lastSeenIso) return null;
+  const ms = Date.now() - new Date(lastSeenIso).getTime();
+  const days = ms / (1000 * 60 * 60 * 24);
+  if (Number.isNaN(days)) return null;
+  if (days <= 30) return 'active';
+  if (days <= 90) return 'warm';
+  if (days <= 180) return 'cooling';
+  if (days <= 365) return 'stale';
+  return 'dormant';
+}
+
+function lastSeenIsoFor(contact: Contact): string | null {
+  const withInteraction = contact as Contact & { lastInteractionAt?: Date | string | null };
+  const lastSeen = withInteraction.lastInteractionAt ?? contact.lastSynced;
+  if (!lastSeen) return null;
+  return lastSeen instanceof Date ? lastSeen.toISOString() : lastSeen;
+}
+
+function labelForRfmCohort(cohort: RfmCohort, count: number): string {
+  return `${cohort} (${count} contacts)`;
+}
+
+function titleForRfmCohort(cohort: RfmCohort): string {
+  switch (cohort) {
+    case 'active': return 'Active Contacts';
+    case 'warm': return 'Warm Contacts';
+    case 'cooling': return 'Cooling Contacts';
+    case 'stale': return 'Stale Contacts';
+    case 'dormant': return 'Dormant Contacts';
+  }
+}
+
 /**
  * AI-powered circle auto-detection.
  * Groups contacts by company, then uses AI to suggest circle names.
@@ -336,7 +401,7 @@ export async function calculateCircleHealth(
 export async function autoDetectCircles(
   userId: string,
   contacts: Contact[]
-): Promise<Omit<ContactCircle, 'id' | 'createdAt' | 'updatedAt'>[]> {
+): Promise<CircleSuggestion[]> {
   if (contacts.length === 0) return [];
 
   // Group contacts by company
@@ -354,7 +419,7 @@ export async function autoDetectCircles(
     .filter(([, members]) => members.length >= 2)
     .slice(0, 10); // cap at 10 suggestions
 
-  const suggestions: Omit<ContactCircle, 'id' | 'createdAt' | 'updatedAt'>[] = [];
+  const suggestions: CircleSuggestion[] = [];
 
   for (let i = 0; i < companyGroups.length; i++) {
     const [companyKey, members] = companyGroups[i];
@@ -371,6 +436,9 @@ export async function autoDetectCircles(
     } catch { /* keep display name */ }
 
     suggestions.push({
+      type: 'company',
+      label: displayName,
+      contact_ids: members.map(m => m.id),
       userId,
       name: circleName,
       description: `${members.length} contacts from ${displayName}`,
@@ -390,6 +458,9 @@ export async function autoDetectCircles(
 
   if (recentContacts.length >= 2) {
     suggestions.push({
+      type: 'rfm_cohort',
+      label: labelForRfmCohort('active', recentContacts.length),
+      contact_ids: recentContacts.map(c => c.id),
       userId,
       name: 'Recently Added',
       description: `${recentContacts.length} contacts added in the last 30 days`,
@@ -397,6 +468,63 @@ export async function autoDetectCircles(
       icon: '✨',
       source: 'auto',
       memberContactIds: recentContacts.map(c => c.id),
+      healthScore: undefined,
+    });
+  }
+
+  const byEmailDomain: Record<string, Contact[]> = {};
+  for (const contact of contacts) {
+    const key = emailDomainClusterKey(contact.email);
+    if (!key) continue;
+    if (!byEmailDomain[key]) byEmailDomain[key] = [];
+    byEmailDomain[key].push(contact);
+  }
+
+  const emailDomainGroups = Object.entries(byEmailDomain)
+    .filter(([, members]) => members.length >= 2);
+
+  for (const [domain, members] of emailDomainGroups) {
+    suggestions.push({
+      type: 'email_domain',
+      label: domain,
+      contact_ids: members.map(m => m.id),
+      userId,
+      name: domain,
+      description: `${members.length} contacts with ${domain} email addresses`,
+      color: getCircleColorForIndex(suggestions.length),
+      source: 'auto',
+      memberContactIds: members.map(m => m.id),
+      healthScore: undefined,
+    });
+  }
+
+  const byRfmCohort: Record<RfmCohort, Contact[]> = {
+    active: [],
+    warm: [],
+    cooling: [],
+    stale: [],
+    dormant: [],
+  };
+
+  for (const contact of contacts) {
+    const cohort = rfmCohortFor(lastSeenIsoFor(contact));
+    if (cohort) byRfmCohort[cohort].push(contact);
+  }
+
+  const rfmCohorts: RfmCohort[] = ['active', 'warm', 'cooling', 'stale', 'dormant'];
+  for (const cohort of rfmCohorts) {
+    const members = byRfmCohort[cohort];
+    if (members.length < 2) continue;
+    suggestions.push({
+      type: 'rfm_cohort',
+      label: labelForRfmCohort(cohort, members.length),
+      contact_ids: members.map(c => c.id),
+      userId,
+      name: titleForRfmCohort(cohort),
+      description: `${members.length} contacts in the ${cohort} recency cohort`,
+      color: getCircleColorForIndex(suggestions.length),
+      source: 'auto',
+      memberContactIds: members.map(c => c.id),
       healthScore: undefined,
     });
   }

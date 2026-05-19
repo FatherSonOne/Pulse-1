@@ -137,6 +137,19 @@ export const HoverReactionTrigger: React.FC<HoverReactionTriggerProps> = ({
   const longPressStartTime = useRef<number>(0);
   const longPressAnimationRef = useRef<number | null>(null);
 
+  // When `disabled` flips to true while the reaction bar is already
+  // showing (e.g. right-click fires the context menu mid-hover), the
+  // hover-handler guards alone don't close it because the mouse never
+  // left the bubble. Force-hide here so the new menu doesn't render on
+  // top of a stale hover-bar.
+  useEffect(() => {
+    if (disabled && (showReactionBar || isPendingHover)) {
+      setShowReactionBar(false);
+      setIsPendingHover(false);
+      setIsExiting(false);
+    }
+  }, [disabled, showReactionBar, isPendingHover]);
+
   // Calculate optimal position for reaction bar
   const calculatePosition = useCallback(() => {
     if (!containerRef.current) return {};
@@ -253,10 +266,14 @@ export const HoverReactionTrigger: React.FC<HoverReactionTriggerProps> = ({
     }, 300);
   }, []);
 
-  // Use the hover hook with extended callbacks
+  // Use the hover hook with extended callbacks.
+  // unhoverDelay is generous enough for the user's mouse to traverse the
+  // 8px gap from the message bubble up/down to the floating reaction bar.
+  // 100ms was too aggressive — users frequently lost the bar before they
+  // could click a reaction. 450ms matches iMessage / Slack tapback timing.
   const { isHovering, hoverRef, isLongPressed } = useHoverWithDelay({
     hoverDelay,
-    unhoverDelay: 100,
+    unhoverDelay: 450,
     onHoverStart: handleHoverStart,
     onHoverEnd: handleHoverEnd,
     enableLongPress: enableMobileLongPress,

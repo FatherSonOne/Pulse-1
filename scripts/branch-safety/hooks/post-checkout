@@ -1,0 +1,65 @@
+#!/bin/sh
+# Pulse — Branch-swap safety + LFS handoff.
+#
+# 1. Branch-swap detector. Prints a loud header whenever the working
+#    tree moves between branches so parallel sessions can SEE the swap
+#    in their terminal output. Doesn't block the swap (git already
+#    refuses to drop tracked changes), but surfaces commit deltas and
+#    untracked-file counts so a Claude session can react instead of
+#    silently losing context.
+# 2. Git LFS handoff (unchanged from the original Git for Windows hook).
+#
+# Args: $1 = previous HEAD sha, $2 = new HEAD sha, $3 = branch flag
+# (1 = branch checkout, 0 = file checkout).
+
+prev_HEAD="$1"
+new_HEAD="$2"
+branch_flag="$3"
+
+if [ "$branch_flag" = "1" ]; then
+  new_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+  prev_branch=$(git name-rev --name-only "$prev_HEAD" 2>/dev/null | sed 's|\^.*||;s|~.*||')
+
+  # Skip the banner if we landed on the same branch (e.g. detached HEAD recovery).
+  if [ "$prev_HEAD" != "$new_HEAD" ]; then
+    printf '\n'
+    printf '===============================================================\n'
+    printf '  BRANCH SWAP DETECTED\n'
+    printf '===============================================================\n'
+    printf '   from:  %s  (%s)\n' "$prev_branch" "$(echo "$prev_HEAD" | cut -c1-7)"
+    printf '   to:    %s  (%s)\n' "$new_branch" "$(echo "$new_HEAD" | cut -c1-7)"
+    printf '\n'
+    printf '   tip:   '
+    git log -1 --oneline 2>/dev/null
+    printf '\n'
+
+    # How far did we diverge?
+    base=$(git merge-base "$prev_HEAD" HEAD 2>/dev/null)
+    if [ -n "$base" ] && [ "$base" != "$prev_HEAD" ]; then
+      lost=$(git rev-list --count "$base".."$prev_HEAD" 2>/dev/null)
+      gained=$(git rev-list --count "$base"..HEAD 2>/dev/null)
+      if [ "$lost" -gt "0" ] || [ "$gained" -gt "0" ]; then
+        printf '   delta: %s commit(s) on previous branch are NOT in this one\n' "$lost"
+        printf '          %s commit(s) on this branch are NOT in previous\n' "$gained"
+        if [ "$lost" -gt "0" ]; then
+          printf '\n'
+          printf '   WARN:  If a Claude / AI session was working on %s\n' "$prev_branch"
+          printf '          its uncommitted files are GONE from the working tree.\n'
+          printf '          Recover with:  git checkout %s   OR   git merge %s\n' "$prev_branch" "$prev_branch"
+        fi
+      fi
+    fi
+
+    # Untracked-file count - easy to lose if next swap happens before commit.
+    untracked=$(git status --porcelain 2>/dev/null | grep -c '^??')
+    if [ "$untracked" -gt "0" ]; then
+      printf '\n'
+      printf '   NOTE:  %s untracked file(s) in working tree - commit before next swap.\n' "$untracked"
+    fi
+    printf '===============================================================\n\n'
+  fi
+fi
+
+# Git LFS handoff (preserved from original hook).
+command -v git-lfs >/dev/null 2>&1 || { printf >&2 "\n%s\n\n" "This repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting the 'post-checkout' file in the hooks directory (set by 'core.hookspath'; usually '.git/hooks')."; exit 2; }
+git lfs post-checkout "$@"

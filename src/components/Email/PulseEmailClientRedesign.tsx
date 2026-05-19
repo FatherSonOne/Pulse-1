@@ -463,7 +463,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
 
         {/* Header — search dominates, secondary controls quiet */}
         <div className="flex items-center gap-4 px-6 py-4 border-b border-stone-200 dark:border-zinc-800">
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden w-9 h-9 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-400 transition" aria-label="Open menu"><Menu className="w-4 h-4" /></button>
+          <button onClick={() => setSidebarOpen(true)} className="md:hidden w-11 h-11 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-400 transition" aria-label="Open menu"><Menu className="w-5 h-5" /></button>
 
           {/* Search — primary surface */}
           <div className="flex-1 relative max-w-2xl">
@@ -473,11 +473,21 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="Search emails"
-              className="w-full bg-stone-100/70 dark:bg-white/[0.03] border border-transparent hover:border-stone-200 dark:hover:border-white/10 rounded-lg pl-10 pr-9 py-2 text-sm text-stone-900 dark:text-white placeholder-stone-500 dark:placeholder-zinc-500 focus:outline-none focus:border-rose-500/60 focus:bg-white dark:focus:bg-zinc-900 transition-colors"
+              aria-label="Search emails"
+              enterKeyHint="search"
+              className="w-full h-11 bg-stone-100/70 dark:bg-white/[0.03] border border-transparent hover:border-stone-200 dark:hover:border-white/10 rounded-lg pl-10 pr-11 text-sm text-stone-900 dark:text-white placeholder-stone-500 dark:placeholder-zinc-500 focus:outline-none focus:border-rose-500/60 focus:bg-white dark:focus:bg-zinc-900 transition-colors"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-zinc-500" />
             {searchQuery && (
-              <button type="button" title="Clear search" onClick={() => { setSearchQuery(''); loadEmails(); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white"><X className="w-3.5 h-3.5" /></button>
+              <button
+                type="button"
+                title="Clear search"
+                aria-label="Clear search"
+                onClick={() => { setSearchQuery(''); loadEmails(); }}
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-md flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:bg-stone-200/70 dark:hover:bg-white/[0.06] hover:text-stone-700 dark:hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
             )}
           </div>
 
@@ -492,7 +502,8 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
             {currentFolder === 'inbox' && (
               <button
                 onClick={() => setShowBriefing(!showBriefing)}
-                className={`hidden sm:flex items-center gap-2 px-3 h-9 rounded-lg text-sm transition ${
+                aria-pressed={showBriefing}
+                className={`hidden sm:flex items-center gap-2 px-3 h-10 rounded-lg text-sm transition ${
                   showBriefing
                     ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
                     : 'text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white'
@@ -506,9 +517,10 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
             <button
               onClick={handleSync}
               disabled={syncing}
-              className="relative w-9 h-9 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white flex items-center justify-center transition disabled:opacity-40"
+              className="relative w-10 h-10 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white flex items-center justify-center transition disabled:opacity-40"
               title="Sync emails"
-              aria-label="Sync emails"
+              aria-label={syncing ? 'Syncing emails' : 'Sync emails'}
+              aria-busy={syncing}
             >
               <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncPulseKey > 0 && (
@@ -518,7 +530,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
 
             <button
               onClick={() => setShowEmailSettings(true)}
-              className="w-9 h-9 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white flex items-center justify-center transition"
+              className="w-10 h-10 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white flex items-center justify-center transition"
               title="Email settings"
               aria-label="Open email settings"
             >

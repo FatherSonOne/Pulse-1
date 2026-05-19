@@ -11,6 +11,7 @@ import {
   logoutUser,
   connectProvider,
   syncGoogleContacts,
+  CONTACTS_PHASE_A_ENABLED,
   revokeGoogleAccess,
   disconnectGoogleAccount,
   forceRefreshSession,
@@ -44,6 +45,11 @@ interface AuthContextType {
   checkSessionValid: () => Promise<boolean>;
 
   // Data sync
+  /**
+   * @deprecated Under Phase A (CONTACTS_PHASE_A_ENABLED). Triggers the legacy
+   * unbounded Google contacts bulk import. Will be removed once all callers
+   * migrate to ConnectContactsModal / importSelectedLabels().
+   */
   syncContacts: () => Promise<void>;
 }
 
@@ -176,6 +182,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const handleSyncContacts = async (): Promise<void> => {
     try {
+      if (CONTACTS_PHASE_A_ENABLED) {
+        console.warn('[AuthContext] syncContacts is deprecated under Phase A.');
+        return;
+      }
       await syncGoogleContacts();
     } catch (error) {
       console.error('[AuthProvider] Sync contacts failed:', error);

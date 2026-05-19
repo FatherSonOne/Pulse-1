@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Contact } from '../../types';
 import { LeadGradeBadge, LeadStatusBadge } from './LeadScoreIndicator';
 import { LeadScoreCard } from './LeadScoreIndicator';
@@ -17,6 +18,9 @@ import { getGoalForContact, upsertGoal, deleteGoal, markActionComplete } from '.
 import { ContactGoalModal } from './ContactGoalModal';
 import { RelationshipAutopilotToggle } from './RelationshipAutopilotToggle';
 import { supabase } from '../../services/supabase';
+import { useWorkspaceData } from '../../contexts/WorkspaceContext';
+import { listWorkspaceContacts, type WorkspaceSharedContact } from '../../services/workspaceContactsService';
+import { ProvenanceChip, type ContactProvenanceSource } from './ProvenanceChip';
 
 import toast from 'react-hot-toast';
 import { ArrowRight, Cake, Check, Clock, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Sparkles, Star, Target, Trash2, Video, X } from 'lucide-react';
@@ -109,6 +113,8 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   onRefreshInsights,
   onSuggestedAction,
 }) => {
+  const { t } = useTranslation();
+  const { currentWorkspace } = useWorkspaceData();
   const [summaryExpanded, setSummaryExpanded] = useState(true);
   const [notesEditing, setNotesEditing] = useState(false);
   const [goal, setGoal] = useState<ContactGoal | null>(null);
@@ -119,6 +125,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   // ----- Email history (Phase 3) -----
   const [emailHistory, setEmailHistory] = useState<EmailHistoryItem[]>([]);
   const [emailHistoryLoading, setEmailHistoryLoading] = useState(false);
+  const [workspaceAuditEntries, setWorkspaceAuditEntries] = useState<WorkspaceSharedContact[]>([]);
 
   // Load goal for this contact
   useEffect(() => {
@@ -153,6 +160,20 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
     return () => { cancelled = true; };
   }, [contact?.email, userId]);
 
+  useEffect(() => {
+    if (!contact?.id || !currentWorkspace?.id) {
+      setWorkspaceAuditEntries([]);
+      return;
+    }
+    let cancelled = false;
+    listWorkspaceContacts(currentWorkspace.id)
+      .then(entries => {
+        if (!cancelled) setWorkspaceAuditEntries(entries.filter(entry => entry.id === contact.id));
+      })
+      .catch(error => console.warn('[ContactDetail] workspace audit fetch failed:', error));
+    return () => { cancelled = true; };
+  }, [contact?.id, currentWorkspace?.id]);
+
   if (!contact) return null;
 
   const profile = relationshipProfile;
@@ -162,6 +183,8 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   const trendIcon = trend ? getTrendIcon(trend) : null;
   const trendColor = trend ? getTrendColor(trend) : '#6b7280';
   const ringClass = score !== undefined ? getRelationshipRingClass(score) : '';
+  const provenanceSource = ((contact as Contact & { import_source?: ContactProvenanceSource }).import_source
+    ?? (contact.source === 'google' ? 'google' : contact.source === 'local' ? 'manual' : 'legacy')) as ContactProvenanceSource;
 
   return (
     <>
@@ -177,6 +200,11 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             <X />
           </button>
           <span className="font-semibold text-zinc-900 dark:text-white text-sm">Contact Details</span>
+          <ProvenanceChip
+            variant="chip"
+            source={provenanceSource}
+            addedAt={(contact as Contact & { created_at?: string }).created_at}
+          />
         </div>
         <div className="flex gap-1">
           <button
@@ -673,6 +701,39 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
         {/* ── Email History (Phase 3) ── */}
         <div className="px-6 py-4">
           <SectionHeader icon="fa-solid fa-envelope-clock" label="Email History" />
+          {workspaceAuditEntries.length > 0 && (
+            <div
+              className="mb-4 rounded-xl border p-3"
+              style={{ background: 'var(--pulse-surface-raised)', borderColor: 'var(--pulse-border)' }}
+            >
+              <p
+                className="mb-2 text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--pulse-ink-3)' }}
+              >
+                {t('contacts.workspaceShare.audit_title')}
+              </p>
+              <div className="space-y-2">
+                {workspaceAuditEntries.map(entry => {
+                  const sharedBy = entry.shared_by
+                    ? t('contacts.workspaceShare.audit_shared_by', { user: entry.shared_by })
+                    : ` ${t('contacts.workspaceShare.shared_by_former_user')}`;
+                  return (
+                    <div
+                      key={`${entry.id}-${entry.shared_at}`}
+                      className="text-xs"
+                      style={{ color: 'var(--pulse-ink-2)' }}
+                    >
+                      {t('contacts.workspaceShare.audit_shared_with', {
+                        workspace: currentWorkspace?.name ?? '',
+                        date: new Date(entry.shared_at).toLocaleDateString(),
+                        by: sharedBy,
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {emailHistoryLoading ? (
             <div className="flex items-center justify-center py-6">
               <Loader2 className="animate-spin text-indigo-500" />
