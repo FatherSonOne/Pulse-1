@@ -23,6 +23,25 @@ export interface FeatureFlags {
   toneAnalysis: boolean;
   scheduledMessages: boolean;
   draftManager: boolean;
+
+  // PR 2 — Messages Tools Redesign · Surface 2 (message context-menu).
+  // Gates the new long-press / right-click menu, quick-reactions bar,
+  // and "edited" badge tooltip. Legacy menu renders when off.
+  messageContextMenuV2: boolean;
+
+  // PR 1 — Messages Tools Redesign · Surface 1 (compose bar).
+  // Gates the new PulseComposer (attach sheet, Smart Compose ghost-text,
+  // format-on-selection popover, /t templates + / generic slash autocomplete,
+  // Tools menu opener). Legacy `MessageInput` renders when off. Voice and
+  // schedule send are deliberately deferred to follow-up PRs.
+  pulseComposerV2: boolean;
+
+  // PR 3a — Messages Tools Redesign · Surface 3 (slim Tools menu shell).
+  // Gates the new ToolsMenuV2 (search box + Thread Audit tile + Translate
+  // Settings tile). Renders ToolsMenuPlaceholder when off. Thread Summary
+  // and Insights tiles ship in PR 3b — not visible in PR 3a even when on.
+  // Carries ZERO coral; coral budget is reserved for PR 3b.
+  toolsMenuV2: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -55,6 +74,15 @@ const DEFAULT_FEATURES: FeatureFlags = {
   toneAnalysis: false,
   scheduledMessages: false,
   draftManager: false,
+
+  // PR 2 — default off until rollout
+  messageContextMenuV2: false,
+
+  // PR 1 — default off until rollout
+  pulseComposerV2: false,
+
+  // PR 3a — default off until rollout
+  toolsMenuV2: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -210,6 +238,15 @@ export const FEATURE_CATEGORIES = {
       'scheduledMessages',
       'draftManager'
     ] as (keyof FeatureFlags)[]
+  },
+  messagesRedesign: {
+    name: 'Messages Tools Redesign (Beta)',
+    description: 'New compose bar, context-menu, and slim Tools menu. Toggle independently to A/B against legacy.',
+    features: [
+      'pulseComposerV2',
+      'messageContextMenuV2',
+      'toolsMenuV2'
+    ] as (keyof FeatureFlags)[]
   }
 };
 
@@ -224,4 +261,7 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   toneAnalysis: 'Tone Analysis',
   scheduledMessages: 'Scheduled Messages',
   draftManager: 'Draft Manager',
+  messageContextMenuV2: 'New Message Context-Menu (Beta)',
+  pulseComposerV2: 'New Compose Bar (Beta)',
+  toolsMenuV2: 'New Tools Menu (Beta)',
 };

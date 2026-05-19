@@ -61,7 +61,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
       onClick={onClick}
       aria-current={isActive ? 'page' : undefined}
       aria-label={ariaLabel ?? label}
-      className={`relative w-full flex items-center gap-3 pl-4 pr-3 h-9 rounded-md text-left text-sm transition-colors group ${
+      className={`relative w-full flex items-center gap-3 pl-4 pr-3 min-h-11 rounded-md text-left text-sm transition-colors group ${
         isActive
           ? 'text-rose-600 dark:text-rose-400 bg-rose-500/[0.06] dark:bg-rose-500/[0.08] font-medium'
           : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100/70 dark:hover:bg-white/[0.04] font-normal'
@@ -121,7 +121,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="md:hidden w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.04] flex items-center justify-center text-stone-500 dark:text-zinc-400 transition"
+            className="md:hidden w-11 h-11 rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.04] flex items-center justify-center text-stone-500 dark:text-zinc-400 transition"
             aria-label="Close menu"
           >
             <X className="w-4 h-4" />
@@ -132,7 +132,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
         <div className="px-3 pt-4 pb-2">
           <button
             onClick={onCompose}
-            className="w-full flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white h-10 rounded-lg font-medium text-sm transition-colors shadow-[0_1px_0_rgba(244,63,94,0.2),0_4px_12px_rgba(244,63,94,0.18)]"
+            className="w-full flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white min-h-11 rounded-lg font-medium text-sm transition-colors shadow-[0_1px_0_rgba(244,63,94,0.2),0_4px_12px_rgba(244,63,94,0.18)]"
             aria-label="Compose new email"
           >
             <SquarePen className="w-4 h-4" />

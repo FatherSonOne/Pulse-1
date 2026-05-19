@@ -9,9 +9,10 @@
 // receiver loses access the moment the broadcaster goes quiet.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Check, Radio, Users, X } from 'lucide-react';
 import { Contact } from '../../../types';
+import { useDialogA11y } from './useDialogA11y';
 
 interface BroadcastRecipientPickerProps {
   contacts: Contact[];
@@ -37,6 +38,7 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Set<string>>(() => new Set(initialSelectedUserIds));
   const sheetRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -44,27 +46,10 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
     return eligible.filter(c => c.name.toLowerCase().includes(q));
   }, [eligible, query]);
 
-  // Focus trap + Esc close. Same pattern other Map sheets use so the keyboard
-  // story stays consistent across overlays.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); onCancel(); return; }
-      if (e.key !== 'Tab') return;
-      const root = sheetRef.current;
-      if (!root) return;
-      const focusables = Array.from(
-        root.querySelectorAll<HTMLElement>('input, button, [tabindex]:not([tabindex="-1"])'),
-      ).filter(el => !el.hasAttribute('disabled'));
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-      if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  // Shared dialog a11y — focus trap, Escape, restore focus to trigger on
+  // unmount. Initial focus goes to the search input (the most useful entry
+  // point — operator usually starts typing a name to narrow the list).
+  useDialogA11y({ containerRef: sheetRef, onClose: onCancel, initialFocusRef: searchInputRef });
 
   const toggleContact = (userId: string) => {
     setSelected(prev => {
@@ -85,7 +70,7 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
       onClick={onCancel}
       role="dialog"
       aria-modal="true"
-      aria-label="Pick recipients for your live broadcast"
+      aria-labelledby="broadcast-picker-title"
     >
       <div
         ref={sheetRef}
@@ -97,8 +82,9 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
       >
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDarkMode ? 'border-white/10' : 'border-gray-100'}`}>
           <div className="flex items-center gap-2">
-            <Radio size={14} className="text-rose-500" />
+            <Radio size={14} className="text-rose-500" aria-hidden="true" />
             <span
+              id="broadcast-picker-title"
               className="text-[11px] tracking-[0.1em] uppercase"
               style={{ fontFamily: "'JetBrains Mono', monospace" }}
             >
@@ -108,22 +94,23 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            aria-label="Cancel broadcast"
-            className={`p-1 rounded transition-colors ${
+            aria-label="Close"
+            className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
               isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'
             }`}
           >
-            <X size={14} />
+            <X size={14} aria-hidden="true" />
           </button>
         </div>
 
         <div className="px-4 py-3 space-y-3">
           <input
-            autoFocus
+            ref={searchInputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search Pulse contacts…"
+            aria-label="Search Pulse contacts"
             className={`w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors ${
               isDarkMode
                 ? 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-rose-500'
@@ -131,7 +118,11 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
             }`}
           />
           <div className="flex items-center justify-between text-xs">
-            <span className={isDarkMode ? 'text-gray-500' : 'text-gray-500'}>
+            <span
+              className={isDarkMode ? 'text-gray-500' : 'text-gray-500'}
+              aria-live="polite"
+              aria-atomic="true"
+            >
               {selected.size} selected of {eligible.length}
             </span>
             <div className="flex items-center gap-3">
@@ -159,7 +150,12 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
           </div>
         </div>
 
-        <div className="max-h-72 overflow-y-auto border-t" style={{ borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }}>
+        <div
+          role="group"
+          aria-labelledby="broadcast-picker-title"
+          className="max-h-72 overflow-y-auto border-t"
+          style={{ borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }}
+        >
           {eligible.length === 0 ? (
             <p className={`px-4 py-10 text-sm text-center ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
               No Pulse-linked contacts yet. Invite a teammate to share live location.
@@ -172,17 +168,31 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
             filtered.map(c => {
               const userId = c.pulseUserId!;
               const isSelected = selected.has(userId);
+              const accessibleName = c.role ? `${c.name}, ${c.role}` : c.name;
               return (
                 <button
                   key={c.id}
                   type="button"
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  aria-label={accessibleName}
                   onClick={() => toggleContact(userId)}
-                  aria-pressed={isSelected}
+                  onKeyDown={(e) => {
+                    // role=checkbox on <button>: Space already toggles via
+                    // the button's native click behaviour. Enter does too on
+                    // most browsers — explicit handler keeps SR / keyboard
+                    // parity with native <input type=checkbox>.
+                    if (e.key === ' ' || e.key === 'Enter') {
+                      e.preventDefault();
+                      toggleContact(userId);
+                    }
+                  }}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:bg-rose-500/10 ${
                     isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'
                   }`}
                 >
                   <div
+                    aria-hidden="true"
                     className={`w-5 h-5 rounded flex items-center justify-center transition-colors flex-shrink-0 ${
                       isSelected
                         ? 'bg-rose-500 text-white'
@@ -193,12 +203,13 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
                     <Check size={11} />
                   </div>
                   <div
+                    aria-hidden="true"
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
                     style={{ backgroundColor: c.avatarColor || '#f43f5e' }}
                   >
                     {c.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                   </div>
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1" aria-hidden="true">
                     <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       {c.name}
                     </p>
@@ -228,10 +239,11 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
             type="button"
             onClick={() => onConfirm(Array.from(selected))}
             disabled={selected.size === 0}
+            aria-label={`Broadcast to ${selected.size} ${selected.size === 1 ? 'recipient' : 'recipients'}`}
             className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1"
           >
-            <Users size={11} />
-            Broadcast to {selected.size}
+            <Users size={11} aria-hidden="true" />
+            <span aria-hidden="true">Broadcast to {selected.size}</span>
           </button>
         </div>
       </div>

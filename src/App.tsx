@@ -40,7 +40,7 @@ import { ContextHandoff } from './components/health/ContextHandoff';
 import { NotificationCenter } from './components/NotificationCenter';
 import { LoadingProvider, useLoading } from './contexts/LoadingContext';
 import EnhancedLoadingScreen from './components/EnhancedLoadingScreen';
-import { loginWithGoogle, loginWithEmail, signUpWithEmail, loginWithMicrosoft, syncGoogleContacts } from './services/authService';
+import { CONTACTS_PHASE_A_ENABLED, loginWithGoogle, loginWithEmail, signUpWithEmail, loginWithMicrosoft, syncGoogleContacts } from './services/authService';
 import { dataService } from './services/dataService';
 import { useNotificationStore } from './store/notificationStore';
 import { Contact, AppView } from './types';
@@ -556,7 +556,7 @@ const App: React.FC = () => {
       setIsLoadingContacts(false); // ✅ Unblock UI now - don't wait for Google sync
 
       // STEP 2: Sync Google Contacts in background (SLOW - non-blocking)
-      if (syncGoogle) {
+      if (syncGoogle && !CONTACTS_PHASE_A_ENABLED) {
         // Don't await - run in background
         syncGoogleContacts()
           .then(googleContacts => {

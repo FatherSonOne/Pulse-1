@@ -1,25 +1,47 @@
 // ReconnectGoogleModal.tsx - Seamless Google Re-Authentication Modal
 // Allows users to reconnect Google account without full logout/login
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 interface ReconnectGoogleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   message?: string;
+  title?: string;
+  whyText?: string;
+  invalidGrantReason?: 'revoked' | 'expired';
 }
+
+const focusableSelector = [
+  'button:not([disabled])',
+  'input:not([disabled])',
+  '[href]',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
 
 export const ReconnectGoogleModal: React.FC<ReconnectGoogleModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  message = 'Your Google session has expired. Please reconnect to continue using email features.'
+  message = 'Your Google session has expired. Please reconnect to continue using email features.',
+  title = 'Reconnect Google Account',
+  whyText = 'Google access tokens expire periodically for security. Reconnecting refreshes your access without losing your work.',
+  invalidGrantReason,
 }) => {
+  const { t } = useTranslation();
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const laterButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    window.setTimeout(() => laterButtonRef.current?.focus(), 0);
+  }, [isOpen]);
 
   const handleReconnect = async () => {
     setIsReconnecting(true);
@@ -57,6 +79,27 @@ export const ReconnectGoogleModal: React.FC<ReconnectGoogleModalProps> = ({
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      onClose();
+      return;
+    }
+
+    if (event.key !== 'Tab' || !dialogRef.current) return;
+    const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(focusableSelector));
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -67,8 +110,10 @@ export const ReconnectGoogleModal: React.FC<ReconnectGoogleModalProps> = ({
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
+        onKeyDown={handleKeyDown}
       >
         <motion.div
+          ref={dialogRef}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
@@ -95,7 +140,7 @@ export const ReconnectGoogleModal: React.FC<ReconnectGoogleModalProps> = ({
 
           {/* Title */}
           <h2 className="text-2xl font-bold text-white text-center mb-2">
-            Reconnect Google Account
+            {title}
           </h2>
 
           {/* Message */}
@@ -103,18 +148,34 @@ export const ReconnectGoogleModal: React.FC<ReconnectGoogleModalProps> = ({
             {message}
           </p>
 
+          {invalidGrantReason === 'revoked' && (
+            <div
+              role="alert"
+              className="border-l-4 p-3 rounded mb-4"
+              style={{
+                borderColor: 'var(--pulse-tone-overdue)',
+                background: 'var(--pulse-tone-overdue-soft)',
+                color: 'var(--pulse-ink)',
+              }}
+            >
+              <strong>{t('contacts.invalidGrantBanner.headline')}</strong>
+              <p className="text-sm mt-1">{t('contacts.invalidGrantBanner.body')}</p>
+            </div>
+          )}
+
           {/* Why this happened */}
           <div className="bg-zinc-800/50 rounded-lg p-4 mb-6">
             <p className="text-sm text-zinc-400">
               <span className="text-zinc-300 font-semibold">Why did this happen?</span>
               <br />
-              Google access tokens expire periodically for security. Reconnecting refreshes your access without losing your work.
+              {whyText}
             </p>
           </div>
 
           {/* Actions */}
           <div className="flex gap-3">
             <button
+              ref={laterButtonRef}
               onClick={onClose}
               disabled={isReconnecting}
               className="flex-1 px-4 py-3 rounded-lg bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"

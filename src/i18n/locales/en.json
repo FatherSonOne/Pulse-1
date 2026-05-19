@@ -213,6 +213,56 @@
       "source_legacy": "Unknown origin",
       "dot_tooltip_format": "{{source}} - added {{date}}",
       "chip_label_format": "{{source}}"
+    },
+    "empty": {
+      "headline": "Your people are quiet here.",
+      "body": "We didn't bring any contacts in. When you're ready, pick exactly who Pulse should know about — one at a time, or in groups.",
+      "cta_primary": "Connect Contacts",
+      "cta_secondary": "Add one manually"
+    },
+    "connectModal": {
+      "headline": "Choose who Pulse sees.",
+      "body": "We'll show your Google Contacts groups. Tick only the people you want in Pulse. Skipped contacts stay on Google — we just won't see them.",
+      "group_label_unlabeled": "Other (uncategorized)",
+      "select_all_in_group": "Select all in {{group}}",
+      "select_contact": "Select {{name}}",
+      "selected_count": "{{count}} selected",
+      "orphan_bucket_label": "Include uncategorized contacts",
+      "orphan_bucket_default_off_note": "Off by default — most uncategorized contacts are noise.",
+      "cta_primary": "Connect selected ({{count}})",
+      "cta_secondary": "Cancel",
+      "error_workspace_not_ready": "Your workspace isn't ready yet. Try again in a moment.",
+      "error_generic": "We couldn't connect those contacts. Try again in a moment."
+    },
+    "trimWizard": {
+      "headline": "One last look.",
+      "body": "These {{count}} contacts came in. Anyone who looks off — a vendor, a one-off, an old number — uncheck them now and we'll skip them. You can always add them back later.",
+      "default_keep_banner": "All contacts kept by default. Uncheck any you want to skip.",
+      "inverted_default_banner": "Large import — start by checking only the contacts you want to keep.",
+      "row_skip_aria": "Skip {{name}}",
+      "counter": "Keeping {{kept}} / Skipping {{skipped}}",
+      "cta_primary": "Keep checked ({{count}})",
+      "cta_secondary": "Skip trimming",
+      "skip_confirm": "Skip {{count}} contacts? They'll stay on Google but Pulse won't see them.",
+      "trim_complete_toast": "Connected {{kept}} contacts. {{skipped}} skipped.",
+      "trim_error_toast": "We couldn't finish trimming contacts. Try again in a moment.",
+      "check_all": "Check all",
+      "uncheck_all": "Uncheck all",
+      "keep_label": "Keep"
+    },
+    "scopeLossToast": {
+      "title": "Contacts permission missing",
+      "body": "Pulse can read your messages but not your contacts. Reconnect to fix permissions.",
+      "cta": "Reconnect",
+      "dismiss": "Dismiss"
+    },
+    "invalidGrantBanner": {
+      "headline": "Google revoked this session.",
+      "body": "Your last connection was cancelled by Google or you. Reconnect to restore access — your data stays put."
+    },
+    "reconnectModal": {
+      "title": "Reconnect Google Contacts",
+      "message": "Pulse needs Google Contacts permission before it can connect selected people."
     }
   }
 }

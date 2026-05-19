@@ -13,6 +13,14 @@ import { TodayView } from './TodayView';
 import { CirclesView } from './CirclesView';
 import { ContactsOnboarding, shouldShowContactsTour } from './ContactsOnboarding';
 import { useContactsKeyboard } from './useContactsKeyboard';
+import { ContactsEmptyState } from './ContactsEmptyState';
+import { ConnectContactsModal } from './ConnectContactsModal';
+import { TrimWizard } from './TrimWizard';
+import { AddContactModal } from './AddContactModal';
+import { ReconnectGoogleModal } from '../Auth/ReconnectGoogleModal';
+import { CONTACTS_PHASE_A_ENABLED } from '../../services/authService';
+import { useWorkspaceData } from '../../contexts/WorkspaceContext';
+import { useTranslation } from 'react-i18next';
 
 import { MapPin, Search } from 'lucide-react';
 
@@ -73,11 +81,20 @@ const TABS: ModeTab[] = [
 // ==================== MAIN COMPONENT ====================
 
 export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
+  const { t } = useTranslation();
+  const { currentWorkspace } = useWorkspaceData();
   const [activeMode, setActiveMode] = useState<ContactsMode>(props.initialMode ?? 'today');
   const [showTour, setShowTour] = useState(() => shouldShowContactsTour());
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
+  const [trimWizardOpen, setTrimWizardOpen] = useState(false);
+  const [importedContactsForTrim, setImportedContactsForTrim] = useState<Contact[]>([]);
+  const [reconnectModalOpen, setReconnectModalOpen] = useState(false);
+  const [manualAddModalOpen, setManualAddModalOpen] = useState(false);
   // Defers the search-focus until after the People tab has actually rendered,
   // instead of the previous setTimeout(..., 100) race. Cleared once consumed.
   const pendingSearchFocusRef = useRef(false);
+  const workspaceId = currentWorkspace?.id ?? '';
+  const showPhaseAEmpty = CONTACTS_PHASE_A_ENABLED && props.contacts.length === 0;
 
   // Focus the People tab's search input (selector via data attribute).
   const handleSearchFocus = useCallback(() => {
@@ -100,6 +117,24 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
       pendingSearchFocusRef.current = false;
     }
   }, [activeMode]);
+
+  useEffect(() => {
+    if (!CONTACTS_PHASE_A_ENABLED) return;
+
+    const openHandler = () => setConnectModalOpen(true);
+    const scopeMissingHandler = () => {
+      import('../../services/toastFactory').then(module => {
+        module.showScopeLossToast(() => setReconnectModalOpen(true));
+      });
+    };
+
+    window.addEventListener('pulse:contacts:open-connect-modal', openHandler);
+    window.addEventListener('pulse:contacts:scope-missing', scopeMissingHandler);
+    return () => {
+      window.removeEventListener('pulse:contacts:open-connect-modal', openHandler);
+      window.removeEventListener('pulse:contacts:scope-missing', scopeMissingHandler);
+    };
+  }, []);
 
   // Keyboard shortcuts
   useContactsKeyboard({
@@ -179,31 +214,81 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
 
       {/* Mode content */}
       <div className="flex-1 overflow-hidden">
-        {activeMode === 'today' && (
-          <TodayView onAction={props.onAction} contacts={props.contacts} />
-        )}
-        {activeMode === 'people' && (
-          <ContactsRedesigned
-            contacts={props.contacts}
-            onAction={props.onAction}
-            onSyncComplete={props.onSyncComplete}
-            onUpdateContact={props.onUpdateContact}
-            onAddContact={props.onAddContact}
-            onDeleteContact={props.onDeleteContact}
-            openAddContact={props.openAddContact}
+        {showPhaseAEmpty ? (
+          <ContactsEmptyState
+            variant={activeMode}
+            onConnectClick={() => setConnectModalOpen(true)}
+            onAddManualClick={() => setManualAddModalOpen(true)}
           />
-        )}
-        {activeMode === 'circles' && (
-          <CirclesView
-            contacts={props.contacts}
-            onAction={props.onAction}
-          />
+        ) : (
+          <>
+            {activeMode === 'today' && (
+              <TodayView onAction={props.onAction} contacts={props.contacts} />
+            )}
+            {activeMode === 'people' && (
+              <ContactsRedesigned
+                contacts={props.contacts}
+                onAction={props.onAction}
+                onSyncComplete={props.onSyncComplete}
+                onUpdateContact={props.onUpdateContact}
+                onAddContact={props.onAddContact}
+                onDeleteContact={props.onDeleteContact}
+                openAddContact={props.openAddContact}
+              />
+            )}
+            {activeMode === 'circles' && (
+              <CirclesView
+                contacts={props.contacts}
+                onAction={props.onAction}
+              />
+            )}
+          </>
         )}
       </div>
 
       {/* First-visit onboarding tour */}
       {showTour && (
         <ContactsOnboarding onComplete={() => setShowTour(false)} />
+      )}
+
+      {CONTACTS_PHASE_A_ENABLED && (
+        <>
+          <ConnectContactsModal
+            isOpen={connectModalOpen}
+            onClose={() => setConnectModalOpen(false)}
+            onImportComplete={(result) => {
+              setConnectModalOpen(false);
+              const importedContacts = result.keptContactsForTrim ?? [];
+              setImportedContactsForTrim(importedContacts);
+              if (result.imported > 0) {
+                setTrimWizardOpen(true);
+              }
+            }}
+            workspaceId={workspaceId}
+          />
+          <TrimWizard
+            isOpen={trimWizardOpen}
+            importedContacts={importedContactsForTrim}
+            workspaceId={workspaceId}
+            onComplete={() => setTrimWizardOpen(false)}
+            onClose={() => setTrimWizardOpen(false)}
+          />
+          <ReconnectGoogleModal
+            isOpen={reconnectModalOpen}
+            onClose={() => setReconnectModalOpen(false)}
+            onSuccess={() => setReconnectModalOpen(false)}
+            title={t('contacts.reconnectModal.title')}
+            message={t('contacts.reconnectModal.message')}
+            invalidGrantReason="revoked"
+          />
+          <AddContactModal
+            isOpen={manualAddModalOpen}
+            onClose={() => setManualAddModalOpen(false)}
+            onAdd={async (contact) => {
+              await props.onAddContact?.(contact);
+            }}
+          />
+        </>
       )}
     </div>
   );
