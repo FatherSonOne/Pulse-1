@@ -351,7 +351,8 @@
   <a href="#pulse-tools"><span class="n">05</span>Pulse slash commands</a>
   <a href="#parallel"><span class="n">06</span>Parallel work</a>
   <a href="#recovery"><span class="n">07</span>Recovery</a>
-  <a href="#reference"><span class="n">08</span>Reference card</a>
+  <a href="#ide"><span class="n">08</span>In your IDE</a>
+  <a href="#reference"><span class="n">09</span>Reference card</a>
 </nav>
 
 <!-- ─── 1. MENTAL MODEL ──────────────────────────────── -->
@@ -810,8 +811,321 @@
   </p>
 </div>
 
-<!-- ─── 8. REFERENCE ─────────────────────────────────── -->
-<h2 id="reference">08 — Reference card</h2>
+<!-- ─── 8. IDE ──────────────────────────────────────── -->
+<h2 id="ide">08 — Working with Git in your IDE (Cursor / VS Code)</h2>
+<p>
+  Everything in this guide works from the terminal. But your IDE has a built-in view of the same information, and once you can read it, you'll catch problems before they become incidents. Cursor and VS Code share the same Source Control panel — the keyboard shortcut and the UI are identical.
+</p>
+
+<h3>Opening Source Control</h3>
+<p>
+  <code>Ctrl+Shift+G</code> on Windows / <code>Cmd+Shift+G</code> on Mac, or click the branch icon in the activity bar (the third or fourth icon down on the left edge).
+</p>
+
+<div class="diagram">
+  <svg viewBox="0 0 660 360" width="660" height="360" xmlns="http://www.w3.org/2000/svg">
+    <!-- panel chrome -->
+    <rect x="20" y="20" width="320" height="320" rx="10" fill="var(--surface)" stroke="var(--border)" />
+    <!-- panel header -->
+    <rect x="20" y="20" width="320" height="34" rx="10" fill="var(--surface-2)" />
+    <text class="commit-label" x="40" y="42">CHANGES</text>
+    <text class="commit-label muted" x="310" y="42" text-anchor="end">2</text>
+
+    <!-- repo header pulse1 -->
+    <rect x="32" y="62" width="296" height="48" rx="6" fill="var(--surface-2)" stroke="var(--border)" />
+    <text class="commit-label" x="44" y="80">pulse1</text>
+    <text class="commit-label muted" x="44" y="98" font-size="9">on branch:</text>
+    <rect x="98" y="89" width="50" height="14" rx="3" fill="var(--coral-soft)" stroke="var(--coral)" stroke-width="1" />
+    <text class="branch-label" x="123" y="100" text-anchor="middle" font-size="9">main</text>
+
+    <!-- commit msg input -->
+    <rect x="32" y="120" width="296" height="30" rx="6" fill="var(--bg)" stroke="var(--border)" />
+    <text class="commit-label muted" x="44" y="140" font-size="10">Message (commit on "main")</text>
+
+    <!-- commit button -->
+    <rect x="32" y="156" width="296" height="32" rx="6" fill="var(--coral-soft)" stroke="var(--coral)" stroke-width="1" />
+    <text class="commit-label" x="180" y="176" text-anchor="middle" style="fill:var(--coral)">✓  Commit</text>
+
+    <!-- staged changes header -->
+    <text class="commit-label muted" x="44" y="212" font-size="10">Staged Changes</text>
+    <text class="commit-label muted" x="316" y="212" text-anchor="end" font-size="10">1</text>
+
+    <!-- staged file row -->
+    <rect x="40" y="220" width="280" height="22" rx="4" fill="var(--positive-soft)" />
+    <text class="commit-label" x="50" y="234" font-size="10">.env.production</text>
+    <text class="commit-label" x="310" y="234" text-anchor="end" font-size="10" style="fill:var(--positive)">A</text>
+
+    <!-- changes header -->
+    <text class="commit-label muted" x="44" y="262" font-size="10">Changes</text>
+    <text class="commit-label muted" x="316" y="262" text-anchor="end" font-size="10">2</text>
+
+    <!-- unstaged file rows -->
+    <rect x="40" y="270" width="280" height="22" rx="4" fill="var(--info-soft)" />
+    <text class="commit-label" x="50" y="284" font-size="10">src/components/Login.tsx</text>
+    <text class="commit-label" x="310" y="284" text-anchor="end" font-size="10" style="fill:var(--info)">M</text>
+
+    <rect x="40" y="296" width="280" height="22" rx="4" fill="var(--warning-soft)" />
+    <text class="commit-label" x="50" y="310" font-size="10">docs/new-handoff.md</text>
+    <text class="commit-label" x="310" y="310" text-anchor="end" font-size="10" style="fill:var(--warning)">U</text>
+
+    <!-- callouts on right -->
+    <line x1="338" y1="36" x2="380" y2="36" stroke="var(--coral)" stroke-width="1" stroke-dasharray="2,2" />
+    <text class="commit-label" x="386" y="40" font-size="11" style="fill:var(--coral)">section header</text>
+
+    <line x1="158" y1="105" x2="380" y2="105" stroke="var(--coral)" stroke-width="1" stroke-dasharray="2,2" />
+    <text class="commit-label" x="386" y="100" font-size="11" style="fill:var(--coral)">current branch</text>
+    <text class="commit-label muted" x="386" y="114" font-size="9">↑ click to switch (careful!)</text>
+
+    <line x1="338" y1="172" x2="380" y2="172" stroke="var(--coral)" stroke-width="1" stroke-dasharray="2,2" />
+    <text class="commit-label" x="386" y="170" font-size="11" style="fill:var(--coral)">commit button</text>
+    <text class="commit-label muted" x="386" y="184" font-size="9">↑ snapshots ONLY staged</text>
+
+    <line x1="338" y1="231" x2="380" y2="231" stroke="var(--coral)" stroke-width="1" stroke-dasharray="2,2" />
+    <text class="commit-label" x="386" y="230" font-size="11" style="fill:var(--coral)">staged changes</text>
+    <text class="commit-label muted" x="386" y="244" font-size="9">↑ ready for next commit</text>
+
+    <line x1="338" y1="284" x2="380" y2="284" stroke="var(--coral)" stroke-width="1" stroke-dasharray="2,2" />
+    <text class="commit-label" x="386" y="282" font-size="11" style="fill:var(--coral)">changes (unstaged)</text>
+    <text class="commit-label muted" x="386" y="296" font-size="9">↑ NOT yet in any commit</text>
+
+    <line x1="338" y1="307" x2="380" y2="307" stroke="var(--warning)" stroke-width="1" stroke-dasharray="2,2" />
+    <text class="commit-label" x="386" y="320" font-size="11" style="fill:var(--warning)">"U" = untracked!</text>
+    <text class="commit-label muted" x="386" y="334" font-size="9">↑ vanishes on branch swap</text>
+  </svg>
+  <div class="diagram-caption">The Source Control panel. Status letters: M = modified, U = untracked, A = added/staged, D = deleted.</div>
+</div>
+
+<h3>Reading file status</h3>
+<p>
+  Each file gets a single-letter badge on the right that tells you what state it's in:
+</p>
+<table>
+  <thead><tr><th>Badge</th><th>Means</th><th>What to know</th></tr></thead>
+  <tbody>
+    <tr><td><code style="color:var(--info)">M</code></td><td>Modified</td><td>Tracked file you've edited. Staged or unstaged depending on which section it's in.</td></tr>
+    <tr><td><code style="color:var(--warning)">U</code></td><td>Untracked</td><td><strong>Not in any commit yet.</strong> If you switch branches, it'll likely vanish. Commit or stash before swapping.</td></tr>
+    <tr><td><code style="color:var(--positive)">A</code></td><td>Added (staged)</td><td>New file, staged for the next commit.</td></tr>
+    <tr><td><code style="color:var(--overdue)">D</code></td><td>Deleted</td><td>File removed. Stage it to record the deletion.</td></tr>
+    <tr><td><code>C</code></td><td>Conflict</td><td>Merge conflict — needs resolution. The file has <code>&lt;&lt;&lt;&lt;&lt;</code> markers inside.</td></tr>
+    <tr><td><code>R</code></td><td>Renamed</td><td>Tracked file renamed.</td></tr>
+  </tbody>
+</table>
+
+<h3>Staging + committing from the IDE</h3>
+<ol class="steps">
+  <li><strong>Hover any file under "Changes".</strong> A <code>+</code> button appears to its right. Click to stage just that file. The file moves up into "Staged Changes".</li>
+  <li><strong>Click the file name</strong> to see the diff in the main editor. Green is added, red is removed. Read it before committing.</li>
+  <li><strong>Type a commit message</strong> in the message box at the top of the panel. Use Pulse's conventional-commits style: <code>feat(messages): add quick replies</code>, <code>fix(login): handle empty password</code>.</li>
+  <li><strong>Click "Commit"</strong> (or <code>Ctrl+Enter</code> with the message box focused). Only staged changes go in.</li>
+  <li><strong>Sync</strong> — there's a small sync icon (circular arrows) in the bottom-left status bar. Click it to push your commit + pull anything new. Or use the terminal: <code>git push</code>.</li>
+</ol>
+
+<div class="callout warn">
+  <span class="label">The "Stage All Changes" shortcut</span>
+  <p>
+    The <code>+</code> next to the "Changes" section header stages everything in one click. Convenient, but it's how secrets get committed — you stage a <code>.env</code> file you didn't notice was modified. Prefer staging files individually until you've built the habit of reading the file list first.
+  </p>
+</div>
+
+<h3>The native Graph view (built-in)</h3>
+<p>
+  At the bottom of the Source Control panel is a "GRAPH" section showing recent commits as a tree. Each row is one commit, colored lines show how branches diverged and merged. Cursor / VS Code show the current branch's tip with a colored ring; merge commits show two parent lines.
+</p>
+<p>
+  Hover any commit to see its message and author. Right-click → "Copy commit hash" to paste anywhere, or "Show in editor" to open the diff. The native graph is fine for a quick "what merged recently?" glance, but for anything richer, install Git Graph.
+</p>
+
+<h3>Git Graph extension (highly recommended)</h3>
+<p>
+  The <strong>Git Graph</strong> extension by <code>mhutchie</code> is the most-installed Git extension on the marketplace for a reason. It replaces "look at a flat list of commits" with a <strong>full interactive graph</strong> of every branch, every merge, every tag, every stash, with click-through context menus for almost every git operation. Install:
+</p>
+<div class="cmd"><span class="prompt">$</span> code --install-extension mhutchie.git-graph     <span class="comment"># VS Code</span>
+<span class="prompt">$</span> cursor --install-extension mhutchie.git-graph   <span class="comment"># Cursor (same extension)</span></div>
+<p>
+  Or marketplace search: <em>"Git Graph"</em> by <em>mhutchie</em>. Free, no account, no telemetry.
+</p>
+
+<div class="diagram">
+  <svg viewBox="0 0 700 280" width="700" height="280" xmlns="http://www.w3.org/2000/svg">
+    <!-- panel chrome -->
+    <rect x="20" y="20" width="660" height="240" rx="10" fill="var(--surface)" stroke="var(--border)" />
+    <rect x="20" y="20" width="660" height="32" rx="10" fill="var(--surface-2)" />
+    <text class="commit-label" x="40" y="40">GIT GRAPH · pulse1</text>
+    <text class="commit-label muted" x="660" y="40" text-anchor="end">main ▾  branches ▾  filter ▾</text>
+
+    <!-- column headers -->
+    <text class="commit-label muted" x="40" y="68" font-size="10">graph</text>
+    <text class="commit-label muted" x="160" y="68" font-size="10">description</text>
+    <text class="commit-label muted" x="500" y="68" font-size="10">date</text>
+    <text class="commit-label muted" x="600" y="68" font-size="10">author</text>
+
+    <!-- graph rows -->
+    <!-- main line vertical -->
+    <line class="commit-line coral" x1="55" y1="78" x2="55" y2="240" />
+
+    <!-- row 1: main tip -->
+    <circle class="commit-dot head" cx="55" cy="90" r="7" />
+    <rect x="80" y="80" width="56" height="18" rx="3" fill="var(--coral-soft)" stroke="var(--coral)" stroke-width="1" />
+    <text class="branch-label" x="108" y="93" text-anchor="middle" font-size="9">main</text>
+    <text class="commit-label" x="160" y="94" font-size="11">Merge pull request #76 from docs/learn-…</text>
+    <text class="commit-label muted" x="500" y="94" font-size="10">11:12 PM</text>
+    <text class="commit-label muted" x="600" y="94" font-size="10">FatherSonOne</text>
+
+    <!-- row 2 -->
+    <circle class="commit-dot" cx="55" cy="115" r="6" />
+    <text class="commit-label" x="160" y="119" font-size="11">docs: add Learn Git &amp; GitHub playground</text>
+    <text class="commit-label muted" x="500" y="119" font-size="10">11:08 PM</text>
+    <text class="commit-label muted" x="600" y="119" font-size="10">FatherSonOne</text>
+
+    <!-- row 3 -->
+    <circle class="commit-dot" cx="55" cy="140" r="6" />
+    <text class="commit-label" x="160" y="144" font-size="11">Merge pull request #75 from /task-start…</text>
+    <text class="commit-label muted" x="500" y="144" font-size="10">10:54 PM</text>
+    <text class="commit-label muted" x="600" y="144" font-size="10">FatherSonOne</text>
+
+    <!-- branch split -->
+    <path class="commit-line branch" d="M 55 165 Q 80 170 100 180 L 100 230" />
+    <circle class="commit-dot" cx="55" cy="165" r="6" />
+    <text class="commit-label" x="160" y="169" font-size="11">feat(claude): add /task-start slash command</text>
+    <text class="commit-label muted" x="500" y="169" font-size="10">10:53 PM</text>
+    <text class="commit-label muted" x="600" y="169" font-size="10">FatherSonOne</text>
+
+    <!-- row 5 -->
+    <circle class="commit-dot" cx="55" cy="195" r="6" />
+    <text class="commit-label" x="160" y="199" font-size="11">Merge pull request #74 from /contacts-bulk-org</text>
+    <text class="commit-label muted" x="500" y="199" font-size="10">10:38 PM</text>
+    <text class="commit-label muted" x="600" y="199" font-size="10">FatherSonOne</text>
+
+    <!-- row 6 (branch ref) -->
+    <circle class="commit-dot branch" cx="100" cy="230" r="6" />
+    <rect x="120" y="220" width="118" height="18" rx="3" fill="var(--info-soft)" stroke="var(--info)" stroke-width="1" />
+    <text class="branch-label info" x="179" y="233" text-anchor="middle" font-size="9">feat/contacts-bulk-org</text>
+    <text class="commit-label muted" x="260" y="234" font-size="11">fix(contacts): complete SmartListType keys…</text>
+    <text class="commit-label muted" x="500" y="234" font-size="10">10:18 PM</text>
+    <text class="commit-label muted" x="600" y="234" font-size="10">FatherSonOne</text>
+  </svg>
+  <div class="diagram-caption">Git Graph view. Each branch is a colored vertical line. Merges show as branch lines reconnecting to the main trunk. Branch + tag refs are pills next to the commit they point at.</div>
+</div>
+
+<h3>What Git Graph unlocks (right-click anywhere)</h3>
+<table>
+  <thead><tr><th>Right-click target</th><th>Useful actions</th></tr></thead>
+  <tbody>
+    <tr><td><strong>A commit</strong></td><td>Checkout, Cherry-pick, Revert, Reset to this commit, Create branch from here, Copy hash, Compare to working tree</td></tr>
+    <tr><td><strong>A branch ref</strong></td><td>Checkout, Merge into current, Rebase onto current, Delete (local + remote), Push, Pull, Rename, Compare to current branch</td></tr>
+    <tr><td><strong>A tag</strong></td><td>Checkout, Delete, Push tag, Compare with HEAD</td></tr>
+    <tr><td><strong>The graph itself</strong></td><td>Filter by branch/author/date, Search by message or hash, Toggle "show only my commits", Limit visible branches</td></tr>
+  </tbody>
+</table>
+
+<h3>The two most useful Git Graph workflows</h3>
+<ol class="steps">
+  <li><strong>"What did I just merge?"</strong> Open Git Graph → look at the colored merge lines coming into <code>main</code>. The branch each merge came from is visible as a pill. Click the merge commit → see the full diff. 5 seconds.</li>
+  <li><strong>"Where is that lost commit?"</strong> Open Git Graph → toggle <em>"Show: Remote Branches + Stashes + Tags"</em> in the top-right options. Every commit that exists anywhere in the repo, including detached / orphaned ones, will appear. Find it, right-click → "Create branch from here" → recover.</li>
+</ol>
+
+<div class="callout tip">
+  <span class="label">Git Graph as a checkout-safety check</span>
+  <p>
+    Before you switch branches in the terminal or status bar, glance at Git Graph. If your current branch has commits that <strong>aren't</strong> reachable from where you're about to land, those commits are about to fall off your working tree. Recovery is straightforward (the commits stay in git's reflog), but it's better to see the issue before it happens.
+  </p>
+</div>
+
+<h3>Switching branches via the status bar</h3>
+<p>
+  The bottom-left corner of the IDE shows your current branch name (e.g. <code>main</code> or <code>feat/quick-replies</code>). Click it — a dropdown lets you switch to any branch.
+</p>
+
+<div class="callout dont">
+  <span class="label">The branch picker IS a git checkout</span>
+  <p>
+    Clicking a different branch in the status bar runs <code>git checkout &lt;branch&gt;</code> under the hood. Same risks: untracked files can disappear, the post-checkout hook fires. Always check the "Changes" section first. <strong>If you see anything with a <code>U</code> badge, commit or stash before switching.</strong>
+  </p>
+</div>
+
+<h3>Resolving merge conflicts</h3>
+<p>
+  When <code>git pull</code> or <code>git merge</code> hits a conflict, files with conflicts get the <code>C</code> badge. Click the file to open it. The IDE inlines colored bands around each conflict, with "Accept Current Change", "Accept Incoming Change", "Accept Both", and "Compare Changes" buttons above each conflict block.
+</p>
+<p>
+  Pick the resolution (or hand-edit to combine), then save. The badge changes from <code>C</code> back to <code>M</code>. Stage the file, commit, done.
+</p>
+
+<h3>GitHub integration (the GitHub Pull Requests extension)</h3>
+<p>
+  Install the <strong>GitHub Pull Requests and Issues</strong> extension (made by GitHub, free, both Cursor + VS Code). Once signed in via <code>gh auth login</code> in the terminal or the extension's prompt, you get:
+</p>
+<ul>
+  <li>A "GitHub Pull Requests" panel listing open + assigned + draft PRs across the repo</li>
+  <li>Inline PR comments rendered directly in the diff editor</li>
+  <li>"Create Pull Request" command (palette: <code>Ctrl+Shift+P</code> → "Create PR") — UI equivalent of <code>gh pr create --fill</code></li>
+  <li>Status checks for the current branch's PR (CI passes / fails) visible in the status bar</li>
+  <li>"Checkout PR" — pulls down someone else's PR branch for local review</li>
+</ul>
+
+<h3>Cursor-specific: AGENT REVIEW</h3>
+<p>
+  Cursor's Source Control panel shows an "<strong>AGENT REVIEW</strong>" section with a "Find Issues" button. It runs the Cursor AI agent against your staged + unstaged changes <em>before</em> you commit, looking for likely bugs, missed edge cases, or accidentally-committed secrets. Worth running on any non-trivial commit. Treat its output as a second pair of eyes, not as gospel — it can hallucinate.
+</p>
+
+<h3>Best practices for IDE-based Git work</h3>
+<div class="grid-2">
+  <div class="callout do">
+    <span class="label">Do</span>
+    <ul style="margin-top:8px; color:var(--ink-2)">
+      <li>Open Source Control (<code>Ctrl+Shift+G</code>) <strong>before</strong> any commit. Read the file list.</li>
+      <li>Click each file in the diff before staging — make sure it's what you think it is.</li>
+      <li>Use the terminal for any <code>git checkout</code> to another branch. The visual feedback is better there.</li>
+      <li>Watch for <code>U</code> badges before switching branches.</li>
+      <li>Use AGENT REVIEW (Cursor) before committing non-trivial diffs.</li>
+      <li>Keep the GRAPH section visible — it's your "where am I, what just happened" radar.</li>
+    </ul>
+  </div>
+  <div class="callout dont">
+    <span class="label">Don't</span>
+    <ul style="margin-top:8px; color:var(--ink-2)">
+      <li>Click "Stage All Changes" reflexively. Secrets and stray edits hide there.</li>
+      <li>Use the IDE's "Sync" button for the first push of a branch. Use the terminal: <code>git push -u origin &lt;branch&gt;</code>.</li>
+      <li>Trust the status bar's branch indicator to tell you it's safe to swap. Check <code>git status</code> first.</li>
+      <li>Commit from the IDE without reading the diff. The diff editor is right there.</li>
+      <li>Have <strong>two IDE windows open on the same repo directory</strong>. Pick one. (Same rule as parallel Claude sessions — use worktrees.)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout warn">
+  <span class="label">The .env file trap (visible in the source control panel)</span>
+  <p>
+    If you see <code>.env</code>, <code>.env.local</code>, <code>.env.production</code>, or anything ending in <code>.key</code> / <code>.pem</code> showing up as <code>A</code> or <code>M</code> in your changes list — <strong>stop and check the gitignore</strong>. Those files should never be staged. The gitleaks pre-commit hook will catch most secrets, but it's safer to never stage them in the first place. Right-click the file → "Add to .gitignore" if the IDE offers it; otherwise edit <code>.gitignore</code> directly.
+  </p>
+</div>
+
+<h3>The IDE-terminal split (when to use which)</h3>
+<table>
+  <thead><tr><th>Task</th><th>Where</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Reading what changed</td><td>IDE</td><td>Visual diff is faster than <code>git diff</code></td></tr>
+    <tr><td>Staging specific hunks</td><td>IDE</td><td>Click-to-stage is faster than <code>git add -p</code></td></tr>
+    <tr><td>Writing the commit message</td><td>IDE</td><td>Multi-line message box, no escape characters</td></tr>
+    <tr><td>Switching branches</td><td>Terminal</td><td>Banner fires correctly, status output is fuller</td></tr>
+    <tr><td>Opening / merging PRs</td><td>Terminal (<code>gh</code>)</td><td>Faster + scriptable + no context switch to browser</td></tr>
+    <tr><td>Resolving conflicts</td><td>IDE</td><td>Three-way merge view with click-to-accept buttons</td></tr>
+    <tr><td>Reading commit history</td><td>IDE (GRAPH)</td><td>Visual graph beats <code>git log --oneline --graph</code></td></tr>
+    <tr><td>Recovery (<code>git reflog</code>, <code>git log --all</code>)</td><td>Terminal</td><td>You need the raw output and the <code>-S</code> / <code>--grep</code> flags</td></tr>
+    <tr><td>Anything force-something (<code>--force</code>, <code>--hard</code>)</td><td>Terminal</td><td>Clicking a "Discard" button without thinking has cost too many people too much work</td></tr>
+  </tbody>
+</table>
+
+<div class="callout tip">
+  <span class="label">The two-monitor habit</span>
+  <p>
+    Put your code editor on one screen and a small terminal window on the other (or split-pane the IDE's integrated terminal). Use the IDE for diff-review + staging + commit-message + PR-comments, and the terminal for branch ops + recovery + <code>gh</code>. You'll catch about 90% of the mistakes this guide is designed to prevent.
+  </p>
+</div>
+
+
+<!-- ─── 9. REFERENCE ─────────────────────────────────── -->
+<h2 id="reference">09 — Reference card</h2>
 
 <h3>Pulse loop (the four commands)</h3>
 <div class="cmd"><span class="prompt">/</span>task-start feat/&lt;slug&gt;                       <span class="comment"># 1. start fresh</span>
