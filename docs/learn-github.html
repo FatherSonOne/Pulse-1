@@ -1,0 +1,931 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Learn Git & GitHub — Pulse Playground</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* ─── Pulse design tokens ────────────────────────────────────── */
+  :root[data-theme="dark"] {
+    --bg: #000000;
+    --surface: rgba(255,255,255,0.03);
+    --surface-2: rgba(255,255,255,0.055);
+    --border: rgba(255,255,255,0.10);
+    --ink: #fafafa;
+    --ink-2: #b4b4b8;
+    --ink-3: #6b7280;
+    --coral: #fb7185;
+    --coral-deep: #f43f5e;
+    --coral-soft: rgba(244,63,94,0.12);
+    --positive: #4ade80;
+    --positive-soft: rgba(74,222,128,0.12);
+    --warning: #fb923c;
+    --warning-soft: rgba(251,146,60,0.12);
+    --overdue: #f87171;
+    --overdue-soft: rgba(248,113,113,0.12);
+    --info: #60a5fa;
+    --info-soft: rgba(96,165,250,0.12);
+  }
+  :root[data-theme="light"] {
+    --bg: #f8f8f8;
+    --surface: #ffffff;
+    --surface-2: #f2f2f2;
+    --border: rgba(0,0,0,0.08);
+    --ink: #0f0f0f;
+    --ink-2: #52525b;
+    --ink-3: #6b7280;
+    --coral: #f43f5e;
+    --coral-deep: #e11d48;
+    --coral-soft: rgba(244,63,94,0.10);
+    --positive: #22c55e;
+    --positive-soft: rgba(34,197,94,0.10);
+    --warning: #f97316;
+    --warning-soft: rgba(249,115,22,0.10);
+    --overdue: #ef4444;
+    --overdue-soft: rgba(239,68,68,0.10);
+    --info: #3b82f6;
+    --info-soft: rgba(59,130,246,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.55;
+    transition: background 220ms cubic-bezier(0.16, 1, 0.3, 1), color 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  /* ─── Typography ───────────────────────────────────────────── */
+  h1 { font-size: 2.25rem; font-weight: 300; letter-spacing: -0.025em; line-height: 1.15; margin-bottom: 8px; }
+  h1 .accent { color: var(--coral); font-weight: 500; }
+  h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; margin: 56px 0 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  h2:first-of-type { border-top: 0; padding-top: 0; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 28px 0 10px; }
+  p { color: var(--ink-2); margin-bottom: 14px; max-width: 70ch; }
+  p strong { color: var(--ink); font-weight: 600; }
+  ul, ol { color: var(--ink-2); margin: 0 0 14px 22px; }
+  ul li, ol li { margin-bottom: 6px; }
+  code, .mono {
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 0.875em;
+  }
+  p code, li code {
+    background: var(--surface-2);
+    color: var(--ink);
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .label {
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+  }
+  .lead {
+    font-size: 1.0625rem;
+    color: var(--ink-2);
+    max-width: 65ch;
+  }
+
+  /* ─── Header / nav ─────────────────────────────────────────── */
+  header.hero { margin-bottom: 56px; }
+  .hero-meta { display: flex; gap: 16px; align-items: center; margin-bottom: 24px; }
+  .hero-meta .label-pill {
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: var(--coral-soft);
+    color: var(--coral);
+    font-weight: 500;
+  }
+  .theme-toggle {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--ink-2);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .theme-toggle:hover { background: var(--surface-2); color: var(--ink); }
+
+  nav.toc {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+    margin: 32px 0 56px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  nav.toc a {
+    color: var(--ink-2);
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  nav.toc a:hover { background: var(--surface-2); color: var(--ink); }
+  nav.toc a .n {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6875rem;
+    color: var(--ink-3);
+    min-width: 18px;
+  }
+
+  /* ─── Cards / callouts ─────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+  }
+  .card.tight { padding: 16px; }
+  .callout {
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 20px 0;
+    border-left: 3px solid;
+    background: var(--surface);
+  }
+  .callout .label { display: block; margin-bottom: 6px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.do { border-left-color: var(--positive); background: var(--positive-soft); }
+  .callout.do .label { color: var(--positive); }
+  .callout.dont { border-left-color: var(--overdue); background: var(--overdue-soft); }
+  .callout.dont .label { color: var(--overdue); }
+  .callout.tip { border-left-color: var(--info); background: var(--info-soft); }
+  .callout.tip .label { color: var(--info); }
+  .callout.warn { border-left-color: var(--warning); background: var(--warning-soft); }
+  .callout.warn .label { color: var(--warning); }
+
+  /* ─── Command blocks ───────────────────────────────────────── */
+  .cmd {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 0.8125rem;
+    color: var(--ink);
+    margin: 12px 0;
+    overflow-x: auto;
+    position: relative;
+    white-space: pre;
+    line-height: 1.55;
+  }
+  .cmd .prompt { color: var(--coral); user-select: none; }
+  .cmd .comment { color: var(--ink-3); }
+  .cmd .out { color: var(--ink-2); }
+  .copy {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--ink-3);
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0;
+    transition: opacity 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .cmd:hover .copy { opacity: 1; }
+  .copy.ok { color: var(--positive); }
+
+  /* ─── Diagram svg ──────────────────────────────────────────── */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    text-align: center;
+    overflow-x: auto;
+  }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram-caption {
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+    margin-top: 12px;
+  }
+  /* svg node colors switch with theme */
+  .commit-dot { fill: var(--ink); stroke: var(--bg); stroke-width: 2; }
+  .commit-dot.head { fill: var(--coral); }
+  .commit-dot.branch { fill: var(--info); }
+  .commit-dot.merged { fill: var(--positive); }
+  .commit-line { stroke: var(--ink-2); stroke-width: 2; fill: none; }
+  .commit-line.branch { stroke: var(--info); }
+  .commit-line.coral { stroke: var(--coral); }
+  .commit-label { fill: var(--ink); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .commit-label.muted { fill: var(--ink-3); }
+  .branch-label {
+    fill: var(--coral);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .branch-label.info { fill: var(--info); }
+
+  /* ─── Table-ish layouts ────────────────────────────────────── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+  .grid-2 .card { margin: 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9375rem; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  td code { white-space: nowrap; }
+
+  /* ─── Step list ────────────────────────────────────────────── */
+  .steps {
+    list-style: none;
+    margin: 16px 0 24px;
+    counter-reset: step;
+  }
+  .steps li {
+    position: relative;
+    padding: 0 0 16px 36px;
+    counter-increment: step;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--coral-soft);
+    color: var(--coral);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6875rem;
+    font-weight: 600;
+  }
+  .steps li:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 26px;
+    bottom: 4px;
+    width: 1px;
+    background: var(--border);
+  }
+  .steps li strong { color: var(--ink); }
+
+  footer.fin {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--ink-3);
+    font-size: 0.875rem;
+    text-align: center;
+  }
+  footer.fin a { color: var(--coral); text-decoration: none; }
+  footer.fin a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ─── HERO ─────────────────────────────────────────── -->
+<header class="hero">
+  <div class="hero-meta">
+    <span class="label-pill">Pulse Playground</span>
+    <span class="label">Learn Git &amp; GitHub</span>
+    <button class="theme-toggle" id="themeBtn" type="button">Light mode</button>
+  </div>
+  <h1>Git &amp; GitHub, <span class="accent">the way you actually use them</span></h1>
+  <p class="lead">
+    Everything you need to ship code from this repo without losing work or getting stuck. Built around the actual workflow Pulse uses — including the slash commands, branch-safety scripts, and recovery procedures we set up. No theory. No 30 ways to do the same thing. One safe path, with the failure modes you'll hit explained where they happen.
+  </p>
+</header>
+
+<!-- ─── TOC ──────────────────────────────────────────── -->
+<nav class="toc">
+  <a href="#mental-model"><span class="n">01</span>Mental model</a>
+  <a href="#daily-loop"><span class="n">02</span>The daily loop</a>
+  <a href="#branches"><span class="n">03</span>Branches</a>
+  <a href="#pr-cycle"><span class="n">04</span>The PR cycle</a>
+  <a href="#pulse-tools"><span class="n">05</span>Pulse slash commands</a>
+  <a href="#parallel"><span class="n">06</span>Parallel work</a>
+  <a href="#recovery"><span class="n">07</span>Recovery</a>
+  <a href="#reference"><span class="n">08</span>Reference card</a>
+</nav>
+
+<!-- ─── 1. MENTAL MODEL ──────────────────────────────── -->
+<h2 id="mental-model">01 — Mental model</h2>
+<p>
+  Git stores your work as a chain of <strong>commits</strong>. Each commit is an immutable snapshot of your project at a moment in time, with a parent pointer to the previous commit. The chain is a tree (or graph, when branches merge back).
+</p>
+<p>
+  A <strong>branch</strong> is just a moveable label that points at a commit. Switching branches moves your working directory back to whatever the branch's commit captured. Creating a branch is cheap — it's a single new label.
+</p>
+<p>
+  <strong>HEAD</strong> is a label that points at "where you are right now." Usually it points at a branch (which points at a commit). When you commit, HEAD's branch label moves forward with you.
+</p>
+
+<div class="diagram">
+  <svg viewBox="0 0 560 200" width="560" height="200" xmlns="http://www.w3.org/2000/svg">
+    <!-- commit line -->
+    <line class="commit-line" x1="50" y1="120" x2="510" y2="120" />
+    <!-- 5 commits -->
+    <circle class="commit-dot" cx="80" cy="120" r="8" />
+    <text class="commit-label muted" x="80" y="150" text-anchor="middle">a1b2c3</text>
+    <text class="commit-label muted" x="80" y="166" text-anchor="middle" font-size="9">init</text>
+
+    <circle class="commit-dot" cx="180" cy="120" r="8" />
+    <text class="commit-label muted" x="180" y="150" text-anchor="middle">d4e5f6</text>
+    <text class="commit-label muted" x="180" y="166" text-anchor="middle" font-size="9">add header</text>
+
+    <circle class="commit-dot" cx="280" cy="120" r="8" />
+    <text class="commit-label muted" x="280" y="150" text-anchor="middle">g7h8i9</text>
+    <text class="commit-label muted" x="280" y="166" text-anchor="middle" font-size="9">fix layout</text>
+
+    <circle class="commit-dot" cx="380" cy="120" r="8" />
+    <text class="commit-label muted" x="380" y="150" text-anchor="middle">j0k1l2</text>
+    <text class="commit-label muted" x="380" y="166" text-anchor="middle" font-size="9">refactor</text>
+
+    <circle class="commit-dot head" cx="480" cy="120" r="10" />
+    <text class="commit-label" x="480" y="150" text-anchor="middle">m3n4o5</text>
+    <text class="commit-label muted" x="480" y="166" text-anchor="middle" font-size="9">latest</text>
+
+    <!-- branch + HEAD labels above the latest -->
+    <line class="commit-line coral" x1="480" y1="40" x2="480" y2="106" />
+    <rect x="438" y="20" width="84" height="22" rx="4" fill="var(--coral-soft)" stroke="var(--coral)" stroke-width="1" />
+    <text class="branch-label" x="480" y="35" text-anchor="middle">main · HEAD</text>
+  </svg>
+  <div class="diagram-caption">Time flows left to right. Each dot is a commit. The coral pill is your current branch + HEAD.</div>
+</div>
+
+<p>
+  When you make changes and commit, a new commit appears on the right, and the branch label (with HEAD) moves forward to it. When you branch, you add a second label pointing at the same commit, then commits diverge into two lines.
+</p>
+
+<div class="callout tip">
+  <span class="label">Why this matters</span>
+  <p>Once you internalize "branch = label, commits = immutable nodes", git stops feeling magical. Every git command is moving labels or adding nodes.</p>
+</div>
+
+<!-- ─── 2. DAILY LOOP ────────────────────────────────── -->
+<h2 id="daily-loop">02 — The daily loop</h2>
+<p>
+  Four states a change can be in, and the commands that move it between them:
+</p>
+
+<div class="diagram">
+  <svg viewBox="0 0 720 180" width="720" height="180" xmlns="http://www.w3.org/2000/svg">
+    <!-- Four boxes -->
+    <g>
+      <rect x="20" y="60" width="140" height="60" rx="8" fill="var(--surface-2)" stroke="var(--border)" />
+      <text class="commit-label" x="90" y="85" text-anchor="middle">working tree</text>
+      <text class="commit-label muted" x="90" y="102" text-anchor="middle" font-size="9">files on disk</text>
+    </g>
+    <g>
+      <rect x="200" y="60" width="140" height="60" rx="8" fill="var(--surface-2)" stroke="var(--border)" />
+      <text class="commit-label" x="270" y="85" text-anchor="middle">staging area</text>
+      <text class="commit-label muted" x="270" y="102" text-anchor="middle" font-size="9">git add</text>
+    </g>
+    <g>
+      <rect x="380" y="60" width="140" height="60" rx="8" fill="var(--coral-soft)" stroke="var(--coral)" />
+      <text class="commit-label" x="450" y="85" text-anchor="middle">local repo</text>
+      <text class="commit-label muted" x="450" y="102" text-anchor="middle" font-size="9">git commit</text>
+    </g>
+    <g>
+      <rect x="560" y="60" width="140" height="60" rx="8" fill="var(--surface-2)" stroke="var(--border)" />
+      <text class="commit-label" x="630" y="85" text-anchor="middle">github (remote)</text>
+      <text class="commit-label muted" x="630" y="102" text-anchor="middle" font-size="9">git push</text>
+    </g>
+
+    <!-- arrows -->
+    <g stroke="var(--coral)" stroke-width="2" fill="none">
+      <line x1="160" y1="90" x2="200" y2="90" marker-end="url(#arr)" />
+      <line x1="340" y1="90" x2="380" y2="90" marker-end="url(#arr)" />
+      <line x1="520" y1="90" x2="560" y2="90" marker-end="url(#arr)" />
+    </g>
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="var(--coral)" />
+      </marker>
+    </defs>
+
+    <!-- command labels -->
+    <text class="commit-label" x="180" y="50" text-anchor="middle">git add</text>
+    <text class="commit-label" x="360" y="50" text-anchor="middle">git commit</text>
+    <text class="commit-label" x="540" y="50" text-anchor="middle">git push</text>
+
+    <text class="commit-label muted" x="180" y="146" text-anchor="middle" font-size="9">stage the change</text>
+    <text class="commit-label muted" x="360" y="146" text-anchor="middle" font-size="9">snapshot it</text>
+    <text class="commit-label muted" x="540" y="146" text-anchor="middle" font-size="9">share it</text>
+  </svg>
+  <div class="diagram-caption">The four-stage flow. Only commits in "local repo" are durable. Files in working tree can be lost on branch swap.</div>
+</div>
+
+<h3>The commands</h3>
+<div class="cmd"><button class="copy" data-copy="git status">Copy</button><span class="prompt">$</span> git status                  <span class="comment"># what's changed?</span>
+<span class="prompt">$</span> git add &lt;file&gt;               <span class="comment"># stage a specific file</span>
+<span class="prompt">$</span> git add .                    <span class="comment"># stage everything (careful)</span>
+<span class="prompt">$</span> git commit -m "fix login"    <span class="comment"># snapshot the staged changes</span>
+<span class="prompt">$</span> git push                     <span class="comment"># upload commits to GitHub</span>
+<span class="prompt">$</span> git pull                     <span class="comment"># download other people's commits</span></div>
+
+<div class="callout do">
+  <span class="label">Commit early, commit often</span>
+  <p>
+    A commit makes your work durable. Files that exist only in the working tree can vanish if you switch branches, and they aren't on GitHub yet. Every meaningful chunk of progress deserves its own commit. Five small commits beat one giant commit you can't easily review or revert.
+  </p>
+</div>
+
+<div class="callout dont">
+  <span class="label">Don't bypass safety with --force or --no-verify</span>
+  <p>
+    <code>git push --force</code> can erase other people's work from the remote. <code>git commit --no-verify</code> skips pre-commit checks (in Pulse, that's the gitleaks secret scan). If a hook is blocking you, fix the underlying issue. The hook is there because <em>somebody learned the hard way</em>.
+  </p>
+</div>
+
+<!-- ─── 3. BRANCHES ──────────────────────────────────── -->
+<h2 id="branches">03 — Branches: the safety primitive</h2>
+<p>
+  A branch is just a moveable label. Creating one is essentially free, and it's the most important habit you can build. <strong>One task = one branch.</strong> Never edit directly on <code>main</code>.
+</p>
+<p>
+  When you branch, you're saying "I'm about to try something — if it goes well, I'll merge it back into main; if it goes badly, I'll throw the branch away and main is untouched."
+</p>
+
+<div class="diagram">
+  <svg viewBox="0 0 640 240" width="640" height="240" xmlns="http://www.w3.org/2000/svg">
+    <!-- main line -->
+    <line class="commit-line" x1="40" y1="80" x2="600" y2="80" />
+    <circle class="commit-dot" cx="80" cy="80" r="8" />
+    <text class="commit-label muted" x="80" y="65" text-anchor="middle">a1</text>
+    <circle class="commit-dot" cx="180" cy="80" r="8" />
+    <text class="commit-label muted" x="180" y="65" text-anchor="middle">a2</text>
+    <circle class="commit-dot" cx="280" cy="80" r="8" />
+    <text class="commit-label muted" x="280" y="65" text-anchor="middle">a3</text>
+    <circle class="commit-dot" cx="540" cy="80" r="10" />
+    <text class="commit-label" x="540" y="65" text-anchor="middle">a4 (merged)</text>
+    <text class="branch-label" x="580" y="84" text-anchor="start">main</text>
+
+    <!-- branch out at a3 -->
+    <path class="commit-line branch" d="M 280 80 Q 320 80 340 130 L 460 130 Q 500 130 540 80" />
+    <circle class="commit-dot branch" cx="360" cy="130" r="7" />
+    <text class="commit-label muted" x="360" y="152" text-anchor="middle">b1</text>
+    <circle class="commit-dot branch" cx="430" cy="130" r="7" />
+    <text class="commit-label muted" x="430" y="152" text-anchor="middle">b2</text>
+    <text class="branch-label info" x="395" y="182" text-anchor="middle">feat/login-redesign</text>
+
+    <!-- caption-ish -->
+    <text class="commit-label muted" x="320" y="206" text-anchor="middle" font-size="10">
+      branch off a3 → 2 commits → merge back into main as a4
+    </text>
+  </svg>
+  <div class="diagram-caption">A feature branch's life cycle. Branched at <span class="mono">a3</span>, two commits on the branch, merged back via PR to become <span class="mono">a4</span>.</div>
+</div>
+
+<h3>Branching commands</h3>
+<div class="cmd"><button class="copy" data-copy="git checkout -b feat/my-task">Copy</button><span class="prompt">$</span> git checkout -b feat/my-task   <span class="comment"># create + switch to new branch</span>
+<span class="prompt">$</span> git branch --show-current      <span class="comment"># where am I?</span>
+<span class="prompt">$</span> git branch                     <span class="comment"># list all local branches</span>
+<span class="prompt">$</span> git checkout main              <span class="comment"># switch to main (only if working tree clean!)</span>
+<span class="prompt">$</span> git branch -d feat/old-task    <span class="comment"># delete merged branch (safe)</span></div>
+
+<h3>The naming convention</h3>
+<table>
+  <thead><tr><th>Prefix</th><th>Use for</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td><code>feat/</code></td><td>New features</td><td><code>feat/voice-messages</code></td></tr>
+    <tr><td><code>fix/</code></td><td>Bug fixes</td><td><code>fix/login-redirect</code></td></tr>
+    <tr><td><code>refactor/</code></td><td>Restructuring without behavior change</td><td><code>refactor/messages-extraction</code></td></tr>
+    <tr><td><code>chore/</code></td><td>Config, deps, tooling</td><td><code>chore/bump-tailwind</code></td></tr>
+    <tr><td><code>docs/</code></td><td>Documentation only</td><td><code>docs/learn-github</code></td></tr>
+    <tr><td><code>perf/</code></td><td>Performance work</td><td><code>perf/messages-virtualize</code></td></tr>
+    <tr><td><code>test/</code></td><td>Test-only changes</td><td><code>test/auth-e2e</code></td></tr>
+  </tbody>
+</table>
+
+<!-- ─── 4. PR CYCLE ──────────────────────────────────── -->
+<h2 id="pr-cycle">04 — The PR cycle</h2>
+<p>
+  A Pull Request is GitHub's way of saying "I want to take these commits from my branch and put them on main, please review first." This is how all code on Pulse's main branch gets there.
+</p>
+
+<div class="diagram">
+  <svg viewBox="0 0 720 260" width="720" height="260" xmlns="http://www.w3.org/2000/svg">
+    <!-- 6 stage circles -->
+    <g>
+      <circle class="commit-dot branch" cx="60" cy="80" r="14" />
+      <text x="60" y="84" text-anchor="middle" class="commit-label" style="fill:var(--bg)">1</text>
+      <text class="commit-label" x="60" y="120" text-anchor="middle">branch</text>
+    </g>
+    <line class="commit-line" x1="74" y1="80" x2="116" y2="80" />
+    <g>
+      <circle class="commit-dot branch" cx="180" cy="80" r="14" />
+      <text x="180" y="84" text-anchor="middle" class="commit-label" style="fill:var(--bg)">2</text>
+      <text class="commit-label" x="180" y="120" text-anchor="middle">commit</text>
+    </g>
+    <line class="commit-line" x1="194" y1="80" x2="236" y2="80" />
+    <g>
+      <circle class="commit-dot branch" cx="300" cy="80" r="14" />
+      <text x="300" y="84" text-anchor="middle" class="commit-label" style="fill:var(--bg)">3</text>
+      <text class="commit-label" x="300" y="120" text-anchor="middle">push</text>
+    </g>
+    <line class="commit-line" x1="314" y1="80" x2="356" y2="80" />
+    <g>
+      <circle class="commit-dot head" cx="420" cy="80" r="14" />
+      <text x="420" y="84" text-anchor="middle" class="commit-label" style="fill:var(--bg)">4</text>
+      <text class="commit-label" x="420" y="120" text-anchor="middle">PR open</text>
+    </g>
+    <line class="commit-line coral" x1="434" y1="80" x2="476" y2="80" />
+    <g>
+      <circle class="commit-dot head" cx="540" cy="80" r="14" />
+      <text x="540" y="84" text-anchor="middle" class="commit-label" style="fill:var(--bg)">5</text>
+      <text class="commit-label" x="540" y="120" text-anchor="middle">review</text>
+    </g>
+    <line class="commit-line coral" x1="554" y1="80" x2="596" y2="80" />
+    <g>
+      <circle class="commit-dot merged" cx="660" cy="80" r="14" />
+      <text x="660" y="84" text-anchor="middle" class="commit-label" style="fill:var(--bg)">6</text>
+      <text class="commit-label" x="660" y="120" text-anchor="middle">merge</text>
+    </g>
+
+    <!-- cleanup row -->
+    <text class="commit-label muted" x="360" y="180" text-anchor="middle">↓</text>
+    <rect x="240" y="190" width="240" height="46" rx="8" fill="var(--positive-soft)" stroke="var(--positive)" />
+    <text class="commit-label" x="360" y="212" text-anchor="middle" style="fill:var(--positive)">7 · CLEAN UP</text>
+    <text class="commit-label muted" x="360" y="228" text-anchor="middle" font-size="9">branch deleted, switch to main, pull</text>
+  </svg>
+  <div class="diagram-caption">The seven steps of every PR. Steps 1-3 happen locally; 4-7 use the <code>gh</code> CLI.</div>
+</div>
+
+<h3>The full walkthrough</h3>
+<ol class="steps">
+  <li><strong>Branch off latest main.</strong>
+    <div class="cmd"><span class="prompt">$</span> git checkout main
+<span class="prompt">$</span> git pull
+<span class="prompt">$</span> git checkout -b feat/my-task</div>
+    Or in Pulse: <code>/task-start feat/my-task</code> — does all three for you.
+  </li>
+  <li><strong>Make changes. Commit them.</strong> Often. Small commits.
+    <div class="cmd"><span class="prompt">$</span> git status                  <span class="comment"># see what changed</span>
+<span class="prompt">$</span> git add &lt;files&gt;             <span class="comment"># stage specific files</span>
+<span class="prompt">$</span> git commit -m "feat(messages): add voice attach"</div>
+  </li>
+  <li><strong>Push the branch to GitHub.</strong>
+    <div class="cmd"><span class="prompt">$</span> git push -u origin feat/my-task</div>
+    The <code>-u</code> sets the upstream so future <code>git push</code> doesn't need arguments.
+  </li>
+  <li><strong>Open the PR from the terminal.</strong>
+    <div class="cmd"><span class="prompt">$</span> gh pr create --base main --head feat/my-task --fill
+<span class="out">https://github.com/FatherSonOne/Pulse-1/pull/76</span></div>
+    <code>--fill</code> auto-uses your commit messages as the PR title + body. For a richer description, drop the flag and write one.
+  </li>
+  <li><strong>Review.</strong> Self-review your own diff in the PR view, OR have another person look. Add comments inline. Push more commits to address feedback.
+    <div class="cmd"><span class="prompt">$</span> gh pr view 76                 <span class="comment"># open PR in browser</span>
+<span class="prompt">$</span> gh pr diff 76                 <span class="comment"># see the full diff</span>
+<span class="prompt">$</span> gh pr checks 76               <span class="comment"># CI status</span></div>
+  </li>
+  <li><strong>Merge when ready.</strong>
+    <div class="cmd"><span class="prompt">$</span> gh pr merge 76 --merge --delete-branch
+<span class="out">✓ Merged · branch deleted on remote · switched to main + pulled</span></div>
+    <code>--merge</code> = preserve commit history with a merge commit. <code>--delete-branch</code> cleans up both remote and local branches automatically.
+  </li>
+  <li><strong>You're back on main, up to date. Start the next task.</strong>
+    <div class="cmd"><span class="prompt">$</span> /task-start feat/next-task</div>
+  </li>
+</ol>
+
+<div class="callout tip">
+  <span class="label">Merge strategies</span>
+  <p>
+    <code>--merge</code> preserves the full commit history with a merge commit (clearest audit trail). <code>--squash</code> collapses all PR commits into one (cleanest history). <code>--rebase</code> replays each commit onto main linearly (no merge commit). For Pulse, <code>--merge</code> is the default — you can see exactly what landed and when. Use <code>--squash</code> for PRs with a lot of work-in-progress noise commits.
+  </p>
+</div>
+
+<!-- ─── 5. PULSE SLASH COMMANDS ──────────────────────── -->
+<h2 id="pulse-tools">05 — Pulse's slash commands</h2>
+<p>
+  Two commands wrap the entire above flow into one keystroke each.
+</p>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="label" style="color:var(--coral); margin-bottom:8px;">/task-start</div>
+    <h3 style="margin-top:0">Begin a new task</h3>
+    <p>Sanity-checks your tree, switches to main, pulls, validates the slug, creates the branch, prints the policy reminder.</p>
+    <div class="cmd"><span class="prompt">/</span>task-start feat/voice-messages
+<span class="prompt">/</span>task-start fix/login-redirect
+<span class="prompt">/</span>task-start refactor/x --worktree</div>
+  </div>
+  <div class="card">
+    <div class="label" style="color:var(--coral); margin-bottom:8px;">/git-commit</div>
+    <h3 style="margin-top:0">Commit + push</h3>
+    <p>Runs a secret scan, checks <code>.gitignore</code> coverage, stages, commits with a descriptive message, pushes to the current branch.</p>
+    <div class="cmd"><span class="prompt">/</span>git-commit</div>
+  </div>
+</div>
+
+<div class="callout do">
+  <span class="label">Mental shortcut for the whole cycle</span>
+  <p>
+    <code>/task-start feat/x</code> → edit code → <code>/git-commit</code> → <code>gh pr create --fill</code> → <code>gh pr merge &lt;num&gt; --merge --delete-branch</code>. That's it. The four-step Pulse loop.
+  </p>
+</div>
+
+<!-- ─── 6. PARALLEL ──────────────────────────────────── -->
+<h2 id="parallel">06 — Parallel work (when you need it)</h2>
+<p>
+  By default in Pulse, <strong>one Claude session at a time per working tree.</strong> This was locked in <code>CLAUDE.md</code> § 1 after three lost-work incidents in May 2026, all caused by two sessions both calling <code>git checkout</code> in <code>f:/pulse1/</code>.
+</p>
+<p>
+  When you genuinely need two surfaces worked at once, use <strong>worktrees</strong>. A worktree is a sibling directory linked to the same repo but on a different branch. Two physical directories means zero collision.
+</p>
+
+<div class="diagram">
+  <svg viewBox="0 0 640 220" width="640" height="220" xmlns="http://www.w3.org/2000/svg">
+    <!-- shared .git -->
+    <rect x="240" y="20" width="160" height="50" rx="8" fill="var(--coral-soft)" stroke="var(--coral)" />
+    <text class="commit-label" x="320" y="42" text-anchor="middle">.git/ (shared)</text>
+    <text class="commit-label muted" x="320" y="58" text-anchor="middle" font-size="9">commits, refs, history</text>
+
+    <!-- two worktrees -->
+    <line class="commit-line" x1="320" y1="70" x2="160" y2="120" />
+    <line class="commit-line" x1="320" y1="70" x2="480" y2="120" />
+
+    <rect x="60" y="120" width="200" height="80" rx="8" fill="var(--surface)" stroke="var(--border)" />
+    <text class="commit-label" x="160" y="142" text-anchor="middle">f:/pulse1/</text>
+    <text class="commit-label muted" x="160" y="160" text-anchor="middle" font-size="9">branch: main</text>
+    <text class="commit-label muted" x="160" y="176" text-anchor="middle" font-size="9">Claude session A</text>
+    <text class="commit-label muted" x="160" y="190" text-anchor="middle" font-size="9">working tree #1</text>
+
+    <rect x="380" y="120" width="200" height="80" rx="8" fill="var(--surface)" stroke="var(--border)" />
+    <text class="commit-label" x="480" y="142" text-anchor="middle">f:/pulse1-other/</text>
+    <text class="commit-label muted" x="480" y="160" text-anchor="middle" font-size="9">branch: feat/other</text>
+    <text class="commit-label muted" x="480" y="176" text-anchor="middle" font-size="9">Claude session B</text>
+    <text class="commit-label muted" x="480" y="190" text-anchor="middle" font-size="9">working tree #2</text>
+  </svg>
+  <div class="diagram-caption">Two worktrees share one <code>.git/</code>. They share commits via push/fetch, never through working-tree state.</div>
+</div>
+
+<h3>Spawning a worktree</h3>
+<div class="cmd"><span class="prompt">PS&gt;</span> .\scripts\branch-safety\new-worktree.ps1 -Slug other-task
+<span class="out">Creating worktree:</span>
+<span class="out">  branch:    feat/other-task  (off main)</span>
+<span class="out">  directory: ..\pulse1-other-task</span>
+<span class="out">Done. To start a parallel Claude session there:</span>
+<span class="out">  cd '..\pulse1-other-task'</span>
+<span class="out">  # then open a new Claude Code window pointed at this directory</span></div>
+
+<p>
+  Then open a <strong>new Claude Code window</strong>, pointed at the new directory. That window is a separate session — it can <code>checkout</code>, <code>commit</code>, <code>push</code> freely without ever touching your main window's working tree.
+</p>
+
+<h3>Cleaning up when you're done</h3>
+<div class="cmd"><span class="prompt">$</span> cd f:\pulse1                          <span class="comment"># back to your main session</span>
+<span class="prompt">$</span> git fetch                              <span class="comment"># pull the other tree's branch ref</span>
+<span class="prompt">$</span> git merge origin/feat/other-task       <span class="comment"># bring the work onto main locally</span>
+<span class="prompt">$</span> git worktree remove ..\pulse1-other-task  <span class="comment"># tear down</span>
+<span class="prompt">$</span> git branch -d feat/other-task          <span class="comment"># delete the local branch (now merged)</span></div>
+
+<div class="callout warn">
+  <span class="label">The rule that prevented the May 2026 incidents</span>
+  <p>
+    <strong>Never run two Claude sessions in the same <code>f:/pulse1/</code> directory.</strong> One window per directory. Two directories for two windows. The post-checkout banner in <code>.git/hooks/</code> will warn you loudly if a branch swap happens — pay attention to it.
+  </p>
+</div>
+
+<!-- ─── 7. RECOVERY ──────────────────────────────────── -->
+<h2 id="recovery">07 — Recovery (when things go wrong)</h2>
+<p>
+  Almost nothing in git is permanently lost. Commits live forever (until garbage collection, which takes weeks); branches are just labels you can recreate; even "deleted" branches stay around in the reflog. <strong>Always diagnose before recovering.</strong>
+</p>
+
+<h3>Recovery checklist</h3>
+<ol class="steps">
+  <li><strong>Where am I?</strong>
+    <div class="cmd"><span class="prompt">$</span> git branch --show-current</div>
+  </li>
+  <li><strong>What's the working tree state?</strong>
+    <div class="cmd"><span class="prompt">$</span> git status --short</div>
+    Note any untracked files (<code>??</code>) — those are <em>only</em> in the working tree, never in any commit, and they vanish if you switch branches.
+  </li>
+  <li><strong>What happened recently?</strong>
+    <div class="cmd"><span class="prompt">$</span> git reflog --oneline -30</div>
+    Every checkout, commit, merge, and reset is recorded here. If a branch swap dropped your work, the reflog shows <code>checkout: moving from X to Y</code> — recover by checking out <code>X</code> again.
+  </li>
+  <li><strong>Where does a missing file live?</strong>
+    <div class="cmd"><span class="prompt">$</span> git log --all --oneline -- src/path/to/file.tsx</div>
+    Searches every branch's history for that file.
+  </li>
+  <li><strong>What branches exist?</strong>
+    <div class="cmd"><span class="prompt">$</span> git branch -a              <span class="comment"># local + remote</span>
+<span class="prompt">$</span> git worktree list           <span class="comment"># if work is in a sibling worktree</span></div>
+  </li>
+</ol>
+
+<h3>Common situations</h3>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="label" style="color:var(--info)">Situation</div>
+    <h3 style="margin-top:6px">"My uncommitted work disappeared after switching branches"</h3>
+    <p><strong>Cause:</strong> untracked files don't survive branch swaps.</p>
+    <p><strong>Recovery:</strong></p>
+    <div class="cmd"><span class="prompt">$</span> git reflog
+<span class="prompt">$</span> git checkout &lt;previous-branch&gt;</div>
+    Then commit immediately. <strong>Prevention:</strong> commit before you switch branches. Always.
+  </div>
+
+  <div class="card">
+    <div class="label" style="color:var(--info)">Situation</div>
+    <h3 style="margin-top:6px">"I committed to the wrong branch"</h3>
+    <p><strong>Cause:</strong> you forgot to <code>git checkout -b</code> before working.</p>
+    <p><strong>Recovery:</strong></p>
+    <div class="cmd"><span class="prompt">$</span> git checkout -b feat/my-task      <span class="comment"># claim the new commits</span>
+<span class="prompt">$</span> git checkout main
+<span class="prompt">$</span> git reset --hard origin/main       <span class="comment"># reset main</span></div>
+  </div>
+
+  <div class="card">
+    <div class="label" style="color:var(--info)">Situation</div>
+    <h3 style="margin-top:6px">"git pull complained about conflicts"</h3>
+    <p><strong>Cause:</strong> remote and local diverged.</p>
+    <p><strong>Recovery:</strong> Open the conflicted files. You'll see <code>&lt;&lt;&lt;&lt;&lt;</code> / <code>=====</code> / <code>&gt;&gt;&gt;&gt;&gt;</code> markers. Pick which side you want (or both), delete the markers, save. Then:</p>
+    <div class="cmd"><span class="prompt">$</span> git add &lt;file&gt;
+<span class="prompt">$</span> git commit                          <span class="comment"># merge commit message ready</span></div>
+  </div>
+
+  <div class="card">
+    <div class="label" style="color:var(--info)">Situation</div>
+    <h3 style="margin-top:6px">"I accidentally committed a secret"</h3>
+    <p><strong>Cause:</strong> didn't see gitleaks warning, or bypassed it.</p>
+    <p><strong>Recovery:</strong> If not yet pushed, <code>git reset HEAD~1</code> + scrub the secret + recommit. If already pushed, <strong>rotate the secret first</strong>, then talk to the team about a history rewrite. Don't try to delete-and-force-push without coordination.</p>
+  </div>
+</div>
+
+<div class="callout warn">
+  <span class="label">Before any destructive command</span>
+  <p>
+    Anything ending in <code>--force</code>, <code>--hard</code>, or <code>-f</code> can lose work. <code>git reset --hard</code>, <code>git checkout --</code>, <code>git clean -f</code>, <code>git push --force</code>. Stop and diagnose first. Ask yourself: "If I'm wrong about what this command does, what's the worst case?"
+  </p>
+</div>
+
+<!-- ─── 8. REFERENCE ─────────────────────────────────── -->
+<h2 id="reference">08 — Reference card</h2>
+
+<h3>Pulse loop (the four commands)</h3>
+<div class="cmd"><span class="prompt">/</span>task-start feat/&lt;slug&gt;                       <span class="comment"># 1. start fresh</span>
+<span class="comment"># edit / test ...</span>
+<span class="prompt">/</span>git-commit                                   <span class="comment"># 2. commit + push</span>
+<span class="prompt">$</span> gh pr create --fill                          <span class="comment"># 3. open PR</span>
+<span class="prompt">$</span> gh pr merge &lt;num&gt; --merge --delete-branch    <span class="comment"># 4. merge + cleanup</span></div>
+
+<h3>Inspect</h3>
+<table>
+  <tbody>
+    <tr><td><code>git branch --show-current</code></td><td>which branch you're on</td></tr>
+    <tr><td><code>git status --short</code></td><td>what's changed (terse)</td></tr>
+    <tr><td><code>git log --oneline -10</code></td><td>last 10 commits</td></tr>
+    <tr><td><code>git log --all --oneline -- &lt;path&gt;</code></td><td>find a file across all branches</td></tr>
+    <tr><td><code>git diff</code></td><td>what's unstaged</td></tr>
+    <tr><td><code>git diff --cached</code></td><td>what's staged for next commit</td></tr>
+    <tr><td><code>git reflog --oneline -30</code></td><td>recent HEAD movements (recovery)</td></tr>
+  </tbody>
+</table>
+
+<h3>Move work around</h3>
+<table>
+  <tbody>
+    <tr><td><code>git add &lt;file&gt;</code></td><td>stage a change</td></tr>
+    <tr><td><code>git commit -m "msg"</code></td><td>snapshot staged</td></tr>
+    <tr><td><code>git push -u origin &lt;branch&gt;</code></td><td>push + track remote</td></tr>
+    <tr><td><code>git pull</code></td><td>fetch + merge remote</td></tr>
+    <tr><td><code>git fetch</code></td><td>download remote refs without merging</td></tr>
+    <tr><td><code>git merge &lt;branch&gt;</code></td><td>combine another branch into yours</td></tr>
+    <tr><td><code>git cherry-pick &lt;commit&gt;</code></td><td>apply a single commit from elsewhere</td></tr>
+  </tbody>
+</table>
+
+<h3>Branches</h3>
+<table>
+  <tbody>
+    <tr><td><code>git checkout -b &lt;name&gt;</code></td><td>create + switch</td></tr>
+    <tr><td><code>git checkout &lt;branch&gt;</code></td><td>switch (only safe if tree clean)</td></tr>
+    <tr><td><code>git branch -d &lt;branch&gt;</code></td><td>delete (refuses if unmerged)</td></tr>
+    <tr><td><code>git branch -D &lt;branch&gt;</code></td><td>force-delete (DANGER)</td></tr>
+    <tr><td><code>git branch --merged main</code></td><td>list branches whose work is in main</td></tr>
+  </tbody>
+</table>
+
+<h3>GitHub via gh CLI</h3>
+<table>
+  <tbody>
+    <tr><td><code>gh pr create --fill</code></td><td>open PR (auto title/body from commits)</td></tr>
+    <tr><td><code>gh pr view &lt;num&gt;</code></td><td>open PR in browser</td></tr>
+    <tr><td><code>gh pr diff &lt;num&gt;</code></td><td>show the diff</td></tr>
+    <tr><td><code>gh pr checks &lt;num&gt;</code></td><td>CI status</td></tr>
+    <tr><td><code>gh pr merge &lt;num&gt; --merge --delete-branch</code></td><td>merge + cleanup</td></tr>
+    <tr><td><code>gh pr list</code></td><td>list open PRs</td></tr>
+    <tr><td><code>gh repo view --web</code></td><td>open repo in browser</td></tr>
+  </tbody>
+</table>
+
+<h3>Parallel work</h3>
+<table>
+  <tbody>
+    <tr><td><code>.\scripts\branch-safety\new-worktree.ps1 -Slug &lt;s&gt;</code></td><td>spawn isolated sibling directory</td></tr>
+    <tr><td><code>git worktree list</code></td><td>list active worktrees</td></tr>
+    <tr><td><code>git worktree remove &lt;path&gt;</code></td><td>tear down a worktree</td></tr>
+  </tbody>
+</table>
+
+<div class="callout do" style="margin-top:32px">
+  <span class="label">If you remember nothing else</span>
+  <ul style="margin-top:8px; color:var(--ink-2)">
+    <li><strong>One task = one branch.</strong> Never edit on main directly.</li>
+    <li><strong>Commit early.</strong> Uncommitted work is at risk.</li>
+    <li><strong>One Claude per working tree.</strong> Use worktrees for parallel.</li>
+    <li><strong>Diagnose before recovering.</strong> The reflog has nearly everything.</li>
+  </ul>
+</div>
+
+<footer class="fin">
+  <p>Pulse repo conventions live in <a href="../CLAUDE.md">CLAUDE.md</a> · branch-safety scripts at <a href="../scripts/branch-safety/">scripts/branch-safety/</a> · open this page anytime via <code>docs/learn-github.html</code></p>
+</footer>
+
+</div>
+
+<script>
+  // Theme toggle
+  const html = document.documentElement;
+  const btn = document.getElementById('themeBtn');
+  function setTheme(t) {
+    html.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? 'Light mode' : 'Dark mode';
+    try { localStorage.setItem('learn-github-theme', t); } catch (_) {}
+  }
+  try {
+    const saved = localStorage.getItem('learn-github-theme');
+    if (saved) setTheme(saved);
+  } catch (_) {}
+  btn.addEventListener('click', () => {
+    setTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  // Copy buttons
+  document.querySelectorAll('.copy').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const txt = btn.getAttribute('data-copy') || btn.parentElement.innerText.replace(/^Copy\s*/, '');
+      try {
+        await navigator.clipboard.writeText(txt.trim());
+        const orig = btn.textContent;
+        btn.textContent = 'Copied';
+        btn.classList.add('ok');
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove('ok'); }, 1200);
+      } catch (_) { /* ignore */ }
+    });
+  });
+</script>
+
+</body>
+</html>
