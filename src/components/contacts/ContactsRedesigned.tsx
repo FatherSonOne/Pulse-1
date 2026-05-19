@@ -1,4 +1,6 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 import { Contact } from '../../types';
 import { AddContactModal } from './AddContactModal';
 import { EditContactModal } from './EditContactModal';
@@ -9,6 +11,25 @@ import { DuplicateDetectionModal } from './DuplicateDetectionModal';
 import { SmartListType, RelationshipProfile, LeadScore, getRelationshipHealthColor } from '../../types/relationshipTypes';
 import { ContactDetail } from './ContactDetail';
 import { supabase } from '../../services/supabase';
+import { dataService } from '../../services/dataService';
+import { getCircles } from '../../services/contactCircleService';
+import type { ContactCircle } from '../../types/contactCircleTypes';
+import { useWorkspaceData, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
+import { shareContactsToWorkspace } from '../../services/workspaceContactsService';
+import {
+  applyFilterPredicate,
+  createSavedFilter,
+  deleteSavedFilter,
+  listSavedFilters,
+  updateSavedFilter,
+  type FilterPredicate,
+  type SavedFilter,
+} from '../../services/savedFiltersService';
+import { ArchivedToggle } from './ArchivedToggle';
+import { BulkActionToolbar } from './BulkActionToolbar';
+import { ProvenanceChip, type ContactProvenanceSource } from './ProvenanceChip';
+import { SavedFiltersPanel } from './SavedFiltersPanel';
+import { WorkspaceShareModal } from './WorkspaceShareModal';
 import './Contacts.css';
 
 import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronRight, Clock, Copy, Flame, LayoutGrid, List, MessageSquare, Moon, Network, Plus, Radio, RefreshCw, Search, Snowflake, Star, UserX, Users, Video, Wand2, X, Zap } from 'lucide-react';
@@ -76,6 +97,11 @@ interface SidebarProps {
   alertCount: number;
   onViewAlerts: () => void;
   onAddContact: () => void;
+  headerReplacement?: React.ReactNode;
+  showArchived: boolean;
+  archivedCount: number;
+  onToggleArchived: (next: boolean) => void;
+  savedFiltersPanel?: React.ReactNode;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -92,24 +118,34 @@ const Sidebar: React.FC<SidebarProps> = ({
   alertCount,
   onViewAlerts,
   onAddContact,
+  headerReplacement,
+  showArchived,
+  archivedCount,
+  onToggleArchived,
+  savedFiltersPanel,
 }) => (
   <div className="contacts-sidebar">
-    <div className="contacts-sidebar-header">
-      <div className="contacts-sidebar-title">
-        <Network />
-        <span>Network</span>
+    {headerReplacement ? (
+      headerReplacement
+    ) : (
+      <div className="contacts-sidebar-header">
+        <div className="contacts-sidebar-title">
+          <Network />
+          <span>Network</span>
+        </div>
+        <div className="contacts-search">
+          <Search className="contacts-search-icon" />
+          <input
+            type="text"
+            className="contacts-search-input"
+            placeholder="Search contacts..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            data-contacts-search
+          />
+        </div>
       </div>
-      <div className="contacts-search">
-        <Search className="contacts-search-icon" />
-        <input
-          type="text"
-          className="contacts-search-input"
-          placeholder="Search contacts..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
-      </div>
-    </div>
+    )}
 
     {/* Overview Section */}
     <div className="contacts-sidebar-section">
@@ -137,6 +173,12 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
         <span className="contacts-filter-btn-count">{counts.online}</span>
       </button>
+
+      <ArchivedToggle
+        showArchived={showArchived}
+        archivedCount={archivedCount}
+        onToggle={onToggleArchived}
+      />
     </div>
 
     {/* Tags Section */}
@@ -210,6 +252,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       })}
     </div>
 
+    {savedFiltersPanel}
+
     {/* Add Contact Button */}
     <button className="contacts-add-btn" onClick={onAddContact}>
       <Plus />
@@ -225,6 +269,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 interface NodeCardProps {
   contact: Contact;
   isSelected: boolean;
+  isChecked: boolean;
   onSelect: () => void;
   onToggleSelection: () => void;
   profile?: RelationshipProfile;
@@ -235,6 +280,7 @@ interface NodeCardProps {
 const NodeCard: React.FC<NodeCardProps> = ({
   contact,
   isSelected,
+  isChecked,
   onSelect,
   onToggleSelection,
   profile,
@@ -242,12 +288,38 @@ const NodeCard: React.FC<NodeCardProps> = ({
   onAction,
 }) => {
   const healthColor = profile ? getRelationshipHealthColor(profile.relationshipScore) : '#6b7280';
+  const provenanceSource = ((contact as Contact & { import_source?: ContactProvenanceSource }).import_source
+    ?? (contact.source === 'google' ? 'google' : contact.source === 'local' ? 'manual' : 'legacy')) as ContactProvenanceSource;
 
   return (
     <div
       className={`contacts-node ${isSelected ? 'selected' : ''}`}
       onClick={onSelect}
     >
+      <button
+        type="button"
+        className={`contacts-node-select ${isChecked ? 'is-checked' : ''}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggleSelection();
+        }}
+        role="checkbox"
+        aria-checked={isChecked}
+        aria-label={`Select ${contact.name}`}
+      >
+        <span className="contacts-node-select__box">
+          {isChecked && <Check size={14} aria-hidden="true" />}
+        </span>
+      </button>
+
+      <div className="contacts-node-provenance">
+        <ProvenanceChip
+          variant="dot"
+          source={provenanceSource}
+          addedAt={(contact as Contact & { created_at?: string }).created_at}
+        />
+      </div>
+
       {/* Lead Grade Badge */}
       {leadScore && (
         <div className={`contacts-node-lead ${leadScore.leadGrade}`}>
@@ -452,6 +524,9 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   onDeleteContact,
   openAddContact,
 }) => {
+  const { t } = useTranslation();
+  const { currentWorkspace, workspaces } = useWorkspaceData();
+  const { isAdmin, isOwner } = useWorkspacePermissions();
   // State
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -467,11 +542,47 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
   const [showAlertsPanel, setShowAlertsPanel] = useState(false);
   const [showDuplicatesModal, setShowDuplicatesModal] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [archivedContacts, setArchivedContacts] = useState<Contact[]>([]);
+  const [archivedCount, setArchivedCount] = useState(0);
+  const [bulkOperationInFlight, setBulkOperationInFlight] = useState(false);
+  const [showWorkspaceShare, setShowWorkspaceShare] = useState(false);
+  const [circles, setCircles] = useState<ContactCircle[]>([]);
+  const [savedFilters, setSavedFilters] = useState<{ user: SavedFilter[]; workspace: SavedFilter[] }>({ user: [], workspace: [] });
+  const [activeSavedFilterId, setActiveSavedFilterId] = useState<string | null>(null);
+  const [orphanedConditionsByFilterId, setOrphanedConditionsByFilterId] = useState<Record<string, number>>({});
 
   // Auth
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
+
+  const refreshArchivedContacts = async () => {
+    const archived = await dataService.getContacts({ archivedOnly: true });
+    setArchivedContacts(archived);
+    setArchivedCount(archived.length);
+  };
+
+  useEffect(() => {
+    refreshArchivedContacts();
+  }, [contacts.length]);
+
+  useEffect(() => {
+    if (!userId) return;
+    getCircles(userId)
+      .then(setCircles)
+      .catch(error => console.warn('[ContactsRedesigned] circles load failed:', error));
+  }, [userId, contacts.length]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listSavedFilters(currentWorkspace?.id)
+      .then(filters => {
+        if (!cancelled) setSavedFilters(filters);
+      })
+      .catch(error => console.warn('[ContactsRedesigned] saved filters load failed:', error));
+    return () => { cancelled = true; };
+  }, [currentWorkspace?.id]);
 
   // Relationship Intelligence
   const {
@@ -504,16 +615,18 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
     }
   }, [openAddContact]);
 
+  const baseContacts = showArchived ? archivedContacts : contacts;
+
   // Stats
   const counts = useMemo(() => ({
-    total: contacts.length,
-    online: contacts.filter(c => c.status === 'online').length,
-    offline: contacts.filter(c => c.status === 'offline').length,
-  }), [contacts]);
+    total: baseContacts.length,
+    online: baseContacts.filter(c => c.status === 'online').length,
+    offline: baseContacts.filter(c => c.status === 'offline').length,
+  }), [baseContacts]);
 
   // Filtering
   const filteredContacts = useMemo(() => {
-    let result = contacts.filter(c => {
+    let result = baseContacts.filter(c => {
       // Search
       const matchesSearch = searchQuery === '' ||
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -563,8 +676,26 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
       result = result.filter(c => c.email && smartListEmails.has(c.email));
     }
 
+    const activeFilter = [...savedFilters.user, ...savedFilters.workspace].find(filter => filter.id === activeSavedFilterId);
+    if (activeFilter) {
+      const knownCircleIds = new Set(circles.map(circle => circle.id));
+      const knownTagUuids = new Set(baseContacts.flatMap(contact => contact.groups ?? []));
+      const applied = applyFilterPredicate(activeFilter.predicate_json, result, knownCircleIds, knownTagUuids);
+      result = applied.matched;
+    }
+
     return result;
-  }, [contacts, searchQuery, filterStatus, filterTag, activeSmartList, profiles]);
+  }, [baseContacts, searchQuery, filterStatus, filterTag, activeSmartList, profiles, savedFilters, activeSavedFilterId, circles]);
+
+  useEffect(() => {
+    const knownCircleIds = new Set(circles.map(circle => circle.id));
+    const knownTagUuids = new Set(baseContacts.flatMap(contact => contact.groups ?? []));
+    const next: Record<string, number> = {};
+    [...savedFilters.user, ...savedFilters.workspace].forEach(filter => {
+      next[filter.id] = applyFilterPredicate(filter.predicate_json, baseContacts, knownCircleIds, knownTagUuids).orphanedConditions;
+    });
+    setOrphanedConditionsByFilterId(next);
+  }, [baseContacts, circles, savedFilters]);
 
   // Handlers
   const handleSync = async () => {
@@ -590,6 +721,148 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
     });
   };
 
+  useEffect(() => {
+    if (selectedIds.size === 0) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedIds(new Set());
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedIds.size]);
+
+  const refreshAfterBulkOperation = async () => {
+    await refreshArchivedContacts();
+    const nextContacts = await dataService.getContacts();
+    onSyncComplete?.(nextContacts);
+  };
+
+  const selectedIdList = useMemo(() => Array.from(selectedIds), [selectedIds]);
+
+  const affectsCircle = useMemo(() => {
+    if (selectedIds.size === 0) return null;
+    const selected = selectedIds;
+    const emptied = circles.find(circle =>
+      circle.memberContactIds.length > 0 &&
+      circle.memberContactIds.every(id => selected.has(id))
+    );
+    return emptied?.name ?? null;
+  }, [circles, selectedIds]);
+
+  const handleBulkArchive = async () => {
+    if (bulkOperationInFlight || selectedIdList.length === 0) return;
+    setBulkOperationInFlight(true);
+    try {
+      const result = await dataService.archiveContacts(selectedIdList);
+      if (result.failed.length > 0) {
+        toast.error(t('contacts.bulkToolbar.partial_failure', {
+          succeeded: result.succeeded.length,
+          failed: result.failed.length,
+          total: selectedIdList.length,
+        }));
+      } else {
+        toast.success(t('contacts.bulkToolbar.success_archived', { count: result.succeeded.length }));
+      }
+      setSelectedIds(new Set());
+      await refreshAfterBulkOperation();
+    } finally {
+      setBulkOperationInFlight(false);
+    }
+  };
+
+  const handleBulkRestore = async () => {
+    if (bulkOperationInFlight || selectedIdList.length === 0) return;
+    setBulkOperationInFlight(true);
+    try {
+      const result = await dataService.restoreContacts(selectedIdList);
+      if (result.failed.length > 0) {
+        toast.error(t('contacts.bulkToolbar.partial_failure', {
+          succeeded: result.succeeded.length,
+          failed: result.failed.length,
+          total: selectedIdList.length,
+        }));
+      } else {
+        toast.success(t('contacts.bulkToolbar.success_restored', { count: result.succeeded.length }));
+      }
+      setSelectedIds(new Set());
+      await refreshAfterBulkOperation();
+    } finally {
+      setBulkOperationInFlight(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (bulkOperationInFlight || selectedIdList.length === 0) return;
+    setBulkOperationInFlight(true);
+    try {
+      const result = await dataService.bulkDeleteContacts(selectedIdList);
+      if (result.failed.length > 0) {
+        toast.error(t('contacts.bulkToolbar.partial_failure', {
+          succeeded: result.succeeded.length,
+          failed: result.failed.length,
+          total: selectedIdList.length,
+        }));
+      }
+      setSelectedIds(new Set());
+      await refreshAfterBulkOperation();
+    } finally {
+      setBulkOperationInFlight(false);
+    }
+  };
+
+  const buildCurrentPredicate = (): FilterPredicate => ({
+    search: searchQuery.trim() || undefined,
+    archived: showArchived ? true : undefined,
+  });
+
+  const reloadSavedFilters = async () => {
+    const filters = await listSavedFilters(currentWorkspace?.id);
+    setSavedFilters(filters);
+  };
+
+  const handleSaveCurrentFilter = async (draft?: { name: string; scope: 'personal' | 'workspace' }) => {
+    const name = draft?.name || window.prompt(t('contacts.savedFilters.save_dialog_name_label'))?.trim();
+    if (!name) return;
+    await createSavedFilter({
+      name,
+      predicate: buildCurrentPredicate(),
+      workspaceId: draft?.scope === 'workspace' ? currentWorkspace?.id : undefined,
+    });
+    await reloadSavedFilters();
+  };
+
+  const handleEditSavedFilter = async (id: string) => {
+    const filter = [...savedFilters.user, ...savedFilters.workspace].find(item => item.id === id);
+    if (!filter) return;
+    const name = window.prompt(t('contacts.savedFilters.save_dialog_name_label'), filter.name)?.trim();
+    if (!name || name === filter.name) return;
+    await updateSavedFilter(id, { name });
+    await reloadSavedFilters();
+  };
+
+  const handleDeleteSavedFilter = async (id: string) => {
+    await deleteSavedFilter(id);
+    if (activeSavedFilterId === id) setActiveSavedFilterId(null);
+    await reloadSavedFilters();
+  };
+
+  const handleShareToWorkspace = async (workspaceId: string) => {
+    const result = await shareContactsToWorkspace(selectedIdList, workspaceId);
+    const workspaceName = workspaces.find(workspace => workspace.id === workspaceId)?.name ?? '';
+    if (result.failed.length > 0) {
+      toast.error(t('contacts.bulkToolbar.partial_failure', {
+        succeeded: result.succeeded.length,
+        failed: result.failed.length,
+        total: selectedIdList.length,
+      }));
+    } else {
+      toast.success(t('contacts.bulkToolbar.success_shared', { count: result.succeeded.length, workspace: workspaceName }));
+    }
+    setShowWorkspaceShare(false);
+    setSelectedIds(new Set());
+    await refreshAfterBulkOperation();
+    return { shared: result.succeeded.length, failed: result.failed.length };
+  };
+
   const handleAddContactWrapper = async (newContact: Omit<Contact, 'id'>) => {
     if (onAddContact) {
       await onAddContact(newContact);
@@ -612,6 +885,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
 
   const selectedProfile = selectedContact?.email ? getProfileByEmail(selectedContact.email) : null;
   const selectedLeadScore = selectedContact?.email ? getLeadScoreByEmail(selectedContact.email) : null;
+  const canDelete = !!onDeleteContact || selectedIds.size > 0;
 
   return (
     <div className="contacts-container">
@@ -637,6 +911,41 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
         alertCount={alerts.length}
         onViewAlerts={() => setShowAlertsPanel(true)}
         onAddContact={() => setShowAddModal(true)}
+        showArchived={showArchived}
+        archivedCount={archivedCount}
+        onToggleArchived={(next) => {
+          setShowArchived(next);
+          setSelectedIds(new Set());
+          setActiveSavedFilterId(null);
+        }}
+        headerReplacement={selectedIds.size > 0 ? (
+          <BulkActionToolbar
+            selectedCount={selectedIds.size}
+            onClearSelection={() => setSelectedIds(new Set())}
+            onShare={() => setShowWorkspaceShare(true)}
+            onArchive={handleBulkArchive}
+            onUnarchive={handleBulkRestore}
+            onDelete={handleBulkDelete}
+            onSaveAsFilter={() => handleSaveCurrentFilter()}
+            canShare={!!currentWorkspace}
+            canDelete
+            isInArchivedView={showArchived}
+            affectsCircle={affectsCircle}
+          />
+        ) : undefined}
+        savedFiltersPanel={(
+          <SavedFiltersPanel
+            userFilters={savedFilters.user}
+            workspaceFilters={savedFilters.workspace}
+            activeFilterId={activeSavedFilterId}
+            onSelectFilter={setActiveSavedFilterId}
+            onSaveCurrent={handleSaveCurrentFilter}
+            onEditFilter={handleEditSavedFilter}
+            onDeleteFilter={handleDeleteSavedFilter}
+            canEditWorkspaceFilters={isAdmin || isOwner}
+            orphanedConditionsByFilterId={orphanedConditionsByFilterId}
+          />
+        )}
       />
 
       {/* Main Content */}
@@ -728,7 +1037,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
 
         {/* Content */}
         {filteredContacts.length === 0 ? (
-          contacts.length === 0 ? (
+          baseContacts.length === 0 ? (
             <div className="contacts-empty contacts-empty--first-run">
               <div className="contacts-empty-eyebrow">YOUR NETWORK</div>
               <h2 className="contacts-empty-headline">Build your network</h2>
@@ -780,6 +1089,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
                   key={contact.id}
                   contact={contact}
                   isSelected={selectedContact?.id === contact.id}
+                  isChecked={selectedIds.has(contact.id)}
                   onSelect={() => setSelectedContact(contact)}
                   onToggleSelection={() => handleToggleSelection(contact.id)}
                   profile={relationshipProfiles.get(contact.email || '')}
@@ -916,6 +1226,14 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
           setContactToEdit(null);
         }}
         onSave={handleSaveContact}
+      />
+
+      <WorkspaceShareModal
+        open={showWorkspaceShare}
+        contactIds={selectedIdList}
+        availableWorkspaces={workspaces.map(workspace => ({ id: workspace.id, name: workspace.name }))}
+        onShare={handleShareToWorkspace}
+        onCancel={() => setShowWorkspaceShare(false)}
       />
     </div>
   );
