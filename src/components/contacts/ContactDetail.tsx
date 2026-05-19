@@ -21,9 +21,10 @@ import { supabase } from '../../services/supabase';
 import { useWorkspaceData } from '../../contexts/WorkspaceContext';
 import { listWorkspaceContacts, type WorkspaceSharedContact } from '../../services/workspaceContactsService';
 import { ProvenanceChip, type ContactProvenanceSource } from './ProvenanceChip';
+import { CardSourceChip } from './cards/CardSourceChip';
 
 import toast from 'react-hot-toast';
-import { ArrowRight, Cake, Check, Clock, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Sparkles, Star, Target, Trash2, Video, X } from 'lucide-react';
+import { ArrowRight, Cake, Check, Clock, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Send, Sparkles, Star, Target, Trash2, Video, X } from 'lucide-react';
 import MapPreview from '../map/MapPreview';
 
 // ==================== TYPES ====================
@@ -35,6 +36,12 @@ interface ContactDetailProps {
   onAction: (action: 'message' | 'vox' | 'meet', contactId: string) => void;
   onEdit: (contact: Contact) => void;
   onDelete?: () => Promise<void>;
+  /**
+   * Phase C: opens ShareCardModal with this contact as subject. When
+   * omitted, the "Send as card" header button does not render — keeps
+   * Phase B flag-off behavior byte-identical.
+   */
+  onSendAsCard?: (contact: Contact) => void;
   relationshipProfile?: RelationshipProfile | null;
   insights?: RelationshipInsights | null;
   leadScore?: LeadScore | null;
@@ -106,6 +113,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   onAction,
   onEdit,
   onDelete,
+  onSendAsCard,
   relationshipProfile,
   insights,
   leadScore,
@@ -186,6 +194,16 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   const provenanceSource = ((contact as Contact & { import_source?: ContactProvenanceSource }).import_source
     ?? (contact.source === 'google' ? 'google' : contact.source === 'local' ? 'manual' : 'legacy')) as ContactProvenanceSource;
 
+  // Phase C: detect whether this contact originated from an accepted card.
+  // TODO(phase-6-review): the schema spec did not pin a definitive column
+  // for the indicator (it added `possible_duplicate_of` but not a
+  // `from_card_sender` column). Defensible defaults until backend lands:
+  //   1. import_source === 'card' (if a future migration adopts this)
+  //   2. an as-yet-unnamed `from_card_sender_name` field on Contact
+  // Both are nullable; if neither resolves, the chip is hidden silently.
+  const cardSourceSenderName = ((contact as Contact & { from_card_sender_name?: string | null }).from_card_sender_name) ?? null;
+  const cameFromCard = provenanceSource === 'card' || Boolean(cardSourceSenderName);
+
   return (
     <>
     <div className="fixed inset-y-0 right-0 w-full md:w-[480px] bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-50 flex flex-col">
@@ -205,8 +223,25 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             source={provenanceSource}
             addedAt={(contact as Contact & { created_at?: string }).created_at}
           />
+          {cameFromCard && (
+            <CardSourceChip
+              senderName={cardSourceSenderName ?? 'Pulse user'}
+              sentAt={(contact as Contact & { created_at?: string }).created_at}
+            />
+          )}
         </div>
         <div className="flex gap-1">
+          {onSendAsCard && (
+            <button
+              onClick={() => onSendAsCard(contact)}
+              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 transition"
+              title={t('contacts.cards.contactDetail.send_as_card_cta')}
+              aria-label={t('contacts.cards.contactDetail.send_as_card_aria_format', { name: contact.name })}
+              style={{ minWidth: 44, minHeight: 44 }}
+            >
+              <Send className="text-sm" />
+            </button>
+          )}
           <button
             onClick={() => onEdit(contact)}
             className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 transition"
