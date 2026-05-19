@@ -905,8 +905,13 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
           warm_leads: 0,
           inactive_30_days: 0,
           vip: 0,
+          hot_leads: 0,
+          at_risk: 0,
           cold_leads: 0,
           recent_contacts: 0,
+          company: 0,
+          tag: 0,
+          custom: 0,
         }}
         alertCount={alerts.length}
         onViewAlerts={() => setShowAlertsPanel(true)}
