@@ -55,23 +55,43 @@ twice to silent branch swaps during parallel sessions.
 5. Surface the diagnosis to the user before taking recovery actions;
    never silently `git checkout` to recover
 
-### Parallel sessions:
+### Session policy (locked 2026-05-18):
 
-Multiple Claude sessions may be working in this repo simultaneously
-(e.g. one writing tests on a fix branch while another redesigns a
-feature on a refactor branch). **The strongest defense is to give each
-session its own physical working tree directory** so they can never
-clobber each other (see "Worktree workflow" below).
+**Default: serial.** One Claude session runs at a time in this repo.
+The user opens a session on a fresh branch off `main`, the session
+works, commits, pushes, opens a PR, and is closed before another
+session begins. This is the safe default — no two sessions ever share
+a working tree at the same time, so the branch-swap collisions that
+plagued the May 2026 redesign window cannot occur.
 
-If two sessions must share a working tree, each must stay on its own
-branch. If you need work from another branch:
+**Escalation: worktrees, only when explicitly requested.** When the
+user says they want two surfaces worked in parallel (e.g. "finish the
+messages redesign while I prototype the new dashboard"), spawn an
+isolated worktree via `scripts/branch-safety/new-worktree.{sh,ps1}`.
+Each parallel session lives in its own sibling directory
+(`f:/pulse1-<slug>/`) and can never reach into another session's
+working tree. See "Worktree workflow" below for the commands.
 
-- `git merge <other-branch>` (preserve both histories) — preferred
+**Never run two sessions in the same `f:/pulse1/` directory.** This is
+not a soft rule; it is the root cause of every lost-work incident in
+the May 2026 window. Two sessions in two physical directories are
+fine; two sessions in one directory are forbidden.
+
+If a session inherits a dirty / unexpected working tree state (e.g.
+discovers it's not on the branch it expected), STOP immediately and
+surface the diagnosis. Don't `git checkout` to "fix" it — that's how
+work disappears.
+
+### Cross-branch coordination (when you need work from another branch):
+
+Always use commit-level operations, never working-tree-level ones:
+
+- `git fetch && git merge <branch>` (preserve both histories) — preferred
 - `git cherry-pick <commit>` (specific commits only) — surgical
 - NEVER do an in-place `git checkout` swap that abandons the
   current branch's uncommitted state
 
-### Worktree workflow (recommended for parallel sessions):
+### Worktree workflow (use when escalating to parallel sessions):
 
 Instead of switching branches in-place within `f:/pulse1`, spawn an
 isolated working tree at a sibling directory. Each Claude session
