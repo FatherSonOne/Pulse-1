@@ -139,5 +139,80 @@
       "resetConfirm": "Yes, reset",
       "toggleFeature": "Toggle {{name}}"
     }
+  },
+  "contacts": {
+    "bulkToolbar": {
+      "selected_count": "{{count}} selected",
+      "selected_count_aria": "{{count}} contacts selected. Bulk actions available.",
+      "toolbar_label": "Bulk actions for selected contacts",
+      "share_cta": "Share with Workspace",
+      "archive_cta": "Archive",
+      "unarchive_cta": "Restore",
+      "delete_cta": "Delete",
+      "save_filter_cta": "Save as filter",
+      "clear_selection": "Clear selection",
+      "delete_skip_confirm_title": "Delete {{count}} contacts?",
+      "delete_skip_confirm_body": "These contacts will be removed from Pulse. Their messages stay. This can't be undone.",
+      "delete_skip_confirm_cta": "Delete {{count}}",
+      "delete_skip_confirm_cancel": "Keep them",
+      "archive_circle_warning": "Archiving will empty the \"{{circle}}\" circle. Continue?",
+      "continue_cta": "Continue",
+      "cancel_cta": "Cancel",
+      "success_archived": "Archived {{count}} contacts. Restore from Show archived.",
+      "success_restored": "Restored {{count}} contacts.",
+      "success_shared": "Shared {{count}} contacts with {{workspace}}.",
+      "partial_failure": "{{succeeded}} of {{total}} succeeded. {{failed}} failed - try again.",
+      "range_boundary": "{{count}} rows selected; load more to extend selection"
+    },
+    "savedFilters": {
+      "panel_label": "Saved filters",
+      "section_mine": "My filters",
+      "section_workspace": "Workspace filters",
+      "empty": "No saved filters yet. Build a filter, then save it.",
+      "save_dialog_title": "Save this filter",
+      "save_dialog_name_label": "Filter name",
+      "save_dialog_name_placeholder": "e.g. Warm leads in Atlanta",
+      "save_dialog_scope_personal": "Just for me",
+      "save_dialog_scope_workspace": "Share with workspace",
+      "save_dialog_cta": "Save filter",
+      "orphan_badge": "{{count}} condition unavailable",
+      "orphan_badge_plural": "{{count}} conditions unavailable",
+      "orphan_tooltip": "Some saved conditions no longer apply - fields or tags were removed. Open to fix or delete.",
+      "read_only_hint": "Workspace filter - ask an editor to change it.",
+      "delete_confirm": "Delete \"{{name}}\"? This won't delete any contacts."
+    },
+    "workspaceShare": {
+      "title": "Share with Workspace",
+      "subtitle": "These contacts will be visible to everyone in the workspace you pick.",
+      "picker_label": "Workspace",
+      "picker_placeholder": "Pick a workspace...",
+      "preview_label": "Sharing {{count}} contact",
+      "preview_label_plural": "Sharing {{count}} contacts",
+      "privacy_disclaimer": "Your private notes, tags, and call history stay private - only the contact card is shared.",
+      "shared_by_former_user": "Shared by (former member)",
+      "audit_title": "Workspace history",
+      "audit_shared_with": "Shared with {{workspace}} on {{date}}{{by}}",
+      "audit_shared_by": " by {{user}}",
+      "cta_primary": "Share {{count}}",
+      "cta_secondary": "Cancel",
+      "settings_link": "Settings",
+      "error_no_workspace": "You're not in a workspace yet. Create one in Settings.",
+      "error_no_permission": "You don't have permission to share contacts in this workspace."
+    },
+    "archived": {
+      "toggle_label": "Show archived",
+      "toggle_aria": "Show archived contacts",
+      "row_badge": "Archived",
+      "row_date_format": "Archived {{date}}",
+      "restore_action": "Restore"
+    },
+    "provenance": {
+      "source_google": "From Google",
+      "source_outlook": "From Outlook",
+      "source_manual": "Added manually",
+      "source_legacy": "Unknown origin",
+      "dot_tooltip_format": "{{source}} - added {{date}}",
+      "chip_label_format": "{{source}}"
+    }
   }
 }
