@@ -1923,6 +1923,13 @@ html.dark .pulse-studio,
   background: var(--pulse-tone-info);
 }
 
+.ps-provenance-dot[data-source="logos-vision"] {
+  /* LV (Logos Vision) — coral, the "case-record bridge" promise from the
+     landing page. Distinct enough to spot, paired with the LV . CASE chip
+     label rather than carrying meaning by color alone. */
+  background: var(--pulse-rose);
+}
+
 .ps-provenance-dot[data-source="manual"],
 .ps-provenance-dot[data-source="legacy"],
 .ps-provenance-dot:not([data-source]) {

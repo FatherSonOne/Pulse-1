@@ -211,6 +211,7 @@
       "source_outlook": "From Outlook",
       "source_manual": "Added manually",
       "source_legacy": "Unknown origin",
+      "source_logos-vision": "LV . Case",
       "dot_tooltip_format": "{{source}} - added {{date}}",
       "chip_label_format": "{{source}}"
     },

@@ -1,8 +1,9 @@
 // ============================================
 // CONTACTS SHELL
 // Top-level container for the reimagined Contacts section.
-// Provides three modes: Today (default), People, Circles.
-// Phase 5: keyboard shortcuts + first-visit onboarding tour.
+// Provides two modes: Today (default) and People.
+// Circles were demoted from a top-level tab to a sidebar facet on People
+// in Phase D (the bubble-chart visualization was decoration, not a tool).
 // ============================================
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
@@ -10,7 +11,6 @@ import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { AppView, Contact } from '../../types';
 import { ContactsRedesigned } from './ContactsRedesigned';
 import { TodayView } from './TodayView';
-import { CirclesView } from './CirclesView';
 import { ContactsOnboarding, shouldShowContactsTour } from './ContactsOnboarding';
 import { useContactsKeyboard } from './useContactsKeyboard';
 import { ContactsEmptyState } from './ContactsEmptyState';
@@ -28,7 +28,7 @@ import { MapPin, Search } from 'lucide-react';
 // Map is no longer a tab here — it was promoted to a top-level Sidebar
 // section (AppView.MAP). The 'View on Map' chip in the tab bar deep-links
 // users who built muscle memory for Contacts → Map.
-type ContactsMode = 'today' | 'people' | 'circles';
+type ContactsMode = 'today' | 'people';
 
 interface ContactsShellProps {
   contacts: Contact[];
@@ -67,13 +67,6 @@ const TABS: ModeTab[] = [
     icon: 'people',
     description: 'Everyone you know',
     shortcut: '2',
-  },
-  {
-    id: 'circles',
-    label: 'Circles',
-    icon: 'network',
-    description: 'How your network connects',
-    shortcut: '3',
   },
 ];
 
@@ -232,12 +225,6 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
                 onAddContact={props.onAddContact}
                 onDeleteContact={props.onDeleteContact}
                 openAddContact={props.openAddContact}
-              />
-            )}
-            {activeMode === 'circles' && (
-              <CirclesView
-                contacts={props.contacts}
-                onAction={props.onAction}
               />
             )}
           </>

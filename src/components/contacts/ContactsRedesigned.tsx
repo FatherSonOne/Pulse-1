@@ -101,6 +101,9 @@ interface SidebarProps {
   archivedCount: number;
   onToggleArchived: (next: boolean) => void;
   savedFiltersPanel?: React.ReactNode;
+  circles: ContactCircle[];
+  activeCircleId: string | null;
+  onCircleChange: (circleId: string | null) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -122,6 +125,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   archivedCount,
   onToggleArchived,
   savedFiltersPanel,
+  circles,
+  activeCircleId,
+  onCircleChange,
 }) => (
   <div className="contacts-sidebar">
     {headerReplacement ? (
@@ -251,6 +257,55 @@ const Sidebar: React.FC<SidebarProps> = ({
       })}
     </div>
 
+    {/* Circles facet — demoted from a top-level tab in Phase D.
+        Click a circle to filter the contact list to its members.
+        Auto-detect is exposed in the section header. */}
+    {circles.length > 0 && (
+      <div className="contacts-sidebar-section">
+        <div
+          className="contacts-section-title"
+          style={{
+            fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+            letterSpacing: '0.1em',
+          }}
+        >
+          Circles
+        </div>
+        {circles.map(circle => {
+          const isActive = activeCircleId === circle.id;
+          return (
+            <button
+              key={circle.id}
+              className={`contacts-smart-list ${isActive ? 'active' : ''}`}
+              onClick={() => onCircleChange(isActive ? null : circle.id)}
+              title={circle.name}
+            >
+              <span
+                className="contacts-smart-list-icon"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <span
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    background: circle.color || 'var(--pulse-tone-neutral)',
+                    display: 'inline-block',
+                  }}
+                />
+              </span>
+              <span className="contacts-smart-list-label">{circle.name}</span>
+              <span className="contacts-smart-list-count">{circle.memberContactIds.length}</span>
+            </button>
+          );
+        })}
+      </div>
+    )}
+
     {savedFiltersPanel}
 
     {/* Add Contact Button */}
@@ -288,7 +343,13 @@ const NodeCard: React.FC<NodeCardProps> = ({
 }) => {
   const healthColor = profile ? getRelationshipHealthColor(profile.relationshipScore) : '#6b7280';
   const provenanceSource = ((contact as Contact & { import_source?: ContactProvenanceSource }).import_source
-    ?? (contact.source === 'google' ? 'google' : contact.source === 'local' ? 'manual' : 'legacy')) as ContactProvenanceSource;
+    ?? (contact.source === 'google'
+      ? 'google'
+      : contact.source === 'local'
+        ? 'manual'
+        : contact.source === 'vision'
+          ? 'logos-vision'
+          : 'legacy')) as ContactProvenanceSource;
 
   return (
     <div
@@ -357,6 +418,11 @@ const NodeCard: React.FC<NodeCardProps> = ({
           <div className="contacts-node-company">
             <Building2 />
             {contact.company}
+          </div>
+        )}
+        {provenanceSource === 'logos-vision' && (
+          <div style={{ marginTop: 8 }}>
+            <ProvenanceChip variant="chip" source="logos-vision" addedAt={null} />
           </div>
         )}
       </div>
@@ -431,6 +497,14 @@ const ListRow: React.FC<ListRowProps> = ({
   leadScore,
 }) => {
   const healthColor = profile ? getRelationshipHealthColor(profile.relationshipScore) : '#6b7280';
+  const provenanceSource = ((contact as Contact & { import_source?: ContactProvenanceSource }).import_source
+    ?? (contact.source === 'google'
+      ? 'google'
+      : contact.source === 'local'
+        ? 'manual'
+        : contact.source === 'vision'
+          ? 'logos-vision'
+          : 'legacy')) as ContactProvenanceSource;
 
   return (
     <div
@@ -466,7 +540,12 @@ const ListRow: React.FC<ListRowProps> = ({
           />
         </div>
         <div>
-          <div className="contacts-list-name">{contact.name}</div>
+          <div className="contacts-list-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {contact.name}
+            {provenanceSource === 'logos-vision' && (
+              <ProvenanceChip variant="chip" source="logos-vision" addedAt={null} />
+            )}
+          </div>
           <div className="contacts-list-role">{contact.role || 'Contact'}</div>
         </div>
       </div>
@@ -546,6 +625,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   const [bulkOperationInFlight, setBulkOperationInFlight] = useState(false);
   const [showWorkspaceShare, setShowWorkspaceShare] = useState(false);
   const [circles, setCircles] = useState<ContactCircle[]>([]);
+  const [activeCircleId, setActiveCircleId] = useState<string | null>(null);
   const [savedFilters, setSavedFilters] = useState<{ user: SavedFilter[]; workspace: SavedFilter[] }>({ user: [], workspace: [] });
   const [activeSavedFilterId, setActiveSavedFilterId] = useState<string | null>(null);
   const [orphanedConditionsByFilterId, setOrphanedConditionsByFilterId] = useState<Record<string, number>>({});
@@ -640,6 +720,12 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
       // Tag Filter
       if (filterTag && !c.groups?.includes(filterTag)) return false;
 
+      // Circle facet filter
+      if (activeCircleId) {
+        const circle = circles.find(cc => cc.id === activeCircleId);
+        if (!circle || !circle.memberContactIds.includes(c.id)) return false;
+      }
+
       return true;
     });
 
@@ -683,7 +769,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
     }
 
     return result;
-  }, [baseContacts, searchQuery, filterStatus, filterTag, activeSmartList, profiles, savedFilters, activeSavedFilterId, circles]);
+  }, [baseContacts, searchQuery, filterStatus, filterTag, activeSmartList, profiles, savedFilters, activeSavedFilterId, circles, activeCircleId]);
 
   useEffect(() => {
     const knownCircleIds = new Set(circles.map(circle => circle.id));
@@ -946,6 +1032,9 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
             orphanedConditionsByFilterId={orphanedConditionsByFilterId}
           />
         )}
+        circles={circles}
+        activeCircleId={activeCircleId}
+        onCircleChange={setActiveCircleId}
       />
 
       {/* Main Content */}
