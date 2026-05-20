@@ -680,6 +680,24 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
 
+  // Phase D step 7: respond to events dispatched by TodayEmptyState
+  // (routed through ContactsShell). Applies a smart-list filter on
+  // arrival to People so the operator lands where the empty-state CTA
+  // promised.
+  useEffect(() => {
+    const applyHandler = (event: Event) => {
+      const detail = (event as CustomEvent<{ list: SmartListType }>).detail;
+      if (detail?.list) {
+        setActiveSmartList(detail.list);
+        setFilterTag(null);
+      }
+    };
+    window.addEventListener('pulse:contacts:apply-smart-list', applyHandler);
+    return () => {
+      window.removeEventListener('pulse:contacts:apply-smart-list', applyHandler);
+    };
+  }, []);
+
   const refreshArchivedContacts = async () => {
     const archived = await dataService.getContacts({ archivedOnly: true });
     setArchivedContacts(archived);

@@ -413,7 +413,19 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
 
         {/* Empty state */}
         {!loading && !error && filteredItems.length === 0 && (
-          <TodayEmptyState onRefresh={handleRefresh} />
+          <TodayEmptyState
+            onRefresh={handleRefresh}
+            onShowColdContacts={() => {
+              window.dispatchEvent(
+                new CustomEvent('pulse:contacts:show-smart-list', {
+                  detail: { list: 'inactive_30_days' },
+                })
+              );
+            }}
+            onSetCheckInGoal={() => {
+              window.dispatchEvent(new CustomEvent('pulse:contacts:open-check-in-goal'));
+            }}
+          />
         )}
 
         {/* Feed items — Time view (default) */}

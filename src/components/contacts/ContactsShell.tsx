@@ -117,12 +117,36 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
         module.showScopeLossToast(() => setReconnectModalOpen(true));
       });
     };
+    // Phase D step 7: TodayEmptyState dispatches these when the operator
+    // taps "See who's gone cold" or "Set a check-in goal". The shell
+    // owns the routing because People is the surface the smart-list
+    // filter applies to.
+    const showSmartListHandler = (event: Event) => {
+      const detail = (event as CustomEvent<{ list: string }>).detail;
+      if (!detail?.list) return;
+      setActiveMode('people');
+      window.setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent('pulse:contacts:apply-smart-list', { detail })
+        );
+      }, 50);
+    };
+    const openCheckInGoalHandler = () => {
+      setActiveMode('people');
+      window.setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('pulse:contacts:open-check-in-goal-people'));
+      }, 50);
+    };
 
     window.addEventListener('pulse:contacts:open-connect-modal', openHandler);
     window.addEventListener('pulse:contacts:scope-missing', scopeMissingHandler);
+    window.addEventListener('pulse:contacts:show-smart-list', showSmartListHandler);
+    window.addEventListener('pulse:contacts:open-check-in-goal', openCheckInGoalHandler);
     return () => {
       window.removeEventListener('pulse:contacts:open-connect-modal', openHandler);
       window.removeEventListener('pulse:contacts:scope-missing', scopeMissingHandler);
+      window.removeEventListener('pulse:contacts:show-smart-list', showSmartListHandler);
+      window.removeEventListener('pulse:contacts:open-check-in-goal', openCheckInGoalHandler);
     };
   }, []);
 
