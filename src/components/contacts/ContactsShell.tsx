@@ -260,6 +260,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
           }
         }}
         workspaceId={workspaceId}
+        workspaceName={currentWorkspace?.name}
       />
       <TrimWizard
         isOpen={trimWizardOpen}

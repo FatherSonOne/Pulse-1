@@ -4,7 +4,7 @@
  */
 
 import { supabase } from './supabase';
-import { Contact } from '../types';
+import { Contact, ContactType } from '../types';
 
 export class WorkspaceNotBootstrappedError extends Error {
   constructor(message: string) {
@@ -597,5 +597,75 @@ export const importSelectedLabels = async (
     imported: rows.length,
     skipped: allContacts.length - rows.length,
     rejectedFilteredOut,
+  };
+};
+
+export interface ContactImportAssignment {
+  contact: Contact;
+  contactType: ContactType;
+}
+
+/**
+ * Phase D import path. Caller supplies a pre-staged set of Google contacts
+ * each tagged with the Pulse-taxonomy contactType the operator picked in the
+ * Tag step of ConnectContactsModal. Bypasses label-based filtering entirely.
+ */
+export const importSelectedContacts = async (
+  assignments: ContactImportAssignment[],
+  workspaceId: string
+): Promise<ImportSelectedLabelsResult> => {
+  if (assignments.length === 0) {
+    return { imported: 0, skipped: 0, rejectedFilteredOut: 0 };
+  }
+
+  const { data: hasAccess, error: accessError } = await supabase.rpc('user_has_workspace_access', {
+    ws_id: workspaceId,
+  });
+  if (accessError) throw accessError;
+  if (!hasAccess) {
+    throw new WorkspaceNotBootstrappedError(
+      `Workspace not bootstrapped or user not a member: ${workspaceId}`
+    );
+  }
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user) {
+    throw new Error('Cannot import Google contacts without an authenticated user');
+  }
+
+  const rows = assignments.map(({ contact, contactType }) => ({
+    user_id: user.id,
+    platform: 'google',
+    external_id: contact.id.replace(/^google_/, ''),
+    name: contact.name,
+    role: contact.role || 'Contact',
+    company: contact.company,
+    avatar_color: contact.avatarColor,
+    status: contact.status,
+    email: contact.email,
+    phone: contact.phone,
+    address: contact.address,
+    notes: contact.notes,
+    website: contact.website,
+    birthday: contact.birthday,
+    groups: contact.groups ?? [],
+    source: 'google',
+    last_synced: new Date().toISOString(),
+    import_source: 'google',
+    import_label: contact.groups ?? [],
+    contact_type: contactType,
+  }));
+
+  const { error: upsertError } = await supabase
+    .from('contacts')
+    .upsert(rows, { onConflict: 'user_id,platform,external_id' });
+
+  if (upsertError) throw upsertError;
+
+  return {
+    imported: rows.length,
+    skipped: 0,
+    rejectedFilteredOut: 0,
   };
 };
