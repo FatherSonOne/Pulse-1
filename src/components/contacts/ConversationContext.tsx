@@ -148,7 +148,7 @@ export const ConversationContext: React.FC<ConversationContextProps> = ({
         {/* No profile data fallback */}
         {!summary && talkingPoints.length === 0 && (
           <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-3 italic">
-            No conversation history yet — this could be your first message!
+            No conversation history yet. This could be your first message.
           </p>
         )}
 
