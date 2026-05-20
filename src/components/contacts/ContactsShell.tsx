@@ -18,7 +18,6 @@ import { ConnectContactsModal } from './ConnectContactsModal';
 import { TrimWizard } from './TrimWizard';
 import { AddContactModal } from './AddContactModal';
 import { ReconnectGoogleModal } from '../Auth/ReconnectGoogleModal';
-import { CONTACTS_PHASE_A_ENABLED } from '../../services/authService';
 import { useWorkspaceData } from '../../contexts/WorkspaceContext';
 import { useTranslation } from 'react-i18next';
 
@@ -94,7 +93,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
   // instead of the previous setTimeout(..., 100) race. Cleared once consumed.
   const pendingSearchFocusRef = useRef(false);
   const workspaceId = currentWorkspace?.id ?? '';
-  const showPhaseAEmpty = CONTACTS_PHASE_A_ENABLED && props.contacts.length === 0;
+  const showEmptyState = props.contacts.length === 0;
 
   // Focus the People tab's search input (selector via data attribute).
   const handleSearchFocus = useCallback(() => {
@@ -119,8 +118,6 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
   }, [activeMode]);
 
   useEffect(() => {
-    if (!CONTACTS_PHASE_A_ENABLED) return;
-
     const openHandler = () => setConnectModalOpen(true);
     const scopeMissingHandler = () => {
       import('../../services/toastFactory').then(module => {
@@ -214,7 +211,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
 
       {/* Mode content */}
       <div className="flex-1 overflow-hidden">
-        {showPhaseAEmpty ? (
+        {showEmptyState ? (
           <ContactsEmptyState
             variant={activeMode}
             onConnectClick={() => setConnectModalOpen(true)}
@@ -251,45 +248,41 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
         <ContactsOnboarding onComplete={() => setShowTour(false)} />
       )}
 
-      {CONTACTS_PHASE_A_ENABLED && (
-        <>
-          <ConnectContactsModal
-            isOpen={connectModalOpen}
-            onClose={() => setConnectModalOpen(false)}
-            onImportComplete={(result) => {
-              setConnectModalOpen(false);
-              const importedContacts = result.keptContactsForTrim ?? [];
-              setImportedContactsForTrim(importedContacts);
-              if (result.imported > 0) {
-                setTrimWizardOpen(true);
-              }
-            }}
-            workspaceId={workspaceId}
-          />
-          <TrimWizard
-            isOpen={trimWizardOpen}
-            importedContacts={importedContactsForTrim}
-            workspaceId={workspaceId}
-            onComplete={() => setTrimWizardOpen(false)}
-            onClose={() => setTrimWizardOpen(false)}
-          />
-          <ReconnectGoogleModal
-            isOpen={reconnectModalOpen}
-            onClose={() => setReconnectModalOpen(false)}
-            onSuccess={() => setReconnectModalOpen(false)}
-            title={t('contacts.reconnectModal.title')}
-            message={t('contacts.reconnectModal.message')}
-            invalidGrantReason="revoked"
-          />
-          <AddContactModal
-            isOpen={manualAddModalOpen}
-            onClose={() => setManualAddModalOpen(false)}
-            onAdd={async (contact) => {
-              await props.onAddContact?.(contact);
-            }}
-          />
-        </>
-      )}
+      <ConnectContactsModal
+        isOpen={connectModalOpen}
+        onClose={() => setConnectModalOpen(false)}
+        onImportComplete={(result) => {
+          setConnectModalOpen(false);
+          const importedContacts = result.keptContactsForTrim ?? [];
+          setImportedContactsForTrim(importedContacts);
+          if (result.imported > 0) {
+            setTrimWizardOpen(true);
+          }
+        }}
+        workspaceId={workspaceId}
+      />
+      <TrimWizard
+        isOpen={trimWizardOpen}
+        importedContacts={importedContactsForTrim}
+        workspaceId={workspaceId}
+        onComplete={() => setTrimWizardOpen(false)}
+        onClose={() => setTrimWizardOpen(false)}
+      />
+      <ReconnectGoogleModal
+        isOpen={reconnectModalOpen}
+        onClose={() => setReconnectModalOpen(false)}
+        onSuccess={() => setReconnectModalOpen(false)}
+        title={t('contacts.reconnectModal.title')}
+        message={t('contacts.reconnectModal.message')}
+        invalidGrantReason="revoked"
+      />
+      <AddContactModal
+        isOpen={manualAddModalOpen}
+        onClose={() => setManualAddModalOpen(false)}
+        onAdd={async (contact) => {
+          await props.onAddContact?.(contact);
+        }}
+      />
     </div>
   );
 };

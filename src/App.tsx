@@ -40,7 +40,7 @@ import { ContextHandoff } from './components/health/ContextHandoff';
 import { NotificationCenter } from './components/NotificationCenter';
 import { LoadingProvider, useLoading } from './contexts/LoadingContext';
 import EnhancedLoadingScreen from './components/EnhancedLoadingScreen';
-import { CONTACTS_PHASE_A_ENABLED, loginWithGoogle, loginWithEmail, signUpWithEmail, loginWithMicrosoft, syncGoogleContacts } from './services/authService';
+import { loginWithGoogle, loginWithEmail, signUpWithEmail, loginWithMicrosoft } from './services/authService';
 import { dataService } from './services/dataService';
 import { useNotificationStore } from './store/notificationStore';
 import { Contact, AppView } from './types';
@@ -545,42 +545,14 @@ const App: React.FC = () => {
     );
   }, [isSidebarCollapsed]);
 
-  // Load contacts from database and sync with Google Contacts (optimized, non-blocking)
-  const loadContacts = useCallback(async (syncGoogle = false) => {
+  const loadContacts = useCallback(async () => {
     setIsLoadingContacts(true);
-
     try {
-      // STEP 1: Load local contacts from Supabase (FAST - unblocks UI immediately)
       const dbContacts = await dataService.getContacts();
       setContacts(dbContacts);
-      setIsLoadingContacts(false); // ✅ Unblock UI now - don't wait for Google sync
-
-      // STEP 2: Sync Google Contacts in background (SLOW - non-blocking)
-      if (syncGoogle && !CONTACTS_PHASE_A_ENABLED) {
-        // Don't await - run in background
-        syncGoogleContacts()
-          .then(googleContacts => {
-            if (googleContacts && googleContacts.length > 0) {
-              // Merge Google contacts, avoiding duplicates by email
-              setContacts(prev => {
-                const existingEmails = new Set(prev.map(c => c.email?.toLowerCase()).filter(Boolean));
-                const newGoogleContacts = googleContacts.filter(
-                  gc => gc.email && !existingEmails.has(gc.email.toLowerCase())
-                );
-                if (newGoogleContacts.length > 0) {
-                  console.log(`✅ Added ${newGoogleContacts.length} new contacts from Google (background sync)`);
-                }
-                return [...prev, ...newGoogleContacts];
-              });
-            }
-          })
-          .catch(error => {
-            console.warn('⚠️ Google Contacts sync failed (optional, non-blocking):', error);
-            // Silent failure - Google sync is optional and shouldn't block the app
-          });
-      }
     } catch (error) {
-      console.error('❌ Failed to load contacts:', error);
+      console.error('Failed to load contacts:', error);
+    } finally {
       setIsLoadingContacts(false);
     }
   }, []);
@@ -591,12 +563,8 @@ const App: React.FC = () => {
 
     if (user) {
       dataService.setUserId(user.id);
-      // Auto-sync Google Contacts if user is logged in with Google
-      const syncGoogle = user.googleConnected || user.connectedProviders?.google;
-
-      // Only load contacts if the component is still mounted
       if (isSubscribed) {
-        loadContacts(syncGoogle);
+        loadContacts();
       }
     } else {
       dataService.setUserId('');

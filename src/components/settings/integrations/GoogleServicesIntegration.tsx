@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { User } from '../../../types';
-import { CONTACTS_PHASE_A_ENABLED, loginWithGoogle, revokeGoogleAccess, disconnectGoogleAccount } from '../../../services/authService';
+import { loginWithGoogle, revokeGoogleAccess, disconnectGoogleAccount } from '../../../services/authService';
 import {
   Check, AlertTriangle, Info, Plug,
   Lock, Loader2, Unlink, Ban,
@@ -18,7 +18,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
 
   // Contacts state
   const [contactsTesting, setContactsTesting] = useState(false);
-  const [contactsStatus, setContactsStatus] = useState<{ success: boolean; contactCount?: number; error?: string } | null>(null);
+  const [contactsStatus, setContactsStatus] = useState<{ success: boolean; error?: string } | null>(null);
 
   // Maps state
   const [mapsApiKey, setMapsApiKey] = useState(() => localStorage.getItem('google_maps_api_key') || '');
@@ -343,19 +343,15 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
                     setContactsStatus(null);
                     try {
                       const { googleContactsService } = await import('../../../services/googleContactsService');
-                      const contacts = await googleContactsService.getAllContacts();
-                      setContactsStatus({
-                        success: true,
-                        contactCount: contacts.length
-                      });
+                      const connected = await googleContactsService.isConnected();
+                      setContactsStatus({ success: connected, error: connected ? undefined : 'Contacts scope not granted' });
                     } catch (error: any) {
                       setContactsStatus({ success: false, error: error.message || 'Connection failed' });
                     } finally {
                       setContactsTesting(false);
                     }
                   }}
-                  disabled={contactsTesting || CONTACTS_PHASE_A_ENABLED}
-                  title={CONTACTS_PHASE_A_ENABLED ? 'Use Connect Contacts in the Contacts tab' : undefined}
+                  disabled={contactsTesting}
                   className="nothing-btn nothing-btn-primary"
                 >
                   {contactsTesting ? (
@@ -375,7 +371,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
               {contactsStatus && (
                 <div className={`status-display ${contactsStatus.success ? 'success' : 'error'}`}>
                   <i className={`fa-solid ${contactsStatus.success ? 'fa-circle-check' : 'fa-circle-xmark'} status-icon`}></i>
-                  <span>{contactsStatus.success ? `Found ${contactsStatus.contactCount} contacts` : `Error: ${contactsStatus.error}`}</span>
+                  <span>{contactsStatus.success ? 'Contacts scope granted. Import contacts from Contacts > Connect.' : `Error: ${contactsStatus.error}`}</span>
                 </div>
               )}
             </>

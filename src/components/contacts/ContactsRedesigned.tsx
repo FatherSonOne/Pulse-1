@@ -699,8 +699,6 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      // Phase A: re-pointed from syncGoogleContacts (legacy bulk path) to the
-      // ConnectContactsModal (selective picker). UI consumer wires up in call 2.
       window.dispatchEvent(new CustomEvent('pulse:contacts:open-connect-modal'));
     } catch (e) {
       console.error("Sync failed", e);

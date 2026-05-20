@@ -54,18 +54,6 @@ declare global {
 const USER_KEY = 'pulse_user_session';
 const GOOGLE_CONTACTS_READONLY_SCOPE = 'https://www.googleapis.com/auth/contacts.readonly';
 
-/**
- * Phase A feature flag. When true:
- * - syncGoogleContacts() auto-fire is neutered (becomes a no-op with a warn)
- * - Selective import via ConnectContactsModal (shipping in a later call) is the new path
- * - Trim wizard, INVALID_GRANT banner, scope-loss toast are wired up
- *
- * Set to true in .env.local to enable Phase A locally. Production rollout
- * via env config when shipping.
- */
-export const CONTACTS_PHASE_A_ENABLED =
-  import.meta.env.VITE_CONTACTS_PHASE_A_ENABLED === 'true';
-
 // "Keep me logged in" sentinel: if the user has opted out of persistent sessions,
 // auto-logout when the browser is restarted (sessionStorage is cleared on close).
 // We set a sessionStorage sentinel on every page load. If it's missing on load AND
@@ -708,67 +696,6 @@ export const connectProvider = async (provider: 'google' | 'microsoft' | 'icloud
   }
 
   return true;
-};
-
-// Real Google Contacts Sync via Google People API
-let inFlightSync: Promise<Contact[]> | null = null;
-
-export const syncGoogleContacts = async (): Promise<Contact[]> => {
-  if (CONTACTS_PHASE_A_ENABLED) {
-    console.warn(
-      '[contacts] syncGoogleContacts is deprecated under Phase A. ' +
-      'Use ConnectContactsModal / importSelectedLabels() instead.'
-    );
-    return [];
-  }
-
-  // Dedupe concurrent calls (e.g. React StrictMode double-mount in dev)
-  if (inFlightSync) return inFlightSync;
-
-  inFlightSync = (async () => {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        console.debug('[Auth Debug] Skipping contact sync - not authenticated');
-        return [];
-      }
-
-      const { googleContactsService } = await import('./googleContactsService');
-
-      const connected = await googleContactsService.isConnected();
-      if (!connected) {
-        console.debug('[Auth Debug] Google Contacts not connected (expected when not authenticated or permission not granted)');
-        return [];
-      }
-
-      const contacts = await googleContactsService.getAllContacts();
-      if (contacts.length > 0) {
-        console.log(`Synced ${contacts.length} contacts from Google`);
-      } else {
-        console.debug('[Auth Debug] No contacts synced from Google (expected if no contacts exist)');
-      }
-      return contacts;
-    } catch (error: any) {
-      if (error?.name === 'AbortError') {
-        console.debug('[Auth Debug] Contact sync aborted (expected during initialization)');
-        return [];
-      }
-
-      if (error.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED') {
-        console.debug('[Auth Debug] Google Contacts permission not granted (expected)');
-        return [];
-      }
-
-      console.warn('Failed to sync Google contacts:', error);
-      return [];
-    }
-  })();
-
-  try {
-    return await inFlightSync;
-  } finally {
-    inFlightSync = null;
-  }
 };
 
 // Mock Google Calendar Event Creation
