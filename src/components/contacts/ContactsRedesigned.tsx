@@ -642,6 +642,7 @@ const ListRow: React.FC<ListRowProps> = ({
 export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   contacts,
   onAction,
+  onSyncComplete,
   onUpdateContact,
   onAddContact,
   onDeleteContact,
