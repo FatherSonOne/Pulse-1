@@ -101,6 +101,20 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
         if (cancelled) return;
         setGroups(nextGroups);
         setContacts(nextContacts);
+        // Diagnostic: Google's People API doesn't always 403 when the
+        // contacts.readonly scope is missing -- sometimes it returns 200
+        // with empty connections, which makes the wizard look "empty"
+        // for no apparent reason. If both lists are empty and we got
+        // here without throwing, treat it as a likely scope problem
+        // and surface the reconnect banner so the user has a fix path.
+        if (nextGroups.length === 0 && nextContacts.length === 0) {
+          console.warn(
+            '[ConnectContactsModal] Google returned 0 groups and 0 contacts. ' +
+            'Most common cause: the connected Google account is missing the ' +
+            'contacts.readonly scope. Showing reconnect banner.'
+          );
+          setScopeLost(true);
+        }
       })
       .catch((error: { code?: string; status?: number; message?: string }) => {
         if (cancelled) return;
