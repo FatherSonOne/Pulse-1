@@ -494,6 +494,7 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
                   selectedContactIds={selectedContactIds}
                   toggleContact={toggleContact}
                   toggleGroup={toggleGroup}
+                  totalContactCount={contacts.length}
                   t={t}
                 />
               ) : step === 'tag' ? (
@@ -577,6 +578,7 @@ interface StageStepProps {
   selectedContactIds: Set<string>;
   toggleContact: (c: Contact) => void;
   toggleGroup: (g: ContactGroup) => void;
+  totalContactCount: number;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }
 
@@ -590,6 +592,7 @@ const StageStep: React.FC<StageStepProps> = ({
   selectedContactIds,
   toggleContact,
   toggleGroup,
+  totalContactCount,
   t,
 }) => {
   return (
@@ -615,6 +618,34 @@ const StageStep: React.FC<StageStepProps> = ({
         />
       </div>
 
+      {/* Always show what we loaded so it's obvious whether the wizard
+          has data (and search is just filtering it out) vs the API
+          returned nothing. */}
+      <div
+        className="flex items-center justify-between text-[11px] tracking-[0.1em] uppercase"
+        style={{
+          color: 'var(--pulse-ink-3)',
+          fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+        }}
+        aria-live="polite"
+      >
+        <span>
+          {totalContactCount === 0
+            ? 'No contacts loaded'
+            : `${totalContactCount} contact${totalContactCount === 1 ? '' : 's'} loaded`}
+        </span>
+        {search.trim() && (
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            className="hover:underline"
+            style={{ color: 'var(--pulse-rose-deep)' }}
+          >
+            Clear search
+          </button>
+        )}
+      </div>
+
       {filteredGroups.length === 0 ? (
         <div
           className="p-8 text-center text-sm rounded-lg border"
@@ -624,7 +655,9 @@ const StageStep: React.FC<StageStepProps> = ({
             color: 'var(--pulse-ink-3)',
           }}
         >
-          {search.trim() ? t('contacts.connectModal.stage_empty_state') : t('contacts.connectModal.stage_empty_groups')}
+          {search.trim()
+            ? `No match for "${search.trim()}" in ${totalContactCount} loaded contact${totalContactCount === 1 ? '' : 's'}.`
+            : t('contacts.connectModal.stage_empty_groups')}
         </div>
       ) : (
         filteredGroups.map(group => {

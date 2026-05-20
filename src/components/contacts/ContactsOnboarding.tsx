@@ -1,66 +1,50 @@
 // ============================================
 // CONTACTS ONBOARDING
-// First-visit tour tooltips for Contacts Reimagined.
-// Shown once per user — dismissed state stored in localStorage.
+// First-visit tour for the Contacts section. Shown once per user,
+// dismissed state stored in localStorage. Phase D rewrite: matches
+// the new IA (Today + People; Circles is now a People sidebar facet)
+// and uses coral instead of sky-blue so it reads as Pulse, not a
+// generic onboarding template.
 // ============================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
-
-// ==================== TYPES ====================
 
 interface OnboardingStep {
   id: string;
   title: string;
   body: string;
-  targetId?: string;     // CSS id to highlight (optional)
-  position: 'center' | 'top' | 'bottom';
   icon: string;
 }
-
-// ==================== TOUR STEPS ====================
 
 const TOUR_STEPS: OnboardingStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to Contacts Reimagined',
-    body: 'Your contacts section is now a People Intelligence system. Let\'s take a 30-second tour.',
-    position: 'center',
+    title: 'Welcome to Contacts',
+    body: 'Pulse turns your contacts into a relationship surface. Two tabs, one workflow. A 20-second tour.',
     icon: 'rocket',
   },
   {
     id: 'today',
-    title: 'Your Day',
-    body: 'The Today tab shows AI-curated relationship actions: who to reach out to, follow up with, or celebrate. Check it every morning.',
-    position: 'top',
+    title: 'Today',
+    body: 'A triage feed of relationship actions: who to follow up with, who has gone cold, who is worth a check-in. Start your morning here.',
     icon: 'target',
   },
   {
     id: 'people',
-    title: 'Your People',
-    body: 'The People tab is your enhanced contacts list with relationship health rings, AI search, and rich profiles. Try searching "clients I haven\'t talked to in a month".',
-    position: 'top',
+    title: 'People',
+    body: 'Everyone you know, with relationship health and tags. Use Smart Lists for system-computed filters, Tags for your own labels, and Circles for grouped lenses, all in the sidebar.',
     icon: 'people',
   },
   {
-    id: 'circles',
-    title: 'Your Network',
-    body: 'The Circles tab shows your network as interactive bubbles. Let AI group your contacts automatically, or create your own circles.',
-    position: 'top',
-    icon: 'globe',
-  },
-  {
     id: 'goals',
-    title: 'Set Keep-in-Touch Goals',
-    body: 'Open any contact and set a relationship goal. Enable Autopilot and AI will draft messages for you when it\'s time to reach out.',
-    position: 'center',
+    title: 'Keep-in-touch goals',
+    body: 'Open any contact and set a cadence. Pulse surfaces them on Today before they slip, and Autopilot drafts the message for you.',
     icon: 'gear',
   },
 ];
 
-const LS_KEY = 'pulse_contacts_tour_seen_v1';
-
-// ==================== COMPONENT ====================
+const LS_KEY = 'pulse_contacts_tour_seen_v2';
 
 interface ContactsOnboardingProps {
   onComplete: () => void;
@@ -71,60 +55,83 @@ export const ContactsOnboarding: React.FC<ContactsOnboardingProps> = ({ onComple
   const currentStep = TOUR_STEPS[step];
   const isLast = step === TOUR_STEPS.length - 1;
 
-  function handleNext() {
+  const handleNext = () => {
     if (isLast) {
-      localStorage.setItem(LS_KEY, 'true');
+      try { localStorage.setItem(LS_KEY, 'true'); } catch { /* ignore */ }
       onComplete();
     } else {
       setStep(s => s + 1);
     }
-  }
+  };
 
-  function handleSkip() {
-    localStorage.setItem(LS_KEY, 'true');
+  const handleSkip = () => {
+    try { localStorage.setItem(LS_KEY, 'true'); } catch { /* ignore */ }
     onComplete();
-  }
+  };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
-      <div className="w-full max-w-sm bg-white/90 dark:bg-zinc-900/85 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.07] shadow-2xl shadow-black/20 dark:shadow-black/50 rounded-2xl overflow-hidden animate-perm-enter">
-
-        {/* Sky-500 accent strip (Contacts accent color) */}
-        <div className="h-1 w-full bg-gradient-to-r from-sky-500 to-blue-600" />
-
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0, 0, 0, 0.70)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contacts-tour-title"
+        className="w-full max-w-sm rounded-2xl overflow-hidden"
+        style={{
+          background: 'var(--pulse-surface)',
+          border: '1px solid var(--pulse-border)',
+          boxShadow: 'var(--pulse-shadow-md)',
+          color: 'var(--pulse-ink)',
+        }}
+      >
         <div className="p-6">
-          {/* Segmented progress dots */}
-          <div className="flex gap-1.5 mb-5">
+          {/* Segmented progress: filled coral for done, hairline rose for current, neutral for upcoming */}
+          <div className="flex gap-1.5 mb-5" aria-hidden="true">
             {TOUR_STEPS.map((_, i) => (
               <div
                 key={i}
-                className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                  i < step
-                    ? 'bg-gradient-to-r from-rose-500 to-pink-500'
-                    : i === step
-                    ? 'bg-sky-400 animate-pulse'
-                    : 'bg-zinc-200 dark:bg-zinc-700/60'
-                }`}
+                className="h-1 flex-1 rounded-full"
+                style={{
+                  background:
+                    i < step
+                      ? 'var(--pulse-rose)'
+                      : i === step
+                      ? 'var(--pulse-rose-glow)'
+                      : 'var(--pulse-border)',
+                  transition: 'background 220ms cubic-bezier(0.16, 1, 0.3, 1)',
+                }}
               />
             ))}
           </div>
 
-          {/* Step icon — 72×72 sky accent */}
           <div className="flex justify-center mb-4">
-            <div className="w-[72px] h-[72px] rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center">
+            <div
+              className="w-[72px] h-[72px] rounded-2xl flex items-center justify-center"
+              style={{
+                background: 'var(--pulse-rose-soft)',
+                border: '1px solid var(--pulse-rose-soft)',
+              }}
+            >
               <AnimatedIcon icon={currentStep.icon} size={32} />
             </div>
           </div>
 
-          {/* Content */}
-          <h3 className="text-lg font-bold text-zinc-900 dark:text-white text-center mb-2">
+          <h3
+            id="contacts-tour-title"
+            className="text-lg font-semibold text-center mb-2"
+            style={{ color: 'var(--pulse-ink)' }}
+          >
             {currentStep.title}
           </h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center leading-relaxed">
+          <p
+            className="text-sm text-center leading-relaxed"
+            style={{ color: 'var(--pulse-ink-2)' }}
+          >
             {currentStep.body}
           </p>
 
-          {/* Dot nav */}
           <div className="flex items-center justify-center gap-1.5 mt-5">
             {TOUR_STEPS.map((_, i) => (
               <button
@@ -132,31 +139,41 @@ export const ContactsOnboarding: React.FC<ContactsOnboardingProps> = ({ onComple
                 type="button"
                 aria-label={`Go to step ${i + 1}`}
                 onClick={() => setStep(i)}
-                className={`rounded-full transition-all ${
-                  i === step
-                    ? 'w-4 h-1.5 bg-sky-500'
-                    : 'w-1.5 h-1.5 bg-zinc-300 dark:bg-zinc-600'
-                }`}
+                className="rounded-full"
+                style={{
+                  width: i === step ? 16 : 6,
+                  height: 6,
+                  background: i === step ? 'var(--pulse-rose)' : 'var(--pulse-border-strong)',
+                  transition: 'all 220ms cubic-bezier(0.16, 1, 0.3, 1)',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
               />
             ))}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 pb-5 flex items-center justify-between">
+        <div
+          className="px-6 pb-5 flex items-center justify-between"
+          style={{ borderTop: '1px solid transparent' }}
+        >
           <button
             type="button"
             onClick={handleSkip}
-            className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            className="text-xs hover:underline"
+            style={{ color: 'var(--pulse-ink-3)' }}
           >
             Skip tour
           </button>
           <button
             type="button"
             onClick={handleNext}
-            className="px-5 py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:brightness-110 active:scale-[0.98] text-white text-sm font-semibold rounded-xl transition-all duration-150 shadow-md"
+            className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-colors"
+            style={{ background: 'var(--pulse-rose)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--pulse-rose-deep)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--pulse-rose)'; }}
           >
-            {isLast ? 'Get started' : 'Next →'}
+            {isLast ? 'Get started' : 'Next'}
           </button>
         </div>
       </div>
@@ -165,7 +182,9 @@ export const ContactsOnboarding: React.FC<ContactsOnboardingProps> = ({ onComple
 };
 
 /**
- * Returns true if the user hasn't seen the tour yet.
+ * Returns true if the user hasn't seen the Phase D tour yet. We bumped
+ * the localStorage key from _v1 to _v2 so anyone who saw the old
+ * (Circles-bubble-chart) tour sees this updated one once.
  */
 export function shouldShowContactsTour(): boolean {
   try {
