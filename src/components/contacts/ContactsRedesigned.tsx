@@ -61,6 +61,41 @@ interface SmartListConfig {
 // SMART LIST CONFIGURATION
 // ============================================
 
+// ============================================
+// CONTACT FILTERING TAXONOMY (Phase D mental model)
+// ============================================
+// Pulse Contacts uses four distinct filtering surfaces. They overlap less
+// than they look once their jobs are kept straight:
+//
+//   TAGS         User-applied labels. The user attaches a tag to a contact
+//                via Edit Contact; the tag travels with the contact row.
+//                Source of truth: contact.groups[].
+//                Example: applying "Customer" to a list of contacts the
+//                user manually triaged as customers.
+//
+//   SMART LISTS  System-computed filters. Pulse evaluates each list against
+//                relationship profile data (last interaction, score,
+//                trend) at render time. The user does not apply these to
+//                anything; they read like a query.
+//                Source of truth: RelationshipProfile[].
+//                Example: "Warm Leads" returns profiles where score >= 60
+//                and trend === 'rising', regardless of any tag.
+//
+//   SAVED FILTERS  User-saved predicates over tags + smart lists + circle
+//                  membership. Live in savedFiltersService; can be
+//                  workspace-scoped.
+//
+//   CIRCLES      A saved-filter-shape: user-curated groups with members
+//                stored in contact_circles. In Phase D Circles were
+//                demoted from a top-level tab to a Sidebar facet on People
+//                (see Step 5 commit).
+//
+// Phase D collision fix: the "VIP" tag chip was removed from the
+// hardcoded TAGS palette because "VIP Contacts" already exists as a
+// smart list driven by RelationshipProfile.isVip. Users who still want a
+// per-contact "starred" treatment can apply any tag in Edit Contact and
+// filter via Saved Filters.
+
 const SMART_LISTS: SmartListConfig[] = [
   { id: 'needs_follow_up', label: 'Needs Follow-up', Icon: Clock },
   { id: 'warm_leads', label: 'Warm Leads', Icon: Flame },
@@ -71,7 +106,6 @@ const SMART_LISTS: SmartListConfig[] = [
 ];
 
 const TAGS = [
-  { id: 'vip', label: 'VIP', activeColor: '#f59e0b' },
   { id: 'prospect', label: 'Prospect', activeColor: '#3b82f6' },
   { id: 'customer', label: 'Customer', activeColor: '#10b981' },
   { id: 'partner', label: 'Partner', activeColor: '#a855f7' },
@@ -188,7 +222,12 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     {/* Tags Section */}
     <div className="contacts-sidebar-section">
-      <div className="contacts-section-title">Tags</div>
+      <div
+        className="contacts-section-title"
+        title="Labels you apply to contacts in Edit Contact."
+      >
+        Tags
+      </div>
       {TAGS.map((tag) => {
         const isActive = filterTag === tag.id;
         return (
@@ -238,7 +277,12 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     {/* Smart Lists Section */}
     <div className="contacts-sidebar-section">
-      <div className="contacts-section-title">Smart Lists</div>
+      <div
+        className="contacts-section-title"
+        title="System-computed lists. Pulse evaluates relationship data at render time. Not user-edited."
+      >
+        Smart Lists
+      </div>
       {SMART_LISTS.map((list) => {
         const ListIcon = list.Icon;
         return (
@@ -264,6 +308,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="contacts-sidebar-section">
         <div
           className="contacts-section-title"
+          title="User-curated groups. Click to filter People to a circle's members."
           style={{
             fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
             letterSpacing: '0.1em',
