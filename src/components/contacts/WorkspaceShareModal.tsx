@@ -122,10 +122,10 @@ export const WorkspaceShareModal: React.FC<WorkspaceShareModalProps> = ({
             <div className="p-5 space-y-4">
               <div
                 id={descriptionId}
-                className="rounded-lg border-l-4 p-3 text-sm"
+                className="rounded-lg border p-3 text-sm"
                 style={{
                   background: 'var(--pulse-tone-info-soft)',
-                  borderLeftColor: 'var(--pulse-tone-info)',
+                  borderColor: 'var(--pulse-tone-info-soft)',
                   color: 'var(--pulse-ink)',
                 }}
               >

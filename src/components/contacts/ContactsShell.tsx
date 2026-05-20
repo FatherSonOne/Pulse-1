@@ -145,10 +145,10 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
   });
 
   return (
-    <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
+    <div className="flex flex-col h-full bg-zinc-50 dark:bg-black overflow-hidden">
 
       {/* Tab bar */}
-      <div className="flex-shrink-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex-shrink-0 bg-white dark:bg-white/[0.03] border-b border-zinc-200 dark:border-white/[0.06]">
         <div className="flex items-stretch px-2 pt-2 gap-0.5">
           {TABS.map(tab => {
             const isActive = activeMode === tab.id;
@@ -157,20 +157,21 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
                 key={tab.id}
                 onClick={() => setActiveMode(tab.id)}
                 className={`
-                  relative flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium
+                  relative flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium uppercase tracking-[0.06em]
                   transition-colors duration-150
                   ${isActive
-                    ? 'bg-zinc-50 dark:bg-zinc-950 text-rose-500 dark:text-rose-400 border border-b-0 border-zinc-200 dark:border-zinc-700'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                    ? 'bg-zinc-50 dark:bg-white/[0.055] text-rose-500 dark:text-rose-400 border border-b-0 border-zinc-200 dark:border-white/10'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/[0.04]'
                   }
                 `}
+                style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
                 title={`${tab.description} (${tab.shortcut})`}
               >
                 <AnimatedIcon icon={tab.icon} size={16} />
                 <span>{tab.label}</span>
                 {/* Keyboard shortcut hint */}
                 {!isActive && (
-                  <span className="hidden sm:inline-flex ml-0.5 w-4 h-4 items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-400 text-[9px] font-mono rounded">
+                  <span className="hidden sm:inline-flex ml-0.5 w-4 h-4 items-center justify-center bg-zinc-100 dark:bg-white/[0.06] text-zinc-400 text-[9px] font-mono rounded">
                     {tab.shortcut}
                   </span>
                 )}

@@ -24,7 +24,6 @@ import { relationshipIntelligenceService } from '../../services/relationshipInte
 import { supabase } from '../../services/supabase';
 import { CircleBubbleChart } from './CircleBubbleChart';
 import { CircleDetail } from './CircleDetail';
-import { NetworkAnalyticsCard } from './NetworkAnalyticsCard';
 
 import { Loader2, Plus, Wand2 } from 'lucide-react';
 
@@ -345,18 +344,6 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
           >
             Accept all {suggestions.length} circles
           </button>
-        </div>
-      )}
-
-      {/* Network Analytics */}
-      {!loading && circles.length > 0 && (
-        <div className="flex-shrink-0 px-4 pt-3">
-          <NetworkAnalyticsCard
-            circles={circles}
-            contacts={contacts}
-            profiles={profiles}
-            orphanCount={orphans.length}
-          />
         </div>
       )}
 

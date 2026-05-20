@@ -105,10 +105,9 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
   return (
     <div
       className={`
-        relative bg-white dark:bg-zinc-900 border rounded-xl overflow-hidden
+        relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden
         transition-all duration-300 ease-in-out
         ${isExiting ? 'opacity-0 scale-95 -translate-y-1 max-h-0' : 'opacity-100 scale-100 max-h-96'}
-        ${typeConfig.colorClass} border-l-4
         shadow-sm hover:shadow-md
       `}
     >
