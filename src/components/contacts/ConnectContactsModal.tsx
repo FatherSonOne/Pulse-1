@@ -106,13 +106,15 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
         if (cancelled) return;
         console.error('[ConnectContactsModal] load failed:', error);
         // Anything that looks like a token-expired / scope-revoked /
-        // unauthenticated response triggers the in-modal reconnect
-        // banner rather than a generic toast the user often misses.
+        // unauthenticated / no-Google-account response triggers the
+        // in-modal reconnect banner rather than a generic toast the
+        // user often misses.
         const isAuthFailure =
           error?.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED' ||
+          error?.code === 'GOOGLE_CONTACTS_NOT_CONNECTED' ||
           error?.status === 401 ||
           error?.status === 403 ||
-          /401|403|unauthorized|invalid[_ ]grant|expired|permission/i.test(error?.message ?? '');
+          /401|403|unauthorized|invalid[_ ]grant|expired|permission|not[_ ]connected/i.test(error?.message ?? '');
         if (isAuthFailure) {
           setScopeLost(true);
         } else {
@@ -127,7 +129,13 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, t]);
+    // Deliberately depend on isOpen only. Including `t` (i18next's
+    // translator) would cause the effect to re-fire on every parent
+    // re-render (each render produces a fresh `t` reference), which
+    // would reset modal state and re-fetch contacts mid-interaction --
+    // visually "the wizard disappears and returns to the empty state."
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // Auto-focus search on entering the stage step.
   useEffect(() => {
@@ -310,9 +318,10 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
       const e = error as { code?: string; status?: number; message?: string };
       const isAuthFailure =
         e?.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED' ||
+        e?.code === 'GOOGLE_CONTACTS_NOT_CONNECTED' ||
         e?.status === 401 ||
         e?.status === 403 ||
-        /401|403|unauthorized|invalid[_ ]grant|expired|permission/i.test(e?.message ?? '');
+        /401|403|unauthorized|invalid[_ ]grant|expired|permission|not[_ ]connected/i.test(e?.message ?? '');
       if (error instanceof WorkspaceNotBootstrappedError) {
         showImportErrorToast(t('contacts.connectModal.error_workspace_not_ready'));
       } else if (isAuthFailure) {
