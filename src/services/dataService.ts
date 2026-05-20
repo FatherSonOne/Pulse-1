@@ -448,21 +448,38 @@ class DataService {
         return [];
       }
 
-      let query = supabase
-        .from('contacts')
-        .select('*')
-        .eq('user_id', userId);
+      const buildQuery = (includeArchiveFilter: boolean) => {
+        let q = supabase.from('contacts').select('*').eq('user_id', userId);
+        if (includeArchiveFilter) {
+          if (options.archivedOnly) {
+            q = q.not('archived_at', 'is', null);
+          } else if (!options.includeArchived) {
+            q = q.is('archived_at', null);
+          }
+        }
+        return q.order('name');
+      };
 
-      if (options.archivedOnly) {
-        query = query.not('archived_at', 'is', null);
-      } else if (!options.includeArchived) {
-        query = query.is('archived_at', null);
+      let { data, error } = await buildQuery(true);
+
+      // Graceful degradation when the Phase B archive column hasn't been
+      // applied to this Supabase project yet (migration
+      // 20260524000001_phase_b_archive_column.sql). Retry without the
+      // archive filter and warn so the missing migration is visible.
+      if (error?.code === '42703' && /archived_at/.test(error.message ?? '')) {
+        console.warn(
+          '[DataService] contacts.archived_at column missing. Falling back to unfiltered query. ' +
+          'Apply migration 20260524000001_phase_b_archive_column.sql to enable archive views.'
+        );
+        if (options.archivedOnly) {
+          return [];
+        }
+        const fallback = await buildQuery(false);
+        data = fallback.data;
+        error = fallback.error;
       }
 
-      const { data, error } = await query.order('name');
-
       if (error) {
-        // Check if it's an AbortError (expected during component unmount)
         if (error.message?.includes('AbortError') || error.message?.includes('aborted')) {
           console.debug('[DataService] Contact fetch aborted (expected during cleanup)');
           return [];

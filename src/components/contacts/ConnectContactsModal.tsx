@@ -102,9 +102,18 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
         setGroups(nextGroups);
         setContacts(nextContacts);
       })
-      .catch((error: { code?: string; message?: string }) => {
+      .catch((error: { code?: string; status?: number; message?: string }) => {
         if (cancelled) return;
-        if (error?.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED') {
+        console.error('[ConnectContactsModal] load failed:', error);
+        // Anything that looks like a token-expired / scope-revoked /
+        // unauthenticated response triggers the in-modal reconnect
+        // banner rather than a generic toast the user often misses.
+        const isAuthFailure =
+          error?.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED' ||
+          error?.status === 401 ||
+          error?.status === 403 ||
+          /401|403|unauthorized|invalid[_ ]grant|expired|permission/i.test(error?.message ?? '');
+        if (isAuthFailure) {
           setScopeLost(true);
         } else {
           showImportErrorToast(t('contacts.connectModal.error_generic'));
@@ -297,9 +306,16 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
       const result = await importSelectedContacts(items, workspaceId);
       onImportComplete({ ...result, keptContactsForTrim: selectedContacts });
     } catch (error) {
+      console.error('[ConnectContactsModal] import failed:', error);
+      const e = error as { code?: string; status?: number; message?: string };
+      const isAuthFailure =
+        e?.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED' ||
+        e?.status === 401 ||
+        e?.status === 403 ||
+        /401|403|unauthorized|invalid[_ ]grant|expired|permission/i.test(e?.message ?? '');
       if (error instanceof WorkspaceNotBootstrappedError) {
         showImportErrorToast(t('contacts.connectModal.error_workspace_not_ready'));
-      } else if ((error as { code?: string })?.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED') {
+      } else if (isAuthFailure) {
         setScopeLost(true);
       } else {
         showImportErrorToast(t('contacts.connectModal.error_generic'));

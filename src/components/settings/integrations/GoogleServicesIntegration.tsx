@@ -338,6 +338,20 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
 
               <div className="flex flex-wrap gap-3">
                 <button
+                  onClick={() => {
+                    // Navigate to Contacts and open the import wizard on
+                    // arrival. ContactsShell listens for both events.
+                    window.dispatchEvent(new CustomEvent('pulse:navigate', { detail: { view: 'contacts' } }));
+                    window.setTimeout(() => {
+                      window.dispatchEvent(new CustomEvent('pulse:contacts:open-connect-modal'));
+                    }, 100);
+                  }}
+                  className="nothing-btn nothing-btn-primary"
+                >
+                  <Plug />
+                  Manage Contacts Import
+                </button>
+                <button
                   onClick={async () => {
                     setContactsTesting(true);
                     setContactsStatus(null);
@@ -352,7 +366,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
                     }
                   }}
                   disabled={contactsTesting}
-                  className="nothing-btn nothing-btn-primary"
+                  className="nothing-btn"
                 >
                   {contactsTesting ? (
                     <>
@@ -360,10 +374,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
                       Testing...
                     </>
                   ) : (
-                    <>
-                      <Plug />
-                      Test Connection
-                    </>
+                    <>Test Connection</>
                   )}
                 </button>
               </div>
