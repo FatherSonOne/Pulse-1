@@ -59,7 +59,7 @@ const NewCircleModal: React.FC<NewCircleModalProps> = ({ onSave, onClose }) => {
           onChange={e => setName(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && name.trim()) onSave(name.trim(), color); }}
           placeholder="Circle name…"
-          className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500 mb-4"
+          className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:ring-2 focus:ring-rose-500 mb-4"
         />
 
         <div className="flex items-center gap-2 mb-6">
@@ -78,7 +78,7 @@ const NewCircleModal: React.FC<NewCircleModalProps> = ({ onSave, onClose }) => {
           <button
             onClick={() => name.trim() && onSave(name.trim(), color)}
             disabled={!name.trim()}
-            className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-colors"
+            className="flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-colors"
           >
             Create Circle
           </button>
@@ -243,7 +243,12 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
             <button
               onClick={handleAutoDetect}
               disabled={detecting}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 uppercase tracking-[0.1em]"
+              style={{
+                background: 'var(--pulse-rose-soft)',
+                color: 'var(--pulse-rose-deep)',
+                fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+              }}
             >
               {detecting ? (
                 <Loader2 className="animate-spin text-xs" />
@@ -293,14 +298,26 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
 
       {/* AI Suggestions Banner */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="flex-shrink-0 mx-4 mt-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl">
+        <div
+          className="flex-shrink-0 mx-4 mt-3 p-3 rounded-xl border"
+          style={{
+            background: 'var(--pulse-rose-softer)',
+            borderColor: 'var(--pulse-rose-soft)',
+          }}
+        >
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">
-              <AnimatedIcon icon="sparkle" size={14} /> AI found {suggestions.length} circle{suggestions.length !== 1 ? 's' : ''}
+            <p
+              className="text-[11px] font-semibold uppercase tracking-[0.1em] flex items-center gap-1.5"
+              style={{
+                color: 'var(--pulse-rose-deep)',
+                fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+              }}
+            >
+              <AnimatedIcon icon="sparkle" size={14} /> Pulse AI · {suggestions.length} circle{suggestions.length !== 1 ? 's' : ''} found
             </p>
             <button
               onClick={() => setShowSuggestions(false)}
-              className="text-xs text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300"
+              className="text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300"
             >
               Dismiss
             </button>
@@ -310,12 +327,12 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
               <div key={s.name} className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
-                  <span className="text-sm text-indigo-800 dark:text-indigo-200 font-medium truncate">{s.name}</span>
-                  <span className="text-xs text-indigo-500">{s.memberContactIds.length} contacts</span>
+                  <span className="text-sm text-zinc-800 dark:text-zinc-100 font-medium truncate">{s.name}</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">{s.memberContactIds.length} contacts</span>
                 </div>
                 <button
                   onClick={() => handleAcceptSuggestion(s)}
-                  className="flex-shrink-0 text-xs text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+                  className="flex-shrink-0 text-xs text-rose-600 dark:text-rose-400 font-medium hover:underline"
                 >
                   Add
                 </button>
@@ -324,7 +341,7 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
           </div>
           <button
             onClick={handleAcceptAllSuggestions}
-            className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors"
+            className="w-full py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold rounded-lg transition-colors"
           >
             Accept all {suggestions.length} circles
           </button>
@@ -348,7 +365,7 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-3" />
+              <div className="animate-spin w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full mx-auto mb-3" />
               <p className="text-sm text-zinc-500">Loading your network…</p>
             </div>
           </div>
@@ -378,7 +395,7 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
             <button
               onClick={handleAutoDetect}
               disabled={detecting}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 ml-4"
+              className="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 ml-4"
             >
               Organise
             </button>

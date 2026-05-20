@@ -263,7 +263,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
                 title="Sort by priority"
                 className={`flex items-center gap-1 px-2.5 py-1 transition-colors ${
                   viewMode === 'time'
-                    ? 'bg-indigo-500 text-white'
+                    ? 'bg-rose-500 text-white'
                     : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                 }`}
               >
@@ -276,7 +276,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
                 title="Group by location"
                 className={`flex items-center gap-1 px-2.5 py-1 transition-colors ${
                   viewMode === 'route'
-                    ? 'bg-indigo-500 text-white'
+                    ? 'bg-rose-500 text-white'
                     : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                 }`}
               >
@@ -299,7 +299,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
         {!loading && (
           <div className="flex items-center gap-3 mt-2">
             <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-              <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{activeItems.length}</span>
+              <span className="text-rose-500 dark:text-rose-400 font-semibold">{activeItems.length}</span>
               {' '}action{activeItems.length !== 1 ? 's' : ''} today
             </span>
             {completedCount > 0 && (
@@ -337,7 +337,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
                 className={`
                   flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors
                   ${filter === chip.id
-                    ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                    ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300'
                     : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                   }
                 `}
@@ -348,7 +348,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
                   <span className={`
                     px-1 rounded-full text-xs
                     ${filter === chip.id
-                      ? 'bg-indigo-200 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300'
+                      ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300'
                       : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400'
                     }
                   `}>
@@ -434,7 +434,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
             {hasMore && (
               <button
                 onClick={() => setShowAll(true)}
-                className="w-full py-3 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700 hover:border-indigo-300 dark:hover:border-indigo-600"
+                className="w-full py-3 text-sm text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 font-medium transition-colors rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-400/40"
               >
                 Show {filteredItems.length - ITEMS_PER_PAGE} more
               </button>
@@ -459,7 +459,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
               <div key={c.id} className="space-y-2">
                 <div className="flex items-baseline justify-between gap-2 px-1">
                   <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5">
-                    <MapPin size={12} className="text-indigo-500" />
+                    <MapPin size={12} className="text-zinc-500 dark:text-zinc-400" />
                     {c.label === null
                       ? <span className="inline-block w-24 h-3 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
                       : c.label}

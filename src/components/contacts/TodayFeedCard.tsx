@@ -137,9 +137,16 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
               <span>{typeConfig.label}</span>
             </span>
             {item.metadata?.isAutopilot && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-                <Bot className="text-[9px]" />
-                Autopilot
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-[0.1em]"
+                style={{
+                  background: 'var(--pulse-rose-soft)',
+                  color: 'var(--pulse-rose-deep)',
+                  fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+                }}
+              >
+                <Bot className="text-[9px]" aria-hidden="true" />
+                Pulse AI · Autopilot
               </span>
             )}
             <span className="text-xs text-zinc-400 dark:text-zinc-600">·</span>
@@ -162,13 +169,28 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
           {item.aiDraftMessage && (
             <div className="mt-2">
               {showDraft ? (
-                <div className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-2.5 border border-zinc-200 dark:border-zinc-700">
-                  <p className="text-xs text-zinc-600 dark:text-zinc-300 italic leading-relaxed">
+                <div
+                  className="rounded-lg p-2.5 border"
+                  style={{
+                    background: 'var(--pulse-rose-softer)',
+                    borderColor: 'var(--pulse-rose-soft)',
+                  }}
+                >
+                  <div
+                    className="text-[10px] uppercase tracking-[0.1em] font-semibold mb-1"
+                    style={{
+                      color: 'var(--pulse-rose-deep)',
+                      fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+                    }}
+                  >
+                    Pulse AI · Draft
+                  </div>
+                  <p className="text-xs text-zinc-700 dark:text-zinc-200 leading-relaxed">
                     "{item.aiDraftMessage}"
                   </p>
                   <button
                     onClick={() => setShowDraft(false)}
-                    className="text-xs text-indigo-500 dark:text-indigo-400 mt-1.5 hover:underline"
+                    className="text-xs text-rose-600 dark:text-rose-400 mt-1.5 hover:underline"
                   >
                     Hide draft
                   </button>
@@ -176,9 +198,9 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
               ) : (
                 <button
                   onClick={() => setShowDraft(true)}
-                  className="flex items-center gap-1 text-xs text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 mt-1 transition-colors"
+                  className="flex items-center gap-1 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 mt-1 transition-colors"
                 >
-                  <Wand2 className="text-xs" />
+                  <Wand2 className="text-xs" aria-hidden="true" />
                   <span>View AI draft</span>
                 </button>
               )}
@@ -191,7 +213,7 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
           {/* Primary action button */}
           <button
             onClick={handlePrimaryAction}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 dark:bg-rose-500 dark:hover:bg-rose-400 text-white text-xs font-medium transition-colors"
           >
             <i className={`${SUGGESTED_ACTION_ICON[item.suggestedAction]} text-xs`} />
             <span className="hidden sm:inline">{SUGGESTED_ACTION_LABEL[item.suggestedAction]}</span>

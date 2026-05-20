@@ -5,8 +5,8 @@ import toast from 'react-hot-toast';
 import { Loader2, Plus, UserPlus, X } from 'lucide-react';
 
 const AVATAR_COLORS = [
-  'bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500',
-  'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500',
+  'bg-blue-500', 'bg-emerald-500', 'bg-rose-500', 'bg-amber-500',
+  'bg-rose-500', 'bg-cyan-500', 'bg-rose-500', 'bg-teal-500',
 ];
 
 interface AddContactModalProps {
