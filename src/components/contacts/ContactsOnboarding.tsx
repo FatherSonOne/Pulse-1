@@ -31,7 +31,7 @@ const TOUR_STEPS: OnboardingStep[] = [
   {
     id: 'today',
     title: 'Your Day',
-    body: 'The Today tab shows AI-curated relationship actions — who to reach out to, follow up with, or celebrate. Check it every morning.',
+    body: 'The Today tab shows AI-curated relationship actions: who to reach out to, follow up with, or celebrate. Check it every morning.',
     position: 'top',
     icon: 'target',
   },

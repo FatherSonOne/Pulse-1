@@ -29,6 +29,7 @@ import { BulkActionToolbar } from './BulkActionToolbar';
 import { ProvenanceChip, type ContactProvenanceSource } from './ProvenanceChip';
 import { SavedFiltersPanel } from './SavedFiltersPanel';
 import { WorkspaceShareModal } from './WorkspaceShareModal';
+import { NamePromptModal } from './NamePromptModal';
 import './Contacts.css';
 
 import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronRight, Clock, Copy, Flame, LayoutGrid, List, MessageSquare, Moon, Network, Plus, Radio, RefreshCw, Search, Snowflake, Star, UserX, Users, Video, Wand2, X, Zap } from 'lucide-react';
@@ -674,6 +675,13 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   const [savedFilters, setSavedFilters] = useState<{ user: SavedFilter[]; workspace: SavedFilter[] }>({ user: [], workspace: [] });
   const [activeSavedFilterId, setActiveSavedFilterId] = useState<string | null>(null);
   const [orphanedConditionsByFilterId, setOrphanedConditionsByFilterId] = useState<Record<string, number>>({});
+  const [namePromptState, setNamePromptState] = useState<{
+    title: string;
+    placeholder?: string;
+    initialValue?: string;
+    cta?: string;
+    onSubmit: (name: string) => void;
+  } | null>(null);
 
   // Auth
   useEffect(() => {
@@ -964,23 +972,46 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   };
 
   const handleSaveCurrentFilter = async (draft?: { name: string; scope: 'personal' | 'workspace' }) => {
-    const name = draft?.name || window.prompt(t('contacts.savedFilters.save_dialog_name_label'))?.trim();
-    if (!name) return;
-    await createSavedFilter({
-      name,
-      predicate: buildCurrentPredicate(),
-      workspaceId: draft?.scope === 'workspace' ? currentWorkspace?.id : undefined,
+    if (draft?.name) {
+      await createSavedFilter({
+        name: draft.name,
+        predicate: buildCurrentPredicate(),
+        workspaceId: draft.scope === 'workspace' ? currentWorkspace?.id : undefined,
+      });
+      await reloadSavedFilters();
+      return;
+    }
+    setNamePromptState({
+      title: t('contacts.savedFilters.save_dialog_title'),
+      placeholder: t('contacts.savedFilters.save_dialog_name_placeholder'),
+      cta: t('contacts.savedFilters.save_dialog_cta'),
+      onSubmit: async (name) => {
+        setNamePromptState(null);
+        await createSavedFilter({
+          name,
+          predicate: buildCurrentPredicate(),
+          workspaceId: undefined,
+        });
+        await reloadSavedFilters();
+      },
     });
-    await reloadSavedFilters();
   };
 
   const handleEditSavedFilter = async (id: string) => {
     const filter = [...savedFilters.user, ...savedFilters.workspace].find(item => item.id === id);
     if (!filter) return;
-    const name = window.prompt(t('contacts.savedFilters.save_dialog_name_label'), filter.name)?.trim();
-    if (!name || name === filter.name) return;
-    await updateSavedFilter(id, { name });
-    await reloadSavedFilters();
+    setNamePromptState({
+      title: t('contacts.savedFilters.save_dialog_title'),
+      placeholder: t('contacts.savedFilters.save_dialog_name_placeholder'),
+      initialValue: filter.name,
+      cta: t('contacts.savedFilters.save_dialog_cta'),
+      onSubmit: async (name) => {
+        setNamePromptState(null);
+        if (!name || name === filter.name) return;
+        await updateSavedFilter(id, { name });
+        await reloadSavedFilters();
+      },
+    });
   };
 
   const handleDeleteSavedFilter = async (id: string) => {
@@ -1386,6 +1417,16 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
         availableWorkspaces={workspaces.map(workspace => ({ id: workspace.id, name: workspace.name }))}
         onShare={handleShareToWorkspace}
         onCancel={() => setShowWorkspaceShare(false)}
+      />
+
+      <NamePromptModal
+        isOpen={!!namePromptState}
+        title={namePromptState?.title ?? ''}
+        placeholder={namePromptState?.placeholder}
+        initialValue={namePromptState?.initialValue}
+        cta={namePromptState?.cta}
+        onSubmit={(name) => namePromptState?.onSubmit(name)}
+        onClose={() => setNamePromptState(null)}
       />
     </div>
   );
