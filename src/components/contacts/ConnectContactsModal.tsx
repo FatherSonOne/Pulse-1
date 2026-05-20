@@ -162,14 +162,22 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
     const map = new Map<string, Contact[]>();
     groups.forEach(group => map.set(group.id, []));
     map.set(ORPHAN_GROUP_ID, []);
+    // A contact is "orphan" (Uncategorized) when none of its group IDs
+    // matches a user-visible group. Google contacts almost always carry
+    // system group IDs like `myContacts`, `starred`, `chatBuddies` --
+    // those aren't USER_CONTACT_GROUP and don't appear in `groups`. The
+    // previous logic only treated zero-group contacts as orphans, which
+    // meant a Google account with 441 contacts in `myContacts` rendered
+    // an empty wizard (the only buckets they belonged to weren't shown).
+    const visibleGroupIds = new Set(groups.map(g => g.id));
     contacts.forEach(contact => {
       const groupIds = contact.groups ?? [];
-      if (groupIds.length === 0) {
+      const matchingVisibleGroups = groupIds.filter(id => visibleGroupIds.has(id));
+      if (matchingVisibleGroups.length === 0) {
         map.get(ORPHAN_GROUP_ID)!.push(contact);
         return;
       }
-      groupIds.forEach(groupId => {
-        if (!map.has(groupId)) map.set(groupId, []);
+      matchingVisibleGroups.forEach(groupId => {
         map.get(groupId)!.push(contact);
       });
     });
