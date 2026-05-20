@@ -270,6 +270,13 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
           if (result.imported > 0) {
             setTrimWizardOpen(true);
           }
+          // Phase D step 20: import wrote rows directly via
+          // importSelectedContacts(); App.tsx's contact state still
+          // points at the pre-import snapshot, so the People view
+          // stays in its empty state until a reload. Passing [] keeps
+          // App.handleSyncContacts' dedup filter from re-creating
+          // anything; the loadContacts() at the end is what we want.
+          props.onSyncComplete?.([]);
         }}
         workspaceId={workspaceId}
         workspaceName={currentWorkspace?.name}
@@ -278,7 +285,13 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
         isOpen={trimWizardOpen}
         importedContacts={importedContactsForTrim}
         workspaceId={workspaceId}
-        onComplete={() => setTrimWizardOpen(false)}
+        onComplete={() => {
+          setTrimWizardOpen(false);
+          // Trim mutates contacts.archived_at on rows the user
+          // skipped. Refresh so the People list reflects the trimmed
+          // set instead of the post-import set.
+          props.onSyncComplete?.([]);
+        }}
         onClose={() => setTrimWizardOpen(false)}
       />
       <ReconnectGoogleModal
