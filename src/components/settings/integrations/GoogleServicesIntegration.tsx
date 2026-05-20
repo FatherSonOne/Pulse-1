@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AppView } from '../../../types';
 import type { User } from '../../../types';
 import { loginWithGoogle, revokeGoogleAccess, disconnectGoogleAccount } from '../../../services/authService';
 import {
@@ -19,6 +20,8 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
   // Contacts state
   const [contactsTesting, setContactsTesting] = useState(false);
   const [contactsStatus, setContactsStatus] = useState<{ success: boolean; error?: string } | null>(null);
+  const [contactsWiping, setContactsWiping] = useState(false);
+  const [contactsWipeResult, setContactsWipeResult] = useState<{ deleted: number } | null>(null);
 
   // Maps state
   const [mapsApiKey, setMapsApiKey] = useState(() => localStorage.getItem('google_maps_api_key') || '');
@@ -339,12 +342,13 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => {
-                    // Navigate to Contacts and open the import wizard on
-                    // arrival. ContactsShell listens for both events.
-                    window.dispatchEvent(new CustomEvent('pulse:navigate', { detail: { view: 'contacts' } }));
+                    // Navigate to Contacts (AppView.CONTACTS, uppercase
+                    // enum value) and open the import wizard on arrival.
+                    // ContactsShell listens for both events.
+                    window.dispatchEvent(new CustomEvent('pulse:navigate', { detail: { view: AppView.CONTACTS } }));
                     window.setTimeout(() => {
                       window.dispatchEvent(new CustomEvent('pulse:contacts:open-connect-modal'));
-                    }, 100);
+                    }, 150);
                   }}
                   className="nothing-btn nothing-btn-primary"
                 >
@@ -385,6 +389,62 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
                   <span>{contactsStatus.success ? 'Contacts scope granted. Import contacts from Contacts > Connect.' : `Error: ${contactsStatus.error}`}</span>
                 </div>
               )}
+
+              <div
+                className="mt-4 rounded-xl border border-rose-200 dark:border-rose-900/40 p-3"
+                style={{ background: 'var(--pulse-tone-overdue-soft)' }}
+              >
+                <p
+                  className="text-[11px] uppercase tracking-[0.1em] font-semibold mb-1"
+                  style={{
+                    color: 'var(--pulse-tone-overdue)',
+                    fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+                  }}
+                >
+                  Start Over
+                </p>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed mb-2">
+                  Pulse imported contacts in bulk before. Wipe them and re-import selectively with the new picker. Only Google-sourced contacts are removed; manual and Logos Vision contacts stay.
+                </p>
+                {contactsWipeResult && (
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-2">
+                    Removed {contactsWipeResult.deleted} Google contact{contactsWipeResult.deleted === 1 ? '' : 's'}.
+                  </p>
+                )}
+                <button
+                  onClick={async () => {
+                    if (!window.confirm('Delete all Google-imported contacts from Pulse? Manual and Logos Vision contacts are unaffected. You can re-import via Connect Contacts.')) {
+                      return;
+                    }
+                    setContactsWiping(true);
+                    setContactsWipeResult(null);
+                    try {
+                      const { wipeGoogleImportedContacts } = await import('../../../services/googleContactsService');
+                      const result = await wipeGoogleImportedContacts();
+                      setContactsWipeResult(result);
+                    } catch (error: any) {
+                      setContactsStatus({ success: false, error: error.message || 'Reset failed' });
+                    } finally {
+                      setContactsWiping(false);
+                    }
+                  }}
+                  disabled={contactsWiping}
+                  className="nothing-btn"
+                  style={{
+                    color: 'var(--pulse-tone-overdue)',
+                    borderColor: 'var(--pulse-tone-overdue)',
+                  }}
+                >
+                  {contactsWiping ? (
+                    <>
+                      <Loader2 className="spinner-icon" />
+                      Wiping...
+                    </>
+                  ) : (
+                    <>Wipe Google contacts</>
+                  )}
+                </button>
+              </div>
             </>
           ) : (
             <div className="bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 text-center">

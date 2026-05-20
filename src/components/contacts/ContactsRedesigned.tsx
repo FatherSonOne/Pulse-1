@@ -1285,7 +1285,46 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
         ) : (
           <div className="contacts-list">
             <div className="contacts-list-header">
-              <div />
+              <div>
+                {(() => {
+                  const allChecked = filteredContacts.length > 0 && filteredContacts.every(c => selectedIds.has(c.id));
+                  const someChecked = filteredContacts.some(c => selectedIds.has(c.id)) && !allChecked;
+                  return (
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={allChecked ? true : someChecked ? 'mixed' : false}
+                      title={allChecked ? 'Clear selection' : 'Select all visible'}
+                      onClick={() => {
+                        setSelectedIds(prev => {
+                          if (allChecked) {
+                            const next = new Set(prev);
+                            filteredContacts.forEach(c => next.delete(c.id));
+                            return next;
+                          }
+                          const next = new Set(prev);
+                          filteredContacts.forEach(c => next.add(c.id));
+                          return next;
+                        });
+                      }}
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 4,
+                        border: '1.5px solid var(--pulse-border-strong)',
+                        background: allChecked || someChecked ? 'var(--pulse-rose)' : 'transparent',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                      }}
+                    >
+                      {allChecked ? <Check size={12} /> : someChecked ? <span style={{ width: 8, height: 2, background: '#fff', borderRadius: 1 }} /> : null}
+                    </button>
+                  );
+                })()}
+              </div>
               <div>Name</div>
               <div>Email</div>
               <div>Company</div>

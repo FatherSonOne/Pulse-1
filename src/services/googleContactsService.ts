@@ -669,3 +669,28 @@ export const importSelectedContacts = async (
     rejectedFilteredOut: 0,
   };
 };
+
+/**
+ * Phase D start-over path. Hard-deletes every contact row whose
+ * source = 'google' for the current user. Intended for the operator
+ * who landed in Pulse with a pre-Phase-D bulk import and wants to
+ * re-import selectively via ConnectContactsModal. Manual ('local')
+ * and Logos Vision ('vision') rows are untouched.
+ */
+export const wipeGoogleImportedContacts = async (): Promise<{ deleted: number }> => {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user) {
+    throw new Error('Not authenticated');
+  }
+
+  const { count, error } = await supabase
+    .from('contacts')
+    .delete({ count: 'exact' })
+    .eq('user_id', user.id)
+    .eq('source', 'google');
+
+  if (error) throw error;
+
+  return { deleted: count ?? 0 };
+};
