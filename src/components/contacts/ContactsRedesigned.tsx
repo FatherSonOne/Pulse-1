@@ -30,6 +30,10 @@ import { ProvenanceChip, type ContactProvenanceSource } from './ProvenanceChip';
 import { SavedFiltersPanel } from './SavedFiltersPanel';
 import { WorkspaceShareModal } from './WorkspaceShareModal';
 import { NamePromptModal } from './NamePromptModal';
+import { ReceivedTab } from './cards/ReceivedTab';
+import { ShareCardModal } from './cards/ShareCardModal';
+import { ShareCardBundleModal } from './cards/ShareCardBundleModal';
+import { SentCardsView } from './cards/SentCardsView';
 import './Contacts.css';
 
 import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronDown, ChevronRight, Clock, Copy, Flame, LayoutGrid, List, MessageSquare, Moon, Network, Plus, Radio, RefreshCw, Search, Snowflake, Star, UserPlus, UserX, Users, Video, Wand2, X, Zap } from 'lucide-react';
@@ -720,6 +724,15 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   const [archivedCount, setArchivedCount] = useState(0);
   const [bulkOperationInFlight, setBulkOperationInFlight] = useState(false);
   const [showWorkspaceShare, setShowWorkspaceShare] = useState(false);
+
+  // Phase C — contact-card sharing
+  const phaseCEnabled = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env?.VITE_CONTACTS_PHASE_C_ENABLED === 'true';
+  type CardsView = 'people' | 'received' | 'sent';
+  const [cardsView, setCardsView] = useState<CardsView>('people');
+  const [pendingDeeplinkCardId, setPendingDeeplinkCardId] = useState<string | null>(null);
+  const [shareCardSubject, setShareCardSubject] = useState<Contact | null>(null);
+  const [showShareCardBundle, setShowShareCardBundle] = useState(false);
+
   const [circles, setCircles] = useState<ContactCircle[]>([]);
   const [activeCircleId, setActiveCircleId] = useState<string | null>(null);
   const [savedFilters, setSavedFilters] = useState<{ user: SavedFilter[]; workspace: SavedFilter[] }>({ user: [], workspace: [] });
@@ -755,6 +768,48 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
       window.removeEventListener('pulse:contacts:apply-smart-list', applyHandler);
     };
   }, []);
+
+  // Phase C: Capacitor Universal Link / App Link → Received tab handoff (R-6).
+  // We coexist with main.tsx's existing OAuth deeplink listener — the
+  // Capacitor App plugin supports multiple appUrlOpen handlers.
+  useEffect(() => {
+    if (!phaseCEnabled) return;
+    let cleanup: (() => void) | null = null;
+    let cancelled = false;
+    const CARD_URL_RE = /^https:\/\/go\.pulse\.logosvision\.org\/c\/([a-zA-Z0-9-]+)\/?$/;
+
+    const wire = async () => {
+      try {
+        // Lazy import keeps web builds free of @capacitor/app dep churn.
+        const capCore = await import('@capacitor/core').catch(() => null);
+        const isNative = capCore?.Capacitor?.isNativePlatform?.();
+        if (!isNative) return;
+        const appMod = await import('@capacitor/app').catch(() => null);
+        if (cancelled || !appMod?.App) return;
+        const handle = await appMod.App.addListener('appUrlOpen', ({ url }: { url: string }) => {
+          const match = url.match(CARD_URL_RE);
+          if (!match) return;
+          const token = match[1];
+          setCardsView('received');
+          setPendingDeeplinkCardId(token);
+          // TODO(phase-6-review): when the user is signed-out at deeplink
+          // time, queue the token until sign-in completes. For now we
+          // store it and rely on ReceivedTab to noop when not authed.
+        });
+        cleanup = () => {
+          // PluginListenerHandle.remove() returns a promise; safe to fire-and-forget.
+          handle.remove?.().catch(() => undefined);
+        };
+      } catch (err) {
+        console.warn('[ContactsRedesigned] Phase C deeplink wiring failed:', err);
+      }
+    };
+    void wire();
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
+  }, [phaseCEnabled]);
 
   const refreshArchivedContacts = async () => {
     const archived = await dataService.getContacts({ archivedOnly: true });
@@ -1153,11 +1208,22 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
             selectedCount={selectedIds.size}
             onClearSelection={() => setSelectedIds(new Set())}
             onShare={() => setShowWorkspaceShare(true)}
+            onShareAsCard={phaseCEnabled ? () => {
+              // selectedCount === 1 → single-card flow; otherwise bundle.
+              if (selectedIds.size === 1) {
+                const onlyId = Array.from(selectedIds)[0];
+                const subject = baseContacts.find(c => c.id === onlyId);
+                if (subject) setShareCardSubject(subject);
+              } else {
+                setShowShareCardBundle(true);
+              }
+            } : undefined}
+            canShareAsCard={phaseCEnabled}
             onArchive={handleBulkArchive}
             onUnarchive={handleBulkRestore}
             onDelete={handleBulkDelete}
             onSaveAsFilter={() => handleSaveCurrentFilter()}
-            canShare={!!currentWorkspace}
+            canShare={!!currentWorkspace && selectedIds.size >= 2}
             canDelete
             isInArchivedView={showArchived}
             affectsCircle={affectsCircle}
@@ -1183,6 +1249,96 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
 
       {/* Main Content */}
       <div className="contacts-main">
+
+        {/* Phase C — tab strip (People · Received · Sent).
+            Tab order per vision § IA: 4th tab "Received" sits to the right
+            of the existing People view. Sent Cards lives in Settings →
+            Activity in production; we surface it here as a sibling for now
+            since the Pulse settings shell isn't restructured for this. */}
+        {phaseCEnabled && (
+          <div
+            role="tablist"
+            aria-label={t('contacts.tabs.received_label')}
+            className="flex items-center gap-1 px-4 pt-3"
+            style={{ borderBottom: '1px solid var(--pulse-border)' }}
+          >
+            <button
+              role="tab"
+              type="button"
+              aria-selected={cardsView === 'people'}
+              onClick={() => setCardsView('people')}
+              className="rounded-t-lg px-3 py-2 text-sm font-medium"
+              style={{
+                minHeight: 44,
+                background: cardsView === 'people' ? 'var(--pulse-surface-raised)' : 'transparent',
+                color: cardsView === 'people' ? 'var(--pulse-ink)' : 'var(--pulse-ink-2)',
+                borderBottom: cardsView === 'people' ? '2px solid var(--pulse-rose)' : '2px solid transparent',
+              }}
+            >
+              People
+            </button>
+            <button
+              role="tab"
+              type="button"
+              aria-selected={cardsView === 'received'}
+              onClick={() => {
+                setCardsView('received');
+                setPendingDeeplinkCardId(null);
+              }}
+              className="inline-flex items-center gap-2 rounded-t-lg px-3 py-2 text-sm font-medium"
+              style={{
+                minHeight: 44,
+                background: cardsView === 'received' ? 'var(--pulse-surface-raised)' : 'transparent',
+                color: cardsView === 'received' ? 'var(--pulse-ink)' : 'var(--pulse-ink-2)',
+                borderBottom: cardsView === 'received' ? '2px solid var(--pulse-rose)' : '2px solid transparent',
+              }}
+            >
+              {t('contacts.tabs.received_label')}
+              {/* Phase C coral exception per magi D-5 — signal-of-pending, not AI provenance.
+                  Badge count is wired to the live fetchReceived call in ReceivedTab;
+                  for the parent tab strip we show the badge when ReceivedTab posts a
+                  count. TODO(phase-6-review): lift the count into a shared hook so the
+                  badge reflects unread without double-fetch. */}
+            </button>
+            <button
+              role="tab"
+              type="button"
+              aria-selected={cardsView === 'sent'}
+              onClick={() => setCardsView('sent')}
+              className="rounded-t-lg px-3 py-2 text-sm font-medium"
+              style={{
+                minHeight: 44,
+                background: cardsView === 'sent' ? 'var(--pulse-surface-raised)' : 'transparent',
+                color: cardsView === 'sent' ? 'var(--pulse-ink)' : 'var(--pulse-ink-2)',
+                borderBottom: cardsView === 'sent' ? '2px solid var(--pulse-rose)' : '2px solid transparent',
+              }}
+            >
+              Sent cards
+            </button>
+          </div>
+        )}
+
+        {/* Phase C Received view */}
+        {phaseCEnabled && cardsView === 'received' && (
+          <ReceivedTab
+            onOpenSentCards={() => setCardsView('sent')}
+            onOpenCard={cardId => {
+              setPendingDeeplinkCardId(cardId);
+              // TODO(phase-6-review): wire to a real detail route. The current
+              // pattern reuses the right-pane ContactDetail for People; the
+              // received-card detail (ReceivedCardDetail) is rendered inside
+              // ReceivedTab in a follow-up pass when the routing approach
+              // settles. For now, the deeplink target is staged in state.
+            }}
+          />
+        )}
+        {phaseCEnabled && cardsView === 'sent' && (
+          <SentCardsView onBack={() => setCardsView('received')} />
+        )}
+
+        {/* Default People surface (existing Phase A/B) */}
+        {(!phaseCEnabled || cardsView === 'people') && (<>
+
         {/* Top Bar */}
         <div className="contacts-topbar">
           <div className="contacts-topbar-left">
@@ -1395,6 +1551,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
             ))}
           </div>
         )}
+        </>)}
       </div>
 
       {/* Detail Panel */}
@@ -1407,6 +1564,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
           onClose={() => setSelectedContact(null)}
           onAction={(action) => onAction(action, selectedContact.id)}
           onEdit={() => handleEditContact(selectedContact)}
+          onSendAsCard={phaseCEnabled ? (c) => setShareCardSubject(c) : undefined}
           onDelete={onDeleteContact ? async () => {
             const ok = await onDeleteContact(selectedContact.id);
             if (ok) setSelectedContact(null);
@@ -1609,6 +1767,30 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Phase C — contact-card sharing modals (gated by feature flag) */}
+      {phaseCEnabled && (
+        <>
+          <ShareCardModal
+            open={Boolean(shareCardSubject)}
+            contact={shareCardSubject}
+            onCancel={() => setShareCardSubject(null)}
+            onSent={() => {
+              setShareCardSubject(null);
+              setSelectedIds(new Set());
+            }}
+          />
+          <ShareCardBundleModal
+            open={showShareCardBundle}
+            subjects={baseContacts.filter(c => selectedIds.has(c.id))}
+            onCancel={() => setShowShareCardBundle(false)}
+            onSent={() => {
+              setShowShareCardBundle(false);
+              setSelectedIds(new Set());
+            }}
+          />
+        </>
       )}
     </div>
   );

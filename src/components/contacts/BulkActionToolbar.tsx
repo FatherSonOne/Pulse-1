@@ -1,16 +1,33 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Archive, RotateCcw, Save, Share2, Trash2, X } from 'lucide-react';
+import { Archive, RotateCcw, Save, Send, Share2, Trash2, X } from 'lucide-react';
 
 interface BulkActionToolbarProps {
   selectedCount: number;
   onClearSelection: () => void;
+  /**
+   * "Share to workspace" — existing Phase B behavior (workspace_contacts JOIN).
+   * Only available when ≥2 contacts are selected (existing semantics).
+   */
   onShare: () => void;
+  /**
+   * "Send as card" — Phase C peer-share flow. Opens ShareCardBundleModal
+   * (or ShareCardModal when selectedCount === 1). Per accord R-22 the
+   * existing "Share" CTA was a label-vs-behavior dark pattern; Phase C
+   * splits it into two explicit CTAs.
+   */
+  onShareAsCard?: () => void;
   onArchive: () => void;
   onUnarchive?: () => void;
   onDelete: () => void;
   onSaveAsFilter: () => void;
   canShare: boolean;
+  /**
+   * True iff the user can send contacts as cards (essentially: signed in
+   * + has at least one contact selected). When omitted the card action
+   * is hidden — preserves Phase B byte-identical flag-off behavior.
+   */
+  canShareAsCard?: boolean;
   canDelete: boolean;
   isInArchivedView: boolean;
   affectsCircle?: string | null;
@@ -21,11 +38,13 @@ export const BulkActionToolbar: React.FC<BulkActionToolbarProps> = ({
   selectedCount,
   onClearSelection,
   onShare,
+  onShareAsCard,
   onArchive,
   onUnarchive,
   onDelete,
   onSaveAsFilter,
   canShare,
+  canShareAsCard,
   canDelete,
   isInArchivedView,
   affectsCircle,
@@ -36,12 +55,29 @@ export const BulkActionToolbar: React.FC<BulkActionToolbarProps> = ({
 
   const actions = useMemo(() => {
     const items: Array<{ key: string; label: string; run: () => void; primary?: boolean; danger?: boolean; icon: React.ReactNode }> = [];
+    // Phase C R-22: split the legacy "Share" CTA into two explicit actions.
+    // "Send as card" (peer-share) renders whenever the caller signals it
+    // is available — works for any selectedCount >= 1.
+    if (canShareAsCard && onShareAsCard) {
+      items.push({
+        key: 'share-as-card',
+        label: t('contacts.bulkToolbar.send_as_card_cta'),
+        run: onShareAsCard,
+        primary: true,
+        icon: <Send size={16} aria-hidden="true" />,
+      });
+    }
+    // "Share to workspace" preserves Phase B's workspace_contacts JOIN
+    // path. Existing canShare callers (≥2 contacts + workspace member)
+    // are unchanged.
     if (canShare) {
       items.push({
         key: 'share',
-        label: t('contacts.bulkToolbar.share_cta'),
+        label: t('contacts.bulkToolbar.share_workspace_cta'),
         run: onShare,
-        primary: true,
+        // No longer the primary action when canShareAsCard is true; the
+        // peer-share is the conversion-vector primary now.
+        primary: !canShareAsCard,
         icon: <Share2 size={16} aria-hidden="true" />,
       });
     }
@@ -75,7 +111,7 @@ export const BulkActionToolbar: React.FC<BulkActionToolbarProps> = ({
       });
     }
     return items;
-  }, [canDelete, canShare, isInArchivedView, onArchive, onDelete, onSaveAsFilter, onShare, onUnarchive, selectedCount, t]);
+  }, [canDelete, canShare, canShareAsCard, isInArchivedView, onArchive, onDelete, onSaveAsFilter, onShare, onShareAsCard, onUnarchive, selectedCount, t]);
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;

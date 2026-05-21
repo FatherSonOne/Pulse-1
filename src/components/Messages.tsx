@@ -4699,6 +4699,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   pulseCtxMenu.close();
                 }}
                 onClose={pulseCtxMenu.close}
+                isDarkMode={typeof document !== 'undefined' && document.documentElement.classList.contains('dark')}
               />
             );
           })() : null}
