@@ -133,7 +133,15 @@ export async function invokeAI(
 export async function invokeAIPrompt(
   task: AITask,
   prompt: string,
-  opts: InvokeAIOptions & { systemPrompt?: string; jsonMode?: boolean; temperature?: number },
+  opts: InvokeAIOptions & {
+    systemPrompt?: string;
+    jsonMode?: boolean;
+    temperature?: number;
+    /** Cap the model's output. Inline UI (Smart Compose, quick suggestions)
+     *  should set this aggressively low; without it the task default applies
+     *  (1024-4096 tokens) and a single keystroke can stream back a paragraph. */
+    maxOutputTokens?: number;
+  },
 ): Promise<string> {
   const result = await invokeAI(
     task,
@@ -142,6 +150,7 @@ export async function invokeAIPrompt(
       systemPrompt: opts.systemPrompt,
       jsonMode: opts.jsonMode,
       temperature: opts.temperature,
+      maxOutputTokens: opts.maxOutputTokens,
     },
     opts, // forwards modelOverride if present
   );

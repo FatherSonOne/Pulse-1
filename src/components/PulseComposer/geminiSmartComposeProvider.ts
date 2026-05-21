@@ -32,6 +32,12 @@ const SYSTEM_PROMPT =
 
 const MAX_COMPLETION_LEN = 120;
 const MIN_DRAFT_LEN = 4;
+// Hard cap on the model's output. The system prompt asks for 1-5 words but
+// the prompt is not a contract — without a token cap the content_generation
+// task default (4096) applies and the model can stream back a paragraph
+// every keystroke pause. 32 covers ~10 words with headroom for tokenizer
+// quirks; anything longer is dropped by MAX_COMPLETION_LEN below anyway.
+const MAX_OUTPUT_TOKENS = 32;
 
 export const geminiSmartComposeProvider: SmartComposeProvider = async (
   current,
@@ -53,6 +59,7 @@ export const geminiSmartComposeProvider: SmartComposeProvider = async (
       workspaceId,
       systemPrompt: SYSTEM_PROMPT,
       temperature: 0.4,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
     });
 
     if (signal.aborted) return null;
