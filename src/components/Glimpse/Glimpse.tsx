@@ -172,13 +172,26 @@ const ConversationItem: React.FC<{
     ? `+${otherParticipants.length}`
     : (firstAvatar?.name?.[0] || '?').toUpperCase();
 
+  // Build an aria-label that mirrors what sighted users see at a glance:
+  // unread weight, action count, AI status, sender, kind, duration, and a
+  // peek of the summary. Without these, AT users get a strictly worse inbox.
+  const ariaParts = [
+    isUnread && 'Unread',
+    actionCount > 0 && `${actionCount} action ${actionCount === 1 ? 'item' : 'items'}`,
+    processing && !hasSummary && 'AI transcribing',
+    displayName,
+    isGroup && 'group',
+    conversation.lastMessageDuration && formatDuration(conversation.lastMessageDuration),
+    conversation.lastMessageSummary && `Summary: ${conversation.lastMessageSummary}`,
+  ].filter(Boolean);
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={`gl-tc-row ${isDarkMode ? 'dark' : 'light'}`}
       data-unread={isUnread || undefined}
-      aria-label={`${displayName} · ${kindLabel} · ${conversation.lastMessageDuration ? formatDuration(conversation.lastMessageDuration) : ''}`}
+      aria-label={ariaParts.join(' · ')}
     >
       <div className="gl-tc-avatar">
         {firstAvatar?.avatarUrl ? (
@@ -192,7 +205,9 @@ const ConversationItem: React.FC<{
         <div className="gl-tc-from">
           {isUnread && <span className="gl-tc-unread-dot" aria-hidden="true" />}
           <span className="gl-tc-from-name">{displayName}</span>
-          <span className="gl-tc-kind">· {kindLabel}</span>
+          {/* Kind suffix only earns its place when it differentiates from the
+              default 1:1 glimpse — otherwise it's reading noise on every row. */}
+          {isGroup && <span className="gl-tc-kind">· {kindLabel}</span>}
         </div>
         {processing && !hasSummary ? (
           <div className="gl-tc-summary-skeleton" aria-hidden="true">
@@ -217,9 +232,8 @@ const ConversationItem: React.FC<{
         {processing && !hasSummary && (
           <span className="gl-ai-chip pending gl-tc-ai-chip">Transcribing</span>
         )}
-        {!hasSummary && !processing && actionCount === 0 && (
-          <span className="gl-tc-ai-mute">No actions</span>
-        )}
+        {/* Absence of action items is inferred from absence of pill — no need
+            to surface a "No actions" negative-signal label. */}
       </div>
 
       <div className="gl-tc-duration">
@@ -1352,9 +1366,12 @@ const Glimpse: React.FC<GlimpseProps> = ({
               </div>
             ) : (
               <>
-                {/* Column header strip — sticky inside the list */}
-                <div className="gl-tc-colhead" role="row">
-                  <span aria-hidden="true" />
+                {/* Column header strip — sticky inside the list. No ARIA role:
+                    the rows below are <button>s, not table rows, so a stray
+                    role="row" here would orphan AT users in an incomplete table
+                    pattern. The strip is honest visual chrome. */}
+                <div className="gl-tc-colhead" aria-hidden="true">
+                  <span />
                   <span className="gl-label">From · Signal</span>
                   <span className="gl-label">Actions</span>
                   <span className="gl-label" style={{ textAlign: 'right' }}>Length</span>
@@ -1370,19 +1387,6 @@ const Glimpse: React.FC<GlimpseProps> = ({
                     isDarkMode={isDarkMode}
                   />
                 ))}
-
-                {canShareScreen && (
-                  <div className="gl-tc-list-foot">
-                    <button
-                      type="button"
-                      onClick={() => enterRecorder('cam-screen')}
-                      className="gl-tc-empty-link"
-                    >
-                      <MonitorPlay className="w-3.5 h-3.5" />
-                      or record a walkthrough
-                    </button>
-                  </div>
-                )}
               </>
             )}
           </div>

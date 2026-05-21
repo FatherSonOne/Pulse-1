@@ -183,10 +183,11 @@
   padding-top: 0;
 }
 
-/* Column header strip */
+/* Column header strip. Widened actions column from 80px to 110px to fit the
+   horizontal pill+chip cluster on busy rows ("3 Actions" + "Claude" ≈ 108px). */
 .gl-tc-colhead {
   display: grid;
-  grid-template-columns: 40px 1fr 80px 60px 56px;
+  grid-template-columns: 40px 1fr 110px 60px 56px;
   gap: 12px;
   align-items: center;
   padding: 10px 20px;
@@ -202,7 +203,7 @@
 /* Triage row */
 .gl-tc-row {
   display: grid;
-  grid-template-columns: 40px 1fr 80px 60px 56px;
+  grid-template-columns: 40px 1fr 110px 60px 56px;
   gap: 12px;
   align-items: center;
   padding: 14px 20px;
@@ -219,9 +220,11 @@
 
 .gl-tc-row:hover { background: var(--gl-surface-soft); }
 .gl-tc-row:focus-visible {
+  /* Outline is the focus signal — hover already supplies the background tint,
+     so keeping both rules on focus made the two states visually identical
+     apart from the outline. Lean on the outline alone. */
   outline: 2px solid var(--gl-rose);
   outline-offset: -2px;
-  background: var(--gl-surface-soft);
 }
 .gl-tc-row:last-of-type { border-bottom: none; }
 
@@ -337,9 +340,13 @@
 .gl-tc-summary-skeleton span:nth-child(2) { width: 52%; }
 
 .gl-tc-actions {
+  /* Inline pill + chip on desktop — one coral attention-hit per row, not two
+     stacked vertically. Wraps to two lines only when the cluster doesn't fit
+     the 110px column (very long content; rare). */
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 4px;
 }
 
@@ -369,14 +376,6 @@
 .gl-tc-ai-chip {
   padding: 2px 6px;
   font-size: 9px;
-}
-
-.gl-tc-ai-mute {
-  font-family: var(--gl-mono);
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--gl-ink-fog);
 }
 
 .gl-tc-duration {
@@ -478,12 +477,14 @@
 .gl-tc-empty-cta:active { transform: translateY(0); }
 
 /* Quiet text-link for the secondary "walkthrough" CTA — text + tiny icon,
-   no button chrome, monospace caps to stay in the system signature. */
+   no button chrome, monospace caps to stay in the system signature. Padded
+   to meet WCAG 2.2 SC 2.5.8 (Target Size, Minimum) ≥ 24×24px. */
 .gl-tc-empty-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 6px;
+  padding: 8px 10px;
+  min-height: 24px;
   border: none;
   background: transparent;
   font-family: var(--gl-mono);
@@ -500,14 +501,6 @@
   outline: 2px solid var(--gl-rose);
   outline-offset: 2px;
   border-radius: 4px;
-}
-
-/* List foot — anchors the secondary walkthrough link below the populated
-   list, mirroring the empty-state link so users always have the affordance. */
-.gl-tc-list-foot {
-  display: flex;
-  justify-content: center;
-  padding: 24px 16px 0;
 }
 
 /* ============================================
