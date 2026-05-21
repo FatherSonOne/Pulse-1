@@ -70,6 +70,15 @@ export interface GlimpseConversation {
   lastMessageSender?: string;
   lastMessageDuration?: number;
   lastMessageThumbnail?: string;
+  // AI-extracted peek of the most-recent message — surfaced at list level so
+  // the conversations view can render summary + action count + transcribing
+  // skeleton without forcing a per-row fetch. Triage Cockpit (2026-05-20).
+  lastMessageSummary?: string;
+  lastMessageActionCount?: number;
+  lastMessageProcessingStatus?: 'pending' | 'transcribing' | 'summarizing' | 'complete' | 'failed';
+  /** Unread count for the current user; previously attached via cast in the
+      service mapper, now formal so the UI can rely on it. */
+  unreadCount?: number;
   createdBy?: string;
   createdAt: Date;
   updatedAt: Date;

@@ -165,104 +165,349 @@
 }
 
 /* ============================================
-   CONVERSATIONS LIST
+   TRIAGE COCKPIT — conversations list (added 2026-05-20)
+   Information-dense triage table: 5-column grid on desktop, AI summary
+   peek in row, action-count pill + provenance chip, mono duration + when.
+   Sticky column-header strip. Honors --gl-* tokens + coral-as-signal.
    ============================================ */
 .vvb-conversations {
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding: 16px 16px 32px;
-  gap: 8px;
+  padding: 0 0 32px;
 }
 
-.vvb-conversation-item {
-  display: flex;
-  align-items: center;
+.gl-tc-list {
+  /* Triage list owns its own padding so the sticky column-header can pin to
+     the section frame's top edge without an outer gap above it. */
+  padding-top: 0;
+}
+
+/* Column header strip */
+.gl-tc-colhead {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px 60px 56px;
   gap: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--gl-border);
-  background: var(--gl-surface);
-  cursor: pointer;
-  transition: background var(--gl-fast) var(--gl-ease),
-              border-color var(--gl-fast) var(--gl-ease);
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--gl-border);
+  background: var(--gl-canvas);
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
+
+.gl-tc-colhead .gl-label { color: var(--gl-ink-fog); }
+
+/* Triage row */
+.gl-tc-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px 60px 56px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 20px;
+  border: none;
+  border-bottom: 1px solid var(--gl-border);
+  background: transparent;
+  color: inherit;
+  font: inherit;
   text-align: left;
   width: 100%;
-  font-family: var(--gl-sans);
-  color: inherit;
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease);
 }
 
-.vvb-conversation-item:hover {
+.gl-tc-row:hover { background: var(--gl-surface-soft); }
+.gl-tc-row:focus-visible {
+  outline: 2px solid var(--gl-rose);
+  outline-offset: -2px;
   background: var(--gl-surface-soft);
-  border-color: var(--gl-border-strong);
 }
+.gl-tc-row:last-of-type { border-bottom: none; }
 
-.vvb-conv-thumb {
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
+.gl-tc-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
   background: var(--gl-surface-soft);
+  border: 1px solid var(--gl-border);
+  position: relative;
 }
-
-.vvb-conv-thumb img {
+.gl-tc-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
-
-.vvb-conv-avatar {
-  width: 100%;
-  height: 100%;
+.gl-tc-avatar-fallback {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--gl-ink);
-  background: var(--gl-surface-soft);
+  font-family: var(--gl-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--gl-ink-cloth);
 }
 
-.vvb-conv-info {
-  flex: 1;
-  min-width: 0;
+.gl-tc-signal {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  min-width: 0;
 }
 
-.vvb-conv-header {
+.gl-tc-from {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-}
-
-.vvb-conv-name {
-  font-weight: 500;
-  font-size: 0.9375rem;
-  color: var(--gl-ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.vvb-conv-time {
   font-family: var(--gl-mono);
   font-size: 11px;
-  letter-spacing: 0.05em;
-  color: var(--gl-ink-fog);
-  flex-shrink: 0;
-}
-
-.vvb-conv-preview {
-  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--gl-ink-cloth);
   white-space: nowrap;
   overflow: hidden;
+}
+
+.gl-tc-row[data-unread] .gl-tc-from { color: var(--gl-ink); }
+
+.gl-tc-from-name {
+  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.gl-tc-unread-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gl-rose);
+  flex-shrink: 0;
+}
+
+.gl-tc-kind {
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--gl-ink-fog);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.gl-tc-summary {
   margin: 0;
+  font-family: var(--gl-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--gl-ink-cloth);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 56ch;
+}
+
+.gl-tc-row[data-unread] .gl-tc-summary { color: var(--gl-ink); }
+
+.gl-tc-summary-empty {
+  font-style: italic;
+  color: var(--gl-ink-fog);
+}
+
+.gl-tc-summary-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 2px;
+}
+.gl-tc-summary-skeleton span {
+  height: 9px;
+  border-radius: 3px;
+  background: var(--gl-surface-soft);
+  animation: gl-skel 1.6s ease-in-out infinite;
+}
+.gl-tc-summary-skeleton span:nth-child(1) { width: 76%; }
+.gl-tc-summary-skeleton span:nth-child(2) { width: 52%; }
+
+.gl-tc-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.gl-tc-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: var(--gl-accent-soft-light);
+  color: var(--gl-rose-deep);
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.video-vox-mode.dark .gl-tc-action-pill {
+  background: var(--gl-accent-soft-dark);
+  color: var(--gl-rose-bright);
+}
+
+/* Compact provenance chip variant for triage rows — shorter padding, smaller
+   font, same leading-dot pattern. The full chip lives on the chat card. */
+.gl-tc-ai-chip {
+  padding: 2px 6px;
+  font-size: 9px;
+}
+
+.gl-tc-ai-mute {
+  font-family: var(--gl-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gl-ink-fog);
+}
+
+.gl-tc-duration {
+  text-align: right;
+  font-family: var(--gl-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--gl-ink-cloth);
+}
+.gl-tc-row[data-unread] .gl-tc-duration { color: var(--gl-ink); }
+
+.gl-tc-when {
+  text-align: right;
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gl-ink-fog);
+  white-space: nowrap;
+}
+
+/* Counter chip in the toolbar children slot — replaces the old cyan badge */
+.gl-tc-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: var(--gl-surface-soft);
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.gl-tc-counter-sep { color: var(--gl-ink-fog); }
+.gl-tc-counter-unread {
+  color: var(--gl-rose-deep);
+  font-weight: 500;
+}
+.video-vox-mode.dark .gl-tc-counter-unread { color: var(--gl-rose-bright); }
+
+/* Triage empty state */
+.gl-tc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 64px 32px;
+}
+
+.gl-tc-empty-stamp {
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gl-ink-fog);
+  padding: 8px 16px;
+  border: 1px dashed var(--gl-border-strong);
+  border-radius: 4px;
+}
+
+.gl-tc-empty-body {
+  margin: 0;
+  font-family: var(--gl-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--gl-ink-cloth);
+  text-align: center;
+  max-width: 44ch;
+}
+
+.gl-tc-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: var(--gl-rose);
+  color: #fafafa;
+  border: none;
+  font-family: var(--gl-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease),
+              box-shadow var(--gl-fast) var(--gl-ease),
+              transform var(--gl-fast) var(--gl-ease);
+  box-shadow: 0 4px 12px var(--gl-accent-glow-light);
+}
+.video-vox-mode.dark .gl-tc-empty-cta {
+  box-shadow: 0 4px 12px var(--gl-accent-glow-dark);
+}
+.gl-tc-empty-cta:hover {
+  background: var(--gl-rose-deep);
+  transform: translateY(-1px);
+}
+.gl-tc-empty-cta:active { transform: translateY(0); }
+
+/* Quiet text-link for the secondary "walkthrough" CTA — text + tiny icon,
+   no button chrome, monospace caps to stay in the system signature. */
+.gl-tc-empty-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gl-ink-cloth);
+  cursor: pointer;
+  transition: color var(--gl-fast) var(--gl-ease);
+}
+.gl-tc-empty-link:hover { color: var(--gl-rose); }
+.video-vox-mode.dark .gl-tc-empty-link:hover { color: var(--gl-rose-bright); }
+.gl-tc-empty-link:focus-visible {
+  outline: 2px solid var(--gl-rose);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* List foot — anchors the secondary walkthrough link below the populated
+   list, mirroring the empty-state link so users always have the affordance. */
+.gl-tc-list-foot {
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px 0;
 }
 
 /* ============================================
@@ -1569,31 +1814,6 @@
   text-align: center;
 }
 
-.vvb-empty-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 12px;
-  border: 1px solid var(--gl-rose);
-  background: transparent;
-  color: var(--gl-rose);
-  font-family: var(--gl-sans);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--gl-fast) var(--gl-ease);
-}
-
-/* Two empty-state CTAs side-by-side: Record a glimpse + Record a walkthrough */
-.gl-empty-cta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin-top: 8px;
-}
-
 /* Mode confirmation row in the recorder — replaces the Cam/Cam+Screen toggle.
    Capture mode is now an intent decided at the entry point (Glimpse vs
    Walkthrough); this strip just confirms which one is active. */
@@ -1615,16 +1835,6 @@
 }
 
 .video-vox-mode.dark .gl-mode-confirm {
-  background: var(--gl-accent-soft-dark);
-  color: var(--gl-rose-bright);
-}
-
-.vvb-empty-cta:hover {
-  background: var(--gl-accent-soft-light);
-  color: var(--gl-rose-deep);
-}
-
-.video-vox-mode.dark .vvb-empty-cta:hover {
   background: var(--gl-accent-soft-dark);
   color: var(--gl-rose-bright);
 }
@@ -1899,9 +2109,48 @@
   }
   .gl-recipient-clear { width: 48px; }
   .gl-recipient-bar-toggle { padding: 12px; }
-  .vvb-empty-cta { padding: 12px 18px; }
   .gl-action-btn { padding: 12px 10px; }
   .gl-send-btn { padding: 14px 20px; }
+
+  /* Triage Cockpit row collapse — drop the 5-col grid into named areas.
+     The .gl-tc-signal wrapper goes display:contents so its children become
+     direct row children and can claim distinct grid areas.
+
+       columns: 40px 1fr auto
+       rows:    from      when
+                summary
+                actions   duration
+
+     Column-header strip hides — no room on mobile. */
+  .gl-tc-colhead { display: none; }
+
+  .gl-tc-row {
+    grid-template-columns: 40px 1fr auto;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "avatar from     when"
+      "avatar summary  summary"
+      "avatar actions  duration";
+    padding: 14px 16px;
+    gap: 6px 12px;
+  }
+  .gl-tc-avatar { grid-area: avatar; grid-row: 1 / -1; align-self: start; }
+  .gl-tc-signal { display: contents; }
+  .gl-tc-from { grid-area: from; min-width: 0; }
+  .gl-tc-row .gl-tc-summary,
+  .gl-tc-row .gl-tc-summary-skeleton {
+    grid-area: summary;
+    max-width: none;
+  }
+  .gl-tc-actions {
+    grid-area: actions;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .gl-tc-duration { grid-area: duration; justify-self: end; align-self: center; }
+  .gl-tc-when { grid-area: when; justify-self: end; align-self: center; }
 }
 
 /* ============================================
@@ -1912,11 +2161,13 @@
   .gl-stage[data-state="paused"],
   .gl-rec-dot,
   .gl-summary-skeleton span,
+  .gl-tc-summary-skeleton span,
   .gl-reaction-picker,
   .gl-record-btn,
   .gl-action-btn,
   .gl-card,
-  .vvb-conversation-item {
+  .gl-tc-row,
+  .gl-tc-empty-cta {
     animation: none !important;
     transition: none !important;
   }
