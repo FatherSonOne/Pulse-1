@@ -1274,15 +1274,23 @@ const Glimpse: React.FC<GlimpseProps> = ({
         onShowHelp={() => setShowShortcutsHelp(true)}
         selectionCount={selectionCount}
         customActions={[
-          // Triage Cockpit (conversations mode): condensed to Search + single
-          // primary Record CTA. Walkthrough demoted to a quiet text-link inside
-          // the list and empty state, so the header chrome doesn't sprawl.
+          // Triage Cockpit (conversations mode): Search and Walkthrough render
+          // as quiet icon-only buttons so they don't fight the labelled Record
+          // CTA for visual weight, but both stay reachable from the populated
+          // list — Walkthrough is a real entry-point feature, not an empty-
+          // state-only affordance, and capture mode is locked at entry so we
+          // must surface both intents here.
           ...(viewMode === 'conversations' ? [
             {
               icon: <Search className="w-4 h-4" />,
               title: 'Search glimpses',
               onClick: () => setViewMode('search'),
             },
+            ...(canShareScreen ? [{
+              icon: <MonitorPlay className="w-4 h-4" />,
+              title: 'Record a walkthrough — screen + camera',
+              onClick: () => enterRecorder('cam-screen'),
+            }] : []),
             {
               icon: <Video className="w-4 h-4" />,
               label: 'Record',
