@@ -1249,6 +1249,9 @@ const Glimpse: React.FC<GlimpseProps> = ({
             onClose?.();
           }
         }}
+        // Hide back on the conversations home view — nothing meaningful to
+        // go back to (onClose is undefined in the workspace shell mount).
+        showBack={viewMode !== 'conversations'}
         modeTitle="Glimpse"
         modeSubtitle="Video · Transcribed · Triaged"
         modeIcon={<Video className="w-5 h-5" />}
