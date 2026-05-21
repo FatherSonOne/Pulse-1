@@ -32,7 +32,7 @@ import { WorkspaceShareModal } from './WorkspaceShareModal';
 import { NamePromptModal } from './NamePromptModal';
 import './Contacts.css';
 
-import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronRight, Clock, Copy, Flame, LayoutGrid, List, MessageSquare, Moon, Network, Plus, Radio, RefreshCw, Search, Snowflake, Star, UserX, Users, Video, Wand2, X, Zap } from 'lucide-react';
+import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronDown, ChevronRight, Clock, Copy, Flame, LayoutGrid, List, MessageSquare, Moon, Network, Plus, Radio, RefreshCw, Search, Snowflake, Star, UserPlus, UserX, Users, Video, Wand2, X, Zap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 // ============================================
@@ -141,6 +141,29 @@ interface SidebarProps {
   onCircleChange: (circleId: string | null) => void;
 }
 
+const SectionToggle: React.FC<{
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  title?: string;
+}> = ({ label, open, onToggle, title }) => (
+  <button
+    type="button"
+    onClick={onToggle}
+    title={title}
+    aria-expanded={open}
+    className="contacts-section-title contacts-section-title--toggle"
+  >
+    <span>{label}</span>
+    <ChevronDown
+      size={12}
+      className="contacts-section-toggle-chevron"
+      data-open={open ? 'true' : 'false'}
+      aria-hidden="true"
+    />
+  </button>
+);
+
 const Sidebar: React.FC<SidebarProps> = ({
   searchQuery,
   onSearchChange,
@@ -163,7 +186,29 @@ const Sidebar: React.FC<SidebarProps> = ({
   circles,
   activeCircleId,
   onCircleChange,
-}) => (
+}) => {
+  // Collapsible state per section. Default open; persisted to
+  // localStorage so the operator's choice survives reloads.
+  const readLs = (k: string, fallback: boolean): boolean => {
+    try {
+      const v = localStorage.getItem(`pulse_contacts_section_${k}`);
+      return v === null ? fallback : v === '1';
+    } catch {
+      return fallback;
+    }
+  };
+  const writeLs = (k: string, v: boolean) => {
+    try { localStorage.setItem(`pulse_contacts_section_${k}`, v ? '1' : '0'); } catch { /* ignore */ }
+  };
+  const [tagsOpen, setTagsOpen] = useState(() => readLs('tags', true));
+  const [smartListsOpen, setSmartListsOpen] = useState(() => readLs('smart_lists', true));
+  const [circlesOpen, setCirclesOpen] = useState(() => readLs('circles', true));
+
+  const toggleTags = () => { setTagsOpen(v => { writeLs('tags', !v); return !v; }); };
+  const toggleSmartLists = () => { setSmartListsOpen(v => { writeLs('smart_lists', !v); return !v; }); };
+  const toggleCircles = () => { setCirclesOpen(v => { writeLs('circles', !v); return !v; }); };
+
+  return (
   <div className="contacts-sidebar">
     {headerReplacement ? (
       headerReplacement
@@ -187,7 +232,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
     )}
 
-    {/* Overview Section */}
+    {/* Scroll region holds every section. The Add Contact button
+        lives in a sibling footer below so it stays pinned. */}
+    <div className="contacts-sidebar-scroll">
     <div className="contacts-sidebar-section">
       <div className="contacts-section-title">Overview</div>
       <button
@@ -223,13 +270,13 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     {/* Tags Section */}
     <div className="contacts-sidebar-section">
-      <div
-        className="contacts-section-title"
+      <SectionToggle
+        label="Tags"
+        open={tagsOpen}
+        onToggle={toggleTags}
         title="Labels you apply to contacts in Edit Contact."
-      >
-        Tags
-      </div>
-      {TAGS.map((tag) => {
+      />
+      {tagsOpen && TAGS.map((tag) => {
         const isActive = filterTag === tag.id;
         return (
           <button
@@ -278,13 +325,13 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     {/* Smart Lists Section */}
     <div className="contacts-sidebar-section">
-      <div
-        className="contacts-section-title"
+      <SectionToggle
+        label="Smart Lists"
+        open={smartListsOpen}
+        onToggle={toggleSmartLists}
         title="System-computed lists. Pulse evaluates relationship data at render time. Not user-edited."
-      >
-        Smart Lists
-      </div>
-      {SMART_LISTS.map((list) => {
+      />
+      {smartListsOpen && SMART_LISTS.map((list) => {
         const ListIcon = list.Icon;
         return (
           <button
@@ -307,17 +354,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         Auto-detect is exposed in the section header. */}
     {circles.length > 0 && (
       <div className="contacts-sidebar-section">
-        <div
-          className="contacts-section-title"
+        <SectionToggle
+          label="Circles"
+          open={circlesOpen}
+          onToggle={toggleCircles}
           title="User-curated groups. Click to filter People to a circle's members."
-          style={{
-            fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
-            letterSpacing: '0.1em',
-          }}
-        >
-          Circles
-        </div>
-        {circles.map(circle => {
+        />
+        {circlesOpen && circles.map(circle => {
           const isActive = activeCircleId === circle.id;
           return (
             <button
@@ -353,14 +396,19 @@ const Sidebar: React.FC<SidebarProps> = ({
     )}
 
     {savedFiltersPanel}
+    </div>{/* /.contacts-sidebar-scroll */}
 
-    {/* Add Contact Button */}
-    <button className="contacts-add-btn" onClick={onAddContact}>
-      <Plus />
-      Add Contact
-    </button>
+    {/* Sticky footer keeps Add Contact in view regardless of how many
+        sections expand above. */}
+    <div className="contacts-sidebar-footer">
+      <button className="contacts-add-btn" onClick={onAddContact}>
+        <Plus />
+        Add Contact
+      </button>
+    </div>
   </div>
-);
+  );
+};
 
 // ============================================
 // NODE CARD COMPONENT
@@ -662,6 +710,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   const [activeSmartList, setActiveSmartList] = useState<SmartListType | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddChooser, setShowAddChooser] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
   const [showAlertsPanel, setShowAlertsPanel] = useState(false);
@@ -1091,7 +1140,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
         }}
         alertCount={alerts.length}
         onViewAlerts={() => setShowAlertsPanel(true)}
-        onAddContact={() => setShowAddModal(true)}
+        onAddContact={() => setShowAddChooser(true)}
         showArchived={showArchived}
         archivedCount={archivedCount}
         onToggleArchived={(next) => {
@@ -1468,6 +1517,99 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
         onSubmit={(name) => namePromptState?.onSubmit(name)}
         onClose={() => setNamePromptState(null)}
       />
+
+      {/* Add Contact chooser: lets the operator pick between
+          importing from Google (re-opens ConnectContactsModal via the
+          existing pulse:contacts:open-connect-modal event) and adding
+          one manually (opens AddContactModal). Replaces the prior
+          single-button-opens-manual-modal flow. */}
+      {showAddChooser && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0, 0, 0, 0.70)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setShowAddChooser(false)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-contact-chooser-title"
+            className="w-full max-w-sm rounded-2xl overflow-hidden"
+            style={{
+              background: 'var(--pulse-surface)',
+              border: '1px solid var(--pulse-border)',
+              boxShadow: 'var(--pulse-shadow-md)',
+              color: 'var(--pulse-ink)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b" style={{ borderColor: 'var(--pulse-border)' }}>
+              <h2 id="add-contact-chooser-title" className="text-lg font-semibold">
+                Add a contact
+              </h2>
+              <p className="mt-1 text-sm" style={{ color: 'var(--pulse-ink-2)' }}>
+                Pick someone from Google, or add one yourself.
+              </p>
+            </div>
+            <div className="p-3 space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddChooser(false);
+                  window.dispatchEvent(new CustomEvent('pulse:contacts:open-connect-modal'));
+                }}
+                className="w-full flex items-start gap-3 p-3 rounded-xl border text-left hover:border-rose-300 dark:hover:border-rose-400/40 transition-colors"
+                style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
+              >
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'var(--pulse-rose-soft)' }}
+                >
+                  <Users className="w-4 h-4" style={{ color: 'var(--pulse-rose)' }} aria-hidden="true" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold">Import from Google</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--pulse-ink-3)' }}>
+                    Open the picker. Tick exactly who Pulse should know about.
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddChooser(false);
+                  setShowAddModal(true);
+                }}
+                className="w-full flex items-start gap-3 p-3 rounded-xl border text-left hover:border-rose-300 dark:hover:border-rose-400/40 transition-colors"
+                style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
+              >
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'var(--pulse-tone-info-soft)' }}
+                >
+                  <UserPlus className="w-4 h-4" style={{ color: 'var(--pulse-tone-info)' }} aria-hidden="true" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold">Add manually</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--pulse-ink-3)' }}>
+                    Fill in a name, email, phone. Stays Pulse-local.
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div className="px-5 py-3 border-t flex justify-end" style={{ borderColor: 'var(--pulse-border)' }}>
+              <button
+                type="button"
+                onClick={() => setShowAddChooser(false)}
+                className="min-h-[36px] px-3 py-1.5 rounded-lg text-sm font-medium"
+                style={{ color: 'var(--pulse-ink-2)' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
