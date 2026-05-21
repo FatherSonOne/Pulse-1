@@ -115,17 +115,17 @@ export const AIContactSearch: React.FC<AIContactSearchProps> = ({
         flex items-center gap-2 px-3 py-2 rounded-xl border transition-all
         bg-white dark:bg-zinc-900
         ${isAIMode
-          ? 'border-indigo-300 dark:border-indigo-600 ring-1 ring-indigo-300 dark:ring-indigo-600'
+          ? 'border-rose-300 dark:border-rose-600 ring-1 ring-indigo-300 dark:ring-indigo-600'
           : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
         }
-        focus-within:border-indigo-400 dark:focus-within:border-indigo-500
+        focus-within:border-rose-400 dark:focus-within:border-rose-500
         focus-within:ring-1 focus-within:ring-indigo-400 dark:focus-within:ring-indigo-500
       `}>
         {/* Icon: spinner when searching, sparkle for AI, magnifying glass otherwise */}
         {isSearching ? (
-          <Loader2 className="animate-spin text-indigo-500 text-sm flex-shrink-0" />
+          <Loader2 className="animate-spin text-rose-500 text-sm flex-shrink-0" />
         ) : isAIMode ? (
-          <Wand2 className="text-indigo-500 text-sm flex-shrink-0" />
+          <Wand2 className="text-rose-500 text-sm flex-shrink-0" />
         ) : (
           <Search className="text-zinc-400 text-sm flex-shrink-0" />
         )}
@@ -143,7 +143,7 @@ export const AIContactSearch: React.FC<AIContactSearchProps> = ({
 
         {/* AI badge */}
         {isAIMode && !isSearching && (
-          <span className="flex-shrink-0 px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-xs font-medium rounded-full">
+          <span className="flex-shrink-0 px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 text-xs font-medium rounded-full">
             AI
           </span>
         )}
@@ -162,8 +162,8 @@ export const AIContactSearch: React.FC<AIContactSearchProps> = ({
       {/* AI explanation chip */}
       {isAIMode && explanation && (
         <div className="mt-1.5 flex items-center gap-1.5 px-2">
-          <Sparkles className="text-xs text-indigo-400" />
-          <span className="text-xs text-indigo-600 dark:text-indigo-400 leading-tight">
+          <Sparkles className="text-xs text-rose-400" />
+          <span className="text-xs text-rose-600 dark:text-rose-400 leading-tight">
             {explanation}
           </span>
         </div>

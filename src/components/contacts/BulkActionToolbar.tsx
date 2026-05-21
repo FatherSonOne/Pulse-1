@@ -33,12 +33,6 @@ interface BulkActionToolbarProps {
   affectsCircle?: string | null;
 }
 
-const buttonBase: React.CSSProperties = {
-  minHeight: 44,
-  minWidth: 44,
-  borderRadius: 10,
-  border: '1px solid var(--pulse-border)',
-};
 
 export const BulkActionToolbar: React.FC<BulkActionToolbarProps> = ({
   selectedCount,
@@ -174,7 +168,6 @@ export const BulkActionToolbar: React.FC<BulkActionToolbarProps> = ({
           title={t('contacts.bulkToolbar.clear_selection')}
           aria-label={t('contacts.bulkToolbar.clear_selection')}
           className="contacts-bulk-toolbar__icon-btn"
-          style={buttonBase}
         >
           <X size={16} aria-hidden="true" />
         </button>
@@ -191,10 +184,10 @@ export const BulkActionToolbar: React.FC<BulkActionToolbarProps> = ({
           }}
         >
           <span>{t('contacts.bulkToolbar.archive_circle_warning', { circle: affectsCircle })}</span>
-          <button type="button" onClick={onArchive} style={buttonBase}>
+          <button type="button" onClick={onArchive}>
             {t('contacts.bulkToolbar.continue_cta')}
           </button>
-          <button type="button" onClick={onClearSelection} style={buttonBase}>
+          <button type="button" onClick={onClearSelection}>
             {t('contacts.bulkToolbar.cancel_cta')}
           </button>
         </div>
@@ -206,21 +199,9 @@ export const BulkActionToolbar: React.FC<BulkActionToolbarProps> = ({
             key={action.key}
             type="button"
             data-action={action.key}
+            data-primary={action.primary ? 'true' : 'false'}
             onClick={action.run}
             className="contacts-bulk-toolbar__button"
-            style={{
-              ...buttonBase,
-              background: action.primary
-                ? 'var(--pulse-rose)'
-                : action.danger
-                ? 'var(--pulse-tone-overdue-soft)'
-                : 'var(--pulse-surface)',
-              color: action.primary
-                ? 'var(--pulse-surface)'
-                : action.danger
-                ? 'var(--pulse-tone-overdue)'
-                : 'var(--pulse-ink)',
-            }}
           >
             {action.icon}
             <span>{action.label}</span>

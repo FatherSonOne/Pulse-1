@@ -21,7 +21,7 @@ function profileToInsight(profile: RelationshipProfile | undefined):
   const score = profile.relationshipScore ?? 50;
   const trend = profile.relationshipTrend;
   if (trend === 'falling' && score < 40) {
-    return { tone: 'overdue', chipLabel: 'GONE QUIET', dotTitle: 'At risk — went quiet' };
+    return { tone: 'overdue', chipLabel: 'GONE QUIET', dotTitle: 'At risk: went quiet' };
   }
   if (trend === 'falling' && score < 60) {
     return { tone: 'warning', chipLabel: 'COOLING', dotTitle: 'Cooling' };

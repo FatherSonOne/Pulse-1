@@ -1,8 +1,9 @@
 // ============================================
 // CONTACTS SHELL
 // Top-level container for the reimagined Contacts section.
-// Provides three modes: Today (default), People, Circles.
-// Phase 5: keyboard shortcuts + first-visit onboarding tour.
+// Provides two modes: Today (default) and People.
+// Circles were demoted from a top-level tab to a sidebar facet on People
+// in Phase D (the bubble-chart visualization was decoration, not a tool).
 // ============================================
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
@@ -10,7 +11,6 @@ import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { AppView, Contact } from '../../types';
 import { ContactsRedesigned } from './ContactsRedesigned';
 import { TodayView } from './TodayView';
-import { CirclesView } from './CirclesView';
 import { ContactsOnboarding, shouldShowContactsTour } from './ContactsOnboarding';
 import { useContactsKeyboard } from './useContactsKeyboard';
 import { ContactsEmptyState } from './ContactsEmptyState';
@@ -18,7 +18,6 @@ import { ConnectContactsModal } from './ConnectContactsModal';
 import { TrimWizard } from './TrimWizard';
 import { AddContactModal } from './AddContactModal';
 import { ReconnectGoogleModal } from '../Auth/ReconnectGoogleModal';
-import { CONTACTS_PHASE_A_ENABLED } from '../../services/authService';
 import { useWorkspaceData } from '../../contexts/WorkspaceContext';
 import { useTranslation } from 'react-i18next';
 
@@ -29,7 +28,7 @@ import { MapPin, Search } from 'lucide-react';
 // Map is no longer a tab here — it was promoted to a top-level Sidebar
 // section (AppView.MAP). The 'View on Map' chip in the tab bar deep-links
 // users who built muscle memory for Contacts → Map.
-type ContactsMode = 'today' | 'people' | 'circles';
+type ContactsMode = 'today' | 'people';
 
 interface ContactsShellProps {
   contacts: Contact[];
@@ -69,13 +68,6 @@ const TABS: ModeTab[] = [
     description: 'Everyone you know',
     shortcut: '2',
   },
-  {
-    id: 'circles',
-    label: 'Circles',
-    icon: 'network',
-    description: 'How your network connects',
-    shortcut: '3',
-  },
 ];
 
 // ==================== MAIN COMPONENT ====================
@@ -94,7 +86,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
   // instead of the previous setTimeout(..., 100) race. Cleared once consumed.
   const pendingSearchFocusRef = useRef(false);
   const workspaceId = currentWorkspace?.id ?? '';
-  const showPhaseAEmpty = CONTACTS_PHASE_A_ENABLED && props.contacts.length === 0;
+  const showEmptyState = props.contacts.length === 0;
 
   // Focus the People tab's search input (selector via data attribute).
   const handleSearchFocus = useCallback(() => {
@@ -119,20 +111,48 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
   }, [activeMode]);
 
   useEffect(() => {
-    if (!CONTACTS_PHASE_A_ENABLED) return;
-
     const openHandler = () => setConnectModalOpen(true);
     const scopeMissingHandler = () => {
       import('../../services/toastFactory').then(module => {
         module.showScopeLossToast(() => setReconnectModalOpen(true));
       });
     };
+    // Phase D step 23: direct open from the wizard's reconnect banner.
+    // Skips the toast intermediary so the user goes from "click
+    // Reconnect" -> "see OAuth modal" in one step.
+    const openReconnectHandler = () => setReconnectModalOpen(true);
+    // Phase D step 7: TodayEmptyState dispatches these when the operator
+    // taps "See who's gone cold" or "Set a check-in goal". The shell
+    // owns the routing because People is the surface the smart-list
+    // filter applies to.
+    const showSmartListHandler = (event: Event) => {
+      const detail = (event as CustomEvent<{ list: string }>).detail;
+      if (!detail?.list) return;
+      setActiveMode('people');
+      window.setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent('pulse:contacts:apply-smart-list', { detail })
+        );
+      }, 50);
+    };
+    const openCheckInGoalHandler = () => {
+      setActiveMode('people');
+      window.setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('pulse:contacts:open-check-in-goal-people'));
+      }, 50);
+    };
 
     window.addEventListener('pulse:contacts:open-connect-modal', openHandler);
     window.addEventListener('pulse:contacts:scope-missing', scopeMissingHandler);
+    window.addEventListener('pulse:contacts:open-reconnect-modal', openReconnectHandler);
+    window.addEventListener('pulse:contacts:show-smart-list', showSmartListHandler);
+    window.addEventListener('pulse:contacts:open-check-in-goal', openCheckInGoalHandler);
     return () => {
       window.removeEventListener('pulse:contacts:open-connect-modal', openHandler);
       window.removeEventListener('pulse:contacts:scope-missing', scopeMissingHandler);
+      window.removeEventListener('pulse:contacts:open-reconnect-modal', openReconnectHandler);
+      window.removeEventListener('pulse:contacts:show-smart-list', showSmartListHandler);
+      window.removeEventListener('pulse:contacts:open-check-in-goal', openCheckInGoalHandler);
     };
   }, []);
 
@@ -148,10 +168,10 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
   });
 
   return (
-    <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
+    <div className="flex flex-col h-full bg-zinc-50 dark:bg-black overflow-hidden">
 
       {/* Tab bar */}
-      <div className="flex-shrink-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex-shrink-0 bg-white dark:bg-white/[0.03] border-b border-zinc-200 dark:border-white/[0.06]">
         <div className="flex items-stretch px-2 pt-2 gap-0.5">
           {TABS.map(tab => {
             const isActive = activeMode === tab.id;
@@ -160,20 +180,21 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
                 key={tab.id}
                 onClick={() => setActiveMode(tab.id)}
                 className={`
-                  relative flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium
+                  relative flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium uppercase tracking-[0.06em]
                   transition-colors duration-150
                   ${isActive
-                    ? 'bg-zinc-50 dark:bg-zinc-950 text-rose-500 dark:text-rose-400 border border-b-0 border-zinc-200 dark:border-zinc-700'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                    ? 'bg-zinc-50 dark:bg-white/[0.055] text-rose-500 dark:text-rose-400 border border-b-0 border-zinc-200 dark:border-white/10'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/[0.04]'
                   }
                 `}
+                style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
                 title={`${tab.description} (${tab.shortcut})`}
               >
                 <AnimatedIcon icon={tab.icon} size={16} />
                 <span>{tab.label}</span>
                 {/* Keyboard shortcut hint */}
                 {!isActive && (
-                  <span className="hidden sm:inline-flex ml-0.5 w-4 h-4 items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-400 text-[9px] font-mono rounded">
+                  <span className="hidden sm:inline-flex ml-0.5 w-4 h-4 items-center justify-center bg-zinc-100 dark:bg-white/[0.06] text-zinc-400 text-[9px] font-mono rounded">
                     {tab.shortcut}
                   </span>
                 )}
@@ -214,7 +235,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
 
       {/* Mode content */}
       <div className="flex-1 overflow-hidden">
-        {showPhaseAEmpty ? (
+        {showEmptyState ? (
           <ContactsEmptyState
             variant={activeMode}
             onConnectClick={() => setConnectModalOpen(true)}
@@ -236,12 +257,6 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
                 openAddContact={props.openAddContact}
               />
             )}
-            {activeMode === 'circles' && (
-              <CirclesView
-                contacts={props.contacts}
-                onAction={props.onAction}
-              />
-            )}
           </>
         )}
       </div>
@@ -251,45 +266,65 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
         <ContactsOnboarding onComplete={() => setShowTour(false)} />
       )}
 
-      {CONTACTS_PHASE_A_ENABLED && (
-        <>
-          <ConnectContactsModal
-            isOpen={connectModalOpen}
-            onClose={() => setConnectModalOpen(false)}
-            onImportComplete={(result) => {
-              setConnectModalOpen(false);
-              const importedContacts = result.keptContactsForTrim ?? [];
-              setImportedContactsForTrim(importedContacts);
-              if (result.imported > 0) {
-                setTrimWizardOpen(true);
-              }
-            }}
-            workspaceId={workspaceId}
-          />
-          <TrimWizard
-            isOpen={trimWizardOpen}
-            importedContacts={importedContactsForTrim}
-            workspaceId={workspaceId}
-            onComplete={() => setTrimWizardOpen(false)}
-            onClose={() => setTrimWizardOpen(false)}
-          />
-          <ReconnectGoogleModal
-            isOpen={reconnectModalOpen}
-            onClose={() => setReconnectModalOpen(false)}
-            onSuccess={() => setReconnectModalOpen(false)}
-            title={t('contacts.reconnectModal.title')}
-            message={t('contacts.reconnectModal.message')}
-            invalidGrantReason="revoked"
-          />
-          <AddContactModal
-            isOpen={manualAddModalOpen}
-            onClose={() => setManualAddModalOpen(false)}
-            onAdd={async (contact) => {
-              await props.onAddContact?.(contact);
-            }}
-          />
-        </>
-      )}
+      <ConnectContactsModal
+        isOpen={connectModalOpen}
+        onClose={() => setConnectModalOpen(false)}
+        onImportComplete={(result) => {
+          setConnectModalOpen(false);
+          const importedContacts = result.keptContactsForTrim ?? [];
+          setImportedContactsForTrim(importedContacts);
+          if (result.imported > 0) {
+            setTrimWizardOpen(true);
+          }
+          // Phase D step 20: import wrote rows directly via
+          // importSelectedContacts(); App.tsx's contact state still
+          // points at the pre-import snapshot, so the People view
+          // stays in its empty state until a reload. Passing [] keeps
+          // App.handleSyncContacts' dedup filter from re-creating
+          // anything; the loadContacts() at the end is what we want.
+          props.onSyncComplete?.([]);
+        }}
+        workspaceId={workspaceId}
+        workspaceName={currentWorkspace?.name}
+      />
+      <TrimWizard
+        isOpen={trimWizardOpen}
+        importedContacts={importedContactsForTrim}
+        workspaceId={workspaceId}
+        onComplete={() => {
+          setTrimWizardOpen(false);
+          // Trim mutates contacts.archived_at on rows the user
+          // skipped. Refresh so the People list reflects the trimmed
+          // set instead of the post-import set.
+          props.onSyncComplete?.([]);
+        }}
+        onClose={() => setTrimWizardOpen(false)}
+      />
+      <ReconnectGoogleModal
+        isOpen={reconnectModalOpen}
+        onClose={() => setReconnectModalOpen(false)}
+        onSuccess={async () => {
+          setReconnectModalOpen(false);
+          // After a successful reconnect, the Supabase session has a
+          // fresh provider_token. Nuke the in-memory cache so the next
+          // wizard open / contact fetch picks it up immediately
+          // instead of replaying the dead-token error.
+          try {
+            const { googleContactsService } = await import('../../services/googleContactsService');
+            googleContactsService.invalidateTokenCache();
+          } catch { /* defensive: never let a reconnect celebrate-toast crash */ }
+        }}
+        title={t('contacts.reconnectModal.title')}
+        message={t('contacts.reconnectModal.message')}
+        invalidGrantReason="revoked"
+      />
+      <AddContactModal
+        isOpen={manualAddModalOpen}
+        onClose={() => setManualAddModalOpen(false)}
+        onAdd={async (contact) => {
+          await props.onAddContact?.(contact);
+        }}
+      />
     </div>
   );
 };

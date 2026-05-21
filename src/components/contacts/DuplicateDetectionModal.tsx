@@ -139,11 +139,11 @@ export const DuplicateDetectionModal: React.FC<DuplicateDetectionModalProps> = (
 
                 {/* Merge info */}
                 {selectedPrimary && (
-                  <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-lg mb-4">
-                    <h4 className="font-medium text-purple-900 dark:text-purple-300 mb-2">
+                  <div className="p-4 bg-rose-50 dark:bg-rose-900/10 rounded-lg mb-4">
+                    <h4 className="font-medium text-rose-900 dark:text-rose-300 mb-2">
                       What will happen:
                     </h4>
-                    <ul className="text-sm text-purple-700 dark:text-purple-400 space-y-1">
+                    <ul className="text-sm text-rose-700 dark:text-rose-400 space-y-1">
                       <li className="flex items-start gap-2">
                         <Check className="text-xs mt-1" />
                         <span>All interactions will be combined</span>
@@ -169,7 +169,7 @@ export const DuplicateDetectionModal: React.FC<DuplicateDetectionModalProps> = (
                   <button
                     onClick={handleMerge}
                     disabled={!selectedPrimary || merging}
-                    className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:bg-zinc-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition"
+                    className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-zinc-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition"
                   >
                     {merging ? (
                       <span className="flex items-center justify-center gap-2">
@@ -203,7 +203,7 @@ export const DuplicateDetectionModal: React.FC<DuplicateDetectionModalProps> = (
         {/* Loading overlay */}
         {isLoading && (
           <div className="absolute inset-0 bg-white/80 dark:bg-zinc-900/80 flex items-center justify-center">
-            <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full"></div>
+            <div className="animate-spin w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full"></div>
           </div>
         )}
       </div>
@@ -231,7 +231,7 @@ const DuplicateGroupCard: React.FC<DuplicateGroupCardProps> = ({
     <div
       className={`p-4 rounded-xl border cursor-pointer transition ${
         isSelected
-          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/10'
+          ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/10'
           : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900'
       }`}
       onClick={onClick}
@@ -303,7 +303,7 @@ const DuplicateProfileCard: React.FC<DuplicateProfileCardProps> = ({
     <div
       className={`p-4 rounded-xl border cursor-pointer transition ${
         isSelected
-          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/10'
+          ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/10'
           : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
       }`}
       onClick={onClick}
@@ -321,7 +321,7 @@ const DuplicateProfileCard: React.FC<DuplicateProfileCardProps> = ({
             {(profile?.contactName?.[0] || profile?.contactEmail[0] || '?').toUpperCase()}
           </div>
           {isSelected && (
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-rose-500 rounded-full flex items-center justify-center">
               <Check className="text-white text-[10px]" />
             </div>
           )}

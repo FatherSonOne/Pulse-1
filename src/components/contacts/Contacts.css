@@ -119,30 +119,40 @@
   box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.1);
 }
 
-/* Phase B bulk actions, saved filters, archive toggle, and provenance affordances */
+/* Phase D step 12: bulk actions live in the narrow sidebar column,
+   so the actions stack vertically as full-width rows. Each row is
+   icon (16, leading) + label (flex-1, left-aligned). Avoids the
+   "Share with Workspac…" clipping and the multi-line "Save as filter"
+   wrap that came from the prior horizontal flex layout. */
 .contacts-bulk-toolbar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-}
-
-.contacts-bulk-toolbar__top,
-.contacts-bulk-toolbar__actions,
-.contacts-bulk-toolbar__note {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  gap: 12px;
+  padding: 14px;
 }
 
 .contacts-bulk-toolbar__top {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--pulse-border);
 }
 
 .contacts-bulk-toolbar__count {
   color: var(--pulse-ink);
-  font-size: 13px;
-  font-weight: 700;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.contacts-bulk-toolbar__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .contacts-bulk-toolbar__icon-btn,
@@ -150,34 +160,94 @@
 .contacts-bulk-toolbar__note button {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
   cursor: pointer;
-  transition: background var(--pulse-duration) var(--pulse-ease), color var(--pulse-duration) var(--pulse-ease);
+  transition: background 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.contacts-bulk-toolbar__icon-btn {
+  justify-content: center;
+  min-width: 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  color: var(--pulse-ink-2);
+}
+
+.contacts-bulk-toolbar__icon-btn:hover {
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink);
 }
 
 .contacts-bulk-toolbar__button {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 40px;
+  gap: 10px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--pulse-border);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.contacts-bulk-toolbar__button > span {
   flex: 1;
-  padding: 0 10px;
-  font-size: 12px;
-  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contacts-bulk-toolbar__button:hover {
+  border-color: var(--pulse-border-strong);
+}
+
+.contacts-bulk-toolbar__button[data-primary="true"] {
+  background: var(--pulse-rose);
+  color: #fff;
+  border-color: var(--pulse-rose);
+}
+
+.contacts-bulk-toolbar__button[data-primary="true"]:hover {
+  background: var(--pulse-rose-deep);
+  border-color: var(--pulse-rose-deep);
+}
+
+.contacts-bulk-toolbar__button[data-action="delete"] {
+  color: var(--pulse-tone-overdue);
+  border-color: var(--pulse-border);
+  background: transparent;
 }
 
 .contacts-bulk-toolbar__button[data-action="delete"]:hover {
-  background: var(--pulse-tone-overdue) !important;
-  color: var(--pulse-surface) !important;
+  background: var(--pulse-tone-overdue-soft);
+  border-color: var(--pulse-tone-overdue);
 }
 
 .contacts-bulk-toolbar__note {
-  align-items: flex-start;
-  flex-wrap: wrap;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   border-radius: 10px;
-  padding: 8px;
+  padding: 10px 12px;
   font-size: 12px;
 }
 
 .contacts-bulk-toolbar__note span {
-  flex: 1 1 100%;
+  display: block;
+}
+
+.contacts-bulk-toolbar__note button {
+  justify-content: center;
+  min-height: 36px;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--pulse-border);
 }
 
 .contacts-node-select {
@@ -805,6 +875,25 @@
   position: relative;
   z-index: 2;
   animation: cnt-slide-in-left 0.4s ease;
+  /* Phase D step 21: explicit height so the inner scroll region can
+     bound itself without the Add Contact button falling below the
+     viewport. The parent (.contacts-container) is already flex-row
+     with full-viewport height. */
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.contacts-sidebar-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.contacts-sidebar-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--cnt-border);
+  background: var(--cnt-bg-secondary);
 }
 
 .contacts-sidebar-header {
@@ -877,10 +966,37 @@
   border-bottom: 1px solid var(--cnt-border);
 }
 
-.contacts-sidebar-section:last-child {
+.contacts-sidebar-section:last-of-type {
   border-bottom: none;
-  flex: 1;
-  overflow-y: auto;
+}
+
+/* Phase D step 21: collapsible section header. The whole title row is
+   a button so the chevron + label hit one focusable target. */
+.contacts-section-title--toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.contacts-section-title--toggle:hover {
+  color: var(--cnt-text-primary);
+}
+
+.contacts-section-toggle-chevron {
+  flex-shrink: 0;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0.6;
+}
+
+.contacts-section-toggle-chevron[data-open="false"] {
+  transform: rotate(-90deg);
 }
 
 .contacts-section-title {
@@ -1062,7 +1178,7 @@
   color: var(--cnt-text-muted);
 }
 
-/* Add Contact Button */
+/* Add Contact Button (lives inside the sticky footer in Phase D) */
 .contacts-add-btn {
   display: flex;
   align-items: center;
@@ -1071,20 +1187,21 @@
   width: calc(100% - 24px);
   margin: 12px;
   padding: 12px;
-  background: var(--cnt-gradient-node);
+  background: var(--pulse-rose);
   border: none;
   border-radius: 12px;
   font-size: 13px;
   font-weight: 600;
   color: white;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.3);
+  transition: background 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.20);
 }
 
 .contacts-add-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(244, 63, 94, 0.4);
+  background: var(--pulse-rose-deep);
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.30);
 }
 
 /* ============================================
@@ -1105,9 +1222,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  background: var(--cnt-bg-glass);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  background: var(--cnt-bg-secondary);
   border-bottom: 1px solid var(--cnt-border);
   z-index: 10;
 }
@@ -1231,12 +1346,11 @@
   gap: 20px;
 }
 
-/* Node Card - The unique design */
+/* Node Card - The unique design (glass-on-list is banned per DESIGN.md,
+   so the card stays opaque-translucent over the canvas, not blurred). */
 .contacts-node {
   position: relative;
-  background: var(--cnt-gradient-card);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: var(--cnt-bg-secondary);
   border: 1px solid var(--cnt-border);
   border-radius: 20px;
   padding: 24px;

@@ -87,7 +87,7 @@ export const RelationshipAlertsFeed: React.FC<RelationshipAlertsFeedProps> = ({
 
       {isLoading && (
         <div className="flex items-center justify-center py-4">
-          <div className="animate-spin w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full"></div>
+          <div className="animate-spin w-5 h-5 border-2 border-rose-500 border-t-transparent rounded-full"></div>
         </div>
       )}
     </div>
@@ -221,9 +221,9 @@ const AlertCard: React.FC<AlertCardProps> = ({
               <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">
                 Suggested Action
               </div>
-              <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
-                <Lightbulb className="text-purple-500" />
-                <span className="text-sm text-purple-700 dark:text-purple-300">
+              <div className="flex items-center gap-3 p-3 bg-rose-50 dark:bg-rose-900/10 rounded-lg">
+                <Lightbulb className="text-rose-500" />
+                <span className="text-sm text-rose-700 dark:text-rose-300">
                   {alert.suggestedAction}
                 </span>
               </div>
@@ -235,7 +235,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
             {alert.actionType && (
               <button
                 onClick={() => onAction(alert.id, alert.actionType!)}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium rounded-lg transition"
               >
                 <Zap className="mr-2" />
                 Take Action

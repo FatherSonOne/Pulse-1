@@ -60,7 +60,7 @@ const MemberCard: React.FC<MemberCardProps> = ({ contact, profile, onRemove, onC
   const ringColor = score !== undefined ? getRelationshipHealthColor(score) : '#6b7280';
 
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 group hover:border-indigo-200 dark:hover:border-indigo-700 transition-colors">
+    <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 group hover:border-rose-200 dark:hover:border-rose-400/40 transition-colors">
       {/* Avatar */}
       <button onClick={onClick} className="flex-shrink-0">
         <div
@@ -76,7 +76,7 @@ const MemberCard: React.FC<MemberCardProps> = ({ contact, profile, onRemove, onC
 
       {/* Info */}
       <div className="flex-1 min-w-0" onClick={onClick}>
-        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100 truncate cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400">
+        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100 truncate cursor-pointer hover:text-rose-600 dark:hover:text-rose-400">
           {contact.name}
         </p>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
@@ -190,8 +190,15 @@ export const CircleDetail: React.FC<CircleDetailProps> = ({
         </div>
         {/* Source badge */}
         {localCircle.source === 'auto' && (
-          <span className="text-xs px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full font-medium">
-            <AnimatedIcon icon="sparkle" size={12} /> AI detected
+          <span
+            className="text-[10px] px-2 py-0.5 rounded font-semibold uppercase tracking-[0.1em]"
+            style={{
+              background: 'var(--pulse-rose-soft)',
+              color: 'var(--pulse-rose-deep)',
+              fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+            }}
+          >
+            <AnimatedIcon icon="sparkle" size={12} /> Pulse AI · Detected
           </span>
         )}
       </div>
@@ -218,16 +225,16 @@ export const CircleDetail: React.FC<CircleDetailProps> = ({
                     value={editName}
                     onChange={e => setEditName(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setIsEditingName(false); }}
-                    className="flex-1 text-lg font-bold bg-transparent border-b-2 border-indigo-500 outline-none text-zinc-800 dark:text-zinc-100"
+                    className="flex-1 text-lg font-bold bg-transparent border-b-2 border-rose-500 outline-none text-zinc-800 dark:text-zinc-100"
                   />
-                  <button onClick={handleSaveName} className="text-indigo-500 text-sm font-medium">Save</button>
+                  <button onClick={handleSaveName} className="text-rose-500 text-sm font-medium">Save</button>
                 </div>
               ) : (
                 <button
                   onClick={() => setIsEditingName(true)}
                   className="text-left group"
                 >
-                  <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
                     {localCircle.name}
                   </h2>
                   <p className="text-xs text-zinc-400 mt-0.5">Click to rename</p>
@@ -275,7 +282,7 @@ export const CircleDetail: React.FC<CircleDetailProps> = ({
         <div className="px-6 py-3 border-b border-zinc-100 dark:border-zinc-800/60 flex items-center gap-2">
           <button
             onClick={() => onBulkMessage(localCircle)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg text-xs font-medium hover:bg-rose-100 dark:hover:bg-rose-500/15 transition-colors"
           >
             <MessageSquare className="text-xs" />
             Message all

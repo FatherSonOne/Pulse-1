@@ -61,7 +61,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-3"></div>
+          <div className="animate-spin w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full mx-auto mb-3"></div>
           <p className="text-sm text-zinc-500">Analyzing relationship...</p>
         </div>
       </div>
@@ -115,12 +115,12 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
 
           {/* AI Summary */}
           {insights?.profile.aiRelationshipSummary && (
-            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-900/30">
-              <h3 className="font-semibold text-purple-900 dark:text-purple-300 mb-2 flex items-center gap-2">
+            <div className="bg-gradient-to-br from-rose-50 to-rose-50 dark:from-rose-900/20 dark:to-rose-900/20 rounded-xl p-4 border border-rose-100 dark:border-rose-900/30">
+              <h3 className="font-semibold text-rose-900 dark:text-rose-300 mb-2 flex items-center gap-2">
                 <Wand2 />
                 AI Summary
               </h3>
-              <p className="text-sm text-purple-800 dark:text-purple-200">
+              <p className="text-sm text-rose-800 dark:text-rose-200">
                 {insights.profile.aiRelationshipSummary}
               </p>
             </div>
@@ -138,7 +138,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
                     key={idx}
                     className="flex items-start gap-3 p-3 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
                   >
-                    <span className="w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
                       {idx + 1}
                     </span>
                     <span className="text-sm text-zinc-700 dark:text-zinc-300">
@@ -166,7 +166,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
                         ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30'
                         : suggestion.type === 'insight'
                         ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-900/30'
-                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-purple-400'
+                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-rose-400'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
@@ -179,7 +179,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
                       }`}>
                         {suggestion.title}
                       </span>
-                      <ArrowRight className="text-zinc-300 group-hover:text-purple-500 transition" />
+                      <ArrowRight className="text-zinc-300 group-hover:text-rose-500 transition" />
                     </div>
                     <p className={`text-xs ${
                       suggestion.type === 'warning'
@@ -199,7 +199,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
           {/* Refresh Button */}
           <button
             onClick={onRefreshInsights}
-            className="w-full py-2 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium transition"
+            className="w-full py-2 text-sm text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-medium transition"
           >
             <RefreshCw className="mr-2" />
             Refresh Insights
@@ -248,20 +248,20 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
                     {leadScore.buyingSignals.slice(0, 5).map((signal, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg"
+                        className="flex items-center gap-3 p-3 bg-rose-50 dark:bg-rose-900/10 rounded-lg"
                       >
-                        <Zap className="text-purple-500" />
+                        <Zap className="text-rose-500" />
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-purple-900 dark:text-purple-200 capitalize">
+                          <div className="text-sm font-medium text-rose-900 dark:text-rose-200 capitalize">
                             {signal.signal.replace(/_/g, ' ')}
                           </div>
                           {signal.details && (
-                            <div className="text-xs text-purple-600 dark:text-purple-400">
+                            <div className="text-xs text-rose-600 dark:text-rose-400">
                               {signal.details}
                             </div>
                           )}
                         </div>
-                        <div className="text-xs text-purple-500 dark:text-purple-400">
+                        <div className="text-xs text-rose-500 dark:text-rose-400">
                           {Math.round(signal.confidence * 100)}%
                         </div>
                       </div>
@@ -272,12 +272,12 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
 
               {/* AI Predictions */}
               {leadScore.aiNextActionPrediction && (
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-indigo-100 dark:border-indigo-900/30">
-                  <h3 className="font-semibold text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-2">
+                <div className="bg-gradient-to-br from-rose-50 to-rose-50 dark:from-rose-900/20 dark:to-rose-900/20 rounded-xl p-4 border border-rose-100 dark:border-rose-900/30">
+                  <h3 className="font-semibold text-rose-900 dark:text-rose-300 mb-2 flex items-center gap-2">
                     <Globe />
                     AI Prediction
                   </h3>
-                  <p className="text-sm text-indigo-800 dark:text-indigo-200">
+                  <p className="text-sm text-rose-800 dark:text-rose-200">
                     {leadScore.aiNextActionPrediction}
                   </p>
                 </div>
