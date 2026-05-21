@@ -588,12 +588,18 @@ export const ToolsMenuV2: React.FC<ToolsMenuV2Props> = ({
         aria-labelledby="tools-menu-v2-title"
         style={{
           width: DESKTOP_PANEL_WIDTH,
+          maxHeight: 'min(640px, 80vh)',
         }}
         className={[
-          'fixed right-0 top-0 bottom-0 z-50 flex flex-col shadow-2xl animate-fade-in',
+          // Anchor to the bottom-right so the panel opens near its trigger
+          // (the Tools button in the compose bar at the bottom of the
+          // viewport). Previous top-0/bottom-0 spanned full height and
+          // forced the operator to drag their eyes from the compose bar
+          // back up to the top of the screen to click a tile.
+          'fixed right-0 bottom-0 z-50 flex flex-col shadow-2xl animate-fade-in rounded-tl-2xl overflow-hidden',
           isDarkMode
-            ? 'bg-zinc-900 border-l border-white/10 text-zinc-100'
-            : 'bg-white border-l border-black/10 text-zinc-900',
+            ? 'bg-zinc-900 border-l border-t border-white/10 text-zinc-100'
+            : 'bg-white border-l border-t border-black/10 text-zinc-900',
         ].join(' ')}
       >
         {headerBase}
