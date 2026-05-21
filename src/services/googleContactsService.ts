@@ -194,13 +194,31 @@ const getGoogleAccessToken = async (): Promise<string | null> => {
   return null;
 };
 
-// Refresh token if needed
+// Refresh token if needed.
+//
+// Refresh strategy (cheapest-first, multi-stage failsafe):
+//
+//   1. If session.provider_token is present, use it (fast path).
+//   2. Otherwise call supabase.auth.refreshSession() FIRST -- Supabase
+//      Auth knows how to refresh OAuth provider tokens against the
+//      provider's token endpoint server-side, and the refreshed
+//      session re-populates provider_token. This is the no-backend
+//      path that works in any environment.
+//   3. If supabase.auth.refreshSession() returns a session WITHOUT a
+//      provider_token (Google didn't issue a refresh token at
+//      original sign-in, or it has been revoked), fall back to the
+//      Pulse backend's /api/google/refresh-token endpoint, which can
+//      mint a new access token using the stored refresh token +
+//      client_secret. The backend is optional (default
+//      http://localhost:3003) -- if VITE_BACKEND_URL isn't set, skip
+//      it cleanly instead of hammering a port that isn't listening.
+//   4. Return null. Callers throw GOOGLE_CONTACTS_NOT_CONNECTED, which
+//      the wizard catches into the in-modal reconnect banner.
 const refreshTokenIfNeeded = async (): Promise<string | null> => {
   const { data: { session }, error } = await supabase.auth.getSession();
 
   if (error || !session) {
-    // Use debug-level - this is expected when user isn't logged in
-    console.debug('[Google Contacts Debug] No session found (expected when not authenticated)');
+    console.debug('[Google Contacts] No Supabase session; cannot refresh Google token');
     return null;
   }
 
@@ -208,21 +226,41 @@ const refreshTokenIfNeeded = async (): Promise<string | null> => {
     return session.provider_token;
   }
 
+  // Stage 2: Supabase-native refresh. Cheap, server-side, no extra
+  // backend dependency.
+  try {
+    const refreshResult = await supabase.auth.refreshSession();
+    if (!refreshResult.error && refreshResult.data.session?.provider_token) {
+      console.debug('[Google Contacts] Refreshed via supabase.auth.refreshSession()');
+      return refreshResult.data.session.provider_token;
+    }
+    if (refreshResult.error) {
+      console.warn('[Google Contacts] Supabase refreshSession() failed:', refreshResult.error.message);
+    }
+  } catch (e) {
+    console.warn('[Google Contacts] Supabase refreshSession() threw:', e);
+  }
+
+  // Stage 3: Pulse backend refresh. Only attempt when VITE_BACKEND_URL
+  // is explicitly configured -- otherwise the default localhost:3003
+  // hammers a port that's typically unreachable.
+  const backendConfigured = !!import.meta.env.VITE_BACKEND_URL;
   const refreshToken = (session as any)?.provider_refresh_token;
-  if (refreshToken) {
+  if (backendConfigured && refreshToken) {
     const refreshed = await refreshGoogleAccessToken(refreshToken);
     if (refreshed) {
+      console.debug('[Google Contacts] Refreshed via Pulse backend endpoint');
       return refreshed;
     }
+  } else if (!refreshToken) {
+    console.warn(
+      '[Google Contacts] No provider_refresh_token in session. ' +
+      'Original sign-in did not request offline access, or Google revoked ' +
+      'the grant. User must reconnect via Settings > Google Services.'
+    );
   }
 
-  const refreshResult = await supabase.auth.refreshSession();
-  if (refreshResult.error) {
-    console.error('[Google Contacts] Failed to refresh session:', refreshResult.error);
-    return null;
-  }
-
-  return refreshResult.data.session?.provider_token || null;
+  return null;
 };
 
 // Generate consistent avatar color from email
@@ -310,34 +348,64 @@ const googlePersonToContact = (person: GooglePerson): Contact => {
 class GoogleContactsService {
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
+  /**
+   * Dedup concurrent refresh attempts. Without this, opening the
+   * wizard (which fires getContactGroups + getAllContacts in parallel)
+   * triggers two simultaneous refresh chains, both racing to update
+   * accessToken / tokenExpiry.
+   */
+  private inFlightRefresh: Promise<string | null> | null = null;
 
-  // Get valid token (cached or refreshed)
+  private async resolveFreshToken(): Promise<string | null> {
+    if (this.inFlightRefresh) return this.inFlightRefresh;
+    this.inFlightRefresh = (async () => {
+      try {
+        let token = await getGoogleAccessToken();
+        if (!token) token = await refreshTokenIfNeeded();
+        return token;
+      } finally {
+        this.inFlightRefresh = null;
+      }
+    })();
+    return this.inFlightRefresh;
+  }
+
+  // Get valid token (cached or refreshed). 5-minute safety margin so
+  // tokens close to expiry trigger a refresh before the next request
+  // rather than after a 401 round-trip.
   private async getValidToken(): Promise<string> {
-    // Check if we have a valid cached token
-    if (this.accessToken && Date.now() < this.tokenExpiry) {
+    const SAFETY_MS = 5 * 60 * 1000;
+    if (this.accessToken && Date.now() < this.tokenExpiry - SAFETY_MS) {
       return this.accessToken;
     }
 
-    // Try to get token from session
-    let token = await getGoogleAccessToken();
-
-    if (!token) {
-      // Try refreshing the session
-      token = await refreshTokenIfNeeded();
-    }
+    const token = await this.resolveFreshToken();
 
     if (!token) {
       const error = new Error('GOOGLE_CONTACTS_NOT_CONNECTED');
       (error as any).code = 'GOOGLE_CONTACTS_NOT_CONNECTED';
-      (error as any).userMessage = 'Click "Connect" to enable Google Contacts sync';
+      (error as any).userMessage = 'Reconnect Google Contacts in Settings.';
       throw error;
     }
 
     this.accessToken = token;
-    // Cache for 50 minutes (tokens typically expire in 1 hour)
-    this.tokenExpiry = Date.now() + 50 * 60 * 1000;
-
+    // Cache for 55 minutes (Google access tokens expire in ~1 hour).
+    // 5-minute safety margin above ensures refresh kicks in before
+    // the token is actually dead on the wire.
+    this.tokenExpiry = Date.now() + 55 * 60 * 1000;
     return token;
+  }
+
+  /**
+   * Public: nuke the cached token so the next request forces a fresh
+   * resolve. Used after the wizard surfaces the reconnect banner --
+   * once the user reconnects, the next fetch should pick up the new
+   * provider_token immediately.
+   */
+  invalidateTokenCache(): void {
+    this.accessToken = null;
+    this.tokenExpiry = 0;
+    this.inFlightRefresh = null;
   }
 
   // Make authenticated API request
@@ -358,13 +426,20 @@ class GoogleContactsService {
       console.error('Google People API error:', errorData);
 
       if (response.status === 401) {
-        // Token expired, clear cache and retry once
-        this.accessToken = null;
-        this.tokenExpiry = 0;
-        const newToken = await refreshTokenIfNeeded();
-        if (newToken) {
-          return this.apiRequest(endpoint, options);
+        // Token expired or revoked on Google's side mid-request.
+        // Wipe the cache so the recursive retry forces a fresh
+        // resolve through the multi-stage failsafe in
+        // refreshTokenIfNeeded. Use a one-shot retry guard to
+        // avoid infinite recursion if refresh keeps yielding a
+        // dead token.
+        const alreadyRetried = (options as RequestInit & { __retried?: boolean }).__retried;
+        if (alreadyRetried) {
+          const error = new Error('Google Contacts session expired. Reconnect to continue.');
+          (error as any).code = 'GOOGLE_CONTACTS_SESSION_EXPIRED';
+          throw error;
         }
+        this.invalidateTokenCache();
+        return this.apiRequest(endpoint, { ...options, __retried: true } as RequestInit);
       }
 
       if (response.status === 403) {

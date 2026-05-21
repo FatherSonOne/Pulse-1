@@ -297,7 +297,17 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
       <ReconnectGoogleModal
         isOpen={reconnectModalOpen}
         onClose={() => setReconnectModalOpen(false)}
-        onSuccess={() => setReconnectModalOpen(false)}
+        onSuccess={async () => {
+          setReconnectModalOpen(false);
+          // After a successful reconnect, the Supabase session has a
+          // fresh provider_token. Nuke the in-memory cache so the next
+          // wizard open / contact fetch picks it up immediately
+          // instead of replaying the dead-token error.
+          try {
+            const { googleContactsService } = await import('../../services/googleContactsService');
+            googleContactsService.invalidateTokenCache();
+          } catch { /* defensive: never let a reconnect celebrate-toast crash */ }
+        }}
         title={t('contacts.reconnectModal.title')}
         message={t('contacts.reconnectModal.message')}
         invalidGrantReason="revoked"
