@@ -1553,8 +1553,11 @@ const Glimpse: React.FC<GlimpseProps> = ({
             )}
 
             {/* Recipient bar — anchor for the selector popover so it never
-                pushes the recorder off the fold. */}
-            {state.status === 'idle' && (
+                pushes the recorder off the fold. Visible in both pre-record
+                (idle) and post-record (ready) states — without ready, users
+                who record without selecting recipients first get trapped
+                with no way out except discarding the recording. */}
+            {(state.status === 'idle' || state.status === 'ready') && (
               <div className="gl-recipient-anchor">
                 <div className="gl-recipient-bar">
                   <button
@@ -1745,8 +1748,12 @@ const Glimpse: React.FC<GlimpseProps> = ({
 
                   <button
                     type="button"
-                    onClick={handleSend}
-                    disabled={isSending || selectedRecipients.length === 0}
+                    onClick={
+                      selectedRecipients.length === 0
+                        ? () => setShowRecipientSelector(true)
+                        : handleSend
+                    }
+                    disabled={isSending}
                     className="gl-send-btn"
                   >
                     {isSending ? (
