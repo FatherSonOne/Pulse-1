@@ -63,7 +63,15 @@ export interface User {
   isAdmin?: boolean;
 }
 
-export type ContactType = 'team' | 'client' | 'volunteer' | 'vendor' | 'other';
+export type ContactType =
+  | 'team'        // Co-worker / internal teammate
+  | 'client'      // Active customer
+  | 'lead'        // Prospect / pipeline
+  | 'partner'     // External partner / referrer
+  | 'vendor'      // Supplier / service provider
+  | 'volunteer'   // Unpaid contributor
+  | 'network'     // Loose connection / network keep-warm
+  | 'other';
 
 export interface Contact {
   id: string;

@@ -142,6 +142,22 @@ async function fetchCoverageGaps(days: number): Promise<CoverageGap[]> {
       .limit(MAX_GAP_PREVIEW * 2),
   ]);
 
+  // Graceful degradation when contacts.last_contacted_at hasn't been
+  // provisioned on this Supabase project. Code expects the column
+  // (carried over from email_contacts semantics) but no public.contacts
+  // migration adds it yet. Warn once and return an empty radar instead
+  // of bubbling a 400 into the Dashboard tile.
+  const missingColumn =
+    (staleQuery.error?.code === '42703' && /last_contacted_at/.test(staleQuery.error.message ?? '')) ||
+    (neverQuery.error?.code === '42703' && /last_contacted_at/.test(neverQuery.error.message ?? ''));
+  if (missingColumn) {
+    console.warn(
+      '[teamRadarService] contacts.last_contacted_at column missing. ' +
+      'Coverage gaps surface inert until an "ALTER TABLE public.contacts ADD COLUMN last_contacted_at timestamptz" migration is applied.'
+    );
+    return [];
+  }
+
   const rows = [
     ...(staleQuery.data ?? []),
     ...(neverQuery.data ?? []),

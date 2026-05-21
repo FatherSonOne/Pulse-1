@@ -87,7 +87,7 @@ export const ConversationContext: React.FC<ConversationContextProps> = ({
       {/* Progress bar (auto-dismiss countdown) */}
       <div className="h-1 bg-zinc-100 dark:bg-zinc-800 rounded-t-2xl overflow-hidden">
         <div
-          className="h-full bg-indigo-500 transition-none rounded-t-2xl"
+          className="h-full bg-rose-500 transition-none rounded-t-2xl"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -121,8 +121,8 @@ export const ConversationContext: React.FC<ConversationContextProps> = ({
 
         {/* AI Summary snippet */}
         {summary && (
-          <div className="mb-3 p-2.5 bg-purple-50 dark:bg-purple-900/15 rounded-lg border border-purple-100 dark:border-purple-900/30">
-            <p className="text-xs text-purple-700 dark:text-purple-300 leading-relaxed line-clamp-3">
+          <div className="mb-3 p-2.5 bg-rose-50 dark:bg-rose-900/15 rounded-lg border border-rose-100 dark:border-rose-900/30">
+            <p className="text-xs text-rose-700 dark:text-rose-300 leading-relaxed line-clamp-3">
               {summary}
             </p>
           </div>
@@ -137,7 +137,7 @@ export const ConversationContext: React.FC<ConversationContextProps> = ({
             <ul className="space-y-1">
               {talkingPoints.map((point, idx) => (
                 <li key={idx} className="flex items-start gap-2 text-xs text-zinc-700 dark:text-zinc-300">
-                  <span className="text-indigo-400 mt-0.5">•</span>
+                  <span className="text-rose-400 mt-0.5">•</span>
                   <span className="leading-relaxed">{point}</span>
                 </li>
               ))}
@@ -148,7 +148,7 @@ export const ConversationContext: React.FC<ConversationContextProps> = ({
         {/* No profile data fallback */}
         {!summary && talkingPoints.length === 0 && (
           <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-3 italic">
-            No conversation history yet — this could be your first message!
+            No conversation history yet. This could be your first message.
           </p>
         )}
 
@@ -156,7 +156,7 @@ export const ConversationContext: React.FC<ConversationContextProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleProceed}
-            className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors"
+            className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg transition-colors"
           >
             Open Messages →
           </button>

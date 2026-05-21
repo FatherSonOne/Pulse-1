@@ -308,9 +308,9 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
           onKeyDown={onMenuKeyDown}
           className={[
             'fixed left-0 right-0 bottom-0 z-50 rounded-t-2xl pb-[env(safe-area-inset-bottom)]',
-            'animate-slide-up',
+            'animate-slide-up shadow-2xl',
             isDarkMode
-              ? 'bg-zinc-900 border-t border-white/10 text-zinc-100'
+              ? 'bg-zinc-900 border-t border-white/15 text-zinc-50'
               : 'bg-white border-t border-black/10 text-zinc-900',
           ].join(' ')}
         >
@@ -352,8 +352,8 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
                       'min-h-[44px] text-xs font-mono uppercase tracking-[0.1em]',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
                       isDarkMode
-                        ? 'text-zinc-400 hover:bg-white/5'
-                        : 'text-zinc-500 hover:bg-black/5',
+                        ? 'text-zinc-300 hover:bg-white/10 focus-visible:bg-white/10'
+                        : 'text-zinc-500 hover:bg-black/5 focus-visible:bg-black/5',
                     ].join(' ')}
                   >
                     More
@@ -394,9 +394,9 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         zIndex: 50,
       }}
       className={[
-        'rounded-xl shadow-2xl backdrop-blur animate-fade-in',
+        'rounded-xl shadow-2xl backdrop-blur-md animate-fade-in',
         isDarkMode
-          ? 'bg-zinc-900/95 border border-white/10 text-zinc-100'
+          ? 'bg-zinc-900/98 border border-white/15 text-zinc-50 shadow-black/60 ring-1 ring-black/40'
           : 'bg-white/98 border border-black/10 text-zinc-900',
       ].join(' ')}
     >

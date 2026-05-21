@@ -1,8 +1,8 @@
 // ============================================
 // CONTACTS KEYBOARD SHORTCUTS
-// Keyboard navigation for Contacts Reimagined.
+// Keyboard navigation for Contacts.
 // Cmd/Ctrl+K: focus AI search
-// 1/2/3: switch tabs (Today/People/Circles)
+// 1/2: switch tabs (Today/People)
 // Escape: close panels
 // D: dismiss active card (Today feed)
 // S: snooze active card (Today feed)
@@ -10,7 +10,7 @@
 
 import { useEffect, useCallback } from 'react';
 
-type ContactsMode = 'today' | 'people' | 'circles';
+type ContactsMode = 'today' | 'people';
 
 interface ContactsKeyboardOptions {
   activeMode: ContactsMode;
@@ -46,10 +46,9 @@ export function useContactsKeyboard({
 
     if (isInput) return; // don't intercept other keys when typing
 
-    // 1/2/3 — switch tabs
-    if (e.key === '1') { e.preventDefault(); onModeChange('today');   return; }
-    if (e.key === '2') { e.preventDefault(); onModeChange('people');  return; }
-    if (e.key === '3') { e.preventDefault(); onModeChange('circles'); return; }
+    // 1/2 — switch tabs
+    if (e.key === '1') { e.preventDefault(); onModeChange('today');  return; }
+    if (e.key === '2') { e.preventDefault(); onModeChange('people'); return; }
 
     // Escape — close panels
     if (e.key === 'Escape') { e.preventDefault(); onEscape?.(); return; }
@@ -70,6 +69,5 @@ export const KEYBOARD_SHORTCUTS = [
   { keys: ['⌘', 'K'],  label: 'Search contacts' },
   { keys: ['1'],        label: 'Today' },
   { keys: ['2'],        label: 'People' },
-  { keys: ['3'],        label: 'Circles' },
   { keys: ['Esc'],      label: 'Close panel' },
 ] as const;

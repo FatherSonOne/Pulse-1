@@ -5,9 +5,32 @@ import toast from 'react-hot-toast';
 import { Loader2, Plus, UserPlus, X } from 'lucide-react';
 
 const AVATAR_COLORS = [
-  'bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500',
-  'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500',
+  'bg-blue-500', 'bg-emerald-500', 'bg-rose-500', 'bg-amber-500',
+  'bg-rose-500', 'bg-cyan-500', 'bg-rose-500', 'bg-teal-500',
 ];
+
+// US-leaning E.164 input formatter. Strips non-digits, prepends +1
+// when the first digit isn't already a country marker, then renders
+// as "+1 (XXX) XXX-XXXX" while keeping international numbers
+// (anything starting with +<2+ digits> or 11+ leading digits) intact
+// as a raw "+<digits>" string. Avoids fighting the user mid-edit.
+const formatPhoneInput = (raw: string): string => {
+  const trimmed = raw.trim();
+  if (trimmed === '') return '';
+  const startsWithPlus = trimmed.startsWith('+');
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits === '') return startsWithPlus ? '+' : '';
+  // International (non-US) or already-prefixed with a non-1 country code.
+  if (startsWithPlus && !digits.startsWith('1')) {
+    return `+${digits}`;
+  }
+  // Normalize US digits: strip leading 1 if present.
+  const us = digits.startsWith('1') ? digits.slice(1) : digits;
+  if (us.length === 0) return '+1 ';
+  if (us.length <= 3) return `+1 (${us}`;
+  if (us.length <= 6) return `+1 (${us.slice(0, 3)}) ${us.slice(3)}`;
+  return `+1 (${us.slice(0, 3)}) ${us.slice(3, 6)}-${us.slice(6, 10)}`;
+};
 
 interface AddContactModalProps {
   isOpen: boolean;
@@ -102,8 +125,10 @@ export const AddContactModal: React.FC<AddContactModalProps> = ({
               <input
                 type="tel"
                 value={form.phone}
-                onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="+1 555..."
+                onChange={(e) => setForm(prev => ({ ...prev, phone: formatPhoneInput(e.target.value) }))}
+                placeholder="+1 (555) 123-4567"
+                inputMode="tel"
+                autoComplete="tel"
                 className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
               />
             </div>
