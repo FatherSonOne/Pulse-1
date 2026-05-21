@@ -117,6 +117,10 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
         module.showScopeLossToast(() => setReconnectModalOpen(true));
       });
     };
+    // Phase D step 23: direct open from the wizard's reconnect banner.
+    // Skips the toast intermediary so the user goes from "click
+    // Reconnect" -> "see OAuth modal" in one step.
+    const openReconnectHandler = () => setReconnectModalOpen(true);
     // Phase D step 7: TodayEmptyState dispatches these when the operator
     // taps "See who's gone cold" or "Set a check-in goal". The shell
     // owns the routing because People is the surface the smart-list
@@ -140,11 +144,13 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
 
     window.addEventListener('pulse:contacts:open-connect-modal', openHandler);
     window.addEventListener('pulse:contacts:scope-missing', scopeMissingHandler);
+    window.addEventListener('pulse:contacts:open-reconnect-modal', openReconnectHandler);
     window.addEventListener('pulse:contacts:show-smart-list', showSmartListHandler);
     window.addEventListener('pulse:contacts:open-check-in-goal', openCheckInGoalHandler);
     return () => {
       window.removeEventListener('pulse:contacts:open-connect-modal', openHandler);
       window.removeEventListener('pulse:contacts:scope-missing', scopeMissingHandler);
+      window.removeEventListener('pulse:contacts:open-reconnect-modal', openReconnectHandler);
       window.removeEventListener('pulse:contacts:show-smart-list', showSmartListHandler);
       window.removeEventListener('pulse:contacts:open-check-in-goal', openCheckInGoalHandler);
     };

@@ -302,7 +302,12 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
   };
 
   const requestReconnect = () => {
-    window.dispatchEvent(new CustomEvent('pulse:contacts:scope-missing'));
+    // Phase D step 23: skip the toast hop. Dispatch a direct event the
+    // shell handles by opening ReconnectGoogleModal immediately. The
+    // old pulse:contacts:scope-missing path went through a toast the
+    // user had to click before the modal appeared -- two-step UX for a
+    // single intent. Keep the wizard closing so the modal owns focus.
+    window.dispatchEvent(new CustomEvent('pulse:contacts:open-reconnect-modal'));
     onClose();
   };
 

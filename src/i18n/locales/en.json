@@ -258,7 +258,7 @@
       "nav_import": "Import {{count}}",
       "nav_cancel": "Cancel",
       "scope_lost_title": "Reconnect required",
-      "scope_lost_body": "Pulse lost permission to read your Google Contacts. Reconnect to continue.",
+      "scope_lost_body": "Pulse can't refresh your Google session silently. Reconnect once to grant offline access, then it stays refreshed in the background.",
       "scope_lost_cta": "Reconnect Google",
       "error_workspace_not_ready": "Your workspace isn't ready yet. Try again in a moment.",
       "error_generic": "We couldn't connect those contacts. Try again in a moment."
