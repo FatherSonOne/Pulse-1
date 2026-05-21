@@ -50,13 +50,14 @@ export const ContextMenuItem = forwardRef<HTMLButtonElement, ContextMenuItemProp
           // Touch target — always ≥44px on the row height.
           compact ? 'px-3 py-2 min-h-[44px]' : 'px-3 py-2.5 min-h-[44px]',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+          'transition-colors',
           isDarkMode
             ? item.destructive
-              ? 'hover:bg-red-500/10 text-red-300'
-              : 'hover:bg-white/5 text-zinc-100'
+              ? 'hover:bg-red-500/15 focus-visible:bg-red-500/15 text-red-300'
+              : 'hover:bg-white/10 focus-visible:bg-white/10 text-zinc-50'
             : item.destructive
-              ? 'hover:bg-red-500/10 text-red-600'
-              : 'hover:bg-black/5 text-zinc-900',
+              ? 'hover:bg-red-500/10 focus-visible:bg-red-500/10 text-red-600'
+              : 'hover:bg-black/5 focus-visible:bg-black/5 text-zinc-900',
         ].join(' ')}
       >
         <Icon
@@ -65,7 +66,7 @@ export const ContextMenuItem = forwardRef<HTMLButtonElement, ContextMenuItemProp
             'shrink-0',
             item.destructive
               ? isDarkMode ? 'text-red-300' : 'text-red-500'
-              : isDarkMode ? 'text-zinc-400' : 'text-zinc-500',
+              : isDarkMode ? 'text-zinc-300' : 'text-zinc-500',
           ].join(' ')}
           aria-hidden="true"
         />
@@ -77,7 +78,7 @@ export const ContextMenuItem = forwardRef<HTMLButtonElement, ContextMenuItemProp
             aria-hidden="true"
             className={[
               'shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] ml-2',
-              isDarkMode ? 'text-zinc-500' : 'text-zinc-400',
+              isDarkMode ? 'text-zinc-400' : 'text-zinc-400',
             ].join(' ')}
           >
             {item.shortcut}

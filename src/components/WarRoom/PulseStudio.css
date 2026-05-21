@@ -1929,6 +1929,13 @@ html.dark .pulse-studio,
   background: var(--pulse-tone-neutral);
 }
 
+.ps-provenance-dot[data-source="card"] {
+  /* Phase C — contact-card source. Info-blue per vision spec
+     (semantically "transferred from elsewhere"). Coral is reserved
+     for the Received-tab badge only; do not use coral here. */
+  background: var(--pulse-tone-info);
+}
+
 .ps-provenance-sep {
   opacity: 0.5;
 }

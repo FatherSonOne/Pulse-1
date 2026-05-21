@@ -2,7 +2,7 @@ import React, { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../WarRoom/PulseStudio.css';
 
-export type ContactProvenanceSource = 'google' | 'outlook' | 'manual' | 'legacy' | null;
+export type ContactProvenanceSource = 'google' | 'outlook' | 'manual' | 'legacy' | 'card' | null;
 
 interface ProvenanceChipProps {
   source: ContactProvenanceSource;
