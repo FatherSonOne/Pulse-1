@@ -13,6 +13,7 @@
 // Failure is silent per spec: a thrown provider error logs and returns null.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { geminiSmartComposeProvider } from './geminiSmartComposeProvider';
 import type {
   SmartComposeProvider,
   SmartComposeSuggestion,
@@ -20,37 +21,6 @@ import type {
 
 /** Debounce window per spec §A11y / Live regions for Smart Compose. */
 const DEBOUNCE_MS = 600;
-
-/**
- * Stub provider — returns a hard-coded completion that demonstrates
- * acceptance UX without a network call. Real Gemini routing is wired in
- * a follow-up PR.
- */
-const stubProvider: SmartComposeProvider = async (current, signal) => {
-  // Honor abort.
-  if (signal.aborted) return null;
-  // Only suggest once the user has typed at least 2 characters and the
-  // text doesn't already end with our canned completion.
-  const trimmed = current.trim();
-  if (trimmed.length < 2) return null;
-  // Mock latency so we can see the debounce + live-region flow.
-  await new Promise<void>((resolve) => setTimeout(resolve, 50));
-  if (signal.aborted) return null;
-  // Two canned completions chosen to be visually distinct in the
-  // ghost-text rendering — short and longer.
-  const lower = trimmed.toLowerCase();
-  if (lower.endsWith('thanks') || lower.endsWith('thank you')) {
-    return { id: 'stub-followup', completion: ' — I really appreciate it.' };
-  }
-  if (lower.endsWith('?')) {
-    // No completion after a question — looks more natural.
-    return null;
-  }
-  return {
-    id: 'stub-circleback',
-    completion: " I'll circle back tomorrow.",
-  };
-};
 
 export interface UseSmartComposeResult {
   /** Current pending suggestion, or null when none is active. */
@@ -92,7 +62,7 @@ export function useSmartCompose(
   const lastValueRef = useRef<string>(value);
 
   const resolvedProvider = useMemo<SmartComposeProvider>(
-    () => provider ?? stubProvider,
+    () => provider ?? geminiSmartComposeProvider,
     [provider],
   );
 

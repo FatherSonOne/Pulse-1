@@ -38,8 +38,13 @@ import { emailSyncService } from '../services/emailSyncService';
 
 import { Archive, ArrowRight, BookUser, Calendar, Check, CheckCircle2, CheckSquare, ChevronRight, Copy, Heart, List, Loader2, Mail, MessageSquare, MessagesSquare, Mic, Plus, Search, Send, Target, TrendingUp, UserCheck, UserPlus, Users, X } from 'lucide-react';
 
-// Auto-refresh interval in milliseconds (5 minutes)
-const BRIEFING_REFRESH_INTERVAL = 5 * 60 * 1000;
+// Auto-refresh interval in milliseconds. Bumped from 5min → 30min after
+// the 2026-05-21 egress incident: the briefing fans out to 10 DB queries
+// (one of them the heavy threads+messages join) plus a Gemini call that
+// can stream a large response. A tab left open for 12h at 5-min cadence
+// was burning ~13 GB/day. Combined with the visibility gate below, idle
+// tabs no longer poll at all.
+const BRIEFING_REFRESH_INTERVAL = 30 * 60 * 1000;
 
 // ============= TYPES =============
 
@@ -901,8 +906,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
       // Initial load
       loadDailyBriefing();
 
-      // Set up auto-refresh interval
+      // Set up auto-refresh interval. Skip ticks when the tab is hidden so
+      // a forgotten background tab cannot run up the Gemini bill while the
+      // user is doing something else (see 2026-05-21 egress incident).
       briefingRefreshRef.current = setInterval(() => {
+        if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
         loadDailyBriefing(true); // silent refresh
       }, BRIEFING_REFRESH_INTERVAL);
 

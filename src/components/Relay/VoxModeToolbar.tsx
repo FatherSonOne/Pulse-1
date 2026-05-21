@@ -26,6 +26,10 @@ export interface VoxToolbarCustomAction {
 export interface VoxModeToolbarProps {
   // Header identity
   onBack: () => void;
+  /** Hide the leading back-chevron when there's nothing meaningful to go
+      back to — e.g. on a section's home view where the click would no-op.
+      Defaults to true to preserve existing behavior across all Relay modes. */
+  showBack?: boolean;
   modeIcon: React.ReactNode;
   modeTitle: string;
   modeSubtitle?: string;
@@ -82,6 +86,7 @@ export interface VoxModeToolbarProps {
  */
 const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
   onBack,
+  showBack = true,
   modeIcon,
   modeTitle,
   modeSubtitle,
@@ -121,15 +126,17 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
           : 'border-[rgba(0,0,0,0.08)] bg-white'
       }`}
     >
-      {/* ← Back */}
-      <button
-        type="button"
-        onClick={onBack}
-        className={actionBtnBase}
-        aria-label="Go back"
-      >
-        <ChevronLeft className="w-5 h-5" />
-      </button>
+      {/* ← Back — hidden on section home views where the click would no-op */}
+      {showBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className={actionBtnBase}
+          aria-label="Go back"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+      )}
 
       {/* Mode icon badge */}
       <div
