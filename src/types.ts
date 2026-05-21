@@ -16,6 +16,7 @@ export enum AppView {
   CALENDAR = 'CALENDAR',
   MEETINGS = 'MEETINGS',
   CONTACTS = 'CONTACTS',
+  MAP = 'MAP',
   LIVE = 'LIVE',
   LIVE_AI = 'LIVE_AI',
   ARCHIVES = 'ARCHIVES',
@@ -25,6 +26,10 @@ export enum AppView {
   ANALYTICS = 'ANALYTICS',
   DECISIONS_TASKS = 'DECISIONS_TASKS',
   USERS_GUIDE = 'USERS_GUIDE',
+  /**
+   * Deprecated. Map is now a top-level section (AppView.MAP). This value is
+   * kept so legacy deep-links keep working; App.tsx redirects to MAP.
+   */
   CONTACT_MAP = 'CONTACT_MAP',
 }
 
@@ -58,7 +63,15 @@ export interface User {
   isAdmin?: boolean;
 }
 
-export type ContactType = 'team' | 'client' | 'volunteer' | 'vendor' | 'other';
+export type ContactType =
+  | 'team'        // Co-worker / internal teammate
+  | 'client'      // Active customer
+  | 'lead'        // Prospect / pipeline
+  | 'partner'     // External partner / referrer
+  | 'vendor'      // Supplier / service provider
+  | 'volunteer'   // Unpaid contributor
+  | 'network'     // Loose connection / network keep-warm
+  | 'other';
 
 export interface Contact {
   id: string;

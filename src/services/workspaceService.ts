@@ -157,6 +157,16 @@ export interface WorkspaceGroupMember {
   added_by: string | null;
 }
 
+export interface GroupGrant {
+  id: string;
+  group_id: string;
+  permission_key: string;
+  resource_type: string | null;
+  resource_id: string | null;
+  created_at: string;
+  created_by: string | null;
+}
+
 export type IntegrationKey =
   | 'slack' | 'gmail' | 'google_calendar' | 'google_drive'
   | 'microsoft' | 'twilio' | 'zapier';
@@ -589,7 +599,12 @@ export const workspaceService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return { ok: false, reason: 'Not signed in' };
 
-    const inviteUrl = `${window.location.origin}/invite?token=${encodeURIComponent(token)}`;
+    // Invite emails are delivered to external recipients — they cannot reach
+    // localhost or any dev origin. Always use the canonical public URL so the
+    // link resolves in the recipient's browser regardless of where the invite
+    // was sent from. Mirrors inviteService.sendInvitationViaGmail.
+    const PUBLIC_APP_URL = 'https://pulse.logosvision.org';
+    const inviteUrl = `${PUBLIC_APP_URL}/invite?token=${encodeURIComponent(token)}`;
     const fromName = inviterName || 'A teammate';
 
     const html = `
@@ -683,7 +698,10 @@ export const workspaceService = {
    * Returns the shareable invite link URL for a given invite token.
    */
   getInviteLink(token: string): string {
-    return `${window.location.origin}/invite?token=${encodeURIComponent(token)}`;
+    // Shareable invite links are pasted into email/Slack/SMS for external
+    // recipients, so they must always point at the public production URL
+    // even when generated from a dev environment.
+    return `https://pulse.logosvision.org/invite?token=${encodeURIComponent(token)}`;
   },
 
   /**
@@ -996,6 +1014,62 @@ export const workspaceService = {
       .eq('user_id', userId);
 
     assertNoError(error, 'removeGroupMember');
+  },
+
+  // -------------------------------------------------------------------------
+  // Group grants — workspace-wide permission assignments to groups.
+  //
+  // First consumer of the public.group_grants table (added in Sub-PR 5,
+  // migration 20260522000000_permissions_group_grants.sql). This pass ships
+  // workspace-wide grants only — resource-scoped grants (resource_type +
+  // resource_id NOT NULL) are deferred until a feature surface exists that
+  // needs them.
+  //
+  // NOTE: client-side hasPermission() on WorkspaceContext is matrix-only and
+  // does NOT yet merge group grants. RLS on the server is authoritative;
+  // bringing the client-side gate into agreement is a follow-up.
+  // -------------------------------------------------------------------------
+
+  async listGroupGrants(groupId: string): Promise<GroupGrant[]> {
+    const { data, error } = await supabase
+      .from('group_grants')
+      .select('*')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: true });
+
+    assertNoError(error, 'listGroupGrants');
+    return (data ?? []) as GroupGrant[];
+  },
+
+  /** Grant a workspace-wide permission to a group. Requires groups.manage. */
+  async grantGroupPermission(
+    groupId: string,
+    permissionKey: string,
+  ): Promise<GroupGrant> {
+    const userId = await getCurrentUserId();
+    const { data, error } = await supabase
+      .from('group_grants')
+      .insert({
+        group_id: groupId,
+        permission_key: permissionKey,
+        resource_type: null,
+        resource_id: null,
+        created_by: userId,
+      })
+      .select()
+      .single();
+
+    assertNoError(error, 'grantGroupPermission');
+    return data as GroupGrant;
+  },
+
+  async revokeGroupGrant(grantId: string): Promise<void> {
+    const { error } = await supabase
+      .from('group_grants')
+      .delete()
+      .eq('id', grantId);
+
+    assertNoError(error, 'revokeGroupGrant');
   },
 
   // -------------------------------------------------------------------------

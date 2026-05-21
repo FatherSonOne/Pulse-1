@@ -96,9 +96,26 @@ type GeocodeResponse = {
   error_message?: string;
 };
 
+// Routes through the `maps-geocode` Supabase edge function. The server
+// holds GOOGLE_MAPS_SERVER_KEY (unrestricted-by-referer) so we don't
+// hit the "API keys with referer restrictions cannot be used with this
+// API" rejection Google returns for direct browser calls.
+//
+// Signature preserved (params: string of either "address=X" or
+// "latlng=Y,Z") so all existing callers keep working. We parse the
+// params back into the structured body the edge function expects.
 async function fetchGoogleGeocode(params: string): Promise<GeocodeResponse> {
-  if (!API_KEY) throw new Error('VITE_GOOGLE_MAPS_API_KEY not set');
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?${params}&key=${API_KEY}`;
+  // Parse the legacy params string into the proxy's structured body.
+  let proxyBody: { kind: 'forward'; address: string } | { kind: 'reverse'; lat: number; lng: number };
+  const addrMatch = params.match(/^address=(.+)$/);
+  const latlngMatch = params.match(/^latlng=(-?[\d.]+),(-?[\d.]+)$/);
+  if (addrMatch) {
+    proxyBody = { kind: 'forward', address: decodeURIComponent(addrMatch[1]) };
+  } else if (latlngMatch) {
+    proxyBody = { kind: 'reverse', lat: Number(latlngMatch[1]), lng: Number(latlngMatch[2]) };
+  } else {
+    throw new Error(`fetchGoogleGeocode: unrecognized params shape "${params}"`);
+  }
 
   let lastErr: unknown;
   for (let attempt = 0; attempt <= GEOCODE_MAX_RETRIES; attempt++) {
@@ -110,23 +127,48 @@ async function fetchGoogleGeocode(params: string): Promise<GeocodeResponse> {
     await acquireGeocodeToken();
     incrementGeocodeDailyCounter();
 
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), GEOCODE_TIMEOUT_MS);
     try {
-      const res = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(timer);
-      if (res.status === 429 || (res.status >= 500 && res.status < 600)) {
-        lastErr = new Error(`geocode http ${res.status}`);
+      const { data, error } = await supabase.functions.invoke('maps-geocode', {
+        body: proxyBody,
+      });
+      if (error) {
+        lastErr = error;
         continue;
       }
-      const data = (await res.json()) as GeocodeResponse;
-      if (data.status === 'OVER_QUERY_LIMIT' || data.status === 'UNKNOWN_ERROR') {
-        lastErr = new Error(`geocode google ${data.status}`);
+      const payload = data as {
+        result?: { lat: number | null; lng: number | null; formatted_address: string | null } | null;
+        status?: string;
+        error?: string;
+        detail?: string;
+      };
+      // Edge function returns `error: 'upstream_error'` with detail for
+      // REQUEST_DENIED; translate back to the legacy shape so the
+      // resolveAddress 'denied' branch still triggers and logs cleanly.
+      if (payload.error === 'upstream_error') {
+        return {
+          status: 'REQUEST_DENIED',
+          error_message: payload.detail ?? 'upstream error',
+        };
+      }
+      if (payload.error) {
+        lastErr = new Error(`maps-geocode ${payload.error}`);
         continue;
       }
-      return data;
+      if (!payload.result) {
+        return { status: payload.status ?? 'ZERO_RESULTS' };
+      }
+      const r = payload.result;
+      if (r.lat == null || r.lng == null) {
+        return { status: 'ZERO_RESULTS' };
+      }
+      return {
+        status: 'OK',
+        results: [{
+          geometry: { location: { lat: r.lat, lng: r.lng } },
+          formatted_address: r.formatted_address ?? undefined,
+        }],
+      };
     } catch (err) {
-      clearTimeout(timer);
       lastErr = err;
     }
   }
@@ -236,13 +278,85 @@ export async function geocodeContactsBatch(
 // Persistence
 // ============================================================
 
+// Strict UUID v4-ish detector — matches the format Supabase emits for
+// `uuid_generate_v4()`. Used to tell a real DB-rooted contact from a
+// virtual one (Google contacts get ids like `google_c123…`, never UUIDs).
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isContactUuid(id: string): boolean { return UUID_RE.test(id); }
+
+/** Make sure the contact has a row in the public.contacts table and return
+ *  its canonical UUID id. Google-sourced contacts (id prefix `google_…`)
+ *  live only in client memory until they earn a write — this is where they
+ *  get promoted, with `external_id` preserving the Google resource id and
+ *  `source = 'google'` recording the origin.
+ *
+ *  Callers must propagate the returned id back into their local state when
+ *  it differs from `contact.id`, otherwise subsequent writes will keep
+ *  re-promoting the same contact.
+ */
+export async function ensureContactInDB(contact: Contact): Promise<string> {
+  if (isContactUuid(contact.id)) return contact.id;
+
+  const { data: { user }, error: userErr } = await supabase.auth.getUser();
+  if (userErr || !user) {
+    throw new Error('ensureContactInDB: not authenticated');
+  }
+
+  // Strip the `google_` (or other) prefix so external_id holds just the
+  // upstream resource id. Falls back to the full original id when there's
+  // no recognised prefix.
+  const externalId = contact.id.replace(/^(google_|vision_)/, '');
+
+  const insertPayload = {
+    user_id: user.id,
+    name: contact.name,
+    role: contact.role || 'Contact',
+    company: contact.company ?? null,
+    avatar_color: contact.avatarColor || '#6366f1',
+    // Status column has a check constraint; the in-memory Contact already
+    // narrows to these values, but be defensive in case a Google sync
+    // produced something unexpected.
+    status: (['online', 'offline', 'busy', 'away'] as const).includes(contact.status as any)
+      ? contact.status
+      : 'offline',
+    email: contact.email || '',
+    phone: contact.phone ?? null,
+    address: contact.address ?? null,
+    notes: contact.notes ?? null,
+    source: (contact.source === 'google' || contact.source === 'vision') ? contact.source : 'local',
+    external_id: externalId,
+    platform: 'web',
+  };
+
+  const { data, error } = await supabase
+    .from('contacts')
+    .insert(insertPayload)
+    .select('id')
+    .single();
+
+  if (error || !data) {
+    console.error('[locationService] ensureContactInDB insert failed:', error);
+    throw error ?? new Error('ensureContactInDB: no row returned');
+  }
+
+  return data.id as string;
+}
+
 export async function saveContactLocation(
-  contactId: string,
+  contact: Contact,
   locationType: 'home' | 'work',
   lat: number,
   lng: number,
-  address: string
-): Promise<void> {
+  address: string,
+  // Optional geofence radius in meters. When set, geofence enter/exit/
+  // approach events fire as the user crosses the radius. Null disables
+  // the geofence on this place.
+  geofenceRadiusM: number | null = null
+): Promise<string> {
+  // Step 1: resolve to a real DB row. Promotes Google/Vision contacts
+  // on demand so PATCH-by-id can run against a valid UUID.
+  const canonicalId = await ensureContactInDB(contact);
+
   const column = locationType === 'home'
     ? { lat: 'home_lat', lng: 'home_lng', addr: 'home_address' }
     : { lat: 'work_lat', lng: 'work_lng', addr: 'work_address' };
@@ -260,7 +374,7 @@ export async function saveContactLocation(
       geo_accuracy: 'precise',
       location_updated_at: new Date().toISOString(),
     })
-    .eq('id', contactId);
+    .eq('id', canonicalId);
 
   if (error) {
     console.error('[locationService] saveContactLocation error:', error);
@@ -270,16 +384,32 @@ export async function saveContactLocation(
   // Mirror to the universal Place schema. Failures here are logged but
   // not thrown — the legacy columns remain authoritative until cutover.
   try {
-    await upsertContactPlace(contactId, locationType, lat, lng, address);
+    await upsertContactPlace(canonicalId, locationType, lat, lng, address, geofenceRadiusM);
   } catch (placeErr) {
     console.error('[locationService] upsertContactPlace mirror failed:', placeErr);
   }
+
+  return canonicalId;
 }
 
 export async function clearContactLocation(
   contactId: string,
   locationType: 'home' | 'work'
 ): Promise<void> {
+  // Mirror saveContactLocation's UUID handling: a virtual contact (Google /
+  // Vision, id prefix like `google_…`) has nothing in the DB to clear yet,
+  // so a clear-by-id would hit zero rows and silently no-op. Skip the round
+  // trip and let the caller refresh its local state. This is the symmetric
+  // guard the empty-state flow needs once it lets users open the edit modal
+  // for an un-promoted contact and click Clear.
+  if (!isContactUuid(contactId)) {
+    console.warn(
+      '[locationService] clearContactLocation called with non-UUID id; nothing to clear in DB:',
+      contactId,
+    );
+    return;
+  }
+
   const update = locationType === 'home'
     ? { home_lat: null, home_lng: null, home_address: null }
     : { work_lat: null, work_lng: null, work_address: null };
@@ -403,6 +533,24 @@ export async function createPlace(input: {
 }
 
 /**
+ * Update the geofence radius on a place. Pass null to disable the
+ * geofence entirely (no enter/exit events will fire). Used by the
+ * entity-side surfaces (TaskEditModal location section, decision
+ * geo-anchor) so any attached place can be promoted from "just a
+ * marker" to "fires arrival events".
+ */
+export async function setPlaceGeofence(
+  placeId: string,
+  radiusM: number | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from('places')
+    .update({ geofence_radius_m: radiusM })
+    .eq('id', placeId);
+  if (error) throw error;
+}
+
+/**
  * Attach a place to an entity in a specific role. If a row with the
  * same (entity_type, entity_id, place_id, role) already exists, the
  * insert is a no-op (handled by the composite PK).
@@ -479,7 +627,8 @@ export async function upsertContactPlace(
   role: 'home' | 'work',
   lat: number,
   lng: number,
-  address: string
+  address: string,
+  geofenceRadiusM: number | null = null
 ): Promise<Place> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
@@ -504,6 +653,7 @@ export async function upsertContactPlace(
         address,
         name: role === 'home' ? 'Home' : 'Work',
         type: role,
+        geofence_radius_m: geofenceRadiusM,
       })
       .eq('id', existingPlaceId)
       .select('*')
@@ -522,6 +672,7 @@ export async function upsertContactPlace(
       address,
       name: role === 'home' ? 'Home' : 'Work',
       type: role,
+      geofence_radius_m: geofenceRadiusM,
       created_by: user.id,
     })
     .select('*')
@@ -617,13 +768,54 @@ let broadcastDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Start broadcasting current user's position to user_locations table.
 // Returns a stop function.
+//
+// Side effect: also runs geofence detection on every raw position update
+// (independent of the 15-second DB-write debounce) so enter/exit/approach
+// events fire as soon as we have a fresh fix. geofenceService is loaded
+// lazily to keep this file's import surface unchanged.
 export function startLocationBroadcast(
   userId: string,
   onError?: (err: GeolocationPositionError) => void
 ): () => void {
   if (!navigator.geolocation) return () => {};
 
+  // Lazy import so existing call sites that don't care about geofences
+  // don't pay the cost on first paint. We also init the notification
+  // fan-out (toast + native + feed item) once the modules resolve and
+  // bring in the ETA share ticker for any active live shares.
+  let geofenceModule: typeof import('./geofenceService') | null = null;
+  let etaShareModule: typeof import('./etaShareService') | null = null;
+  Promise.all([
+    import('./geofenceService'),
+    import('./geofenceNotificationService'),
+    import('./etaShareService'),
+  ]).then(([gfMod, notifMod, etaMod]) => {
+    geofenceModule = gfMod;
+    etaShareModule = etaMod;
+    gfMod.startGeofenceDetection(userId);
+    notifMod.initGeofenceNotifications();
+  }).catch(err => {
+    console.warn('[locationService] geofence pipeline failed to load:', err);
+  });
+
   const writePosition = (pos: GeolocationPosition) => {
+    // Run geofence detection immediately on every raw tick — not on the
+    // debounced DB write — so enter/exit/approach events are detected
+    // as soon as the OS gives us a fix.
+    if (geofenceModule) {
+      geofenceModule
+        .processPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy)
+        .catch(err => console.warn('[locationService] geofence processPosition failed:', err));
+    }
+
+    // Refresh any active ETA shares — has its own internal 12s throttle,
+    // so calling on every raw tick is cheap when no shares are active.
+    if (etaShareModule) {
+      etaShareModule
+        .tickActiveShares(pos.coords.latitude, pos.coords.longitude)
+        .catch(err => console.warn('[locationService] etaShare tick failed:', err));
+    }
+
     if (broadcastDebounceTimer) clearTimeout(broadcastDebounceTimer);
     broadcastDebounceTimer = setTimeout(async () => {
       await supabase.from('user_locations').upsert({
@@ -657,6 +849,10 @@ export function stopLocationBroadcast(): void {
     clearTimeout(broadcastDebounceTimer);
     broadcastDebounceTimer = null;
   }
+  // Tear down geofence session too. Lazy-loaded to avoid a hard import.
+  import('./geofenceService')
+    .then(mod => mod.stopGeofenceDetection())
+    .catch(() => { /* module never loaded — nothing to stop */ });
 }
 
 // Subscribe to another Pulse user's live location.
@@ -743,4 +939,92 @@ export async function upsertLocationConsent(
     updated_at: new Date().toISOString(),
   });
   if (error) throw error;
+}
+
+// ============================================================
+// Phase 7 — Multi-recipient broadcast
+//
+// The spec called for a new `live_location_recipients` table; in practice
+// Pulse already has the same shape under `location_share_consents` (Phase 3
+// bilateral consent). These helpers wrap the bulk grant/revoke flow the
+// BROADCAST chip drives so the consent table doesn't sprout ad-hoc upserts
+// across the codebase.
+//
+// Session set: the recipients picked for the current broadcast live in
+// module state so the stop handler knows which consents to revoke (without
+// touching long-standing manual grants the user set elsewhere).
+// ============================================================
+
+let currentBroadcastRecipients = new Set<string>();
+
+/** Active recipients viewer ids visible to the current process. Empty when
+ *  no broadcast is running or the user is broadcasting to nobody. */
+export function getActiveBroadcastRecipientIds(): string[] {
+  return Array.from(currentBroadcastRecipients);
+}
+
+/** Replace the current broadcast recipient set. Grants new ids (upserts
+ *  with is_granted=true), revokes ids dropped from the set (is_granted=false),
+ *  preserves any consent rows the user added manually outside this session. */
+export async function setBroadcastRecipients(
+  broadcasterUserId: string,
+  recipientUserIds: string[],
+  shareLevel: 'precise' | 'approximate' | 'city_only' = 'precise',
+): Promise<void> {
+  const nextSet = new Set(recipientUserIds);
+  const prevSet = currentBroadcastRecipients;
+
+  const toGrant = recipientUserIds.filter(id => !prevSet.has(id));
+  const toRevoke = Array.from(prevSet).filter(id => !nextSet.has(id));
+
+  const updatedAt = new Date().toISOString();
+
+  if (toGrant.length > 0) {
+    const { error } = await supabase.from('location_share_consents').upsert(
+      toGrant.map(viewerId => ({
+        subject_user_id: broadcasterUserId,
+        viewer_user_id: viewerId,
+        is_granted: true,
+        share_level: shareLevel,
+        expires_at: null,
+        updated_at: updatedAt,
+      })),
+    );
+    if (error) throw error;
+  }
+
+  if (toRevoke.length > 0) {
+    // Mark previously-this-session grants as revoked. Bulk update keyed by
+    // (subject_user_id, viewer_user_id). Supabase's update doesn't take a
+    // composite-key array natively, so iterate — usually a handful of rows.
+    for (const viewerId of toRevoke) {
+      const { error } = await supabase
+        .from('location_share_consents')
+        .update({ is_granted: false, updated_at: updatedAt })
+        .eq('subject_user_id', broadcasterUserId)
+        .eq('viewer_user_id', viewerId);
+      if (error) throw error;
+    }
+  }
+
+  currentBroadcastRecipients = nextSet;
+}
+
+/** Revoke all session-granted consents and clear the in-memory set. Called
+ *  when the user toggles BROADCAST off. Pre-existing consents granted from
+ *  the LocationSharePanel (per-contact) are intentionally untouched —
+ *  they were never part of this session's set. */
+export async function endBroadcastRecipients(broadcasterUserId: string): Promise<void> {
+  const recipients = Array.from(currentBroadcastRecipients);
+  currentBroadcastRecipients = new Set();
+  if (recipients.length === 0) return;
+  const updatedAt = new Date().toISOString();
+  for (const viewerId of recipients) {
+    await supabase
+      .from('location_share_consents')
+      .update({ is_granted: false, updated_at: updatedAt })
+      .eq('subject_user_id', broadcasterUserId)
+      .eq('viewer_user_id', viewerId)
+      .then(() => {}, () => {}); // swallow per-recipient errors — best effort
+  }
 }

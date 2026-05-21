@@ -9,6 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { useEntitlements } from '../../hooks/useEntitlements';
 import { useWorkspaceData } from '../../contexts/WorkspaceContext';
 import { TrialExpiredBlock } from './TrialExpiredBlock';
+import { isJustPaidGraceActive } from '../../lib/monitoring/onboardingEvents';
 
 const DEV_BYPASS_KEY = 'pulse_dev_bypass_paywall';
 
@@ -17,8 +18,42 @@ interface TrialGateProps {
 }
 
 export const TrialGate: React.FC<TrialGateProps> = ({ children }) => {
-  const { entitlements, hasActivePulseAccess, isLoading } = useEntitlements();
+  const { entitlements, hasActivePulseAccess, isLoading, refresh } = useEntitlements();
   const { currentWorkspace } = useWorkspaceData();
+
+  // Post-Stripe webhook race: Checkout redirects ~1s before the billing-webhook
+  // finishes writing the entitlements row. Without a grace window the user sees
+  // TrialExpiredBlock flash for the duration. The grace flag is set by the
+  // BillingSettings ?billing=success effect (see onboardingEvents.markJustPaidGrace).
+  // While the flag is live we suppress the paywall AND background-poll
+  // entitlements every 1.5s so the real state takes over the moment it's ready.
+  const [graceActive, setGraceActive] = useState<boolean>(() => isJustPaidGraceActive());
+
+  useEffect(() => {
+    if (!graceActive) return;
+    let cancelled = false;
+    const interval = window.setInterval(() => {
+      if (cancelled) return;
+      refresh().catch(() => {});
+      if (!isJustPaidGraceActive()) {
+        setGraceActive(false);
+        window.clearInterval(interval);
+      }
+    }, 1500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [graceActive, refresh]);
+
+  // Drop the grace flag the moment we see real Pulse access — no need to keep
+  // polling once entitlements are populated.
+  useEffect(() => {
+    if (graceActive && hasActivePulseAccess) {
+      try { sessionStorage.removeItem('pulse_just_paid_grace'); } catch { /* ignore */ }
+      setGraceActive(false);
+    }
+  }, [graceActive, hasActivePulseAccess]);
 
   // Dev-only escape hatch — lets the engineer log in as other accounts on
   // localhost without having to manually flip entitlements in the DB.
@@ -61,7 +96,8 @@ export const TrialGate: React.FC<TrialGateProps> = ({ children }) => {
     !!entitlements &&
     !hasActivePulseAccess &&
     !!currentWorkspace &&
-    !devBypassed;
+    !devBypassed &&
+    !graceActive;
 
   return (
     <>

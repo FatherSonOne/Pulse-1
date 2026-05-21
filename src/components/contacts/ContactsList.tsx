@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Contact } from '../../types';
 import { OnlineIndicator } from '../UserContact/OnlineIndicator';
 import { RelationshipScoreBadge } from './RelationshipHealthCard';
@@ -20,7 +21,7 @@ function profileToInsight(profile: RelationshipProfile | undefined):
   const score = profile.relationshipScore ?? 50;
   const trend = profile.relationshipTrend;
   if (trend === 'falling' && score < 40) {
-    return { tone: 'overdue', chipLabel: 'GONE QUIET', dotTitle: 'At risk — went quiet' };
+    return { tone: 'overdue', chipLabel: 'GONE QUIET', dotTitle: 'At risk: went quiet' };
   }
   if (trend === 'falling' && score < 60) {
     return { tone: 'warning', chipLabel: 'COOLING', dotTitle: 'Cooling' };
@@ -58,7 +59,10 @@ export const ContactsList: React.FC<ContactsListProps> = ({
   relationshipProfiles,
   leadScores,
 }) => {
+  const { t } = useTranslation();
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [rangeAnchorIndex, setRangeAnchorIndex] = useState<number | null>(null);
+  const [rangeBoundaryMessage, setRangeBoundaryMessage] = useState<string | null>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -84,6 +88,38 @@ export const ContactsList: React.FC<ContactsListProps> = ({
   }, [contacts]); // Careful: if contacts object ref changes often this might reset scroll. Assuming filteredContacts memoized upstream.
 
   const visibleContacts = contacts.slice(0, visibleCount);
+
+  const selectRange = useCallback((from: number, to: number) => {
+    const start = Math.max(0, Math.min(from, to));
+    const end = Math.min(visibleContacts.length - 1, Math.max(from, to));
+    visibleContacts.slice(start, end + 1).forEach(contact => {
+      if (!selectedIds.has(contact.id)) onToggleSelection(contact.id);
+    });
+  }, [onToggleSelection, selectedIds, visibleContacts]);
+
+  const handleRangeKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!event.shiftKey || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    if (visibleContacts.length === 0) return;
+    event.preventDefault();
+    const selectedLoadedIndexes = visibleContacts
+      .map((contact, index) => selectedIds.has(contact.id) ? index : -1)
+      .filter(index => index >= 0);
+    const anchor = rangeAnchorIndex ?? selectedLoadedIndexes[0] ?? 0;
+    const target = event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+      ? visibleContacts.length - 1
+      : event.key === 'ArrowDown'
+      ? Math.min(visibleContacts.length - 1, anchor + 1)
+      : Math.max(0, anchor - 1);
+    setRangeAnchorIndex(anchor);
+    selectRange(anchor, target);
+    if ((event.key === 'ArrowDown' || event.key === 'End') && target === visibleContacts.length - 1 && visibleContacts.length < contacts.length) {
+      setRangeBoundaryMessage(t('contacts.bulkToolbar.range_boundary', { count: selectedIds.size }));
+    } else {
+      setRangeBoundaryMessage(null);
+    }
+  };
 
   if (isLoading) {
     const EnhancedLoadingScreen = lazy(() => import('../EnhancedLoadingScreen'));
@@ -113,7 +149,12 @@ export const ContactsList: React.FC<ContactsListProps> = ({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto h-full p-4 bg-white dark:bg-zinc-950">
+    <div className="flex-1 overflow-y-auto h-full p-4 bg-white dark:bg-zinc-950" tabIndex={0} onKeyDown={handleRangeKeyDown}>
+      {rangeBoundaryMessage && (
+        <div className="sticky top-0 z-20 mb-3 rounded-lg border px-3 py-2 text-sm" role="alert" style={{ background: 'var(--pulse-tone-info-soft)', color: 'var(--pulse-tone-info)', borderColor: 'var(--pulse-border)' }}>
+          {rangeBoundaryMessage}
+        </div>
+      )}
       {viewStyle === 'list' ? (
         <div className="w-full">
            <div className="grid grid-cols-12 gap-4 px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-zinc-950 z-10">
@@ -136,12 +177,17 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                 onClick={() => onSelectContact(contact)}
               >
                 <div className="col-span-1 text-center" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(contact.id)}
-                    onChange={() => onToggleSelection(contact.id)}
-                    className="rounded border-zinc-300 dark:border-zinc-700"
-                  />
+                  <label className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(contact.id)}
+                      onChange={() => {
+                        setRangeAnchorIndex(visibleContacts.findIndex(item => item.id === contact.id));
+                        onToggleSelection(contact.id);
+                      }}
+                      className="h-5 w-5 rounded border-zinc-300 dark:border-zinc-700"
+                    />
+                  </label>
                 </div>
                 <div className="col-span-3 flex items-center gap-3">
                   <div className="relative">
@@ -232,13 +278,18 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                 onClick={() => onSelectContact(contact)}
               >
                 <div className="absolute top-3 left-3 z-10" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(contact.id)}
-                    onChange={() => onToggleSelection(contact.id)}
-                    className="opacity-0 group-hover:opacity-100 checked:opacity-100 transition cursor-pointer rounded border-zinc-300"
-                    aria-label={`Select ${contact.name}`}
-                  />
+                  <label className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(contact.id)}
+                      onChange={() => {
+                        setRangeAnchorIndex(visibleContacts.findIndex(item => item.id === contact.id));
+                        onToggleSelection(contact.id);
+                      }}
+                      className="h-5 w-5 opacity-0 group-hover:opacity-100 checked:opacity-100 transition cursor-pointer rounded border-zinc-300"
+                      aria-label={`Select ${contact.name}`}
+                    />
+                  </label>
                 </div>
 
                 {/* Lead Grade Badge */}

@@ -133,7 +133,7 @@ export const ContactGoalModal: React.FC<ContactGoalModalProps> = ({
                     onClick={() => setFrequency(freq)}
                     className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-center transition-all
                       ${isActive
-                        ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                        ? 'border-rose-400 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300'
                         : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 text-zinc-600 dark:text-zinc-300'
                       }`}
                   >
@@ -162,7 +162,7 @@ export const ContactGoalModal: React.FC<ContactGoalModalProps> = ({
                     onClick={() => setChannel(ch.id)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all
                       ${isActive
-                        ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                        ? 'border-rose-400 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300'
                         : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600'
                       }`}
                   >
@@ -184,27 +184,30 @@ export const ContactGoalModal: React.FC<ContactGoalModalProps> = ({
               onChange={e => setNotes(e.target.value)}
               placeholder={`e.g. "Ask about the product launch" or "Check in on the Q1 partnership"`}
               rows={2}
-              className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+              className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-400 resize-none"
             />
           </div>
 
           {/* Autopilot toggle */}
-          <div className="flex items-start justify-between p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/40">
+          <div className="flex items-start justify-between p-3 bg-rose-50 dark:bg-rose-900/20 rounded-xl border border-rose-100 dark:border-rose-800/40">
             <div className="flex-1 mr-3">
               <div className="flex items-center gap-1.5">
-                <Bot className="text-indigo-500 text-xs" />
-                <span className="text-sm font-semibold text-indigo-800 dark:text-indigo-200">
+                <Bot className="text-rose-500 text-xs" />
+                <span className="text-sm font-semibold text-rose-800 dark:text-rose-200">
                   Autopilot
                 </span>
               </div>
-              <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5 leading-relaxed">
-                When it's time, AI will draft a message for you automatically in Today.
+              <p className="text-xs text-rose-600 dark:text-rose-400 mt-0.5 leading-relaxed">
+                When it's time, this goal surfaces as a priority nudge in Today.
+                <span className="block text-[10px] text-rose-500/70 dark:text-rose-400/70 mt-0.5">
+                  AI-drafted replies coming soon.
+                </span>
               </p>
             </div>
             <button
               onClick={() => setAutopilot(p => !p)}
               className={`relative w-10 h-5.5 rounded-full transition-colors flex-shrink-0 mt-0.5 ${
-                autopilot ? 'bg-indigo-500' : 'bg-zinc-300 dark:bg-zinc-600'
+                autopilot ? 'bg-rose-500' : 'bg-zinc-300 dark:bg-zinc-600'
               }`}
               style={{ height: '22px', width: '40px' }}
             >
@@ -240,7 +243,7 @@ export const ContactGoalModal: React.FC<ContactGoalModalProps> = ({
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60"
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60"
             >
               {isSaving ? 'Saving…' : existingGoal ? 'Update goal' : 'Set goal'}
             </button>

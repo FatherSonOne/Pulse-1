@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Check, CreditCard, Loader, Sparkles, X } from 'lucide-react';
 import billingService from '../../services/billingService';
+import { PULSE_TEAM_FEATURES as FEATURES } from '../LandingPage/landingData';
 
 interface TrialExpiredBlockProps {
   workspaceId: string;
@@ -13,15 +14,6 @@ interface TrialExpiredBlockProps {
    *  in the top-right corner that dismisses the overlay for the session. */
   onDevDismiss?: () => void;
 }
-
-const FEATURES = [
-  'Unlimited team seats',
-  'All 6 Relay modes (Quick, Team, Drop, Threads, Radio, Notes)',
-  'Video Vox + Studio RAG',
-  'Email, calendar, messaging, meetings',
-  'Advanced analytics + full ecosystem bridge',
-  '2,000 AI messages / 500 SMS / 50 GB storage / mo',
-];
 
 export const TrialExpiredBlock: React.FC<TrialExpiredBlockProps> = ({
   workspaceId,

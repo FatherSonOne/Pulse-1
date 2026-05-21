@@ -1,7 +1,32 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { Contact } from '../types';
 import { useAuth } from '../hooks/useAuth';
+import { settingsService } from '../services/settingsService';
+
+// Deterministic avatar color from a user id. Matches the decorative palette
+// used inside VoiceRooms' room-color picker — status hues (emerald/orange/
+// red/yellow/blue-500) and the brand rose are deliberately excluded so the
+// avatar never collides with state-bearing signals.
+const RELAY_AVATAR_COLORS = [
+  'bg-indigo-500',
+  'bg-violet-500',
+  'bg-fuchsia-500',
+  'bg-pink-500',
+  'bg-sky-500',
+  'bg-cyan-500',
+  'bg-teal-500',
+  'bg-slate-500',
+] as const;
+
+function avatarColorForId(id: string): string {
+  if (!id) return RELAY_AVATAR_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return RELAY_AVATAR_COLORS[hash % RELAY_AVATAR_COLORS.length];
+}
 
 // Keyboard shortcuts
 import { useRelayKeyboardShortcuts } from '../hooks/useRelayKeyboardShortcuts';
@@ -59,11 +84,28 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
   // user.id powers the Triage stream's voice-source queries.
   const { user } = useAuth();
 
-  // If the parent passed an initialContactId we land on Direct so the
-  // contact is reachable. ClassicMode owns the per-contact selection (an
-  // explicit prop hand-off would couple this wrapper to its internal state),
-  // so the value is forwarded below.
+  // Initial view priority: parent deep-link > saved Settings preference > triage.
+  // ClassicMode owns the per-contact selection (an explicit prop hand-off would
+  // couple this wrapper to its internal state), so the value is forwarded below.
+  // The saved preference is loaded async; we land on the deep-link-or-triage
+  // default first and switch once settingsService resolves.
   const [view, setView] = useState<RelayView>(initialContactId ? 'direct' : 'triage');
+  useEffect(() => {
+    // Skip the preference load when the parent forced a destination via
+    // initialContactId — the deep-link wins by design.
+    if (initialContactId) return;
+    let cancelled = false;
+    settingsService
+      .get('relayDefaultView')
+      .then((preferred) => {
+        if (cancelled) return;
+        if (preferred && RELAY_VIEWS.includes(preferred)) setView(preferred);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [initialContactId]);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -100,7 +142,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
   }, true);
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-black rounded-2xl overflow-hidden border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] animate-fade-in shadow-xl">
+    <div className="h-full flex flex-col bg-white dark:bg-[#080808] rounded-2xl overflow-hidden border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] animate-fade-in shadow-xl">
       {/* Mode nav — six peers + settings affordance. The Direct / Channel /
           Broadcast triplet replaces the old "Messages" umbrella so the top
           nav stays the single mode signal. */}
@@ -207,7 +249,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
             currentUser={{
               id: user.id,
               name: user.name,
-              avatarColor: 'bg-rose-500',
+              avatarColor: avatarColorForId(user.id),
             }}
           />
         )}

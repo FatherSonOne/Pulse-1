@@ -587,50 +587,50 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-1 px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 overflow-x-auto scrollbar-thin">
+        <div className="flex items-stretch gap-1 px-2 sm:px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
           <button
             onClick={() => setActiveTab('services')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap flex-shrink-0 ${
+            className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'services'
                 ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <Plug className="text-xs" />
-            <span>Services</span>
+            <Plug className="text-xs shrink-0" />
+            <span className="truncate">Services</span>
           </button>
           <button
             onClick={() => setActiveTab('privacy')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap flex-shrink-0 ${
+            className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'privacy'
                 ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <Lock className="text-xs" />
-            <span>Privacy</span>
+            <Lock className="text-xs shrink-0" />
+            <span className="truncate">Privacy</span>
           </button>
           <button
             onClick={() => setActiveTab('security')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap flex-shrink-0 ${
+            className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'security'
                 ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <Shield className="text-xs" />
-            <span>Security</span>
+            <Shield className="text-xs shrink-0" />
+            <span className="truncate">Security</span>
           </button>
           <button
             onClick={() => setActiveTab('activity')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap flex-shrink-0 ${
+            className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'activity'
                 ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <TrendingUp className="text-xs" />
-            <span>Activity</span>
+            <TrendingUp className="text-xs shrink-0" />
+            <span className="truncate">Activity</span>
           </button>
         </div>
 

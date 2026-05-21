@@ -25,7 +25,8 @@
   --ug-note-icon:      var(--pulse-rose);
 }
 
-.dark .users-guide {
+.dark .users-guide,
+.users-guide.dark {
   --ug-highlight:      var(--pulse-rose-soft);
   --ug-highlight-text: #fecdd3;
   --ug-expand-border:  var(--pulse-border);

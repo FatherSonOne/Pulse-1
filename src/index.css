@@ -2237,6 +2237,15 @@ html, body {
 }
 .pulse-email-ai-fresh { animation: pulse-email-ai-fresh 1.4s cubic-bezier(0.16, 1, 0.3, 1) 3; }
 
+@media (prefers-reduced-motion: reduce) {
+  .pulse-email-zero-halo,
+  .pulse-email-star-pop,
+  .pulse-email-sync-success,
+  .pulse-email-ai-fresh {
+    animation: none !important;
+  }
+}
+
 /* ─── Coral Heartbeat ──────────────────────────────────────────────────────
    The brand's "alive" beat. Applied to dots on rows that just arrived via
    Realtime. One pulse, then rest. Reserve for genuine state transitions —

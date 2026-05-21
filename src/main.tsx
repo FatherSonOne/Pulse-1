@@ -10,6 +10,15 @@ import { LoadingProvider } from './contexts/LoadingContext'
 import './index.css'
 import './components/shared/PulseTypography.css'
 
+// DEV-ONLY E2E test harness flag — short-circuits the App render at the bottom
+// of this file so component-level a11y / keyboard journeys can be exercised in
+// a real browser without the auth / OAuth / service-worker scaffolding.
+// Guarded twice: import.meta.env.DEV at build-time (tree-shaken in prod) AND a
+// URL query check. Never reachable in production builds.
+const E2E_MAP_HARNESS =
+  import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).get('e2eHarness') === 'map';
+
 // DEVELOPMENT: Force clear service worker cache on version mismatch
 const APP_VERSION = '28.2.0';
 const VERSION_KEY = 'pulse_app_version';
@@ -288,12 +297,23 @@ if (isMobileViewport) {
   document.documentElement.classList.add('mobile-viewport');
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <LoadingProvider>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </LoadingProvider>
-  </React.StrictMode>
-)
+if (E2E_MAP_HARNESS) {
+  // Lazy-load so the harness module is excluded from the production graph.
+  void import('./components/map/__e2e_harness/MapTestHarness').then(({ default: MapTestHarness }) => {
+    ReactDOM.createRoot(document.getElementById('root')!).render(
+      <React.StrictMode>
+        <MapTestHarness />
+      </React.StrictMode>
+    );
+  });
+} else {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <LoadingProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </LoadingProvider>
+    </React.StrictMode>
+  )
+}

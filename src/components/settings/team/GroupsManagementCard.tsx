@@ -12,9 +12,18 @@ import {
   UserPlus,
   X,
   Check,
+  ShieldCheck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { workspaceService, WorkspaceGroup, WorkspaceMember } from '../../../services/workspaceService';
+import { workspaceService, WorkspaceGroup, WorkspaceMember, GroupGrant } from '../../../services/workspaceService';
+import { supabase } from '../../../services/supabase';
+
+interface PermissionRow {
+  key: string;
+  category: string;
+  label: string;
+  description: string | null;
+}
 
 interface Props {
   workspaceId: string;
@@ -22,6 +31,10 @@ interface Props {
   isAdmin: boolean;
 }
 
+// Group color palette. Stored as literal hex in workspace_groups.color so the
+// DB row is self-describing (no CSS-var leaks). The first entry mirrors
+// `--pulse-accent` from src/styles/pulse-tokens.css — keep them in sync if
+// the brand coral ever changes.
 const GROUP_COLORS = ['#f43f5e', '#f97316', '#eab308', '#22c55e', '#0ea5e9', '#8b5cf6', '#ec4899', '#64748b'];
 
 export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, isAdmin }) => {
@@ -43,6 +56,13 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
 
   const [addingMemberFor, setAddingMemberFor] = useState<string | null>(null);
   const [memberToAdd, setMemberToAdd] = useState<string>('');
+
+  // Permission catalog (static workspace-independent set of 23 keys, loaded once).
+  const [catalog, setCatalog] = useState<PermissionRow[]>([]);
+  // group_id -> grants
+  const [grantsByGroup, setGrantsByGroup] = useState<Record<string, GroupGrant[]>>({});
+  const [grantingFor, setGrantingFor] = useState<string | null>(null);
+  const [keyToGrant, setKeyToGrant] = useState<string>('');
 
   const loadGroups = useCallback(async () => {
     setIsLoading(true);
@@ -68,12 +88,42 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
     }
   }, []);
 
+  const loadGroupGrants = useCallback(async (groupId: string) => {
+    try {
+      const grants = await workspaceService.listGroupGrants(groupId);
+      setGrantsByGroup(prev => ({ ...prev, [groupId]: grants }));
+    } catch {
+      // non-fatal
+    }
+  }, []);
+
+  // Load the permission catalog once. RLS allows any authenticated user to
+  // read public.permissions (catalog is workspace-agnostic).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('permissions')
+        .select('key,category,label,description')
+        .order('category', { ascending: true })
+        .order('key', { ascending: true });
+      if (cancelled) return;
+      if (error) {
+        // Non-fatal — permissions UI just won't render without the catalog.
+        return;
+      }
+      setCatalog((data ?? []) as PermissionRow[]);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const handleToggleExpand = (groupId: string) => {
     if (expandedId === groupId) {
       setExpandedId(null);
     } else {
       setExpandedId(groupId);
       if (!groupMembers[groupId]) loadGroupMembers(groupId);
+      if (!grantsByGroup[groupId]) loadGroupGrants(groupId);
     }
   };
 
@@ -176,6 +226,43 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
     }
   };
 
+  const handleGrant = async (groupId: string) => {
+    if (!keyToGrant) return;
+    try {
+      const created = await workspaceService.grantGroupPermission(groupId, keyToGrant);
+      setGrantsByGroup(prev => ({
+        ...prev,
+        [groupId]: [...(prev[groupId] ?? []), created],
+      }));
+      setKeyToGrant('');
+      setGrantingFor(null);
+      toast.success('Permission granted');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to grant permission';
+      toast.error(msg);
+    }
+  };
+
+  const handleRevokeGrant = async (groupId: string, grant: GroupGrant) => {
+    try {
+      await workspaceService.revokeGroupGrant(grant.id);
+      setGrantsByGroup(prev => ({
+        ...prev,
+        [groupId]: (prev[groupId] ?? []).filter(g => g.id !== grant.id),
+      }));
+      toast.success('Permission revoked');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to revoke permission';
+      toast.error(msg);
+    }
+  };
+
+  const catalogByKey = React.useMemo(() => {
+    const m = new Map<string, PermissionRow>();
+    for (const p of catalog) m.set(p.key, p);
+    return m;
+  }, [catalog]);
+
   const memberById = (id: string): WorkspaceMember | undefined => members.find(m => m.user_id === id);
 
   return (
@@ -197,9 +284,8 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
       </div>
 
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
-        Tags for organising members. Coming soon: mention routing,
-        notification rules, and channel access derived from group
-        membership.
+        Organise members and grant permissions to a whole group at once.
+        Group grants stack on top of each member's workspace role.
       </p>
 
       {/* Create form */}
@@ -262,8 +348,19 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
       )}
 
       {!isLoading && groups.length === 0 && !creating && (
-        <div className="py-8 text-center text-xs text-zinc-400">
-          No groups yet.{isAdmin && ' Create one above to get started.'}
+        <div className="py-10 text-center space-y-3">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            No groups yet.
+          </p>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setCreating(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition"
+            >
+              <Plus className="w-3.5 h-3.5" /> Create your first group
+            </button>
+          )}
         </div>
       )}
 
@@ -274,6 +371,10 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
           const memberIds = groupMembers[g.id] ?? [];
           const groupMemberRecords = memberIds.map(memberById).filter((m): m is WorkspaceMember => !!m);
           const availableToAdd = members.filter(m => !memberIds.includes(m.user_id));
+
+          const grants = grantsByGroup[g.id] ?? [];
+          const grantedKeys = new Set(grants.map(grant => grant.permission_key));
+          const ungrantedCatalog = catalog.filter(p => !grantedKeys.has(p.key));
 
           return (
             <div key={g.id} className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
@@ -459,6 +560,110 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
                       )}
                     </div>
                   )}
+
+                  {/* Permissions — workspace-wide grants. Server-side via
+                      public.user_has_permission(); client-side hasPermission()
+                      doesn't merge these yet, so grants here are reflected by
+                      RLS but not by UI gating until the matrix hook is extended. */}
+                  <div className="pt-3 mt-1 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-zinc-500" />
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                        Permissions
+                      </span>
+                      <span className="text-[11px] text-zinc-400">· {grants.length}</span>
+                    </div>
+
+                    {grants.length === 0 && (
+                      <p className="text-[11px] text-zinc-400">
+                        No extra permissions granted. Members of this group only have what their workspace role grants them.
+                      </p>
+                    )}
+
+                    {grants.map(grant => {
+                      const meta = catalogByKey.get(grant.permission_key);
+                      return (
+                        <div
+                          key={grant.id}
+                          className="flex items-center gap-2 px-2 py-1.5 bg-white dark:bg-zinc-900 rounded border border-zinc-200/60 dark:border-zinc-800/60"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200 truncate">
+                              {meta?.label ?? grant.permission_key}
+                            </p>
+                            <p className="text-[10px] text-zinc-400 truncate">
+                              {meta?.category ?? '—'} · <code className="font-mono">{grant.permission_key}</code>
+                            </p>
+                          </div>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => handleRevokeGrant(g.id, grant)}
+                              className="p-1 text-zinc-400 hover:text-red-500"
+                              title="Revoke permission"
+                              aria-label="Revoke permission"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {isAdmin && (
+                      <div className="pt-1">
+                        {grantingFor === g.id ? (
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={keyToGrant}
+                              onChange={(e) => setKeyToGrant(e.target.value)}
+                              aria-label="Permission to grant"
+                              className="flex-1 px-2 py-1 text-xs border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                            >
+                              <option value="">Select a permission...</option>
+                              {Object.entries(
+                                ungrantedCatalog.reduce<Record<string, PermissionRow[]>>((acc, p) => {
+                                  (acc[p.category] ??= []).push(p);
+                                  return acc;
+                                }, {}),
+                              ).map(([category, rows]) => (
+                                <optgroup key={category} label={category}>
+                                  {rows.map(p => (
+                                    <option key={p.key} value={p.key}>{p.label}</option>
+                                  ))}
+                                </optgroup>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => handleGrant(g.id)}
+                              disabled={!keyToGrant}
+                              className="px-2 py-1 text-xs font-semibold text-white bg-rose-500 rounded disabled:opacity-40"
+                            >
+                              Grant
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setGrantingFor(null); setKeyToGrant(''); }}
+                              className="text-xs text-zinc-400 hover:text-zinc-600"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          ungrantedCatalog.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setGrantingFor(g.id)}
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-500 hover:text-rose-600"
+                            >
+                              <Plus className="w-3 h-3" /> Grant permission
+                            </button>
+                          )
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

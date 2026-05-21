@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useWorkspaceData, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
 import billingService, { type Invoice, type Subscription } from '../../services/billingService';
 import { useEntitlements } from '../../hooks/useEntitlements';
@@ -7,6 +7,11 @@ import { UsageWarningBanner } from '../billing/UsageWarningBanner';
 import { TaxIdCard } from './billing/TaxIdCard';
 import { BillingContactsCard } from './billing/BillingContactsCard';
 import { InvoicesCard } from './billing/InvoicesCard';
+import {
+  markJustPaidGrace,
+  trackOnboarding,
+  OnboardingEvent,
+} from '../../lib/monitoring/onboardingEvents';
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -114,6 +119,7 @@ export const BillingSettings: React.FC = () => {
     hasActivePulseAccess,
     isLoading: entLoading,
     error: entError,
+    refresh: refreshEntitlements,
   } = useEntitlements();
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -125,25 +131,46 @@ export const BillingSettings: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [checkoutMessage, setCheckoutMessage] =
     useState<{ type: 'success' | 'canceled'; text: string } | null>(null);
+  const [usageHighlight, setUsageHighlight] = useState(false);
+
+  const usageSectionRef = useRef<HTMLDivElement | null>(null);
 
   const canManageBilling = isOwner || isAdmin;
   const workspaceId = currentWorkspace?.id;
 
-  // Handle ?billing=success / ?billing=canceled redirect from Stripe
+  // Handle ?billing=success / ?billing=canceled redirect from Stripe.
+  // Success path: arm the just-paid grace window so TrialGate suppresses the
+  // paywall while the billing-webhook is still writing entitlements, then
+  // refresh entitlements + poll every 1.5s up to 15s until access is real.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const billingParam = params.get('billing');
     if (billingParam === 'success') {
       setCheckoutMessage({
         type: 'success',
-        text: 'Subscription updated! Changes may take a moment to reflect.',
+        text: 'Subscription updated. Pulse is unlocking your workspace now.',
       });
+      markJustPaidGrace(30_000);
+      trackOnboarding(OnboardingEvent.CheckoutCompleted, {
+        workspace_id: currentWorkspace?.id,
+      });
+      refreshEntitlements().catch(() => {});
+
+      let attempts = 0;
+      const poll = window.setInterval(() => {
+        attempts += 1;
+        refreshEntitlements().catch(() => {});
+        if (attempts >= 10) window.clearInterval(poll);
+      }, 1500);
+
       params.delete('billing');
       window.history.replaceState(
         {},
         '',
         `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`,
       );
+
+      return () => window.clearInterval(poll);
     } else if (billingParam === 'canceled') {
       setCheckoutMessage({ type: 'canceled', text: 'Checkout canceled. No changes were made.' });
       params.delete('billing');
@@ -153,7 +180,28 @@ export const BillingSettings: React.FC = () => {
         `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`,
       );
     }
-  }, []);
+  }, [currentWorkspace?.id, refreshEntitlements]);
+
+  // Deep-link from the sidebar "Nearing usage limit" banner: focus the usage
+  // section and briefly highlight it so the user lands on the right card.
+  useEffect(() => {
+    if (loading || entLoading) return;
+    const params = new URLSearchParams(window.location.search);
+    const focus = params.get('billing_focus');
+    if (focus !== 'usage' || !usageSectionRef.current) return;
+
+    usageSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setUsageHighlight(true);
+    const t = setTimeout(() => setUsageHighlight(false), 2400);
+
+    params.delete('billing_focus');
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`,
+    );
+    return () => clearTimeout(t);
+  }, [loading, entLoading]);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -306,6 +354,14 @@ export const BillingSettings: React.FC = () => {
     subscriptionCycle === 'yearly'
       ? Math.round(PULSE_TEAM_PRICING.yearly / 12)
       : PULSE_TEAM_PRICING.monthly;
+
+  // True when the workspace has a real paid Stripe subscription (not a synthetic
+  // pre-Stripe trial). Plan changes must go through the Customer Portal in this
+  // state — Stripe handles proration and prevents the double-subscription bug.
+  const hasActivePaidSub =
+    !isTrialing &&
+    !!subscription &&
+    (subscription.status === 'active' || subscription.status === 'past_due');
 
   const statusBadge = isTrialing
     ? `TRIAL · ${trialDaysLeft}d LEFT`
@@ -540,8 +596,10 @@ export const BillingSettings: React.FC = () => {
         </div>
       )}
 
-      {/* Trial upgrade card */}
-      {isTrialing && canManageBilling && (
+      {/* Trial upgrade card — only when on a Team trial. Defensive `apps.pulse`
+          check prevents this card from leaking through if entitlements drift
+          (e.g. trial sub left dangling after upgrade — see the May-14 incident). */}
+      {isTrialing && canManageBilling && entitlements?.apps?.pulse !== 'growth' && (
         <div
           className="rounded-2xl p-6"
           style={{
@@ -778,24 +836,44 @@ export const BillingSettings: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => handleCheckoutGrowth(growthCycle)}
-            disabled={actionLoading === 'checkout-growth'}
+            onClick={() => (hasActivePaidSub ? handleManageBilling() : handleCheckoutGrowth(growthCycle))}
+            disabled={actionLoading === 'checkout-growth' || actionLoading === 'portal'}
             className="w-full py-3 px-4 text-sm font-semibold rounded-xl transition-all text-white disabled:opacity-50"
             style={{
               background: GROWTH_COLORS.gradient,
               boxShadow: `0 4px 12px ${GROWTH_COLORS.shadow}`,
             }}
           >
-            {actionLoading === 'checkout-growth' ? 'Redirecting to checkout...' : 'Move up to Growth'}
+            {hasActivePaidSub
+              ? actionLoading === 'portal'
+                ? 'Opening Stripe portal…'
+                : 'Switch to Growth in Stripe portal'
+              : actionLoading === 'checkout-growth'
+                ? 'Redirecting to checkout...'
+                : 'Move up to Growth'}
           </button>
+          {hasActivePaidSub && (
+            <p
+              className="text-xs mt-3 text-center"
+              style={{ color: 'var(--pulse-ink-3)' }}
+            >
+              Plan changes happen in Stripe&rsquo;s portal — proration is automatic and
+              you&rsquo;ll never be billed for two plans at once.
+            </p>
+          )}
         </div>
       )}
 
       {/* Usage Meters */}
       {entitlements && (
         <div
-          className="rounded-xl p-6"
-          style={{ background: 'var(--pulse-surface)', border: '1px solid var(--pulse-border)' }}
+          ref={usageSectionRef}
+          className="rounded-xl p-6 scroll-mt-4 transition-shadow"
+          style={{
+            background: 'var(--pulse-surface)',
+            border: `1px solid ${usageHighlight ? 'var(--pulse-rose)' : 'var(--pulse-border)'}`,
+            boxShadow: usageHighlight ? '0 0 0 3px rgba(217, 70, 239, 0.18)' : 'none',
+          }}
         >
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <h4

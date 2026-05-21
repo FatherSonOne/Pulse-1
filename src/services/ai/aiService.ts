@@ -67,7 +67,15 @@ export async function invokeAI(
   });
 
   if (error) {
-    // FunctionsHttpError exposes .context.response for non-2xx responses
+    // FunctionsHttpError exposes .context.response for non-2xx responses,
+    // but supabase-js will sometimes hand back a typed error with NO
+    // populated response (network blip, abort, certain edge runtime
+    // failures). In that case `status` defaults to 0 and the cap-exceeded
+    // signal would slip past — components see a generic "AI request failed
+    // (0): unknown" instead of the typed AICapExceededError that the toast
+    // and circuit-breaker both branch on. We sniff the body and the error
+    // message for the cap_exceeded / trial_expired tokens so the typed
+    // error fires even when the HTTP status didn't come through.
     const ctx = (error as { context?: { response?: Response } }).context;
     const response = ctx?.response;
     const status = response?.status ?? 0;
@@ -79,8 +87,17 @@ export async function invokeAI(
       } catch { /* not JSON */ }
     }
 
-    if (status === 402) {
-      if (body?.error === 'trial_expired') throw new AITrialExpiredError();
+    const bodyError = typeof body?.error === 'string' ? body.error : '';
+    const errMsg = (error as Error)?.message ?? '';
+    const looksCapExceeded =
+      bodyError === 'cap_exceeded' ||
+      /\bcap[_-]?exceeded\b/i.test(errMsg);
+    const looksTrialExpired =
+      bodyError === 'trial_expired' ||
+      /\btrial[_-]?expired\b/i.test(errMsg);
+
+    if (status === 402 || looksCapExceeded || looksTrialExpired) {
+      if (looksTrialExpired) throw new AITrialExpiredError();
       throw new AICapExceededError(
         (body?.usage as number) ?? 0,
         (body?.limit as number) ?? 0,
@@ -90,7 +107,7 @@ export async function invokeAI(
     if (status === 502) {
       throw new AIProviderUnavailableError((body?.detail as string) || 'unknown');
     }
-    const code = (body?.error as string) || 'unknown';
+    const code = bodyError || 'unknown';
     throw new AIRouterError(
       `AI request failed (${status}): ${code}${body?.detail ? ` — ${body.detail}` : ''}`,
       code,
@@ -116,7 +133,15 @@ export async function invokeAI(
 export async function invokeAIPrompt(
   task: AITask,
   prompt: string,
-  opts: InvokeAIOptions & { systemPrompt?: string; jsonMode?: boolean; temperature?: number },
+  opts: InvokeAIOptions & {
+    systemPrompt?: string;
+    jsonMode?: boolean;
+    temperature?: number;
+    /** Cap the model's output. Inline UI (Smart Compose, quick suggestions)
+     *  should set this aggressively low; without it the task default applies
+     *  (1024-4096 tokens) and a single keystroke can stream back a paragraph. */
+    maxOutputTokens?: number;
+  },
 ): Promise<string> {
   const result = await invokeAI(
     task,
@@ -125,6 +150,7 @@ export async function invokeAIPrompt(
       systemPrompt: opts.systemPrompt,
       jsonMode: opts.jsonMode,
       temperature: opts.temperature,
+      maxOutputTokens: opts.maxOutputTokens,
     },
     opts, // forwards modelOverride if present
   );

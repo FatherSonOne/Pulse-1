@@ -10,7 +10,6 @@ import {
   signUpWithEmail,
   logoutUser,
   connectProvider,
-  syncGoogleContacts,
   revokeGoogleAccess,
   disconnectGoogleAccount,
   forceRefreshSession,
@@ -42,9 +41,6 @@ interface AuthContextType {
   // Session management
   refreshSession: () => Promise<boolean>;
   checkSessionValid: () => Promise<boolean>;
-
-  // Data sync
-  syncContacts: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -174,15 +170,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const handleSyncContacts = async (): Promise<void> => {
-    try {
-      await syncGoogleContacts();
-    } catch (error) {
-      console.error('[AuthProvider] Sync contacts failed:', error);
-      throw error;
-    }
-  };
-
   const handleDisconnectGoogle = async (): Promise<void> => {
     try {
       await disconnectGoogleAccount();
@@ -239,7 +226,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     revokeGoogleAccess: handleRevokeGoogleAccess,
     refreshSession: handleRefreshSession,
     checkSessionValid: handleCheckSessionValid,
-    syncContacts: handleSyncContacts,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

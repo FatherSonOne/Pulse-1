@@ -1,52 +1,48 @@
 // ── Landing Page Static Data ──────────────────────────────────────────────────
 // Extracted from the god component to keep LandingPage.tsx focused on rendering.
 
-export const STATS = [
-  { value: '8', label: 'Voice Modes' },
-  { value: '7+', label: 'AI Models' },
-  { value: '4', label: 'CRM Integrations' },
-  { value: '8', label: 'War Room Commands' },
-  { value: '5', label: 'Platform Syncs' },
-  { value: '12', label: 'Archive Types' },
-  { value: '14', label: 'Settings Panels' },
-];
+// Hero stats strip was retired 2026-05-14 (impeccable hero-metric template ban).
+// The numbers live in the prose index strip directly below the hero now —
+// see "Index strip" comment in LandingPage.tsx. Counts retained here as a
+// reference doc against the shipped code:
+//   - 5 Relay peers (RelayView in Relay.tsx); Triage is a stream, not a peer
+//   - 6 communication surfaces (Messages, Email, SMS, Relay, Glimpse, Summit)
+//   - 7+ AI Models (Gemini, Claude, GPT-4o, Whisper, AssemblyAI, ElevenLabs, GPT-realtime)
+//   - 4 CRMs (HubSpot, Salesforce, Pipedrive, Zoho)
+//   - 8 War Room commands (STUDIO_COMMANDS in useStudioCommands.ts)
+//   - 5 platform syncs (Slack, Gmail, Outlook+Teams, Zoom, Google Meet)
+//   - 14 settings panels (top-level src/components/settings/*.tsx)
 
-export const VOX_MODES = [
-  { icon: 'fa-solid fa-wave-square', name: 'Classic', desc: 'Push-to-talk voice with waveform visualization and playback controls' },
-  { icon: 'fa-solid fa-bolt', name: 'Quick Vox', desc: 'One-tap record and send — the fastest way to drop a voice note' },
-  { icon: 'fa-solid fa-users', name: 'Team Vox', desc: 'Channel-based voice threads with @mentions and group transcription' },
-  { icon: 'fa-solid fa-clock', name: 'Vox Drop', desc: 'Schedule voice messages to deliver at the perfect moment' },
-  { icon: 'fa-solid fa-note-sticky', name: 'Vox Notes', desc: 'Personal voice journaling with AI summary and keyword extraction' },
-  { icon: 'fa-solid fa-video', name: 'Video Vox', desc: 'Async video messages with face-cam and screen recording' },
-  { icon: 'fa-solid fa-radio', name: 'Pulse Radio', desc: 'Live broadcast mode — stream to your entire team simultaneously' },
-  { icon: 'fa-solid fa-comments', name: 'Voice Threads', desc: 'Async threaded voice conversations — reply on your schedule, stay in context' },
-];
+// CRM_PLATFORMS, PLATFORMS, STUDIO_FEATURES, EMAIL_FEATURES, MESSAGING_FEATURES,
+// CALENDAR_FEATURES, ANALYTICS_FEATURES were never imported by LandingPage.tsx
+// (every feature card inline-defined its data). Deleted 2026-05-14 to avoid
+// drift between landingData and inline literals. Re-add as a single source of
+// truth in a future refactor that extracts feature-section components.
 
-export const CRM_PLATFORMS = [
-  { name: 'HubSpot', color: '#f97316', icon: 'fa-brands fa-hubspot', desc: 'Bi-directional sync: tasks, deals, calls, contacts' },
-  { name: 'Salesforce', color: '#00a1e0', icon: 'fa-solid fa-cloud', desc: 'SOQL queries, opportunities, activities, leads' },
-  { name: 'Pipedrive', color: '#28a745', icon: 'fa-solid fa-filter', desc: 'Activities, deals, persons, organization tracking' },
-  { name: 'Zoho CRM', color: '#e42527', icon: 'fa-solid fa-database', desc: 'Full CRUD: tasks, deals, contacts, calls' },
-];
-
-export const PLATFORMS = [
-  { name: 'Slack', icon: 'fa-brands fa-slack', color: '#E01E5A' },
-  { name: 'Gmail', icon: 'fa-brands fa-google', color: '#EA4335' },
-  { name: 'Teams', icon: 'fa-brands fa-microsoft', color: '#6264A7' },
-  { name: 'Outlook', icon: 'fa-brands fa-microsoft', color: '#0078D4' },
-  { name: 'Zoom', icon: 'fa-solid fa-video', color: '#2D8CFF' },
-  { name: 'HubSpot', icon: 'fa-brands fa-hubspot', color: '#f97316' },
-  { name: 'Salesforce', icon: 'fa-solid fa-cloud', color: '#00a1e0' },
-  { name: 'Pipedrive', icon: 'fa-solid fa-filter', color: '#28a745' },
-  { name: 'Zoho', icon: 'fa-solid fa-database', color: '#e42527' },
-  { name: 'G Meet', icon: 'fa-brands fa-google', color: '#00897B' },
+// Relay's six surfaces, mirroring RelayView in src/components/Relay.tsx.
+// Triage is the stream-style landing view; Direct/Channel/Broadcast/Notes/Live
+// are the five audience peers. Glimpse (video) is a separate top-level section,
+// covered elsewhere on the page. Renamed from VOX_MODES on 2026-05-14 to match
+// the shipped Voxer → Relay terminology rebrand.
+//
+// The `key` field is the shipped keyboard shortcut from
+// src/hooks/useRelayKeyboardShortcuts.ts — surfaced on the landing page as a
+// JetBrains Mono badge on each peer card so the relationship between marketing
+// language and in-app behaviour is visible.
+export const RELAY_PEERS = [
+  { key: 'T', icon: 'fa-solid fa-inbox',           name: 'Triage',    desc: 'Your unified voice-message stream. Every Relay message in one prioritised list, sorted by what needs you now.' },
+  { key: 'D', icon: 'fa-solid fa-wave-square',     name: 'Direct',    desc: 'One-to-one voice with waveform visualisation, playback control, and AI transcription on every message.' },
+  { key: 'C', icon: 'fa-solid fa-users',           name: 'Channel',   desc: 'Channel-based voice threads with @mentions, group transcription, and topic scoping.' },
+  { key: 'B', icon: 'fa-solid fa-tower-broadcast', name: 'Broadcast', desc: 'Push-to-air for the whole team. Stream a voice update to everyone at once with transcript on arrival.' },
+  { key: 'N', icon: 'fa-solid fa-note-sticky',     name: 'Notes',     desc: 'Personal voice journaling with AI summary, keyword extraction, and linked tasks.' },
+  { key: 'L', icon: 'fa-solid fa-radio',           name: 'Live',      desc: 'Persistent voice rooms. Always-on hangouts for your team, Discord-style, with playback if you miss it.' },
 ];
 
 export const FAQ_DATA = [
-  { q: "What is Pulse?", a: "Pulse is an AI-powered communication and productivity platform that combines messaging, email, voice (Relay), calendar, contacts with CRM intelligence, an AI research studio, and analytics — all in one interface. Built for high-performance teams." },
+  { q: "What is Pulse?", a: "Pulse is the AI-powered command surface for high-performance teams. It pulls messaging, email, SMS, voice (Relay's 5 peers + Triage stream), async video (Glimpse), calendar with meetings, contacts with CRM intelligence, maps and ETA sharing, an AI research studio (War Room), and analytics into one interface, organised by workspace. One operator, one screen, every signal." },
   { q: "What AI models does Pulse support?", a: "Pulse integrates multiple AI providers: Google Gemini (primary, with built-in web search grounding), Anthropic Claude, OpenAI GPT-4, ElevenLabs for voice synthesis, OpenAI Whisper and AssemblyAI for transcription. You can switch between models in Settings → AI & Intelligence." },
   { q: "What is the War Room?", a: "The War Room is your AI command center — a research and strategy workspace with 8 slash commands (/brainstorm, /decide, /analyze, /summarize, /plan, /debrief, /risks, /compare), 4 specialized AI agents, RAG document intelligence, voice agent, and session management. Upload your docs and get context-aware AI responses." },
-  { q: "What are the 8 Relay modes?", a: "Classic (push-to-talk), Quick Vox (one-tap record), Team Vox (channel-based with @mentions), Vox Drop (scheduled delivery), Vox Notes (voice journaling), Video Vox (async video messages), Pulse Radio (live broadcast), and Voice Threads (async threaded conversations). All modes include AI transcription." },
+  { q: "What are the Relay peers?", a: "Triage (your unified voice-message stream — the default landing view), Direct (one-to-one voice with AI transcription), Channel (voice threads with @mentions), Broadcast (push-to-air for the whole team), Notes (personal voice journaling), and Live (persistent voice rooms, Discord-style). Glimpse — async video messaging with face-cam and screen recording — is a separate top-level section. AI transcription runs on every voice and video message." },
   { q: "Which CRM platforms does Pulse integrate with?", a: "Pulse offers 4 native CRM integrations: HubSpot, Salesforce, Pipedrive, and Zoho CRM. Additionally, Pulse includes Logos Vision — a built-in relationship intelligence system with 0-100 health scoring and bidirectional sync." },
   { q: "What platforms are in the Unified Inbox?", a: "Pulse syncs with Gmail, Slack, Microsoft Outlook/Teams, Zoom, and Google Meet. Each platform connects via OAuth in Settings → Integrations." },
   { q: "Is my data encrypted?", a: "Yes. Pulse stores all data with AES-256 encryption at rest and TLS in transit. Support staff cannot read your message content — only metadata, with your explicit written consent." },
@@ -71,8 +67,10 @@ export const SHORTCUT_GROUPS = [
   ]},
   { label: 'Relay', icon: 'fa-solid fa-microphone', shortcuts: [
     { keys: ['Space'], desc: 'Toggle recording' },
-    { keys: ['1–8'], desc: 'Switch Vox mode' },
-    { keys: ['Ctrl', 'S'], desc: 'AI summarize' },
+    { keys: ['T'], desc: 'Triage stream' },
+    { keys: ['D', 'C', 'B'], desc: 'Direct / Channel / Broadcast' },
+    { keys: ['N', 'L'], desc: 'Notes / Live' },
+    { keys: ['Ctrl', 'S'], desc: 'AI summarise' },
     { keys: ['Esc'], desc: 'Cancel recording' },
   ]},
   { label: 'Email', icon: 'fa-solid fa-envelope', shortcuts: [
@@ -98,80 +96,14 @@ export const SHORTCUT_GROUPS = [
   ]},
 ];
 
-export const STUDIO_FEATURES = [
-  {
-    title: '8 Slash Commands',
-    desc: '/brainstorm, /decide, /analyze, /summarize, /plan, /debrief, /risks, /compare — structured AI outputs for every workflow.',
-    tags: ['Brainstorm', 'Decide', 'Analyze', 'Plan'],
-  },
-  {
-    title: '4 AI Agent Personas',
-    desc: '@general for balanced analysis, @skeptic to challenge assumptions, @scribe for documentation, @deep-diver for thorough research.',
-    tags: ['General', 'Skeptic', 'Scribe', 'Deep-Diver'],
-  },
-  {
-    title: 'RAG Document Intelligence',
-    desc: 'Upload PDFs, docs, and data sources. Every AI response draws from your uploaded context — grounded, not hallucinated.',
-    tags: ['PDF Upload', 'Vector Search', 'Context-Aware'],
-  },
-  {
-    title: 'Realtime Voice Agent',
-    desc: 'Have live voice conversations with the AI agent. Ask questions, dictate, and get spoken responses in real time.',
-    tags: ['Voice Input', 'Live Response', 'Hands-Free'],
-  },
-  {
-    title: 'Session Management',
-    desc: 'Save sessions by project. Revisit past research, export to Markdown or PDF, and collaborate with team members in real time.',
-    tags: ['Projects', 'Export', 'Collaboration'],
-  },
-  {
-    title: 'Artifact Rendering',
-    desc: 'Tables, code blocks, comparison matrices, and structured outputs render inline — not just text walls.',
-    tags: ['Tables', 'Code', 'Charts'],
-  },
-];
-
-export const EMAIL_FEATURES = [
-  { title: 'Gmail Integration', desc: 'Real-time bidirectional sync with full thread support, labels, filters, snooze, and schedule-send.', tags: ['OAuth', 'Realtime Sync', 'Labels'] },
-  { title: 'AI Daily Briefing', desc: 'Every morning, get an AI-generated summary of priorities, pending decisions, urgent threads, and upcoming meetings.', tags: ['Priorities', 'Decisions', 'Meetings'] },
-  { title: 'Smart Compose & Templates', desc: 'AI-assisted email drafting with reusable templates, tone adjustment, and signature management.', tags: ['AI Draft', 'Templates', 'Signatures'] },
-  { title: 'Campaign Builder', desc: 'Create email campaigns with audience segmentation, template editor, and delivery scheduling.', tags: ['Segments', 'Scheduling', 'Analytics'] },
-  { title: 'Follow-Up Nudges', desc: 'AI detects threads going cold and nudges you before relationships slip through the cracks.', tags: ['Auto-Detect', 'Reminders', 'Health Score'] },
-  { title: 'Action Item Extraction', desc: 'AI identifies tasks, commitments, and deadlines buried in email threads and surfaces them as actionable items.', tags: ['Tasks', 'Deadlines', 'Tracking'] },
-];
-
-export const MESSAGING_FEATURES = [
-  { title: 'Channels & Threads', desc: 'Organized conversations with split-view layout, thread nesting, and channel categories for every team.', tags: ['Split View', 'Threads', 'Categories'] },
-  { title: 'Focus Mode', desc: 'Distraction blocking with a Pomodoro-style timer, stats dashboard, and productivity tracking.', tags: ['Timer', 'Block Distractions', 'Stats'] },
-  { title: 'AI Summarization', desc: 'Missed a long thread? Get an instant AI summary of key points, decisions, and action items.', tags: ['Key Points', 'Decisions', 'Actions'] },
-  { title: 'Smart Auto-Response', desc: 'AI drafts contextual replies based on conversation history and your communication style.', tags: ['Context-Aware', 'Style Match', 'Quick Reply'] },
-  { title: 'Rich Text & Reactions', desc: 'Bold, code blocks, links, file attachments, emoji reactions, stars, and @mentions built in.', tags: ['Markdown', 'Reactions', 'Mentions'] },
-  { title: 'Unified Inbox', desc: 'Slack, Gmail, Outlook, and internal messages flow into one prioritized stream. No tab-switching.', tags: ['Slack', 'Gmail', 'Outlook'] },
-];
-
-export const CALENDAR_FEATURES = [
-  { title: 'Dual Calendar Sync', desc: 'Bidirectional sync with Google Calendar and Outlook. Changes in Pulse reflect instantly in your native calendar.', tags: ['Google', 'Outlook', 'Realtime'] },
-  { title: 'AI Calendar Assistant', desc: 'Natural language scheduling, smart insights, analytics, and goal tracking — all in a 4-tab AI panel.', tags: ['NLP', 'Insights', 'Goals'] },
-  { title: 'Booking Pages', desc: 'Share availability links for easy scheduling. Invitees pick a slot, and the event creates itself.', tags: ['Share Link', 'Auto-Create', 'Availability'] },
-  { title: 'Video Conferencing', desc: 'One-click links for Pulse Meet, Google Meet, Zoom, or Microsoft Teams attached to any event.', tags: ['Zoom', 'Meet', 'Teams'] },
-  { title: 'Conflict Detection', desc: 'Smart alerts when events overlap, double-book, or clash with focus time blocks.', tags: ['Overlap Alert', 'Focus Time', 'Auto-Suggest'] },
-  { title: 'Meeting Prep', desc: 'AI-generated briefings before every meeting — attendee context, agenda items, and past discussion notes.', tags: ['Briefing', 'Attendees', 'Context'] },
-];
-
-export const ANALYTICS_FEATURES = [
-  { title: 'Predictive Analytics', desc: 'AI forecasts trends and flags risks before they become problems.', tags: ['Forecasting', 'Risk Alerts'] },
-  { title: 'Sentiment Analysis', desc: 'Track communication health, tone shifts, and relationship strength across your network.', tags: ['Tone', 'Health Score'] },
-  { title: 'Team Velocity', desc: 'Monitor productivity, task completion rates, conflicts, and kudos in real time.', tags: ['Productivity', 'Conflicts', 'Kudos'] },
-  { title: '8 View Modes', desc: 'Overview, velocity, sentiment, network, relationships, conflicts, kudos, and predictions — all interactive.', tags: ['Dashboards', 'Export'] },
-];
-
 // ── Pricing — Pulse Team tier ───────────────────────────────────────────────
-// Keep in sync with src/components/billing/TrialExpiredBlock.tsx FEATURES.
+// TrialExpiredBlock.tsx imports this list directly — single source of truth.
 export const PULSE_TEAM_FEATURES = [
-  'Unlimited team seats',
-  'All 6 Relay modes (Quick, Team, Drop, Threads, Radio, Notes)',
-  'Video Vox + Studio RAG',
-  'Email, calendar, messaging, meetings',
+  'Unlimited team seats and workspaces',
+  'All 5 Relay peers + Triage stream',
+  'Glimpse async video + Studio RAG',
+  'Email, calendar, messaging, meetings, SMS',
+  'Maps with geofence alerts and ETA sharing',
   'Advanced analytics + full ecosystem bridge',
   '2,000 AI messages / 500 SMS / 50 GB storage / mo',
 ];
@@ -185,20 +117,22 @@ export const PULSE_TEAM_PRICING = {
 
 // ── Pricing — Pulse Growth tier ─────────────────────────────────────────────
 // 5× Team caps for AI/SMS/Relay, 10× storage, plus premium-only unlocks.
+// Prices wired to Stripe test-mode product (price_1TWqj0Gb3AGXe9w8QMGNRIek monthly,
+// price_1TWqj1Gb3AGXe9w8oCk374f5 yearly). Keep in sync with the plans table.
 export const PULSE_GROWTH_FEATURES = [
   'Everything in Team, plus:',
   '10,000 AI messages / 2,500 SMS / 500 GB / 2,500 Relay min / mo',
-  'SSO / SAML — coming soon',
+  'SSO / SAML, coming soon',
   'API access with rate-limited keys',
   'Audit log retention: 365 days',
-  'Custom branding on emails & exports',
+  'Custom branding on emails and exports',
   'Advanced AI budget controls (per-user caps)',
-  'Priority support — 1 business day SLA',
+  'Priority support, 1 business day SLA',
 ];
 
 export const PULSE_GROWTH_PRICING = {
-  monthly: 300,      // $/mo billed monthly
-  yearly: 3000,      // $/yr billed annually (2 months free vs. monthly)
-  yearlyMonthlyEquiv: Math.round(3000 / 12), // ≈ $250/mo display value
+  monthly: 249,      // $/mo billed monthly (Stripe price_1TWqj0Gb3AGXe9w8QMGNRIek)
+  yearly: 2490,      // $/yr billed annually, 2 months free vs. monthly (price_1TWqj1Gb3AGXe9w8oCk374f5)
+  yearlyMonthlyEquiv: Math.round(2490 / 12), // ≈ $208/mo display value
   trialDays: 30,
 };

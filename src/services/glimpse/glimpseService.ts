@@ -139,6 +139,9 @@ class GlimpseService {
     );
 
     // Step 2: full conversations + last-message embed, ordered server-side.
+    // Embed includes AI peek fields (summary / action_items / processing_status)
+    // so the Triage Cockpit conversations list can render its 2-line summary
+    // peek + action-count pill + transcribing skeleton without a per-row fetch.
     const { data: convs, error: convError } = await supabase
       .from('video_vox_conversations')
       .select(`
@@ -147,7 +150,10 @@ class GlimpseService {
           caption,
           sender_name,
           duration,
-          thumbnail_url
+          thumbnail_url,
+          summary,
+          action_items,
+          processing_status
         )
       `)
       .in('id', conversationIds)
@@ -181,10 +187,7 @@ class GlimpseService {
         avatarColor: string;
       }>;
       const mapped = this.mapDbToConversation(conv, participants);
-      // Attach unread for completeness — currently the type doesn't carry it,
-      // but consumers may extend GlimpseConversation later.
-      (mapped as GlimpseConversation & { unreadCount?: number }).unreadCount =
-        unreadByConv.get(conv.id) ?? 0;
+      mapped.unreadCount = unreadByConv.get(conv.id) ?? 0;
       return mapped;
     });
   }
@@ -1430,6 +1433,7 @@ Return as JSON.`,
     avatarColor: string;
   }>): GlimpseConversation {
     const lastMessage = db.video_vox_messages;
+    const actionItems: string[] | undefined = lastMessage?.action_items;
 
     return {
       id: db.id,
@@ -1442,6 +1446,9 @@ Return as JSON.`,
       lastMessageSender: lastMessage?.sender_name,
       lastMessageDuration: lastMessage?.duration,
       lastMessageThumbnail: lastMessage?.thumbnail_url,
+      lastMessageSummary: lastMessage?.summary,
+      lastMessageActionCount: Array.isArray(actionItems) ? actionItems.length : undefined,
+      lastMessageProcessingStatus: lastMessage?.processing_status,
       createdBy: db.created_by,
       createdAt: new Date(db.created_at),
       updatedAt: new Date(db.updated_at || db.created_at),

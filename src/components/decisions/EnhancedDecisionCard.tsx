@@ -8,6 +8,7 @@ import { consensusDetectorService } from '../../services/consensusDetectorServic
 import { CheckCircle, Clock, AlertCircle, TrendingUp, Bell, Sparkles, ListTodo, AlertTriangle, Info } from 'lucide-react';
 import { TaskExtractionModal, ExtractedTask } from '../tasks/TaskExtractionModal';
 import { notificationService } from '../../services/notificationService';
+import PlacePicker from '../map/PlacePicker';
 import '../DecisionCard.css';
 import './EnhancedDecisionCard.css';
 
@@ -508,6 +509,18 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Decision venue / geofence — attaches a place via entity_places
+          with role='venue'. Geofence enabled per-place via the picker's
+          toggle/radius slider so arriving at the venue surfaces a Today
+          feed item with decision context. */}
+      <div className="mt-3" style={{ maxWidth: 360 }}>
+        <PlacePicker
+          entityType="decision"
+          entityId={decision.id}
+          role="venue"
+        />
+      </div>
 
       {/* AI Action Buttons */}
       <div className="decision-actions" role="group" aria-label="Decision actions">

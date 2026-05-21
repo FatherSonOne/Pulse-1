@@ -4,7 +4,14 @@
  */
 
 import { supabase } from './supabase';
-import { Contact } from '../types';
+import { Contact, ContactType } from '../types';
+
+export class WorkspaceNotBootstrappedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'WorkspaceNotBootstrappedError';
+  }
+}
 
 const GOOGLE_PEOPLE_API = 'https://people.googleapis.com/v1';
 
@@ -82,6 +89,12 @@ interface PeopleConnectionsResponse {
   nextPageToken?: string;
   totalPeople?: number;
   totalItems?: number;
+}
+
+export interface ImportSelectedLabelsResult {
+  imported: number;
+  skipped: number;
+  rejectedFilteredOut: number;
 }
 
 // Avatar color palette
@@ -181,13 +194,31 @@ const getGoogleAccessToken = async (): Promise<string | null> => {
   return null;
 };
 
-// Refresh token if needed
+// Refresh token if needed.
+//
+// Refresh strategy (cheapest-first, multi-stage failsafe):
+//
+//   1. If session.provider_token is present, use it (fast path).
+//   2. Otherwise call supabase.auth.refreshSession() FIRST -- Supabase
+//      Auth knows how to refresh OAuth provider tokens against the
+//      provider's token endpoint server-side, and the refreshed
+//      session re-populates provider_token. This is the no-backend
+//      path that works in any environment.
+//   3. If supabase.auth.refreshSession() returns a session WITHOUT a
+//      provider_token (Google didn't issue a refresh token at
+//      original sign-in, or it has been revoked), fall back to the
+//      Pulse backend's /api/google/refresh-token endpoint, which can
+//      mint a new access token using the stored refresh token +
+//      client_secret. The backend is optional (default
+//      http://localhost:3003) -- if VITE_BACKEND_URL isn't set, skip
+//      it cleanly instead of hammering a port that isn't listening.
+//   4. Return null. Callers throw GOOGLE_CONTACTS_NOT_CONNECTED, which
+//      the wizard catches into the in-modal reconnect banner.
 const refreshTokenIfNeeded = async (): Promise<string | null> => {
   const { data: { session }, error } = await supabase.auth.getSession();
 
   if (error || !session) {
-    // Use debug-level - this is expected when user isn't logged in
-    console.debug('[Google Contacts Debug] No session found (expected when not authenticated)');
+    console.debug('[Google Contacts] No Supabase session; cannot refresh Google token');
     return null;
   }
 
@@ -195,27 +226,58 @@ const refreshTokenIfNeeded = async (): Promise<string | null> => {
     return session.provider_token;
   }
 
+  // Stage 2: Supabase-native refresh. Cheap, server-side, no extra
+  // backend dependency.
+  try {
+    const refreshResult = await supabase.auth.refreshSession();
+    if (!refreshResult.error && refreshResult.data.session?.provider_token) {
+      console.debug('[Google Contacts] Refreshed via supabase.auth.refreshSession()');
+      return refreshResult.data.session.provider_token;
+    }
+    if (refreshResult.error) {
+      console.warn('[Google Contacts] Supabase refreshSession() failed:', refreshResult.error.message);
+    }
+  } catch (e) {
+    console.warn('[Google Contacts] Supabase refreshSession() threw:', e);
+  }
+
+  // Stage 3: Pulse backend refresh. Only attempt when VITE_BACKEND_URL
+  // is explicitly configured -- otherwise the default localhost:3003
+  // hammers a port that's typically unreachable.
+  const backendConfigured = !!import.meta.env.VITE_BACKEND_URL;
   const refreshToken = (session as any)?.provider_refresh_token;
-  if (refreshToken) {
+  if (backendConfigured && refreshToken) {
     const refreshed = await refreshGoogleAccessToken(refreshToken);
     if (refreshed) {
+      console.debug('[Google Contacts] Refreshed via Pulse backend endpoint');
       return refreshed;
     }
+  } else if (!refreshToken) {
+    console.warn(
+      '[Google Contacts] No provider_refresh_token in session. ' +
+      'Original sign-in did not request offline access, or Google revoked ' +
+      'the grant. User must reconnect via Settings > Google Services.'
+    );
   }
 
-  const refreshResult = await supabase.auth.refreshSession();
-  if (refreshResult.error) {
-    console.error('[Google Contacts] Failed to refresh session:', refreshResult.error);
-    return null;
-  }
-
-  return refreshResult.data.session?.provider_token || null;
+  return null;
 };
 
 // Generate consistent avatar color from email
 const getAvatarColor = (email: string): string => {
   const colorIndex = email.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % AVATAR_COLORS.length;
   return AVATAR_COLORS[colorIndex];
+};
+
+const stripContactGroupPrefix = (labelId: string): string => labelId.replace(/^contactGroups\//, '');
+
+const getPersonContactGroupIds = (person: GooglePerson): string[] => {
+  const ids = person.memberships
+    ?.map(membership => membership.contactGroupMembership?.contactGroupId)
+    .filter((id): id is string => Boolean(id))
+    .map(stripContactGroupPrefix) ?? [];
+
+  return Array.from(new Set(ids));
 };
 
 // Convert Google Person to Contact
@@ -279,41 +341,71 @@ const googlePersonToContact = (person: GooglePerson): Contact => {
     status: 'offline',
     source: 'google',
     lastSynced: new Date(),
-    groups: [],
+    groups: getPersonContactGroupIds(person),
   };
 };
 
 class GoogleContactsService {
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
+  /**
+   * Dedup concurrent refresh attempts. Without this, opening the
+   * wizard (which fires getContactGroups + getAllContacts in parallel)
+   * triggers two simultaneous refresh chains, both racing to update
+   * accessToken / tokenExpiry.
+   */
+  private inFlightRefresh: Promise<string | null> | null = null;
 
-  // Get valid token (cached or refreshed)
+  private async resolveFreshToken(): Promise<string | null> {
+    if (this.inFlightRefresh) return this.inFlightRefresh;
+    this.inFlightRefresh = (async () => {
+      try {
+        let token = await getGoogleAccessToken();
+        if (!token) token = await refreshTokenIfNeeded();
+        return token;
+      } finally {
+        this.inFlightRefresh = null;
+      }
+    })();
+    return this.inFlightRefresh;
+  }
+
+  // Get valid token (cached or refreshed). 5-minute safety margin so
+  // tokens close to expiry trigger a refresh before the next request
+  // rather than after a 401 round-trip.
   private async getValidToken(): Promise<string> {
-    // Check if we have a valid cached token
-    if (this.accessToken && Date.now() < this.tokenExpiry) {
+    const SAFETY_MS = 5 * 60 * 1000;
+    if (this.accessToken && Date.now() < this.tokenExpiry - SAFETY_MS) {
       return this.accessToken;
     }
 
-    // Try to get token from session
-    let token = await getGoogleAccessToken();
-
-    if (!token) {
-      // Try refreshing the session
-      token = await refreshTokenIfNeeded();
-    }
+    const token = await this.resolveFreshToken();
 
     if (!token) {
       const error = new Error('GOOGLE_CONTACTS_NOT_CONNECTED');
       (error as any).code = 'GOOGLE_CONTACTS_NOT_CONNECTED';
-      (error as any).userMessage = 'Click "Connect" to enable Google Contacts sync';
+      (error as any).userMessage = 'Reconnect Google Contacts in Settings.';
       throw error;
     }
 
     this.accessToken = token;
-    // Cache for 50 minutes (tokens typically expire in 1 hour)
-    this.tokenExpiry = Date.now() + 50 * 60 * 1000;
-
+    // Cache for 55 minutes (Google access tokens expire in ~1 hour).
+    // 5-minute safety margin above ensures refresh kicks in before
+    // the token is actually dead on the wire.
+    this.tokenExpiry = Date.now() + 55 * 60 * 1000;
     return token;
+  }
+
+  /**
+   * Public: nuke the cached token so the next request forces a fresh
+   * resolve. Used after the wizard surfaces the reconnect banner --
+   * once the user reconnects, the next fetch should pick up the new
+   * provider_token immediately.
+   */
+  invalidateTokenCache(): void {
+    this.accessToken = null;
+    this.tokenExpiry = 0;
+    this.inFlightRefresh = null;
   }
 
   // Make authenticated API request
@@ -334,13 +426,20 @@ class GoogleContactsService {
       console.error('Google People API error:', errorData);
 
       if (response.status === 401) {
-        // Token expired, clear cache and retry once
-        this.accessToken = null;
-        this.tokenExpiry = 0;
-        const newToken = await refreshTokenIfNeeded();
-        if (newToken) {
-          return this.apiRequest(endpoint, options);
+        // Token expired or revoked on Google's side mid-request.
+        // Wipe the cache so the recursive retry forces a fresh
+        // resolve through the multi-stage failsafe in
+        // refreshTokenIfNeeded. Use a one-shot retry guard to
+        // avoid infinite recursion if refresh keeps yielding a
+        // dead token.
+        const alreadyRetried = (options as RequestInit & { __retried?: boolean }).__retried;
+        if (alreadyRetried) {
+          const error = new Error('Google Contacts session expired. Reconnect to continue.');
+          (error as any).code = 'GOOGLE_CONTACTS_SESSION_EXPIRED';
+          throw error;
         }
+        this.invalidateTokenCache();
+        return this.apiRequest(endpoint, { ...options, __retried: true } as RequestInit);
       }
 
       if (response.status === 403) {
@@ -434,7 +533,13 @@ class GoogleContactsService {
     }
   }
 
-  // Get contact groups (labels)
+  /**
+   * Get contact groups (labels).
+   *
+   * Google returns full resource names (`contactGroups/<id>`), but Pulse stores
+   * and compares the bare `<id>` form everywhere downstream, including
+   * `rejected_import_labels.label_id`.
+   */
   async getContactGroups(): Promise<Array<{ id: string; name: string; memberCount: number }>> {
     try {
       const response = await this.apiRequest<{
@@ -468,3 +573,199 @@ class GoogleContactsService {
 
 // Export singleton instance
 export const googleContactsService = new GoogleContactsService();
+
+export const importSelectedLabels = async (
+  labelIds: string[],
+  workspaceId: string
+): Promise<ImportSelectedLabelsResult> => {
+  const canonicalLabelIds = Array.from(new Set(labelIds.map(stripContactGroupPrefix)));
+  if (canonicalLabelIds.length === 0) {
+    return { imported: 0, skipped: 0, rejectedFilteredOut: 0 };
+  }
+
+  const { data: hasAccess, error: accessError } = await supabase.rpc('user_has_workspace_access', {
+    ws_id: workspaceId,
+  });
+
+  if (accessError) {
+    throw accessError;
+  }
+
+  if (!hasAccess) {
+    throw new WorkspaceNotBootstrappedError(
+      `Workspace not bootstrapped or user not a member: ${workspaceId}`
+    );
+  }
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) {
+    throw userError;
+  }
+
+  if (!user) {
+    throw new Error('Cannot import Google contacts without an authenticated user');
+  }
+
+  const { data: rejectedRows, error: rejectedError } = await supabase
+    .from('rejected_import_labels')
+    .select('label_id')
+    .eq('user_id', user.id)
+    .eq('workspace_id', workspaceId)
+    .eq('source', 'google');
+
+  if (rejectedError) {
+    throw rejectedError;
+  }
+
+  const rejectedLabelIds = new Set((rejectedRows ?? []).map(row => row.label_id));
+  const survivingLabelIds = canonicalLabelIds.filter(labelId => !rejectedLabelIds.has(labelId));
+  const rejectedFilteredOut = canonicalLabelIds.length - survivingLabelIds.length;
+
+  if (survivingLabelIds.length === 0) {
+    return { imported: 0, skipped: 0, rejectedFilteredOut };
+  }
+
+  const survivingLabelSet = new Set(survivingLabelIds);
+  const allContacts = await googleContactsService.getAllContacts();
+  const matchingContacts = allContacts
+    .map(contact => ({
+      contact,
+      importLabels: (contact.groups ?? []).filter(groupId => survivingLabelSet.has(groupId)),
+    }))
+    .filter(({ importLabels }) => importLabels.length > 0);
+
+  if (matchingContacts.length === 0) {
+    return { imported: 0, skipped: allContacts.length, rejectedFilteredOut };
+  }
+
+  const rows = matchingContacts.map(({ contact, importLabels }) => ({
+    user_id: user.id,
+    platform: 'google',
+    external_id: contact.id.replace(/^google_/, ''),
+    name: contact.name,
+    role: contact.role || 'Contact',
+    company: contact.company,
+    avatar_color: contact.avatarColor,
+    status: contact.status,
+    email: contact.email,
+    phone: contact.phone,
+    address: contact.address,
+    notes: contact.notes,
+    website: contact.website,
+    birthday: contact.birthday,
+    groups: contact.groups ?? [],
+    source: 'google',
+    last_synced: new Date().toISOString(),
+    import_source: 'google',
+    import_label: importLabels,
+  }));
+
+  const { error: upsertError } = await supabase
+    .from('contacts')
+    .upsert(rows, { onConflict: 'user_id,platform,external_id' });
+
+  if (upsertError) {
+    throw upsertError;
+  }
+
+  return {
+    imported: rows.length,
+    skipped: allContacts.length - rows.length,
+    rejectedFilteredOut,
+  };
+};
+
+export interface ContactImportAssignment {
+  contact: Contact;
+  contactType: ContactType;
+}
+
+/**
+ * Phase D import path. Caller supplies a pre-staged set of Google contacts
+ * each tagged with the Pulse-taxonomy contactType the operator picked in the
+ * Tag step of ConnectContactsModal. Bypasses label-based filtering entirely.
+ */
+export const importSelectedContacts = async (
+  assignments: ContactImportAssignment[],
+  workspaceId: string
+): Promise<ImportSelectedLabelsResult> => {
+  if (assignments.length === 0) {
+    return { imported: 0, skipped: 0, rejectedFilteredOut: 0 };
+  }
+
+  const { data: hasAccess, error: accessError } = await supabase.rpc('user_has_workspace_access', {
+    ws_id: workspaceId,
+  });
+  if (accessError) throw accessError;
+  if (!hasAccess) {
+    throw new WorkspaceNotBootstrappedError(
+      `Workspace not bootstrapped or user not a member: ${workspaceId}`
+    );
+  }
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user) {
+    throw new Error('Cannot import Google contacts without an authenticated user');
+  }
+
+  const rows = assignments.map(({ contact, contactType }) => ({
+    user_id: user.id,
+    platform: 'google',
+    external_id: contact.id.replace(/^google_/, ''),
+    name: contact.name,
+    role: contact.role || 'Contact',
+    company: contact.company,
+    avatar_color: contact.avatarColor,
+    status: contact.status,
+    email: contact.email,
+    phone: contact.phone,
+    address: contact.address,
+    notes: contact.notes,
+    website: contact.website,
+    birthday: contact.birthday,
+    groups: contact.groups ?? [],
+    source: 'google',
+    last_synced: new Date().toISOString(),
+    import_source: 'google',
+    import_label: contact.groups ?? [],
+    contact_type: contactType,
+  }));
+
+  const { error: upsertError } = await supabase
+    .from('contacts')
+    .upsert(rows, { onConflict: 'user_id,platform,external_id' });
+
+  if (upsertError) throw upsertError;
+
+  return {
+    imported: rows.length,
+    skipped: 0,
+    rejectedFilteredOut: 0,
+  };
+};
+
+/**
+ * Phase D start-over path. Hard-deletes every contact row whose
+ * source = 'google' for the current user. Intended for the operator
+ * who landed in Pulse with a pre-Phase-D bulk import and wants to
+ * re-import selectively via ConnectContactsModal. Manual ('local')
+ * and Logos Vision ('vision') rows are untouched.
+ */
+export const wipeGoogleImportedContacts = async (): Promise<{ deleted: number }> => {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user) {
+    throw new Error('Not authenticated');
+  }
+
+  const { count, error } = await supabase
+    .from('contacts')
+    .delete({ count: 'exact' })
+    .eq('user_id', user.id)
+    .eq('source', 'google');
+
+  if (error) throw error;
+
+  return { deleted: count ?? 0 };
+};

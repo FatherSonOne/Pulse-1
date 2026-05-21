@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useWorkspace } from '../../contexts/WorkspaceContext';
+import toast from 'react-hot-toast';
+import { useWorkspace, useWorkspaceMutationLock } from '../../contexts/WorkspaceContext';
 import { useAuth } from '../../hooks/useAuth';
 import { Workspace, workspaceService } from '../../services/workspaceService';
 import { DeleteWorkspaceDialog } from '../settings/DeleteWorkspaceDialog';
@@ -57,6 +58,9 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
     softDeleteWorkspace,
     hardDeleteWorkspace,
   } = useWorkspace();
+  // Mutation lock — when held, block workspace switching so an in-flight
+  // Team Settings mutation can't return into a different workspace's context.
+  const { isMutating } = useWorkspaceMutationLock();
 
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -149,6 +153,10 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
   }, [isOpen, showCreateForm, showInviteForm]);
 
   const handleSwitch = (ws: Workspace) => {
+    if (isMutating) {
+      toast('Finish the current change before switching workspaces', { icon: '⏳' });
+      return;
+    }
     switchWorkspace(ws.id);
     setIsOpen(false);
   };

@@ -1,0 +1,59 @@
+/**
+ * PulseComposer — module-scoped styles
+ *
+ * The compose bar relies on Tailwind for layout + color; this stylesheet
+ * exists only for things Tailwind can't easily express:
+ *
+ *   1. Smart Compose ghost-text overlay. The textarea sits on top of a
+ *      visually-identical mirror <pre> that paints the suggestion in
+ *      muted ink — this is the only way to get faithful inline ghost
+ *      text without a contentEditable rewrite (which would break the
+ *      legacy MessageInput escape hatch).
+ *
+ *   2. Animations (`animate-fade-in`, `animate-slide-up`) reuse the
+ *      same keyframes MessageContextMenu adopts. Defined globally in
+ *      tailwind config — referenced here as classes only.
+ *
+ * Coral budget: ZERO. Ghost-text color is muted ink, not coral.
+ */
+
+.pulse-composer-textarea-stack {
+  position: relative;
+  display: grid;
+  /* The textarea and the ghost mirror share the same grid cell, so the
+     mirror tracks size automatically as the textarea auto-grows. */
+}
+
+.pulse-composer-textarea-stack > * {
+  grid-area: 1 / 1;
+}
+
+.pulse-composer-ghost {
+  /* The mirror shows the user's text in transparent ink (so only the
+     ghost completion appears on screen) followed by the muted suggestion. */
+  pointer-events: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: hidden;
+  /* Light: 55% transparent; dark: 50% transparent (per spec). */
+  color: color-mix(in oklch, var(--pulse-ink, currentColor), transparent 55%);
+}
+
+.dark .pulse-composer-ghost {
+  color: color-mix(in oklch, var(--pulse-ink, currentColor), transparent 50%);
+}
+
+.pulse-composer-ghost > .pulse-composer-ghost-prefix {
+  /* The portion that mirrors the user's text — invisible. */
+  color: transparent;
+}
+
+/* Hide the native resize affordance — the textarea grows automatically. */
+.pulse-composer-textarea {
+  resize: none;
+}
+
+/* Make the focus ring respect light/dark surface ink. */
+.pulse-composer-textarea:focus-visible {
+  outline: none;
+}
