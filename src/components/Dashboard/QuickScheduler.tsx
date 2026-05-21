@@ -95,8 +95,14 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
         setGoogleEvents(events);
       }
     } catch (error) {
-      // Only log error if not aborted
-      if (!signal?.aborted && error instanceof Error && error.name !== 'AbortError') {
+      // Only log error if not aborted, and skip the expected "not connected" case
+      // (session.connectedProviders.google can be stale after token revocation/sign-out)
+      if (
+        !signal?.aborted &&
+        error instanceof Error &&
+        error.name !== 'AbortError' &&
+        (error as { code?: string }).code !== 'GOOGLE_CALENDAR_NOT_CONNECTED'
+      ) {
         console.error('Failed to load Google Calendar events:', error);
       }
     } finally {
