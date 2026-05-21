@@ -155,6 +155,7 @@ browser-extension/src/config.js
 !.claude/commands/**/*.md
 !.claude/skills/**/*.md
 !.claude/prompts/**/*.md
+!docs/reports/*.md
 docs/*.md
 # But allowlist the doc patterns we hand-author and keep under review.
 # Match the existing naming conventions in docs/ (redesign specs,

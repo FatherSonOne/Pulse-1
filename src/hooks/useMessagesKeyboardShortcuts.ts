@@ -10,6 +10,9 @@ interface UseMessagesKeyboardShortcutsArgs<T extends ConversationLike> {
   onSelectConversation: (id: string) => void;
   onFocusComposer?: () => void;
   onToggleShortcutsOverlay: () => void;
+  /** Called with the conversation id when E is pressed. Implementations
+   *  should call messageEnhancements.toggleThreadArchive. */
+  onArchiveConversation?: (id: string) => void;
   /**
    * True when a modal/overlay owns focus (FeatureSettingsPanel, CommandPalette,
    * StatsPanel, OutcomeSetup, HandoffCard, etc.). When true the hook no-ops so
@@ -41,6 +44,7 @@ export function useMessagesKeyboardShortcuts<T extends ConversationLike>(
     onSelectConversation,
     onFocusComposer,
     onToggleShortcutsOverlay,
+    onArchiveConversation,
     disabled = false,
   } = args;
 
@@ -108,9 +112,25 @@ export function useMessagesKeyboardShortcuts<T extends ConversationLike>(
         focus();
         return;
       }
+      if (key === 'e' || key === 'E') {
+        const archive = argsRef.current.onArchiveConversation;
+        if (!archive) return;
+        const target = cursorConvId ?? argsRef.current.activeConversationId;
+        if (!target) return;
+        e.preventDefault();
+        archive(target);
+        return;
+      }
       if (key === '?') {
         e.preventDefault();
         argsRef.current.onToggleShortcutsOverlay();
+        return;
+      }
+      if (key === 'Escape') {
+        if (cursorConvId) {
+          e.preventDefault();
+          setCursorConvId(null);
+        }
         return;
       }
     };

@@ -3217,7 +3217,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   }, []);
 
   // Phase III: J/K/Enter cursor navigation, R focus composer, ? shortcuts
-  // overlay. E (archive) deferred until Pulse archive backend exists.
   // MUST be before any early returns (Rules of Hooks).
   const keyboardDisabled =
     showFeatureSettings || showOutcomeSetup ||
@@ -3235,6 +3234,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     onFocusComposer: () => {
       const el = document.querySelector('[data-composer="pulse"]');
       if (el && 'focus' in el) (el as HTMLElement).focus();
+    },
+    onArchiveConversation: (id: string) => {
+      messageEnhancements.toggleThreadArchive(id);
     },
     onToggleShortcutsOverlay: () => setShowShortcuts(prev => !prev),
     disabled: keyboardDisabled,
