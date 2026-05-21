@@ -1,10 +1,8 @@
 /* ============================================
-   FLOATING TOOLS BUTTON - RADIAL MENU
-   Rose Theme (#f43f5e)
-   ============================================ */
-
-/* ============================================
-   CONTAINER & POSITIONING
+   FLOATING TOOLS BUTTON — flat popup variant.
+   Coral FAB in the bottom-right corner; click opens a vertical
+   list of all 11 message tools sectioned by WRITE / ANALYZE /
+   COACH. The old radial-menu + per-category drill-down is gone.
    ============================================ */
 
 .ftb-container {
@@ -20,393 +18,296 @@
 }
 
 /* ============================================
+   BACKDROP SCRIM
+   ============================================ */
+
+.ftb-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.40);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 9991;
+  pointer-events: auto;
+}
+
+/* ============================================
    FAB BUTTON
    ============================================ */
 
 .ftb-fab {
   position: relative;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
-  border: none;
-  color: white;
-  font-size: 20px;
+  width: 52px;
+  height: 52px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  border: 0;
+  color: #ffffff;
   cursor: pointer;
-  box-shadow:
-    0 8px 16px rgba(244, 63, 94, 0.3),
-    0 4px 8px rgba(0, 0, 0, 0.2);
   z-index: 10001;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: box-shadow 0.2s ease;
+  box-shadow:
+    0 4px 16px rgba(244, 63, 94, 0.30),
+    0 1px 3px rgba(0, 0, 0, 0.10);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ftb-fab:hover {
+  transform: translateY(-1px);
   box-shadow:
-    0 12px 24px rgba(244, 63, 94, 0.4),
-    0 6px 12px rgba(0, 0, 0, 0.3);
+    0 6px 20px rgba(244, 63, 94, 0.40),
+    0 2px 4px rgba(0, 0, 0, 0.12);
 }
 
-.ftb-fab:active {
+.ftb-fab:focus-visible {
+  outline: none;
   box-shadow:
-    0 4px 8px rgba(244, 63, 94, 0.3),
-    0 2px 4px rgba(0, 0, 0, 0.2);
+    0 4px 16px rgba(244, 63, 94, 0.30),
+    0 0 0 3px rgba(244, 63, 94, 0.25);
+}
+
+.ftb-fab--open {
+  background: linear-gradient(135deg, #e11d48 0%, #db2777 100%);
 }
 
 /* ============================================
-   BACKDROP
+   POPUP
    ============================================ */
 
-.ftb-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
+.ftb-popup {
+  position: absolute;
+  bottom: calc(100% + 12px);
   right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(4px);
-  z-index: 9999;
-}
-
-/* ============================================
-   RADIAL CONTAINER
-   ============================================ */
-
-.ftb-radial-container {
-  position: absolute;
-  bottom: 28px;
-  right: 28px;
-  width: 0;
-  height: 0;
-  z-index: 10000;
-}
-
-/* ============================================
-   CATEGORY BUTTONS (Radial Positioning)
-   120px radius from center
-   ============================================ */
-
-.ftb-category {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.98);
-  border: 2px solid rgba(244, 63, 94, 0.2);
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  max-height: min(70vh, 540px);
+  background: rgba(255, 255, 255, 0.97);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 16px;
-  cursor: pointer;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(20px);
-  transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  min-width: 80px;
-  transform-origin: center;
-}
-
-.dark .ftb-category {
-  background: rgba(10, 14, 20, 0.98);
-  border-color: rgba(244, 63, 94, 0.3);
-}
-
-/* Radial Positions - 90° apart */
-.ftb-category-top-right {
-  transform: translate(85px, -85px); /* 45° */
-}
-
-.ftb-category-top-left {
-  transform: translate(-165px, -85px); /* 135° */
-}
-
-.ftb-category-bottom-left {
-  transform: translate(-165px, 85px); /* 225° */
-}
-
-.ftb-category-bottom-right {
-  transform: translate(85px, 85px); /* 315° */
-}
-
-/* Hover State */
-.ftb-category:hover {
-  border-color: rgba(244, 63, 94, 0.6);
-  box-shadow: 0 12px 24px rgba(244, 63, 94, 0.3);
-  transform: translate(85px, -85px) scale(1.05);
-}
-
-.ftb-category-top-left:hover {
-  transform: translate(-165px, -85px) scale(1.05);
-}
-
-.ftb-category-bottom-left:hover {
-  transform: translate(-165px, 85px) scale(1.05);
-}
-
-.ftb-category-bottom-right:hover {
-  transform: translate(85px, 85px) scale(1.05);
-}
-
-/* Selected State */
-.ftb-category.selected {
-  border-color: #f43f5e;
-  box-shadow: 0 12px 24px rgba(244, 63, 94, 0.4);
-  background: linear-gradient(135deg,
-    rgba(244, 63, 94, 0.1) 0%,
-    rgba(236, 72, 153, 0.1) 100%);
-}
-
-.dark .ftb-category.selected {
-  background: linear-gradient(135deg,
-    rgba(244, 63, 94, 0.15) 0%,
-    rgba(236, 72, 153, 0.15) 100%);
-}
-
-/* ============================================
-   CATEGORY ICON
-   ============================================ */
-
-.ftb-category-icon {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  color: white;
-  font-size: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: all 200ms ease;
-}
-
-.ftb-category:hover .ftb-category-icon {
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-  transform: scale(1.1);
-}
-
-/* ============================================
-   CATEGORY NAME
-   ============================================ */
-
-.ftb-category-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: #18181B;
-  text-align: center;
-  letter-spacing: -0.01em;
-}
-
-.dark .ftb-category-name {
-  color: #E4E4E7;
-}
-
-/* ============================================
-   CATEGORY BADGE (Tool Count)
-   ============================================ */
-
-.ftb-category-badge {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 24px;
-  height: 24px;
-  background: linear-gradient(135deg, #f43f5e, #e11d48);
-  border: 2px solid white;
-  border-radius: 50%;
-  font-size: 11px;
-  font-weight: 700;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.4);
-}
-
-.dark .ftb-category-badge {
-  border-color: #0A0E14;
-}
-
-/* ============================================
-   TOOL SUBMENU
-   ============================================ */
-
-.ftb-submenu {
-  position: absolute;
-  bottom: -200px;
-  right: -120px;
-  width: 320px;
-  max-height: 400px;
-  background: rgba(255, 255, 255, 0.98);
-  border: 2px solid #f43f5e;
-  border-radius: 16px;
-  backdrop-filter: blur(24px);
   box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.15),
-    0 0 24px rgba(244, 63, 94, 0.2);
+    0 20px 25px -5px rgba(0, 0, 0, 0.10),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  z-index: 10000;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  z-index: 10002;
 }
 
-.dark .ftb-submenu {
-  background: rgba(10, 14, 20, 0.98);
-  border-color: rgba(244, 63, 94, 0.6);
+.dark .ftb-popup {
+  background: rgba(8, 8, 8, 0.96);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.60),
+    0 10px 20px rgba(0, 0, 0, 0.40);
 }
 
 /* ============================================
-   SUBMENU HEADER
+   POPUP HEADER
    ============================================ */
 
-.ftb-submenu-header {
-  padding: 16px;
-  color: white;
+.ftb-popup-header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.ftb-submenu-header-content {
-  display: flex;
-  align-items: center;
   gap: 12px;
-  flex: 1;
+  padding: 12px 16px;
+  background: rgba(244, 63, 94, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
 }
 
-.ftb-submenu-header i {
-  font-size: 20px;
+.dark .ftb-popup-header {
+  background: rgba(244, 63, 94, 0.05);
+  border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
-.ftb-submenu-title {
-  flex: 1;
+.ftb-popup-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #18181b;
 }
 
-.ftb-submenu-category-name {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin-bottom: 2px;
+.dark .ftb-popup-title {
+  color: #fafafa;
 }
 
-.ftb-submenu-category-desc {
-  font-size: 12px;
-  opacity: 0.9;
+.ftb-popup-title > svg {
+  color: #f43f5e;
 }
 
-.ftb-submenu-close {
-  width: 32px;
-  height: 32px;
+.ftb-popup-count {
+  color: #a1a1aa;
+  font-variant-numeric: tabular-nums;
+}
+
+.ftb-popup-close {
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  background: transparent;
+  border: 0;
+  color: #52525b;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 150ms ease;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
-.ftb-submenu-close:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
+.ftb-popup-close:hover {
+  background: rgba(244, 63, 94, 0.10);
+  color: #f43f5e;
+}
+
+.dark .ftb-popup-close {
+  color: #a1a1aa;
+}
+
+.dark .ftb-popup-close:hover {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
 }
 
 /* ============================================
-   SUBMENU TOOLS LIST
+   BODY
    ============================================ */
 
-.ftb-submenu-tools {
+.ftb-popup-body {
   flex: 1;
-  max-height: 340px;
   overflow-y: auto;
-  padding: 8px;
+  padding: 8px 12px 12px;
   scrollbar-width: thin;
   scrollbar-color: rgba(244, 63, 94, 0.3) transparent;
 }
 
-.ftb-submenu-tools::-webkit-scrollbar {
+.ftb-popup-body::-webkit-scrollbar {
   width: 6px;
 }
 
-.ftb-submenu-tools::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.ftb-submenu-tools::-webkit-scrollbar-thumb {
-  background: rgba(244, 63, 94, 0.3);
+.ftb-popup-body::-webkit-scrollbar-thumb {
+  background: rgba(244, 63, 94, 0.30);
   border-radius: 3px;
 }
 
-.ftb-submenu-tools::-webkit-scrollbar-thumb:hover {
-  background: rgba(244, 63, 94, 0.5);
+.ftb-popup-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 94, 0.50);
 }
 
 /* ============================================
-   TOOL ITEMS
+   SECTIONS
    ============================================ */
 
-.ftb-tool-item {
+.ftb-section + .ftb-section {
+  margin-top: 12px;
+}
+
+.ftb-section-label {
+  padding: 8px 6px 6px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: #a1a1aa;
+}
+
+.dark .ftb-section-label {
+  color: #71717a;
+}
+
+/* ============================================
+   TOOL ROWS
+   ============================================ */
+
+.ftb-tool-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ftb-tool {
   display: flex;
   align-items: center;
   gap: 12px;
-  width: 100%;
-  padding: 12px;
+  padding: 10px 12px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  margin-bottom: 4px;
+  text-align: left;
+  width: 100%;
+  transition: background-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.ftb-tool-item:hover {
-  background: rgba(244, 63, 94, 0.1);
-  border-color: rgba(244, 63, 94, 0.2);
+.ftb-tool:hover {
+  background: rgba(244, 63, 94, 0.06);
+  border-color: rgba(244, 63, 94, 0.12);
 }
 
-.dark .ftb-tool-item:hover {
-  background: rgba(244, 63, 94, 0.15);
-  border-color: rgba(244, 63, 94, 0.3);
+.ftb-tool:focus-visible {
+  outline: none;
+  border-color: rgba(244, 63, 94, 0.40);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.10);
+}
+
+.dark .ftb-tool:hover {
+  background: rgba(244, 63, 94, 0.10);
+  border-color: rgba(244, 63, 94, 0.20);
 }
 
 .ftb-tool-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg,
-    rgba(244, 63, 94, 0.1) 0%,
-    rgba(236, 72, 153, 0.1) 100%);
-  border-radius: 10px;
-  font-size: 18px;
+  background: rgba(244, 63, 94, 0.10);
+  border-radius: 8px;
   flex-shrink: 0;
+}
+
+.dark .ftb-tool-icon {
+  background: rgba(244, 63, 94, 0.15);
+}
+
+.ftb-tool-icon i {
+  color: #f43f5e;
+  font-size: 14px;
 }
 
 .ftb-tool-info {
   flex: 1;
   min-width: 0;
-  text-align: left;
+  display: flex;
+  flex-direction: column;
 }
 
 .ftb-tool-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #18181B;
-  margin-bottom: 2px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #18181b;
   letter-spacing: -0.01em;
 }
 
 .dark .ftb-tool-name {
-  color: #E4E4E7;
+  color: #fafafa;
 }
 
 .ftb-tool-desc {
-  font-size: 12px;
-  color: #71717A;
+  font-size: 11px;
+  color: #71717a;
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -414,140 +315,44 @@
 }
 
 .dark .ftb-tool-desc {
-  color: #A1A1AA;
+  color: #a1a1aa;
 }
 
 .ftb-tool-shortcut {
-  padding: 4px 8px;
-  background: rgba(244, 63, 94, 0.1);
-  border: 1px solid rgba(244, 63, 94, 0.2);
-  border-radius: 6px;
+  padding: 3px 7px;
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.18);
+  border-radius: 5px;
   font-size: 10px;
   font-family: 'JetBrains Mono', 'Courier New', monospace;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: 0.05em;
   color: #f43f5e;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .dark .ftb-tool-shortcut {
-  background: rgba(244, 63, 94, 0.15);
-  border-color: rgba(244, 63, 94, 0.3);
-}
-
-.ftb-tool-arrow {
-  color: #A1A1AA;
-  font-size: 12px;
-  opacity: 0;
-  transition: all 200ms ease;
-}
-
-.ftb-tool-item:hover .ftb-tool-arrow {
-  opacity: 1;
-  transform: translateX(2px);
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.25);
 }
 
 /* ============================================
-   EMPTY STATE
-   ============================================ */
-
-.ftb-submenu-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 32px;
-  text-align: center;
-}
-
-.ftb-submenu-empty i {
-  font-size: 32px;
-}
-
-/* ============================================
-   MOBILE RESPONSIVE
+   MOBILE
    ============================================ */
 
 @media (max-width: 768px) {
   .ftb-container {
-    bottom: calc(16px + env(safe-area-inset-bottom));
+    bottom: 16px;
     right: 16px;
   }
 
-  .ftb-fab {
-    width: 48px;
-    height: 48px;
-    font-size: 18px;
-  }
-
-  /* Stack categories vertically on mobile */
-  .ftb-category-top-right {
-    transform: translate(0, -140px);
-  }
-
-  .ftb-category-top-left {
-    transform: translate(-100px, -70px);
-  }
-
-  .ftb-category-bottom-left {
-    transform: translate(-100px, 70px);
-  }
-
-  .ftb-category-bottom-right {
-    transform: translate(0, 140px);
-  }
-
-  .ftb-category:hover {
-    transform: translate(0, -140px) scale(1.05);
-  }
-
-  .ftb-category-top-left:hover {
-    transform: translate(-100px, -70px) scale(1.05);
-  }
-
-  .ftb-category-bottom-left:hover {
-    transform: translate(-100px, 70px) scale(1.05);
-  }
-
-  .ftb-category-bottom-right:hover {
-    transform: translate(0, 140px) scale(1.05);
-  }
-
-  /* Full-width submenu on mobile */
-  .ftb-submenu {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    right: auto;
-    bottom: auto;
-    transform: translate(-50%, -50%);
+  .ftb-popup {
     width: calc(100vw - 32px);
-    max-width: 360px;
+    right: 0;
   }
 
   .ftb-tool-shortcut {
     display: none;
   }
-}
-
-/* ============================================
-   ANIMATIONS
-   ============================================ */
-
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow:
-      0 8px 16px rgba(244, 63, 94, 0.3),
-      0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-  50% {
-    box-shadow:
-      0 8px 16px rgba(244, 63, 94, 0.5),
-      0 4px 8px rgba(0, 0, 0, 0.2),
-      0 0 20px rgba(244, 63, 94, 0.3);
-  }
-}
-
-.ftb-fab {
-  animation: pulseGlow 3s ease-in-out infinite;
 }

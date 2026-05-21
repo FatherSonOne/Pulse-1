@@ -77,7 +77,7 @@ const ThreadSearch: React.FC<ThreadSearchProps> = ({
           onFocus={onFocus}
           onBlur={onBlur}
           placeholder={placeholder}
-          className="w-full pl-10 pr-10 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          className="w-full pl-10 pr-10 py-2 rounded-lg border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] bg-white dark:bg-[rgba(255,255,255,0.055)] text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] focus:border-transparent transition-all"
           aria-label="Search threads"
           aria-describedby="search-hint"
         />
@@ -90,7 +90,7 @@ const ThreadSearch: React.FC<ThreadSearchProps> = ({
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.15 }}
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] transition-colors"
             aria-label="Clear search"
             title="Clear search"
           >

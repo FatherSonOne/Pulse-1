@@ -173,7 +173,7 @@ export const RecurrencePicker: React.FC<RecurrencePickerProps> = ({ value, onCha
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between gap-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+        className="w-full flex items-center justify-between gap-2 bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2.5 text-sm text-[var(--pulse-ink-2)] hover:border-zinc-400 dark:hover:border-zinc-600 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
       >
         <span className="flex items-center gap-2">
           <RefreshCw className="w-4 h-4 text-zinc-400" />
@@ -196,7 +196,7 @@ export const RecurrencePicker: React.FC<RecurrencePickerProps> = ({ value, onCha
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute left-0 top-full mt-1 w-full z-50 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden"
+        <div className="absolute left-0 top-full mt-1 w-full z-50 rounded-xl border border-[var(--pulse-border-strong)] bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] shadow-xl overflow-hidden"
           style={{ minWidth: '260px' }}
         >
           {!custom ? (
@@ -210,13 +210,13 @@ export const RecurrencePicker: React.FC<RecurrencePickerProps> = ({ value, onCha
                   className={`w-full text-left px-4 py-2.5 text-sm transition hover:bg-rose-50 dark:hover:bg-rose-950/30 ${
                     value === p.rule
                       ? 'text-rose-500 font-medium bg-rose-50 dark:bg-rose-950/20'
-                      : 'text-zinc-700 dark:text-zinc-300'
+                      : 'text-[var(--pulse-ink-2)]'
                   }`}
                 >
                   {p.label}
                 </button>
               ))}
-              <div className="border-t border-zinc-100 dark:border-zinc-800">
+              <div className="border-t border-[var(--pulse-border)]">
                 <button
                   type="button"
                   onClick={() => setCustom(true)}
@@ -230,7 +230,7 @@ export const RecurrencePicker: React.FC<RecurrencePickerProps> = ({ value, onCha
             /* Custom panel */
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Custom recurrence</span>
+                <span className="text-sm font-semibold text-[var(--pulse-ink-2)]">Custom recurrence</span>
                 <button type="button" onClick={() => setCustom(false)} className="text-zinc-400 hover:text-zinc-600">
                   <X className="w-4 h-4" />
                 </button>
@@ -245,12 +245,12 @@ export const RecurrencePicker: React.FC<RecurrencePickerProps> = ({ value, onCha
                   max={99}
                   value={state.interval}
                   onChange={e => setState(p => ({ ...p, interval: Math.max(1, parseInt(e.target.value, 10) || 1) }))}
-                  className="w-16 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-center outline-none focus:border-rose-400 transition"
+                  className="w-16 bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border-strong)] rounded-lg px-2 py-1.5 text-sm text-center outline-none focus:border-rose-400 transition"
                 />
                 <select
                   value={state.freq}
                   onChange={e => setState(p => ({ ...p, freq: e.target.value as Freq }))}
-                  className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-rose-400 dark:text-zinc-300 transition"
+                  className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border-strong)] rounded-lg px-2 py-1.5 text-sm outline-none focus:border-rose-400 dark:text-zinc-300 transition"
                 >
                   {(Object.keys(FREQ_LABELS) as Freq[]).map(f => (
                     <option key={f} value={f}>{FREQ_LABELS[f]}{state.interval > 1 ? 's' : ''}</option>
@@ -271,7 +271,7 @@ export const RecurrencePicker: React.FC<RecurrencePickerProps> = ({ value, onCha
                         className={`w-8 h-8 rounded-full text-xs font-medium transition ${
                           state.byDay.includes(code)
                             ? 'bg-rose-500 text-white'
-                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                            : 'bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink-3)] hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-[var(--pulse-surface-raised)]'
                         }`}
                       >
                         {DAY_LABELS[i][0]}
@@ -294,7 +294,7 @@ export const RecurrencePicker: React.FC<RecurrencePickerProps> = ({ value, onCha
                         onChange={() => setState(p => ({ ...p, endCondition: cond }))}
                         className="accent-rose-500"
                       />
-                      <span className="text-sm text-zinc-700 dark:text-zinc-300 capitalize">
+                      <span className="text-sm text-[var(--pulse-ink-2)] capitalize">
                         {cond === 'never' ? 'Never' : cond === 'until' ? 'On date' : 'After'}
                       </span>
                       {cond === 'until' && state.endCondition === 'until' && (
@@ -302,7 +302,7 @@ export const RecurrencePicker: React.FC<RecurrencePickerProps> = ({ value, onCha
                           type="date"
                           value={state.untilDate}
                           onChange={e => setState(p => ({ ...p, untilDate: e.target.value }))}
-                          className="ml-auto bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1 text-sm outline-none focus:border-rose-400 dark:text-zinc-300 transition"
+                          className="ml-auto bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border-strong)] rounded-lg px-2 py-1 text-sm outline-none focus:border-rose-400 dark:text-zinc-300 transition"
                         />
                       )}
                       {cond === 'count' && state.endCondition === 'count' && (
@@ -313,7 +313,7 @@ export const RecurrencePicker: React.FC<RecurrencePickerProps> = ({ value, onCha
                             max={365}
                             value={state.count}
                             onChange={e => setState(p => ({ ...p, count: Math.max(1, parseInt(e.target.value, 10) || 1) }))}
-                            className="w-16 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1 text-sm text-center outline-none focus:border-rose-400 transition"
+                            className="w-16 bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border-strong)] rounded-lg px-2 py-1 text-sm text-center outline-none focus:border-rose-400 transition"
                           />
                           <span className="text-xs text-zinc-400">times</span>
                         </div>
@@ -327,7 +327,7 @@ export const RecurrencePicker: React.FC<RecurrencePickerProps> = ({ value, onCha
               <button
                 type="button"
                 onClick={applyCustom}
-                className="w-full py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-semibold rounded-lg hover:opacity-90 transition shadow-sm"
+                className="w-full py-2 bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold rounded-lg transition shadow-sm"
               >
                 Apply
               </button>

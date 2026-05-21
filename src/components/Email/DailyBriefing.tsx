@@ -131,6 +131,12 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
               <MailOpen className="briefing-icon" />
             </div>
             <div className="briefing-title-section">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 6, height: 6, borderRadius: 9999, background: '#f43f5e', display: 'inline-block' }} aria-hidden="true" />
+                <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(244, 63, 94, 0.85)', fontWeight: 500 }}>
+                  Pulse AI · Briefing
+                </span>
+              </div>
               <h2>Daily Briefing</h2>
               <p>
                 {briefing.newCount} new · {briefing.urgentCount} urgent

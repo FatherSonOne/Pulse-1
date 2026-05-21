@@ -521,50 +521,50 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
 
   // Theme classes for consistent styling
   const tc = {
-    // Backgrounds
+    // Backgrounds (Pulse brand surfaces — translucent over true-black in dark)
     pageBg: isDarkMode
-      ? 'bg-gradient-to-br from-gray-900 via-red-900/10 to-gray-900'
-      : 'bg-gradient-to-br from-slate-50 via-red-50/30 to-white',
+      ? 'bg-black'
+      : 'bg-[#f8f8f8]',
     panelBg: isDarkMode
-      ? 'bg-gray-900'
+      ? 'bg-[rgba(255,255,255,0.03)]'
       : 'bg-white',
     cardBg: isDarkMode
-      ? 'bg-gray-800/60'
+      ? 'bg-[rgba(255,255,255,0.055)]'
       : 'bg-white',
     inputBg: isDarkMode
-      ? 'bg-gray-800/60 border-gray-700/50'
-      : 'bg-white/80 border-gray-200/60',
+      ? 'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.10)]'
+      : 'bg-white border-[rgba(0,0,0,0.08)]',
     hoverBg: isDarkMode
-      ? 'hover:bg-gray-800/60'
-      : 'hover:bg-gray-100/80',
+      ? 'hover:bg-[rgba(255,255,255,0.055)]'
+      : 'hover:bg-[#f2f2f2]',
     activeBg: isDarkMode
-      ? 'bg-red-500/20'
-      : 'bg-red-500/10',
+      ? 'bg-[rgba(244,63,94,0.12)]'
+      : 'bg-[rgba(244,63,94,0.08)]',
 
     // Borders
-    border: isDarkMode ? 'border-gray-800/60' : 'border-gray-200/60',
-    borderAccent: isDarkMode ? 'border-red-500/30' : 'border-red-400/40',
+    border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-[rgba(0,0,0,0.08)]',
+    borderAccent: 'border-[#f43f5e]',
 
     // Text
-    text: isDarkMode ? 'text-white' : 'text-gray-900',
-    textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
-    textMuted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-    textAccent: 'text-red-500',
+    text: isDarkMode ? 'text-[#fafafa]' : 'text-[#0f0f0f]',
+    textSecondary: isDarkMode ? 'text-[#b4b4b8]' : 'text-[#52525b]',
+    textMuted: 'text-[#6b7280]',
+    textAccent: 'text-[#f43f5e]',
 
     // Buttons
-    btnPrimary: 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/25',
+    btnPrimary: 'btn-brand-primary',
     btnSecondary: isDarkMode
-      ? 'bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 border border-gray-700/50'
-      : 'bg-white/80 hover:bg-gray-100/80 text-gray-700 border border-gray-200/60',
+      ? 'bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.055)] text-[#fafafa] border border-[rgba(255,255,255,0.10)]'
+      : 'bg-white hover:bg-[#f2f2f2] text-[#0f0f0f] border border-[rgba(0,0,0,0.08)]',
     btnGhost: isDarkMode
-      ? 'hover:bg-gray-800/60 text-gray-400 hover:text-white'
-      : 'hover:bg-gray-100/80 text-gray-500 hover:text-gray-900',
+      ? 'hover:bg-[rgba(255,255,255,0.055)] text-[#b4b4b8] hover:text-[#fafafa]'
+      : 'hover:bg-[#f2f2f2] text-[#52525b] hover:text-[#0f0f0f]',
 
     // Modal
-    modalOverlay: 'bg-zinc-950/60 backdrop-blur-sm',
+    modalOverlay: 'pulse-modal-scrim',
     modalBg: isDarkMode
-      ? 'bg-gray-900 border-gray-800/60'
-      : 'bg-white border-gray-200/60',
+      ? 'bg-[#0a0a0a] border-[rgba(255,255,255,0.06)]'
+      : 'bg-white border-[rgba(0,0,0,0.08)]',
   };
 
   return (
@@ -1108,7 +1108,6 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                         setTimeout(() => startRecording(), 100);
                       }}
                       isDarkMode={isDarkMode}
-                      modeColor={MODE_COLOR}
                     />
                   ) : (
                     <VoxRecordArea

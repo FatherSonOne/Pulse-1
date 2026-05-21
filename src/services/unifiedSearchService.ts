@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { GmailService } from './gmailService';
 import searchQueryParser from './searchQueryParser';
 
 /**
@@ -377,7 +376,8 @@ export class UnifiedSearchService {
     filters?: SearchFilters
   ): Promise<SearchResult[]> {
     try {
-      // Get Gmail service instance
+      // Lazy-load GmailService to avoid pulling svc-email into svc-core at init.
+      const { GmailService } = await import('./gmailService');
       const gmailService = new GmailService();
       
       // Search Gmail inbox (max 50 results)

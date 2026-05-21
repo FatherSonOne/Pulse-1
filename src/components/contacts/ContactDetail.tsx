@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Contact } from '../../types';
 import { LeadGradeBadge, LeadStatusBadge } from './LeadScoreIndicator';
 import { LeadScoreCard } from './LeadScoreIndicator';
@@ -17,9 +18,13 @@ import { getGoalForContact, upsertGoal, deleteGoal, markActionComplete } from '.
 import { ContactGoalModal } from './ContactGoalModal';
 import { RelationshipAutopilotToggle } from './RelationshipAutopilotToggle';
 import { supabase } from '../../services/supabase';
+import { useWorkspaceData } from '../../contexts/WorkspaceContext';
+import { listWorkspaceContacts, type WorkspaceSharedContact } from '../../services/workspaceContactsService';
+import { ProvenanceChip, type ContactProvenanceSource } from './ProvenanceChip';
+import { CardSourceChip } from './cards/CardSourceChip';
 
 import toast from 'react-hot-toast';
-import { ArrowRight, Cake, Check, Clock, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Sparkles, Star, Target, Trash2, Video, X } from 'lucide-react';
+import { ArrowRight, Cake, Check, Clock, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Send, Sparkles, Star, Target, Trash2, Video, X } from 'lucide-react';
 import MapPreview from '../map/MapPreview';
 
 // ==================== TYPES ====================
@@ -31,6 +36,12 @@ interface ContactDetailProps {
   onAction: (action: 'message' | 'vox' | 'meet', contactId: string) => void;
   onEdit: (contact: Contact) => void;
   onDelete?: () => Promise<void>;
+  /**
+   * Phase C: opens ShareCardModal with this contact as subject. When
+   * omitted, the "Send as card" header button does not render — keeps
+   * Phase B flag-off behavior byte-identical.
+   */
+  onSendAsCard?: (contact: Contact) => void;
   relationshipProfile?: RelationshipProfile | null;
   insights?: RelationshipInsights | null;
   leadScore?: LeadScore | null;
@@ -102,6 +113,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   onAction,
   onEdit,
   onDelete,
+  onSendAsCard,
   relationshipProfile,
   insights,
   leadScore,
@@ -109,6 +121,8 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   onRefreshInsights,
   onSuggestedAction,
 }) => {
+  const { t } = useTranslation();
+  const { currentWorkspace } = useWorkspaceData();
   const [summaryExpanded, setSummaryExpanded] = useState(true);
   const [notesEditing, setNotesEditing] = useState(false);
   const [goal, setGoal] = useState<ContactGoal | null>(null);
@@ -119,6 +133,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   // ----- Email history (Phase 3) -----
   const [emailHistory, setEmailHistory] = useState<EmailHistoryItem[]>([]);
   const [emailHistoryLoading, setEmailHistoryLoading] = useState(false);
+  const [workspaceAuditEntries, setWorkspaceAuditEntries] = useState<WorkspaceSharedContact[]>([]);
 
   // Load goal for this contact
   useEffect(() => {
@@ -153,6 +168,20 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
     return () => { cancelled = true; };
   }, [contact?.email, userId]);
 
+  useEffect(() => {
+    if (!contact?.id || !currentWorkspace?.id) {
+      setWorkspaceAuditEntries([]);
+      return;
+    }
+    let cancelled = false;
+    listWorkspaceContacts(currentWorkspace.id)
+      .then(entries => {
+        if (!cancelled) setWorkspaceAuditEntries(entries.filter(entry => entry.id === contact.id));
+      })
+      .catch(error => console.warn('[ContactDetail] workspace audit fetch failed:', error));
+    return () => { cancelled = true; };
+  }, [contact?.id, currentWorkspace?.id]);
+
   if (!contact) return null;
 
   const profile = relationshipProfile;
@@ -162,6 +191,18 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   const trendIcon = trend ? getTrendIcon(trend) : null;
   const trendColor = trend ? getTrendColor(trend) : '#6b7280';
   const ringClass = score !== undefined ? getRelationshipRingClass(score) : '';
+  const provenanceSource = ((contact as Contact & { import_source?: ContactProvenanceSource }).import_source
+    ?? (contact.source === 'google' ? 'google' : contact.source === 'local' ? 'manual' : 'legacy')) as ContactProvenanceSource;
+
+  // Phase C: detect whether this contact originated from an accepted card.
+  // TODO(phase-6-review): the schema spec did not pin a definitive column
+  // for the indicator (it added `possible_duplicate_of` but not a
+  // `from_card_sender` column). Defensible defaults until backend lands:
+  //   1. import_source === 'card' (if a future migration adopts this)
+  //   2. an as-yet-unnamed `from_card_sender_name` field on Contact
+  // Both are nullable; if neither resolves, the chip is hidden silently.
+  const cardSourceSenderName = ((contact as Contact & { from_card_sender_name?: string | null }).from_card_sender_name) ?? null;
+  const cameFromCard = provenanceSource === 'card' || Boolean(cardSourceSenderName);
 
   return (
     <>
@@ -177,8 +218,30 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             <X />
           </button>
           <span className="font-semibold text-zinc-900 dark:text-white text-sm">Contact Details</span>
+          <ProvenanceChip
+            variant="chip"
+            source={provenanceSource}
+            addedAt={(contact as Contact & { created_at?: string }).created_at}
+          />
+          {cameFromCard && (
+            <CardSourceChip
+              senderName={cardSourceSenderName ?? 'Pulse user'}
+              sentAt={(contact as Contact & { created_at?: string }).created_at}
+            />
+          )}
         </div>
         <div className="flex gap-1">
+          {onSendAsCard && (
+            <button
+              onClick={() => onSendAsCard(contact)}
+              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 transition"
+              title={t('contacts.cards.contactDetail.send_as_card_cta')}
+              aria-label={t('contacts.cards.contactDetail.send_as_card_aria_format', { name: contact.name })}
+              style={{ minWidth: 44, minHeight: 44 }}
+            >
+              <Send className="text-sm" />
+            </button>
+          )}
           <button
             onClick={() => onEdit(contact)}
             className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 transition"
@@ -227,7 +290,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white">{contact.name}</h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">{contact.role}</p>
             {contact.company && (
-              <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium mt-0.5">{contact.company}</p>
+              <p className="text-sm text-rose-600 dark:text-rose-400 font-medium mt-0.5">{contact.company}</p>
             )}
 
             {/* Lead badges */}
@@ -273,7 +336,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
               {/* Preferred channel */}
               <div className="bg-zinc-50 dark:bg-zinc-900 rounded-xl p-3 text-center border border-zinc-100 dark:border-zinc-800">
                 <div className="flex items-center justify-center mb-0.5">
-                  <i className={`${CHANNEL_ICON[profile.preferredChannel] ?? 'fa-solid fa-message'} text-indigo-500 text-sm`} />
+                  <i className={`${CHANNEL_ICON[profile.preferredChannel] ?? 'fa-solid fa-message'} text-rose-500 text-sm`} />
                 </div>
                 <div className="text-xs text-zinc-500 dark:text-zinc-400 capitalize">
                   {profile.preferredChannel ?? 'Unknown'}
@@ -315,26 +378,26 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
 
             {isLoadingInsights ? (
               <div className="flex items-center gap-3 py-4">
-                <div className="animate-spin w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full" />
+                <div className="animate-spin w-5 h-5 border-2 border-rose-500 border-t-transparent rounded-full" />
                 <span className="text-sm text-zinc-500">Analyzing relationship...</span>
               </div>
             ) : (
               <div className="space-y-3">
                 {/* AI Summary (collapsible) */}
                 {profile.aiRelationshipSummary && (
-                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/15 dark:to-indigo-900/15 rounded-xl p-3.5 border border-purple-100 dark:border-purple-900/30">
+                  <div className="bg-gradient-to-br from-rose-50 to-rose-50 dark:from-rose-900/15 dark:to-rose-900/15 rounded-xl p-3.5 border border-rose-100 dark:border-rose-900/30">
                     <button
                       onClick={() => setSummaryExpanded(v => !v)}
                       className="w-full flex items-center justify-between text-left mb-1.5"
                     >
-                      <span className="text-xs font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
+                      <span className="text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
                         <Sparkles className="text-xs" />
                         AI Summary
                       </span>
-                      <i className={`fa-solid fa-chevron-${summaryExpanded ? 'up' : 'down'} text-xs text-purple-400`} />
+                      <i className={`fa-solid fa-chevron-${summaryExpanded ? 'up' : 'down'} text-xs text-rose-400`} />
                     </button>
                     {summaryExpanded && (
-                      <p className="text-sm text-purple-800 dark:text-purple-200 leading-relaxed">
+                      <p className="text-sm text-rose-800 dark:text-rose-200 leading-relaxed">
                         {profile.aiRelationshipSummary}
                       </p>
                     )}
@@ -343,17 +406,17 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
 
                 {/* Suggested next action */}
                 {profile.aiNextActionSuggestion && (
-                  <div className="flex items-start gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/15 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
-                    <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Lightbulb className="text-xs text-indigo-500" />
+                  <div className="flex items-start gap-3 p-3 bg-rose-50 dark:bg-rose-900/15 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                    <div className="w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Lightbulb className="text-xs text-rose-500" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-0.5">Suggested next step</p>
-                      <p className="text-sm text-indigo-800 dark:text-indigo-200">{profile.aiNextActionSuggestion}</p>
+                      <p className="text-xs font-semibold text-rose-700 dark:text-rose-300 mb-0.5">Suggested next step</p>
+                      <p className="text-sm text-rose-800 dark:text-rose-200">{profile.aiNextActionSuggestion}</p>
                     </div>
                     <button
                       onClick={() => onAction('message', contact.id)}
-                      className="flex-shrink-0 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition"
+                      className="flex-shrink-0 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-lg transition"
                     >
                       Act
                     </button>
@@ -412,7 +475,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                     <ul className="space-y-1.5">
                       {insights.talkingPoints.slice(0, 3).map((point, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                          <span className="w-4 h-4 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="w-4 h-4 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
                             {idx + 1}
                           </span>
                           {point}
@@ -434,7 +497,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                             ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30'
                             : suggestion.type === 'insight'
                             ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-900/30'
-                            : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-purple-400'
+                            : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-rose-400'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -445,7 +508,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                           }`}>
                             {suggestion.title}
                           </span>
-                          <ArrowRight className="text-zinc-300 group-hover:text-purple-500 transition text-xs" />
+                          <ArrowRight className="text-zinc-300 group-hover:text-rose-500 transition text-xs" />
                         </div>
                         <p className={`text-xs mt-0.5 ${
                           suggestion.type === 'warning' ? 'text-red-600 dark:text-red-400'
@@ -469,7 +532,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             <SectionHeader icon="fa-solid fa-bullseye" label="Keep-in-Touch Goal" />
             <button
               onClick={() => setGoalModalOpen(true)}
-              className="text-xs font-medium text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 transition"
+              className="text-xs font-medium text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 transition"
             >
               {goal ? 'Edit' : '+ Set goal'}
             </button>
@@ -524,13 +587,13 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                 className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-xl border border-emerald-100 dark:border-emerald-800/40 transition"
               >
                 <Check />
-                Mark as done — schedule next
+                Mark done, schedule next
               </button>
             </div>
           ) : (
             <button
               onClick={() => setGoalModalOpen(true)}
-              className="w-full flex flex-col items-center justify-center gap-1.5 py-5 text-zinc-400 dark:text-zinc-500 border border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-500 dark:hover:text-indigo-400 transition group"
+              className="w-full flex flex-col items-center justify-center gap-1.5 py-5 text-zinc-400 dark:text-zinc-500 border border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl hover:border-rose-300 dark:hover:border-rose-700 hover:text-rose-500 dark:hover:text-rose-400 transition group"
             >
               <Target className="text-xl group-hover:scale-110 transition-transform" />
               <span className="text-xs font-medium">Set a keep-in-touch goal</span>
@@ -614,7 +677,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                   href={contact.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-indigo-600 dark:text-indigo-400 hover:underline truncate"
+                  className="text-rose-600 dark:text-rose-400 hover:underline truncate"
                 >
                   {contact.website}
                 </a>
@@ -651,7 +714,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                 }
                 setNotesEditing(v => !v);
               }}
-              className="text-xs text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
+              className="text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 font-medium"
             >
               {notesEditing ? 'Done' : 'Edit'}
             </button>
@@ -660,7 +723,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             <textarea
               ref={notesRef}
               defaultValue={contact.notes ?? ''}
-              className="w-full min-h-[80px] text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full min-h-[80px] text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-rose-500"
               placeholder="Add notes about this contact..."
             />
           ) : (
@@ -673,9 +736,42 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
         {/* ── Email History (Phase 3) ── */}
         <div className="px-6 py-4">
           <SectionHeader icon="fa-solid fa-envelope-clock" label="Email History" />
+          {workspaceAuditEntries.length > 0 && (
+            <div
+              className="mb-4 rounded-xl border p-3"
+              style={{ background: 'var(--pulse-surface-raised)', borderColor: 'var(--pulse-border)' }}
+            >
+              <p
+                className="mb-2 text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--pulse-ink-3)' }}
+              >
+                {t('contacts.workspaceShare.audit_title')}
+              </p>
+              <div className="space-y-2">
+                {workspaceAuditEntries.map(entry => {
+                  const sharedBy = entry.shared_by
+                    ? t('contacts.workspaceShare.audit_shared_by', { user: entry.shared_by })
+                    : ` ${t('contacts.workspaceShare.shared_by_former_user')}`;
+                  return (
+                    <div
+                      key={`${entry.id}-${entry.shared_at}`}
+                      className="text-xs"
+                      style={{ color: 'var(--pulse-ink-2)' }}
+                    >
+                      {t('contacts.workspaceShare.audit_shared_with', {
+                        workspace: currentWorkspace?.name ?? '',
+                        date: new Date(entry.shared_at).toLocaleDateString(),
+                        by: sharedBy,
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {emailHistoryLoading ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="animate-spin text-indigo-500" />
+              <Loader2 className="animate-spin text-rose-500" />
             </div>
           ) : emailHistory.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-6 text-zinc-400">
@@ -692,7 +788,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                   {/* Direction indicator */}
                   <div className={`mt-0.5 w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
                     email.is_sent
-                      ? 'bg-indigo-500/10 text-indigo-500'
+                      ? 'bg-rose-500/10 text-rose-500'
                       : 'bg-emerald-500/10 text-emerald-500'
                   }`}>
                     <i className={`fa-solid text-xs ${email.is_sent ? 'fa-paper-plane' : 'fa-inbox'}`} />

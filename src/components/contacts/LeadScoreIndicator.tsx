@@ -169,7 +169,7 @@ export const BuyingSignalBadge: React.FC<BuyingSignalBadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full font-medium ${sizeClasses[size]} bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400`}
+      className={`inline-flex items-center gap-1 rounded-full font-medium ${sizeClasses[size]} bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400`}
       title={`${count} buying signal${count > 1 ? 's' : ''} detected`}
     >
       <Zap className="text-[8px]" />
@@ -265,11 +265,11 @@ export const LeadScoreCard: React.FC<LeadScoreCardProps> = ({
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3 text-center">
         {buyingSignals > 0 && (
-          <div className="bg-purple-50 dark:bg-purple-900/10 rounded-lg p-2">
-            <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+          <div className="bg-rose-50 dark:bg-rose-900/10 rounded-lg p-2">
+            <div className="text-lg font-bold text-rose-600 dark:text-rose-400">
               {buyingSignals}
             </div>
-            <div className="text-[10px] text-purple-500 dark:text-purple-500">
+            <div className="text-[10px] text-rose-500 dark:text-rose-500">
               Signals
             </div>
           </div>

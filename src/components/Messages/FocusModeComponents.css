@@ -1,16 +1,16 @@
 /**
  * Focus Mode Components - Visual Design System
  *
- * Design Language:
- * - Primary: Blue (#3b82f6) - Focus/Work mode
- * - Secondary: Green (#10b981) - Break mode, success states
- * - Accent: Purple (#8b5cf6) - Highlights, streaks
- * - Warning: Orange (#f59e0b) - Urgent priority
- * - Error: Red (#ef4444) - Critical priority, cancel actions
+ * Design Language (Pulse Coral Cockpit):
+ * - Primary: Coral (#f43f5e) - Focus/Work mode, primary CTAs
+ * - Status: Status palette (red overdue / orange blocked / yellow streak /
+ *   blue in-progress / green done) used only for semantic states
+ * - Surfaces: True-black canvas + translucent layers in dark mode;
+ *   #f8f8f8 paper in light mode
  *
  * Typography:
  * - Display: Inter, system-ui (bold headings)
- * - Mono: JetBrains Mono (timers, statistics)
+ * - Mono: JetBrains Mono (timers, statistics, uppercase labels)
  * - Body: Inter, system-ui (readable content)
  *
  * Spacing Scale: 4px base (0.25rem)
@@ -22,18 +22,19 @@
    ============================================ */
 
 :root {
-  /* Focus Mode Color Palette */
-  --focus-blue-50: #eff6ff;
-  --focus-blue-100: #dbeafe;
-  --focus-blue-200: #bfdbfe;
-  --focus-blue-300: #93c5fd;
-  --focus-blue-400: #60a5fa;
-  --focus-blue-500: #3b82f6;
-  --focus-blue-600: #2563eb;
-  --focus-blue-700: #1d4ed8;
-  --focus-blue-800: #1e40af;
-  --focus-blue-900: #1e3a8a;
+  /* Pulse Coral Cockpit primary — replaces decorative blue/purple */
+  --focus-blue-50: rgba(244, 63, 94, 0.06);
+  --focus-blue-100: rgba(244, 63, 94, 0.10);
+  --focus-blue-200: rgba(244, 63, 94, 0.15);
+  --focus-blue-300: #fda4af;
+  --focus-blue-400: #fb7185;
+  --focus-blue-500: #f43f5e;
+  --focus-blue-600: #e11d48;
+  --focus-blue-700: #be123c;
+  --focus-blue-800: #9f1239;
+  --focus-blue-900: #881337;
 
+  /* Status: decided/done — kept semantic */
   --focus-green-50: #ecfdf5;
   --focus-green-100: #d1fae5;
   --focus-green-400: #34d399;
@@ -41,11 +42,12 @@
   --focus-green-600: #059669;
   --focus-green-900: #064e3b;
 
-  --focus-purple-50: #faf5ff;
-  --focus-purple-100: #f3e8ff;
-  --focus-purple-400: #a78bfa;
-  --focus-purple-500: #8b5cf6;
-  --focus-purple-600: #7c3aed;
+  /* Brand companion (pink in coral→pink gradient) — replaces decorative purple */
+  --focus-purple-50: rgba(236, 72, 153, 0.06);
+  --focus-purple-100: rgba(236, 72, 153, 0.10);
+  --focus-purple-400: #f472b6;
+  --focus-purple-500: #ec4899;
+  --focus-purple-600: #db2777;
 
   --focus-orange-50: #fff7ed;
   --focus-orange-100: #ffedd5;
@@ -85,9 +87,9 @@
   --focus-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
   --focus-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
   --focus-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-  --focus-shadow-glow-blue: 0 0 40px rgba(59, 130, 246, 0.3);
-  --focus-shadow-glow-green: 0 0 40px rgba(16, 185, 129, 0.3);
-  --focus-shadow-glow-purple: 0 0 40px rgba(139, 92, 246, 0.3);
+  --focus-shadow-glow-blue: 0 0 40px rgba(244, 63, 94, 0.30);
+  --focus-shadow-glow-green: 0 0 40px rgba(16, 185, 129, 0.30);
+  --focus-shadow-glow-purple: 0 0 40px rgba(236, 72, 153, 0.30);
 
   /* Transitions */
   --focus-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -233,10 +235,10 @@ html:not(.dark) {
 
 @keyframes focus-glow-pulse {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 20px rgba(244, 63, 94, 0.30);
   }
   50% {
-    box-shadow: 0 0 40px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 40px rgba(244, 63, 94, 0.50);
   }
 }
 
@@ -304,8 +306,8 @@ html:not(.dark) {
 
 .focus-digest-header {
   background: linear-gradient(135deg,
-    rgba(59, 130, 246, 0.15) 0%,
-    rgba(139, 92, 246, 0.15) 100%
+    rgba(244, 63, 94, 0.15) 0%,
+    rgba(236, 72, 153, 0.15) 100%
   );
   border-bottom: 1px solid var(--focus-border-subtle);
 }
@@ -334,7 +336,7 @@ html:not(.dark) {
 
 .focus-priority-normal {
   background-color: rgba(59, 130, 246, 0.15);
-  color: var(--focus-blue-400);
+  color: #60a5fa;
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
@@ -348,8 +350,8 @@ html:not(.dark) {
 .focus-blocking-overlay {
   background: linear-gradient(
     to right,
-    rgba(59, 130, 246, 0.2) 0%,
-    rgba(139, 92, 246, 0.15) 30%,
+    rgba(244, 63, 94, 0.20) 0%,
+    rgba(236, 72, 153, 0.15) 30%,
     transparent 60%
   );
   backdrop-filter: blur(8px);
@@ -420,8 +422,8 @@ html:not(.dark) {
 .focus-stats-chart-bar {
   background: linear-gradient(
     to top,
-    var(--focus-blue-700) 0%,
-    var(--focus-blue-500) 100%
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.20) 100%
   );
   border-radius: var(--focus-radius-sm) var(--focus-radius-sm) 0 0;
   transform-origin: bottom;
@@ -435,8 +437,8 @@ html:not(.dark) {
 .focus-stats-chart-bar.today {
   background: linear-gradient(
     to top,
-    var(--focus-blue-600) 0%,
-    var(--focus-blue-400) 100%
+    #e11d48 0%,
+    #f43f5e 100%
   );
 }
 
@@ -490,7 +492,7 @@ html:not(.dark) {
 }
 
 .focus-btn:focus-visible {
-  outline: 2px solid var(--focus-blue-500);
+  outline: 2px solid #f43f5e;
   outline-offset: 2px;
 }
 
@@ -500,14 +502,14 @@ html:not(.dark) {
 }
 
 .focus-btn-primary {
-  background: linear-gradient(135deg, var(--focus-blue-600) 0%, var(--focus-purple-600) 100%);
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.30);
 }
 
 .focus-btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.40);
 }
 
 .focus-btn-primary:active:not(:disabled) {

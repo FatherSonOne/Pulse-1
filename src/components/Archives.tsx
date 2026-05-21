@@ -5,6 +5,9 @@ import { ArchiveDetailView } from './Archives/ArchiveDetailView';
 import { MemoryOverviewPanel } from './Archives/MemoryOverviewPanel';
 import { ArchiveModals } from './Archives/ArchiveModals';
 import { ShortcutOverlay } from './Archives/ShortcutOverlay';
+import CapturesView from './Captures/CapturesView';
+
+type ArchivesTab = 'memory' | 'notes';
 
 const Archives: React.FC = () => {
   const loading = useArchiveStore(s => s.loading);
@@ -28,6 +31,21 @@ const Archives: React.FC = () => {
   const handleStartEdit = useArchiveStore(s => s.handleStartEdit);
 
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  // Tab toggle between the existing Memory (archive_items) view and the new
+  // Notes (pulse_notes) view. Defaults to Notes when arriving with either
+  //   - `pulse_focus_note` (specific note to focus, set by dashboard row + palette), or
+  //   - `pulse_archives_tab = 'notes'` (generic "open the notes tab" sentinel
+  //     set by the Capture widget's View All / SEE ALL links).
+  const [activeTab, setActiveTab] = useState<ArchivesTab>(() => {
+    if (sessionStorage.getItem('pulse_focus_note')) return 'notes';
+    const tabHint = sessionStorage.getItem('pulse_archives_tab');
+    if (tabHint === 'notes') {
+      sessionStorage.removeItem('pulse_archives_tab');
+      return 'notes';
+    }
+    return 'memory';
+  });
 
   // Initial data load
   useEffect(() => {
@@ -132,18 +150,52 @@ const Archives: React.FC = () => {
   }, [handleKeyDown]);
 
   return (
-    <div className="h-full flex flex-col md:flex-row bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-fade-in shadow-2xl">
-      {/* Sidebar with search, filters, and item views */}
-      <ArchiveSidebar onOpenShortcuts={() => setShortcutsOpen(true)} />
+    <div className="h-full flex flex-col bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-fade-in shadow-2xl">
 
-      {/* Main content area: detail view or memory overview */}
-      <div className="flex-1 flex flex-col bg-zinc-50 dark:bg-zinc-950 relative">
-        {selectedItem ? (
-          <ArchiveDetailView />
-        ) : (
-          <MemoryOverviewPanel />
-        )}
+      {/* Tab strip: Memory (archive_items) vs Notes (pulse_notes) */}
+      <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-white/[0.06] px-4 shrink-0">
+        {([
+          { id: 'memory' as const, label: 'MEMORY' },
+          { id: 'notes'  as const, label: 'NOTES' },
+        ]).map(tab => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveTab(tab.id)}
+              className={`relative px-3 py-2.5 pulse-label transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm ${
+                isActive
+                  ? 'text-rose-600 dark:text-rose-400'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+              }`}
+            >
+              {tab.label}
+              {isActive && (
+                <span aria-hidden="true" className="absolute left-2 right-2 -bottom-px h-px bg-rose-500" />
+              )}
+            </button>
+          );
+        })}
       </div>
+
+      {/* MEMORY (legacy archive_items) */}
+      {activeTab === 'memory' && (
+        <div className="flex-1 flex flex-col md:flex-row min-h-0">
+          <ArchiveSidebar onOpenShortcuts={() => setShortcutsOpen(true)} />
+          <div className="flex-1 flex flex-col bg-zinc-50 dark:bg-zinc-950 relative">
+            {selectedItem ? <ArchiveDetailView /> : <MemoryOverviewPanel />}
+          </div>
+        </div>
+      )}
+
+      {/* NOTES (pulse_notes — Capture layer) */}
+      {activeTab === 'notes' && (
+        <div className="flex-1 min-h-0">
+          <CapturesView />
+        </div>
+      )}
 
       {/* All modals rendered here */}
       <ArchiveModals />

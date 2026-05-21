@@ -58,18 +58,18 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800"
+          className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]"
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+          <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
             <h3 className="font-bold dark:text-white flex items-center gap-2">
-              <Share className="text-blue-500" />
+              <Share className="text-[#f43f5e]" />
               Forward Message
             </h3>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition"
+              className="w-8 h-8 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center justify-center transition"
             >
               <X className="text-zinc-500" />
             </button>
@@ -78,7 +78,7 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
           {/* Content */}
           <div className="p-4">
             {/* Message Preview */}
-            <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300 mb-4 max-h-32 overflow-y-auto">
+            <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300 mb-4 max-h-32 overflow-y-auto">
               {message.text}
             </div>
 
@@ -93,14 +93,14 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
                   <button
                     key={thread.id}
                     onClick={() => onForward(thread.id)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition group"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition group"
                   >
                     <div
                       className={`w-9 h-9 rounded-full ${thread.avatarColor} flex items-center justify-center text-white text-sm font-bold`}
                     >
                       {thread.contactName.charAt(0)}
                     </div>
-                    <span className="text-sm dark:text-white font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                    <span className="text-sm dark:text-white font-medium group-hover:text-[#e11d48] dark:group-hover:text-[#fb7185] transition">
                       {thread.contactName}
                     </span>
                     <ChevronRight className="text-xs text-zinc-400 ml-auto opacity-0 group-hover:opacity-100 transition" />

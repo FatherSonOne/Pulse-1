@@ -21,7 +21,6 @@ export { TranslationWidgetEnhanced, TranslationIndicator, AutoTranslateToggle } 
 // Phase 3: Analytics & Engagement (Original)
 export { ConversationHealthWidget } from './ConversationHealthWidget';
 export { AchievementToast, AchievementProgress } from './AchievementToast';
-export { MessageImpactVisualization } from './MessageImpactVisualization';
 export { ProactiveInsights } from './ProactiveInsights';
 export { ThreadActionsMenu, ThreadBadges } from './ThreadActions';
 export { TranslationWidget } from './TranslationWidget';
@@ -79,12 +78,7 @@ export { QuickReplies, QuickReplyBar } from './QuickReplies';
 export { MessageStatusTimeline, StatusIndicator } from './MessageStatusTimeline';
 
 // Phase 9: Advanced Personalization & Automation
-export { AutoResponseRules, RuleStatusToggle } from './AutoResponseRules';
 export { FormattingToolbar, InlineFormattingBar } from './FormattingToolbar';
-export { ContactNotes, QuickNoteButton } from './ContactNotes';
-export { ConversationModes, StatusDot } from './ConversationModes';
-export { NotificationSounds, MuteButton } from './NotificationSounds';
-export { DraftManager, useAutoSaveDraft, AutoSaveIndicator, DraftRecoveryPrompt } from './DraftManager';
 
 // Phase 10: Security, Insights & Productivity
 export { MessageEncryption, PrivacyShieldButton } from './MessageEncryption';
@@ -97,7 +91,6 @@ export { FocusTimer, TimerWidget } from './FocusTimer';
 // Phase 11: Multi-Media & Export Hub
 export { TranslationHub, TranslateButton } from './TranslationHub';
 export { AnalyticsExport, QuickExportButton as AnalyticsExportButton } from './AnalyticsExport';
-export { TemplatesLibrary, TemplateInsertButton } from './TemplatesLibrary';
 export { AttachmentManager, AttachmentButton } from './AttachmentManager';
 export { BackupSync, SyncStatusIndicator } from './BackupSync';
 export { SmartSuggestions, SuggestionButton } from './SmartSuggestions';

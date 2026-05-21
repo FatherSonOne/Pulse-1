@@ -1131,12 +1131,22 @@ a.duration-300,
   z-index: 3;
 }
 
-/* Text content — left column, vertically centered */
+/* Text content — left column, vertically centered. max-width switched from a
+   viewport-relative 52% to an absolute cap so the headline always has a
+   predictable column to wrap into. The previous 52% meant that at 768-1100px
+   viewports the column shrank to 400-570px while the headline was still
+   computing 50-70px Syne 800, overflowing horizontally and getting clipped by
+   the root's overflow-x-hidden. The new cap (720px hard ceiling, 92vw at
+   narrow widths) keeps the asymmetric layout on desktop while letting mobile
+   borrow the full content area. */
 .hero-asymm-content {
   position: relative;
   z-index: 10;
   padding: max(120px, 10vh) 64px 64px;
-  max-width: 52%;
+  /* 880px on big desktop gives "Every Decision." comfortable room at the
+     80px Syne ceiling; 92vw at narrow widths lets the hero text borrow the
+     full visible area. */
+  max-width: min(880px, 92vw);
   width: 100%;
 }
 
@@ -1164,17 +1174,29 @@ a.duration-300,
   color: #be123c;
 }
 
-/* Headline — Syne 800, massive scale — clamps 64px→96px across viewport */
+/* Headline — Syne 800. Clamp scales aggressively at narrow widths so the
+   longest phrase ("Every Decision.", 15 chars) fits on a single line at every
+   viewport. text-wrap: balance was removed — it was forcing two-line wraps
+   inside each ha-line span, which produced the "Decisio…" clipping at
+   600-700px viewports. Three explicit phrases on three explicit lines is the
+   intended composition; balance fights it. */
 .hero-asymm-headline {
   font-family: 'Syne', 'Inter', system-ui, sans-serif;
   font-weight: 800;
-  font-size: clamp(64px, 6.5vw, 96px);
-  line-height: 1.04;
-  letter-spacing: -0.03em;
+  /* Syne 800's glyphs are wide. Floor lowered to 26px so "Every Decision."
+     (15 chars) fits inside 92vw - 40px padding at iPhone SE width (320px).
+     6.5vw factor scales gracefully so by ~1280px we're at the 80px ceiling. */
+  font-size: clamp(26px, 6.5vw, 80px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
   margin-bottom: 40px;
 }
 
-/* Staggered blur-reveal per line */
+/* Staggered blur-reveal per line. white-space: nowrap was removed — it
+   forced overflow at 768-1100px viewports where .hero-asymm-content shrinks
+   to max-width:52% (~420px) while "Every Decision." still needs more.
+   Without nowrap the clamp() handles most cases on one line and any residual
+   wraps cleanly instead of clipping a half-character at the viewport edge. */
 .hero-asymm-headline .ha-line {
   display: block;
   animation: ha-line-in 0.72s cubic-bezier(0.22,1,0.36,1) both;
@@ -1188,16 +1210,22 @@ a.duration-300,
   to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
 }
 
-/* Gradient on final "Every Decision." line */
+/* Gradient on final "Every Decision." line — coral two-stop. The previous
+   three-stop ran into #a855f7 violet on the right end, which conflicted with
+   PRODUCT.md anti-references ("gradient-purple AI-startup template"). This
+   coral lighten stays inside DESIGN.md's brand palette (Rose Pulse → Rose
+   Bright) while preserving the left-to-right energy build. */
 .ha-gradient {
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #a855f7 100%);
+  background: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   padding-bottom: 0.1em;
 }
 
-/* CTA — coral gradient */
+/* CTA — coral gradient. Curve, lift, and halo brought into parity with
+   .lp-cta-primary so the hero CTA hovers exactly like the nav and pricing
+   CTAs (1px lift + DESIGN.md "coral halo" shadow, 220ms ease-out-expo). */
 .hero-asymm-cta {
   display: inline-flex;
   align-items: center;
@@ -1211,27 +1239,35 @@ a.duration-300,
   padding: 13px 28px;
   background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
   color: #ffffff;
-  box-shadow: 0 8px 32px rgba(244,63,94,0.38);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(244,63,94,0.30);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 .hero-asymm-cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 40px rgba(244,63,94,0.55);
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px #f43f5e, 0 6px 28px rgba(244,63,94,0.35);
 }
-.hero-asymm-cta:active { transform: scale(0.97); }
+.hero-asymm-cta:active { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .hero-asymm-cta { transition: none; }
+  .hero-asymm-cta:hover {
+    transform: none;
+    box-shadow: 0 0 0 1px #f43f5e;
+  }
+}
 
 /* Light mode adjustments */
 .lp-light .hero-signal-canvas { opacity: 0.2; }
 .lp-light .hero-asymm-grid { opacity: 0.3; }
 
-/* Mobile — stack canvas below text */
+/* Mobile — stack canvas below text. Headline font-size override removed so
+   the clamp() above handles scaling smoothly all the way down to phone size. */
 @media (max-width: 768px) {
   .hero-asymm-content {
     max-width: 100%;
-    padding: max(96px, 8vh) 24px 48px;
+    padding: max(96px, 8vh) 20px 48px;
   }
-  .hero-asymm-headline { font-size: 42px; }
   .hero-signal-canvas {
     width: 100%;
     height: 55%;

@@ -55,15 +55,25 @@ const defaultShortcuts: Shortcut[] = [
   { id: 'gen-escape', keys: ['Escape'], action: 'close-modal', description: 'Close modal/cancel', category: 'general', enabled: true, customizable: false },
   { id: 'gen-focus', keys: ['Ctrl', 'Shift', 'F'], action: 'focus-mode', description: 'Toggle focus mode', category: 'general', enabled: true, customizable: true },
 
-  // AI Tools (Phase 2A)
+  // Message tools — Phase-2 taxonomy only. Tools that moved to the
+  // global Tools modal (Vision Lab, Code Studio, Deep Reasoner, Video
+  // Analyst, Meeting Intel, Deep Search) have their own shortcuts in
+  // that surface.
   { id: 'tool-palette', keys: ['Ctrl', 'K'], action: 'open-command-palette', description: 'Open command palette', category: 'tools', enabled: true, customizable: true },
-  { id: 'tool-reasoner', keys: ['Ctrl', 'Shift', 'R'], action: 'deep-reasoner', description: 'Deep Reasoner', category: 'tools', enabled: true, customizable: true },
-  { id: 'tool-video', keys: ['Ctrl', 'Shift', 'V'], action: 'video-analyst', description: 'Video Analyst', category: 'tools', enabled: true, customizable: true },
-  { id: 'tool-code', keys: ['Ctrl', 'Shift', 'C'], action: 'code-studio', description: 'Code Studio', category: 'tools', enabled: true, customizable: true },
-  { id: 'tool-vision', keys: ['Ctrl', 'Shift', 'I'], action: 'vision-lab', description: 'Vision Lab', category: 'tools', enabled: true, customizable: true },
-  { id: 'tool-search', keys: ['Ctrl', 'Shift', 'S'], action: 'deep-search', description: 'Deep Search', category: 'tools', enabled: true, customizable: true },
-  { id: 'tool-meeting', keys: ['Ctrl', 'Shift', 'M'], action: 'meeting-intel', description: 'Meeting Intel', category: 'tools', enabled: true, customizable: true },
-  { id: 'tool-assistant', keys: ['Ctrl', 'Shift', 'A'], action: 'ai-assistant', description: 'AI Assistant', category: 'tools', enabled: true, customizable: true }
+  // WRITE
+  { id: 'tool-compose', keys: ['Ctrl', 'Shift', 'W'], action: 'smart-compose', description: 'Smart Compose', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-templates', keys: ['Ctrl', 'Shift', 'T'], action: 'templates', description: 'Templates', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-format', keys: ['Ctrl', 'Shift', 'F'], action: 'message-formatting', description: 'Format', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-translate', keys: ['Ctrl', 'Shift', 'L'], action: 'translation', description: 'Translate', category: 'tools', enabled: true, customizable: true },
+  // ANALYZE
+  { id: 'tool-summary', keys: ['Ctrl', 'Shift', 'S'], action: 'conversation-summary', description: 'Conversation Summary', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-pace', keys: ['Ctrl', 'Shift', 'P'], action: 'pace', description: 'Pace', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-sentiment', keys: ['Ctrl', 'Shift', 'Y'], action: 'sentiment', description: 'Sentiment', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-flow', keys: ['Ctrl', 'Shift', 'G'], action: 'conversation-flow', description: 'Conversation Flow', category: 'tools', enabled: true, customizable: true },
+  // COACH
+  { id: 'tool-coach', keys: ['Ctrl', 'Shift', 'K'], action: 'ai-coach', description: 'AI Coach', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-mediator', keys: ['Ctrl', 'Shift', 'M'], action: 'ai-mediator', description: 'AI Mediator', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-insights', keys: ['Ctrl', 'Shift', 'I'], action: 'insights', description: 'Insights', category: 'tools', enabled: true, customizable: true },
 ];
 
 const categoryConfig = {

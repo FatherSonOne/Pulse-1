@@ -134,7 +134,9 @@ const REACTION_EMOJIS = [
 // SUB-COMPONENTS
 // ============================================
 
-// Conversation List Item
+// Triage Cockpit row — information-dense conversation entry with AI summary
+// peek, action-count pill, and mono duration/timestamp. Replaces the previous
+// SMS-style ConversationItem (Direction 01, 2026-05-20).
 const ConversationItem: React.FC<{
   conversation: GlimpseConversation;
   currentUserId: string;
@@ -146,35 +148,104 @@ const ConversationItem: React.FC<{
     otherParticipants.map(p => p.name).join(', ') ||
     'Video Chat';
 
+  const isUnread = (conversation.unreadCount ?? 0) > 0;
+  const isGroup = otherParticipants.length > 1;
+  const kindLabel = isGroup ? 'Group' : 'Glimpse';
+
+  const processing =
+    conversation.lastMessageProcessingStatus === 'pending' ||
+    conversation.lastMessageProcessingStatus === 'transcribing';
+  const hasSummary = !!conversation.lastMessageSummary;
+  const actionCount = conversation.lastMessageActionCount ?? 0;
+
+  // Summary text fallback chain: AI summary → caption → duration hint → empty.
+  const summary =
+    conversation.lastMessageSummary ||
+    conversation.lastMessageCaption ||
+    (conversation.lastMessageDuration
+      ? `${formatDuration(conversation.lastMessageDuration)} ${isGroup ? 'group ' : ''}glimpse`
+      : '');
+
+  // Neutral avatar fallback — no cyan, surface-soft tinted neutral.
+  const firstAvatar = otherParticipants[0];
+  const fallbackInitials = isGroup
+    ? `+${otherParticipants.length}`
+    : (firstAvatar?.name?.[0] || '?').toUpperCase();
+
+  // Build an aria-label that mirrors what sighted users see at a glance:
+  // unread weight, action count, AI status, sender, kind, duration, and a
+  // peek of the summary. Without these, AT users get a strictly worse inbox.
+  const ariaParts = [
+    isUnread && 'Unread',
+    actionCount > 0 && `${actionCount} action ${actionCount === 1 ? 'item' : 'items'}`,
+    processing && !hasSummary && 'AI transcribing',
+    displayName,
+    isGroup && 'group',
+    conversation.lastMessageDuration && formatDuration(conversation.lastMessageDuration),
+    conversation.lastMessageSummary && `Summary: ${conversation.lastMessageSummary}`,
+  ].filter(Boolean);
+
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`vvb-conversation-item ${isDarkMode ? 'dark' : 'light'}`}
+      className={`gl-tc-row ${isDarkMode ? 'dark' : 'light'}`}
+      data-unread={isUnread || undefined}
+      aria-label={ariaParts.join(' · ')}
     >
-      {/* Thumbnail or Avatar */}
-      <div className="vvb-conv-thumb">
-        {conversation.lastMessageThumbnail ? (
-          <img src={conversation.lastMessageThumbnail} alt="" />
+      <div className="gl-tc-avatar">
+        {firstAvatar?.avatarUrl ? (
+          <img src={firstAvatar.avatarUrl} alt="" />
         ) : (
-          <div
-            className="vvb-conv-avatar"
-            style={{ background: otherParticipants[0]?.avatarColor || '#06B6D4' }}
-          >
-            {otherParticipants[0]?.name?.[0] || '?'}
-          </div>
+          <span className="gl-tc-avatar-fallback">{fallbackInitials}</span>
         )}
       </div>
 
-      <div className="vvb-conv-info">
-        <div className="vvb-conv-header">
-          <span className="vvb-conv-name">{displayName}</span>
-          <span className="vvb-conv-time">
-            {conversation.lastMessageAt
-              ? formatRelativeTime(conversation.lastMessageAt)
-              : 'NEW'}
-          </span>
+      <div className="gl-tc-signal">
+        <div className="gl-tc-from">
+          {isUnread && <span className="gl-tc-unread-dot" aria-hidden="true" />}
+          <span className="gl-tc-from-name">{displayName}</span>
+          {/* Kind suffix only earns its place when it differentiates from the
+              default 1:1 glimpse — otherwise it's reading noise on every row. */}
+          {isGroup && <span className="gl-tc-kind">· {kindLabel}</span>}
         </div>
-        <p className="vvb-conv-preview">{formatConvoPreview(conversation)}</p>
+        {processing && !hasSummary ? (
+          <div className="gl-tc-summary-skeleton" aria-hidden="true">
+            <span /><span />
+          </div>
+        ) : summary ? (
+          <p className="gl-tc-summary">{summary}</p>
+        ) : (
+          <p className="gl-tc-summary gl-tc-summary-empty">No glimpses yet</p>
+        )}
+      </div>
+
+      <div className="gl-tc-actions">
+        {actionCount > 0 && (
+          <span className="gl-tc-action-pill">
+            {actionCount} {actionCount === 1 ? 'Action' : 'Actions'}
+          </span>
+        )}
+        {hasSummary && (
+          <span className="gl-ai-chip gl-tc-ai-chip">Claude</span>
+        )}
+        {processing && !hasSummary && (
+          <span className="gl-ai-chip pending gl-tc-ai-chip">Transcribing</span>
+        )}
+        {/* Absence of action items is inferred from absence of pill — no need
+            to surface a "No actions" negative-signal label. */}
+      </div>
+
+      <div className="gl-tc-duration">
+        {conversation.lastMessageDuration
+          ? formatDuration(conversation.lastMessageDuration)
+          : '—'}
+      </div>
+
+      <div className="gl-tc-when">
+        {conversation.lastMessageAt
+          ? formatRelativeTime(conversation.lastMessageAt)
+          : 'NEW'}
       </div>
     </button>
   );
@@ -1178,6 +1249,9 @@ const Glimpse: React.FC<GlimpseProps> = ({
             onClose?.();
           }
         }}
+        // Hide back on the conversations home view — nothing meaningful to
+        // go back to (onClose is undefined in the workspace shell mount).
+        showBack={viewMode !== 'conversations'}
         modeTitle="Glimpse"
         modeSubtitle="Video · Transcribed · Triaged"
         modeIcon={<Video className="w-5 h-5" />}
@@ -1203,24 +1277,29 @@ const Glimpse: React.FC<GlimpseProps> = ({
         onShowHelp={() => setShowShortcutsHelp(true)}
         selectionCount={selectionCount}
         customActions={[
+          // Triage Cockpit (conversations mode): Search and Walkthrough render
+          // as quiet icon-only buttons so they don't fight the labelled Record
+          // CTA for visual weight, but both stay reachable from the populated
+          // list — Walkthrough is a real entry-point feature, not an empty-
+          // state-only affordance, and capture mode is locked at entry so we
+          // must surface both intents here.
           ...(viewMode === 'conversations' ? [
             {
               icon: <Search className="w-4 h-4" />,
-              title: 'Search',
+              title: 'Search glimpses',
               onClick: () => setViewMode('search'),
-            },
-            {
-              icon: <Video className="w-4 h-4" />,
-              label: 'Glimpse',
-              title: 'Record a glimpse — camera',
-              onClick: () => enterRecorder('cam'),
             },
             ...(canShareScreen ? [{
               icon: <MonitorPlay className="w-4 h-4" />,
-              label: 'Walkthrough',
               title: 'Record a walkthrough — screen + camera',
               onClick: () => enterRecorder('cam-screen'),
             }] : []),
+            {
+              icon: <Video className="w-4 h-4" />,
+              label: 'Record',
+              title: 'Record a glimpse — camera',
+              onClick: () => enterRecorder('cam'),
+            },
           ] : []),
           ...(viewMode === 'chat' ? [
             {
@@ -1235,10 +1314,17 @@ const Glimpse: React.FC<GlimpseProps> = ({
           ] : []),
         ]}
       >
-        {/* Unread badge (conversations view) */}
-        {viewMode === 'conversations' && totalUnread > 0 && (
-          <span className="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-medium">
-            {totalUnread} unread
+        {/* Triage counter chip — uses gl-label mono caps to fit the system
+            signature instead of the old cyan rounded badge. */}
+        {viewMode === 'conversations' && conversations.length > 0 && (
+          <span className="gl-tc-counter">
+            <span className="gl-label dim">{conversations.length} signals</span>
+            {totalUnread > 0 && (
+              <>
+                <span className="gl-tc-counter-sep" aria-hidden="true">·</span>
+                <span className="gl-tc-counter-unread">{totalUnread} unread</span>
+              </>
+            )}
           </span>
         )}
         {/* Phase 6: Keyboard Shortcuts Help */}
@@ -1254,50 +1340,65 @@ const Glimpse: React.FC<GlimpseProps> = ({
 
       {/* Main Content */}
       <main className="vvb-content">
-        {/* CONVERSATIONS VIEW */}
+        {/* CONVERSATIONS VIEW — Triage Cockpit */}
         {viewMode === 'conversations' && (
-          <div className="vvb-conversations">
+          <div className="vvb-conversations gl-tc-list">
             {conversationsLoading ? (
               <div className="vvb-loading">
                 <Loader2 className="w-8 h-8 animate-spin" />
                 <p>Loading conversations...</p>
               </div>
             ) : conversations.length === 0 ? (
-              <div className="vvb-empty">
-                <Video className="w-10 h-10" style={{ color: MODE_COLOR, opacity: 0.7 }} />
-                <h3>No glimpses yet</h3>
-                <p>Video for the moments words can't carry. Pulse handles the rest.</p>
-                <div className="gl-empty-cta-row">
+              <div className="gl-tc-empty">
+                <span className="gl-tc-empty-stamp">No incoming signals</span>
+                <p className="gl-tc-empty-body">
+                  When someone sends a glimpse, it lands here with a transcript,
+                  summary, and action items already extracted. You'll see what
+                  to watch — and what to skip — before pressing play.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => enterRecorder('cam')}
+                  className="gl-tc-empty-cta"
+                >
+                  <Video className="w-4 h-4" />
+                  Record your first glimpse
+                </button>
+                {canShareScreen && (
                   <button
                     type="button"
-                    onClick={() => enterRecorder('cam')}
-                    className="vvb-empty-cta"
+                    onClick={() => enterRecorder('cam-screen')}
+                    className="gl-tc-empty-link"
                   >
-                    <Video className="w-4 h-4" />
-                    Record a glimpse
+                    <MonitorPlay className="w-3.5 h-3.5" />
+                    or record a walkthrough
                   </button>
-                  {canShareScreen && (
-                    <button
-                      type="button"
-                      onClick={() => enterRecorder('cam-screen')}
-                      className="vvb-empty-cta"
-                    >
-                      <MonitorPlay className="w-4 h-4" />
-                      Record a walkthrough
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
             ) : (
-              conversations.map(conv => (
-                <ConversationItem
-                  key={conv.id}
-                  conversation={conv}
-                  currentUserId={currentUserId}
-                  onClick={() => handleSelectConversation(conv)}
-                  isDarkMode={isDarkMode}
-                />
-              ))
+              <>
+                {/* Column header strip — sticky inside the list. No ARIA role:
+                    the rows below are <button>s, not table rows, so a stray
+                    role="row" here would orphan AT users in an incomplete table
+                    pattern. The strip is honest visual chrome. */}
+                <div className="gl-tc-colhead" aria-hidden="true">
+                  <span />
+                  <span className="gl-label">From · Signal</span>
+                  <span className="gl-label">Actions</span>
+                  <span className="gl-label" style={{ textAlign: 'right' }}>Length</span>
+                  <span className="gl-label" style={{ textAlign: 'right' }}>When</span>
+                </div>
+
+                {conversations.map(conv => (
+                  <ConversationItem
+                    key={conv.id}
+                    conversation={conv}
+                    currentUserId={currentUserId}
+                    onClick={() => handleSelectConversation(conv)}
+                    isDarkMode={isDarkMode}
+                  />
+                ))}
+              </>
             )}
           </div>
         )}
@@ -1452,8 +1553,11 @@ const Glimpse: React.FC<GlimpseProps> = ({
             )}
 
             {/* Recipient bar — anchor for the selector popover so it never
-                pushes the recorder off the fold. */}
-            {state.status === 'idle' && (
+                pushes the recorder off the fold. Visible in both pre-record
+                (idle) and post-record (ready) states — without ready, users
+                who record without selecting recipients first get trapped
+                with no way out except discarding the recording. */}
+            {(state.status === 'idle' || state.status === 'ready') && (
               <div className="gl-recipient-anchor">
                 <div className="gl-recipient-bar">
                   <button
@@ -1644,8 +1748,12 @@ const Glimpse: React.FC<GlimpseProps> = ({
 
                   <button
                     type="button"
-                    onClick={handleSend}
-                    disabled={isSending || selectedRecipients.length === 0}
+                    onClick={
+                      selectedRecipients.length === 0
+                        ? () => setShowRecipientSelector(true)
+                        : handleSend
+                    }
+                    disabled={isSending}
                     className="gl-send-btn"
                   >
                     {isSending ? (
@@ -1836,15 +1944,6 @@ function formatDuration(seconds: number): string {
 
 function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatConvoPreview(conversation: GlimpseConversation): string {
-  if (conversation.lastMessageCaption) return conversation.lastMessageCaption;
-  if (conversation.lastMessageDuration && conversation.lastMessageDuration > 0) {
-    return `${formatDuration(conversation.lastMessageDuration)} glimpse`;
-  }
-  if (conversation.lastMessageAt) return 'Glimpse';
-  return 'No glimpses yet';
 }
 
 function formatRelativeTime(date: Date): string {

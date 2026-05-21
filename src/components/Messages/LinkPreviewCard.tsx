@@ -46,7 +46,7 @@ export const LinkPreviewCard: React.FC<LinkPreviewCardProps> = ({
   if (loading) {
     return (
       <div
-        className={`rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-3 animate-pulse ${className}`}
+        className={`rounded-lg border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)]/50 p-3 animate-pulse ${className}`}
       >
         <div className="h-3 w-3/4 bg-zinc-200 dark:bg-zinc-700 rounded mb-2" />
         <div className="h-2 w-full bg-zinc-200 dark:bg-zinc-700 rounded mb-1" />
@@ -66,11 +66,11 @@ export const LinkPreviewCard: React.FC<LinkPreviewCardProps> = ({
       href={preview.url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`block rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-rose-300 dark:hover:border-rose-700 hover:shadow-sm transition overflow-hidden ${className}`}
+      className={`block rounded-lg border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] bg-white dark:bg-[rgba(255,255,255,0.03)] hover:border-rose-300 dark:hover:border-rose-700 hover:shadow-sm transition overflow-hidden ${className}`}
       title={preview.url}
     >
       {hasImage && (
-        <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+        <div className="aspect-video bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] overflow-hidden">
           <img
             src={preview.image_url}
             alt=""

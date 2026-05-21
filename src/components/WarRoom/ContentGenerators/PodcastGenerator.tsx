@@ -153,7 +153,7 @@ REQUIREMENTS:
 
       setScriptProgress(30);
 
-      const response = await processWithModel(apiKey, prompt);
+      const response = await processWithModel(prompt);
       setScriptProgress(80);
 
       if (!response) {

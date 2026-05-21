@@ -254,7 +254,7 @@ class ContextBankServiceClass {
           // Rate limiting - small delay between embedding calls
           if (i > 0) await new Promise(r => setTimeout(r, 100));
 
-          embedding = await generateEmbedding(apiKey, chunkContent);
+          embedding = await generateEmbedding(chunkContent);
           if (embedding) {
             this.embeddingCache.set(chunkId, embedding);
           }
@@ -333,7 +333,7 @@ class ContextBankServiceClass {
     // 1. Generate query embedding
     let queryEmbedding: number[] | null = null;
     try {
-      queryEmbedding = await generateEmbedding(apiKey, query);
+      queryEmbedding = await generateEmbedding(query);
     } catch (e) {
       console.warn('Failed to generate query embedding:', e);
     }

@@ -288,9 +288,9 @@ const ResizeDivider: React.FC<ResizeDividerProps> = ({
         }}
         transition={{ duration: DESIGN_TOKENS.animation.fast }}
       >
-        <div className="w-1 h-1 rounded-full bg-blue-500" />
-        <div className="w-1 h-1 rounded-full bg-blue-500" />
-        <div className="w-1 h-1 rounded-full bg-blue-500" />
+        <div className="w-1 h-1 rounded-full bg-[#f43f5e]" />
+        <div className="w-1 h-1 rounded-full bg-[#f43f5e]" />
+        <div className="w-1 h-1 rounded-full bg-[#f43f5e]" />
       </motion.div>
     </motion.div>
   );
@@ -306,7 +306,7 @@ interface MobileBackButtonProps {
 
 const MobileBackButton: React.FC<MobileBackButtonProps> = ({ onClick }) => (
   <motion.button
-    className="fixed top-4 left-4 flex items-center gap-2 px-3 py-2 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700"
+    className="fixed top-4 left-4 flex items-center gap-2 px-3 py-2 bg-white dark:bg-[rgba(255,255,255,0.055)] rounded-lg shadow-lg border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)]"
     style={{ zIndex: DESIGN_TOKENS.zIndex.mobileBackButton }}
     onClick={onClick}
     initial={{ opacity: 0, x: -20 }}
@@ -371,7 +371,7 @@ const KeyboardShortcutsHelper: React.FC = () => {
       transition={{ duration: DESIGN_TOKENS.animation.fast }}
     >
       <motion.div
-        className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 border border-zinc-200 dark:border-zinc-800"
+        className="bg-white dark:bg-[rgba(255,255,255,0.03)] rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]"
         onClick={(e) => e.stopPropagation()}
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -384,7 +384,7 @@ const KeyboardShortcutsHelper: React.FC = () => {
           </h3>
           <button
             onClick={() => setIsVisible(false)}
-            className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-2 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors"
             aria-label="Close"
           >
             <X className="text-zinc-600 dark:text-zinc-400" />
@@ -398,7 +398,7 @@ const KeyboardShortcutsHelper: React.FC = () => {
               <div className="flex items-center gap-1">
                 {keys.map((key, index) => (
                   <React.Fragment key={key}>
-                    <kbd className="px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-mono text-xs border border-zinc-200 dark:border-zinc-700">
+                    <kbd className="px-2 py-1 rounded bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] text-zinc-900 dark:text-white font-mono text-xs border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)]">
                       {key}
                     </kbd>
                     {index < keys.length - 1 && (
@@ -411,8 +411,8 @@ const KeyboardShortcutsHelper: React.FC = () => {
           ))}
         </div>
 
-        <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-xs text-zinc-500 dark:text-zinc-400">
-          Press <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">?</kbd> to toggle this help
+        <div className="mt-4 pt-4 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] text-xs text-zinc-500 dark:text-zinc-400">
+          Press <kbd className="px-1.5 py-0.5 rounded bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)]">?</kbd> to toggle this help
         </div>
       </motion.div>
     </motion.div>
@@ -600,7 +600,7 @@ const SplitViewMessagesContainer: React.FC<SplitViewMessagesContainerProps> = ({
     return (
       <div
         ref={containerRef}
-        className={`split-view-container relative h-full w-full overflow-hidden bg-white dark:bg-zinc-900 ${className}`}
+        className={`split-view-container relative h-full w-full overflow-hidden bg-white dark:bg-[rgba(255,255,255,0.03)] ${className}`}
       >
         <AnimatePresence mode="wait">
           {showMobileView === 'threads' ? (
@@ -670,7 +670,7 @@ const SplitViewMessagesContainer: React.FC<SplitViewMessagesContainerProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`split-view-container relative flex h-full w-full overflow-hidden bg-white dark:bg-zinc-900 ${className}`}
+      className={`split-view-container relative flex h-full w-full overflow-hidden bg-white dark:bg-[rgba(255,255,255,0.03)] ${className}`}
       style={{
         // Prevent text selection during resize
         userSelect: isResizing ? 'none' : 'auto',

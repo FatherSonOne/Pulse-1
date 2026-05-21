@@ -160,50 +160,50 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-1 px-6 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 overflow-x-auto">
+        <div className="flex items-stretch gap-1 px-2 sm:px-6 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
           <button
             onClick={() => setActiveTab('resources')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+            className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'resources'
                 ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <Book className="mr-2" />
-            Resources
+            <Book className="shrink-0" />
+            <span className="truncate">Resources</span>
           </button>
           <button
             onClick={() => setActiveTab('faq')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+            className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'faq'
                 ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <MessagesSquare className="mr-2" />
-            FAQ
+            <MessagesSquare className="shrink-0" />
+            <span className="truncate">FAQ</span>
           </button>
           <button
             onClick={() => setActiveTab('shortcuts')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+            className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'shortcuts'
                 ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <Keyboard className="mr-2" />
-            Keyboard Shortcuts
+            <Keyboard className="shrink-0" />
+            <span className="truncate"><span className="sm:hidden">Shortcuts</span><span className="hidden sm:inline">Keyboard Shortcuts</span></span>
           </button>
           <button
             onClick={() => setActiveTab('contact')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+            className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'contact'
                 ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <Headset className="mr-2" />
-            Contact Support
+            <Headset className="shrink-0" />
+            <span className="truncate"><span className="sm:hidden">Contact</span><span className="hidden sm:inline">Contact Support</span></span>
           </button>
         </div>
 

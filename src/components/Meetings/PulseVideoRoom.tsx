@@ -556,10 +556,9 @@ const MeetingRoom: React.FC<{
 
       let summary = '';
       try {
-        // Use Gemini to summarize if available. The apiKey arg is unused by
-        // the service (auth is workspace-derived) but is still in the signature.
+        // Use Gemini to summarize — auth is workspace-derived server-side.
         const { generateSummary } = await import('../../services/geminiService');
-        summary = (await generateSummary('', fullTranscript)) ?? '';
+        summary = (await generateSummary(fullTranscript)) ?? '';
       } catch {
         summary = `Meeting lasted ${Math.floor(duration / 60)} minutes with ${allParticipants.length} participant(s).`;
       }

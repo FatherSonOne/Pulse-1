@@ -90,7 +90,7 @@ const StatCard: React.FC<{
   bgColor: string;
 }> = ({ icon, label, value, subValue, color, bgColor }) => (
   <motion.div
-    className={`p-4 rounded-xl ${bgColor} border border-gray-700/50`}
+    className={`p-4 rounded-xl ${bgColor} border border-[rgba(255,255,255,0.10)]/50`}
     variants={cardVariants}
   >
     <div className="flex items-start gap-3">
@@ -98,9 +98,9 @@ const StatCard: React.FC<{
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{label}</p>
+        <p className="text-xs text-[#6b7280] uppercase tracking-wider mb-1">{label}</p>
         <p className="text-xl font-bold text-white truncate">{value}</p>
-        {subValue && <p className="text-xs text-gray-400 mt-0.5">{subValue}</p>}
+        {subValue && <p className="text-xs text-[#b4b4b8] mt-0.5">{subValue}</p>}
       </div>
     </div>
   </motion.div>
@@ -138,7 +138,7 @@ const TimeDistributionChart: React.FC<{
               <motion.div
                 className={`w-full rounded-t-lg ${
                   isToday
-                    ? 'bg-gradient-to-t from-blue-600 to-blue-400'
+                    ? 'bg-gradient-to-t from-[#e11d48] to-[#f43f5e]'
                     : 'bg-gradient-to-t from-gray-700 to-gray-600'
                 }`}
                 style={{ originY: 1 }}
@@ -153,13 +153,13 @@ const TimeDistributionChart: React.FC<{
 
               {/* Tooltip on hover */}
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
-                <div className="bg-gray-800 px-2 py-1 rounded text-xs text-white whitespace-nowrap shadow-lg">
+                <div className="bg-[rgba(255,255,255,0.055)] px-2 py-1 rounded text-xs text-white whitespace-nowrap shadow-lg">
                   {formatDuration(item.focusMinutes)}
                 </div>
               </div>
             </div>
 
-            <span className={`text-xs ${isToday ? 'text-blue-400 font-medium' : 'text-gray-500'}`}>
+            <span className={`text-xs ${isToday ? 'text-[#f43f5e] font-medium' : 'text-[#6b7280]'}`}>
               {formatLabel(item)}
             </span>
           </div>
@@ -175,7 +175,7 @@ const ProgressRing: React.FC<{
   size?: number;
   strokeWidth?: number;
   color?: string;
-}> = ({ progress, size = 120, strokeWidth = 8, color = '#3b82f6' }) => {
+}> = ({ progress, size = 120, strokeWidth = 8, color = '#f43f5e' }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
@@ -248,8 +248,8 @@ const StreakDisplay: React.FC<{
           </div>
         </div>
         <div className="text-right">
-          <p className="text-sm text-gray-500">Best</p>
-          <p className="text-lg font-semibold text-gray-300">{longestStreak} days</p>
+          <p className="text-sm text-[#6b7280]">Best</p>
+          <p className="text-lg font-semibold text-[#fafafa]">{longestStreak} days</p>
         </div>
       </div>
 
@@ -261,7 +261,7 @@ const StreakDisplay: React.FC<{
               className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                 streakDays[index]
                   ? 'bg-orange-500 text-white'
-                  : 'bg-gray-800 text-gray-600'
+                  : 'bg-[rgba(255,255,255,0.055)] text-gray-600'
               }`}
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -273,7 +273,7 @@ const StreakDisplay: React.FC<{
                 </svg>
               )}
             </motion.div>
-            <span className="text-xs text-gray-500">{day}</span>
+            <span className="text-xs text-[#6b7280]">{day}</span>
           </div>
         ))}
       </div>
@@ -344,20 +344,20 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
           onClick={onClose}
         >
           <motion.div
-            className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl bg-gray-900 border border-gray-700 shadow-2xl"
+            className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl bg-[#0a0a0a] border border-[rgba(255,255,255,0.10)] shadow-2xl"
             variants={cardVariants}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-6 py-5 border-b border-gray-700 bg-gray-800/50">
+            <div className="px-6 py-5 border-b border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.04)]">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-white">Focus Statistics</h2>
-                  <p className="text-sm text-gray-400 mt-1">Track your productivity journey</p>
+                  <p className="text-sm text-[#b4b4b8] mt-1">Track your productivity journey</p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                  className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.10)] text-[#b4b4b8] hover:text-white transition-colors"
                   aria-label="Close"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,8 +374,8 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
                     onClick={() => setActiveTab(tab)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       activeTab === tab
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-800 text-gray-400 hover:text-white'
+                        ? 'bg-[#f43f5e] text-white'
+                        : 'bg-[rgba(255,255,255,0.055)] text-[#b4b4b8] hover:text-white'
                     }`}
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -400,15 +400,15 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <StatCard
                         icon={
-                          <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 text-[#f43f5e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         }
                         label="Total Focus"
                         value={formatDuration(stats.totalFocusTime)}
                         subValue={`${formatHours(stats.totalFocusTime)} total`}
-                        color="bg-blue-400"
-                        bgColor="bg-gray-800/50"
+                        color="bg-[#f43f5e]"
+                        bgColor="bg-[rgba(255,255,255,0.04)]"
                       />
                       <StatCard
                         icon={
@@ -420,18 +420,18 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
                         value={stats.completedSessions}
                         subValue={`of ${stats.totalSessions} total`}
                         color="bg-green-400"
-                        bgColor="bg-gray-800/50"
+                        bgColor="bg-[rgba(255,255,255,0.04)]"
                       />
                       <StatCard
                         icon={
-                          <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 text-[#a1a1aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                           </svg>
                         }
                         label="Avg Session"
                         value={formatDuration(Math.round(stats.averageSessionLength))}
-                        color="bg-purple-400"
-                        bgColor="bg-gray-800/50"
+                        color="bg-[#a1a1aa]"
+                        bgColor="bg-[rgba(255,255,255,0.04)]"
                       />
                       <StatCard
                         icon={
@@ -443,7 +443,7 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
                         value={stats.sessionsThisWeek}
                         subValue={formatDuration(stats.focusTimeThisWeek)}
                         color="bg-yellow-400"
-                        bgColor="bg-gray-800/50"
+                        bgColor="bg-[rgba(255,255,255,0.04)]"
                       />
                     </div>
 
@@ -451,10 +451,10 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
                     <div className="grid md:grid-cols-5 gap-6">
                       {/* Completion Rate */}
                       <motion.div
-                        className="md:col-span-2 p-5 rounded-xl bg-gray-800/50 border border-gray-700/50"
+                        className="md:col-span-2 p-5 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.10)]/50"
                         variants={cardVariants}
                       >
-                        <h3 className="text-sm font-medium text-gray-400 mb-4">Completion Rate</h3>
+                        <h3 className="text-sm font-medium text-[#b4b4b8] mb-4">Completion Rate</h3>
                         <div className="flex items-center justify-center">
                           <ProgressRing
                             progress={stats.completionRate}
@@ -462,23 +462,23 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
                               stats.completionRate >= 80
                                 ? '#10b981'
                                 : stats.completionRate >= 60
-                                ? '#3b82f6'
+                                ? '#f43f5e'
                                 : '#f59e0b'
                             }
                           />
                         </div>
-                        <p className="text-center text-sm text-gray-500 mt-4">
+                        <p className="text-center text-sm text-[#6b7280] mt-4">
                           {stats.completedSessions} of {stats.totalSessions} sessions completed
                         </p>
                       </motion.div>
 
                       {/* Time Distribution Chart */}
                       <motion.div
-                        className="md:col-span-3 p-5 rounded-xl bg-gray-800/50 border border-gray-700/50"
+                        className="md:col-span-3 p-5 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.10)]/50"
                         variants={cardVariants}
                       >
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-sm font-medium text-gray-400">Focus Time</h3>
+                          <h3 className="text-sm font-medium text-[#b4b4b8]">Focus Time</h3>
                           <div className="flex gap-1">
                             {(['daily', 'weekly', 'monthly'] as const).map((range) => (
                               <button
@@ -486,8 +486,8 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
                                 onClick={() => setTimeRange(range)}
                                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                                   timeRange === range
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-700 text-gray-400 hover:text-white'
+                                    ? 'bg-[#f43f5e] text-white'
+                                    : 'bg-gray-700 text-[#b4b4b8] hover:text-white'
                                 }`}
                               >
                                 {range.charAt(0).toUpperCase() + range.slice(1)}
@@ -507,10 +507,10 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
 
                     {/* Period Summary */}
                     <motion.div
-                      className="p-5 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20"
+                      className="p-5 rounded-xl bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.20)]"
                       variants={cardVariants}
                     >
-                      <h3 className="text-sm font-medium text-gray-400 mb-3">
+                      <h3 className="text-sm font-medium text-[#b4b4b8] mb-3">
                         {timeRange === 'daily' ? 'This Week' : timeRange === 'weekly' ? 'Last 7 Days' : 'Last 30 Days'}
                       </h3>
                       <div className="grid grid-cols-3 gap-4 text-center">
@@ -518,17 +518,17 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
                           <p className="text-2xl font-bold text-white">
                             {formatDuration(periodStats.totalMinutes)}
                           </p>
-                          <p className="text-xs text-gray-500">Total Focus</p>
+                          <p className="text-xs text-[#6b7280]">Total Focus</p>
                         </div>
                         <div>
                           <p className="text-2xl font-bold text-white">{periodStats.totalSessions}</p>
-                          <p className="text-xs text-gray-500">Sessions</p>
+                          <p className="text-xs text-[#6b7280]">Sessions</p>
                         </div>
                         <div>
                           <p className="text-2xl font-bold text-white">
                             {formatDuration(Math.round(periodStats.avgMinutesPerDay))}
                           </p>
-                          <p className="text-xs text-gray-500">Daily Avg</p>
+                          <p className="text-xs text-[#6b7280]">Daily Avg</p>
                         </div>
                       </div>
                     </motion.div>
@@ -544,7 +544,7 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
                     transition={{ duration: 0.2 }}
                     className="space-y-4"
                   >
-                    <h3 className="text-sm font-medium text-gray-400 mb-4">Recent Sessions</h3>
+                    <h3 className="text-sm font-medium text-[#b4b4b8] mb-4">Recent Sessions</h3>
 
                     {filteredData
                       .filter(d => d.sessionsCompleted > 0)
@@ -552,20 +552,20 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
                       .map((day, index) => (
                         <motion.div
                           key={day.date}
-                          className="flex items-center justify-between p-4 rounded-xl bg-gray-800/50 border border-gray-700/50"
+                          className="flex items-center justify-between p-4 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.10)]/50"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.05 }}
                         >
                           <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                              <span className="text-lg font-bold text-blue-400">
+                            <div className="w-12 h-12 rounded-xl bg-[rgba(244,63,94,0.10)] flex items-center justify-center">
+                              <span className="text-lg font-bold text-[#f43f5e]">
                                 {new Date(day.date).getDate()}
                               </span>
                             </div>
                             <div>
                               <p className="font-medium text-white">{day.dayOfWeek}</p>
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-[#6b7280]">
                                 {new Date(day.date).toLocaleDateString('en-US', {
                                   month: 'long',
                                   year: 'numeric',
@@ -575,7 +575,7 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
                           </div>
                           <div className="text-right">
                             <p className="font-semibold text-white">{formatDuration(day.focusMinutes)}</p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-[#6b7280]">
                               {day.sessionsCompleted} session{day.sessionsCompleted !== 1 ? 's' : ''}
                             </p>
                           </div>
@@ -584,12 +584,12 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
 
                     {filteredData.filter(d => d.sessionsCompleted > 0).length === 0 && (
                       <div className="text-center py-12">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-800 flex items-center justify-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[rgba(255,255,255,0.055)] flex items-center justify-center">
                           <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
-                        <p className="text-gray-400 font-medium">No sessions yet</p>
+                        <p className="text-[#b4b4b8] font-medium">No sessions yet</p>
                         <p className="text-gray-600 text-sm mt-1">Start a focus session to see your history</p>
                       </div>
                     )}

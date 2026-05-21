@@ -4,7 +4,11 @@ import { Archive, Download, Trash2 } from 'lucide-react';
 
 interface VoxMessageMenuProps {
   isDarkMode: boolean;
-  accentColor: string;
+  /**
+   * Accent for the leading action icons. Defaults to brand rose (`#f43f5e`)
+   * — Coral-As-Signal Rule. Retained as a prop for downstream flexibility.
+   */
+  accentColor?: string;
   onArchive: () => void;
   onDownload: () => void;
   onDelete?: () => void;
@@ -15,7 +19,7 @@ interface VoxMessageMenuProps {
 
 const VoxMessageMenu: React.FC<VoxMessageMenuProps> = ({
   isDarkMode,
-  accentColor,
+  accentColor = '#f43f5e',
   onArchive,
   onDownload,
   onDelete,
@@ -61,9 +65,11 @@ const VoxMessageMenu: React.FC<VoxMessageMenuProps> = ({
     };
   }, [onClose]);
 
-  const bg = isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200';
-  const textPrimary = isDarkMode ? 'text-gray-100' : 'text-gray-800';
-  const hoverBg = isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100';
+  const bg = isDarkMode
+    ? 'bg-[#0a0a0a] border-[rgba(255,255,255,0.06)]'
+    : 'bg-white border-[rgba(0,0,0,0.08)]';
+  const textPrimary = isDarkMode ? 'text-[#fafafa]' : 'text-[#0f0f0f]';
+  const hoverBg = isDarkMode ? 'hover:bg-[rgba(255,255,255,0.055)]' : 'hover:bg-[#f2f2f2]';
 
   const handleArchive = () => { onArchive(); onClose(); };
   const handleDownload = () => { onDownload(); onClose(); };
@@ -105,7 +111,7 @@ const VoxMessageMenu: React.FC<VoxMessageMenuProps> = ({
 
       {onDelete && (
         <>
-          <div className={`my-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} />
+          <div className={`my-1 border-t ${isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-[rgba(0,0,0,0.08)]'}`} />
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); handleDelete(); }}

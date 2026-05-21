@@ -1918,6 +1918,31 @@ html.dark .pulse-studio,
   flex-shrink: 0;
 }
 
+.ps-provenance-dot[data-source="google"],
+.ps-provenance-dot[data-source="outlook"] {
+  background: var(--pulse-tone-info);
+}
+
+.ps-provenance-dot[data-source="logos-vision"] {
+  /* LV (Logos Vision) — coral, the "case-record bridge" promise from the
+     landing page. Distinct enough to spot, paired with the LV . CASE chip
+     label rather than carrying meaning by color alone. */
+  background: var(--pulse-rose);
+}
+
+.ps-provenance-dot[data-source="manual"],
+.ps-provenance-dot[data-source="legacy"],
+.ps-provenance-dot:not([data-source]) {
+  background: var(--pulse-tone-neutral);
+}
+
+.ps-provenance-dot[data-source="card"] {
+  /* Phase C — contact-card source. Info-blue per vision spec
+     (semantically "transferred from elsewhere"). Coral is reserved
+     for the Received-tab badge only; do not use coral here. */
+  background: var(--pulse-tone-info);
+}
+
 .ps-provenance-sep {
   opacity: 0.5;
 }

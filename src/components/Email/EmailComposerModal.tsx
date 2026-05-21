@@ -102,6 +102,62 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
   const [attachments, setAttachments] = useState<File[]>([]);
   const [savingDraft, setSavingDraft] = useState(false);
 
+  // Pre-send guards (inline, never modal)
+  const [missingAttachmentWarning, setMissingAttachmentWarning] = useState(false);
+
+  // Draft persistence (localStorage, debounced 800ms)
+  const DRAFT_KEY = 'pulse-email-composer-draft';
+  const isInitialMountRef = useRef(true);
+  const [restoredDraft, setRestoredDraft] = useState<{ savedAt: number } | null>(null);
+
+  // Restore draft on first mount (only if composer is opening fresh, no replyTo / restored params)
+  useEffect(() => {
+    if (!isInitialMountRef.current) return;
+    isInitialMountRef.current = false;
+    if (replyTo || initialTo || initialSubject) return; // not a blank compose
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (!draft || (!draft.body && !draft.subject && !draft.to)) return;
+      setRestoredDraft({ savedAt: draft.savedAt ?? Date.now() });
+    } catch { /* corrupt JSON; ignore */ }
+  }, []);
+
+  const applyRestoredDraft = () => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) { setRestoredDraft(null); return; }
+      const draft = JSON.parse(raw);
+      if (draft.to) setTo(draft.to);
+      if (draft.cc) { setCc(draft.cc); setShowCc(true); }
+      if (draft.bcc) { setBcc(draft.bcc); setShowBcc(true); }
+      if (draft.subject) setSubject(draft.subject);
+      if (typeof draft.body === 'string') setBody(draft.body);
+    } catch { /* ignore */ }
+    setRestoredDraft(null);
+  };
+
+  const dismissRestoredDraft = () => {
+    setRestoredDraft(null);
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
+  };
+
+  // Auto-save draft on change (debounced 800ms). Skips empty drafts and non-blank composes.
+  useEffect(() => {
+    if (replyTo || initialTo || initialSubject) return;
+    const hasContent = Boolean(to.trim() || subject.trim() || body.trim() || cc.trim() || bcc.trim());
+    if (!hasContent) return;
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          to, cc, bcc, subject, body, savedAt: Date.now(),
+        }));
+      } catch { /* quota or unavailable */ }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [to, cc, bcc, subject, body, replyTo, initialTo, initialSubject]);
+
   // Schedule send state
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduling, setScheduling] = useState(false);
@@ -210,6 +266,13 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
       return;
     }
 
+    // Attachment-keyword guard: body mentions attachment, none attached. Inline warning, not modal.
+    const mentionsAttachment = /\b(attach(ed|ment|ing)?|enclosed|see\s+attached|please\s+find)\b/i.test(body);
+    if (mentionsAttachment && attachments.length === 0 && !missingAttachmentWarning) {
+      setMissingAttachmentWarning(true);
+      return;
+    }
+
     setSending(true);
     try {
       // Convert File attachments to EmailAttachment format
@@ -245,6 +308,8 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
           toast.error('Email sent, but confidential settings failed to save.');
         }
       }
+      // Successful send: clear persisted draft.
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
       onClose();
     } catch (error) {
       // Error handled by parent
@@ -494,6 +559,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
     }
 
     setAttachments(prev => [...prev, ...newFiles]);
+    setMissingAttachmentWarning(false);
     toast.success(`Added ${newFiles.length} attachment(s)`);
 
     // Reset input
@@ -733,6 +799,30 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
 
         {/* Form */}
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Restored-draft strip — shown only on first mount when a saved draft exists */}
+          {restoredDraft && (
+            <div className="px-4 py-2.5 border-b border-rose-500/25 bg-rose-500/[0.06] flex items-center gap-3">
+              <Save className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-rose-400">
+                  Draft · Saved {new Date(restoredDraft.savedAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                </div>
+              </div>
+              <button
+                onClick={applyRestoredDraft}
+                className="h-7 px-3 rounded-md text-xs font-medium bg-rose-500 hover:bg-rose-600 text-white transition-colors"
+              >
+                Restore
+              </button>
+              <button
+                onClick={dismissRestoredDraft}
+                className="h-7 px-2.5 rounded-md text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+              >
+                Discard
+              </button>
+            </div>
+          )}
+
           {/* Recipients */}
           <div className="px-4 py-2 border-b border-zinc-800/50">
             <div className="flex items-center gap-2">
@@ -1025,6 +1115,33 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                   </label>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Inline pre-send warnings */}
+          {missingAttachmentWarning && (
+            <div className="px-4 py-2.5 border-t border-amber-500/30 bg-amber-500/[0.06] flex items-center gap-3">
+              <Paperclip className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-amber-600 dark:text-amber-400">
+                  Attachment · Missing
+                </div>
+                <div className="text-xs text-stone-700 dark:text-zinc-300 mt-0.5">
+                  Body mentions an attachment but none added.
+                </div>
+              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="h-7 px-2.5 rounded-md text-xs font-medium text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors"
+              >
+                Add file
+              </button>
+              <button
+                onClick={() => { setMissingAttachmentWarning(false); handleSend(); }}
+                className="h-7 px-3 rounded-md text-xs font-medium bg-rose-500 hover:bg-rose-600 text-white transition-colors"
+              >
+                Send anyway
+              </button>
             </div>
           )}
 

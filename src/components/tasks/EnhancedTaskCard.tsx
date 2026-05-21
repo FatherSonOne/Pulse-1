@@ -146,11 +146,14 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
     }
   };
 
-  const getAIScoreColor = (score: number): string => {
-    if (score >= 80) return '#ef4444'; // Red for high priority
-    if (score >= 60) return '#f59e0b'; // Amber for medium-high
-    if (score >= 40) return '#10b981'; // Green for medium
-    return '#6b7280'; // Gray for low
+  // Returns the canonical Pulse status token for an AI priority score.
+  // The pair is (bg-soft, fg) so the chip carries a tinted background +
+  // matching text color — same shape as every status pill in the system.
+  const getAIScoreToneVars = (score: number): { bg: string; fg: string } => {
+    if (score >= 80) return { bg: 'var(--pulse-tone-overdue-soft)', fg: 'var(--pulse-tone-overdue)' };
+    if (score >= 60) return { bg: 'var(--pulse-tone-warning-soft)', fg: 'var(--pulse-tone-warning)' };
+    if (score >= 40) return { bg: 'var(--pulse-tone-positive-soft)', fg: 'var(--pulse-tone-positive)' };
+    return { bg: 'var(--pulse-tone-neutral-soft)', fg: 'var(--pulse-tone-neutral)' };
   };
 
   const getBlockedTasks = () => {
@@ -207,20 +210,21 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
               </div>
             )}
 
-            {/* AI Priority Score Badge */}
-            {aiScore !== null && (
-              <div
-                className="ai-score-badge"
-                style={{
-                  backgroundColor: `${getAIScoreColor(aiScore)}15`,
-                  color: getAIScoreColor(aiScore)
-                }}
-                title={`AI Priority Score: ${aiScore}/100`}
-              >
-                <Zap size={12} />
-                <span>{aiScore}</span>
-              </div>
-            )}
+            {/* AI Priority Score Badge — uses canonical status tone tokens
+                (Status-Stays-Status rule); soft bg + matching fg. */}
+            {aiScore !== null && (() => {
+              const tone = getAIScoreToneVars(aiScore);
+              return (
+                <div
+                  className="ai-score-badge"
+                  style={{ backgroundColor: tone.bg, color: tone.fg }}
+                  title={`AI Priority Score: ${aiScore}/100`}
+                >
+                  <Zap size={12} />
+                  <span>{aiScore}</span>
+                </div>
+              );
+            })()}
           </div>
         </div>
 

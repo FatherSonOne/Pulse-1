@@ -1,9 +1,14 @@
-// Enhanced AI Conversation Coach with Real-time Analysis
+// Enhanced AI Conversation Coach — real-time draft analysis. Combines
+// a fast keyword-driven pass (analyzeDraft, below) with a debounced LLM
+// call (analyzeDraftIntent) so the user gets instant heuristic feedback
+// AND a higher-quality LLM suggestion when one is available.
 import React, { useState, useEffect, useMemo } from 'react';
 import type { AICoachSuggestion } from '../../types/messageEnhancements';
 
 import { Wand2, X } from 'lucide-react';
 import { AIProvenanceTag } from '../shared/AIProvenanceTag';
+import { analyzeDraftIntent } from '../../services/geminiService';
+import type { DraftAnalysis } from '../../types';
 
 interface EnhancedCoachSuggestion extends AICoachSuggestion {
   category: 'tone' | 'clarity' | 'timing' | 'structure' | 'empathy' | 'action';
@@ -18,6 +23,9 @@ interface AICoachEnhancedProps {
   onApplySuggestion: (newText: string) => void;
   onDismiss: () => void;
   compact?: boolean;
+  /** Suppress the internal provenance-tag header. Use when the panel
+   *  is wrapped in PanelShell so the chip isn't duplicated. */
+  hideHeader?: boolean;
 }
 
 // Analyze draft for potential issues
@@ -170,16 +178,66 @@ const AICoachEnhancedComponent: React.FC<AICoachEnhancedProps> = ({
   contactName,
   onApplySuggestion,
   onDismiss,
-  compact = false
+  compact = false,
+  hideHeader = false,
 }) => {
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [showAll, setShowAll] = useState(false);
+  const [llmAnalysis, setLlmAnalysis] = useState<DraftAnalysis | null>(null);
 
-  const suggestions = useMemo(() =>
-    analyzeDraft(draftText, recentMessages, contactName)
-      .filter((_, idx) => !dismissedIds.has(`${idx}`)),
-    [draftText, recentMessages, contactName, dismissedIds]
+  // LLM enrichment — server-side draft analysis. Debounced so we don't
+  // hammer the router on every keystroke.
+  useEffect(() => {
+    if (!draftText || draftText.length < 12) {
+      setLlmAnalysis(null);
+      return;
+    }
+    const handle = window.setTimeout(() => {
+      let cancelled = false;
+      void analyzeDraftIntent(draftText)
+        .then(result => {
+          if (cancelled) return;
+          // Only surface confident, non-trivial suggestions.
+          if (result && result.confidence > 0.65 && result.intent !== 'social') {
+            setLlmAnalysis(result);
+          } else {
+            setLlmAnalysis(null);
+          }
+        })
+        .catch(() => {
+          // Hard router errors bubble up via the geminiService throw;
+          // soft failures (rate limit, no workspace) return null and we
+          // simply fall back to the heuristic suggestions.
+        });
+      return () => { cancelled = true; };
+    }, 900);
+    return () => window.clearTimeout(handle);
+  }, [draftText]);
+
+  const heuristicSuggestions = useMemo(() =>
+    analyzeDraft(draftText, recentMessages, contactName),
+    [draftText, recentMessages, contactName]
   );
+
+  // Compose the final list: prepend the LLM rewrite (if any) so it sits
+  // above the heuristic items, then apply the dismiss filter.
+  const suggestions: EnhancedCoachSuggestion[] = useMemo(() => {
+    const list: EnhancedCoachSuggestion[] = [];
+    if (llmAnalysis && llmAnalysis.improvedText && llmAnalysis.improvedText !== draftText) {
+      list.push({
+        type: 'tone',
+        category: 'clarity',
+        severity: 'info',
+        priority: 0,
+        message: llmAnalysis.suggestion || 'AI suggests a rewrite',
+        suggestion: `Intent: ${llmAnalysis.intent}`,
+        alternativeText: llmAnalysis.improvedText,
+        quickFix: 'Apply rewrite',
+      });
+    }
+    list.push(...heuristicSuggestions);
+    return list.filter((_, idx) => !dismissedIds.has(`${idx}`));
+  }, [llmAnalysis, heuristicSuggestions, dismissedIds, draftText]);
 
   const visibleSuggestions = showAll ? suggestions : suggestions.slice(0, 2);
   const hiddenCount = suggestions.length - visibleSuggestions.length;
@@ -230,20 +288,22 @@ const AICoachEnhancedComponent: React.FC<AICoachEnhancedProps> = ({
   }
 
   return (
-    <div className="space-y-2 mb-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs">
-          <AIProvenanceTag
-            source="pulse-ai"
-            kind="coach"
-            onDismiss={onDismiss}
-          />
-          <span className="text-zinc-500 dark:text-zinc-400">
-            {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}
-          </span>
+    <div className="space-y-2">
+      {/* Header — hidden when wrapped in PanelShell (host owns chrome). */}
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 text-xs">
+            <AIProvenanceTag
+              source="pulse-ai"
+              kind="coach"
+              onDismiss={onDismiss}
+            />
+            <span className="text-zinc-500 dark:text-zinc-400">
+              {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Suggestions */}
       {visibleSuggestions.map((suggestion, index) => (

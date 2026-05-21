@@ -811,6 +811,21 @@ export class GmailService {
   }
 
   /**
+   * Add/remove arbitrary system or user label IDs on a message in one call
+   * (e.g. IMPORTANT, SPAM, custom Gmail labels). Used by viewer toolbar actions.
+   */
+  async modifyMessageLabels(
+    messageId: string,
+    addLabelIds: string[] = [],
+    removeLabelIds: string[] = []
+  ): Promise<void> {
+    await this.gmailRequest(`users/me/messages/${messageId}/modify`, {
+      method: 'POST',
+      body: { addLabelIds, removeLabelIds }
+    });
+  }
+
+  /**
    * Get all labels
    */
   async getLabels(): Promise<Array<{ id: string; name: string; type: string }>> {

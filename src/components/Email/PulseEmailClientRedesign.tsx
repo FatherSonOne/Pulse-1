@@ -29,7 +29,7 @@ import { useEmailKeyboardShortcuts } from '../../hooks/useEmailKeyboardShortcuts
 import { ReconnectGoogleModal } from '../Auth/ReconnectGoogleModal';
 import { GoogleAuthStatus } from './GoogleAuthStatus';
 
-import { AlertTriangle, ExternalLink, Keyboard, Loader2, MailCheck, MailOpen, Menu, Pen, Search, Send, Settings, X } from 'lucide-react';
+import { AlertTriangle, ExternalLink, Keyboard, Loader2, MailCheck, MailOpen, Menu, Pen, RefreshCw, Search, Send, Settings, X } from 'lucide-react';
 
 interface PulseEmailClientRedesignProps {
   userEmail: string;
@@ -70,6 +70,27 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
   } = useEmailUIStore();
 
   const briefingRef = useRef<HTMLDivElement>(null);
+  const [syncPulseKey, setSyncPulseKey] = React.useState(0);
+
+  // First-run check: is Gmail provider connected at all?
+  // Heuristic: no provider_token AND no cached emails → never-connected first-run.
+  const [gmailConnectionState, setGmailConnectionState] = React.useState<'checking' | 'connected' | 'never'>('checking');
+  const [connectingGmail, setConnectingGmail] = React.useState(false);
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (cancelled) return;
+        const hasProviderToken = Boolean(session?.provider_token);
+        const hasCached = (syncState?.total_emails_cached ?? 0) > 0 || emails.length > 0;
+        setGmailConnectionState(hasProviderToken || hasCached ? 'connected' : 'never');
+      } catch {
+        if (!cancelled) setGmailConnectionState('connected'); // fail open: don't block the inbox
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [syncState?.total_emails_cached, emails.length]);
 
   // ── Focus nudge from Daily Overview ────────────────────────────────
   useEffect(() => {
@@ -185,17 +206,17 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
       const result = await emailSyncService.fullSync(100);
       if (result.synced > 0) {
         toast.custom((t) => (
-          <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white dark:bg-zinc-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+          <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white dark:bg-zinc-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-stone-950/5 dark:ring-white/10`}>
             <div className="flex-1 w-0 p-4">
               <div className="flex items-start">
-                <div className="flex-shrink-0 pt-0.5"><MailCheck className="text-green-500 text-lg" /></div>
+                <div className="flex-shrink-0 pt-0.5"><MailCheck className="w-4 h-4 text-emerald-500" /></div>
                 <div className="ml-3 flex-1">
-                  <p className="text-sm font-medium text-stone-900 dark:text-gray-100">Synced {result.synced} new emails</p>
+                  <p className="text-sm font-medium text-stone-900 dark:text-zinc-100">Synced {result.synced} new emails</p>
                 </div>
               </div>
             </div>
-            <div className="flex border-l border-gray-200 dark:border-zinc-700">
-              <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus:outline-none">Close</button>
+            <div className="flex border-l border-stone-200 dark:border-zinc-700">
+              <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-stone-700 dark:text-zinc-300 hover:text-rose-500 focus:outline-none transition-colors">Close</button>
             </div>
           </div>
         ), { duration: 4000 });
@@ -203,9 +224,31 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
         toast.success(`Synced ${result.synced} emails`);
       }
       await loadEmails();
+      setSyncPulseKey((k) => k + 1); // brief rose ring confirming success
     } catch (error) {
       console.error('Sync error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to sync emails');
+      const msg = error instanceof Error ? error.message : 'Failed to sync emails';
+      toast.custom((t) => (
+        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white dark:bg-zinc-800 rounded-lg pointer-events-auto flex shadow-lg ring-1 ring-stone-950/5 dark:ring-white/10`}>
+          <div className="flex-1 w-0 p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-stone-900 dark:text-zinc-100">Sync failed</p>
+                <p className="text-xs text-stone-500 dark:text-zinc-500 mt-0.5 truncate">{msg}</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex border-l border-stone-200 dark:border-zinc-700">
+            <button
+              onClick={() => { toast.dismiss(t.id); handleSync(); }}
+              className="px-4 flex items-center justify-center text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      ), { duration: 6000 });
     } finally {
       setSyncing(false);
     }
@@ -260,13 +303,15 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
       } catch (error) {
         console.error('Send error:', error);
         removePendingSend(sendId);
+        // Restore the composer with the user's typed content so they don't retype it.
+        restoreComposer(params);
         const msg = error instanceof Error ? error.message : 'Failed to send email';
         if (msg.includes('session') || msg.includes('sign') || msg.includes('expired')) {
           setAuthError(true);
           resetGmailService();
-          toast.error('Google session expired. Click "Reconnect Google" to continue.');
+          toast.error('Google session expired. Reconnect, then send again. (Draft restored.)');
         } else {
-          toast.error(msg);
+          toast.error(`${msg}. Draft restored.`);
         }
       }
     };
@@ -346,6 +391,44 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
   //  RENDER
   // ═══════════════════════════════════════════════════════════════════
 
+  // First-run: Gmail never connected. Replace the inbox shell with an opinionated welcome.
+  if (gmailConnectionState === 'never') {
+    return (
+      <div className="flex flex-1 h-full bg-stone-50 dark:bg-zinc-950 items-center justify-center p-8">
+        <div className="text-center max-w-md">
+          <div className="relative w-20 h-20 mx-auto mb-7 flex items-center justify-center">
+            <span className="pulse-email-zero-halo absolute inset-0 rounded-full bg-rose-500/15 dark:bg-rose-500/20" aria-hidden="true" />
+            <span className="absolute inset-3 rounded-full bg-rose-500/10 dark:bg-rose-500/15" aria-hidden="true" />
+            <MailCheck className="w-7 h-7 text-rose-500 relative" strokeWidth={1.75} />
+          </div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-rose-600 dark:text-rose-400 mb-3">
+            Pulse Mail · Connect
+          </div>
+          <h2 className="text-2xl font-light text-stone-900 dark:text-white tracking-tight mb-2">
+            One inbox, one surface.
+          </h2>
+          <p className="text-sm text-stone-500 dark:text-zinc-400 mb-7 max-w-[42ch] mx-auto leading-relaxed">
+            Pulse pulls your Gmail in, summarizes what matters, and drafts replies in your voice. Sign in to your Google account to begin.
+          </p>
+          <button
+            onClick={async () => {
+              setConnectingGmail(true);
+              try { await handleReAuthenticate(); } catch { setConnectingGmail(false); }
+            }}
+            disabled={connectingGmail}
+            className="inline-flex items-center gap-2 h-11 px-6 bg-rose-500 hover:bg-rose-600 disabled:bg-rose-500/60 text-white rounded-lg text-sm font-medium transition-[transform,box-shadow,background-color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_1px_0_rgba(244,63,94,0.2),0_4px_12px_rgba(244,63,94,0.18)] hover:-translate-y-[1px] hover:shadow-[0_2px_0_rgba(244,63,94,0.25),0_10px_24px_rgba(244,63,94,0.30)]"
+          >
+            {connectingGmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
+            {connectingGmail ? 'Opening Google' : 'Connect Google'}
+          </button>
+          <div className="mt-7 font-mono text-[10px] uppercase tracking-[0.14em] text-stone-400 dark:text-zinc-600">
+            Read · Send · Search · Modify · Compose
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-1 h-full bg-stone-50 dark:bg-zinc-950 min-h-0">
       {/* Sidebar */}
@@ -380,7 +463,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
 
         {/* Header — search dominates, secondary controls quiet */}
         <div className="flex items-center gap-4 px-6 py-4 border-b border-stone-200 dark:border-zinc-800">
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden w-9 h-9 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-400 transition" aria-label="Open menu"><Menu className="w-4 h-4" /></button>
+          <button onClick={() => setSidebarOpen(true)} className="md:hidden w-11 h-11 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-400 transition" aria-label="Open menu"><Menu className="w-5 h-5" /></button>
 
           {/* Search — primary surface */}
           <div className="flex-1 relative max-w-2xl">
@@ -390,11 +473,21 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="Search emails"
-              className="w-full bg-stone-100/70 dark:bg-white/[0.03] border border-transparent hover:border-stone-200 dark:hover:border-white/10 rounded-lg pl-10 pr-9 py-2 text-sm text-stone-900 dark:text-white placeholder-stone-500 dark:placeholder-zinc-500 focus:outline-none focus:border-rose-500/60 focus:bg-white dark:focus:bg-zinc-900 transition-colors"
+              aria-label="Search emails"
+              enterKeyHint="search"
+              className="w-full h-11 bg-stone-100/70 dark:bg-white/[0.03] border border-transparent hover:border-stone-200 dark:hover:border-white/10 rounded-lg pl-10 pr-11 text-sm text-stone-900 dark:text-white placeholder-stone-500 dark:placeholder-zinc-500 focus:outline-none focus:border-rose-500/60 focus:bg-white dark:focus:bg-zinc-900 transition-colors"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-zinc-500" />
             {searchQuery && (
-              <button type="button" title="Clear search" onClick={() => { setSearchQuery(''); loadEmails(); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white"><X className="w-3.5 h-3.5" /></button>
+              <button
+                type="button"
+                title="Clear search"
+                aria-label="Clear search"
+                onClick={() => { setSearchQuery(''); loadEmails(); }}
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-md flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:bg-stone-200/70 dark:hover:bg-white/[0.06] hover:text-stone-700 dark:hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
             )}
           </div>
 
@@ -409,7 +502,8 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
             {currentFolder === 'inbox' && (
               <button
                 onClick={() => setShowBriefing(!showBriefing)}
-                className={`hidden sm:flex items-center gap-2 px-3 h-9 rounded-lg text-sm transition ${
+                aria-pressed={showBriefing}
+                className={`hidden sm:flex items-center gap-2 px-3 h-10 rounded-lg text-sm transition ${
                   showBriefing
                     ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
                     : 'text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white'
@@ -423,16 +517,20 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
             <button
               onClick={handleSync}
               disabled={syncing}
-              className="w-9 h-9 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white flex items-center justify-center transition disabled:opacity-40"
+              className="relative w-10 h-10 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white flex items-center justify-center transition disabled:opacity-40"
               title="Sync emails"
-              aria-label="Sync emails"
+              aria-label={syncing ? 'Syncing emails' : 'Sync emails'}
+              aria-busy={syncing}
             >
-              <i className={`fa-solid fa-arrows-rotate text-sm ${syncing ? 'fa-spin' : ''}`}></i>
+              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+              {syncPulseKey > 0 && (
+                <span key={syncPulseKey} className="pulse-email-sync-success" aria-hidden="true" />
+              )}
             </button>
 
             <button
               onClick={() => setShowEmailSettings(true)}
-              className="w-9 h-9 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white flex items-center justify-center transition"
+              className="w-10 h-10 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white flex items-center justify-center transition"
               title="Email settings"
               aria-label="Open email settings"
             >

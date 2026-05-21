@@ -14,9 +14,7 @@ import { blobToBase64 } from '../services/audioService';
 import { transcribeAudio, generateMeetingInsights } from '../services/assemblyService';
 import { generateSpeech as generateElevenLabsSpeech, getVoices } from '../services/elevenLabsService';
 import { geocodeAddress, getStaticMapUrl, getNavigationRoute } from '../services/mapboxService';
-import { generateWithFallback, AIProvider } from '../services/unifiedAIService';
-
-import { ArrowLeft, ArrowRight, Bot, CloudUpload, Code, Copy, Download, Eye, FileAudio, Film, Flag, FlaskConical, Image, Lightbulb, Loader2, MapPin, Mic, Play, Podcast, Quote, Route, Users, Volume2, Wand2, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CloudUpload, Code, Copy, Download, Eye, FileAudio, Film, Flag, FlaskConical, Image, Lightbulb, Loader2, MapPin, Mic, Play, Podcast, Quote, Route, Users, Volume2, Wand2, Zap } from 'lucide-react';
 
 interface ToolsProps {
   apiKey: string;
@@ -27,7 +25,7 @@ interface ToolsProps {
   claudeKey?: string;
 }
 
-type ToolId = 'reason' | 'video' | 'video_gen' | 'transcribe' | 'code' | 'vision' | 'image_edit' | 'maps' | 'meeting_intel' | 'voice_studio' | 'route_planner' | 'ai_assistant' | null;
+type ToolId = 'reason' | 'video' | 'video_gen' | 'transcribe' | 'code' | 'vision' | 'image_edit' | 'maps' | 'meeting_intel' | 'voice_studio' | 'route_planner' | null;
 
 interface ToolTileConfig {
   id: ToolId;
@@ -39,6 +37,10 @@ interface ToolTileConfig {
   partner?: string;
 }
 
+// Coral-As-Signal: every tile uses the same rose tint. The
+// `partner` label and tool name carry differentiation, not a
+// per-tile gradient. The `color` field is kept on the type for
+// historical reasons but now resolves to "rose" everywhere.
 const TOOL_TILES: ToolTileConfig[] = [
   // === GEMINI TOOLS ===
   {
@@ -46,8 +48,8 @@ const TOOL_TILES: ToolTileConfig[] = [
     icon: 'fa-brain',
     label: 'Deep Reasoner',
     description: 'Complex problem solving with extended thinking',
-    color: 'purple',
-    gradient: 'from-purple-600 to-violet-600',
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-500',
     partner: 'Gemini'
   },
   {
@@ -55,8 +57,8 @@ const TOOL_TILES: ToolTileConfig[] = [
     icon: 'fa-film',
     label: 'Video Analyst',
     description: 'Analyze and extract insights from video content',
-    color: 'blue',
-    gradient: 'from-blue-600 to-cyan-600',
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-500',
     partner: 'Gemini'
   },
   {
@@ -64,8 +66,8 @@ const TOOL_TILES: ToolTileConfig[] = [
     icon: 'fa-clapperboard',
     label: 'Video Studio',
     description: 'Generate videos with Veo AI model',
-    color: 'orange',
-    gradient: 'from-orange-600 to-amber-600',
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-500',
     partner: 'Veo'
   },
   {
@@ -73,8 +75,8 @@ const TOOL_TILES: ToolTileConfig[] = [
     icon: 'fa-headphones-simple',
     label: 'Voice Lab',
     description: 'Real-time speech transcription',
-    color: 'emerald',
-    gradient: 'from-emerald-600 to-teal-600',
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-500',
     partner: 'Gemini'
   },
   {
@@ -82,8 +84,8 @@ const TOOL_TILES: ToolTileConfig[] = [
     icon: 'fa-laptop-code',
     label: 'Code Studio',
     description: 'Generate code and algorithms',
-    color: 'indigo',
-    gradient: 'from-indigo-600 to-blue-600',
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-500',
     partner: 'Gemini'
   },
   {
@@ -91,8 +93,8 @@ const TOOL_TILES: ToolTileConfig[] = [
     icon: 'fa-image',
     label: 'Vision Lab',
     description: 'Create stunning images with Imagen 3',
-    color: 'pink',
-    gradient: 'from-pink-600 to-rose-600',
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-500',
     partner: 'Imagen'
   },
   {
@@ -100,8 +102,8 @@ const TOOL_TILES: ToolTileConfig[] = [
     icon: 'fa-wand-magic-sparkles',
     label: 'Image Editor',
     description: 'AI-powered image editing and manipulation',
-    color: 'cyan',
-    gradient: 'from-cyan-600 to-sky-600',
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-500',
     partner: 'Gemini'
   },
   {
@@ -109,8 +111,8 @@ const TOOL_TILES: ToolTileConfig[] = [
     icon: 'fa-map-location-dot',
     label: 'Geo Intel',
     description: 'Location-aware queries with grounding',
-    color: 'green',
-    gradient: 'from-green-600 to-emerald-600',
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-500',
     partner: 'Gemini'
   },
   // === NEW MULTI-API TOOLS ===
@@ -119,8 +121,8 @@ const TOOL_TILES: ToolTileConfig[] = [
     icon: 'fa-users-rectangle',
     label: 'Meeting Intel',
     description: 'Speaker diarization & sentiment from recordings',
-    color: 'violet',
-    gradient: 'from-violet-600 to-purple-600',
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-500',
     partner: 'AssemblyAI'
   },
   {
@@ -128,8 +130,8 @@ const TOOL_TILES: ToolTileConfig[] = [
     icon: 'fa-podcast',
     label: 'Voice Studio',
     description: 'Ultra-realistic text-to-speech synthesis',
-    color: 'amber',
-    gradient: 'from-amber-500 to-orange-600',
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-500',
     partner: 'ElevenLabs'
   },
   {
@@ -137,18 +139,9 @@ const TOOL_TILES: ToolTileConfig[] = [
     icon: 'fa-route',
     label: 'Route Planner',
     description: 'Visual maps & optimized navigation',
-    color: 'teal',
-    gradient: 'from-teal-500 to-cyan-600',
-    partner: 'Mapbox'
-  },
-  {
-    id: 'ai_assistant',
-    icon: 'fa-robot',
-    label: 'AI Assistant',
-    description: 'Multi-model chat with auto-fallback',
     color: 'rose',
-    gradient: 'from-rose-500 to-pink-600',
-    partner: 'Multi-AI'
+    gradient: 'from-rose-500 to-pink-500',
+    partner: 'Mapbox'
   },
 ];
 
@@ -231,20 +224,15 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
   const [isPlanning, setIsPlanning] = useState(false);
 
   // AI Assistant State (Multi-AI Fallback)
-  const [assistantPrompt, setAssistantPrompt] = useState('');
-  const [assistantResult, setAssistantResult] = useState('');
-  const [assistantProvider, setAssistantProvider] = useState<AIProvider | ''>('');
-  const [preferredProvider, setPreferredProvider] = useState<AIProvider>('gemini');
-  const [isAssisting, setIsAssisting] = useState(false);
 
   // --- Handlers ---
 
   const handleReason = async () => {
-    if (!reasonPrompt.trim() || !apiKey) return;
+    if (!reasonPrompt.trim()) return;
     setIsReasoning(true);
     setReasonResult('');
     try {
-      const text = await generateThinkingResponse(apiKey, reasonPrompt);
+      const text = await generateThinkingResponse(reasonPrompt);
       setReasonResult(text || "No response generated.");
     } catch (e) {
       setReasonResult("Error: Unable to process complex query. Please try again.");
@@ -259,13 +247,13 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
   };
 
   const handleAnalyzeVideo = async () => {
-    if (!videoFile || !videoPrompt.trim() || !apiKey) return;
+    if (!videoFile || !videoPrompt.trim()) return;
     setIsAnalyzingVideo(true);
     setVideoResult('');
     try {
       const blob = videoFile.slice(0, videoFile.size); // Full file
       const base64 = await blobToBase64(blob);
-      const text = await analyzeVideo(apiKey, base64, videoFile.type, videoPrompt);
+      const text = await analyzeVideo(base64, videoFile.type, videoPrompt);
       setVideoResult(text || "No insights found.");
     } catch (e) {
       setVideoResult("Error analyzing video. Ensure the file is not too large.");
@@ -336,7 +324,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
           const base64 = await blobToBase64(blob);
           try {
             // FIX: Pass the actual mimeType detected above, not hardcoded 'audio/webm'
-            const text = await transcribeMedia(apiKey, base64, mimeType);
+            const text = await transcribeMedia(base64, mimeType);
             setTranscription(text || "No speech detected.");
           } catch (e) {
             console.error(e);
@@ -356,11 +344,11 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
   };
 
   const handleGenerateCode = async () => {
-      if (!codePrompt.trim() || !apiKey) return;
+      if (!codePrompt.trim()) return;
       setIsCoding(true);
       setCodeResult('');
       try {
-          const text = await generateCode(apiKey, codePrompt);
+          const text = await generateCode(codePrompt);
           setCodeResult(text || "No code generated.");
       } catch (e) {
           setCodeResult("Error generating code.");
@@ -369,11 +357,11 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
   };
 
   const handleGenerateImage = async () => {
-      if (!visionPrompt.trim() || !apiKey) return;
+      if (!visionPrompt.trim()) return;
       setIsGeneratingImage(true);
       setGeneratedImage('');
       try {
-          const url = await generateProImage(apiKey, visionPrompt, aspectRatio, imageSize);
+          const url = await generateProImage(visionPrompt, aspectRatio, imageSize);
           if (url) setGeneratedImage(url);
           else throw new Error("No image returned");
       } catch (e) {
@@ -390,12 +378,12 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
   };
 
   const handleEditImage = async () => {
-      if (!editImageFile || !editPrompt.trim() || !apiKey) return;
+      if (!editImageFile || !editPrompt.trim()) return;
       setIsEditingImage(true);
       setEditedImageUrl('');
       try {
           const base64 = await blobToBase64(editImageFile);
-          const url = await editImage(apiKey, base64, editPrompt, editImageFile.type);
+          const url = await editImage(base64, editPrompt, editImageFile.type);
           if (url) setEditedImageUrl(url);
           else throw new Error("Image edit failed");
       } catch (e) {
@@ -406,12 +394,12 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
   };
 
   const handleMapsQuery = async () => {
-      if (!mapsQuery.trim() || !apiKey) return;
+      if (!mapsQuery.trim()) return;
       setIsMapping(true);
       setMapsResult('');
       setMapsChunks([]);
       try {
-          const { text, groundingChunks } = await generateMapsResponse(apiKey, mapsQuery);
+          const { text, groundingChunks } = await generateMapsResponse(mapsQuery);
           setMapsResult(text);
           setMapsChunks(groundingChunks);
       } catch (e) {
@@ -506,31 +494,6 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
       alert("Error planning route.");
     }
     setIsPlanning(false);
-  };
-
-  // AI Assistant Handler (Multi-AI Fallback)
-  const handleAIAssist = async () => {
-    if (!assistantPrompt.trim()) return;
-    setIsAssisting(true);
-    setAssistantResult('');
-    setAssistantProvider('');
-    try {
-      const response = await generateWithFallback(
-        {
-          openaiKey,
-          claudeKey,
-          geminiKey: apiKey,
-          preferredProvider
-        },
-        assistantPrompt
-      );
-      setAssistantResult(response.text);
-      setAssistantProvider(response.provider);
-    } catch (e) {
-      console.error(e);
-      setAssistantResult("All AI providers failed. Please check your API keys.");
-    }
-    setIsAssisting(false);
   };
 
   // Get current tool config
@@ -1281,70 +1244,6 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
                     <Flag className="text-red-500" />
                     <span>{endAddress}</span>
                   </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* AI Assistant (Multi-AI Fallback) */}
-        {activeTool === 'ai_assistant' && (
-          <div className="max-w-3xl mx-auto space-y-6 animate-slide-up">
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-              <div className="mb-4">
-                <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Your Question</label>
-                <textarea 
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500 transition min-h-[120px]"
-                  placeholder="Ask anything. The best available AI will respond..."
-                  value={assistantPrompt}
-                  onChange={(e) => setAssistantPrompt(e.target.value)}
-                />
-              </div>
-              
-              <div className="flex flex-wrap gap-4 items-end justify-between">
-                <div>
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Preferred AI</label>
-                  <div className="flex gap-2">
-                    {(['gemini', 'openai', 'claude'] as AIProvider[]).map((provider) => (
-                      <button
-                        key={provider}
-                        onClick={() => setPreferredProvider(provider)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition ${
-                          preferredProvider === provider 
-                            ? 'bg-rose-500 text-white' 
-                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                        }`}
-                      >
-                        {provider}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <button 
-                  onClick={handleAIAssist}
-                  disabled={isAssisting || !assistantPrompt.trim()}
-                  className="bg-rose-500 hover:bg-rose-400 text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-rose-500/20 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {isAssisting ? <><Loader2 className="animate-spin" /> Thinking...</> : <><Bot /> Ask AI</>}
-                </button>
-              </div>
-            </div>
-
-            {assistantResult && (
-              <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-rose-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                    <Bot /> AI Response
-                  </h3>
-                  {assistantProvider && (
-                    <span className="px-2 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                      via {assistantProvider}
-                    </span>
-                  )}
-                </div>
-                <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
-                  {assistantResult}
                 </div>
               </div>
             )}

@@ -1,38 +1,8 @@
 import { unifiedSearchService, SearchResult, SearchFilters, SearchSourceError } from './unifiedSearchService';
 import searchQueryParser from './searchQueryParser';
 import { supabase } from './supabase';
-import { invokeAI } from './ai/aiService';
-import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
 
 // Uses searchQueryParser.parseToFlatOperators() — no local adapter needed
-
-// ============================================
-// WEB SEARCH TYPES AND INTERFACES
-// ============================================
-
-export interface SonarWebResult {
-  answer: string;
-  citations: string[];
-  relatedQuestions: string[];
-  images?: string[];
-  usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
-  model?: string;
-}
-
-export interface SonarSearchOptions {
-  model?: 'sonar' | 'sonar-pro' | 'sonar-reasoning';
-  systemPrompt?: string;
-  temperature?: number;
-  maxTokens?: number;
-  searchRecencyFilter?: 'day' | 'week' | 'month' | 'year';
-  returnImages?: boolean;
-  returnRelatedQuestions?: boolean;
-  searchDomainFilter?: string[];
-}
 
 /**
  * Enhanced Search with AI Semantic Search and Auto-suggestions
@@ -243,7 +213,7 @@ Do not include any other text or markdown formatting.`;
    * Apply parsed operators to filters
    */
   private applyOperatorsToFilters(
-    operators: ParsedSearchQuery['operators'],
+    operators: Record<string, string>,
     existingFilters?: SearchFilters
   ): SearchFilters {
     const filters: SearchFilters = { ...existingFilters };
@@ -344,15 +314,17 @@ Do not include any other text or markdown formatting.`;
 
   /**
    * Get popular searches
+   * Ranked by execution count (incremented on each run by saveSearchToHistory),
+   * with recency as a tiebreaker.
    */
   private async getPopularSearches(userId: string, query: string, limit: number): Promise<string[]> {
     try {
-      // Query without count column to avoid 406 errors
       const { data, error } = await supabase
         .from('search_history')
         .select('query')
         .eq('user_id', userId)
         .ilike('query', `%${query}%`)
+        .order('count', { ascending: false })
         .order('updated_at', { ascending: false })
         .limit(limit);
 
@@ -408,14 +380,14 @@ Do not include any other text or markdown formatting.`;
   }
 
   /**
-   * Save search to history
+   * Save search to history.
+   * Increments `count` on existing rows so getPopularSearches can rank by usage.
    */
   async saveSearchToHistory(userId: string, query: string): Promise<void> {
     try {
-      // First try to check if record exists (without count column to avoid 406)
       const { data: existing, error: selectError } = await supabase
         .from('search_history')
-        .select('id')
+        .select('id, count')
         .eq('user_id', userId)
         .eq('query', query)
         .maybeSingle();
@@ -426,13 +398,14 @@ Do not include any other text or markdown formatting.`;
       }
 
       if (existing) {
-        // Update existing record
         await supabase
           .from('search_history')
-          .update({ updated_at: new Date().toISOString() })
+          .update({
+            updated_at: new Date().toISOString(),
+            count: (existing.count ?? 1) + 1,
+          })
           .eq('id', existing.id);
       } else {
-        // Insert new record
         await supabase
           .from('search_history')
           .insert([{
@@ -442,49 +415,6 @@ Do not include any other text or markdown formatting.`;
       }
     } catch (error) {
       // Table might not exist - that's okay, silently fail
-    }
-  }
-
-  // ============================================
-  // WEB SEARCH METHODS
-  // ============================================
-
-  /**
-   * Perform web search using Gemini Search Grounding via the ai-router `web_search` task.
-   * This provides real-time, web-grounded search results with citations.
-   *
-   * Method name and signature preserved for backward compatibility with existing callers.
-   */
-  async sonarWebSearch(
-    query: string,
-    options: SonarSearchOptions = {}
-  ): Promise<SonarWebResult | null> {
-    void options;
-    try {
-      const workspaceId = getCurrentWorkspaceId();
-      if (!workspaceId) {
-        console.error('Web search failed: no active workspace');
-        return null;
-      }
-
-      const result = await invokeAI(
-        'web_search',
-        { messages: [{ role: 'user', content: query }] },
-        { workspaceId },
-      );
-
-      const citations = (result.groundingChunks || [])
-        .map(c => c.uri)
-        .filter((uri): uri is string => Boolean(uri));
-
-      return {
-        answer: result.text || '',
-        citations,
-        relatedQuestions: [],
-      };
-    } catch (error) {
-      console.error('Web search failed:', error);
-      return null;
     }
   }
 

@@ -272,6 +272,26 @@ async function upsertSubscription(
   // Clean up the synthetic pre-Stripe trial row, if any.
   await deleteSyntheticTrial(supabase, workspace.id);
 
+  // In newer Stripe API/billing modes, current_period_start/end live on the
+  // subscription ITEM, not the subscription. Fall through to the item if the
+  // top-level fields are missing — otherwise new Date(undefined * 1000) crashes
+  // the handler, Stripe retries forever, and the row never moves off the old plan.
+  const firstItem = subscription.items?.data?.[0] as
+    | (Stripe.SubscriptionItem & { current_period_start?: number; current_period_end?: number })
+    | undefined;
+  const periodStartSec =
+    subscription.current_period_start ?? firstItem?.current_period_start ?? subscription.billing_cycle_anchor;
+  const periodEndSec =
+    subscription.current_period_end ?? firstItem?.current_period_end ?? null;
+
+  if (!periodStartSec || !periodEndSec) {
+    console.error(
+      '[billing-webhook] Missing period start/end on subscription ' + subscription.id +
+        ' (and on its first item) — refusing to upsert with invalid timestamps'
+    );
+    return null;
+  }
+
   const { data: sub, error: subError } = await supabase
     .from('subscriptions')
     .upsert(
@@ -279,10 +299,8 @@ async function upsertSubscription(
         workspace_id: workspace.id,
         stripe_subscription_id: subscription.id,
         status: subscription.status,
-        current_period_start: new Date(
-          subscription.current_period_start * 1000
-        ).toISOString(),
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        current_period_start: new Date(periodStartSec * 1000).toISOString(),
+        current_period_end: new Date(periodEndSec * 1000).toISOString(),
         cancel_at_period_end: subscription.cancel_at_period_end,
         canceled_at: subscription.canceled_at
           ? new Date(subscription.canceled_at * 1000).toISOString()

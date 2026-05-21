@@ -30,13 +30,13 @@ const ContextualSuggestionsBase: React.FC<ContextualSuggestionsProps> = ({
     // Time-based suggestions
     if (hour >= 9 && hour < 12) {
       // Morning: productivity tools
-      suggestedToolIds.push('brainstorm-assistant', 'smart-compose', 'templates');
+      suggestedToolIds.push('smart-compose', 'templates', 'message-formatting');
     } else if (hour >= 13 && hour < 17) {
       // Afternoon: analysis tools
-      suggestedToolIds.push('conversation-intelligence', 'sentiment-analysis', 'engagement-scoring');
+      suggestedToolIds.push('conversation-intelligence', 'sentiment-timeline', 'engagement-scoring');
     } else if (hour >= 18) {
       // Evening: summary and planning tools
-      suggestedToolIds.push('analytics-export', 'draft-manager', 'scheduled-messages');
+      suggestedToolIds.push('analytics-export', 'scheduled-messages');
     }
 
     // Add tools related to recently used tools

@@ -27,12 +27,13 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
   const generatingRef = useRef(false);
 
-  // Generate placeholder background if provided API key and currently inactive/empty
+  // Generate placeholder background when currently inactive/empty. Routes
+  // through gemini-image edge function — apiKey arg is no-op now (kept for
+  // prop-stability; remove in Phase D cleanup).
   useEffect(() => {
-    if (apiKey && !bgImage && !generatingRef.current && (!analyser || !isActive)) {
+    if (!bgImage && !generatingRef.current && (!analyser || !isActive)) {
         generatingRef.current = true;
-        // Generate a sleek, minimalist background matching the app's aesthetic
-        generateImage(apiKey, "abstract fluid sound waves background, dark mode, minimalist, 8k resolution, smooth gradients, no text, subtle neon lighting")
+        generateImage("abstract fluid sound waves background, dark mode, minimalist, 8k resolution, smooth gradients, no text, subtle neon lighting")
             .then(url => {
                 if (url) {
                     const img = new Image();
@@ -42,7 +43,7 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
             })
             .catch(err => console.error("Failed to generate visualizer background", err));
     }
-  }, [apiKey, analyser, isActive, bgImage]);
+  }, [analyser, isActive, bgImage]);
 
   useEffect(() => {
     const canvas = ref.current;

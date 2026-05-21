@@ -141,7 +141,7 @@ export const MicrophoneTest: React.FC<MicrophoneTestProps> = ({
 
   const tc = {
     bg: isDarkMode ? 'bg-gray-900' : 'bg-white',
-    border: isDarkMode ? 'border-gray-700/50' : 'border-gray-200/60',
+    border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-gray-200/60',
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textMuted: isDarkMode ? 'text-gray-400' : 'text-gray-500',
     meterBg: isDarkMode ? 'bg-gray-800' : 'bg-gray-100',

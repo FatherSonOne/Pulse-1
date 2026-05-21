@@ -83,19 +83,19 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
       <aside
         className={`relative w-full sm:max-w-md h-full flex flex-col border-l ${
           isDarkMode
-            ? 'bg-zinc-950 border-zinc-800'
-            : 'bg-white border-zinc-200'
+            ? 'bg-black border-[rgba(255,255,255,0.06)]'
+            : 'bg-white border-[rgba(0,0,0,0.08)]'
         } animate-fade-in`}
       >
         {/* Header */}
         <div
           className={`px-4 py-3 flex items-center justify-between border-b ${
-            isDarkMode ? 'border-zinc-800' : 'border-zinc-200'
+            isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-[rgba(0,0,0,0.08)]'
           }`}
         >
           <h2
             className={`font-mono text-[11px] uppercase tracking-[0.1em] ${
-              isDarkMode ? 'text-zinc-300' : 'text-zinc-700'
+              isDarkMode ? 'text-[#b4b4b8]' : 'text-[#52525b]'
             }`}
           >
             Relay settings
@@ -104,7 +104,7 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
             type="button"
             onClick={onClose}
             className={`p-1 rounded-md transition ${
-              isDarkMode ? 'hover:bg-zinc-900' : 'hover:bg-zinc-100'
+              isDarkMode ? 'hover:bg-[rgba(255,255,255,0.055)]' : 'hover:bg-[#f2f2f2]'
             }`}
             aria-label="Close settings"
           >
@@ -114,8 +114,8 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
 
         {/* Tab nav */}
         <nav
-          className={`flex items-center gap-1 px-3 py-2 border-b overflow-x-auto ${
-            isDarkMode ? 'border-zinc-800' : 'border-zinc-200'
+          className={`flex items-stretch gap-1 px-3 py-2 border-b ${
+            isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-[rgba(0,0,0,0.08)]'
           }`}
           role="tablist"
         >
@@ -129,16 +129,16 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] transition ${
+                className={`flex-1 min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] transition ${
                   isActive
-                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                    ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
                     : isDarkMode
-                      ? 'text-zinc-400 hover:bg-zinc-900'
-                      : 'text-zinc-500 hover:bg-zinc-100'
+                      ? 'text-[#b4b4b8] hover:bg-[rgba(255,255,255,0.055)]'
+                      : 'text-[#52525b] hover:bg-[#f2f2f2]'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-                {tab.label}
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{tab.label}</span>
               </button>
             );
           })}
@@ -150,12 +150,12 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
         {/* Footer */}
         <div
           className={`px-4 py-3 border-t flex items-center justify-between ${
-            isDarkMode ? 'border-zinc-800' : 'border-zinc-200'
+            isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-[rgba(0,0,0,0.08)]'
           }`}
         >
           <p
             className={`font-mono text-[10px] uppercase tracking-[0.1em] ${
-              isDarkMode ? 'text-zinc-500' : 'text-zinc-400'
+              isDarkMode ? 'text-[#6b7280]' : 'text-[#6b7280]'
             }`}
           >
             Saved automatically
@@ -163,7 +163,7 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-md bg-rose-500 hover:bg-rose-600 text-white font-mono text-[11px] uppercase tracking-[0.1em] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
+            className="btn-brand-primary px-4 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f43f5e] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black"
           >
             Done
           </button>

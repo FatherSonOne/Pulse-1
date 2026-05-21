@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
-import ReactMarkdown from 'react-markdown';
 import {
   Search,
   Filter,
@@ -9,6 +8,7 @@ import {
   Sparkles,
   Plus,
   Pin,
+  Bell,
   StickyNote,
   Users,
   Calendar,
@@ -23,8 +23,6 @@ import {
   Mic,
   Download,
   Bookmark,
-  Globe,
-  ExternalLink,
   Loader2,
   Maximize2,
   Minimize2,
@@ -36,7 +34,7 @@ import {
 import { SearchResult, SearchResultType, SearchFilters, SearchSortOptions, SearchSourceError } from '../services/unifiedSearchService';
 import { searchClipboardService, ClipboardItem } from '../services/searchClipboardService';
 import { dataService } from '../services/dataService';
-import { searchEnhancements, SearchSuggestion, SonarWebResult } from '../services/searchEnhancements';
+import { searchEnhancements, SearchSuggestion } from '../services/searchEnhancements';
 import { searchExport } from '../services/searchExport';
 import { savedSearchesService, SavedSearch } from '../services/savedSearches';
 import { voiceSearchService } from '../services/voiceSearch';
@@ -152,7 +150,11 @@ function groupResultsByDate(results: SearchResult[]) {
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function UnifiedSearchRedesign() {
+interface UnifiedSearchRedesignProps {
+  isDarkMode?: boolean;
+}
+
+export default function UnifiedSearchRedesign({ isDarkMode = false }: UnifiedSearchRedesignProps = {}) {
 
   // ── Core state ───────────────────────────────────────────────────────────────
   const [searchQuery,   setSearchQuery]   = useState('');
@@ -201,14 +203,6 @@ export default function UnifiedSearchRedesign() {
   const [geoCenter, setGeoCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [geoFilterError, setGeoFilterError] = useState<string | null>(null);
 
-  // ── Web search (Sonar) ───────────────────────────────────────────────────────
-  const [useWebSearch,     setUseWebSearch]     = useState(
-    () => localStorage.getItem('pulse:search:useWeb') !== 'false'
-  );
-  const [webSearchResult,  setWebSearchResult]  = useState<SonarWebResult | null>(null);
-  const [webSearchLoading, setWebSearchLoading] = useState(false);
-  const [webSearchModel,   setWebSearchModel]   = useState<'sonar' | 'sonar-pro' | 'sonar-reasoning'>('sonar');
-
   // ── Filters ──────────────────────────────────────────────────────────────────
   const [filters,       setFilters]       = useState<SearchFilters>({});
   const [selectedTypes, setSelectedTypes] = useState<Set<SearchResultType>>(new Set());
@@ -241,11 +235,19 @@ export default function UnifiedSearchRedesign() {
   const sentinelRef      = useRef<HTMLDivElement>(null);
   const heartbeatTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const exportMenuRef    = useRef<HTMLDivElement>(null);
+  // Refs mirror state used by the global keydown handler so the handler
+  // doesn't need to re-attach on every relevant state change. Updated below
+  // in a tracking effect.
+  const resumeRef = useRef<{
+    isEmptyState: boolean;
+    recents: string[];
+    saved: SavedSearch[];
+  }>({ isEmptyState: true, recents: [], saved: [] });
 
   const userId = dataService.getUserId();
   // API key no longer needed client-side — Gemini calls proxied through gemini-proxy edge function
 
-  const isEmptyState = !loading && searchResults.length === 0 && !webSearchResult && !searchQuery.trim();
+  const isEmptyState = !loading && searchResults.length === 0 && !searchQuery.trim();
 
   // ── Live facet counts for the sidebar Content Type list ──────────────────
   const facetCounts = useMemo(() => {
@@ -345,16 +347,48 @@ export default function UnifiedSearchRedesign() {
         e.preventDefault();
         setShowOperatorPopover(v => !v);
       }
+      // Digits 1–5 in the empty state → run the corresponding Resume row.
+      // Recent searches fill the slots first, then saved searches pad out
+      // any remaining slots — same order as the rendered list.
+      if (
+        !inField
+        && !e.metaKey && !e.ctrlKey && !e.altKey
+        && /^[1-5]$/.test(e.key)
+      ) {
+        const { isEmptyState: empty, recents, saved } = resumeRef.current;
+        if (!empty) return;
+        const idx = parseInt(e.key, 10) - 1;
+        const recentSlots = recents.slice(0, 5);
+        if (idx < recentSlots.length) {
+          e.preventDefault();
+          setSearchQuery(recentSlots[idx]);
+          return;
+        }
+        const savedSlot = saved[idx - recentSlots.length];
+        if (savedSlot) {
+          e.preventDefault();
+          setSearchQuery(savedSlot.query);
+          setFilters(savedSlot.filters);
+        }
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Keep the resume-shortcut data in sync without churning the listener.
+  useEffect(() => {
+    resumeRef.current = {
+      isEmptyState,
+      recents: recentSearches,
+      saved: savedSearches.slice(0, 5),
+    };
+  }, [isEmptyState, recentSearches, savedSearches]);
+
   // ── Core search ──────────────────────────────────────────────────────────────
   const performSearch = useCallback(async () => {
     if (!debouncedSearchQuery.trim()) {
       setSearchResults([]);
-      setWebSearchResult(null);
       setActiveGeoFilter(null);
       setGeoCenter(null);
       setGeoFilterError(null);
@@ -372,19 +406,6 @@ export default function UnifiedSearchRedesign() {
     const queryForBackend = geoFilter ? baseQuery : debouncedSearchQuery;
     setActiveGeoFilter(geoFilter);
     setGeoFilterError(null);
-
-    // Web search — fire and forget. Use cleaned baseQuery so "near me" doesn't
-    // pollute the LLM web search.
-    if (useWebSearch) {
-      setWebSearchLoading(true);
-      searchEnhancements
-        .sonarWebSearch(queryForBackend, { model: webSearchModel })
-        .then(setWebSearchResult)
-        .catch(() => setWebSearchResult(null))
-        .finally(() => setWebSearchLoading(false));
-    } else {
-      setWebSearchResult(null);
-    }
 
     try {
       await searchEnhancements.saveSearchToHistory(userId, debouncedSearchQuery);
@@ -435,7 +456,7 @@ export default function UnifiedSearchRedesign() {
     } finally {
       if (searchGeneration.current === generation) setLoading(false);
     }
-  }, [debouncedSearchQuery, filters, selectedTypes, useAISearch, useWebSearch, webSearchModel, userId]);
+  }, [debouncedSearchQuery, filters, selectedTypes, useAISearch, userId]);
 
   // ── Auto-search on debounced query change ─────────────────────────────────────
   useEffect(() => {
@@ -515,9 +536,6 @@ export default function UnifiedSearchRedesign() {
   // ── Preference toggles ─────────────────────────────────────────────────────────
   const toggleAISearch = () => setUseAISearch(v => {
     const next = !v; localStorage.setItem('pulse:search:useAI', String(next)); return next;
-  });
-  const toggleWebSearch = () => setUseWebSearch(v => {
-    const next = !v; localStorage.setItem('pulse:search:useWeb', String(next)); return next;
   });
 
   // ── Action handlers ────────────────────────────────────────────────────────────
@@ -746,6 +764,13 @@ export default function UnifiedSearchRedesign() {
                     onClick={() => { setSearchQuery(s.query); setFilters(s.filters); }}>
                     <Bookmark size={13} />
                     <span className="filter-name-text">{s.name}</span>
+                    {s.alertEnabled && (
+                      <Bell
+                        size={11}
+                        className="filter-alert-indicator"
+                        aria-label={`Alerts on: ${s.alertFrequency}`}
+                      />
+                    )}
                   </button>
                   <button type="button" className="filter-delete-btn"
                     title="Delete saved search" aria-label={`Delete saved search "${s.name}"`}
@@ -843,26 +868,6 @@ export default function UnifiedSearchRedesign() {
               <button type="button" className={`filter-option-btn ${useAISearch ? 'active' : ''}`} onClick={toggleAISearch} aria-pressed={useAISearch ? 'true' : 'false'}>
                 <Sparkles size={13} /><span>AI ranking</span>
               </button>
-              <button type="button" className={`filter-option-btn ${useWebSearch ? 'active' : ''}`} onClick={toggleWebSearch} aria-pressed={useWebSearch ? 'true' : 'false'}>
-                <Globe size={13} /><span>Web search</span>
-              </button>
-              {useWebSearch && (
-                <div className="sonar-model-segments" role="radiogroup" aria-label="Web search model">
-                  {([
-                    { id: 'sonar',           label: 'Fast' },
-                    { id: 'sonar-pro',       label: 'Pro' },
-                    { id: 'sonar-reasoning', label: 'Reasoning' },
-                  ] as const).map(({ id, label }) => (
-                    <button type="button" key={id}
-                      className={`sonar-model-segment ${webSearchModel === id ? 'active' : ''}`}
-                      role="radio"
-                      aria-checked={webSearchModel === id ? 'true' : 'false'}
-                      onClick={() => setWebSearchModel(id)}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
 
@@ -967,11 +972,6 @@ export default function UnifiedSearchRedesign() {
                   onClick={handleVoiceSearch} title="Voice search"
                   aria-label={isListening ? 'Listening…' : 'Voice search'}>
                   <Mic size={15} />
-                </button>
-                <button type="button" className={`search-action-btn ${useWebSearch ? 'active' : ''}`}
-                  onClick={toggleWebSearch} title="Toggle web search"
-                  aria-label="Toggle web search">
-                  <Globe size={15} />
                 </button>
                 <button type="button" className={`search-action-btn ${showOperatorPopover ? 'active' : ''}`}
                   onClick={() => setShowOperatorPopover(v => !v)}
@@ -1180,41 +1180,8 @@ export default function UnifiedSearchRedesign() {
             </div>
           )}
 
-          {/* ── AI / Web answer card ─────────────────────────────────────────── */}
-          {webSearchResult && (
-            <div className="ai-answer-card">
-              <div className="ai-answer-header">
-                {/* Provenance tag — DESIGN.md "Signature Component" pattern */}
-                <span className="ai-provenance-tag">
-                  <span className="ai-provenance-dot" />
-                  Pulse AI · Synthesis
-                </span>
-                {webSearchLoading && <Loader2 size={13} color="#f43f5e"
-                  style={{ animation: 'spin 0.8s linear infinite', marginLeft: 'auto' }} />}
-              </div>
-              {/* AI answer body — smaller readable text */}
-              <div className="ai-answer-content prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown>{webSearchResult.answer}</ReactMarkdown>
-              </div>
-              {webSearchResult.citations.length > 0 && (
-                <div className="ai-citations">
-                  {webSearchResult.citations.map((c, i) => {
-                    let hostname = c;
-                    try { hostname = new URL(c).hostname; } catch { /* raw url */ }
-                    return (
-                      <a key={i} href={c} target="_blank" rel="noopener noreferrer"
-                        className="ai-citation-chip" title={c}>
-                        <ExternalLink size={10} />{hostname}
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
           {/* ── No-results empty state ───────────────────────────────────────── */}
-          {!loading && !webSearchResult && searchResults.length === 0 && searchQuery.trim() && (
+          {!loading && searchResults.length === 0 && searchQuery.trim() && (
             <div className="empty-dashboard-state">
               <Search className="empty-dashboard-icon" />
               {/* Brand-approved no-results copy — honest, never apologetic */}
@@ -1281,6 +1248,7 @@ export default function UnifiedSearchRedesign() {
               <SearchMapView
                 results={searchResults}
                 center={geoCenter}
+                isDarkMode={isDarkMode}
                 onSelect={setDetailResult}
               />
             ) : viewMode === 'timeline' ? (

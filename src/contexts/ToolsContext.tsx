@@ -27,7 +27,7 @@ export type ToolPanelType =
   | null;
 
 // Tab Types for Each Panel
-export type AnalyticsTab = 'response' | 'engagement' | 'flow' | 'insights';
+export type AnalyticsTab = 'pace' | 'flow' | 'insights';
 export type CollaborationTab = 'collab' | 'links' | 'kb' | 'search' | 'pins' | 'annotations';
 export type ProductivityTab = 'templates' | 'schedule' | 'summary' | 'export' | 'shortcuts' | 'notifications';
 export type IntelligenceTab = 'insights' | 'reactions' | 'bookmarks' | 'tags' | 'delivery';
@@ -155,7 +155,7 @@ export const ToolsProvider: React.FC<ToolsProviderProps> = ({ children }) => {
 
   // Analytics panel
   const [showAnalyticsPanel, setShowAnalyticsPanel] = useState(false);
-  const [analyticsView, setAnalyticsView] = useState<AnalyticsTab>('response');
+  const [analyticsView, setAnalyticsView] = useState<AnalyticsTab>('pace');
 
   // Collaboration panel
   const [showCollaborationPanel, setShowCollaborationPanel] = useState(false);

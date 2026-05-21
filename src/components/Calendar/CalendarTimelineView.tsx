@@ -88,12 +88,12 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
   const ROW_H = 44; // px per swim lane
 
   return (
-    <div className="flex-1 overflow-auto bg-white dark:bg-zinc-950">
+    <div className="flex-1 overflow-auto bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)]">
       {/* Sticky header */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="sticky top-0 z-10 bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)] border-b border-[var(--pulse-border)]">
         <div className="flex">
           {/* Lane label gutter */}
-          <div className="w-28 flex-shrink-0 border-r border-zinc-200 dark:border-zinc-800" />
+          <div className="w-28 flex-shrink-0 border-r border-[var(--pulse-border)]" />
           {/* Day columns */}
           {days.map((day, i) => {
             const isToday = isSameDay(day, today);
@@ -101,18 +101,18 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
               <div
                 key={i}
                 style={{ width: COL_W, minWidth: COL_W }}
-                className={`text-center py-2 border-r border-zinc-100 dark:border-zinc-800/50 flex-shrink-0 ${
+                className={`text-center py-2 border-r border-[var(--pulse-border)]/50 flex-shrink-0 ${
                   isToday
                     ? 'bg-rose-50 dark:bg-rose-500/10'
                     : day.getDay() === 0 || day.getDay() === 6
-                      ? 'bg-zinc-50 dark:bg-zinc-900/40'
+                      ? 'bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)]/40'
                       : ''
                 }`}
               >
                 <div className={`text-[10px] font-medium ${isToday ? 'text-rose-500' : 'text-zinc-400'}`}>
                   {DAY_NAMES[day.getDay()]}
                 </div>
-                <div className={`text-sm font-bold ${isToday ? 'text-rose-500' : 'text-zinc-800 dark:text-zinc-100'}`}>
+                <div className={`text-sm font-bold ${isToday ? 'text-rose-500' : 'text-[var(--pulse-ink)]'}`}>
                   {day.getDate()}
                 </div>
                 {i === 0 || day.getDate() === 1 ? (
@@ -133,10 +133,10 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
         </div>
       ) : (
         laneGroups.map(([lane, laneEvents]) => (
-          <div key={lane} className="flex border-b border-zinc-100 dark:border-zinc-800/50" style={{ minHeight: ROW_H }}>
+          <div key={lane} className="flex border-b border-[var(--pulse-border)]/50" style={{ minHeight: ROW_H }}>
             {/* Lane label */}
-            <div className="w-28 flex-shrink-0 border-r border-zinc-200 dark:border-zinc-800 px-2 py-1 flex items-center">
-              <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider truncate">
+            <div className="w-28 flex-shrink-0 border-r border-[var(--pulse-border)] px-2 py-1 flex items-center">
+              <span className="text-[10px] font-semibold text-[var(--pulse-ink-3)] uppercase tracking-wider truncate">
                 {lane}
               </span>
             </div>
@@ -149,7 +149,7 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
                   <div
                     key={i}
                     style={{ width: COL_W, minWidth: COL_W }}
-                    className={`flex-shrink-0 border-r border-zinc-100 dark:border-zinc-800/40 h-full ${
+                    className={`flex-shrink-0 border-r border-[var(--pulse-border)]/40 h-full ${
                       isSameDay(day, today) ? 'bg-rose-50/50 dark:bg-rose-500/5' : ''
                     }`}
                   />

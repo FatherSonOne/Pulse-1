@@ -234,59 +234,60 @@
   outline-offset: 2px;
 }
 
-/* AI Subtask Generation Section */
-.subtask-ai-section {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-  padding: 0.75rem;
-  background: linear-gradient(135deg, rgba(225, 29, 72, 0.05), rgba(219, 39, 119, 0.05));
-  border: 1px solid rgba(225, 29, 72, 0.1);
-  border-radius: 6px;
-}
-
-.subtask-ai-button {
+/* AI Subtask Generation — demoted from gradient pill to mono-uppercase
+   secondary chip per the critique (drops the Sparkles animation, the
+   gradient background, and the SaaS-template feel). The provenance chip
+   in the list header carries AI identity when subtasks have been
+   generated; the chip below just kicks off the breakdown. */
+.subtask-ai-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #e11d48, #db2777);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.subtask-ai-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.625rem;
+  background: transparent;
+  border: 1px solid var(--dt-border);
+  border-radius: 9999px;
+  color: var(--dt-text-secondary);
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: all var(--dt-transition-base);
+  transition: background var(--dt-transition-fast),
+              color var(--dt-transition-fast),
+              border-color var(--dt-transition-fast);
 }
 
-.subtask-ai-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+.subtask-ai-chip:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.08);
+  color: var(--dt-accent, #e11d48);
+  border-color: rgba(244, 63, 94, 0.4);
 }
 
-.subtask-ai-button:disabled {
+.subtask-ai-chip:focus-visible {
+  outline: 2px solid var(--dt-accent, #e11d48);
+  outline-offset: 2px;
+}
+
+.subtask-ai-chip:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.subtask-ai-button svg {
-  animation: sparkle 2s ease-in-out infinite;
-}
-
-@keyframes sparkle {
-  0%, 100% { transform: rotate(0deg) scale(1); opacity: 1; }
-  50% { transform: rotate(180deg) scale(1.1); opacity: 0.8; }
-}
-
-.ai-generated-badge {
-  font-size: 0.75rem;
-  color: var(--dt-accent, #e11d48);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+.subtask-ai-count {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dt-text-muted);
 }
 
 /* AI-generated subtask indicator: subtle background tint + the inline
@@ -310,13 +311,89 @@
   opacity: 0.8;
 }
 
-/* Empty state */
+/* Legacy bare empty state — kept for read-only renders where we don't
+   want the click-to-promote scaffold to suggest editability. */
 .subtask-empty {
   padding: var(--dt-spacing-lg);
   text-align: center;
   color: var(--dt-text-muted);
   font-size: var(--dt-font-sm);
   font-style: italic;
+}
+
+/* Empty-state scaffold — three click-to-promote placeholder rows that
+   teach the subtask pattern by example instead of leaving the cold-open
+   to the AI button. */
+.subtask-empty-scaffold {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dt-spacing-xs);
+}
+
+.subtask-empty-hint {
+  margin: 0 0 var(--dt-spacing-xs);
+  font-size: var(--dt-font-sm);
+  color: var(--dt-text-secondary);
+  line-height: 1.5;
+}
+
+.subtask-scaffold-item {
+  display: flex;
+  align-items: center;
+  gap: var(--dt-spacing-sm);
+  padding: var(--dt-spacing-sm);
+  background: transparent;
+  border: 1px dashed var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-muted);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dt-transition-fast),
+              border-color var(--dt-transition-fast),
+              color var(--dt-transition-fast);
+}
+
+.subtask-scaffold-item:hover {
+  background: var(--dt-bg-card-hover);
+  border-color: var(--dt-border-hover);
+  color: var(--dt-text-primary);
+}
+
+.subtask-scaffold-item:focus-visible {
+  outline: 2px solid var(--dt-accent, #e11d48);
+  outline-offset: 1px;
+  color: var(--dt-text-primary);
+}
+
+.subtask-scaffold-title {
+  flex: 1;
+  font-size: var(--dt-font-sm);
+  line-height: 1.4;
+}
+
+.subtask-scaffold-cta {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dt-text-muted);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--dt-bg-card);
+  transition: background var(--dt-transition-fast), color var(--dt-transition-fast);
+}
+
+.subtask-scaffold-item:hover .subtask-scaffold-cta,
+.subtask-scaffold-item:focus-visible .subtask-scaffold-cta {
+  background: rgba(244, 63, 94, 0.10);
+  color: var(--dt-accent, #e11d48);
+}
+
+.subtask-list-header-right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dt-spacing-sm);
 }
 
 /* Loading state */

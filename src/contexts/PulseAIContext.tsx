@@ -1,7 +1,7 @@
 /**
  * PulseAIContext — Shared context provider for Pulse AI features.
  *
- * Bridges the text assistant (PulseAssistant) and voice chat (PulseVoiceChat)
+ * Bridges the text assistant (PulseAssistant) and the voice section (Summit)
  * so both can access Pulse data context and share conversation state.
  */
 
@@ -10,6 +10,19 @@ import { AppView, User } from '../types';
 import { AssistantContext } from '../services/pulseAssistantService';
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
+
+export interface SummitHandoff {
+  /** Where the handoff originated. Today: 'sidebar' (Pulse AI panel). */
+  source: 'sidebar';
+  /** Section the user was in when they hit "Take to Summit". */
+  originSection: AppView;
+  /** Full chat thread carried over — Pulse AI sidebar messages in order. */
+  thread: Array<{ role: 'user' | 'assistant'; content: string }>;
+  /** Optional one-liner the Summit canvas can show as a "picking up from…" banner. */
+  openingHint?: string;
+  /** Wall-clock at handoff (ms). Used to expire stale handoffs. */
+  createdAt: number;
+}
 
 interface PulseAIContextState {
   /** Current section-level context (data loaded by useAssistantContext) */
@@ -20,18 +33,28 @@ interface PulseAIContextState {
   user: User | null;
   /** Text assistant conversation summary (for voice to reference) */
   textConversationSummary: string;
+  /** Compact Summit-session summary (for the sidebar to reference). */
+  summitArtifactsSummary: string;
   /** Voice session active */
   isVoiceActive: boolean;
+  /** Pending sidebar→Summit handoff. Consumed once on Summit mount. */
+  pendingHandoff: SummitHandoff | null;
   /** Update the shared assistant context (called by useAssistantContext) */
   setAssistantContext: (ctx: AssistantContext) => void;
   /** Update the active section */
   setActiveSection: (section: AppView) => void;
   /** Set text conversation summary for voice AI to reference */
   setTextConversationSummary: (summary: string) => void;
+  /** Set Summit-artifacts summary for the sidebar AI to reference. */
+  setSummitArtifactsSummary: (summary: string) => void;
   /** Set voice session active state */
   setIsVoiceActive: (active: boolean) => void;
   /** Build a Pulse data context string for injection into any AI system prompt */
   buildPulseDataPrompt: () => string;
+  /** Stage a handoff from the sidebar to Summit. Triggered by "Take to Summit". */
+  setPendingHandoff: (handoff: SummitHandoff | null) => void;
+  /** Read-and-clear the staged handoff. Called by Summit on mount. */
+  consumePendingHandoff: () => SummitHandoff | null;
 }
 
 const PulseAIContext = createContext<PulseAIContextState | null>(null);
@@ -48,7 +71,19 @@ export function PulseAIProvider({ user, activeView, children }: PulseAIProviderP
   const [assistantContext, setAssistantContext] = useState<AssistantContext | null>(null);
   const [activeSection, setActiveSection] = useState<AppView>(activeView);
   const [textConversationSummary, setTextConversationSummary] = useState('');
+  const [summitArtifactsSummary, setSummitArtifactsSummary] = useState('');
   const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [pendingHandoff, setPendingHandoff] = useState<SummitHandoff | null>(null);
+
+  const consumePendingHandoff = useCallback((): SummitHandoff | null => {
+    // Drop handoffs older than 5 minutes — likely stale (user navigated away
+    // and came back via a different path). Keeps the context window clean.
+    if (!pendingHandoff) return null;
+    const STALE_MS = 5 * 60 * 1000;
+    const isStale = Date.now() - pendingHandoff.createdAt > STALE_MS;
+    setPendingHandoff(null);
+    return isStale ? null : pendingHandoff;
+  }, [pendingHandoff]);
 
   // Keep activeSection in sync with the app's activeView
   React.useEffect(() => {
@@ -109,21 +144,30 @@ export function PulseAIProvider({ user, activeView, children }: PulseAIProviderP
       parts.push(`\nRecent text AI conversation: ${textConversationSummary}`);
     }
 
+    if (summitArtifactsSummary) {
+      parts.push(`\nRecent Summit session: ${summitArtifactsSummary}`);
+    }
+
     return parts.join('\n');
-  }, [assistantContext, textConversationSummary]);
+  }, [assistantContext, textConversationSummary, summitArtifactsSummary]);
 
   const value = useMemo<PulseAIContextState>(() => ({
     assistantContext,
     activeSection,
     user,
     textConversationSummary,
+    summitArtifactsSummary,
     isVoiceActive,
+    pendingHandoff,
     setAssistantContext,
     setActiveSection,
     setTextConversationSummary,
+    setSummitArtifactsSummary,
     setIsVoiceActive,
     buildPulseDataPrompt,
-  }), [assistantContext, activeSection, user, textConversationSummary, isVoiceActive, buildPulseDataPrompt]);
+    setPendingHandoff,
+    consumePendingHandoff,
+  }), [assistantContext, activeSection, user, textConversationSummary, summitArtifactsSummary, isVoiceActive, pendingHandoff, buildPulseDataPrompt, consumePendingHandoff]);
 
   return (
     <PulseAIContext.Provider value={value}>

@@ -18,6 +18,8 @@ export interface Plan {
   max_workflows: number | null;
   max_workflow_runs_mo: number | null;
   max_integrations: number | null;
+  max_summit_minutes_mo: number | null;
+  max_summit_session_sec: number | null;
   features: Record<string, boolean>;
   stripe_price_monthly: string;
   stripe_price_yearly: string;
@@ -36,6 +38,11 @@ export interface Entitlements {
   max_workflows: number | null;
   max_workflow_runs_mo: number | null;
   max_integrations: number | null;
+  // Summit (live voice) caps. NULL until the workspace has a plan that grants
+  // Summit access; trial users override to tighter values at runtime in the
+  // edge function. See migration 20260512000001_summit_usage.sql.
+  max_summit_minutes_mo: number | null;
+  max_summit_session_sec: number | null;
   features: Record<string, boolean>;
   is_trialing: boolean;
   trial_ends_at: string | null;
@@ -80,24 +87,40 @@ async function callEdgeFunction(name: string, body?: Record<string, unknown>) {
   const { data, error } = await supabase.functions.invoke(name, { body: body || {} });
 
   if (error) {
-    // FunctionsHttpError exposes .context.response for non-2xx responses
-    const ctx = (error as { context?: { response?: Response } }).context;
-    const response = ctx?.response;
-
-    let bodyData: Record<string, unknown> | null = null;
-    if (response) {
-      try { bodyData = await response.clone().json(); } catch { /* not JSON */ }
+    // FunctionsHttpError.context IS the Response object directly (supabase-js v2).
+    // Some older versions wrapped it as { response }; handle both.
+    const ctxRaw = (error as { context?: unknown }).context;
+    let response: Response | undefined;
+    if (ctxRaw instanceof Response) {
+      response = ctxRaw;
+    } else if (ctxRaw && typeof ctxRaw === 'object' && (ctxRaw as { response?: Response }).response instanceof Response) {
+      response = (ctxRaw as { response: Response }).response;
     }
 
-    // Log the full body so DevTools Console shows the actual Stripe error
+    let bodyData: Record<string, unknown> | null = null;
+    let bodyText: string | null = null;
+    if (response) {
+      try {
+        bodyText = await response.clone().text();
+        try { bodyData = JSON.parse(bodyText); } catch { /* not JSON */ }
+      } catch { /* body already consumed */ }
+    }
+
+    // Always log what came back so DevTools Console shows the actual server error,
+    // even when the body isn't valid JSON.
     if (bodyData) {
       console.error(`[${name}] server response:`, bodyData);
+    } else if (bodyText) {
+      console.error(`[${name}] server response (non-JSON):`, bodyText);
+    } else {
+      console.error(`[${name}] no response body. Status:`, response?.status, 'raw error:', error, 'context:', ctxRaw);
     }
 
     const errorMsg = (bodyData?.error as string) || (error as Error).message;
     const detail = bodyData?.detail as string | undefined;
-    const combined = detail ? `${errorMsg} — ${detail}` : errorMsg;
-    throw new Error(`${name}: ${combined}`);
+    const step = bodyData?.step as string | undefined;
+    const parts = [errorMsg, detail, step ? `(step: ${step})` : null].filter(Boolean);
+    throw new Error(`${name}: ${parts.join(' — ')}`);
   }
   return data;
 }
@@ -142,6 +165,8 @@ const billingService = {
         max_workflows: 0,
         max_workflow_runs_mo: 0,
         max_integrations: 0,
+        max_summit_minutes_mo: 0,
+        max_summit_session_sec: 0,
         features: {},
         is_trialing: false,
         trial_ends_at: null,
@@ -294,19 +319,41 @@ const billingService = {
   /**
    * Pushes the current workspace member count into Stripe as the subscription
    * quantity. Called after invite acceptance and member removal so billing
-   * tracks the true seat count. Fire-and-forget — failures are logged and
-   * swallowed so membership operations never break because of Stripe hiccups.
+   * tracks the true seat count.
+   *
+   * Failures are non-fatal for the calling membership operation, but instead
+   * of being silently swallowed they queue an entry in billing_drift_log so
+   * the billing-reconcile-seats cron picks them up on its next run.
    *
    * Returns the new quantity (or 1 when no Stripe sub exists yet).
    */
-  async syncSeats(workspaceId: string): Promise<number> {
+  async syncSeats(
+    workspaceId: string,
+    source: 'accept_invite' | 'remove_member' | 'auto_join_domain' | 'manual' | 'other' = 'other',
+  ): Promise<number> {
     try {
       const result = await callEdgeFunction('billing-sync-seats', {
         workspace_id: workspaceId,
       });
       return (result?.quantity as number) ?? 1;
     } catch (err) {
-      console.warn('[billingService] syncSeats failed (non-fatal):', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.warn('[billingService] syncSeats failed; queueing drift entry:', errorMessage);
+      try {
+        await supabase.rpc('queue_billing_drift_entry', {
+          p_workspace_id: workspaceId,
+          p_source: source,
+          p_error_message: errorMessage,
+        });
+      } catch (queueErr) {
+        // If queueing also fails (e.g. caller already left the workspace and
+        // the RPC's membership check rejects), the daily reconciler scans the
+        // whole instance anyway and will catch the drift on its own.
+        console.warn(
+          '[billingService] queue_billing_drift_entry also failed; reconciler will catch on next scan:',
+          queueErr instanceof Error ? queueErr.message : queueErr,
+        );
+      }
       return 1;
     }
   },

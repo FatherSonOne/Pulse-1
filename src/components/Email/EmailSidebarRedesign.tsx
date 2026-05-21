@@ -2,7 +2,7 @@
 import React from 'react';
 import { EmailFolder } from '../../services/emailSyncService';
 
-import { Database, Mail, Megaphone, SquarePen, X } from 'lucide-react';
+import { AlertCircle, Bookmark, Clock, Database, FileText, Inbox, Mail, Megaphone, Send, SquarePen, Star, Trash2, X } from 'lucide-react';
 
 interface EmailSidebarRedesignProps {
   currentFolder: EmailFolder;
@@ -18,16 +18,16 @@ interface EmailSidebarRedesignProps {
   cachedEmailCount?: number;
 }
 
-const folders: { id: EmailFolder; label: string; icon: string }[] = [
-  { id: 'inbox', label: 'Inbox', icon: 'fa-inbox' },
-  { id: 'starred', label: 'Starred', icon: 'fa-star' },
-  { id: 'snoozed', label: 'Snoozed', icon: 'fa-clock' },
-  { id: 'sent', label: 'Sent', icon: 'fa-paper-plane' },
-  { id: 'drafts', label: 'Drafts', icon: 'fa-file' },
-  { id: 'important', label: 'Important', icon: 'fa-bookmark' },
-  { id: 'all', label: 'All Mail', icon: 'fa-envelope' },
-  { id: 'trash', label: 'Trash', icon: 'fa-trash' },
-  { id: 'spam', label: 'Spam', icon: 'fa-circle-exclamation' },
+const folders: { id: EmailFolder; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'inbox', label: 'Inbox', Icon: Inbox },
+  { id: 'starred', label: 'Starred', Icon: Star },
+  { id: 'snoozed', label: 'Snoozed', Icon: Clock },
+  { id: 'sent', label: 'Sent', Icon: Send },
+  { id: 'drafts', label: 'Drafts', Icon: FileText },
+  { id: 'important', label: 'Important', Icon: Bookmark },
+  { id: 'all', label: 'All Mail', Icon: Mail },
+  { id: 'trash', label: 'Trash', Icon: Trash2 },
+  { id: 'spam', label: 'Spam', Icon: AlertCircle },
 ];
 
 export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
@@ -54,12 +54,14 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
     onClick: () => void,
     count?: number,
     ariaLabel?: string,
+    keyId?: string,
   ) => (
     <button
+      key={keyId ?? label}
       onClick={onClick}
       aria-current={isActive ? 'page' : undefined}
       aria-label={ariaLabel ?? label}
-      className={`relative w-full flex items-center gap-3 pl-4 pr-3 h-9 rounded-md text-left text-sm transition-colors group ${
+      className={`relative w-full flex items-center gap-3 pl-4 pr-3 min-h-11 rounded-md text-left text-sm transition-colors group ${
         isActive
           ? 'text-rose-600 dark:text-rose-400 bg-rose-500/[0.06] dark:bg-rose-500/[0.08] font-medium'
           : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100/70 dark:hover:bg-white/[0.04] font-normal'
@@ -69,7 +71,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
       {isActive && (
         <span className="absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-r bg-rose-500" aria-hidden="true" />
       )}
-      <span className="w-4 h-4 flex items-center justify-center text-[15px] flex-shrink-0">
+      <span className="w-4 h-4 flex items-center justify-center flex-shrink-0">
         {icon}
       </span>
       <span className="flex-1 truncate">{label}</span>
@@ -119,7 +121,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="md:hidden w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.04] flex items-center justify-center text-stone-500 dark:text-zinc-400 transition"
+            className="md:hidden w-11 h-11 rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.04] flex items-center justify-center text-stone-500 dark:text-zinc-400 transition"
             aria-label="Close menu"
           >
             <X className="w-4 h-4" />
@@ -130,7 +132,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
         <div className="px-3 pt-4 pb-2">
           <button
             onClick={onCompose}
-            className="w-full flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white h-10 rounded-lg font-medium text-sm transition-colors shadow-[0_1px_0_rgba(244,63,94,0.2),0_4px_12px_rgba(244,63,94,0.18)]"
+            className="w-full flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white min-h-11 rounded-lg font-medium text-sm transition-colors shadow-[0_1px_0_rgba(244,63,94,0.2),0_4px_12px_rgba(244,63,94,0.18)]"
             aria-label="Compose new email"
           >
             <SquarePen className="w-4 h-4" />
@@ -149,13 +151,15 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
             {folders.map((folder) => {
               const count = folder.id === 'inbox' ? unreadCount : folderCounts[folder.id];
               const isActive = currentFolder === folder.id;
+              const Icon = folder.Icon;
               return renderNavButton(
                 folder.label,
-                <i className={`fa-solid ${folder.icon}`} aria-hidden="true" />,
+                <Icon className="w-4 h-4" />,
                 isActive,
                 () => handleFolderClick(folder.id),
                 count,
                 `${folder.label}${count > 0 ? `, ${count} ${folder.id === 'inbox' ? 'unread' : 'emails'}` : ''}`,
+                folder.id,
               );
             })}
           </div>

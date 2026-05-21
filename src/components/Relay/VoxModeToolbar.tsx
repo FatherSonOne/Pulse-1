@@ -26,10 +26,19 @@ export interface VoxToolbarCustomAction {
 export interface VoxModeToolbarProps {
   // Header identity
   onBack: () => void;
+  /** Hide the leading back-chevron when there's nothing meaningful to go
+      back to — e.g. on a section's home view where the click would no-op.
+      Defaults to true to preserve existing behavior across all Relay modes. */
+  showBack?: boolean;
   modeIcon: React.ReactNode;
   modeTitle: string;
   modeSubtitle?: string;
-  accentColor: string;
+  /**
+   * Accent color for the mode-icon tile and active-state tints. Defaults to
+   * brand rose (`#f43f5e`) — Coral-As-Signal Rule. The prop is retained for
+   * downstream flexibility, but callers should generally omit it.
+   */
+  accentColor?: string;
   isDarkMode?: boolean;
 
   // AI features
@@ -77,10 +86,11 @@ export interface VoxModeToolbarProps {
  */
 const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
   onBack,
+  showBack = true,
   modeIcon,
   modeTitle,
   modeSubtitle,
-  accentColor,
+  accentColor = '#f43f5e',
   isDarkMode = false,
 
   showAI = false,
@@ -102,27 +112,31 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
   children,
   onShowHelp,
 }) => {
-  const textColor = isDarkMode ? 'text-white' : 'text-gray-900';
-  const subtitleColor = isDarkMode ? 'text-gray-400' : 'text-gray-500';
+  const textColor = isDarkMode ? 'text-[#fafafa]' : 'text-[#0f0f0f]';
+  const subtitleColor = isDarkMode ? 'text-[#b4b4b8]' : 'text-[#52525b]';
   const actionBtnBase = isDarkMode
-    ? 'p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-all duration-200'
-    : 'p-2 rounded-lg text-gray-500 hover:bg-zinc-950/10 hover:text-gray-900 transition-all duration-200';
+    ? 'p-2 rounded-lg text-[#b4b4b8] hover:bg-[rgba(255,255,255,0.055)] hover:text-[#fafafa] transition-all duration-200'
+    : 'p-2 rounded-lg text-[#52525b] hover:bg-[#f2f2f2] hover:text-[#0f0f0f] transition-all duration-200';
 
   return (
     <header
       className={`flex items-center gap-2 px-3 md:px-4 py-3 border-b shrink-0 ${
-        isDarkMode ? 'border-white/10 bg-gray-900' : 'border-gray-200 bg-white'
+        isDarkMode
+          ? 'border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]'
+          : 'border-[rgba(0,0,0,0.08)] bg-white'
       }`}
     >
-      {/* ← Back */}
-      <button
-        type="button"
-        onClick={onBack}
-        className={actionBtnBase}
-        aria-label="Go back"
-      >
-        <ChevronLeft className="w-5 h-5" />
-      </button>
+      {/* ← Back — hidden on section home views where the click would no-op */}
+      {showBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className={actionBtnBase}
+          aria-label="Go back"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+      )}
 
       {/* Mode icon badge */}
       <div
@@ -155,7 +169,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
       {showAI && (
         <div
           className={`flex items-center gap-1 border-r pr-2 mr-1 ${
-            isDarkMode ? 'border-white/10' : 'border-gray-200'
+            isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-[rgba(0,0,0,0.08)]'
           }`}
         >
           {onSummarize && (

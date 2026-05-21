@@ -8,6 +8,10 @@
 .pulse-sidebar {
   --sidebar-bg: var(--pulse-canvas);
   --sidebar-bg-secondary: var(--pulse-canvas-soft);
+  /* Solid popover surface — used by floating panels (workspace switcher
+     dropdown) that must occlude sidebar items behind them. Cannot reuse
+     --pulse-surface because the dark token is translucent. */
+  --sidebar-bg-solid: #ffffff;
   --sidebar-border: var(--pulse-border);
   --sidebar-border-strong: var(--pulse-border-strong);
   --nav-item-bg-hover: rgba(0, 0, 0, 0.04);
@@ -22,6 +26,7 @@
 }
 
 .dark .pulse-sidebar {
+  --sidebar-bg-solid: #0a0a0c;
   --nav-item-bg-hover: rgba(255, 255, 255, 0.05);
   --nav-item-text-active: var(--pulse-rose-bright);
 }

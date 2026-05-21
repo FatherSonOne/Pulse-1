@@ -3,7 +3,7 @@
  * Contains all TypeScript interfaces and types for the reorganized Tools panel
  */
 
-export type ToolCategory = 'ai' | 'content' | 'analysis' | 'utilities';
+export type ToolCategory = 'write' | 'analyze' | 'coach';
 
 export interface Tool {
   id: string;

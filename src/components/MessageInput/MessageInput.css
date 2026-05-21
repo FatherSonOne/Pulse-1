@@ -435,6 +435,27 @@
   transform: none;
 }
 
+/* Send heartbeat — fires once when a message is in flight. Coral halo
+   expands outward, then settles. Used as the .sending state and as a
+   one-shot via the .send-button[data-just-sent] hook. */
+@keyframes pulse-send {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(244, 63, 94, 0.55),
+      0 6px 20px rgba(244, 63, 94, 0.45);
+  }
+  60% {
+    box-shadow:
+      0 0 0 10px rgba(244, 63, 94, 0),
+      0 6px 20px rgba(244, 63, 94, 0.30);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(244, 63, 94, 0),
+      0 4px 14px rgba(244, 63, 94, 0.30);
+  }
+}
+
 .send-button.sending {
   animation: pulse-send 1s ease-in-out infinite;
 }

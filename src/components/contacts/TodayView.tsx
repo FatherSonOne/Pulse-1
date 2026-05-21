@@ -4,7 +4,7 @@
 // Shows prioritized action items derived from relationship intelligence.
 // ============================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../services/supabase';
 import {
   generateTodayFeed,
@@ -24,9 +24,19 @@ import { getUpcomingActions } from '../../services/contactGoalService';
 import { TodayFeedCard } from './TodayFeedCard';
 import { TodayEmptyState } from './TodayEmptyState';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
-import TodayRouteStrip from './TodayRouteStrip';
+// TodayRouteStrip lives under map/sub/ — it's a maps-stack consumer, not a
+// contact-relationship feature. Phase 3 IA cleanup.
+import TodayRouteStrip from '../map/sub/TodayRouteStrip';
+import { getCurrentUserLocation } from '../../services/locationService';
+import {
+  clusterFeedItems,
+  enrichClusterLabels,
+  loadPlaceCoordsForItems,
+  formatClusterDistance,
+  FeedCluster,
+} from '../../services/todayClusterService';
 
-import { AlertCircle, Check, Clock } from 'lucide-react';
+import { AlertCircle, Check, Clock, Clock3, MapPin } from 'lucide-react';
 
 // ==================== TYPES ====================
 
@@ -57,6 +67,8 @@ function mapToContactAction(action: TodayFeedSuggestedAction): 'message' | 'vox'
 
 // ==================== COMPONENT ====================
 
+type ViewMode = 'time' | 'route';
+
 export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] }) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [items, setItems] = useState<TodayFeedItem[]>([]);
@@ -65,6 +77,12 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
   const [filter, setFilter] = useState<FilterChip>('all');
   const [showAll, setShowAll] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof localStorage === 'undefined') return 'time';
+    return (localStorage.getItem('pulse:today:view-mode') as ViewMode) || 'time';
+  });
+  const [clusters, setClusters] = useState<FeedCluster[]>([]);
+  const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
 
   // Resolve userId from Supabase auth
   useEffect(() => {
@@ -156,17 +174,70 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
 
   const handleRefresh = () => setRefreshKey(k => k + 1);
 
-  // Computed values
-  const activeItems = items.filter(i => i.status === 'active');
-  const completedCount = items.filter(i => i.status === 'completed').length;
-  const snoozedCount = items.filter(i => i.status === 'snoozed').length;
+  const handleSetViewMode = useCallback((m: ViewMode) => {
+    setViewMode(m);
+    try { localStorage.setItem('pulse:today:view-mode', m); } catch { /* ignore */ }
+  }, []);
 
-  const filteredItems = filter === 'all'
-    ? activeItems
-    : activeItems.filter(i => i.itemType === filter);
+  // Computed values — memoized so downstream useMemo/useEffect deps stay
+  // referentially stable. Without this, `baseClusters` recomputes every
+  // render and the route-mode effect below thrashes setClusters in a loop.
+  const activeItems = useMemo(
+    () => items.filter(i => i.status === 'active'),
+    [items],
+  );
+  const completedCount = useMemo(
+    () => items.filter(i => i.status === 'completed').length,
+    [items],
+  );
+  const snoozedCount = useMemo(
+    () => items.filter(i => i.status === 'snoozed').length,
+    [items],
+  );
+
+  const filteredItems = useMemo(
+    () => (filter === 'all' ? activeItems : activeItems.filter(i => i.itemType === filter)),
+    [activeItems, filter],
+  );
 
   const visibleItems = showAll ? filteredItems : filteredItems.slice(0, ITEMS_PER_PAGE);
   const hasMore = filteredItems.length > ITEMS_PER_PAGE && !showAll;
+
+  // Lazy fetch user position once route view is requested — we don't ask
+  // for geolocation permission unless the user actually opens route mode.
+  useEffect(() => {
+    if (viewMode !== 'route') return;
+    if (userPosition) return;
+    getCurrentUserLocation()
+      .then(setUserPosition)
+      .catch(() => { /* permission denied — clusters fall back to size sort */ });
+  }, [viewMode, userPosition]);
+
+  // Recompute clusters whenever the inputs change and route mode is active.
+  // Labels load async; the structure renders immediately with `null` labels.
+  const baseClusters = useMemo(
+    () => clusterFeedItems(filteredItems, contacts, new Map(), userPosition),
+    [filteredItems, contacts, userPosition],
+  );
+
+  useEffect(() => {
+    if (viewMode !== 'route') return;
+    let cancelled = false;
+    setClusters(baseClusters);
+
+    (async () => {
+      // Resolve metadata.placeId references in one round-trip, rebuild
+      // clusters with that richer location info, then enrich labels.
+      const placeCoords = await loadPlaceCoordsForItems(filteredItems);
+      if (cancelled) return;
+      const richer = clusterFeedItems(filteredItems, contacts, placeCoords, userPosition);
+      setClusters(richer);
+      const labelled = await enrichClusterLabels(richer);
+      if (!cancelled) setClusters([...labelled]);
+    })();
+
+    return () => { cancelled = true; };
+  }, [viewMode, baseClusters, filteredItems, contacts, userPosition]);
 
   // ==================== RENDER ====================
 
@@ -182,21 +253,53 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
               Relationships that need your attention
             </p>
           </div>
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-40"
-            title="Refresh feed"
-          >
-            <i className={`fa-solid fa-rotate-right text-sm ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Time / Route view mode toggle. Persisted to localStorage so
+                returning users land back in their preferred view. */}
+            <div className="flex rounded-lg overflow-hidden text-xs bg-zinc-100 dark:bg-zinc-800">
+              <button
+                onClick={() => handleSetViewMode('time')}
+                aria-pressed={viewMode === 'time'}
+                title="Sort by priority"
+                className={`flex items-center gap-1 px-2.5 py-1 transition-colors ${
+                  viewMode === 'time'
+                    ? 'bg-rose-500 text-white'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+              >
+                <Clock3 size={12} />
+                Time
+              </button>
+              <button
+                onClick={() => handleSetViewMode('route')}
+                aria-pressed={viewMode === 'route'}
+                title="Group by location"
+                className={`flex items-center gap-1 px-2.5 py-1 transition-colors ${
+                  viewMode === 'route'
+                    ? 'bg-rose-500 text-white'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+              >
+                <MapPin size={12} />
+                Route
+              </button>
+            </div>
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-40"
+              title="Refresh feed"
+            >
+              <i className={`fa-solid fa-rotate-right text-sm ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {/* Summary stats */}
         {!loading && (
           <div className="flex items-center gap-3 mt-2">
             <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-              <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{activeItems.length}</span>
+              <span className="text-rose-500 dark:text-rose-400 font-semibold">{activeItems.length}</span>
               {' '}action{activeItems.length !== 1 ? 's' : ''} today
             </span>
             {completedCount > 0 && (
@@ -234,7 +337,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
                 className={`
                   flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors
                   ${filter === chip.id
-                    ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                    ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300'
                     : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                   }
                 `}
@@ -245,7 +348,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
                   <span className={`
                     px-1 rounded-full text-xs
                     ${filter === chip.id
-                      ? 'bg-indigo-200 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300'
+                      ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300'
                       : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400'
                     }
                   `}>
@@ -310,11 +413,23 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
 
         {/* Empty state */}
         {!loading && !error && filteredItems.length === 0 && (
-          <TodayEmptyState onRefresh={handleRefresh} />
+          <TodayEmptyState
+            onRefresh={handleRefresh}
+            onShowColdContacts={() => {
+              window.dispatchEvent(
+                new CustomEvent('pulse:contacts:show-smart-list', {
+                  detail: { list: 'inactive_30_days' },
+                })
+              );
+            }}
+            onSetCheckInGoal={() => {
+              window.dispatchEvent(new CustomEvent('pulse:contacts:open-check-in-goal'));
+            }}
+          />
         )}
 
-        {/* Feed items */}
-        {!loading && !error && visibleItems.length > 0 && (
+        {/* Feed items — Time view (default) */}
+        {!loading && !error && viewMode === 'time' && visibleItems.length > 0 && (
           <div className="p-4 space-y-3">
             {visibleItems.map(item => (
               <TodayFeedCard
@@ -331,7 +446,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
             {hasMore && (
               <button
                 onClick={() => setShowAll(true)}
-                className="w-full py-3 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700 hover:border-indigo-300 dark:hover:border-indigo-600"
+                className="w-full py-3 text-sm text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 font-medium transition-colors rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-400/40"
               >
                 Show {filteredItems.length - ITEMS_PER_PAGE} more
               </button>
@@ -339,6 +454,53 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
 
             {/* Completed/snoozed note */}
             {(completedCount > 0 || snoozedCount > 0) && !showAll && (
+              <p className="text-center text-xs text-zinc-400 dark:text-zinc-600 pt-2">
+                {completedCount > 0 && `${completedCount} completed`}
+                {completedCount > 0 && snoozedCount > 0 && ' · '}
+                {snoozedCount > 0 && `${snoozedCount} snoozed`}
+                {' '}this session
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Feed items — Route view: items grouped by geographic cluster */}
+        {!loading && !error && viewMode === 'route' && filteredItems.length > 0 && (
+          <div className="p-4 space-y-5">
+            {clusters.map(c => (
+              <div key={c.id} className="space-y-2">
+                <div className="flex items-baseline justify-between gap-2 px-1">
+                  <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5">
+                    <MapPin size={12} className="text-zinc-500 dark:text-zinc-400" />
+                    {c.label === null
+                      ? <span className="inline-block w-24 h-3 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
+                      : c.label}
+                    <span className="text-xs font-normal text-zinc-400 dark:text-zinc-500">
+                      · {c.items.length}
+                    </span>
+                  </h3>
+                  {c.distanceM != null && (
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                      {formatClusterDistance(c.distanceM)}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  {c.items.map(item => (
+                    <TodayFeedCard
+                      key={item.id}
+                      item={item}
+                      onAction={handleAction}
+                      onSnooze={handleSnooze}
+                      onDismiss={handleDismiss}
+                      onComplete={handleComplete}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {(completedCount > 0 || snoozedCount > 0) && (
               <p className="text-center text-xs text-zinc-400 dark:text-zinc-600 pt-2">
                 {completedCount > 0 && `${completedCount} completed`}
                 {completedCount > 0 && snoozedCount > 0 && ' · '}

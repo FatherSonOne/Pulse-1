@@ -1,0 +1,7 @@
+# Landing-page screenshot assets
+
+Drop mobile app screenshots here. Currently expected:
+
+- `pulse-mobile-memory.png` — Memory tab screenshot (used in the Mobile section, between FAQ and Footer on LandingPage.tsx)
+
+Naming convention: `pulse-mobile-{surface}.png` (e.g. `pulse-mobile-relay.png`, `pulse-mobile-decisions.png`) so future screenshots can be added without bikeshedding.

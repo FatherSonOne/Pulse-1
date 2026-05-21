@@ -24,6 +24,20 @@ interface EmailListRedesignProps {
   onLoadMore?: () => void;
 }
 
+type BulkEmailAction = 'archive' | 'delete' | 'markAsRead';
+type BulkEmailParams = Record<string, unknown>;
+
+const FOLDER_EMPTY_COPY: Partial<Record<EmailFolder, { title: string; body: string }>> = {
+  sent: { title: 'No sent emails yet.', body: 'Messages you send from Pulse will appear here.' },
+  drafts: { title: 'No drafts saved.', body: 'Start a new email and save it to finish later.' },
+  starred: { title: 'No starred emails yet.', body: 'Star important emails to keep them close.' },
+  important: { title: 'No important emails yet.', body: 'Emails marked important will appear here.' },
+  snoozed: { title: 'No snoozed emails.', body: 'Snoozed emails return here when it is time to act.' },
+  trash: { title: 'Trash is empty.', body: 'Emails you move to trash will appear here before deletion.' },
+  spam: { title: 'No spam found.', body: 'Messages marked as spam will appear here.' },
+  all: { title: 'No emails cached yet.', body: 'Sync Gmail to fill All Mail.' },
+};
+
 export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
   emails,
   selectedEmail,
@@ -43,6 +57,10 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const selectedCount = selectedIds.size;
+
+  // Per-row star-pop animation key — increments only on star (not unstar) for that row
+  const [starPopKeys, setStarPopKeys] = useState<Record<string, number>>({});
 
   const toggleSelect = useCallback((emailId: string) => {
     setSelectedIds((prev) => {
@@ -54,15 +72,19 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
   }, []);
 
   const toggleSelectAll = useCallback(() => {
-    if (selectedIds.size === emails.length) {
+    if (selectedCount === emails.length) {
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(emails.map((e) => e.id)));
     }
-  }, [emails, selectedIds.size]);
+  }, [emails, selectedCount]);
 
-  const runBulkAction = useCallback(async (action: string, params?: Record<string, any>) => {
+  const runBulkAction = useCallback(async (action: BulkEmailAction, params?: BulkEmailParams) => {
     if (selectedIds.size === 0) return;
+    if (action === 'delete') {
+      const confirmed = window.confirm(`Move ${selectedIds.size} selected email${selectedIds.size === 1 ? '' : 's'} to trash? You can recover them from Trash.`);
+      if (!confirmed) return;
+    }
     setBulkLoading(true);
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
@@ -73,11 +95,12 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
         body: JSON.stringify({ emailIds: Array.from(selectedIds), action, params }),
       });
       if (!response.ok) throw new Error('Bulk action failed');
-      toast.success(`${action} applied to ${selectedIds.size} email${selectedIds.size > 1 ? 's' : ''}`);
+      const actionLabel = action === 'markAsRead' ? 'Marked as read' : action === 'delete' ? 'Moved to trash' : 'Archived';
+      toast.success(`${actionLabel}: ${selectedIds.size} email${selectedIds.size > 1 ? 's' : ''}`);
       setSelectedIds(new Set());
       // Refresh will happen via parent
     } catch (err) {
-      toast.error('Bulk action failed');
+      toast.error("Couldn't update selected emails. Try again.");
     } finally {
       setBulkLoading(false);
     }
@@ -157,31 +180,59 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-transparent">
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-transparent" role="status" aria-live="polite" aria-label="Loading emails">
         <div className="text-center">
           <div className="relative w-10 h-10 mx-auto mb-4">
             <div className="absolute inset-0 rounded-full border-2 border-rose-500/15"></div>
             <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-rose-500 animate-spin"></div>
           </div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500 dark:text-zinc-500">Loading</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500 dark:text-zinc-500">Loading emails</p>
         </div>
       </div>
     );
   }
 
   if (emails.length === 0) {
+    const isInboxZero = currentFolder === 'inbox';
+    const emptyCopy = FOLDER_EMPTY_COPY[currentFolder] ?? { title: `No emails in ${currentFolder}.`, body: 'Sync Gmail or choose another folder.' };
     return (
       <div className="flex-1 flex items-center justify-center bg-white dark:bg-transparent p-8">
         <div className="text-center max-w-sm">
-          <Inbox className="w-8 h-8 text-stone-300 dark:text-zinc-700 mx-auto mb-5" />
-          <h3 className="text-lg font-light text-stone-900 dark:text-white tracking-tight mb-2">
-            {currentFolder === 'inbox' ? 'Inbox zero.' : `Nothing in ${currentFolder}.`}
-          </h3>
-          <p className="text-sm text-stone-500 dark:text-zinc-500">
-            {currentFolder === 'inbox'
-              ? "You're caught up. Focus on what matters."
-              : 'Empty for now. Check back later.'}
-          </p>
+          {isInboxZero ? (
+            // Milestone moment: triage achieved. Rose halo + mono badge + confident next-move.
+            <>
+              <div className="relative w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+                <span
+                  className="pulse-email-zero-halo absolute inset-0 rounded-full bg-rose-500/15 dark:bg-rose-500/20"
+                  aria-hidden="true"
+                />
+                <span
+                  className="absolute inset-2 rounded-full bg-rose-500/10 dark:bg-rose-500/15"
+                  aria-hidden="true"
+                />
+                <Inbox className="w-6 h-6 text-rose-500 relative" strokeWidth={1.75} />
+              </div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-rose-600 dark:text-rose-400 mb-3">
+                Inbox · Zero
+              </div>
+              <h3 className="text-lg font-light text-stone-900 dark:text-white tracking-tight mb-1.5">
+                You're caught up.
+              </h3>
+              <p className="text-sm text-stone-500 dark:text-zinc-500 max-w-[34ch] mx-auto">
+                Nothing waiting. Use this window for the work that needs you.
+              </p>
+            </>
+          ) : (
+            <>
+              <Inbox className="w-8 h-8 text-stone-300 dark:text-zinc-700 mx-auto mb-5" strokeWidth={1.5} />
+              <h3 className="text-lg font-light text-stone-900 dark:text-white tracking-tight mb-2">
+                {emptyCopy.title}
+              </h3>
+              <p className="text-sm text-stone-500 dark:text-zinc-500">
+                {emptyCopy.body}
+              </p>
+            </>
+          )}
         </div>
       </div>
     );
@@ -192,18 +243,19 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
       className="flex-1 overflow-y-auto bg-white dark:bg-transparent min-h-0 h-0 scroll-smooth"
       role="listbox"
       aria-label={`Email list - ${currentFolder}`}
+      aria-busy={loading || bulkLoading || loadingMore}
     >
       {/* Sticky Header: Tabs + Bulk Actions — solid, no backdrop-blur (reserved for modals) */}
       <div className="sticky top-0 z-20 bg-white dark:bg-zinc-900 border-b border-stone-200 dark:border-zinc-800">
-        {/* Category Tabs (Inbox Only) — neutral chrome, single coral underline marks active */}
+        {/* Category Filter (Inbox Only) — mono chip row, breaks the Gmail-tab metaphor */}
         {currentFolder === 'inbox' && activeCategory && onCategoryChange && (
-          <div className="flex items-stretch px-2 border-b border-stone-100 dark:border-zinc-800/60">
+          <div className="flex items-center gap-1 px-3 py-2 border-b border-stone-100 dark:border-zinc-800/60 overflow-x-auto" role="tablist" aria-label="Inbox categories">
             {(['primary', 'promotions', 'social', 'updates'] as const).map((cat) => {
               const isActive = activeCategory === cat;
               const count = categoryCounts?.[cat] || 0;
               const labels = {
                 primary: { label: 'Primary', description: "Personal emails and messages that don't appear in other tabs." },
-                promotions: { label: 'Promotions', description: 'Marketing, newsletters, and other promotional emails.' },
+                promotions: { label: 'Promos', description: 'Marketing, newsletters, and other promotional emails.' },
                 social: { label: 'Social', description: 'Notifications from social networks and media sites.' },
                 updates: { label: 'Updates', description: 'Confirmations, receipts, bills, and statements.' },
               }[cat];
@@ -213,25 +265,23 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
                   key={cat}
                   onClick={() => onCategoryChange(cat as EmailCategory)}
                   title={labels.description}
-                  className={`flex-1 relative flex items-center justify-center gap-2 h-11 transition-colors min-w-0 outline-none focus-visible:bg-stone-50 dark:focus-visible:bg-white/[0.03] ${
+                  className={`group flex items-center gap-1.5 h-7 px-2.5 rounded-md transition-colors outline-none focus-visible:ring-2 focus-visible:ring-rose-500/30 ${
                     isActive
-                      ? 'text-stone-900 dark:text-white'
-                      : 'text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-zinc-300'
+                      ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                      : 'text-stone-500 dark:text-zinc-500 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-800 dark:hover:text-zinc-200'
                   }`}
                   role="tab"
                   aria-selected={isActive}
                 >
-                  <span className={`text-sm ${isActive ? 'font-medium' : 'font-normal'}`}>{labels.label}</span>
+                  <span className={`font-mono text-[10px] uppercase tracking-[0.12em] ${isActive ? 'font-medium' : ''}`}>
+                    {labels.label}
+                  </span>
                   {count > 0 && (
-                    <span className={`font-mono text-[10px] tabular-nums tracking-wider ${
+                    <span className={`font-mono text-[10px] tabular-nums ${
                       isActive ? 'text-rose-600 dark:text-rose-400' : 'text-stone-400 dark:text-zinc-600'
                     }`}>
                       {count > 99 ? '99+' : count}
                     </span>
-                  )}
-                  {/* Single coral underline — the only signal of active state */}
-                  {isActive && (
-                    <span className="absolute left-3 right-3 bottom-0 h-[2px] bg-rose-500 rounded-t" aria-hidden="true" />
                   )}
                 </button>
               );
@@ -240,57 +290,59 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
         )}
 
         {/* Bulk Actions Toolbar — quiet idle, prominent only when something is selected */}
-        <div className={`flex items-center gap-3 px-5 h-10 transition-colors ${
-          selectedIds.size > 0 ? 'bg-rose-500/[0.04] dark:bg-rose-500/[0.06]' : ''
+        <div className={`flex items-center gap-3 px-5 min-h-11 transition-colors ${
+          selectedCount > 0 ? 'bg-rose-500/[0.04] dark:bg-rose-500/[0.06]' : ''
         }`}>
-          <input
-            type="checkbox"
-            checked={selectedIds.size > 0 && selectedIds.size === emails.length}
-            onChange={toggleSelectAll}
-            aria-label="Select all emails"
-            className="w-3.5 h-3.5 rounded border-stone-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-rose-500 focus:ring-rose-500/30"
-          />
+          <label className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-stone-100 dark:hover:bg-white/[0.04]">
+            <input
+              type="checkbox"
+              checked={selectedCount > 0 && selectedCount === emails.length}
+              onChange={toggleSelectAll}
+              aria-label={selectedCount === emails.length ? 'Clear all selected emails' : 'Select all emails'}
+              className="w-4 h-4 rounded border-stone-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-rose-500 focus:ring-rose-500/30"
+            />
+          </label>
 
-          {selectedIds.size > 0 ? (
+          {selectedCount > 0 ? (
             <>
               <div className="h-4 w-px bg-stone-200 dark:bg-zinc-700"></div>
               <button
                 type="button"
                 onClick={() => runBulkAction('archive')}
                 disabled={bulkLoading}
-                className="w-7 h-7 rounded hover:bg-stone-100 dark:hover:bg-white/[0.06] flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-40"
+                className="w-10 h-10 rounded-md hover:bg-stone-100 dark:hover:bg-white/[0.06] flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-40"
                 title="Archive selected"
                 aria-label="Archive selected emails"
               >
-                <Archive className="w-3.5 h-3.5" />
+                <Archive className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={() => runBulkAction('delete')}
                 disabled={bulkLoading}
-                className="w-7 h-7 rounded hover:bg-stone-100 dark:hover:bg-white/[0.06] flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:text-red-500 transition disabled:opacity-40"
+                className="w-10 h-10 rounded-md hover:bg-stone-100 dark:hover:bg-white/[0.06] flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:text-red-500 transition disabled:opacity-40"
                 title="Delete selected"
                 aria-label="Delete selected emails"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={() => runBulkAction('markAsRead')}
                 disabled={bulkLoading}
-                className="w-7 h-7 rounded hover:bg-stone-100 dark:hover:bg-white/[0.06] flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-40"
+                className="w-10 h-10 rounded-md hover:bg-stone-100 dark:hover:bg-white/[0.06] flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-40"
                 title="Mark as read"
                 aria-label="Mark selected emails as read"
               >
-                <MailOpen className="w-3.5 h-3.5" />
+                <MailOpen className="w-4 h-4" />
               </button>
             </>
           ) : null}
 
           <div className="flex-1"></div>
           <span className="font-mono text-[10px] uppercase tracking-[0.12em] tabular-nums text-stone-500 dark:text-zinc-500" aria-live="polite">
-            {selectedIds.size > 0
-              ? `${selectedIds.size} selected`
+            {selectedCount > 0
+              ? `${selectedCount} selected`
               : `${emails.length} ${emails.length === 1 ? 'email' : 'emails'}`}
           </span>
         </div>
@@ -329,35 +381,48 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
                 <span className="absolute left-0 top-2 bottom-2 w-[2px] rounded-r bg-rose-500" aria-hidden="true" />
               )}
 
-              {/* Unread dot — coral pip in left margin, single signal */}
-              {!email.is_read && !isSelected && (
-                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden="true" />
-              )}
+              {/* Unread dot — fades out when read, single signal */}
+              <span
+                className={`absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-rose-500 transition-opacity duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none ${
+                  !email.is_read && !isSelected ? 'opacity-100' : 'opacity-0'
+                }`}
+                aria-hidden="true"
+              />
 
               {/* Checkbox */}
-              <div className="pt-[3px]" onClick={(e) => e.stopPropagation()}>
+              <label className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md hover:bg-stone-100 dark:hover:bg-white/[0.04]" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="checkbox"
                   checked={selectedIds.has(email.id)}
                   onChange={() => toggleSelect(email.id)}
-                  className="w-3.5 h-3.5 rounded border-stone-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-rose-500 focus:ring-rose-500/30 transition"
+                  aria-label={`${selectedIds.has(email.id) ? 'Deselect' : 'Select'} email from ${email.from_name || email.from_email}`}
+                  className="w-4 h-4 rounded border-stone-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-rose-500 focus:ring-rose-500/30 transition"
                 />
-              </div>
+              </label>
 
               {/* Star */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (!email.is_starred) {
+                    setStarPopKeys((prev) => ({ ...prev, [email.id]: (prev[email.id] ?? 0) + 1 }));
+                  }
                   onToggleStar(email);
                 }}
-                className={`pt-[3px] transition-colors ${
+                className={`h-10 w-10 flex-shrink-0 rounded-md flex items-center justify-center transition-colors ${
                   email.is_starred
                     ? 'text-amber-500'
-                    : 'text-stone-300 dark:text-zinc-700 hover:text-amber-500'
+                    : 'text-stone-300 dark:text-zinc-700 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-amber-500'
                 }`}
                 title={email.is_starred ? 'Unstar' : 'Star'}
+                aria-label={`${email.is_starred ? 'Unstar' : 'Star'} email from ${email.from_name || email.from_email}`}
               >
-                <i className={`fa-${email.is_starred ? 'solid' : 'regular'} fa-star text-[13px]`}></i>
+                <i
+                  key={starPopKeys[email.id] ?? 0}
+                  className={`fa-${email.is_starred ? 'solid' : 'regular'} fa-star text-[13px] inline-block ${
+                    (starPopKeys[email.id] ?? 0) > 0 ? 'pulse-email-star-pop' : ''
+                  }`}
+                />
               </button>
 
               {/* Avatar — neutral tint, mono initials */}
@@ -412,7 +477,7 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
               </div>
 
               {/* Time and actions — meta column */}
-              <div className="flex flex-col items-end gap-2 flex-shrink-0 self-start pt-[3px] min-w-[44px]">
+              <div className="flex flex-col items-end gap-2 flex-shrink-0 self-start min-w-[44px]">
                 <span className={`font-mono text-[10px] tabular-nums tracking-wider uppercase ${
                   !email.is_read
                     ? 'text-stone-900 dark:text-white'
@@ -422,26 +487,31 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
                 </span>
 
                 {/* Hover actions */}
-                <div className="flex items-center gap-px opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                <div className="flex items-center gap-px opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => { e.stopPropagation(); onArchive(email); }}
-                    className="w-7 h-7 rounded hover:bg-white dark:hover:bg-white/[0.06] flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
+                    className="w-9 h-9 rounded-md flex items-center justify-center text-stone-400 dark:text-zinc-600 transition cursor-not-allowed opacity-60"
                     title="Archive"
+                    aria-label={`Archive email from ${email.from_name || email.from_email}`}
                   >
-                    <Archive className="w-3 h-3" />
+                    <Archive className="w-4 h-4" />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); onTrash(email); }}
-                    className="w-7 h-7 rounded hover:bg-white dark:hover:bg-white/[0.06] flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-red-500 transition"
+                    className="w-9 h-9 rounded-md hover:bg-white dark:hover:bg-white/[0.06] flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-red-500 transition"
                     title="Delete"
+                    aria-label={`Move email from ${email.from_name || email.from_email} to trash`}
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                   <button
-                    className="w-7 h-7 rounded hover:bg-white dark:hover:bg-white/[0.06] flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
-                    title="Snooze"
+                    type="button"
+                    disabled
+                    className="w-9 h-9 rounded-md flex items-center justify-center text-stone-400 dark:text-zinc-600 transition cursor-not-allowed opacity-60"
+                    title="Open the email to snooze it"
+                    aria-label={`Open email from ${email.from_name || email.from_email} to snooze it`}
                   >
-                    <Clock className="w-3 h-3" />
+                    <Clock className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -462,7 +532,7 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
             {loadingMore ? (
               <span className="inline-flex items-center gap-2">
                 <i className="fa-solid fa-spinner fa-spin"></i>
-                Loading
+                Loading more emails
               </span>
             ) : (
               'Load more'

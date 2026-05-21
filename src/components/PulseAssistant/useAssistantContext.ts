@@ -9,8 +9,8 @@ import { googleCalendarService } from '../../services/googleCalendarService';
 import { workspaceService } from '../../services/workspaceService';
 import { teamService } from '../../services/teamService';
 import { settingsService } from '../../services/settingsService';
-import { searchService } from '../../services/searchService';
 import { savedSearchesService } from '../../services/savedSearches';
+import { supabase } from '../../services/supabase';
 
 // Sections that load decisions + tasks
 const DECISION_TASK_SECTIONS: AppView[] = [AppView.DECISIONS_TASKS, AppView.DASHBOARD];
@@ -73,11 +73,17 @@ export function useAssistantContext(
         }
       }
 
+      // Dashboard is the cross-section overview, so it pulls a slim slice of
+      // threads + email + today's calendar alongside decisions/tasks. This is
+      // what makes "who needs my attention first?" and "who messaged me last?"
+      // answerable from Dashboard instead of forcing a section switch.
+      const isDashboard = activeView === AppView.DASHBOARD;
+
       // ── Messages / Threads ─────────────────────────────────────────────
-      if (activeView === AppView.MESSAGES) {
+      if (activeView === AppView.MESSAGES || isDashboard) {
         try {
           const threads = await dataService.getThreads();
-          newCtx.threads = threads.slice(0, 20);
+          newCtx.threads = threads.slice(0, isDashboard ? 8 : 20);
         } catch (e) {
           console.error('[PulseAssistant] Failed to load threads:', e);
           newCtx.threads = [];
@@ -85,10 +91,11 @@ export function useAssistantContext(
       }
 
       // ── Email ──────────────────────────────────────────────────────────
-      if (activeView === AppView.EMAIL) {
+      if (activeView === AppView.EMAIL || isDashboard) {
         try {
+          const limit = isDashboard ? 5 : 15;
           const [emails, unreadCount] = await Promise.all([
-            emailSyncService.getEmailsByFolder('inbox', 15, 0),
+            emailSyncService.getEmailsByFolder('inbox', limit, 0),
             emailSyncService.getUnreadCount('inbox'),
           ]);
           newCtx.emails = emails;
@@ -101,11 +108,11 @@ export function useAssistantContext(
       }
 
       // ── Calendar & Meetings ────────────────────────────────────────────
-      if (CALENDAR_SECTIONS.includes(activeView)) {
+      if (CALENDAR_SECTIONS.includes(activeView) || isDashboard) {
         try {
           const [todayEvents, upcomingEvents] = await Promise.all([
             googleCalendarService.getTodayEvents(),
-            googleCalendarService.getUpcomingEvents(7),
+            googleCalendarService.getUpcomingEvents(isDashboard ? 3 : 7),
           ]);
           // Merge and deduplicate by id
           const seen = new Set<string>();
@@ -114,7 +121,7 @@ export function useAssistantContext(
             seen.add(e.id);
             return true;
           });
-          newCtx.events = allEvents.slice(0, 20);
+          newCtx.events = allEvents.slice(0, isDashboard ? 8 : 20);
         } catch (e) {
           console.error('[PulseAssistant] Failed to load calendar events:', e);
           newCtx.events = [];
@@ -182,9 +189,22 @@ export function useAssistantContext(
       }
 
       // ── Search ─────────────────────────────────────────────────────────
+      // Sources from search_history (the global search source of truth);
+      // the assistant context ran on message-thread-search recents before,
+      // which mismatched the surface the user was actually looking at.
       if (activeView === AppView.MULTI_MODAL) {
         try {
-          const recentSearches = searchService.getRecentSearches();
+          let recentSearches: string[] = [];
+          try {
+            const { data } = await supabase
+              .from('search_history')
+              .select('query')
+              .eq('user_id', user.id)
+              .order('updated_at', { ascending: false })
+              .limit(10);
+            recentSearches = (data || []).map((r: any) => r.query);
+          } catch { /* table might not exist — empty list is fine */ }
+
           let savedSearchCount = 0;
           try {
             const saved = await savedSearchesService.getSavedSearches(user.id);

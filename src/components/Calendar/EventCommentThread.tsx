@@ -35,7 +35,7 @@ function renderBody(text: string): React.ReactNode[] {
     if (m.index > last) parts.push(text.slice(last, m.index));
     if (m[2])      parts.push(<strong key={m.index}>{m[2]}</strong>);
     else if (m[3]) parts.push(<em key={m.index}>{m[3]}</em>);
-    else if (m[4]) parts.push(<code key={m.index} className="text-[12px] bg-zinc-100 dark:bg-zinc-800 px-1 rounded font-mono">{m[4]}</code>);
+    else if (m[4]) parts.push(<code key={m.index} className="text-[12px] bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] px-1 rounded font-mono">{m[4]}</code>);
     last = m.index + m[0].length;
   }
   if (last < text.length) parts.push(text.slice(last));
@@ -85,7 +85,7 @@ const CNode: React.FC<CNodeProps> = ({ comment, replies = [], currentUserId, onR
     <div className={`flex gap-2 ${depth > 0 ? 'mt-2' : 'mt-3'}`}>
       <div className="flex flex-col items-center">
         <CAvatar author={comment.author} small={depth > 0} />
-        {replies.length > 0 && <div className="w-px flex-1 mt-1 bg-zinc-200 dark:bg-zinc-700 min-h-[16px]" />}
+        {replies.length > 0 && <div className="w-px flex-1 mt-1 bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] min-h-[16px]" />}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
@@ -94,12 +94,12 @@ const CNode: React.FC<CNodeProps> = ({ comment, replies = [], currentUserId, onR
           {comment.edited_at && !isDeleted && <span className="text-[10px] italic text-zinc-400">edited</span>}
           {isOwn && !isDeleted && (
             <div className="relative ml-auto" ref={menuRef}>
-              <button type="button" onClick={() => setMenuOpen(o => !o)} className="text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-300 p-0.5 rounded transition">
+              <button type="button" onClick={() => setMenuOpen(o => !o)} className="text-zinc-300 hover:text-[var(--pulse-ink-2)] p-0.5 rounded transition">
                 <MoreHorizontal className="w-3.5 h-3.5" />
               </button>
               {menuOpen && (
-                <div className="absolute right-0 top-5 z-30 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg py-1 min-w-[100px]">
-                  <button type="button" onClick={() => { setEditMode(true); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition">
+                <div className="absolute right-0 top-5 z-30 bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border-strong)] rounded-lg shadow-lg py-1 min-w-[100px]">
+                  <button type="button" onClick={() => { setEditMode(true); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--pulse-ink-2)] hover:bg-zinc-50 dark:hover:bg-zinc-800 transition">
                     <Edit3 className="w-3 h-3" /> Edit
                   </button>
                   <button type="button" onClick={() => { void onDelete(comment.id); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
@@ -114,14 +114,14 @@ const CNode: React.FC<CNodeProps> = ({ comment, replies = [], currentUserId, onR
           <p className="text-xs text-zinc-400 italic">[Comment deleted]</p>
         ) : editMode ? (
           <div className="space-y-1.5">
-            <textarea value={editBody} onChange={e => setEditBody(e.target.value)} rows={2} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-sm dark:text-zinc-200 outline-none focus:border-rose-400 resize-none transition" />
+            <textarea value={editBody} onChange={e => setEditBody(e.target.value)} rows={2} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border-strong)] rounded-lg px-2.5 py-1.5 text-sm dark:text-zinc-200 outline-none focus:border-rose-400 resize-none transition" />
             <div className="flex gap-2">
               <button type="button" onClick={() => setEditMode(false)} className="text-xs text-zinc-400 hover:text-zinc-600 transition">Cancel</button>
               <button type="button" onClick={() => { void onEdit(comment.id, editBody.trim()); setEditMode(false); }} className="text-xs text-rose-500 font-medium hover:text-rose-400 transition">Save</button>
             </div>
           </div>
         ) : (
-          <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{renderBody(comment.body)}</p>
+          <p className="text-sm text-[var(--pulse-ink-2)] leading-relaxed">{renderBody(comment.body)}</p>
         )}
         {!isDeleted && depth === 0 && (
           <button type="button" onClick={() => setReplyOpen(o => !o)} className="mt-1 flex items-center gap-1 text-[10px] text-zinc-400 hover:text-rose-500 transition font-medium">
@@ -132,7 +132,7 @@ const CNode: React.FC<CNodeProps> = ({ comment, replies = [], currentUserId, onR
           <div className="mt-2 flex gap-2">
             <textarea rows={2} placeholder="Write a reply..." value={replyBody} onChange={e => setReplyBody(e.target.value)}
               onKeyDown={e => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { void onReply(comment.id, replyBody.trim()); setReplyBody(''); setReplyOpen(false); } }}
-              className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-sm dark:text-zinc-200 outline-none focus:border-rose-400 resize-none transition" autoFocus />
+              className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border-strong)] rounded-lg px-2.5 py-1.5 text-sm dark:text-zinc-200 outline-none focus:border-rose-400 resize-none transition" autoFocus />
             <button type="button" onClick={() => { void onReply(comment.id, replyBody.trim()); setReplyBody(''); setReplyOpen(false); }}
               disabled={!replyBody.trim()} className="self-end p-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 disabled:opacity-40 transition">
               <Send className="w-3.5 h-3.5" />
@@ -204,11 +204,11 @@ export const EventCommentThread: React.FC<EventCommentThreadProps> = ({ eventId,
           ))
         }
       </div>
-      <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+      <div className="mt-4 pt-3 border-t border-[var(--pulse-border)]">
         <div className="flex gap-2 items-end">
           <textarea rows={2} placeholder="Write a comment... (Cmd+Enter to send)" value={newBody} onChange={e => setNewBody(e.target.value)}
             onKeyDown={e => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { void submit(); } }}
-            className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-sm dark:text-zinc-200 outline-none focus:border-rose-400 resize-none transition" />
+            className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-xl px-3 py-2.5 text-sm dark:text-zinc-200 outline-none focus:border-rose-400 resize-none transition" />
           <button type="button" onClick={() => { void submit(); }} disabled={sending || !newBody.trim()} className="p-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition disabled:opacity-40 shadow-sm">
             {sending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>

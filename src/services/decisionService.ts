@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient';
 import { ecosystemNotifyService } from './ecosystemNotifyService';
+import { invokeAIJson } from './ai/aiService';
+import type { User as PulseUser } from '../types';
 
 export interface Decision {
   id: string;
@@ -332,5 +334,112 @@ export const decisionService = {
       ...d,
       vote_counts: this.calculateVoteCounts(d.votes || [])
     }));
-  }
+  },
+
+  /**
+   * Use AI to decompose a decision into actionable tasks.
+   * Routes through ai-router (decision_risk_analysis → Claude Haiku).
+   * Throws on router failure or invalid JSON; callers should catch and surface.
+   */
+  async decomposeDecision(
+    decision: DecisionWithVotes,
+    workspaceId: string,
+    workspaceMembers: PulseUser[],
+  ): Promise<DecompositionResult> {
+    const context = {
+      title: decision.title,
+      description: decision.description,
+      type: decision.decision_type,
+      status: decision.status,
+      votes: decision.votes?.length || 0,
+      options: (decision as DecisionWithVotes & { options?: unknown[] }).options || [],
+      workspace_members: workspaceMembers.map(m => ({
+        name: m.name,
+        role: m.role,
+        email: m.email,
+      })),
+    };
+
+    const prompt = `You are an expert project manager analyzing a business decision and breaking it down into actionable tasks.
+
+DECISION CONTEXT:
+Title: ${context.title}
+Description: ${context.description || 'No description provided'}
+Type: ${context.type}
+Status: ${context.status}
+Current Votes: ${context.votes}
+Options: ${JSON.stringify(context.options)}
+
+WORKSPACE TEAM:
+${context.workspace_members.map(m => `- ${m.name} (${m.role}): ${m.email}`).join('\n')}
+
+TASK:
+1. Generate a brief 2-3 sentence summary of this decision
+2. Break this decision into 3-7 actionable, concrete tasks
+3. For each task:
+   - Write a clear, specific title (action verb + object)
+   - Add a description explaining what needs to be done and why
+   - Assign a priority (low, medium, high, urgent)
+   - Suggest a realistic deadline (as days from today)
+   - Optionally suggest who should do it (name or role)
+   - Explain the rationale for this task
+
+4. Provide your overall confidence (0.0-1.0) in this decomposition
+5. Explain your reasoning for these specific tasks
+
+REQUIREMENTS:
+- Tasks should be actionable, not vague
+- Tasks should have clear completion criteria
+- Prioritize based on urgency and dependencies
+- Consider the decision type and status
+- Tasks should move the decision toward resolution
+- If status is 'approved', focus on implementation tasks
+- If status is 'voting', focus on research/analysis tasks
+- If status is 'draft', focus on preparation/refinement tasks
+
+Respond ONLY with valid JSON in this exact format:
+{
+  "brief": "2-3 sentence summary",
+  "tasks": [
+    {
+      "title": "Action verb + specific object",
+      "description": "What and why",
+      "priority": "low|medium|high|urgent",
+      "deadline_offset_days": 7,
+      "assignee_suggestion": "Name or role",
+      "rationale": "Why this task matters"
+    }
+  ],
+  "confidence": 0.85,
+  "reasoning": "Why these tasks were chosen"
+}`;
+
+    const result = await invokeAIJson<DecompositionResult>(
+      'decision_risk_analysis',
+      prompt,
+      { workspaceId, temperature: 0.7 },
+    );
+
+    if (!result?.brief || !Array.isArray(result.tasks) || result.tasks.length === 0) {
+      throw new Error('Invalid decomposition result from AI');
+    }
+
+    return result;
+  },
 };
+
+export interface DecomposedTask {
+  title: string;
+  description?: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  deadline_offset_days?: number;
+  assignee_suggestion?: string;
+  rationale?: string;
+}
+
+export interface DecompositionResult {
+  brief: string;
+  tasks: DecomposedTask[];
+  confidence: number;
+  reasoning: string;
+}

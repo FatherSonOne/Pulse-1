@@ -39,10 +39,10 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
   // Colors based on mode
   const colors = {
     work: {
-      primary: '#3b82f6', // blue-500
-      secondary: '#60a5fa', // blue-400
-      bg: '#1e3a8a', // blue-900
-      text: '#dbeafe', // blue-100
+      primary: '#f43f5e', // coral
+      secondary: '#fb7185', // coral light
+      bg: '#881337', // coral deep
+      text: '#fecdd3', // coral pale
     },
     break: {
       primary: '#10b981', // green-500
@@ -148,7 +148,7 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
           </div>
 
           {/* Progress Percentage */}
-          <div className="mt-2 text-sm text-gray-400">
+          <div className="mt-2 text-sm text-[#b4b4b8]">
             {Math.round(progress * 100)}% complete
           </div>
 
@@ -202,8 +202,8 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
         <div
           className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all ${
             mode === 'work'
-              ? 'bg-blue-900 text-blue-100 shadow-lg scale-110'
-              : 'bg-gray-800 text-gray-400'
+              ? 'bg-[#881337] text-[#fecdd3] shadow-lg'
+              : 'bg-[rgba(255,255,255,0.055)] text-[#b4b4b8]'
           }`}
         >
           <svg
@@ -224,8 +224,8 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
         <div
           className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all ${
             mode === 'break'
-              ? 'bg-green-900 text-green-100 shadow-lg scale-110'
-              : 'bg-gray-800 text-gray-400'
+              ? 'bg-green-900 text-green-100 shadow-lg'
+              : 'bg-[rgba(255,255,255,0.055)] text-[#b4b4b8]'
           }`}
         >
           <svg

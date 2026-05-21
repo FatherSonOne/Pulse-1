@@ -63,7 +63,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">1. Introduction</h2>
               <p className="text-zinc-600 dark:text-zinc-400 mb-4">
-                Welcome to Pulse ("we," "our," or "us"). Pulse is an AI-powered communication platform developed by Logos Vision LLC.
+                Welcome to Pulse ("we," "our," or "us"). Pulse is an AI-powered communication platform developed by Quantum Ecosystems LLC.
                 This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our
                 application and services.
               </p>
@@ -320,7 +320,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
                 If you have questions about this Privacy Policy or our data practices, please contact us:
               </p>
               <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-6">
-                <p className="text-zinc-700 dark:text-zinc-300 font-medium">Logos Vision LLC</p>
+                <p className="text-zinc-700 dark:text-zinc-300 font-medium">Quantum Ecosystems LLC</p>
                 <p className="text-zinc-600 dark:text-zinc-400">Email: fm1@qntmecos.com</p>
                 <p className="text-zinc-600 dark:text-zinc-400">Website: https://logosvision.org</p>
               </div>
@@ -338,7 +338,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
             <a href="mailto:fm1@qntmecos.com" className="hover:text-rose-500 transition">Contact</a>
           </div>
           <p className="mt-4 text-xs text-zinc-400">
-            &copy; {new Date().getFullYear()} Logos Vision LLC. All rights reserved.
+            &copy; {new Date().getFullYear()} Quantum Ecosystems LLC. All rights reserved.
           </p>
         </div>
       </main>

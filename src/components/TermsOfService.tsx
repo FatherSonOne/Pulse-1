@@ -63,7 +63,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">1. Acceptance of Terms</h2>
               <p className="text-zinc-600 dark:text-zinc-400">
-                By accessing or using Pulse ("the Service"), provided by Logos Vision LLC ("we," "us," or "our"),
+                By accessing or using Pulse ("the Service"), provided by Quantum Ecosystems LLC ("we," "us," or "our"),
                 you agree to be bound by these Terms of Service. If you disagree with any part of these terms,
                 you may not access the Service.
               </p>
@@ -135,7 +135,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">8. Intellectual Property</h2>
               <p className="text-zinc-600 dark:text-zinc-400">
-                The Service, including its design, features, and content, is owned by Logos Vision LLC
+                The Service, including its design, features, and content, is owned by Quantum Ecosystems LLC
                 and protected by intellectual property laws. You may not copy, modify, distribute, or
                 create derivative works without our express permission.
               </p>
@@ -190,7 +190,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
                 For questions about these Terms of Service, please contact us:
               </p>
               <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-6">
-                <p className="text-zinc-700 dark:text-zinc-300 font-medium">Logos Vision LLC</p>
+                <p className="text-zinc-700 dark:text-zinc-300 font-medium">Quantum Ecosystems LLC</p>
                 <p className="text-zinc-600 dark:text-zinc-400">Email: fm1@qntmecos.com</p>
                 <p className="text-zinc-600 dark:text-zinc-400">Website: https://logosvision.org</p>
               </div>
@@ -208,7 +208,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             <a href="mailto:fm1@qntmecos.com" className="hover:text-rose-500 transition">Contact</a>
           </div>
           <p className="mt-4 text-xs text-zinc-400">
-            &copy; {new Date().getFullYear()} Logos Vision LLC. All rights reserved.
+            &copy; {new Date().getFullYear()} Quantum Ecosystems LLC. All rights reserved.
           </p>
         </div>
       </main>

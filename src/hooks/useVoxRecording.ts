@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { voxModeService } from '../services/relay/voxModeService';
 
 export type RecordingState = 'idle' | 'recording' | 'preview' | 'analyzing';
 
@@ -59,6 +60,10 @@ export interface UseVoxRecordingOptions {
   defaultRecordingMode?: 'hold' | 'tap'; // Default recording mode
   onModeChange?: (mode: 'hold' | 'tap') => void; // Callback when mode changes
   deviceId?: string; // Specific audio input device ID from settings
+  // When true (default), the dashboard-wide `quick_vox_status.is_recording`
+  // flag is flipped on/off so the Relay glance tile + presence subscribers
+  // can render a truthful LIVE state across every recording surface.
+  publishStatus?: boolean;
 }
 
 export interface UseVoxRecordingReturn {
@@ -89,6 +94,7 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
     defaultRecordingMode,
     onModeChange,
     deviceId,
+    publishStatus = true,
   } = options;
 
   // Load recording mode from localStorage or use default
@@ -326,6 +332,38 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
       setState('preview');
     }
   }, [recordingData, onAnalysisComplete]);
+
+  // Mirror recording state to the dashboard-wide `quick_vox_status` flag so the
+  // Relay glance tile and any other presence subscribers reflect the truth
+  // across every mode (Quick / Team / Drop / Notes / Threads / Radio / Classic
+  // composer). Best-effort writes; presence-table failures must not block
+  // recording. We also flip false on unmount and pagehide so a closed tab
+  // doesn't leave the flag stuck.
+  const wasLiveRef = useRef(false);
+  useEffect(() => {
+    if (!publishStatus) return;
+    const isLive = state === 'recording';
+    if (isLive === wasLiveRef.current) return;
+    wasLiveRef.current = isLive;
+    voxModeService.updateQuickVoxStatus(isLive).catch(() => {});
+  }, [state, publishStatus]);
+
+  useEffect(() => {
+    if (!publishStatus) return;
+    const handler = () => {
+      if (wasLiveRef.current) {
+        wasLiveRef.current = false;
+        voxModeService.updateQuickVoxStatus(false).catch(() => {});
+      }
+    };
+    window.addEventListener('pagehide', handler);
+    window.addEventListener('beforeunload', handler);
+    return () => {
+      window.removeEventListener('pagehide', handler);
+      window.removeEventListener('beforeunload', handler);
+      handler(); // also fires on unmount
+    };
+  }, [publishStatus]);
 
   // Set recording mode and persist to localStorage
   const setRecordingMode = useCallback((mode: 'hold' | 'tap') => {

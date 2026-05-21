@@ -2,6 +2,23 @@
 // Both return a normalized AIResponse so the router is provider-agnostic.
 // Claude provider implements prompt caching (90% cost reduction on repeated system prompts).
 
+const PROVIDER_TIMEOUT_MS = 25_000;
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = PROVIDER_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (err) {
+    if ((err as Error).name === 'AbortError') {
+      throw new Error(`upstream timeout after ${timeoutMs}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export interface AIMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -77,7 +94,7 @@ export async function invokeGemini(input: AIInvokeInput): Promise<AIResponse> {
     body.tools = [{ googleSearch: {} }];
   }
 
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -170,7 +187,7 @@ export async function invokeClaude(input: AIInvokeInput): Promise<AIResponse> {
   };
   if (system) body.system = system;
 
-  const res = await fetch(ANTHROPIC_URL, {
+  const res = await fetchWithTimeout(ANTHROPIC_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -42,12 +42,13 @@ const VoxRecordArea: React.FC<VoxRecordAreaProps> = ({
   recordingState,
   children,
 }) => {
-  // Theme classes
+  // Theme classes — translucent surfaces over the true-black canvas in dark
+  // mode (was opaque grey, the Slack/Teams reflex).
   const tc = {
     cardBg: isDarkMode
-      ? 'bg-gray-800/60'
+      ? 'bg-white/[0.03]'
       : 'bg-white',
-    border: isDarkMode ? 'border-gray-700/50' : 'border-gray-200/60',
+    border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-gray-200/60',
   };
 
   // Convert hex color to RGB for opacity

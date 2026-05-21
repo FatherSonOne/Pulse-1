@@ -144,8 +144,8 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
       {/* New Chat Modal */}
       {props.showNewChatModal && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
+            <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
               <h3 className="font-bold dark:text-white flex items-center gap-2">
                 <Plus className="text-rose-500" /> New Conversation
               </h3>
@@ -164,7 +164,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                     value={props.pulseUserSearch}
                     onChange={(e) => props.setPulseUserSearch(e.target.value)}
                     placeholder="Search by @handle or name..."
-                    className="w-full pl-10 pr-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     autoFocus
                   />
                   {props.isSearchingPulseUsers && (
@@ -197,7 +197,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium dark:text-white truncate text-sm flex items-center gap-1">
                                   {user.display_name || user.full_name || 'Pulse User'}
-                                  {user.is_verified && <CheckCircle2 className="text-blue-500 text-[10px]" />}
+                                  {user.is_verified && <CheckCircle2 className="text-[#f43f5e] text-[10px]" />}
                                 </div>
                                 {user.handle && <div className="text-[11px] text-emerald-500 truncate">@{user.handle}</div>}
                               </div>
@@ -231,7 +231,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium dark:text-white truncate text-sm flex items-center gap-1">
                                   {user.display_name || user.full_name || 'Pulse User'}
-                                  {user.is_verified && <CheckCircle2 className="text-blue-500 text-[10px]" />}
+                                  {user.is_verified && <CheckCircle2 className="text-[#f43f5e] text-[10px]" />}
                                 </div>
                                 {user.handle && <div className="text-[11px] text-emerald-500 truncate">@{user.handle}</div>}
                               </div>
@@ -256,7 +256,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                   </div>
                 ) : props.pulseSearchResults.length === 0 && !props.isSearchingPulseUsers ? (
                   <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] rounded-full flex items-center justify-center mx-auto mb-4">
                       <UserX className="text-2xl text-zinc-400" />
                     </div>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -285,7 +285,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                           <div className="font-medium dark:text-white truncate flex items-center gap-2">
                             {user.display_name || user.full_name || 'Pulse User'}
                             {user.is_verified && (
-                              <CheckCircle2 className="text-blue-500 text-xs" />
+                              <CheckCircle2 className="text-[#f43f5e] text-xs" />
                             )}
                           </div>
                           {user.handle && (
@@ -300,7 +300,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
               </div>
             </div>
 
-            <div className="border-t border-zinc-200 dark:border-zinc-800 mt-4 pt-4 px-4 pb-4">
+            <div className="border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] mt-4 pt-4 px-4 pb-4">
               <button
                 onClick={() => { props.setShowNewChatModal(false); props.setPulseUserSearch(''); props.setPulseSearchResults([]); }}
                 className="w-full text-center text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
@@ -315,21 +315,21 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
       {/* Artifact Modal */}
       {props.showArtifactModal && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl h-[80%] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in border border-zinc-200 dark:border-zinc-800">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-950">
+          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-2xl h-[80%] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
+            <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center bg-[#f8f8f8] dark:bg-black">
               <h3 className="font-bold dark:text-white flex items-center gap-2"><FileText /> Channel Artifact</h3>
               <button onClick={() => props.setShowArtifactModal(false)}><X className="text-zinc-500" /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-8">
               {props.loadingArtifact ? (
                 <div className="flex flex-col items-center justify-center h-full gap-4">
-                  <Loader2 className="text-2xl text-blue-500 animate-spin" />
+                  <Loader2 className="text-2xl text-[#f43f5e] animate-spin" />
                   <p className="text-sm text-zinc-500">Generating spec from conversation history...</p>
                 </div>
               ) : props.artifact ? (
                 <div className="prose dark:prose-invert max-w-none text-sm">
                   <h1 className="text-2xl font-bold mb-4">{props.artifact.title}</h1>
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl mb-6 text-blue-800 dark:text-blue-200 italic">
+                  <div className="bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] p-4 rounded-xl mb-6 text-[#0f0f0f] dark:text-[#fafafa] italic">
                     {props.artifact.overview}
                   </div>
                   <h3 className="font-bold uppercase text-xs tracking-wider text-zinc-500 mb-2">Decisions Log</h3>
@@ -337,7 +337,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                     {props.artifact.decisions.map((d, i) => <li key={i} className="text-zinc-700 dark:text-zinc-300">{d}</li>)}
                   </ul>
                   <h3 className="font-bold uppercase text-xs tracking-wider text-zinc-500 mb-2">Specifications</h3>
-                  <div className="whitespace-pre-wrap font-mono text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800 p-4 rounded-xl mb-6">
+                  <div className="whitespace-pre-wrap font-mono text-zinc-600 dark:text-zinc-400 bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-4 rounded-xl mb-6">
                     {props.artifact.spec}
                   </div>
                   <h3 className="font-bold uppercase text-xs tracking-wider text-zinc-500 mb-2">Milestones</h3>
@@ -354,16 +354,16 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                 <div className="text-center text-zinc-500">Failed to generate artifact.</div>
               )}
             </div>
-            <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end">
+            <div className="p-4 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-end">
               <button
                 onClick={props.handleExportToDocs}
                 disabled={props.loadingArtifact || !props.artifact || props.exportingToDocs}
-                className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition disabled:opacity-50 mr-3 flex items-center gap-2"
+                className="bg-[rgba(244,63,94,0.06)] hover:bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185] border border-[rgba(244,63,94,0.20)] px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition disabled:opacity-50 mr-3 flex items-center gap-2"
               >
                 {props.exportingToDocs ? <Loader2 className="animate-spin" /> : <FileText />}
                 Export to Docs
               </button>
-              <button onClick={props.handleSaveArtifact} disabled={props.loadingArtifact || !props.artifact} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition disabled:opacity-50">
+              <button onClick={props.handleSaveArtifact} disabled={props.loadingArtifact || !props.artifact} className="btn-brand-primary px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition disabled:opacity-50">
                 Save to Wiki
               </button>
             </div>
@@ -387,15 +387,15 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
       {/* Forward Message Modal — Pulse conversations only. */}
       {props.showForwardModal && props.forwardingMessage && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
+            <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
               <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <Share className="text-blue-500" /> Forward Message
+                <Share className="text-[#f43f5e]" /> Forward Message
               </h3>
               <button onClick={() => props.setShowForwardModal(false)}><X className="text-zinc-500" /></button>
             </div>
             <div className="p-4">
-              <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300 mb-4 max-h-32 overflow-y-auto">
+              <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300 mb-4 max-h-32 overflow-y-auto">
                 {props.forwardingMessage.text}
               </div>
               <div className="text-xs text-zinc-500 mb-2">Forward to:</div>
@@ -414,7 +414,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               void props.handleForwardPulseMessage(props.forwardingMessage.id, other.id);
                             }
                           }}
-                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
                         >
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                             {other.avatar_url
@@ -485,7 +485,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
       {/* Delete Confirmation Modal */}
       {props.showDeleteConfirm && props.threadToDelete && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
+          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-sm rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
             <div className="p-6 text-center">
               <div className="w-16 h-16 rounded-full bg-red-500/15 dark:bg-red-500/20 ring-1 ring-red-500/30 flex items-center justify-center mx-auto mb-4">
                 <Trash2 className="text-2xl text-red-600 dark:text-red-400" />
@@ -497,7 +497,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
               <div className="flex gap-3">
                 <button
                   onClick={() => { props.setShowDeleteConfirm(false); props.setThreadToDelete(null); }}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 >
                   Cancel
                 </button>
@@ -521,25 +521,25 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
           side="left"
           width="85%"
         >
-          <div className="flex-1 overflow-y-auto flex flex-col bg-zinc-50 dark:bg-zinc-900/50">
-            <div className="p-5 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex-1 overflow-y-auto flex flex-col bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.03)]/50">
+            <div className="p-5 flex justify-between items-center border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
-              <button onClick={props.closeDrawer} className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition" aria-label="Close drawer">
+              <button onClick={props.closeDrawer} className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition" aria-label="Close drawer">
                 <X className="text-lg" />
               </button>
             </div>
 
-            <div className="px-4 py-3 flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800">
+            <div className="px-4 py-3 flex items-center gap-2 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <button onClick={() => { props.setShowInviteModal(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 flex items-center justify-center transition" title="Invite team member">
                 <UserPlus className="text-sm" />
               </button>
               <button onClick={() => { props.setShowCellularSMS(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
                 <Smartphone className="text-sm" />
               </button>
-              <button onClick={() => { props.setShowShortcuts(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
+              <button onClick={() => { props.setShowShortcuts(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center justify-center transition" title="Keyboard shortcuts">
                 <Keyboard className="text-sm" />
               </button>
-              <button onClick={() => { props.setShowNewChatModal(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition" title="New message">
+              <button onClick={() => { props.setShowNewChatModal(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg bg-[#e8e8e8] dark:bg-[rgba(255,255,255,0.055)] text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition" title="New message">
                 <SquarePen className="text-sm" />
               </button>
             </div>
@@ -560,7 +560,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                         <div
                           onClick={() => props.handleSelectConversation(conv.id)}
                           className={`p-3 rounded-xl cursor-pointer transition flex items-center gap-3
-                            ${props.activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
+                            ${props.activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]/50'}`}
                         >
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                             {otherUser.avatar_url ? (

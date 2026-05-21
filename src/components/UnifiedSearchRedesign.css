@@ -1347,155 +1347,6 @@
   background: var(--search-border);
 }
 
-/* ── AI Answer Card ─────────────────────────────────────────────────────
-   Flat coral tint, full 1px border, no side-stripe (DESIGN.md hard ban).
-   No multi-color gradient (rose → pink → purple was the AI-startup template
-   DESIGN.md explicitly rejects). */
-.ai-answer-card {
-  background: var(--search-primary-softer);
-  border: 1px solid rgba(244, 63, 94, 0.20);
-  border-radius: 12px;
-  padding: 1.25rem 1.5rem;
-  animation: searchFadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.dark .ai-answer-card {
-  background: rgba(244, 63, 94, 0.06);
-  border-color: rgba(244, 63, 94, 0.20);
-}
-
-.ai-answer-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-/* AI provenance tag — DESIGN.md "Signature Component" pattern.
-   JetBrains Mono, uppercase, tracked, coral text on soft coral chip. */
-.ai-provenance-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  background: var(--search-primary-soft);
-  color: #e11d48;
-  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
-  font-size: 0.6875rem;            /* 11px */
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.dark .ai-provenance-tag {
-  color: #fb7185;
-}
-
-.ai-provenance-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--search-primary);
-  flex-shrink: 0;
-}
-
-/* AI answer body text — readable, spacious */
-.ai-answer-content {
-  font-size: 0.875rem;            /* 14px */
-  line-height: 1.75;
-  color: var(--search-text-main);
-}
-
-/* Prose within AI answer */
-.ai-answer-content h1,
-.ai-answer-content h2,
-.ai-answer-content h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 1em 0 0.4em;
-  color: var(--search-text-main);
-  letter-spacing: -0.01em;
-}
-
-.ai-answer-content p {
-  margin: 0 0 0.75em;
-}
-
-.ai-answer-content ul,
-.ai-answer-content ol {
-  margin: 0 0 0.75em 1.25em;
-  padding: 0;
-}
-
-.ai-answer-content li {
-  margin-bottom: 0.25em;
-}
-
-.ai-answer-content code {
-  background: var(--search-primary-softer);
-  padding: 0.1em 0.35em;
-  border-radius: 4px;
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
-  font-size: 0.85em;
-  color: var(--search-primary);
-  border: 1px solid rgba(244, 63, 94, 0.15);
-}
-
-.ai-answer-content pre {
-  background: var(--search-surface);
-  border: 1px solid var(--search-border);
-  padding: 0.875rem 1rem;
-  border-radius: 8px;
-  overflow-x: auto;
-  margin: 0.75em 0;
-  box-shadow: var(--search-shadow-sm);
-}
-
-.ai-answer-content a {
-  color: var(--search-primary);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.ai-answer-content strong {
-  font-weight: 600;
-  color: var(--search-text-main);
-}
-
-/* Citations row */
-.ai-citations {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 0.875rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(244, 63, 94, 0.12);
-}
-
-.ai-citation-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.75rem;
-  color: var(--search-primary);
-  background: var(--search-primary-softer);
-  border: 1px solid rgba(244, 63, 94, 0.2);
-  padding: 0.2rem 0.625rem;
-  border-radius: 999px;
-  text-decoration: none;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: all 0.15s ease;
-}
-
-.ai-citation-chip:hover {
-  background: var(--search-primary-soft);
-  border-color: var(--search-primary);
-}
-
 /* ── Skeleton Loading Cards ─────────────────────────────────────── */
 @keyframes skeletonPulse {
   0%, 100% { opacity: 0.5; }
@@ -2361,6 +2212,13 @@
   white-space: nowrap;
 }
 
+/* Bell on a saved-search row signals that an alert subscription is active. */
+.filter-alert-indicator {
+  flex-shrink: 0;
+  color: var(--search-primary);
+  margin-left: 4px;
+}
+
 .filter-operator-code {
   font-family: 'JetBrains Mono', 'SF Mono', monospace;
   font-size: 0.75rem;
@@ -2591,59 +2449,6 @@
 .filter-delete-btn:hover {
   background: var(--search-hover);
   color: #ef4444;
-}
-
-/* ── Sonar model segmented control ────────────────────────────────────────
-   Three exclusive segments matching the section's button vocabulary.
-   Replaces the native <select> chrome. */
-.sonar-model-segments {
-  display: flex;
-  gap: 2px;
-  margin: 6px 0 0 1.625rem;        /* aligned with filter-pill content */
-  padding: 2px;
-  background: var(--search-surface-raised);
-  border: 1px solid var(--search-border);
-  border-radius: 8px;
-}
-
-.dark .sonar-model-segments {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-.sonar-model-segment {
-  flex: 1;
-  padding: 4px 6px;
-  border: none;
-  background: transparent;
-  border-radius: 6px;
-  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
-  font-size: 0.625rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--search-text-muted);
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.sonar-model-segment:hover {
-  color: var(--search-text-secondary);
-}
-
-.sonar-model-segment.active {
-  background: var(--search-surface);
-  color: var(--search-primary);
-  font-weight: 600;
-}
-
-.dark .sonar-model-segment.active {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.sonar-model-segment:focus-visible {
-  outline: 2px solid var(--search-primary);
-  outline-offset: 2px;
 }
 
 /* ── Clipboard count badge ───────────────────────────────────────────────── */

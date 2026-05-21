@@ -630,7 +630,7 @@ export const messageChannelService = {
         text: m.content
       }));
 
-      const reply = await generateSmartReply(apiKey, history);
+      const reply = await generateSmartReply(history);
       if (!reply) return [];
 
       // Generate multiple reply options with different tones
@@ -654,7 +654,7 @@ export const messageChannelService = {
     channelId: string
   ): Promise<DraftAnalysisResult | null> {
     try {
-      const analysis = await analyzeDraftIntent(apiKey, draftContent);
+      const analysis = await analyzeDraftIntent(draftContent);
       if (!analysis) return null;
 
       const wordCount = draftContent.split(/\s+/).length;

@@ -89,7 +89,7 @@ export const MessagesBannersPlugin: React.FC<MessagesBannersPluginProps> = ({
       )}
 
       {isNonPulseThread && canSendNativeSms && (
-        <div className="mb-3 px-3 py-2 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg flex items-center gap-2 text-xs">
+        <div className="mb-3 px-3 py-2 bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.03)]/40 border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] rounded-lg flex items-center gap-2 text-xs">
           <MessageSquare className="text-zinc-500 dark:text-zinc-400" />
           <span className="text-zinc-700 dark:text-zinc-300">
             Messages to {activeContact?.name || 'this contact'} will be sent as SMS via your carrier

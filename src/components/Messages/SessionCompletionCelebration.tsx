@@ -315,7 +315,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
   const getScoreGrade = (score: number): { grade: string; color: string } => {
     if (score >= 90) return { grade: 'A+', color: 'text-green-400' };
     if (score >= 80) return { grade: 'A', color: 'text-green-400' };
-    if (score >= 70) return { grade: 'B', color: 'text-blue-400' };
+    if (score >= 70) return { grade: 'B', color: 'text-[#f43f5e]' };
     if (score >= 60) return { grade: 'C', color: 'text-yellow-400' };
     return { grade: 'D', color: 'text-orange-400' };
   };
@@ -338,7 +338,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
             onClick={onClose}
           >
             <motion.div
-              className="relative w-full max-w-md overflow-hidden rounded-3xl bg-gradient-to-b from-gray-800 to-gray-900 border border-gray-700 shadow-2xl"
+              className="relative w-full max-w-md overflow-hidden rounded-3xl bg-gradient-to-b from-gray-800 to-gray-900 border border-[rgba(255,255,255,0.10)] shadow-2xl"
               variants={cardVariants}
               initial="hidden"
               animate="visible"
@@ -356,7 +356,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                   transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 <motion.div
-                  className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-gradient-to-tr from-blue-500/20 to-purple-500/10 blur-3xl"
+                  className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-gradient-to-tr from-[#f43f5e]/20 to-[#ec4899]/10 blur-3xl"
                   animate={{
                     scale: [1, 1.1, 1],
                     opacity: [0.5, 0.7, 0.5],
@@ -369,7 +369,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                 {/* Close Button */}
                 <button
                   onClick={onClose}
-                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors"
+                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-[rgba(255,255,255,0.10)]/50 text-[#b4b4b8] hover:text-white transition-colors"
                   aria-label="Close"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -420,7 +420,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                 {/* Title */}
                 <motion.div className="text-center mb-8" variants={itemVariants}>
                   <h2 className="text-2xl font-bold text-white mb-2">Session Complete!</h2>
-                  <p className="text-gray-400">Great work staying focused</p>
+                  <p className="text-[#b4b4b8]">Great work staying focused</p>
                 </motion.div>
 
                 {/* Stats Grid */}
@@ -430,16 +430,16 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                 >
                   {/* Duration */}
                   <motion.div
-                    className="p-4 rounded-2xl bg-gray-800/50 border border-gray-700/50"
+                    className="p-4 rounded-2xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.10)]/50"
                     variants={statCountVariants}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                        <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-8 h-8 rounded-lg bg-[rgba(244,63,94,0.10)] flex items-center justify-center">
+                        <svg className="w-4 h-4 text-[#f43f5e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <span className="text-xs text-gray-500 uppercase tracking-wider">Duration</span>
+                      <span className="text-xs text-[#6b7280] uppercase tracking-wider">Duration</span>
                     </div>
                     <div className="text-2xl font-bold text-white">
                       <AnimatedCounter value={stats.duration} suffix="m" />
@@ -448,16 +448,16 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
 
                   {/* Messages Blocked */}
                   <motion.div
-                    className="p-4 rounded-2xl bg-gray-800/50 border border-gray-700/50"
+                    className="p-4 rounded-2xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.10)]/50"
                     variants={statCountVariants}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                        <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-8 h-8 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
+                        <svg className="w-4 h-4 text-[#a1a1aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                         </svg>
                       </div>
-                      <span className="text-xs text-gray-500 uppercase tracking-wider">Blocked</span>
+                      <span className="text-xs text-[#6b7280] uppercase tracking-wider">Blocked</span>
                     </div>
                     <div className="text-2xl font-bold text-white">
                       <AnimatedCounter value={stats.messagesBlocked} />
@@ -466,7 +466,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
 
                   {/* Focus Score */}
                   <motion.div
-                    className="p-4 rounded-2xl bg-gray-800/50 border border-gray-700/50"
+                    className="p-4 rounded-2xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.10)]/50"
                     variants={statCountVariants}
                   >
                     <div className="flex items-center gap-2 mb-2">
@@ -475,11 +475,11 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <span className="text-xs text-gray-500 uppercase tracking-wider">Score</span>
+                      <span className="text-xs text-[#6b7280] uppercase tracking-wider">Score</span>
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className={`text-2xl font-bold ${scoreGrade.color}`}>{scoreGrade.grade}</span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-[#6b7280]">
                         <AnimatedCounter value={stats.focusScore} suffix="%" />
                       </span>
                     </div>
@@ -487,16 +487,16 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
 
                   {/* Breaks */}
                   <motion.div
-                    className="p-4 rounded-2xl bg-gray-800/50 border border-gray-700/50"
+                    className="p-4 rounded-2xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.10)]/50"
                     variants={statCountVariants}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                        <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-8 h-8 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
+                        <svg className="w-4 h-4 text-[#a1a1aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z" />
                         </svg>
                       </div>
-                      <span className="text-xs text-gray-500 uppercase tracking-wider">Breaks</span>
+                      <span className="text-xs text-[#6b7280] uppercase tracking-wider">Breaks</span>
                     </div>
                     <div className="text-2xl font-bold text-white">
                       <AnimatedCounter value={stats.breaksTaken} />
@@ -510,7 +510,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                     className={`mb-6 p-4 rounded-2xl border ${
                       streak.isNewRecord
                         ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/30'
-                        : 'bg-gray-800/50 border-gray-700/50'
+                        : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.10)]/50'
                     }`}
                     variants={itemVariants}
                   >
@@ -539,7 +539,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                             <p className="text-xs text-yellow-400/80">New Personal Record!</p>
                           )}
                           {!streak.isNewRecord && streak.longestStreak > streak.currentStreak && (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-[#6b7280]">
                               Best: {streak.longestStreak} days
                             </p>
                           )}
@@ -565,7 +565,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                 {/* Action Buttons */}
                 <motion.div className="space-y-3" variants={itemVariants}>
                   <motion.button
-                    className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold text-lg shadow-lg shadow-blue-500/25 transition-all duration-200"
+                    className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-[#f43f5e] to-[#ec4899] hover:from-[#e11d48] hover:to-[#db2777] text-white font-semibold text-lg shadow-lg shadow-[#f43f5e]/25 transition-all duration-200"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={onStartAnother}
@@ -581,7 +581,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
 
                   <div className="flex gap-3">
                     <motion.button
-                      className="flex-1 py-3 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 font-medium transition-colors"
+                      className="flex-1 py-3 px-4 rounded-xl bg-[rgba(255,255,255,0.055)] hover:bg-[rgba(255,255,255,0.10)] border border-[rgba(255,255,255,0.10)] text-[#fafafa] font-medium transition-colors"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={onViewStats}
@@ -589,7 +589,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                       View Stats
                     </motion.button>
                     <motion.button
-                      className="flex-1 py-3 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 font-medium transition-colors"
+                      className="flex-1 py-3 px-4 rounded-xl bg-[rgba(255,255,255,0.055)] hover:bg-[rgba(255,255,255,0.10)] border border-[rgba(255,255,255,0.10)] text-[#fafafa] font-medium transition-colors"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={onClose}

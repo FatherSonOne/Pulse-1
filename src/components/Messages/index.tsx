@@ -62,7 +62,7 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
         {selectedChannel ? (
           <>
             {/* Mobile back button */}
-            <div className="md:hidden px-4 py-2 border-b border-gray-200 dark:border-zinc-800">
+            <div className="md:hidden px-4 py-2 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
               <button
                 onClick={() => setShowChannelList(true)}
                 className="flex items-center gap-2 text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white transition"

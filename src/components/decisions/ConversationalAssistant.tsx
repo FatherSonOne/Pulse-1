@@ -243,16 +243,6 @@ const ConversationalAssistantComponent: React.FC<ConversationalAssistantProps> =
     const messageToSend = message || inputValue.trim();
     if (!messageToSend || isLoading) return;
 
-    // Get API key — check localStorage first, then env vars
-    const apiKey = localStorage.getItem('gemini_api_key') ||
-                   import.meta.env.VITE_GEMINI_API_KEY ||
-                   import.meta.env.VITE_API_KEY ||
-                   '';
-    if (!apiKey) {
-      setError('No Gemini API key found. Add VITE_GEMINI_API_KEY to your .env or set it in settings.');
-      return;
-    }
-
     // Clear input
     setInputValue('');
     setError(null);
@@ -275,11 +265,10 @@ const ConversationalAssistantComponent: React.FC<ConversationalAssistantProps> =
         user,
       };
 
-      // Get AI response
+      // Get AI response — apiKey arg is a deprecated no-op (server-side routing).
       const response = await conversationalAIService.answerQuery(
         messageToSend,
         context,
-        apiKey
       );
 
       // Check for action commands in response

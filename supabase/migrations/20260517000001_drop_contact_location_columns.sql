@@ -46,12 +46,12 @@
 --          WHERE (c.home_lat IS NOT NULL AND NOT EXISTS (
 --                   SELECT 1 FROM entity_places ep
 --                   WHERE ep.entity_type = 'contact'
---                     AND ep.entity_id = c.id
+--                     AND ep.entity_id = c.id::text
 --                     AND ep.role = 'home'))
 --             OR (c.work_lat IS NOT NULL AND NOT EXISTS (
 --                   SELECT 1 FROM entity_places ep
 --                   WHERE ep.entity_type = 'contact'
---                     AND ep.entity_id = c.id
+--                     AND ep.entity_id = c.id::text
 --                     AND ep.role = 'work'));
 --      Should return zero rows.
 --
@@ -76,17 +76,21 @@ DO $$
 DECLARE
   orphan_count INT;
 BEGIN
+  -- entity_places.entity_id is TEXT (intentional — it stores IDs across
+  -- multiple entity types with mixed underlying types). contacts.id is
+  -- UUID. Cast on the contacts side to compare against the polymorphic
+  -- text key.
   SELECT COUNT(*) INTO orphan_count
   FROM public.contacts c
   WHERE (c.home_lat IS NOT NULL AND NOT EXISTS (
            SELECT 1 FROM public.entity_places ep
            WHERE ep.entity_type = 'contact'
-             AND ep.entity_id   = c.id
+             AND ep.entity_id   = c.id::text
              AND ep.role        = 'home'))
      OR (c.work_lat IS NOT NULL AND NOT EXISTS (
            SELECT 1 FROM public.entity_places ep
            WHERE ep.entity_type = 'contact'
-             AND ep.entity_id   = c.id
+             AND ep.entity_id   = c.id::text
              AND ep.role        = 'work'));
 
   IF orphan_count > 0 THEN

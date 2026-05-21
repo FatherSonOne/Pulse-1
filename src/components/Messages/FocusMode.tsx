@@ -361,7 +361,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
           {/* Close Button */}
           <button
             onClick={handleClose}
-            className="absolute top-6 right-6 p-3 text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-full transition-colors focus:outline-none focus:ring-4 focus:ring-gray-600"
+            className="absolute top-6 right-6 p-3 text-[#b4b4b8] hover:text-white bg-[rgba(255,255,255,0.055)] hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors focus:outline-none focus:ring-4 focus:ring-gray-600"
             aria-label="Exit focus mode"
           >
             <svg
@@ -394,7 +394,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
               >
                 Focus Mode
               </h1>
-              <p className="text-gray-400 text-lg">{threadName}</p>
+              <p className="text-[#b4b4b8] text-lg">{threadName}</p>
             </motion.div>
 
             {/* Timer */}
@@ -437,7 +437,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
             {/* Tips */}
             {!isTimerActive && (
               <motion.div
-                className="text-center text-sm text-gray-500 max-w-md"
+                className="text-center text-sm text-[#6b7280] max-w-md"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
@@ -463,7 +463,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                 onClick={() => setShowSettings(false)}
               >
                 <motion.div
-                  className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
+                  className="bg-[rgba(255,255,255,0.055)] rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
@@ -476,7 +476,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                   <div className="space-y-4">
                     {/* Work Duration */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-[#fafafa] mb-2">
                         Work Duration (minutes)
                       </label>
                       <input
@@ -492,13 +492,13 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                           setPreferences(newPrefs);
                           focusModeService.savePreferences(newPrefs);
                         }}
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
                       />
                     </div>
 
                     {/* Break Duration */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-[#fafafa] mb-2">
                         Break Duration (minutes)
                       </label>
                       <input
@@ -514,13 +514,13 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                           setPreferences(newPrefs);
                           focusModeService.savePreferences(newPrefs);
                         }}
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
                       />
                     </div>
 
                     {/* Sound Enabled */}
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-gray-300">
+                      <label className="text-sm font-medium text-[#fafafa]">
                         Sound Notifications
                       </label>
                       <button
@@ -534,7 +534,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                         }}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                           preferences.soundEnabled
-                            ? 'bg-blue-600'
+                            ? 'bg-[#f43f5e]'
                             : 'bg-gray-600'
                         }`}
                       >
@@ -550,7 +550,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
 
                     {/* Auto-start */}
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-gray-300">
+                      <label className="text-sm font-medium text-[#fafafa]">
                         Auto-start Breaks
                       </label>
                       <button
@@ -564,7 +564,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                         }}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                           preferences.autoStartBreaks
-                            ? 'bg-blue-600'
+                            ? 'bg-[#f43f5e]'
                             : 'bg-gray-600'
                         }`}
                       >
@@ -581,7 +581,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
 
                   <button
                     onClick={() => setShowSettings(false)}
-                    className="mt-6 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                    className="mt-6 w-full px-4 py-2 btn-brand-primary text-white rounded-lg font-medium transition-colors"
                   >
                     Done
                   </button>

@@ -45,7 +45,8 @@ import {
 import { useMeetingsKeyboardShortcuts } from '../../hooks/useMeetingsKeyboardShortcuts';
 
 interface MeetingsProps {
-  apiKey: string;
+  /** @deprecated no-op — AI routing is server-side via edge functions. */
+  apiKey?: string;
   contacts: Contact[];
   initialContactId?: string;
   initialMeetingCode?: string;
@@ -61,7 +62,7 @@ const getMeetingBaseUrl = (): string => {
   return 'https://pulse.logosvision.org/meeting/';
 };
 
-const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId, initialMeetingCode }) => {
+const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialContactId, initialMeetingCode }) => {
   // ============================================
   // STATE
   // ============================================

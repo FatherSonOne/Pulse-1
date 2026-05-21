@@ -200,38 +200,34 @@ class SearchService {
     return highlights;
   }
 
-  /**
-   * Get recent searches for a user
-   */
+  // ── Thread-message-search recents ─────────────────────────────────────
+  // Local-only history specific to the in-thread message Search Panel. The
+  // global Search section uses the `search_history` Supabase table; do not
+  // conflate the two.
+
   getRecentSearches(): string[] {
     try {
-      const stored = localStorage.getItem('pulse_recent_searches');
+      const stored = localStorage.getItem('pulse:thread-search:recents');
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
     }
   }
 
-  /**
-   * Save a search to recent searches
-   */
   saveRecentSearch(query: string): void {
     try {
       const recent = this.getRecentSearches();
       const filtered = recent.filter(q => q.toLowerCase() !== query.toLowerCase());
       filtered.unshift(query);
       const trimmed = filtered.slice(0, 10);
-      localStorage.setItem('pulse_recent_searches', JSON.stringify(trimmed));
+      localStorage.setItem('pulse:thread-search:recents', JSON.stringify(trimmed));
     } catch (error) {
       console.error('Failed to save recent search:', error);
     }
   }
 
-  /**
-   * Clear recent searches
-   */
   clearRecentSearches(): void {
-    localStorage.removeItem('pulse_recent_searches');
+    localStorage.removeItem('pulse:thread-search:recents');
   }
 }
 

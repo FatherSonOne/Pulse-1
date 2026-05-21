@@ -33,6 +33,7 @@ import RecordingPreview from './RecordingPreview';
 import RecordButton from './RecordButton';
 import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
+import RelayPanelShell from './RelayPanelShell';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/relay/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
@@ -51,6 +52,7 @@ import { archiveRelayConversation, archiveMeetingNotes } from '../../services/re
 import { MessageAIPanel, VoxSmartReplies } from './index';
 import { summarizeConversation, generateSmartReplies, generateMeetingNotes, generateAutoChapters } from '../../services/relay/relayAIService';
 import type { ConversationSummary, SmartReply, MeetingNotes, Chapter } from '../../services/relay/relayAIService';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 
 // Phase 6: Final Polish
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
@@ -671,8 +673,8 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       case 'standup':
         // Full hairline + tinted bg; status carried by the existing "Standup" pill.
         return isDarkMode
-          ? 'border-amber-500/40 bg-amber-500/10'
-          : 'border-amber-500/40 bg-amber-500/5';
+          ? 'border-[#f43f5e]/40 bg-[#f43f5e]/10'
+          : 'border-[#f43f5e]/40 bg-[#f43f5e]/5';
       case 'announcement':
         // Full hairline + tinted bg; status carried by the existing "Announcement" pill.
         return isDarkMode
@@ -685,50 +687,50 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
   // Theme classes for consistent styling
   const tc = {
-    // Backgrounds
+    // Backgrounds (Pulse brand surfaces — translucent over true-black in dark)
     pageBg: isDarkMode
-      ? 'bg-gradient-to-br from-gray-900 via-amber-900/10 to-gray-900'
-      : 'bg-gradient-to-br from-slate-50 via-amber-50/30 to-white',
+      ? 'bg-black'
+      : 'bg-[#f8f8f8]',
     panelBg: isDarkMode
-      ? 'bg-gray-900'
+      ? 'bg-[rgba(255,255,255,0.03)]'
       : 'bg-white',
     cardBg: isDarkMode
-      ? 'bg-gray-800/60'
+      ? 'bg-[rgba(255,255,255,0.055)]'
       : 'bg-white',
     inputBg: isDarkMode
-      ? 'bg-gray-800/60 border-gray-700/50'
-      : 'bg-white/80 border-gray-200/60',
+      ? 'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.10)]'
+      : 'bg-white border-[rgba(0,0,0,0.08)]',
     hoverBg: isDarkMode
-      ? 'hover:bg-gray-800/60'
-      : 'hover:bg-gray-100/80',
+      ? 'hover:bg-[rgba(255,255,255,0.055)]'
+      : 'hover:bg-[#f2f2f2]',
     activeBg: isDarkMode
-      ? 'bg-amber-500/20'
-      : 'bg-amber-500/10',
+      ? 'bg-[rgba(244,63,94,0.12)]'
+      : 'bg-[rgba(244,63,94,0.08)]',
 
     // Borders
-    border: isDarkMode ? 'border-gray-800/60' : 'border-gray-200/60',
-    borderAccent: isDarkMode ? 'border-amber-500/30' : 'border-amber-400/40',
+    border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-[rgba(0,0,0,0.08)]',
+    borderAccent: 'border-[#f43f5e]',
 
     // Text
-    text: isDarkMode ? 'text-white' : 'text-gray-900',
-    textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
-    textMuted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-    textAccent: 'text-amber-500',
+    text: isDarkMode ? 'text-[#fafafa]' : 'text-[#0f0f0f]',
+    textSecondary: isDarkMode ? 'text-[#b4b4b8]' : 'text-[#52525b]',
+    textMuted: 'text-[#6b7280]',
+    textAccent: 'text-[#f43f5e]',
 
     // Buttons
-    btnPrimary: 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/25',
+    btnPrimary: 'btn-brand-primary',
     btnSecondary: isDarkMode
-      ? 'bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 border border-gray-700/50'
-      : 'bg-white/80 hover:bg-gray-100/80 text-gray-700 border border-gray-200/60',
+      ? 'bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.055)] text-[#fafafa] border border-[rgba(255,255,255,0.10)]'
+      : 'bg-white hover:bg-[#f2f2f2] text-[#0f0f0f] border border-[rgba(0,0,0,0.08)]',
     btnGhost: isDarkMode
-      ? 'hover:bg-gray-800/60 text-gray-400 hover:text-white'
-      : 'hover:bg-gray-100/80 text-gray-500 hover:text-gray-900',
+      ? 'hover:bg-[rgba(255,255,255,0.055)] text-[#b4b4b8] hover:text-[#fafafa]'
+      : 'hover:bg-[#f2f2f2] text-[#52525b] hover:text-[#0f0f0f]',
 
     // Modal
-    modalOverlay: 'bg-zinc-950/60 backdrop-blur-sm',
+    modalOverlay: 'pulse-modal-scrim',
     modalBg: isDarkMode
-      ? 'bg-gray-900 border-gray-800/60'
-      : 'bg-white border-gray-200/60',
+      ? 'bg-[#0a0a0a] border-[rgba(255,255,255,0.06)]'
+      : 'bg-white border-[rgba(0,0,0,0.08)]',
   };
 
   // Render sidebar content (shared between mobile and desktop)
@@ -741,14 +743,14 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             onClick={() => toggleWorkspaceExpanded(workspace.id)}
             className={`w-full px-3 py-2.5 flex items-center gap-2 transition-all border-l ${
               selectedWorkspace?.id === workspace.id
-                ? `border-amber-500/60 ${tc.activeBg}`
+                ? `border-[#f43f5e]/60 ${tc.activeBg}`
                 : `border-transparent ${tc.hoverBg}`
             }`}
           >
             {expandedWorkspaces.has(workspace.id) ? (
-              <ChevronDown className={`w-4 h-4 ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.textMuted}`} />
+              <ChevronDown className={`w-4 h-4 ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.textMuted}`} />
             ) : (
-              <ChevronRight className={`w-4 h-4 ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.textMuted}`} />
+              <ChevronRight className={`w-4 h-4 ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.textMuted}`} />
             )}
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm"
@@ -763,7 +765,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               </span>
             </div>
             <div className="flex-1 text-left min-w-0">
-              <span className={`font-semibold text-sm truncate block ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.text}`}>
+              <span className={`font-semibold text-sm truncate block ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.text}`}>
                 {workspace.name}
               </span>
               <span className={`text-xs ${tc.textMuted}`}>
@@ -774,7 +776,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
           {/* Channels */}
           {expandedWorkspaces.has(workspace.id) && (
-            <div className={`ml-8 border-l ${selectedWorkspace?.id === workspace.id ? 'border-amber-500/30' : tc.border} pl-3 space-y-0.5 mt-1`}>
+            <div className={`ml-8 border-l ${selectedWorkspace?.id === workspace.id ? 'border-[#f43f5e]/30' : tc.border} pl-3 space-y-0.5 mt-1`}>
               {workspace.channels.map((channel) => (
                 <button
                   key={channel.id}
@@ -785,22 +787,22 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   }}
                   className={`w-full px-3 py-2 flex items-center gap-2 rounded-r-lg text-sm transition-all group ${
                     selectedChannel?.id === channel.id
-                      ? `${tc.activeBg} text-amber-500 font-medium`
-                      : `${tc.textSecondary} ${tc.hoverBg} hover:text-amber-500`
+                      ? `${tc.activeBg} text-[#f43f5e] font-medium`
+                      : `${tc.textSecondary} ${tc.hoverBg} hover:text-[#f43f5e]`
                   }`}
                   title={`${channel.type.charAt(0).toUpperCase() + channel.type.slice(1)} channel`}
                 >
-                  <span className={selectedChannel?.id === channel.id ? 'text-amber-500' : tc.textMuted}>
+                  <span className={selectedChannel?.id === channel.id ? 'text-[#f43f5e]' : tc.textMuted}>
                     {CHANNEL_ICONS[channel.type]}
                   </span>
                   <span className="truncate flex-1 text-left">{channel.name}</span>
                   {channel.unreadCount > 0 && (
-                    <span className="px-2 py-0.5 text-xs bg-amber-500 text-white rounded-full font-semibold">
+                    <span className="px-2 py-0.5 text-xs bg-[#f43f5e] text-white rounded-full font-semibold">
                       {channel.unreadCount}
                     </span>
                   )}
                   {channel.isPinned && (
-                    <Pin className={`w-3 h-3 ${selectedChannel?.id === channel.id ? 'text-amber-500' : tc.textMuted}`} />
+                    <Pin className={`w-3 h-3 ${selectedChannel?.id === channel.id ? 'text-[#f43f5e]' : tc.textMuted}`} />
                   )}
                 </button>
               ))}
@@ -811,7 +813,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   setSelectedWorkspace(workspace);
                   setShowNewChannel(true);
                 }}
-                className={`w-full px-3 py-2 flex items-center gap-2 rounded-r-lg text-sm ${tc.textMuted} hover:text-amber-500 hover:bg-amber-500/10 transition-all mt-1`}
+                className={`w-full px-3 py-2 flex items-center gap-2 rounded-r-lg text-sm ${tc.textMuted} hover:text-[#f43f5e] hover:bg-[#f43f5e]/10 transition-all mt-1`}
                 title="Create a new channel in this workspace"
               >
                 <Plus className="w-4 h-4" />
@@ -867,12 +869,12 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
           },
         ]}
       >
-        {/* Workspace Selector - Desktop */}
+        {/* Workspace Selector (all viewports — mobile hamburger is hard to discover) */}
         {selectedWorkspace && (
-          <div ref={workspaceDropdownRef} className="hidden md:block relative">
+          <div ref={workspaceDropdownRef} className="relative">
             <button
               onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnSecondary} border hover:border-amber-500/50`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnSecondary} border hover:border-[#f43f5e]/50`}
               title="Switch workspace"
             >
               <Briefcase className="w-4 h-4" />
@@ -880,15 +882,12 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               <ChevronDown className={`w-4 h-4 transition-transform ${showWorkspaceDropdown ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Workspace Dropdown */}
+            {/* Workspace Dropdown — anchor-positioned popover, shares modal border/scrim vocabulary minus the centered scrim */}
             {showWorkspaceDropdown && (
               <div className="absolute top-full right-0 mt-2 w-64 z-50">
-                <div
-                  className={`rounded-xl border ${tc.modalBg} shadow-2xl overflow-hidden`}
-                  style={{ boxShadow: `0 8px 32px ${MODE_COLOR}20` }}
-                >
+                <div className={`rounded-xl border ${tc.modalBg} shadow-2xl overflow-hidden`}>
                   <div className={`px-4 py-3 border-b ${tc.border}`}>
-                    <p className={`text-xs font-semibold ${tc.textMuted} uppercase`}>Switch Workspace</p>
+                    <p className={`text-[11px] font-mono uppercase tracking-[0.1em] ${tc.textSecondary}`}>Switch workspace</p>
                   </div>
                   <div className="max-h-64 overflow-y-auto py-2">
                     {workspaces.map((workspace) => (
@@ -906,7 +905,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                         }}
                         className={`w-full px-4 py-3 flex items-center gap-3 transition-all ${
                           selectedWorkspace?.id === workspace.id
-                            ? `${tc.activeBg} text-amber-500`
+                            ? `${tc.activeBg} text-[#f43f5e]`
                             : `${tc.hoverBg} ${tc.text}`
                         }`}
                       >
@@ -923,7 +922,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                           </span>
                         </div>
                         <div className="flex-1 text-left min-w-0">
-                          <p className={`font-medium truncate ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.text}`}>
+                          <p className={`font-medium truncate ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.text}`}>
                             {workspace.name}
                           </p>
                           <p className={`text-xs ${tc.textMuted} truncate`}>
@@ -931,7 +930,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                           </p>
                         </div>
                         {selectedWorkspace?.id === workspace.id && (
-                          <div className="w-2 h-2 rounded-full bg-amber-500" />
+                          <div className="w-2 h-2 rounded-full bg-[#f43f5e]" />
                         )}
                       </button>
                     ))}
@@ -942,7 +941,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                         setShowWorkspaceDropdown(false);
                         setShowNewWorkspace(true);
                       }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${tc.hoverBg} hover:text-amber-500`}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${tc.hoverBg} hover:text-[#f43f5e]`}
                     >
                       <Plus className="w-4 h-4" />
                       Create New Workspace
@@ -1047,6 +1046,14 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                     action={{ label: 'Start Recording', onClick: () => { if (recordingState === 'idle') startRecording(); } }}
                   />
                 ) : (
+                  // TODO(impeccable phase 3 task 6 — RelayVoiceMessage migration):
+                  // Migrate this Channel message render to <RelayVoiceMessage />
+                  // from `./RelayVoiceMessage`. Surface slots needed:
+                  // messageTypePill (already supported), audienceMeta (mentions),
+                  // plus pending API additions: meeting-notes button slot and
+                  // chapters trigger slot in footerExtras. Do this after the
+                  // surface-migration API gap noted at the top of
+                  // RelayVoiceMessage.tsx is filled.
                   <div className="space-y-4">
                     {messages.map((message, index) => {
                       const showDate = index === 0 ||
@@ -1087,7 +1094,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                 }}
                                 className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
                                   isSelected(message.id)
-                                    ? 'bg-orange-500 border-2 border-orange-600'
+                                    ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
                                     : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
                                 }`}
                                 style={{
@@ -1113,7 +1120,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                     {message.senderName}
                                   </span>
                                   {message.messageType === 'standup' && (
-                                    <span className="px-2 py-0.5 text-xs bg-amber-500/20 text-amber-500 rounded-full">
+                                    <span className="px-2 py-0.5 text-xs bg-[#f43f5e]/20 text-[#f43f5e] rounded-full">
                                       Standup
                                     </span>
                                   )}
@@ -1173,11 +1180,17 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                   </span>
                                 </div>
 
-                                {/* Transcript */}
+                                {/* Transcript — labeled as machine-generated so the
+                                    feed differentiates AI text from the sender's voice. */}
                                 {message.transcript && (
-                                  <p className={`text-sm ${tc.textSecondary} mb-2`}>
-                                    {message.transcript}
-                                  </p>
+                                  <div className="mb-2">
+                                    <div className="mb-1">
+                                      <AIProvenanceChip vendor="PULSE AI" type="TRANSCRIPT" />
+                                    </div>
+                                    <p className={`text-sm ${tc.textSecondary}`}>
+                                      {message.transcript}
+                                    </p>
+                                  </div>
                                 )}
 
                                 {/* AI Chapters button — for transcribed messages >= 30s */}
@@ -1264,7 +1277,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                           {['👍', '❤️', '😂', '🔥', '👏', '🎉'].map((emoji) => (
                                             <button
                                               key={emoji}
-                                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-amber-500/20 transition-colors text-lg"
+                                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f43f5e]/20 transition-colors text-lg"
                                               onClick={() => {
                                                 const userId = voxModeService.getUserId();
                                                 setMessages((prev) =>
@@ -1314,7 +1327,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                         {['👍', '❤️', '😂', '🔥', '👏', '🎉'].map((emoji) => (
                                           <button
                                             key={emoji}
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-amber-500/20 transition-colors text-lg"
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f43f5e]/20 transition-colors text-lg"
                                             onClick={() => {
                                               const userId = voxModeService.getUserId();
                                               setMessages((prev) =>
@@ -1403,7 +1416,6 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                       setTimeout(() => startRecording(), 100);
                     }}
                     isDarkMode={isDarkMode}
-                    modeColor={MODE_COLOR}
                   />
                 </div>
               ) : (
@@ -1439,7 +1451,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                               ? type === 'announcement'
                                 ? 'bg-red-500/20 text-red-500'
                                 : type === 'standup'
-                                  ? 'bg-amber-500/20 text-amber-500'
+                                  ? 'bg-[#f43f5e]/20 text-[#f43f5e]'
                                   : `${tc.activeBg} ${tc.text}`
                               : `${tc.cardBg} ${tc.textSecondary} ${tc.hoverBg}`
                           }`}
@@ -1480,14 +1492,8 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
           ) : (
             <div className={`flex-1 flex items-center justify-center ${tc.textMuted}`}>
               <div className="text-center p-6">
-                <div
-                  className="w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${MODE_COLOR}20 0%, ${MODE_COLOR}10 100%)`,
-                    border: `1px solid ${MODE_COLOR}30`
-                  }}
-                >
-                  <Users className="w-10 h-10" style={{ color: MODE_COLOR, opacity: 0.6 }} />
+                <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center border ${tc.border} ${isDarkMode ? 'bg-white/[0.03]' : 'bg-zinc-100'}`}>
+                  <Users className={`w-7 h-7 ${tc.textMuted}`} />
                 </div>
                 <p className={`text-lg ${tc.text}`}>Select a channel</p>
                 <p className={`text-sm mt-1 ${tc.textSecondary}`}>to start collaborating with your team</p>
@@ -1535,7 +1541,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   value={workspaceName}
                   onChange={(e) => setWorkspaceName(e.target.value)}
                   placeholder="My Team"
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
                 />
               </div>
               <div>
@@ -1547,7 +1553,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   onChange={(e) => setWorkspaceDesc(e.target.value)}
                   placeholder="What's this workspace for?"
                   rows={3}
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all resize-none`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all resize-none`}
                 />
               </div>
             </div>
@@ -1595,26 +1601,37 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   value={channelName}
                   onChange={(e) => setChannelName(e.target.value)}
                   placeholder="new-channel"
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
                 />
               </div>
+              {/* Channel Type — segmented control replaces the 2×2 icon-card
+                  grid (DESIGN.md identical-card-grid risk). Mono-uppercase
+                  labels match the section's chip vocabulary. */}
               <div>
                 <label className={`block text-sm font-medium ${tc.textSecondary} mb-2`}>
                   Channel Type
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div
+                  className={`inline-flex w-full p-0.5 rounded-md ${isDarkMode ? 'bg-[rgba(255,255,255,0.055)]' : 'bg-[#f2f2f2]'}`}
+                  role="radiogroup"
+                  aria-label="Channel type"
+                >
                   {(['general', 'standup', 'announcement', 'project'] as const).map((type) => (
                     <button
                       key={type}
+                      type="button"
+                      role="radio"
+                      aria-checked={channelType === type}
                       onClick={() => setChannelType(type)}
-                      className={`p-3 rounded-xl flex items-center gap-2 transition-all border ${
+                      className={`flex-1 px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.1em] transition ${
                         channelType === type
-                          ? `${tc.activeBg} ${tc.borderAccent} text-amber-500`
-                          : `${tc.cardBg} ${tc.border} ${tc.textSecondary} ${tc.hoverBg}`
+                          ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
+                          : isDarkMode
+                            ? 'text-[#b4b4b8] hover:text-[#fafafa]'
+                            : 'text-[#52525b] hover:text-[#0f0f0f]'
                       }`}
                     >
-                      {CHANNEL_ICONS[type]}
-                      <span className="text-sm capitalize">{type}</span>
+                      {type}
                     </button>
                   ))}
                 </div>
@@ -1639,369 +1656,309 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         </div>
       )}
 
-      {/* Add Member Modal */}
-      {showAddMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className={tc.modalOverlay} onClick={() => setShowAddMember(false)} />
-          <div className={`relative w-full max-w-md rounded-2xl border ${tc.modalBg} p-6`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className="p-2 rounded-xl"
-                  style={{ background: MODE_COLOR }}
-                >
-                  <UserPlus className="w-5 h-5 text-white" />
-                </div>
-                <h3 className={`text-xl font-bold ${tc.text}`}>Add Member</h3>
-              </div>
-              <button onClick={() => setShowAddMember(false)} className={`p-2 rounded-xl ${tc.btnGhost}`}>
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="relative mb-4">
-              <input
-                type="text"
-                placeholder="Search Pulse users..."
-                value={memberSearchQuery}
-                onChange={(e) => setMemberSearchQuery(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all`}
-              />
-            </div>
-
-            <div className={`max-h-64 overflow-y-auto space-y-1 rounded-xl p-2 ${tc.cardBg} border ${tc.border}`}>
-              {pulseContacts.filter(c =>
-                c.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) &&
-                !selectedWorkspace?.memberIds.includes(c.id)
-              ).map((contact) => (
-                <button
-                  key={contact.id}
-                  onClick={async () => {
-                    if (!selectedWorkspace) return;
-                    const success = await voxModeService.addMemberToWorkspace(selectedWorkspace.id, contact.id);
-                    if (success) {
-                      setSelectedWorkspace(prev => prev ? {
-                        ...prev,
-                        memberIds: [...prev.memberIds, contact.id]
-                      } : null);
-                      setWorkspaces(prev => prev.map(ws =>
-                        ws.id === selectedWorkspace.id
-                          ? { ...ws, memberIds: [...ws.memberIds, contact.id] }
-                          : ws
-                      ));
-                    }
-                    setShowAddMember(false);
-                  }}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${tc.hoverBg}`}
-                >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
-                    style={{ backgroundColor: contact.avatarColor || MODE_COLOR }}
-                  >
-                    {contact.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 text-left min-w-0">
-                    <p className={`text-sm font-medium ${tc.text} truncate`}>{contact.name}</p>
-                    <p className={`text-xs ${tc.textMuted} truncate`}>{contact.email || contact.role}</p>
-                  </div>
-                  <Plus className={`w-5 h-5 ${tc.textMuted}`} />
-                </button>
-              ))}
-              {pulseContacts.filter(c => c.name.toLowerCase().includes(memberSearchQuery.toLowerCase())).length === 0 && (
-                <p className={`text-center py-4 text-sm ${tc.textMuted}`}>No Pulse users found</p>
-              )}
-            </div>
-          </div>
+      {/* Add Member Panel */}
+      <RelayPanelShell
+        open={showAddMember}
+        onClose={() => setShowAddMember(false)}
+        label="Add member"
+        tc={tc}
+      >
+        <div className="relative mb-4">
+          <input
+            type="text"
+            placeholder="Search Pulse users..."
+            value={memberSearchQuery}
+            onChange={(e) => setMemberSearchQuery(e.target.value)}
+            className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
+          />
         </div>
-      )}
 
-      {/* Notification Settings Modal */}
-      {showNotificationSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className={tc.modalOverlay} onClick={() => setShowNotificationSettings(false)} />
-          <div className={`relative w-full max-w-md rounded-2xl border ${tc.modalBg} p-6`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className="p-2 rounded-xl"
-                  style={{ background: MODE_COLOR }}
-                >
-                  <Bell className="w-5 h-5 text-white" />
-                </div>
-                <h3 className={`text-xl font-bold ${tc.text}`}>Notification Settings</h3>
-              </div>
-              <button onClick={() => setShowNotificationSettings(false)} className={`p-2 rounded-xl ${tc.btnGhost}`}>
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {[
-                { value: 'all' as const, label: 'All Messages', desc: 'Get notified for every message' },
-                { value: 'mentions' as const, label: 'Mentions Only', desc: "Only when you're @mentioned" },
-                { value: 'mute' as const, label: 'Mute', desc: 'No notifications' }
-              ].map((option) => (
-                <label
-                  key={option.value}
-                  className={`flex items-center justify-between p-4 rounded-xl cursor-pointer ${tc.cardBg} border ${tc.border} ${tc.hoverBg} transition-all`}
-                >
-                  <div>
-                    <p className={`font-medium ${tc.text}`}>{option.label}</p>
-                    <p className={`text-sm ${tc.textSecondary}`}>{option.desc}</p>
-                  </div>
-                  <input
-                    type="radio"
-                    name="notification"
-                    checked={notificationPref === option.value}
-                    onChange={() => setNotificationPref(option.value)}
-                    className="w-4 h-4 text-amber-500"
-                  />
-                </label>
-              ))}
-            </div>
-
+        <div className={`max-h-64 overflow-y-auto space-y-1 rounded-xl p-2 ${tc.cardBg} border ${tc.border}`}>
+          {pulseContacts.filter(c =>
+            c.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) &&
+            !selectedWorkspace?.memberIds.includes(c.id)
+          ).map((contact) => (
             <button
-              onClick={() => {
-                if (selectedChannel) {
-                  try {
-                    localStorage.setItem(
-                      `vox_team_notif_${selectedChannel.id}`,
-                      JSON.stringify({ pref: notificationPref, updatedAt: new Date().toISOString() })
-                    );
-                    toast.success(`Notifications set to "${notificationPref === 'all' ? 'All Messages' : notificationPref === 'mentions' ? 'Mentions Only' : 'Muted'}"`);
-                  } catch {
-                    toast.error('Failed to save notification settings');
-                  }
+              key={contact.id}
+              onClick={async () => {
+                if (!selectedWorkspace) return;
+                const success = await voxModeService.addMemberToWorkspace(selectedWorkspace.id, contact.id);
+                if (success) {
+                  setSelectedWorkspace(prev => prev ? {
+                    ...prev,
+                    memberIds: [...prev.memberIds, contact.id]
+                  } : null);
+                  setWorkspaces(prev => prev.map(ws =>
+                    ws.id === selectedWorkspace.id
+                      ? { ...ws, memberIds: [...ws.memberIds, contact.id] }
+                      : ws
+                  ));
                 }
-                setShowNotificationSettings(false);
+                setShowAddMember(false);
               }}
-              className={`w-full mt-6 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${tc.hoverBg}`}
             >
-              Save Settings
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Channel Settings Modal */}
-      {showChannelSettings && selectedChannel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className={tc.modalOverlay} onClick={() => setShowChannelSettings(false)} />
-          <div className={`relative w-full max-w-md rounded-2xl border ${tc.modalBg} p-6`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className="p-2 rounded-xl"
-                  style={{ background: MODE_COLOR }}
-                >
-                  <Settings className="w-5 h-5 text-white" />
-                </div>
-                <h3 className={`text-xl font-bold ${tc.text}`}>Channel Settings</h3>
-              </div>
-              <button onClick={() => setShowChannelSettings(false)} className={`p-2 rounded-xl ${tc.btnGhost}`}>
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="channel-settings-name" className={`block text-sm font-medium ${tc.textSecondary} mb-2`}>Channel Name</label>
-                <input
-                  id="channel-settings-name"
-                  type="text"
-                  value={editChannelName}
-                  onChange={(e) => setEditChannelName(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all`}
-                />
-              </div>
-              <div>
-                <label htmlFor="channel-settings-desc" className={`block text-sm font-medium ${tc.textSecondary} mb-2`}>Description</label>
-                <textarea
-                  id="channel-settings-desc"
-                  value={editChannelDesc}
-                  onChange={(e) => setEditChannelDesc(e.target.value)}
-                  placeholder="What's this channel about?"
-                  rows={3}
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all resize-none`}
-                />
-              </div>
-              <div className={`p-4 rounded-xl ${tc.cardBg} border ${tc.border}`}>
-                <p className={`text-sm ${tc.textSecondary}`}>
-                  <strong>Type:</strong> {selectedChannel.type.charAt(0).toUpperCase() + selectedChannel.type.slice(1)}
-                </p>
-                <p className={`text-sm mt-1 ${tc.textSecondary}`}>
-                  <strong>Members:</strong> {selectedChannel.memberIds.length || 'All workspace members'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowChannelSettings(false)}
-                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnSecondary}`}
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
+                style={{ backgroundColor: contact.avatarColor || MODE_COLOR }}
               >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  if (!selectedChannel) return;
-                  const trimmedName = editChannelName.trim();
-                  if (!trimmedName) {
-                    toast.error('Channel name cannot be empty');
-                    return;
-                  }
-                  const desc = editChannelDesc.trim();
-                  try {
-                    const updated = await voxModeService.updateTeamChannel(selectedChannel.id, {
-                      name: trimmedName,
-                      description: desc,
-                    });
-                    if (updated) {
-                      // Update local selectedChannel state
-                      setSelectedChannel({ ...selectedChannel, name: trimmedName, description: desc });
-                      // Update the channel inside workspaces list so sidebar reflects changes
-                      setWorkspaces(prev => prev.map(ws => ({
-                        ...ws,
-                        channels: ws.channels.map(ch =>
+                {contact.name.charAt(0)}
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                <p className={`text-sm font-medium ${tc.text} truncate`}>{contact.name}</p>
+                <p className={`text-xs ${tc.textMuted} truncate`}>{contact.email || contact.role}</p>
+              </div>
+              <Plus className={`w-5 h-5 ${tc.textMuted}`} />
+            </button>
+          ))}
+          {pulseContacts.filter(c => c.name.toLowerCase().includes(memberSearchQuery.toLowerCase())).length === 0 && (
+            <p className={`text-center py-4 text-sm ${tc.textMuted}`}>No Pulse users found</p>
+          )}
+        </div>
+      </RelayPanelShell>
+
+      {/* Notification Settings Panel */}
+      <RelayPanelShell
+        open={showNotificationSettings}
+        onClose={() => setShowNotificationSettings(false)}
+        label="Notifications"
+        tc={tc}
+        footer={
+          <button
+            onClick={() => {
+              if (selectedChannel) {
+                try {
+                  localStorage.setItem(
+                    `vox_team_notif_${selectedChannel.id}`,
+                    JSON.stringify({ pref: notificationPref, updatedAt: new Date().toISOString() })
+                  );
+                  toast.success(`Notifications set to "${notificationPref === 'all' ? 'All Messages' : notificationPref === 'mentions' ? 'Mentions Only' : 'Muted'}"`);
+                } catch {
+                  toast.error('Failed to save notification settings');
+                }
+              }
+              setShowNotificationSettings(false);
+            }}
+            className={`w-full px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}
+          >
+            Save
+          </button>
+        }
+      >
+        <div className="space-y-2">
+          {[
+            { value: 'all' as const, label: 'All messages', desc: 'Get notified for every message' },
+            { value: 'mentions' as const, label: 'Mentions only', desc: "Only when you're @mentioned" },
+            { value: 'mute' as const, label: 'Mute', desc: 'No notifications' }
+          ].map((option) => (
+            <label
+              key={option.value}
+              className={`flex items-center justify-between p-4 rounded-xl cursor-pointer ${tc.cardBg} border ${tc.border} ${tc.hoverBg} transition-all`}
+            >
+              <div>
+                <p className={`font-medium ${tc.text}`}>{option.label}</p>
+                <p className={`text-sm ${tc.textSecondary}`}>{option.desc}</p>
+              </div>
+              <input
+                type="radio"
+                name="notification"
+                checked={notificationPref === option.value}
+                onChange={() => setNotificationPref(option.value)}
+                className="w-4 h-4 text-[#f43f5e]"
+              />
+            </label>
+          ))}
+        </div>
+      </RelayPanelShell>
+
+      {/* Channel Settings Panel */}
+      <RelayPanelShell
+        open={showChannelSettings && !!selectedChannel}
+        onClose={() => setShowChannelSettings(false)}
+        label="Channel settings"
+        tc={tc}
+        footer={
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowChannelSettings(false)}
+              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnSecondary}`}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                if (!selectedChannel) return;
+                const trimmedName = editChannelName.trim();
+                if (!trimmedName) {
+                  toast.error('Channel name cannot be empty');
+                  return;
+                }
+                const desc = editChannelDesc.trim();
+                try {
+                  const updated = await voxModeService.updateTeamChannel(selectedChannel.id, {
+                    name: trimmedName,
+                    description: desc,
+                  });
+                  if (updated) {
+                    setSelectedChannel({ ...selectedChannel, name: trimmedName, description: desc });
+                    setWorkspaces(prev => prev.map(ws => ({
+                      ...ws,
+                      channels: ws.channels.map(ch =>
+                        ch.id === selectedChannel.id ? { ...ch, name: trimmedName, description: desc } : ch
+                      ),
+                    })));
+                    if (selectedWorkspace) {
+                      setSelectedWorkspace({
+                        ...selectedWorkspace,
+                        channels: selectedWorkspace.channels.map(ch =>
                           ch.id === selectedChannel.id ? { ...ch, name: trimmedName, description: desc } : ch
                         ),
-                      })));
-                      if (selectedWorkspace) {
-                        setSelectedWorkspace({
-                          ...selectedWorkspace,
-                          channels: selectedWorkspace.channels.map(ch =>
-                            ch.id === selectedChannel.id ? { ...ch, name: trimmedName, description: desc } : ch
-                          ),
-                        });
-                      }
-                      toast.success('Channel settings saved');
-                    } else {
-                      toast.error('Failed to save channel settings');
+                      });
                     }
-                  } catch {
+                    toast.success('Channel settings saved');
+                  } else {
                     toast.error('Failed to save channel settings');
                   }
-                  setShowChannelSettings(false);
-                }}
-                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}
-              >
-                Save Changes
-              </button>
-            </div>
+                } catch {
+                  toast.error('Failed to save channel settings');
+                }
+                setShowChannelSettings(false);
+              }}
+              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}
+            >
+              Save
+            </button>
           </div>
-        </div>
-      )}
-
-      {/* Mention Picker Modal */}
-      {showMentionPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className={tc.modalOverlay} onClick={() => setShowMentionPicker(false)} />
-          <div className={`relative w-full max-w-md rounded-2xl border ${tc.modalBg} p-6`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className="p-2 rounded-xl"
-                  style={{ background: MODE_COLOR }}
-                >
-                  <AtSign className="w-5 h-5 text-white" />
-                </div>
-                <h3 className={`text-xl font-bold ${tc.text}`}>Mention People</h3>
-              </div>
-              <button onClick={() => setShowMentionPicker(false)} className={`p-2 rounded-xl ${tc.btnGhost}`}>
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Search */}
-            <div className="relative mb-4">
+        }
+      >
+        {selectedChannel && (
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="channel-settings-name" className={`block text-sm font-medium ${tc.textSecondary} mb-2`}>Channel name</label>
               <input
+                id="channel-settings-name"
                 type="text"
-                placeholder="Search team members..."
-                value={mentionSearchQuery}
-                onChange={(e) => setMentionSearchQuery(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all`}
+                value={editChannelName}
+                onChange={(e) => setEditChannelName(e.target.value)}
+                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
               />
             </div>
-
-            {/* Selected mentions */}
-            {selectedMentions.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                {selectedMentions.map(mentionId => {
-                  const contact = pulseContacts.find(c => c.id === mentionId);
-                  return contact ? (
-                    <span
-                      key={mentionId}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm"
-                      style={{ background: `${MODE_COLOR}20`, color: MODE_COLOR }}
-                    >
-                      @{contact.name}
-                      <button
-                        onClick={() => setSelectedMentions(selectedMentions.filter(id => id !== mentionId))}
-                        className="hover:opacity-70"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ) : null;
-                })}
-              </div>
-            )}
-
-            {/* Contact List */}
-            <div className={`max-h-64 overflow-y-auto space-y-1 rounded-xl p-2 ${tc.cardBg} border ${tc.border}`}>
-              {pulseContacts.filter(c =>
-                c.name.toLowerCase().includes(mentionSearchQuery.toLowerCase()) &&
-                !selectedMentions.includes(c.id)
-              ).map((contact) => (
-                <button
-                  key={contact.id}
-                  onClick={() => {
-                    setSelectedMentions([...selectedMentions, contact.id]);
-                  }}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${tc.hoverBg}`}
-                >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
-                    style={{ backgroundColor: contact.avatarColor || MODE_COLOR }}
-                  >
-                    {contact.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 text-left min-w-0">
-                    <p className={`text-sm font-medium ${tc.text} truncate`}>{contact.name}</p>
-                    <p className={`text-xs ${tc.textMuted} truncate`}>{contact.email || contact.role}</p>
-                  </div>
-                  <AtSign className={`w-4 h-4 ${tc.textMuted}`} />
-                </button>
-              ))}
-              {pulseContacts.filter(c => c.name.toLowerCase().includes(mentionSearchQuery.toLowerCase())).length === 0 && (
-                <p className={`text-center py-4 text-sm ${tc.textMuted}`}>No team members found</p>
-              )}
+            <div>
+              <label htmlFor="channel-settings-desc" className={`block text-sm font-medium ${tc.textSecondary} mb-2`}>Description</label>
+              <textarea
+                id="channel-settings-desc"
+                value={editChannelDesc}
+                onChange={(e) => setEditChannelDesc(e.target.value)}
+                placeholder="What's this channel about?"
+                rows={3}
+                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all resize-none`}
+              />
             </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setSelectedMentions([]);
-                  setMentionSearchQuery('');
-                  setShowMentionPicker(false);
-                }}
-                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnSecondary}`}
-              >
-                Clear All
-              </button>
-              <button
-                onClick={() => {
-                  setMentionSearchQuery('');
-                  setShowMentionPicker(false);
-                }}
-                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}
-              >
-                Done ({selectedMentions.length})
-              </button>
+            <div className={`p-4 rounded-xl ${tc.cardBg} border ${tc.border}`}>
+              <p className={`text-sm ${tc.textSecondary}`}>
+                <strong>Type:</strong> {selectedChannel.type.charAt(0).toUpperCase() + selectedChannel.type.slice(1)}
+              </p>
+              <p className={`text-sm mt-1 ${tc.textSecondary}`}>
+                <strong>Members:</strong> {selectedChannel.memberIds.length || 'All workspace members'}
+              </p>
             </div>
           </div>
+        )}
+      </RelayPanelShell>
+
+      {/* Mention Picker Panel */}
+      <RelayPanelShell
+        open={showMentionPicker}
+        onClose={() => setShowMentionPicker(false)}
+        label="Mention people"
+        tc={tc}
+        footer={
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                setSelectedMentions([]);
+                setMentionSearchQuery('');
+                setShowMentionPicker(false);
+              }}
+              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnSecondary}`}
+            >
+              Clear all
+            </button>
+            <button
+              onClick={() => {
+                setMentionSearchQuery('');
+                setShowMentionPicker(false);
+              }}
+              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}
+            >
+              Done ({selectedMentions.length})
+            </button>
+          </div>
+        }
+      >
+        <div className="relative mb-4">
+          <input
+            type="text"
+            placeholder="Search team members..."
+            value={mentionSearchQuery}
+            onChange={(e) => setMentionSearchQuery(e.target.value)}
+            className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
+          />
         </div>
-      )}
+
+        {selectedMentions.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {selectedMentions.map(mentionId => {
+              const contact = pulseContacts.find(c => c.id === mentionId);
+              return contact ? (
+                <span
+                  key={mentionId}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm"
+                  style={{ background: `${MODE_COLOR}20`, color: MODE_COLOR }}
+                >
+                  @{contact.name}
+                  <button
+                    onClick={() => setSelectedMentions(selectedMentions.filter(id => id !== mentionId))}
+                    className="hover:opacity-70"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ) : null;
+            })}
+          </div>
+        )}
+
+        <div className={`max-h-64 overflow-y-auto space-y-1 rounded-xl p-2 ${tc.cardBg} border ${tc.border}`}>
+          {pulseContacts.filter(c =>
+            c.name.toLowerCase().includes(mentionSearchQuery.toLowerCase()) &&
+            !selectedMentions.includes(c.id)
+          ).map((contact) => (
+            <button
+              key={contact.id}
+              onClick={() => {
+                setSelectedMentions([...selectedMentions, contact.id]);
+              }}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${tc.hoverBg}`}
+            >
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
+                style={{ backgroundColor: contact.avatarColor || MODE_COLOR }}
+              >
+                {contact.name.charAt(0)}
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                <p className={`text-sm font-medium ${tc.text} truncate`}>{contact.name}</p>
+                <p className={`text-xs ${tc.textMuted} truncate`}>{contact.email || contact.role}</p>
+              </div>
+              <AtSign className={`w-4 h-4 ${tc.textMuted}`} />
+            </button>
+          ))}
+          {pulseContacts.filter(c => c.name.toLowerCase().includes(mentionSearchQuery.toLowerCase())).length === 0 && (
+            <p className={`text-center py-4 text-sm ${tc.textMuted}`}>No team members found</p>
+          )}
+        </div>
+      </RelayPanelShell>
 
       {/* Phase 2: Selection Toolbar */}
       {isSelectionMode && selectedChannel && (

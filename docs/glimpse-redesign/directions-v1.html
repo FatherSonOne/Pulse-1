@@ -1,0 +1,1960 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-state="populated" data-density="comfortable">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1200" />
+<title>Glimpse · Three Directions · Pulse Redesign v1</title>
+
+<!-- ============================================================
+     Pulse · Glimpse Section · Direction Exploration
+     ------------------------------------------------------------
+     Junior Designer pass. Three differentiated directions for the
+     conversations-list view, each honoring the existing Glimpse
+     token system and the Pulse-wide coral-as-signal contract.
+
+     Same sample data across all 3 panels so the comparison is honest.
+     ============================================================ -->
+
+<style>
+/* ============================================================
+   TOKENS — shared with src/components/Glimpse/Glimpse.css
+   These are the only colors any direction is allowed to use.
+   ============================================================ */
+:root {
+  /* Brand signal */
+  --gl-rose: #f43f5e;
+  --gl-rose-deep: #e11d48;
+  --gl-rose-bright: #fb7185;
+  --gl-accent-soft-light: rgba(244, 63, 94, 0.10);
+  --gl-accent-soft-dark: rgba(244, 63, 94, 0.12);
+  --gl-accent-glow-light: rgba(244, 63, 94, 0.25);
+  --gl-accent-glow-dark: rgba(244, 63, 94, 0.30);
+
+  /* Status colors — used sparingly and never as chrome */
+  --gl-status-pending: #facc15;
+  --gl-status-overdue: #ef4444;
+  --gl-status-decided: #10b981;
+
+  /* Motion */
+  --gl-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --gl-fast: 220ms;
+  --gl-med: 320ms;
+
+  /* Type */
+  --gl-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --gl-sans: Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+
+  /* Page chrome (the comparison container itself, not Glimpse) */
+  --page-bg: #0a0a0a;
+  --page-fg: #e5e5e5;
+  --page-fg-dim: #9ca3af;
+  --page-border: rgba(255, 255, 255, 0.07);
+}
+
+/* Light Glimpse surface */
+[data-theme="light"] .gl-mode {
+  --gl-canvas: #f8f8f8;
+  --gl-surface: #ffffff;
+  --gl-surface-soft: #f2f2f2;
+  --gl-border: rgba(0, 0, 0, 0.08);
+  --gl-border-strong: rgba(0, 0, 0, 0.12);
+  --gl-ink: #0f0f0f;
+  --gl-ink-cloth: #52525b;
+  --gl-ink-fog: #6b7280;
+  --gl-accent-soft: var(--gl-accent-soft-light);
+  --gl-accent-glow: var(--gl-accent-glow-light);
+}
+
+/* Dark Glimpse surface (default) */
+[data-theme="dark"] .gl-mode {
+  --gl-canvas: #000000;
+  --gl-surface: rgba(255, 255, 255, 0.03);
+  --gl-surface-soft: rgba(255, 255, 255, 0.055);
+  --gl-border: rgba(255, 255, 255, 0.06);
+  --gl-border-strong: rgba(255, 255, 255, 0.10);
+  --gl-ink: #fafafa;
+  --gl-ink-cloth: #b4b4b8;
+  --gl-ink-fog: #6b7280;
+  --gl-accent-soft: var(--gl-accent-soft-dark);
+  --gl-accent-glow: var(--gl-accent-glow-dark);
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--page-bg);
+  color: var(--page-fg);
+  font-family: var(--gl-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: inherit; }
+
+/* ============================================================
+   PAGE LAYOUT
+   ============================================================ */
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 32px 96px;
+}
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--page-border);
+  margin-bottom: 32px;
+}
+
+.page-eyebrow {
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gl-rose-bright);
+}
+
+.page-title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  max-width: 24ch;
+  color: #fafafa;
+}
+
+.page-deck {
+  margin: 0;
+  max-width: 64ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--page-fg-dim);
+}
+
+.page-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.page-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--page-border);
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--page-fg-dim);
+}
+
+/* ============================================================
+   TWEAKS — top control bar so the user can A/B all three under
+   identical conditions. Doesn't pretend to be the final UI.
+   ============================================================ */
+.tweaks {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  margin: 0 0 32px;
+  background: rgba(10, 10, 10, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--page-border);
+  border-radius: 12px;
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tweak-label {
+  color: var(--page-fg-dim);
+}
+
+.tweak-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--page-border);
+  border-radius: 6px;
+}
+
+.tweak-btn {
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--page-fg-dim);
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease), color var(--gl-fast) var(--gl-ease);
+}
+
+.tweak-btn:hover {
+  color: var(--page-fg);
+}
+
+.tweak-btn[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fafafa;
+}
+
+/* ============================================================
+   DIRECTION CARD — wraps each variant's chrome + demo
+   ============================================================ */
+.direction {
+  margin: 0 0 64px;
+  padding: 32px;
+  border: 1px solid var(--page-border);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 40%);
+}
+
+.dir-header {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 2fr;
+  gap: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--page-border);
+  margin-bottom: 32px;
+}
+
+.dir-id {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dir-id-num {
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--page-fg-dim);
+}
+
+.dir-id-name {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: #fafafa;
+}
+
+.dir-id-philosophy {
+  margin: 0;
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gl-rose-bright);
+  line-height: 1.4;
+}
+
+.dir-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dir-body p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--page-fg);
+  max-width: 60ch;
+}
+
+.dir-body p.dim {
+  color: var(--page-fg-dim);
+}
+
+.dir-pick {
+  margin-top: 4px;
+  padding: 8px 12px;
+  border-left: 2px solid var(--gl-rose);
+  font-size: 13px;
+  line-height: 1.55;
+  color: #fafafa;
+  background: rgba(244, 63, 94, 0.06);
+}
+
+.dir-pick strong {
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gl-rose-bright);
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.dir-risks {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dir-risks li {
+  padding-left: 16px;
+  position: relative;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--page-fg-dim);
+}
+
+.dir-risks li::before {
+  content: '↳';
+  position: absolute;
+  left: 0;
+  color: var(--gl-status-pending);
+  font-family: var(--gl-mono);
+}
+
+/* ============================================================
+   GLIMPSE SECTION MOCK — every direction stages its conversations
+   list inside this section frame, so they're compared like-for-like.
+   ============================================================ */
+.gl-mode {
+  font-family: var(--gl-sans);
+  background: var(--gl-canvas);
+  color: var(--gl-ink);
+  border: 1px solid var(--gl-border-strong);
+  border-radius: 14px;
+  overflow: hidden;
+  /* Width matches Pulse's typical content column inside the workspace shell */
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* Reusable label primitive — the "system signature" 11px mono caps */
+.gl-label {
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--gl-ink-cloth);
+}
+.gl-label.dim { color: var(--gl-ink-fog); }
+.gl-label.strong { color: var(--gl-ink); }
+
+/* AI provenance chip — non-negotiable across all directions */
+.gl-ai-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--gl-accent-soft);
+  color: var(--gl-rose-deep);
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+}
+[data-theme="dark"] .gl-ai-chip {
+  color: var(--gl-rose-bright);
+}
+.gl-ai-chip::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.gl-ai-chip.pending {
+  background: rgba(250, 204, 21, 0.10);
+  color: #b45309;
+}
+[data-theme="dark"] .gl-ai-chip.pending {
+  background: rgba(250, 204, 21, 0.12);
+  color: var(--gl-status-pending);
+}
+
+/* Shared avatar — neutral fallback, never cyan */
+.gl-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--gl-surface-soft);
+  position: relative;
+  border: 1px solid var(--gl-border);
+}
+.gl-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gl-avatar-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--gl-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--gl-ink-cloth);
+  background: var(--gl-surface-soft);
+}
+
+/* Hide empty state when populated, and vice versa */
+[data-state="populated"] .gl-empty-block { display: none; }
+[data-state="empty"] .gl-populated-block { display: none; }
+
+/* ============================================================
+   DIRECTION 1 — "TRIAGE COCKPIT"
+   Pentagram-style information architecture meets Tufte data density.
+   The conversations list is a triage table: AI summary in-line,
+   action-item count and topic chips visible at the row level.
+   ============================================================ */
+
+/* Header: title + ONE primary CTA + overflow */
+.tc-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--gl-border);
+  background: var(--gl-surface);
+}
+.tc-header-back {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--gl-border);
+  background: transparent;
+  color: var(--gl-ink-cloth);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.tc-header-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--gl-accent-soft);
+  color: var(--gl-rose);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+[data-theme="dark"] .tc-header-icon { color: var(--gl-rose-bright); }
+.tc-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.tc-title strong {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.tc-title span {
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gl-ink-fog);
+}
+.tc-header-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--gl-rose);
+  color: #fff;
+  font-family: var(--gl-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease), box-shadow var(--gl-fast) var(--gl-ease);
+}
+.tc-header-cta:hover { background: var(--gl-rose-deep); box-shadow: 0 4px 14px var(--gl-accent-glow); }
+.tc-header-overflow {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--gl-border);
+  background: transparent;
+  color: var(--gl-ink-cloth);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Triage column-header strip */
+.tc-colhead {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px 60px 56px;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--gl-border);
+  background: var(--gl-canvas);
+}
+.tc-colhead .gl-label { color: var(--gl-ink-fog); }
+
+/* Triage row */
+.tc-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px 60px 56px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--gl-border);
+  transition: background var(--gl-fast) var(--gl-ease);
+  cursor: pointer;
+}
+.tc-row:hover { background: var(--gl-surface-soft); }
+.tc-row:last-child { border-bottom: none; }
+
+.tc-row .gl-avatar {
+  width: 36px;
+  height: 36px;
+}
+
+.tc-row-signal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.tc-row-from {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gl-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tc-row-from .unread-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gl-rose);
+  flex-shrink: 0;
+}
+.tc-row-from .kind {
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--gl-ink-fog);
+  text-transform: uppercase;
+}
+.tc-row-summary {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--gl-ink-cloth);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 56ch;
+}
+.tc-row[data-unread="true"] .tc-row-summary {
+  color: var(--gl-ink);
+}
+.tc-row-summary-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 2px;
+}
+.tc-row-summary-skeleton span {
+  height: 9px;
+  border-radius: 3px;
+  background: var(--gl-surface-soft);
+  animation: gl-skel 1.6s ease-in-out infinite;
+}
+.tc-row-summary-skeleton span:nth-child(1) { width: 76%; }
+.tc-row-summary-skeleton span:nth-child(2) { width: 52%; }
+@keyframes gl-skel {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.tc-row-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.tc-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: var(--gl-accent-soft);
+  color: var(--gl-rose-deep);
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+[data-theme="dark"] .tc-action-pill { color: var(--gl-rose-bright); }
+.tc-row-actions .ai-mini {
+  font-family: var(--gl-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gl-ink-fog);
+}
+
+.tc-row-duration {
+  text-align: right;
+  font-family: var(--gl-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--gl-ink-cloth);
+}
+
+.tc-row-when {
+  text-align: right;
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gl-ink-fog);
+}
+
+.tc-row[data-viewed="true"] .tc-row-from { color: var(--gl-ink-cloth); }
+
+/* Triage empty state */
+.tc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 64px 32px;
+}
+.tc-empty-stamp {
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gl-ink-fog);
+  padding: 8px 16px;
+  border: 1px dashed var(--gl-border-strong);
+  border-radius: 4px;
+}
+.tc-empty p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--gl-ink-cloth);
+  text-align: center;
+  max-width: 44ch;
+}
+.tc-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: var(--gl-rose);
+  color: #fff;
+  border: none;
+  font-family: var(--gl-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* ============================================================
+   DIRECTION 2 — "DECISION DIGEST"
+   Kenya Hara emptiness × Anthropic editorial restraint.
+   The list reads as a daily reading digest. Each item gets room
+   to breathe; the AI summary is body copy, not a peek.
+   ============================================================ */
+
+.dd-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 32px 14px;
+  border-bottom: 1px solid var(--gl-border);
+}
+.dd-header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dd-header-title h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  color: var(--gl-ink);
+}
+.dd-header-title .gl-label {
+  color: var(--gl-ink-fog);
+}
+.dd-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dd-header-link {
+  font-size: 13px;
+  color: var(--gl-rose);
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 1px;
+}
+[data-theme="dark"] .dd-header-link { color: var(--gl-rose-bright); }
+.dd-header-link:hover { color: var(--gl-rose-deep); }
+
+.dd-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.dd-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 20px;
+  align-items: start;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--gl-border);
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease);
+}
+.dd-row:hover { background: var(--gl-surface-soft); }
+.dd-row:last-child { border-bottom: none; }
+
+.dd-row .gl-avatar {
+  width: 48px;
+  height: 48px;
+}
+
+.dd-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dd-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.dd-row-from {
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gl-ink);
+}
+.dd-row[data-unread="true"] .dd-row-from::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gl-rose);
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.dd-row-kind {
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gl-ink-fog);
+}
+.dd-row-summary {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--gl-ink);
+  max-width: 58ch;
+  font-weight: 400;
+}
+.dd-row[data-viewed="true"] .dd-row-summary {
+  color: var(--gl-ink-cloth);
+}
+.dd-row-tail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dd-row-tail .gl-label { font-size: 10px; }
+.dd-row-tail .action-count {
+  color: var(--gl-rose-deep);
+}
+[data-theme="dark"] .dd-row-tail .action-count {
+  color: var(--gl-rose-bright);
+}
+
+.dd-row-summary-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 52ch;
+}
+.dd-row-summary-skeleton span {
+  height: 10px;
+  border-radius: 3px;
+  background: var(--gl-surface-soft);
+  animation: gl-skel 1.6s ease-in-out infinite;
+}
+.dd-row-summary-skeleton span:nth-child(1) { width: 86%; }
+.dd-row-summary-skeleton span:nth-child(2) { width: 64%; }
+
+.dd-row-time {
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gl-ink-fog);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+/* Digest empty state — a single quiet line, no card */
+.dd-empty {
+  padding: 80px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  max-width: 52ch;
+  margin: 0 auto;
+}
+.dd-empty p {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.55;
+  font-weight: 400;
+  color: var(--gl-ink);
+  letter-spacing: -0.005em;
+}
+.dd-empty .dd-empty-actions {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.dd-empty-link {
+  font-size: 14px;
+  color: var(--gl-rose);
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 1px;
+}
+[data-theme="dark"] .dd-empty-link { color: var(--gl-rose-bright); }
+
+/* ============================================================
+   DIRECTION 3 — "TRANSMISSION FEED"
+   Field.io motion poetics × cockpit/terminal industrial.
+   Each row is a split-pane monitor: left rail of state stamps,
+   right pane of transmission readout.
+   ============================================================ */
+
+.tf-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--gl-border);
+  background: var(--gl-canvas);
+}
+.tf-coords {
+  display: flex;
+  gap: 16px;
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.tf-coords .crumb {
+  color: var(--gl-ink-fog);
+}
+.tf-coords .crumb.active {
+  color: var(--gl-ink);
+}
+.tf-coords .crumb.signal {
+  color: var(--gl-rose);
+}
+[data-theme="dark"] .tf-coords .crumb.signal {
+  color: var(--gl-rose-bright);
+}
+.tf-coords .sep {
+  color: var(--gl-ink-fog);
+}
+.tf-rail {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.tf-rail-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--gl-border);
+  background: transparent;
+  color: var(--gl-ink-cloth);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--gl-fast) var(--gl-ease);
+}
+.tf-rail-btn:hover {
+  background: var(--gl-surface-soft);
+  color: var(--gl-ink);
+}
+.tf-rail-broadcast {
+  padding: 0 14px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--gl-rose);
+  background: transparent;
+  color: var(--gl-rose);
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+[data-theme="dark"] .tf-rail-broadcast {
+  color: var(--gl-rose-bright);
+  border-color: var(--gl-rose-bright);
+}
+.tf-rail-broadcast:hover {
+  background: var(--gl-accent-soft);
+}
+
+/* Transmission row: 6px state stripe, then split into stamps + readout */
+.tf-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.tf-row {
+  display: grid;
+  grid-template-columns: 4px 64px 1fr auto;
+  gap: 0;
+  align-items: stretch;
+  border-bottom: 1px solid var(--gl-border);
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease);
+}
+.tf-row:hover { background: var(--gl-surface-soft); }
+.tf-row:last-child { border-bottom: none; }
+
+.tf-row-stripe {
+  background: transparent;
+}
+.tf-row[data-unread="true"] .tf-row-stripe {
+  background: var(--gl-rose);
+}
+
+.tf-row-stamps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 8px;
+  border-right: 1px solid var(--gl-border);
+}
+.tf-row-stamps .gl-avatar {
+  width: 36px;
+  height: 36px;
+}
+.tf-row-stamps .glyph {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gl-ink-fog);
+}
+.tf-row-stamps .glyph.ai {
+  color: var(--gl-rose);
+}
+[data-theme="dark"] .tf-row-stamps .glyph.ai {
+  color: var(--gl-rose-bright);
+}
+.tf-row-stamps .glyph.viewed {
+  color: var(--gl-ink-fog);
+}
+.tf-row-stamps .glyph.pending {
+  color: var(--gl-status-pending);
+}
+
+.tf-row-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 20px 16px 18px;
+  min-width: 0;
+}
+.tf-row-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tf-row-from {
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gl-ink);
+}
+.tf-row[data-viewed="true"] .tf-row-from {
+  color: var(--gl-ink-cloth);
+}
+.tf-row-kind {
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gl-ink-fog);
+}
+.tf-row-kind.walk {
+  color: var(--gl-ink-cloth);
+}
+.tf-row-summary {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--gl-ink);
+  max-width: 56ch;
+  font-weight: 400;
+}
+.tf-row[data-viewed="true"] .tf-row-summary { color: var(--gl-ink-cloth); }
+.tf-row-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tf-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  border-radius: 3px;
+  background: var(--gl-surface-soft);
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gl-ink-cloth);
+}
+.tf-tag.action {
+  background: var(--gl-accent-soft);
+  color: var(--gl-rose-deep);
+}
+[data-theme="dark"] .tf-tag.action {
+  color: var(--gl-rose-bright);
+}
+
+.tf-row-meter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 16px 20px 16px 8px;
+  gap: 10px;
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gl-ink-fog);
+  font-variant-numeric: tabular-nums;
+}
+.tf-row-duration {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--gl-ink-cloth);
+}
+.tf-row[data-unread="true"] .tf-row-duration { color: var(--gl-ink); }
+
+.tf-row-summary-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 48ch;
+}
+.tf-row-summary-skeleton span {
+  height: 9px;
+  border-radius: 3px;
+  background: var(--gl-surface-soft);
+  animation: gl-skel 1.6s ease-in-out infinite;
+}
+.tf-row-summary-skeleton span:nth-child(1) { width: 70%; }
+.tf-row-summary-skeleton span:nth-child(2) { width: 48%; }
+
+/* Transmission empty state — terminal stamp */
+.tf-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 80px 32px;
+}
+.tf-empty-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border: 1px solid var(--gl-border-strong);
+  border-radius: 4px;
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gl-ink-fog);
+}
+.tf-empty-stamp .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gl-ink-fog);
+  animation: tf-pulse 2s ease-in-out infinite;
+}
+@keyframes tf-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+.tf-empty-msg {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--gl-ink-cloth);
+  text-align: center;
+  max-width: 40ch;
+}
+.tf-empty-broadcast {
+  padding: 10px 20px;
+  height: auto;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.page-footer {
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--page-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.page-footer p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--page-fg-dim);
+  max-width: 68ch;
+}
+.page-footer .gl-label {
+  color: var(--page-fg-dim);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header class="page-header">
+    <span class="page-eyebrow">Pulse · Glimpse Section · Direction Exploration v1</span>
+    <h1 class="page-title">Three differentiated ways the Glimpse inbox could earn the depth of what's behind it.</h1>
+    <p class="page-deck">The Glimpse chat view already reads like a decision document — AI summaries, action items, topic chips, transcript-on-demand. The conversations list it lives behind still reads like 2018 SMS. These three directions explore what closing that asymmetry could look like, each from a different design tradition. Same sample data, same coral-as-signal contract, same 11px-mono system signature. Picking one is the next step.</p>
+    <div class="page-meta">
+      <span class="page-meta-chip">huashu-design · direction</span>
+      <span class="page-meta-chip">branch · feat/glimpse-redesign</span>
+      <span class="page-meta-chip">surface · src/components/Glimpse</span>
+      <span class="page-meta-chip">tokens · Glimpse.css gl-* family</span>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       TWEAKS BAR
+       ============================================================ -->
+  <div class="tweaks" role="toolbar" aria-label="View controls">
+    <span class="tweak-label">View</span>
+    <div class="tweak-group" role="radiogroup" aria-label="Theme">
+      <button class="tweak-btn" data-tweak="theme" data-value="dark" aria-pressed="true">Dark</button>
+      <button class="tweak-btn" data-tweak="theme" data-value="light" aria-pressed="false">Light</button>
+    </div>
+    <div class="tweak-group" role="radiogroup" aria-label="State">
+      <button class="tweak-btn" data-tweak="state" data-value="populated" aria-pressed="true">Populated</button>
+      <button class="tweak-btn" data-tweak="state" data-value="empty" aria-pressed="false">Empty</button>
+    </div>
+    <div class="tweak-group" role="radiogroup" aria-label="Density">
+      <button class="tweak-btn" data-tweak="density" data-value="comfortable" aria-pressed="true">Comfortable</button>
+      <button class="tweak-btn" data-tweak="density" data-value="compact" aria-pressed="false">Compact</button>
+    </div>
+    <span class="tweak-label" style="margin-left: auto;">Same data across all three</span>
+  </div>
+
+  <!-- ============================================================
+       DIRECTION 1 — TRIAGE COCKPIT
+       ============================================================ -->
+  <section class="direction" id="dir-1">
+    <header class="dir-header">
+      <div class="dir-id">
+        <span class="dir-id-num">Direction 01</span>
+        <h2 class="dir-id-name">Triage Cockpit</h2>
+        <p class="dir-id-philosophy">Pentagram info-architecture × Tufte data density</p>
+      </div>
+      <div class="dir-body">
+        <p>The conversations list becomes a triage table. Every row surfaces what the AI already knows: a two-line summary peek, action-item count, duration, and a relative timestamp — all aligned to a column-header strip in the system's 11px mono. You decide what to watch by reading, not by guessing.</p>
+        <p class="dim">The header collapses to title plus a single primary CTA; everything secondary moves into an overflow. Coral stays disciplined: unread dot, action-item pill, the AI provenance chip, and the Record CTA. Empty state is a quiet enterprise-style stamp, not a marketing card.</p>
+        <ul class="dir-risks">
+          <li><strong>Risk:</strong> reads "enterprise SaaS" — could feel cold to a user expecting a friendly inbox.</li>
+          <li><strong>Risk:</strong> 5-column grid demands a careful mobile collapse — likely 2 rows per item under 480px.</li>
+        </ul>
+        <div class="dir-pick">
+          <strong>Pick this if</strong>
+          Pulse leans into "decision-document" as its identity — and the inbox should feel like a triage console, not a chat list.
+        </div>
+      </div>
+    </header>
+
+    <!-- Mock Glimpse section -->
+    <div class="gl-mode">
+
+      <!-- POPULATED -->
+      <div class="gl-populated-block">
+        <header class="tc-header">
+          <button class="tc-header-back" aria-label="Back" title="Back">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="tc-header-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4z"/></svg>
+          </div>
+          <div class="tc-title">
+            <strong>Glimpse</strong>
+            <span>14 signals · 6 unread</span>
+          </div>
+          <button class="tc-header-cta">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4z"/></svg>
+            Record
+          </button>
+          <button class="tc-header-overflow" aria-label="More" title="More">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+          </button>
+        </header>
+
+        <div class="tc-colhead">
+          <span></span>
+          <span class="gl-label">From · Signal</span>
+          <span class="gl-label" style="text-align:left;">Actions</span>
+          <span class="gl-label" style="text-align:right;">Length</span>
+          <span class="gl-label" style="text-align:right;">When</span>
+        </div>
+
+        <!-- Renata Voss — unread, full AI summary -->
+        <div class="tc-row" data-unread="true">
+          <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=47" alt="" /></div>
+          <div class="tc-row-signal">
+            <div class="tc-row-from"><span class="unread-dot"></span> Renata Voss <span class="kind">· Glimpse</span></div>
+            <div class="tc-row-summary">Pricing pushback on the enterprise tier from the Helix call — wants a follow-up Thursday before legal gets involved. Two specific anchors she'd want addressed.</div>
+          </div>
+          <div class="tc-row-actions">
+            <span class="tc-action-pill">2 Actions</span>
+            <span class="gl-ai-chip" style="padding:2px 6px;">Claude</span>
+          </div>
+          <div class="tc-row-duration">1:32</div>
+          <div class="tc-row-when">12m</div>
+        </div>
+
+        <!-- Mira Achebe-Holm — walkthrough, viewed, 3 action items -->
+        <div class="tc-row" data-viewed="true">
+          <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=32" alt="" /></div>
+          <div class="tc-row-signal">
+            <div class="tc-row-from">Mira Achebe-Holm <span class="kind">· Walkthrough</span></div>
+            <div class="tc-row-summary">Migration test debrief: schema cut went clean, ingestion lag spiked at 14:02 for ~6 minutes, recovered. Action items captured.</div>
+          </div>
+          <div class="tc-row-actions">
+            <span class="tc-action-pill">3 Actions</span>
+            <span class="gl-ai-chip" style="padding:2px 6px;">Claude</span>
+          </div>
+          <div class="tc-row-duration">2:14</div>
+          <div class="tc-row-when">1h</div>
+        </div>
+
+        <!-- Kofi Adeyemi — viewed, walkthrough, bug repro -->
+        <div class="tc-row" data-viewed="true">
+          <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=53" alt="" /></div>
+          <div class="tc-row-signal">
+            <div class="tc-row-from">Kofi Adeyemi <span class="kind">· Walkthrough</span></div>
+            <div class="tc-row-summary">Production bug reproduced in three steps — fix is a one-liner in the retry handler. Patch PR drafted, needs review.</div>
+          </div>
+          <div class="tc-row-actions">
+            <span class="tc-action-pill">1 Action</span>
+            <span class="gl-ai-chip" style="padding:2px 6px;">Claude</span>
+          </div>
+          <div class="tc-row-duration">4:01</div>
+          <div class="tc-row-when">3h</div>
+        </div>
+
+        <!-- Dario Trent + 4 — group, unread -->
+        <div class="tc-row" data-unread="true">
+          <div class="gl-avatar">
+            <div class="gl-avatar-fallback">+4</div>
+          </div>
+          <div class="tc-row-signal">
+            <div class="tc-row-from"><span class="unread-dot"></span> Dario Trent + 4 <span class="kind">· Group</span></div>
+            <div class="tc-row-summary">Q3 launch sequencing — Dario wants to push the marketing beat to the 24th to clear the AWS announcement; Lin pushes back on dev readiness.</div>
+          </div>
+          <div class="tc-row-actions">
+            <span class="gl-ai-chip" style="padding:2px 6px;">Claude</span>
+          </div>
+          <div class="tc-row-duration">1:48</div>
+          <div class="tc-row-when">5h</div>
+        </div>
+
+        <!-- Anjali Devarajan — unread, design review -->
+        <div class="tc-row" data-unread="true">
+          <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=44" alt="" /></div>
+          <div class="tc-row-signal">
+            <div class="tc-row-from"><span class="unread-dot"></span> Anjali Devarajan <span class="kind">· Glimpse</span></div>
+            <div class="tc-row-summary">Design review on the Map redesign — the SOON pills land flat in the dark theme. Suggests demoting them to monogram badges or pulling them entirely.</div>
+          </div>
+          <div class="tc-row-actions">
+            <span class="tc-action-pill">2 Actions</span>
+            <span class="gl-ai-chip" style="padding:2px 6px;">Claude</span>
+          </div>
+          <div class="tc-row-duration">2:55</div>
+          <div class="tc-row-when">Yest</div>
+        </div>
+
+        <!-- Frank Richard Messana — AI transcribing -->
+        <div class="tc-row" data-unread="true">
+          <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=68" alt="" /></div>
+          <div class="tc-row-signal">
+            <div class="tc-row-from"><span class="unread-dot"></span> Frank Richard Messana <span class="kind">· Glimpse</span></div>
+            <div class="tc-row-summary-skeleton" aria-hidden="true"><span></span><span></span></div>
+          </div>
+          <div class="tc-row-actions">
+            <span class="gl-ai-chip pending" style="padding:2px 6px;">Transcribing</span>
+          </div>
+          <div class="tc-row-duration">0:05</div>
+          <div class="tc-row-when">2d</div>
+        </div>
+
+        <!-- Yui Hashimoto — viewed, quick reaction -->
+        <div class="tc-row" data-viewed="true">
+          <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=23" alt="" /></div>
+          <div class="tc-row-signal">
+            <div class="tc-row-from">Yui Hashimoto <span class="kind">· Glimpse</span></div>
+            <div class="tc-row-summary">Quick reaction — agrees with shipping the contacts patch before the Tuesday standup. No blockers.</div>
+          </div>
+          <div class="tc-row-actions">
+            <span class="ai-mini">No actions</span>
+          </div>
+          <div class="tc-row-duration">0:48</div>
+          <div class="tc-row-when">3d</div>
+        </div>
+      </div>
+
+      <!-- EMPTY -->
+      <div class="gl-empty-block">
+        <header class="tc-header">
+          <button class="tc-header-back" aria-label="Back" title="Back">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="tc-header-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4z"/></svg>
+          </div>
+          <div class="tc-title">
+            <strong>Glimpse</strong>
+            <span>0 signals</span>
+          </div>
+          <button class="tc-header-cta">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4z"/></svg>
+            Record
+          </button>
+          <button class="tc-header-overflow" aria-label="More"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </header>
+        <div class="tc-empty">
+          <span class="tc-empty-stamp">No incoming signals</span>
+          <p>When someone sends a glimpse, it lands here with a transcript, summary, and action items already extracted. You'll see what to watch — and what to skip — before pressing play.</p>
+          <button class="tc-empty-cta">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4z"/></svg>
+            Record your first glimpse
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================
+       DIRECTION 2 — DECISION DIGEST
+       ============================================================ -->
+  <section class="direction" id="dir-2">
+    <header class="dir-header">
+      <div class="dir-id">
+        <span class="dir-id-num">Direction 02</span>
+        <h2 class="dir-id-name">Decision Digest</h2>
+        <p class="dir-id-philosophy">Kenya Hara emptiness × Anthropic editorial restraint</p>
+      </div>
+      <div class="dir-body">
+        <p>The conversations list reads as a daily reading digest. Each item gets room to breathe — the sender becomes a typographic byline, the AI summary becomes the headline, and the existing chrome (action counts, kind chips, timestamps) demotes to quiet metadata that sits below the summary.</p>
+        <p class="dim">Big white space between rows. Header is just a title and a hairline link; no icon-only buttons fighting for attention. The empty state is one editorial sentence with a tiny coral text link — the opposite of a marketing card. Coral stays disciplined: unread dot, AI provenance, the single Record link, and the action-count number.</p>
+        <ul class="dir-risks">
+          <li><strong>Risk:</strong> low density — when the inbox is busy, you scroll. May not work for power users.</li>
+          <li><strong>Risk:</strong> action items risk getting buried below the summary copy; needs A/B against a higher-density variant.</li>
+          <li><strong>Risk:</strong> "editorial digest" energy conflicts with the cockpit-state vocabulary the rest of Pulse leans into.</li>
+        </ul>
+        <div class="dir-pick">
+          <strong>Pick this if</strong>
+          Pulse wants Glimpse to feel like a daily briefing — something you read, not something you triage.
+        </div>
+      </div>
+    </header>
+
+    <div class="gl-mode">
+
+      <!-- POPULATED -->
+      <div class="gl-populated-block">
+        <header class="dd-header">
+          <div class="dd-header-title">
+            <h2>Glimpse</h2>
+            <span class="gl-label">14 sent · 6 unwatched</span>
+          </div>
+          <div class="dd-header-meta">
+            <a href="#" class="dd-header-link">Record</a>
+          </div>
+        </header>
+
+        <div class="dd-list">
+
+          <!-- Renata Voss -->
+          <article class="dd-row" data-unread="true">
+            <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=47" alt="" /></div>
+            <div class="dd-row-body">
+              <div class="dd-row-meta">
+                <span class="dd-row-from">Renata Voss</span>
+                <span class="dd-row-kind">Glimpse · 1:32</span>
+              </div>
+              <p class="dd-row-summary">Pricing pushback on the enterprise tier from the Helix call — wants a follow-up Thursday before legal gets involved.</p>
+              <div class="dd-row-tail">
+                <span class="gl-ai-chip">Claude · Summary</span>
+                <span class="gl-label action-count">2 Action Items</span>
+              </div>
+            </div>
+            <span class="dd-row-time">12 min</span>
+          </article>
+
+          <!-- Mira Achebe-Holm -->
+          <article class="dd-row" data-viewed="true">
+            <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=32" alt="" /></div>
+            <div class="dd-row-body">
+              <div class="dd-row-meta">
+                <span class="dd-row-from">Mira Achebe-Holm</span>
+                <span class="dd-row-kind">Walkthrough · 2:14</span>
+              </div>
+              <p class="dd-row-summary">Migration test debrief: the schema cut went clean, ingestion lag spiked for six minutes at 14:02, then recovered. Three follow-ups captured.</p>
+              <div class="dd-row-tail">
+                <span class="gl-ai-chip">Claude · Summary</span>
+                <span class="gl-label action-count">3 Action Items</span>
+              </div>
+            </div>
+            <span class="dd-row-time">1 hr</span>
+          </article>
+
+          <!-- Kofi Adeyemi -->
+          <article class="dd-row" data-viewed="true">
+            <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=53" alt="" /></div>
+            <div class="dd-row-body">
+              <div class="dd-row-meta">
+                <span class="dd-row-from">Kofi Adeyemi</span>
+                <span class="dd-row-kind">Walkthrough · 4:01</span>
+              </div>
+              <p class="dd-row-summary">Production bug reproduced in three steps. The fix is a one-liner in the retry handler — PR drafted, needs a reviewer this afternoon.</p>
+              <div class="dd-row-tail">
+                <span class="gl-ai-chip">Claude · Summary</span>
+                <span class="gl-label action-count">1 Action Item</span>
+              </div>
+            </div>
+            <span class="dd-row-time">3 hr</span>
+          </article>
+
+          <!-- Dario Trent + 4 -->
+          <article class="dd-row" data-unread="true">
+            <div class="gl-avatar">
+              <div class="gl-avatar-fallback">+4</div>
+            </div>
+            <div class="dd-row-body">
+              <div class="dd-row-meta">
+                <span class="dd-row-from">Dario Trent + 4 others</span>
+                <span class="dd-row-kind">Group · 1:48</span>
+              </div>
+              <p class="dd-row-summary">Q3 launch sequencing — Dario wants to push the marketing beat to the 24th to clear the AWS announcement; Lin pushes back on dev readiness.</p>
+              <div class="dd-row-tail">
+                <span class="gl-ai-chip">Claude · Summary</span>
+              </div>
+            </div>
+            <span class="dd-row-time">5 hr</span>
+          </article>
+
+          <!-- Anjali Devarajan -->
+          <article class="dd-row" data-unread="true">
+            <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=44" alt="" /></div>
+            <div class="dd-row-body">
+              <div class="dd-row-meta">
+                <span class="dd-row-from">Anjali Devarajan</span>
+                <span class="dd-row-kind">Glimpse · 2:55</span>
+              </div>
+              <p class="dd-row-summary">Design review on the Map redesign — the SOON pills land flat in the dark theme. Suggests demoting them to monogram badges, or pulling them entirely.</p>
+              <div class="dd-row-tail">
+                <span class="gl-ai-chip">Claude · Summary</span>
+                <span class="gl-label action-count">2 Action Items</span>
+              </div>
+            </div>
+            <span class="dd-row-time">Yesterday</span>
+          </article>
+
+          <!-- Frank Richard Messana — transcribing -->
+          <article class="dd-row" data-unread="true">
+            <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=68" alt="" /></div>
+            <div class="dd-row-body">
+              <div class="dd-row-meta">
+                <span class="dd-row-from">Frank Richard Messana</span>
+                <span class="dd-row-kind">Glimpse · 0:05</span>
+              </div>
+              <div class="dd-row-summary-skeleton" aria-hidden="true"><span></span><span></span></div>
+              <div class="dd-row-tail">
+                <span class="gl-ai-chip pending">Pulse AI · Transcribing</span>
+              </div>
+            </div>
+            <span class="dd-row-time">2 days</span>
+          </article>
+
+          <!-- Yui Hashimoto -->
+          <article class="dd-row" data-viewed="true">
+            <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=23" alt="" /></div>
+            <div class="dd-row-body">
+              <div class="dd-row-meta">
+                <span class="dd-row-from">Yui Hashimoto</span>
+                <span class="dd-row-kind">Glimpse · 0:48</span>
+              </div>
+              <p class="dd-row-summary">Quick agreement on shipping the contacts patch before the Tuesday standup. No blockers, no follow-ups.</p>
+              <div class="dd-row-tail">
+                <span class="gl-ai-chip">Claude · Summary</span>
+              </div>
+            </div>
+            <span class="dd-row-time">3 days</span>
+          </article>
+
+        </div>
+      </div>
+
+      <!-- EMPTY -->
+      <div class="gl-empty-block">
+        <header class="dd-header">
+          <div class="dd-header-title">
+            <h2>Glimpse</h2>
+            <span class="gl-label">No glimpses yet</span>
+          </div>
+          <div class="dd-header-meta">
+            <a href="#" class="dd-header-link">Record</a>
+          </div>
+        </header>
+        <div class="dd-empty">
+          <p>Video, for the moments words can't carry. Pulse will transcribe, summarize, and extract the action items — so what you send arrives as a document, not a tape.</p>
+          <div class="dd-empty-actions">
+            <a href="#" class="dd-empty-link">Record a glimpse →</a>
+            <a href="#" class="dd-empty-link" style="color: var(--gl-ink-cloth); border-color: var(--gl-border-strong);">Record a walkthrough →</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================
+       DIRECTION 3 — TRANSMISSION FEED
+       ============================================================ -->
+  <section class="direction" id="dir-3">
+    <header class="dir-header">
+      <div class="dir-id">
+        <span class="dir-id-num">Direction 03</span>
+        <h2 class="dir-id-name">Transmission Feed</h2>
+        <p class="dir-id-philosophy">Field.io motion poetics × cockpit/terminal industrial</p>
+      </div>
+      <div class="dir-body">
+        <p>The list becomes a feed of transmissions. Each row is split into three columns: a 4px state stripe (coral when unread), a 64px stamp rail showing the sender + AI + viewed glyphs in vertical stack, and a transmission readout with summary + topic tags. A right-edge meter shows duration and arrival time in tabular mono.</p>
+        <p class="dim">The header is a monospace coordinates row — "Inbox · 14 signals · 6 unread" — that acknowledges the section's positioning as Pulse's signal layer. Empty state is a quiet terminal stamp ("NO INCOMING TRANSMISSIONS") with a coral BROADCAST CTA. Coral discipline: state stripe, AI glyph, broadcast CTA, the existing AI provenance chip.</p>
+        <ul class="dir-risks">
+          <li><strong>Risk:</strong> niche aesthetic — pulls Pulse toward cockpit/spy-thriller energy, which not every user will read as "professional".</li>
+          <li><strong>Risk:</strong> stamp rail competes for attention with the readout; needs careful icon weights.</li>
+          <li><strong>Risk:</strong> "BROADCAST" language conflicts with the chat-app metaphor casual users carry in.</li>
+        </ul>
+        <div class="dir-pick">
+          <strong>Pick this if</strong>
+          Pulse wants to push its cockpit identity further — and Glimpse should feel like the section where the signal traffic actually shows up.
+        </div>
+      </div>
+    </header>
+
+    <div class="gl-mode">
+
+      <!-- POPULATED -->
+      <div class="gl-populated-block">
+        <header class="tf-header">
+          <div class="tf-coords">
+            <span class="crumb">Pulse</span>
+            <span class="sep">/</span>
+            <span class="crumb active">Glimpse</span>
+            <span class="sep">·</span>
+            <span class="crumb">14 signals</span>
+            <span class="sep">·</span>
+            <span class="crumb signal">6 unread</span>
+          </div>
+          <div></div>
+          <div class="tf-rail">
+            <button class="tf-rail-btn" aria-label="Search" title="Search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </button>
+            <button class="tf-rail-btn" aria-label="Mark all read" title="Mark all read">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </button>
+            <button class="tf-rail-broadcast">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 15.54a5 5 0 0 1 0-7.07"/></svg>
+              Broadcast
+            </button>
+          </div>
+        </header>
+
+        <div class="tf-list">
+
+          <!-- Renata Voss -->
+          <article class="tf-row" data-unread="true">
+            <div class="tf-row-stripe"></div>
+            <div class="tf-row-stamps">
+              <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=47" alt="" /></div>
+              <span class="glyph ai" title="AI summary ready">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>
+              </span>
+            </div>
+            <div class="tf-row-readout">
+              <div class="tf-row-head">
+                <span class="tf-row-from">Renata Voss</span>
+                <span class="tf-row-kind">Glimpse</span>
+              </div>
+              <p class="tf-row-summary">Pricing pushback on the enterprise tier from the Helix call — wants a follow-up Thursday before legal gets involved.</p>
+              <div class="tf-row-tags">
+                <span class="tf-tag action">2 Actions</span>
+                <span class="tf-tag">Pricing</span>
+                <span class="tf-tag">Helix</span>
+                <span class="tf-tag">Q3</span>
+              </div>
+            </div>
+            <div class="tf-row-meter">
+              <span class="tf-row-duration">1:32</span>
+              <span>12m</span>
+            </div>
+          </article>
+
+          <!-- Mira Achebe-Holm -->
+          <article class="tf-row" data-viewed="true">
+            <div class="tf-row-stripe"></div>
+            <div class="tf-row-stamps">
+              <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=32" alt="" /></div>
+              <span class="glyph ai" title="AI summary ready"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg></span>
+              <span class="glyph viewed" title="Viewed">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </span>
+            </div>
+            <div class="tf-row-readout">
+              <div class="tf-row-head">
+                <span class="tf-row-from">Mira Achebe-Holm</span>
+                <span class="tf-row-kind walk">Walkthrough</span>
+              </div>
+              <p class="tf-row-summary">Migration test debrief — schema cut clean, ingestion lag spiked for six minutes at 14:02 then recovered.</p>
+              <div class="tf-row-tags">
+                <span class="tf-tag action">3 Actions</span>
+                <span class="tf-tag">Migration</span>
+                <span class="tf-tag">Ingestion</span>
+              </div>
+            </div>
+            <div class="tf-row-meter">
+              <span class="tf-row-duration">2:14</span>
+              <span>1h</span>
+            </div>
+          </article>
+
+          <!-- Kofi Adeyemi -->
+          <article class="tf-row" data-viewed="true">
+            <div class="tf-row-stripe"></div>
+            <div class="tf-row-stamps">
+              <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=53" alt="" /></div>
+              <span class="glyph ai"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg></span>
+              <span class="glyph viewed"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            </div>
+            <div class="tf-row-readout">
+              <div class="tf-row-head">
+                <span class="tf-row-from">Kofi Adeyemi</span>
+                <span class="tf-row-kind walk">Walkthrough</span>
+              </div>
+              <p class="tf-row-summary">Production bug reproduced in three steps — fix is a one-liner in the retry handler. PR drafted.</p>
+              <div class="tf-row-tags">
+                <span class="tf-tag action">1 Action</span>
+                <span class="tf-tag">Bug</span>
+                <span class="tf-tag">Retries</span>
+              </div>
+            </div>
+            <div class="tf-row-meter">
+              <span class="tf-row-duration">4:01</span>
+              <span>3h</span>
+            </div>
+          </article>
+
+          <!-- Dario Trent + 4 -->
+          <article class="tf-row" data-unread="true">
+            <div class="tf-row-stripe"></div>
+            <div class="tf-row-stamps">
+              <div class="gl-avatar">
+                <div class="gl-avatar-fallback">+4</div>
+              </div>
+              <span class="glyph ai"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg></span>
+            </div>
+            <div class="tf-row-readout">
+              <div class="tf-row-head">
+                <span class="tf-row-from">Dario Trent + 4</span>
+                <span class="tf-row-kind">Group</span>
+              </div>
+              <p class="tf-row-summary">Q3 launch sequencing — Dario pushes marketing beat to 24th to clear AWS announcement; Lin pushes back on dev readiness.</p>
+              <div class="tf-row-tags">
+                <span class="tf-tag">Launch</span>
+                <span class="tf-tag">Q3</span>
+                <span class="tf-tag">AWS</span>
+              </div>
+            </div>
+            <div class="tf-row-meter">
+              <span class="tf-row-duration">1:48</span>
+              <span>5h</span>
+            </div>
+          </article>
+
+          <!-- Anjali Devarajan -->
+          <article class="tf-row" data-unread="true">
+            <div class="tf-row-stripe"></div>
+            <div class="tf-row-stamps">
+              <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=44" alt="" /></div>
+              <span class="glyph ai"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg></span>
+            </div>
+            <div class="tf-row-readout">
+              <div class="tf-row-head">
+                <span class="tf-row-from">Anjali Devarajan</span>
+                <span class="tf-row-kind">Glimpse</span>
+              </div>
+              <p class="tf-row-summary">Design review on the Map redesign — SOON pills land flat in dark theme. Demote to monogram or pull.</p>
+              <div class="tf-row-tags">
+                <span class="tf-tag action">2 Actions</span>
+                <span class="tf-tag">Map</span>
+                <span class="tf-tag">Design</span>
+              </div>
+            </div>
+            <div class="tf-row-meter">
+              <span class="tf-row-duration">2:55</span>
+              <span>Yest</span>
+            </div>
+          </article>
+
+          <!-- Frank — transcribing -->
+          <article class="tf-row" data-unread="true">
+            <div class="tf-row-stripe"></div>
+            <div class="tf-row-stamps">
+              <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=68" alt="" /></div>
+              <span class="glyph pending" title="Transcribing">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              </span>
+            </div>
+            <div class="tf-row-readout">
+              <div class="tf-row-head">
+                <span class="tf-row-from">Frank Richard Messana</span>
+                <span class="tf-row-kind">Glimpse</span>
+              </div>
+              <div class="tf-row-summary-skeleton" aria-hidden="true"><span></span><span></span></div>
+              <div class="tf-row-tags">
+                <span class="gl-ai-chip pending" style="padding:2px 6px;font-size:9px;">Pulse AI · Transcribing</span>
+              </div>
+            </div>
+            <div class="tf-row-meter">
+              <span class="tf-row-duration">0:05</span>
+              <span>2d</span>
+            </div>
+          </article>
+
+          <!-- Yui Hashimoto -->
+          <article class="tf-row" data-viewed="true">
+            <div class="tf-row-stripe"></div>
+            <div class="tf-row-stamps">
+              <div class="gl-avatar"><img src="https://i.pravatar.cc/96?img=23" alt="" /></div>
+              <span class="glyph ai"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg></span>
+              <span class="glyph viewed"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            </div>
+            <div class="tf-row-readout">
+              <div class="tf-row-head">
+                <span class="tf-row-from">Yui Hashimoto</span>
+                <span class="tf-row-kind">Glimpse</span>
+              </div>
+              <p class="tf-row-summary">Quick agreement — ship the contacts patch before Tuesday standup. No blockers.</p>
+              <div class="tf-row-tags">
+                <span class="tf-tag">Contacts</span>
+                <span class="tf-tag">Standup</span>
+              </div>
+            </div>
+            <div class="tf-row-meter">
+              <span class="tf-row-duration">0:48</span>
+              <span>3d</span>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <!-- EMPTY -->
+      <div class="gl-empty-block">
+        <header class="tf-header">
+          <div class="tf-coords">
+            <span class="crumb">Pulse</span>
+            <span class="sep">/</span>
+            <span class="crumb active">Glimpse</span>
+            <span class="sep">·</span>
+            <span class="crumb">0 signals</span>
+          </div>
+          <div></div>
+          <div class="tf-rail">
+            <button class="tf-rail-broadcast">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 15.54a5 5 0 0 1 0-7.07"/></svg>
+              Broadcast
+            </button>
+          </div>
+        </header>
+        <div class="tf-empty">
+          <span class="tf-empty-stamp">
+            <span class="dot"></span>
+            No incoming transmissions
+          </span>
+          <p class="tf-empty-msg">Glimpses arrive here as transcripts, summaries, and extractable action items — signal first, video as proof.</p>
+          <button class="tf-rail-broadcast tf-empty-broadcast">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 15.54a5 5 0 0 1 0-7.07"/></svg>
+            Open the broadcast
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer class="page-footer">
+    <p>
+      All three directions consume the same Glimpse token system (<code>--gl-*</code>) and preserve the AI provenance chip pattern. Coral usage stays signal-only — no chrome, no accents, no decorative gradients. Real headshots via i.pravatar.cc as placeholders; production will use Pulse profile photos.
+    </p>
+    <div style="display:flex;gap:8px;">
+      <span class="gl-label">v1 · 2026-05-20</span>
+      <span class="gl-label">huashu-design · direction</span>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+/* ============================================================
+   TWEAKS — toggle data-* attributes on <html>. Same payload for
+   all three direction panels so the comparison stays honest.
+   ============================================================ */
+(function () {
+  const root = document.documentElement;
+  const groups = ['theme', 'state', 'density'];
+
+  document.querySelectorAll('.tweak-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const group = btn.dataset.tweak;
+      const value = btn.dataset.value;
+      if (!group || !value) return;
+
+      root.setAttribute('data-' + group, value);
+      document.querySelectorAll('.tweak-btn[data-tweak="' + group + '"]').forEach((sibling) => {
+        sibling.setAttribute('aria-pressed', sibling === btn ? 'true' : 'false');
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

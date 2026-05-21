@@ -112,14 +112,14 @@ export const StorageSettings: React.FC<StorageSettingsProps> = ({
   };
 
   const tc = {
-    bg: isDarkMode ? 'bg-gray-900/60' : 'bg-white/80',
-    cardBg: isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50/80',
-    border: isDarkMode ? 'border-gray-700/50' : 'border-gray-200/60',
+    bg: isDarkMode ? 'bg-white/[0.03]' : 'bg-white/80',
+    cardBg: isDarkMode ? 'bg-white/[0.03]' : 'bg-gray-50/80',
+    border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-gray-200/60',
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
     textMuted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-    inputBg: isDarkMode ? 'bg-gray-800/80' : 'bg-white',
-    hoverBg: isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100/80',
+    inputBg: isDarkMode ? 'bg-white/[0.055]' : 'bg-white',
+    hoverBg: isDarkMode ? 'hover:bg-white/[0.055]' : 'hover:bg-gray-100/80',
   };
 
   return (
@@ -150,7 +150,7 @@ export const StorageSettings: React.FC<StorageSettingsProps> = ({
               {downloadFolder ? (
                 <>
                   <p className={`font-medium ${tc.text} truncate`}>{downloadFolder}</p>
-                  <p className={`text-xs ${tc.textMuted}`}>Selected folder for Vox downloads</p>
+                  <p className={`text-xs ${tc.textMuted}`}>Selected folder for voice downloads</p>
                 </>
               ) : (
                 <>
@@ -181,9 +181,11 @@ export const StorageSettings: React.FC<StorageSettingsProps> = ({
           )}
 
           {!hasFileSystemAccess && (
-            <div className="flex items-center gap-2 mt-3 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-              <span className="text-sm text-amber-500">
+            // Neutral notice — amber was status-pending semantically, but this
+            // is a static browser-capability message, not a pending state.
+            <div className={`flex items-center gap-2 mt-3 px-3 py-2 rounded-lg border ${tc.border} ${tc.cardBg}`}>
+              <AlertCircle className={`w-4 h-4 flex-shrink-0 ${tc.textMuted}`} />
+              <span className={`text-sm ${tc.textSecondary}`}>
                 Folder selection requires Chrome, Edge, or Opera browser
               </span>
             </div>
@@ -202,7 +204,7 @@ export const StorageSettings: React.FC<StorageSettingsProps> = ({
               <Download className="w-5 h-5" style={{ color: accentColor }} />
             </div>
             <div>
-              <span className={`font-medium ${tc.text}`}>Auto-Download Received Voxes</span>
+              <span className={`font-medium ${tc.text}`}>Auto-download voice messages</span>
               <p className={`text-xs ${tc.textMuted}`}>Automatically save incoming voice messages</p>
             </div>
           </div>
@@ -264,14 +266,15 @@ export const StorageSettings: React.FC<StorageSettingsProps> = ({
             Storage Usage
           </label>
           <div className={`p-4 rounded-xl border ${tc.border} ${tc.cardBg}`}>
-            {/* Progress Bar */}
+            {/* Progress Bar — flat coral fill (was a decorative gradient).
+                The bar communicates a fraction; gradient was ornament. */}
             <div className="mb-3">
               <div className={`h-3 rounded-full overflow-hidden ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: `${Math.min((storageUsage.used / storageUsage.quota) * 100, 100)}%`,
-                    background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor}cc 100%)`,
+                    background: accentColor,
                   }}
                 />
               </div>

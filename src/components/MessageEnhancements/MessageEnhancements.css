@@ -655,24 +655,24 @@
   z-index: -1;
 }
 
-/* Pre-hover state (when hovering but before 300ms delay) */
+/* Pre-hover state — coral wash, very faint (was decorative blue) */
 .message-hover-pending::before {
-  background: rgba(59, 130, 246, 0.04);
+  background: rgba(244, 63, 94, 0.04);
 }
 
 .dark .message-hover-pending::before {
-  background: rgba(96, 165, 250, 0.06);
+  background: rgba(244, 63, 94, 0.06);
 }
 
-/* Active hover state (after delay, when reaction bar shows) */
+/* Active hover state — coral halo + 1px coral hairline (was decorative blue) */
 .message-hover-active::before {
-  background: rgba(59, 130, 246, 0.08);
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.1);
+  background: rgba(244, 63, 94, 0.08);
+  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.18);
 }
 
 .dark .message-hover-active::before {
-  background: rgba(96, 165, 250, 0.1);
-  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.15);
+  background: rgba(244, 63, 94, 0.10);
+  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.22);
 }
 
 /* Message content subtle glow */

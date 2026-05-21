@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
-**Version**: 25.4.0
-**Last Updated**: May 4, 2026
+**Version**: 25.5.0
+**Last Updated**: May 10, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -30,6 +30,7 @@
 20. [Mobile & Desktop Apps](#20-mobile--desktop-apps)
 21. [Keyboard Shortcuts](#21-keyboard-shortcuts)
 22. [Troubleshooting & FAQ](#22-troubleshooting--faq)
+23. [Summit — Live Voice (Experimental)](#23-summit--live-voice-experimental)
 
 ---
 
@@ -3343,5 +3344,99 @@ Use Settings → Data Management → Export My Data before initiating account de
 
 ---
 
-*Pulse User's Guide — Version 25.4.0 — Updated May 4, 2026*
+## 23. Summit — Live Voice (Experimental)
+
+Summit is a real-time voice agent you can speak to naturally. It listens, transcribes, summarizes, and pulls out decisions and tasks while you talk — solo, with a teammate, or while thinking out loud.
+
+You'll find it in the sidebar under the **Experimental** section. It's a new way to use Pulse — instead of typing, you just talk.
+
+### Starting a Session
+
+1. Open **Summit** from the sidebar (or press `Ctrl+/` and search "Summit").
+2. On first visit, read the explainer modal — it tells you which mode you're in (BYO key, plan minutes, or trial) and your monthly minute budget.
+3. Click the microphone button to start.
+4. The header meter (e.g., "12 / 60 MIN") tracks usage in real time and color-shifts at 80% (amber) and 100% (red).
+5. Speak naturally. Summit transcribes both sides and shows a live transcript rail.
+6. When you mention a decision, action item, or follow-up, Summit captures it into the **Artifacts panel** on the right.
+7. Pause or mute with the header controls — the meter pauses with you.
+8. End the session with the **X** button. The End Session sheet lets you push transcripts, decisions, tasks, or summaries to Messages, Decisions, Tasks, War Room, or Email.
+
+### Two Modes — BYO Key vs Plan Minutes
+
+Summit runs in one of two modes.
+
+- **BYO Key.** Paste your own OpenAI API key in **Settings → AI Providers**. Summit uses it directly, you pay OpenAI, and there's no Pulse minute cap.
+- **Plan minutes.** Your Pulse plan grants a monthly minute pool plus a per-session length cap.
+
+Switch modes anytime by adding or removing your key. Pulse picks BYO automatically when a valid key is on file.
+
+> **Note:** You don't need a key for normal Pulse AI features (summaries, smart replies, transcription). The BYO key is *only* for Summit live voice.
+
+### Plan Limits
+
+| Plan | Monthly Minutes | Per-Session Cap |
+|---|---|---|
+| Trial | 15 min | 5 min |
+| Pulse Team | 60 min | 15 min |
+| Pulse Growth | 240 min | 30 min |
+| BYO OpenAI Key | Unlimited | Unlimited |
+
+When you reach the per-session cap, Summit warns at 60 seconds remaining and hard-disconnects at zero — your transcript is preserved. When you exhaust the monthly minutes, the meter turns red and **Start** is disabled until next billing cycle (or until you add a BYO key).
+
+### Artifacts — What Summit Captures
+
+Summit watches the transcript and surfaces actionable moments in the right-hand Artifacts panel:
+
+- **Decision** — when you say "let's go with X" or "we decided Y".
+- **Task** — when you say "I need to email Sam by Friday" (assignee, deadline, and source quote captured).
+- **Question** — when something needs follow-up.
+- **Summary** — click **Summarize so far** at any time for a structured recap.
+
+Each artifact has Edit and Delete controls — review before sending anywhere.
+
+### Ending and Exporting
+
+1. Click **X** or press `Esc` to open the End Session sheet.
+2. Pick destinations: **Messages**, **Decisions**, **Tasks**, **War Room**, or **Email**.
+3. Each destination shows a status indicator (queued, sent, failed).
+4. You can also **Copy** the markdown transcript or **Download** it.
+5. Sessions auto-save to **Archives → Voice Sessions** and to the Sessions panel inside Summit.
+
+### Auto-Disconnect Safety
+
+Summit protects you from runaway sessions:
+
+- **60-second warning** before your session cap is reached.
+- **Hard disconnect** at the cap — transcript is saved.
+- **Tab-hidden pause** after 2 minutes; full disconnect after 10.
+- **Inactivity disconnect** after 5 minutes with no detected speech.
+
+Plan-minute mode never bills paused or background time — the meter only counts active spoken audio.
+
+### Pro Tips
+
+- **Tip:** Use Summit as a thinking partner — talk through a hard decision and let the artifact panel capture conclusions.
+- **Tip:** For long research or brainstorming, add a BYO OpenAI key — it removes both the monthly cap and the per-session length cap.
+- **Tip:** Pin the Summit tab while you work — tab-hidden pause keeps it from burning minutes when you switch away.
+- **Tip:** Review the Artifacts panel before clicking End — edit out anything you don't want pushed.
+
+### BYO Key Management
+
+- Rotate your key anytime in **Settings → AI Providers** — Summit uses the new key on the next session.
+- Remove the key to fall back to plan-included minutes — your minute usage that month is preserved.
+- Set a monthly budget alarm in your OpenAI dashboard to be warned before unexpected charges.
+- Keys are encrypted in Supabase Vault with strict access gating — only your own account can decrypt them server-side.
+
+### Common Errors
+
+| Error | What it means | What to do |
+|---|---|---|
+| `NO_SUBSCRIPTION` | Your workspace is on Free | Upgrade to Team or Growth, or add a BYO key |
+| `WRONG_TIER` | Your plan doesn't include Summit | Switch plan or use BYO key |
+| `TRIAL_CAP` / `OVER_CAP` | All this month's minutes used | Wait for renewal or add a BYO key |
+| `NOT_MEMBER` | You're not a workspace member | Ask your admin to re-invite you |
+
+---
+
+*Pulse User's Guide — Version 25.5.0 — Updated May 10, 2026*
 *This guide is updated regularly as new features are added. Run `/users-guide` in Claude Code to regenerate it.*

@@ -18,7 +18,7 @@ export const ActionItemsCard: React.FC<ActionItemsCardProps> = ({
   const priorityConfig: Record<string, { color: string; dot: string }> = {
     high: { color: 'text-rose-400', dot: 'bg-rose-500' },
     medium: { color: 'text-amber-400', dot: 'bg-amber-500' },
-    normal: { color: 'text-blue-400', dot: 'bg-blue-500' },
+    normal: { color: 'text-zinc-300', dot: 'bg-zinc-400' },
     low: { color: 'text-zinc-400', dot: 'bg-zinc-500' },
   };
 

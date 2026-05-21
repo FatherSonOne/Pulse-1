@@ -1,19 +1,34 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
 import { User, AppView, BatchedNotification, CalendarEvent, Task, Thread, Contact } from '../types';
-import { generateJournalInsight, generateSearchResponse, generateDailyBriefing, generateThinkingResponse } from '../services/geminiService';
-import { saveArchiveItem } from '../services/dbService';
+import { generateDailyBriefing, generateThinkingResponse } from '../services/geminiService';
+import { useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
+import { InlineCommandPalette } from './GlobalCommandPalette';
 import { dataService } from '../services/dataService';
 import { useWorkspaceData } from '../contexts/WorkspaceContext';
-import { briefingService, BriefingContext } from '../services/briefingService';
+import { dailyBriefingService, BriefingContext } from '../services/dailyBriefingService';
 import { useAIErrorHandler } from '../hooks/useAIErrorHandler';
 import { UsageWarningBanner } from './billing/UsageWarningBanner';
 import { OrgSetupChecklist } from './settings/OrgSetupChecklist';
 import QuickScheduler from './Dashboard/QuickScheduler';
 import CollapsibleWidget from './Dashboard/CollapsibleWidget';
+import DashboardTabs, { type DashboardTab } from './Dashboard/DashboardTabs';
+import DecisionsOpenStrip from './Dashboard/strips/DecisionsOpenStrip';
+import TasksDueStrip from './Dashboard/strips/TasksDueStrip';
+import RelayUnheardStrip from './Dashboard/strips/RelayUnheardStrip';
+import SummitLastCaptureStrip from './Dashboard/strips/SummitLastCaptureStrip';
+import TeamDecisionsWaitingStrip from './Dashboard/strips/TeamDecisionsWaitingStrip';
+import WeekCapturesStrip from './Dashboard/strips/WeekCapturesStrip';
+import PulseNudgesWidget from './Dashboard/PulseNudgesWidget';
+import { attachStripKeyboardNav } from './Dashboard/strips/stripNavigation';
+import { captureService, type CaptureNote } from '../services/captureService';
+import AttentionDensityTile from './Dashboard/tiles/AttentionDensityTile';
+import DecisionVelocityTile from './Dashboard/tiles/DecisionVelocityTile';
+import TeamRadarTile from './Dashboard/tiles/TeamRadarTile';
+import RelayQuickRecorderStrip from './Dashboard/RelayQuickRecorderStrip';
+import TodaysCaptureTile from './Dashboard/tiles/TodaysCaptureTile';
 import { pulseService, SearchUserResult } from '../services/pulseService';
 import { calculateTeamHealthMetrics, TeamHealthMetrics } from '../services/teamHealthService';
 import { teamService, Team, TeamWithMembers, TeamMember as TeamMemberType } from '../services/teamService';
@@ -23,8 +38,13 @@ import { emailSyncService } from '../services/emailSyncService';
 
 import { Archive, ArrowRight, BookUser, Calendar, Check, CheckCircle2, CheckSquare, ChevronRight, Copy, Heart, List, Loader2, Mail, MessageSquare, MessagesSquare, Mic, Plus, Search, Send, Target, TrendingUp, UserCheck, UserPlus, Users, X } from 'lucide-react';
 
-// Auto-refresh interval in milliseconds (5 minutes)
-const BRIEFING_REFRESH_INTERVAL = 5 * 60 * 1000;
+// Auto-refresh interval in milliseconds. Bumped from 5min → 30min after
+// the 2026-05-21 egress incident: the briefing fans out to 10 DB queries
+// (one of them the heavy threads+messages join) plus a Gemini call that
+// can stream a large response. A tab left open for 12h at 5-min cadence
+// was burning ~13 GB/day. Combined with the visibility gate below, idle
+// tabs no longer poll at all.
+const BRIEFING_REFRESH_INTERVAL = 30 * 60 * 1000;
 
 // ============= TYPES =============
 
@@ -79,7 +99,8 @@ interface PriorityItem {
 
 interface DashboardProps {
   user: User | null;
-  apiKey: string;
+  /** @deprecated no-op — AI routing is server-side via edge functions. */
+  apiKey?: string;
   setView: (view: AppView, options?: { openTaskPanel?: boolean; openAddContact?: boolean }) => void;
   openSettings?: (section: string) => void;
 }
@@ -239,10 +260,16 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
   }
 
   if (priorities.length === 0) {
+    const hour = new Date().getHours();
+    const emptyLine =
+      hour < 12  ? 'Nothing on fire. Pick the hard thing first.' :
+      hour < 17  ? 'Nothing on fire. Take 20 minutes back.' :
+      hour < 22  ? 'Nothing on fire. Close the day.' :
+                   'Nothing on fire. Sleep counts as work.';
     return (
       <section>
         <h2 className="pulse-label text-zinc-500 dark:text-zinc-400 mb-3">PRIORITIES · TODAY</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Nothing on fire. Use the time.</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">{emptyLine}</p>
       </section>
     );
   }
@@ -313,9 +340,7 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
 
 // ============= MAIN DASHBOARD COMPONENT =============
 
-const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettings }) => {
-  // Router handles AI key server-side — client just passes '' to services
-  const effectiveApiKey = apiKey || '';
+const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) => {
   // AI-router error handler (cap exceeded / provider down → toast + CTA)
   const handleAIError = useAIErrorHandler();
   // Active workspace — required for scoping realtime subscriptions so a
@@ -347,7 +372,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
   const [teamBuilderTab, setTeamBuilderTab] = useState<'pulse' | 'contacts'>('pulse');
   const [teamBuilderError, setTeamBuilderError] = useState<string | null>(null);
   const [confirmDeleteTeam, setConfirmDeleteTeam] = useState(false);
-  const [journalCopied, setJournalCopied] = useState(false);
   const [loadingTeams, setLoadingTeams] = useState(false);
   const [teamBuilderContacts, setTeamBuilderContacts] = useState<Contact[]>([]);
   const [loadingTeamBuilderContacts, setLoadingTeamBuilderContacts] = useState(false);
@@ -357,24 +381,58 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     new Set(['scheduler'])
   );
 
-  // Journal State
-  const [journalText, setJournalText] = useState('');
-  const [journalInsight, setJournalInsight] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [lastSavedId, setLastSavedId] = useState<string | null>(null);
-  const [recentJournals, setRecentJournals] = useState<Array<{id: string; title: string; date: Date; content: string}>>([]);
+  // Dashboard tab — Today (triage) / Week (review) / Team (people). Persists per session.
+  const [activeTab, setActiveTab] = useState<DashboardTab>(() => {
+    const saved = sessionStorage.getItem('pulse_dashboard_tab');
+    return (saved === 'week' || saved === 'team') ? saved : 'today';
+  });
+  const handleTabChange = useCallback((tab: DashboardTab) => {
+    setActiveTab(tab);
+    sessionStorage.setItem('pulse_dashboard_tab', tab);
+  }, []);
 
-  // Search/Tools State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResult, setSearchResult] = useState<{text: string, sources: any[]} | null>(null);
-  const [loadingTools, setLoadingTools] = useState(false);
+  // j/k keyboard navigation across strip rows. Scoped to Today tab; on Week/Team
+  // the listener is detached so other shortcuts in those views can claim those keys.
+  const dashboardContainerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (activeTab !== 'today' || !dashboardContainerRef.current) return;
+    return attachStripKeyboardNav(dashboardContainerRef.current);
+  }, [activeTab]);
+
+  // Capture recents — workspace-scoped pulse_notes. Loaded on mount, refreshed
+  // on the `pulse:capture-saved` window event the CaptureModal dispatches.
+  const [recentCaptures, setRecentCaptures] = useState<CaptureNote[]>([]);
+
+  useEffect(() => {
+    if (!currentWorkspace?.id) return;
+    let active = true;
+    const load = async () => {
+      const rows = await captureService.listRecent(currentWorkspace.id, 5);
+      if (active) setRecentCaptures(rows);
+    };
+    void load();
+    const handleSaved = () => { void load(); };
+    window.addEventListener('pulse:capture-saved', handleSaved);
+    return () => {
+      active = false;
+      window.removeEventListener('pulse:capture-saved', handleSaved);
+    };
+  }, [currentWorkspace?.id]);
+
+  // The Dashboard's old "Search the web" widget was replaced by the global
+  // command palette (rendered inline below). Its state is gone with the bar.
 
   // Mini Pulse AI State
   const [pulseAiQuery, setPulseAiQuery] = useState('');
   const [pulseAiResponse, setPulseAiResponse] = useState<string | null>(null);
   const [loadingPulseAi, setLoadingPulseAi] = useState(false);
+  const [pulseAiFocused, setPulseAiFocused] = useState(false);
 
   // Unread Pulse State
+  // Primary-only unread (Gmail Primary tab semantics). Excludes Social,
+  // Promotions, Updates, Forums — newsletters at 1k+ aren't "attention,"
+  // they're noise, and the AttentionDensityTile is supposed to surface the
+  // actionable surface only.
   const [emailUnreadCount, setEmailUnreadCount] = useState(0);
   const [voxUnreadCount, setVoxUnreadCount] = useState(0);
 
@@ -408,12 +466,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
   // Keyboard shortcut overlay
   const [showKbdOverlay, setShowKbdOverlay] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-
-  // Command palette (Cmd+K / Ctrl+K)
-  const [showCmdPalette, setShowCmdPalette] = useState(false);
-  const [cmdPaletteQuery, setCmdPaletteQuery] = useState('');
-  const [cmdPaletteIdx, setCmdPaletteIdx] = useState(0);
-  const cmdPaletteInputRef = useRef<HTMLInputElement | null>(null);
+  // The Dashboard's command-palette state moved to App-level CommandPaletteProvider.
+  // Cmd+K is owned by App.tsx; this view registers its own commands via
+  // useRegisterCommands and renders the InlineCommandPalette in the hero slot.
 
   // Persistent activity badge — shows "SAVED hh:mm" briefly after any save.
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -453,13 +508,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       setPriorities(prioritiesData);
       setWeeklyData(weeklyDataResult);
 
-      // Fetch unread counts for Unread Pulse widget
+      // Fetch unread counts for the AttentionDensityTile. We use the
+      // category-aware fetcher and pass only `primary` so newsletters,
+      // promotions, and notifications don't inflate the attention number into
+      // four-digit nonsense.
       try {
-        const [emailUnread, voxRecordings] = await Promise.all([
-          emailSyncService.getUnreadCount('inbox'),
+        const [emailCategories, voxRecordings] = await Promise.all([
+          emailSyncService.getCategoryUnreadCounts(),
           dataService.getVoxerRecordings(),
         ]);
-        setEmailUnreadCount(emailUnread);
+        setEmailUnreadCount(emailCategories.primary);
         setVoxUnreadCount(voxRecordings.filter((r: any) => !r.played).length);
       } catch {
         // Non-critical — leave counts at 0
@@ -675,50 +733,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
   }, [selectedTeamId, teams, teamMembers, user?.id]);
 
   // Load recent journal entries
-  const loadRecentJournals = useCallback(async () => {
-    try {
-      const archives = await dataService.getArchives();
-      const journals = archives
-        .filter(a => a.type === 'journal')
-        .slice(0, 3)
-        .map(j => ({
-          id: j.id,
-          title: j.title,
-          date: j.date,
-          content: j.content
-        }));
-      setRecentJournals(journals);
-    } catch (error) {
-      console.error('Failed to load recent journals:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadRecentJournals();
-  }, [loadRecentJournals]);
-
-  // Keyboard shortcuts: ESC closes overlays; J focuses #1; K focuses #2; R refreshes briefing; / focuses search; ? toggles overlay; Cmd+K toggles palette
+  // Keyboard shortcuts: ESC closes overlays; J focuses #1; K focuses #2; R refreshes briefing; / focuses search; ? toggles overlay.
+  // Cmd+K is handled globally in App.tsx and opens the command palette.
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
 
-      // Cmd+K / Ctrl+K toggles command palette — works while typing too.
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setShowCmdPalette(prev => !prev);
-        return;
-      }
-
       // ESC closes overlays in priority order
       if (e.key === 'Escape') {
-        if (showCmdPalette) { setShowCmdPalette(false); return; }
         if (showKbdOverlay) { setShowKbdOverlay(false); return; }
         if (showQuickActions) { setShowQuickActions(false); return; }
       }
 
-      // The rest only fire when the user isn't typing (and not when palette is open — palette has its own input)
-      if (isTyping || showCmdPalette) return;
+      // The rest only fire when the user isn't typing
+      if (isTyping) return;
 
       // ? toggles the shortcut overlay
       if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -727,7 +756,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         return;
       }
 
-      // / focuses the search input
+      // / focuses the dashboard inline palette
       if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         searchInputRef.current?.focus();
@@ -747,31 +776,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [showQuickActions, showKbdOverlay, showCmdPalette, priorities, loadingBriefing]);
+  }, [showQuickActions, showKbdOverlay, priorities, loadingBriefing]);
 
-  // Reset palette state when it closes
+  // Listen for the global "show shortcuts" command from the palette.
   useEffect(() => {
-    if (!showCmdPalette) {
-      setCmdPaletteQuery('');
-      setCmdPaletteIdx(0);
-    } else {
-      // Focus the input when opening
-      setTimeout(() => cmdPaletteInputRef.current?.focus(), 0);
-    }
-  }, [showCmdPalette]);
-
-  // Draft protection: warn before browser navigation when journal has unsaved text
-  useEffect(() => {
-    if (!journalText.trim()) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      // Required for legacy browsers; modern browsers ignore the string and show their own message.
-      e.returnValue = '';
-      return '';
-    };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [journalText]);
+    const handler = () => setShowKbdOverlay(true);
+    window.addEventListener('pulse:show-shortcuts', handler);
+    return () => window.removeEventListener('pulse:show-shortcuts', handler);
+  }, []);
 
   // Real-time subscriptions
   useEffect(() => {
@@ -894,8 +906,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       // Initial load
       loadDailyBriefing();
 
-      // Set up auto-refresh interval
+      // Set up auto-refresh interval. Skip ticks when the tab is hidden so
+      // a forgotten background tab cannot run up the Gemini bill while the
+      // user is doing something else (see 2026-05-21 egress incident).
       briefingRefreshRef.current = setInterval(() => {
+        if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
         loadDailyBriefing(true); // silent refresh
       }, BRIEFING_REFRESH_INTERVAL);
 
@@ -914,7 +929,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
 
   const loadBriefingStats = async () => {
     try {
-      const stats = await briefingService.getQuickStats();
+      const stats = await dailyBriefingService.getQuickStats();
       setBriefingStats(stats);
     } catch (error) {
       console.error('Failed to load briefing stats:', error);
@@ -927,11 +942,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
 
     try {
       // Gather comprehensive context from all data sources
-      const context = await briefingService.gatherBriefingContext(currentWorkspace?.id);
-      const contextString = briefingService.buildContextString(context);
+      const context = await dailyBriefingService.gatherBriefingContext(currentWorkspace?.id);
+      const contextString = dailyBriefingService.buildContextString(context);
 
       // Generate AI briefing with full context (router handles key server-side)
-      const data = await generateDailyBriefing(effectiveApiKey, contextString);
+      const data = await generateDailyBriefing(contextString);
 
       if (data) {
         setBriefing(data as BriefingData);
@@ -988,67 +1003,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     });
   }, []);
 
-  const handleJournalAnalyze = async () => {
-    if (!journalText.trim()) return;
-    setSaving(true);
-    const insight = await generateJournalInsight(effectiveApiKey, journalText);
-    setJournalInsight(insight || '');
-    setSaving(false);
-  };
-
-  const handleArchive = async () => {
-    if (!journalText.trim()) return;
-    setSaving(true);
-
-    const item = await saveArchiveItem({
-      type: 'journal',
-      title: `Journal - ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-      content: `Entry: ${journalText}\n\n${journalInsight ? `AI Insight: ${journalInsight}` : ''}`,
-      tags: ['journal', 'quick-note', journalInsight ? 'analyzed' : 'raw']
-    });
-
-    setLastSavedId(item.id);
-    markSaved();
-
-    setTimeout(() => {
-      setSaving(false);
-      setJournalText('');
-      setJournalInsight('');
-      setLastSavedId(null);
-      loadRecentJournals(); // Refresh recent journals after saving
-    }, 1500);
-  };
-
-  const handleShare = () => {
-    if (!journalText) return;
-    navigator.clipboard.writeText(journalText).then(() => {
-      setJournalCopied(true);
-      setTimeout(() => setJournalCopied(false), 2000);
-    });
-  };
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    setLoadingTools(true);
-    try {
-      const { text, groundingChunks } = await generateSearchResponse(effectiveApiKey, searchQuery);
-      setSearchResult({ text, sources: groundingChunks });
-    } catch (err) {
-      console.error('Search failed:', err);
-      if (!handleAIError(err)) {
-        toast.error('Search failed. Try again.');
-      }
-    }
-    setLoadingTools(false);
-  };
-
   const handlePulseAiQuery = async (query: string) => {
     if (!query.trim()) return;
     setLoadingPulseAi(true);
     setPulseAiQuery(query);
     try {
-      const result = await generateThinkingResponse(effectiveApiKey, query);
+      const result = await generateThinkingResponse(query);
       setPulseAiResponse(result || 'No response generated.');
     } catch (err) {
       setPulseAiResponse('Could not reach Pulse AI. Please try again.');
@@ -1250,18 +1210,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     { id: 'search', label: 'Search', icon: 'fa-magnifying-glass', view: AppView.MULTI_MODAL },
   ], []);
 
-  // Build the command palette rows: actions (from quickActions) + nav destinations + help
-  const commandRows = useMemo(() => {
-    type Row = {
-      id: string;
-      label: string;
-      desc: string;
-      kind: 'action' | 'navigate' | 'help';
-      icon: string;
-      run: () => void;
-    };
-    const rows: Row[] = [];
-
+  // Build dashboard-scoped commands (Quick Actions). Navigation rows live in
+  // AppCommandRegistrar so they're available on every view, not just here.
+  const dashboardCommands = useMemo<PaletteCommand[]>(() => {
     const actionDescs: Record<string, string> = {
       task: 'Open the task composer',
       message: 'Compose a new message',
@@ -1270,82 +1221,25 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       vox: 'Record a quick voice message',
       contact: 'Add a new contact',
       warroom: 'Open the live war room',
-      search: 'Open multi-modal search',
+      search: 'Open Pulse search',
     };
 
-    quickActions.forEach(a => {
-      rows.push({
-        id: `action-${a.id}`,
-        label: a.label,
-        desc: actionDescs[a.id] || 'Run this action',
-        kind: 'action',
-        icon: a.icon,
-        run: () => {
-          const params: Record<string, boolean> = {};
-          if (a.openTaskPanel) params.openTaskPanel = true;
-          if (a.openAddContact) params.openAddContact = true;
-          setView(a.view, Object.keys(params).length > 0 ? params : undefined);
-          setShowCmdPalette(false);
-        },
-      });
-    });
-
-    const navDestinations: Array<{ id: string; label: string; desc: string; view: AppView; icon: string }> = [
-      { id: 'nav-messages', label: 'Messages', desc: 'Unified inbox', view: AppView.MESSAGES, icon: 'fa-message' },
-      { id: 'nav-email', label: 'Email', desc: 'Pulse email client', view: AppView.EMAIL, icon: 'fa-envelope' },
-      { id: 'nav-calendar', label: 'Calendar', desc: 'Schedule and tasks', view: AppView.CALENDAR, icon: 'fa-calendar' },
-      { id: 'nav-relay', label: 'Relay', desc: 'Voice messages and notes', view: AppView.RELAY, icon: 'fa-microphone' },
-      { id: 'nav-contacts', label: 'Contacts', desc: 'People and teams', view: AppView.CONTACTS, icon: 'fa-users' },
-      { id: 'nav-archives', label: 'Memory', desc: 'Every word, every voice — find any conversation', view: AppView.ARCHIVES, icon: 'fa-box-archive' },
-      { id: 'nav-settings', label: 'Settings', desc: 'Preferences and account', view: AppView.SETTINGS, icon: 'fa-gear' },
-      { id: 'nav-dashboard', label: 'Dashboard', desc: 'You are here', view: AppView.DASHBOARD, icon: 'fa-house' },
-    ];
-    navDestinations.forEach(n => {
-      rows.push({
-        id: n.id,
-        label: n.label,
-        desc: n.desc,
-        kind: 'navigate',
-        icon: n.icon,
-        run: () => { setView(n.view); setShowCmdPalette(false); },
-      });
-    });
-
-    // Help: opens the keyboard shortcuts overlay
-    rows.push({
-      id: 'help-shortcuts',
-      label: 'View keyboard shortcuts',
-      desc: 'See every binding in one list',
-      kind: 'help',
-      icon: 'fa-keyboard',
+    return quickActions.map(a => ({
+      id: `action-${a.id}`,
+      label: a.label,
+      desc: actionDescs[a.id] || 'Run this action',
+      kind: 'action' as const,
+      icon: a.icon,
       run: () => {
-        setShowCmdPalette(false);
-        setShowKbdOverlay(true);
+        const params: Record<string, boolean> = {};
+        if (a.openTaskPanel) params.openTaskPanel = true;
+        if (a.openAddContact) params.openAddContact = true;
+        setView(a.view, Object.keys(params).length > 0 ? params : undefined);
       },
-    });
-
-    return rows;
+    }));
   }, [quickActions, setView]);
 
-  const filteredCmdRows = useMemo(() => {
-    const q = cmdPaletteQuery.trim().toLowerCase();
-    if (!q) return commandRows;
-    return commandRows.filter(r => r.label.toLowerCase().includes(q));
-  }, [commandRows, cmdPaletteQuery]);
-
-  // Clamp idx into range when filter changes
-  useEffect(() => {
-    if (cmdPaletteIdx >= filteredCmdRows.length) setCmdPaletteIdx(Math.max(0, filteredCmdRows.length - 1));
-  }, [filteredCmdRows.length, cmdPaletteIdx]);
-
-  // Derived: upcoming events (next 3 future events sorted by start time)
-  const upcomingEvents = useMemo(() => {
-    const now = new Date();
-    return events
-      .filter(e => new Date(e.start) > now)
-      .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
-      .slice(0, 3);
-  }, [events]);
+  useRegisterCommands('dashboard:actions', { commands: dashboardCommands });
 
   // Derived: message unread count from threads
   const messageUnreadCount = useMemo(() => threads.filter(t => t.unread).length, [threads]);
@@ -1377,6 +1271,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     return items.sort((a, b) => b.receivedAt - a.receivedAt).slice(0, 5);
   }, [threads]);
 
+  // Pulse Nudges expects the oldest awaiting-reply thread expressed in days,
+  // and only cares when it's >= 3 days old. Derived from awaitingReply so the
+  // nudges widget doesn't re-fetch the same threads.
+  const staleAwaitingReplyForNudges = useMemo(() => {
+    if (awaitingReply.length === 0) return null;
+    const oldest = awaitingReply.reduce((a, b) => (a.receivedAt < b.receivedAt ? a : b));
+    const ageDays = Math.floor(oldest.ageMin / (60 * 24));
+    if (ageDays < 3) return null;
+    return { contactName: oldest.contactName, ageDays, threadId: oldest.threadId };
+  }, [awaitingReply]);
+
   const formatAwaitingAge = useCallback((ageMin: number) => {
     if (ageMin < 1) return 'now';
     if (ageMin < 60) return `${ageMin}m`;
@@ -1386,12 +1291,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     return `${days}d`;
   }, []);
 
-  const wordCount = journalText.trim().split(/\s+/).filter(Boolean).length;
-  const charCount = journalText.length;
   const contextualGreeting = getContextualGreeting(user?.name);
 
   return (
-    <div className="space-y-4 sm:space-y-6 overflow-y-auto h-full pr-1 sm:pr-2 animate-fade-in pb-10 mobile-scroll">
+    <div
+      ref={dashboardContainerRef}
+      className="space-y-4 sm:space-y-6 overflow-y-auto h-full pr-1 sm:pr-2 animate-fade-in pb-10 mobile-scroll"
+    >
 
       {/* Usage-warning banner — surfaces before the user hits a hard cap */}
       <UsageWarningBanner />
@@ -1399,74 +1305,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
       {/* Organization setup checklist — shown to admins while onboarding_step='named' */}
       {openSettings && <OrgSetupChecklist openSettings={openSettings} />}
 
-      {/* Top AI Web Search Bar */}
-      <div className="relative">
-        <form onSubmit={handleSearch}>
-          <div className="relative flex items-center">
-            <Search className="absolute left-4 text-zinc-400 w-4 h-4 pointer-events-none" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search the web"
-              className="w-full bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl pl-11 pr-32 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/60 dark:focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-colors duration-150"
-            />
-            {!searchQuery && (
-              <span className="hidden sm:inline-flex absolute right-24 top-1/2 -translate-y-1/2 items-center gap-1 pointer-events-none">
-                <kbd className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.06]">/</kbd>
-                <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.06]">⌘K</kbd>
-              </span>
-            )}
-            <button
-              type="submit"
-              disabled={loadingTools || !searchQuery.trim()}
-              className="absolute right-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 inline-flex items-center gap-1.5"
-            >
-              {loadingTools ? <Loader2 className="animate-spin w-3 h-3" /> : 'Search'}
-            </button>
-          </div>
-        </form>
-        {searchResult && (
-          <div className="mt-2 bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl p-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 animate-fade-in">
-            <div className="mb-3">
-              <ProvenanceChip provider="gemini" kind="WEB" />
-            </div>
-            <div className="text-sm leading-relaxed">
-              <ReactMarkdown
-                components={{
-                  p: ({ node, ...props }) => <p className="my-2 leading-relaxed text-zinc-700 dark:text-zinc-300" {...props} />,
-                  h1: ({ node, ...props }) => <h1 className="text-base font-semibold mt-4 mb-2 text-zinc-900 dark:text-zinc-50" {...props} />,
-                  h2: ({ node, ...props }) => <h2 className="text-sm font-semibold mt-4 mb-2 text-zinc-900 dark:text-zinc-50" {...props} />,
-                  h3: ({ node, ...props }) => <h3 className="text-sm font-semibold mt-3 mb-1.5 text-zinc-900 dark:text-zinc-50" {...props} />,
-                  ul: ({ node, ...props }) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
-                  ol: ({ node, ...props }) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
-                  li: ({ node, ...props }) => <li className="leading-relaxed text-zinc-700 dark:text-zinc-300" {...props} />,
-                  strong: ({ node, ...props }) => <strong className="font-semibold text-zinc-900 dark:text-zinc-50" {...props} />,
-                  em: ({ node, ...props }) => <em className="italic text-zinc-700 dark:text-zinc-300" {...props} />,
-                  a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" className="text-rose-500 hover:text-rose-400 underline underline-offset-2" {...props} />,
-                  code: ({ node, ...props }) => <code className="px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-rose-500 text-xs font-mono" {...props} />,
-                  blockquote: ({ node, ...props }) => <blockquote className="pl-3 my-2 italic text-zinc-600 dark:text-zinc-400" {...props} />,
-                  hr: () => <hr className="my-3 border-zinc-200 dark:border-zinc-800" />,
-                }}
-              >
-                {searchResult.text}
-              </ReactMarkdown>
-            </div>
-            {searchResult.sources?.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap gap-2">
-                {searchResult.sources.slice(0, 3).map((s: any, i: number) => (
-                  <a key={i} href={s.web?.uri} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-rose-500 hover:text-rose-400 underline underline-offset-2 truncate max-w-[200px]">
-                    {s.web?.title || s.web?.uri}
-                  </a>
-                ))}
-              </div>
-            )}
-            <button onClick={() => setSearchResult(null)} className="mt-2 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">Dismiss</button>
-          </div>
-        )}
-      </div>
+      {/* Global command palette — inline mode. The bar IS the palette: type a
+          command (Compose Email, Go to Calendar, View shortcuts, …) and hit
+          Enter. Cmd+K everywhere opens the modal version of the same palette. */}
+      <InlineCommandPalette inputRef={searchInputRef} />
 
       {/* Daily Briefing — quiet, triage-first */}
       {loadingBriefing || isLoading ? (
@@ -1679,6 +1521,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
             {awaitingReply.map(item => (
               <li key={item.threadId}>
                 <button
+                  data-strip-row
                   onClick={() => {
                     sessionStorage.setItem('pulse_focus_thread', item.threadId);
                     setView(AppView.MESSAGES);
@@ -1715,8 +1558,78 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         </section>
       )}
 
+      {/* Dashboard tabs — Today / Week / Team. Today is triage; Week and Team are review-mode. */}
+      <DashboardTabs active={activeTab} onChange={handleTabChange} />
+
+      {/* ===== TODAY PANEL ===== */}
+      {activeTab === 'today' && (
+        <div id="dashboard-panel-today" role="tabpanel" className="space-y-4 sm:space-y-6">
+
+          {/* Strategic-section strips — Relay / Decisions / Tasks / Summit. Bare lists, no card chrome. */}
+          <RelayUnheardStrip
+            workspaceId={currentWorkspace?.id}
+            authUserId={user?.id}
+            setView={setView}
+          />
+          <DecisionsOpenStrip
+            workspaceId={currentWorkspace?.id}
+            setView={setView}
+          />
+          <TasksDueStrip
+            workspaceId={currentWorkspace?.id}
+            setView={setView}
+          />
+          <SummitLastCaptureStrip
+            onResume={() => setView(AppView.LIVE_AI)}
+          />
+
+          {/* Glance tiles — instrument-grade state at a glance. Each renders null when its data is empty.
+              RelayPulseTile escaped the grid (Phase 3) into the full-width
+              RelayQuickRecorderStrip below — operators record directly from
+              the dashboard without bouncing into the Relay section. */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <AttentionDensityTile
+              messages={awaitingReply.length}
+              email={emailUnreadCount}
+              relay={voxUnreadCount}
+              calendar={events.length}
+              urgent={priorities.filter(p => p.urgency === 'urgent').length}
+              onClick={() => setView(AppView.MESSAGES)}
+            />
+            <DecisionVelocityTile
+              workspaceId={currentWorkspace?.id}
+              onClick={() => setView(AppView.DECISIONS_TASKS)}
+            />
+            <TodaysCaptureTile
+              workspaceId={currentWorkspace?.id}
+              onClick={() => setView(AppView.ARCHIVES)}
+            />
+            <TeamRadarTile
+              workspaceId={currentWorkspace?.id}
+              authUserId={user?.id}
+              // Team Radar is a spatial signal — route to Map. Map opens to
+              // its TODAY lens by default, which matches the tile's intent
+              // ("see your team's geographic positions right now").
+              onClick={() => window.dispatchEvent(new CustomEvent('pulse:navigate', {
+                detail: { view: AppView.MAP },
+              }))}
+            />
+          </div>
+
+          {/* Full-width Relay quick-record strip — replaces the old narrow
+              RelayPulseTile. Stats live in the mono header; recording is a
+              real Web Audio waveform; recipient is required only on send. */}
+          <RelayQuickRecorderStrip
+            workspaceId={currentWorkspace?.id}
+            authUserId={user?.id}
+            setView={setView}
+          />
+
+        </div>
+      )}
+
       {/* Attention & Focus Dashboard */}
-      {user?.id && (
+      {activeTab === 'today' && user?.id && (
         <CollapsibleWidget
           id="attention-focus"
           title="Attention & Focus"
@@ -1748,159 +1661,105 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         </CollapsibleWidget>
       )}
 
+      {activeTab === 'today' && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 dashboard-stagger">
 
-        {/* Enhanced Quick Journal */}
+        {/* Capture — formerly "Journal." Recents view + Cmd+J entry point. Full editor lives in the global modal. */}
         <CollapsibleWidget
           id="journal"
           className="animate-spring-enter"
-          title="Journal"
-          icon="fa-book"
+          title="Capture"
+          icon="fa-note-sticky"
           iconColor="text-rose-500"
           isExpanded={expandedWidgets.has('journal')}
           onToggle={toggleWidget}
           headerAction={
             <button
-              onClick={() => setView(AppView.ARCHIVES)}
+              onClick={() => {
+                sessionStorage.setItem('pulse_archives_tab', 'notes');
+                setView(AppView.ARCHIVES);
+              }}
               className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition"
             >
               View All
             </button>
           }
         >
-          <div className="relative">
-            {lastSavedId && (
-              <div className="absolute inset-0 bg-white/95 dark:bg-zinc-950/95 z-20 flex items-center justify-center animate-fade-in rounded-lg">
-                <div className="text-center">
-                  <div className="w-10 h-10 border-2 border-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Check className="text-emerald-500" />
-                  </div>
-                  <h3 className="text-sm font-bold uppercase tracking-widest dark:text-zinc-50 text-zinc-900">Saved</h3>
-                  <button
-                    onClick={() => setView(AppView.ARCHIVES)}
-                    className="mt-2 text-xs text-zinc-400 hover:text-rose-500 transition flex items-center gap-1.5 mx-auto"
-                  >
-                    <Archive className="text-[10px]" />
-                    <span>View in Archive</span>
-                  </button>
-                </div>
-              </div>
-            )}
+          <div className="space-y-3">
+            {/* Capture CTA — opens the global modal via the window event so the same path
+                serves dashboard click + Cmd+J shortcut anywhere in Pulse. */}
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('pulse:capture-open'))}
+              className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-white/[0.06] hover:border-rose-500/40 dark:hover:border-rose-500/40 hover:bg-rose-500/[0.02] dark:hover:bg-rose-500/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+            >
+              <span className="flex items-baseline gap-2 min-w-0">
+                <span className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                  Capture a thought
+                </span>
+              </span>
+              <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 inline-flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/[0.06] text-zinc-600 dark:text-zinc-300 font-mono text-[10px]">⌘J</kbd>
+              </span>
+            </button>
 
-            {/* Scaffolding: rotating greeting question + last-entry pulse-label cue */}
-            {!journalText && (
-              <div className="mb-4">
-                <div className="flex items-baseline justify-between gap-3 mb-3">
-                  <p className="text-base font-medium text-zinc-800 dark:text-zinc-200">
-                    {contextualGreeting.timeOfDay === 'morning' && "What's on your mind?"}
-                    {contextualGreeting.timeOfDay === 'afternoon' && "What's working today?"}
-                    {contextualGreeting.timeOfDay === 'evening' && "What did you learn?"}
-                    {contextualGreeting.timeOfDay === 'night' && "Anything left to capture?"}
-                  </p>
-                  <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0">
-                    {recentJournals.length > 0
-                      ? `LAST · ${(() => {
-                          const days = Math.floor((Date.now() - recentJournals[0].date.getTime()) / 86_400_000);
-                          if (days === 0) return 'TODAY';
-                          if (days === 1) return 'YESTERDAY';
-                          return `${days}D AGO`;
-                        })()}`
-                      : 'FIRST ENTRY'}
-                  </span>
-                </div>
-                {/* Starter prompt chips */}
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { label: 'Decision', seed: 'Decision: ' },
-                    { label: 'Learning', seed: 'Learning: ' },
-                    { label: 'Friction', seed: 'Friction: ' },
-                  ].map(chip => (
-                    <button
-                      key={chip.label}
-                      onClick={() => setJournalText(chip.seed)}
-                      className="text-xs px-2.5 py-1 rounded-full bg-zinc-50 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
-                    >
-                      {chip.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <textarea
-              className="w-full bg-transparent border-0 p-0 text-base focus:ring-0 resize-none mb-2 min-h-[180px] dark:text-zinc-200 text-zinc-800 placeholder-zinc-400 dark:placeholder-zinc-500 leading-relaxed font-light"
-              placeholder={journalText ? '' : 'Write here, or pick a starter above'}
-              value={journalText}
-              onChange={(e) => setJournalText(e.target.value)}
-            />
-
-            <div className="flex justify-end gap-4 pulse-label text-zinc-500 dark:text-zinc-400 mb-4">
-              <span>{wordCount} WORDS</span>
-              <span>{charCount} CHARS</span>
-            </div>
-
-            {journalInsight && (
-              <div className="mb-4 p-3 rounded-lg bg-zinc-50 dark:bg-white/[0.04] text-sm text-zinc-700 dark:text-zinc-300 animate-fade-in">
-                <ProvenanceChip provider="claude" kind="INSIGHT" className="mb-2" />
-                <p className="italic leading-relaxed">{journalInsight}</p>
-              </div>
-            )}
-
-            <div className="flex gap-3 items-center pt-4 border-t border-zinc-100 dark:border-white/[0.06]">
-              <button
-                onClick={handleJournalAnalyze}
-                disabled={saving || !journalText}
-                className="pulse-label px-3 py-2 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors duration-150 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
-              >
-                ANALYZE
-              </button>
-              <div className="flex-1"></div>
-              <button
-                onClick={handleShare}
-                disabled={!journalText}
-                className={`w-9 h-9 rounded-lg transition-colors duration-150 flex items-center justify-center disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${journalCopied ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' : 'hover:bg-zinc-100 dark:hover:bg-white/[0.05] text-zinc-500 dark:text-zinc-400'}`}
-                title={journalCopied ? 'Copied' : 'Copy to clipboard'}
-              >
-                {journalCopied ? <Check /> : <Copy />}
-              </button>
-              <button
-                onClick={handleArchive}
-                disabled={saving || !journalText}
-                className="px-5 py-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white rounded-lg text-sm font-medium transition-colors duration-150 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950"
-              >
-                Save
-              </button>
-            </div>
-
-            {/* Recent Journal Entries */}
-            {recentJournals.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-white/[0.06]">
+            {/* RECENT captures from pulse_notes — workspace-scoped */}
+            {recentCaptures.length > 0 && (
+              <div className="pt-3 border-t border-zinc-100 dark:border-white/[0.06]">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="pulse-label text-zinc-500 dark:text-zinc-400">RECENT</h4>
                   <button
-                    onClick={() => setView(AppView.ARCHIVES)}
-                    className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+                    onClick={() => {
+                      sessionStorage.setItem('pulse_archives_tab', 'notes');
+                      setView(AppView.ARCHIVES);
+                    }}
+                    className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
                   >
                     SEE ALL
                   </button>
                 </div>
                 <ul className="space-y-px">
-                  {recentJournals.map(journal => (
-                    <li key={journal.id}>
-                      <button
-                        onClick={() => setView(AppView.ARCHIVES)}
-                        className="w-full text-left flex items-center gap-2.5 px-2 py-1.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
-                      >
-                        <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0">
-                          {journal.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}
-                        </span>
-                        <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate flex-1 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
-                          {journal.content.replace('Entry: ', '').slice(0, 60)}...
-                        </span>
-                      </button>
-                    </li>
-                  ))}
+                  {recentCaptures.map(n => {
+                    const date = new Date(n.created_at);
+                    const dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+                    const preview = n.content.slice(0, 64);
+                    return (
+                      <li key={n.id}>
+                        <button
+                          onClick={() => {
+                            sessionStorage.setItem('pulse_focus_note', n.id);
+                            setView(AppView.ARCHIVES);
+                          }}
+                          className="w-full text-left flex items-baseline gap-2.5 px-2 py-1.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                        >
+                          <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 min-w-[46px]">
+                            {dateLabel}
+                          </span>
+                          {n.kind && (
+                            <span className="pulse-label text-rose-600 dark:text-rose-400 shrink-0">
+                              {n.kind.toUpperCase()}
+                            </span>
+                          )}
+                          <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate flex-1 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                            {preview}{n.content.length > 64 ? '…' : ''}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
+              </div>
+            )}
+
+            {/* Empty state — only when no recent captures. Time-of-day prompt + LAST aging chip. */}
+            {recentCaptures.length === 0 && (
+              <div className="pt-2 flex items-baseline justify-between gap-3">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  {contextualGreeting.timeOfDay === 'morning' && "What's on your mind?"}
+                  {contextualGreeting.timeOfDay === 'afternoon' && "What's working today?"}
+                  {contextualGreeting.timeOfDay === 'evening' && "What did you learn?"}
+                  {contextualGreeting.timeOfDay === 'night' && "Anything left to capture?"}
+                </p>
+                <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0">FIRST CAPTURE</span>
               </div>
             )}
           </div>
@@ -1921,153 +1780,60 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         {/* Attention & Widgets Column */}
         <div className="flex flex-col gap-6 animate-spring-enter">
 
-          {/* Attention Budget Widget */}
-          <CollapsibleWidget
-            id="attention-budget"
-            title="Attention Budget"
-            icon="fa-brain"
-            iconColor="text-rose-400"
-            isExpanded={expandedWidgets.has('attention-budget')}
-            onToggle={toggleWidget}
-            headerAction={
-              <span className={`text-xs font-bold px-2 py-1 rounded ${attentionLoad > 80 ? 'bg-red-100 text-red-600' : 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400'}`}>
-                {attentionLoad > 80 ? 'Overloaded' : 'Healthy'}
-              </span>
-            }
-          >
-            <div className="mb-4">
-              <div className="flex justify-between text-xs text-zinc-500 mb-2">
-                <span>Cognitive Load</span>
-                <span>{attentionLoad}%</span>
-              </div>
-              <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-1000 ${attentionLoad > 80 ? 'bg-red-500' : attentionLoad > 50 ? 'bg-yellow-500' : 'bg-rose-500'}`}
-                  style={{ width: `${attentionLoad}%` }}
-                ></div>
-              </div>
-            </div>
-
-            {batchedNotifications.length > 0 ? (
-              <div className="pt-3 border-t border-zinc-100 dark:border-white/[0.06]">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="pulse-label text-zinc-500 dark:text-zinc-400">BATCHED · {batchedNotifications.length}</span>
-                  <button onClick={() => setBatchedNotifications([])} className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors">CLEAR</button>
-                </div>
-                <ul className="space-y-px">
-                  {batchedNotifications.slice(0, 3).map(n => (
-                    <li key={n.id} className="flex items-baseline gap-3 px-2 py-1.5 -mx-2 rounded">
-                      <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 min-w-[40px]">{n.source.toUpperCase()}</span>
-                      <span className="flex-1 min-w-0">
-                        <span className="block text-xs text-zinc-700 dark:text-zinc-300 truncate">{n.message}</span>
-                        <span className="pulse-label text-zinc-400 dark:text-zinc-500">{n.time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-3">Nothing batched. Stay sharp.</p>
-            )}
-          </CollapsibleWidget>
-
-          {/* Mini Pulse AI */}
-          <div className="bg-white dark:bg-white/[0.03] rounded-xl p-5 border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Ask Pulse AI</h3>
-              <ProvenanceChip provider="pulse" kind="ASSIST" />
-            </div>
-            {/* Quick chips */}
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {["Summarize my day", "What's urgent?", "Draft a reply"].map(chip => (
+          {/* Attention Budget retired — cognitive-load percentage replaced by AttentionDensityTile (real per-source counts).
+              Batched notifications survive as a bare strip, rendered only when non-empty. */}
+          {batchedNotifications.length > 0 && (
+            <section aria-labelledby="strip-batched-heading">
+              <div className="flex items-center justify-between mb-3">
+                <h2 id="strip-batched-heading" className="pulse-label text-zinc-500 dark:text-zinc-400">
+                  BATCHED · {batchedNotifications.length}
+                </h2>
                 <button
-                  key={chip}
-                  onClick={() => handlePulseAiQuery(chip)}
-                  className="text-xs px-3 py-1 rounded-full bg-zinc-50 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                  onClick={() => setBatchedNotifications([])}
+                  className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
                 >
-                  {chip}
-                </button>
-              ))}
-            </div>
-            {/* Input */}
-            <form onSubmit={(e) => { e.preventDefault(); handlePulseAiQuery(pulseAiQuery); }}>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={pulseAiQuery}
-                  onChange={(e) => setPulseAiQuery(e.target.value)}
-                  placeholder="Ask anything"
-                  className="w-full bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-colors duration-150 pr-9"
-                />
-                <button type="submit" disabled={loadingPulseAi || !pulseAiQuery.trim()} className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 disabled:opacity-40 transition-colors">
-                  {loadingPulseAi ? <Loader2 className="animate-spin w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                  CLEAR
                 </button>
               </div>
-            </form>
-            {/* Response */}
-            {pulseAiResponse && (
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/[0.06] animate-fade-in">
-                <ProvenanceChip provider="pulse" kind="ANSWER" className="mb-2" />
-                <p className="text-xs leading-relaxed text-zinc-700 dark:text-zinc-300 line-clamp-4">{pulseAiResponse}</p>
-                <div className="flex items-center justify-between mt-2.5">
-                  <button onClick={() => setView(AppView.LIVE_AI)} className="pulse-label text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors">
-                    OPEN PULSE AI →
-                  </button>
-                  <button onClick={() => setPulseAiResponse(null)} className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">CLEAR</button>
-                </div>
-              </div>
-            )}
-          </div>
+              <ul className="space-y-px">
+                {batchedNotifications.slice(0, 4).map(n => (
+                  <li key={n.id} className="flex items-baseline gap-3 px-3 py-2 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150">
+                    <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 min-w-[44px]">{n.source.toUpperCase()}</span>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate flex-1">{n.message}</span>
+                    <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0">
+                      {n.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-          {/* Upcoming Events */}
-          <div className="bg-white dark:bg-white/[0.03] rounded-xl p-5 border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Upcoming</h3>
-              </div>
-              <button onClick={() => setView(AppView.CALENDAR)} className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors">VIEW ALL</button>
-            </div>
-            {upcomingEvents.length === 0 ? (
-              <p className="text-xs text-zinc-400 text-center py-3">No upcoming events</p>
-            ) : (
-              <div className="space-y-2">
-                {upcomingEvents.map(event => {
-                  const start = new Date(event.start);
-                  const now = new Date();
-                  const diffMs = start.getTime() - now.getTime();
-                  const diffMins = Math.floor(diffMs / 60000);
-                  const diffHours = Math.floor(diffMins / 60);
-                  const diffDays = Math.floor(diffHours / 24);
-                  const countdown = diffDays > 0
-                    ? `in ${diffDays}d`
-                    : diffHours > 0
-                    ? `in ${diffHours}h`
-                    : diffMins > 0
-                    ? `in ${diffMins}m`
-                    : 'now';
-                  const timeStr = start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                  return (
-                    <div key={event.id} className="flex items-center justify-between gap-2 py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
-                        <span className="text-sm text-zinc-800 dark:text-zinc-200 truncate">{event.title}</span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0 text-right">
-                        <span className="text-xs text-zinc-400">{timeStr}</span>
-                        <span className="text-xs font-medium text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded-full">{countdown}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {/* Pulse Nudges — receive-surface. Proactive signals synthesized from
+              existing dashboard data (frictions, awaiting reply, decisions,
+              focus). The duplicate send-surface (3 hardcoded chips + free-text
+              input) is gone; a small inline input remains as a fallback ask. */}
+          <PulseNudgesWidget
+            workspaceId={currentWorkspace?.id}
+            authUserId={user?.id}
+            staleAwaitingReply={staleAwaitingReplyForNudges}
+            setView={setView}
+            askQuery={pulseAiQuery}
+            setAskQuery={setPulseAiQuery}
+            askResponse={pulseAiResponse}
+            setAskResponse={setPulseAiResponse}
+            askLoading={loadingPulseAi}
+            onAsk={() => handlePulseAiQuery(pulseAiQuery)}
+          />
+
+          {/* Upcoming widget removed — duplicated Quick Scheduler's "Today's Schedule" list.
+              Cross-day previews live in the AppView.CALENDAR section. */}
 
           {/* Unread widget removed — replaced by the Awaiting You section above Priorities, which surfaces the actionable subset. */}
 
         </div>
       </div>
+      )}
 
       {/* Quick Actions Floating Button — Rendered via Portal */}
       {ReactDOM.createPortal(
@@ -2120,103 +1886,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
             >
               <Plus className="w-5 h-5" />
             </button>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Command Palette (Cmd+K / Ctrl+K) */}
-      {showCmdPalette && ReactDOM.createPortal(
-        <div
-          className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-start justify-center z-[10001] p-4 pt-[12vh] animate-fade-in"
-          onClick={() => setShowCmdPalette(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Command palette"
-        >
-          <div
-            className="bg-white dark:bg-zinc-950 rounded-xl w-full max-w-lg shadow-2xl border border-zinc-200 dark:border-white/[0.08] overflow-hidden animate-scale-in flex flex-col"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Input */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-100 dark:border-white/[0.06]">
-              <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" />
-              <input
-                ref={cmdPaletteInputRef}
-                type="text"
-                value={cmdPaletteQuery}
-                onChange={e => { setCmdPaletteQuery(e.target.value); setCmdPaletteIdx(0); }}
-                onKeyDown={e => {
-                  if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    setCmdPaletteIdx(i => Math.min(i + 1, filteredCmdRows.length - 1));
-                  } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    setCmdPaletteIdx(i => Math.max(i - 1, 0));
-                  } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const row = filteredCmdRows[cmdPaletteIdx];
-                    if (row) row.run();
-                  }
-                }}
-                placeholder="Type a command, jump to a section"
-                className="flex-1 bg-transparent border-0 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-0"
-                autoFocus
-              />
-              <kbd className="hidden sm:inline-flex pulse-label items-center justify-center min-w-[2rem] h-5 px-1.5 rounded text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.06] shrink-0">ESC</kbd>
-            </div>
-
-            {/* Rows */}
-            <div className="max-h-[50vh] overflow-y-auto py-1">
-              {filteredCmdRows.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">No commands match.</p>
-                  <p className="pulse-label text-zinc-400 dark:text-zinc-500 mt-1">TRY A SHORTER QUERY</p>
-                </div>
-              ) : (
-                <ul role="listbox">
-                  {filteredCmdRows.map((row, idx) => (
-                    <li key={row.id}>
-                      <button
-                        onClick={row.run}
-                        onMouseEnter={() => setCmdPaletteIdx(idx)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors duration-100 ${
-                          idx === cmdPaletteIdx
-                            ? 'bg-rose-500/10'
-                            : 'hover:bg-zinc-50 dark:hover:bg-white/[0.04]'
-                        }`}
-                      >
-                        <i className={`fa-solid ${row.icon} w-4 text-center shrink-0 ${
-                          idx === cmdPaletteIdx ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-400 dark:text-zinc-500'
-                        }`}></i>
-                        <span className="flex-1 min-w-0">
-                          <span className={`block text-sm truncate ${
-                            idx === cmdPaletteIdx ? 'text-rose-700 dark:text-rose-300 font-medium' : 'text-zinc-800 dark:text-zinc-200'
-                          }`}>
-                            {row.label}
-                          </span>
-                          <span className="block text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                            {row.desc}
-                          </span>
-                        </span>
-                        <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0">
-                          {row.kind === 'action' ? 'ACTION' : row.kind === 'navigate' ? 'GO TO' : 'HELP'}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-zinc-100 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02]">
-              <div className="pulse-label inline-flex items-center gap-2 text-zinc-400 dark:text-zinc-500">
-                <kbd className="font-mono normal-case tracking-normal">↑↓</kbd> NAVIGATE
-                <kbd className="font-mono normal-case tracking-normal ml-2">↵</kbd> RUN
-              </div>
-              <span className="pulse-label text-zinc-400 dark:text-zinc-500">{filteredCmdRows.length} OF {commandRows.length}</span>
-            </div>
           </div>
         </div>,
         document.body
@@ -2288,7 +1957,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         document.body
       )}
 
-      {/* Productivity Analytics Section */}
+      {/* ===== WEEK PANEL ===== */}
+      {activeTab === 'week' && (
+      <div className="space-y-4 sm:space-y-6">
       <CollapsibleWidget
         id="analytics"
         title="Productivity Analytics"
@@ -2387,9 +2058,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         </div>
       </CollapsibleWidget>
 
-      {/* Goals & Team Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 dashboard-stagger">
-        {/* Goals Progress */}
+      {/* Week's Captures — bare strip, sits between the chart and goals so it
+          stays visible when Productivity Analytics is collapsed. Renders null
+          on a quiet week (until everSeen flips). */}
+      <WeekCapturesStrip
+        workspaceId={currentWorkspace?.id}
+        authUserId={user?.id}
+        setView={setView}
+      />
+
+      {/* Weekly Goals (Week tab) */}
         <CollapsibleWidget
           id="goals"
           title="Weekly Goals"
@@ -2452,6 +2130,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
             )}
           </div>
         </CollapsibleWidget>
+      </div>
+      )}
+
+      {/* ===== TEAM PANEL =====
+          Stacked layout (no inner grid). The 2-col grid was originally meant
+          to pair Team Activity with a Team Workload tile, but we pivoted that
+          slot to a full-width Team Decisions Waiting strip — strips are peer
+          signals, not grid cells. Stacking is also consistent with the Today
+          tab pattern and removes the empty-col-2 asymmetry when the strip
+          legitimately renders null. */}
+      {activeTab === 'team' && (
+      <div className="space-y-4 sm:space-y-6 dashboard-stagger">
+
+        {/* Team Decisions Waiting — surfaced first, peer-level signal. Quiet
+            when nothing's waiting on the operator. */}
+        <TeamDecisionsWaitingStrip
+          workspaceId={currentWorkspace?.id}
+          authUserId={user?.id}
+          setView={setView}
+        />
 
         {/* Team Activity */}
         <CollapsibleWidget
@@ -2596,7 +2294,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
             icon="fa-heart-pulse"
             iconColor="text-rose-400"
             isExpanded={expandedWidgets.has('team-health')}
-            className="lg:col-span-2 animate-spring-enter"
+            className="animate-spring-enter"
             onToggle={toggleWidget}
           >
             {loadingTeamHealth ? (
@@ -2710,6 +2408,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
           </CollapsibleWidget>
         )}
       </div>
+      )}
 
       {/* Team Builder Modal */}
       {showTeamBuilder && (

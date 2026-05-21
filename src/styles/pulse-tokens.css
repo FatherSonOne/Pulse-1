@@ -66,6 +66,15 @@
   /* ─── Motion ─── */
   --pulse-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --pulse-duration: 220ms;
+
+  /* ─── AI provenance chip — Messages Tools Redesign PR 3b ───
+     Reserved for AI-output surfaces ONLY (Thread Summary, Insights
+     and equivalents). Do NOT use these for decorative coral elsewhere.
+     Light: 5.78:1 contrast (PASS WCAG AA). Dark override below.
+     --pulse-coral base lives in App.css :root; cascade resolves it. */
+  --pulse-coral-fg: color-mix(in oklab, var(--pulse-coral) 35%, black 65%);
+  --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-coral) 12%, transparent);
+  --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-coral) 8%, transparent);
 }
 
 .dark {
@@ -112,6 +121,61 @@
   --pulse-ink: #fafafa;
   --pulse-ink-2: #b4b4b8;
   --pulse-ink-3: #6b7280;
+
+  /* AI provenance chip — dark override only; bg-12/08 use transparent
+     mix and composite correctly over any surface in either theme.
+     Dark: 8.47:1 contrast (PASS WCAG AA + AAA). */
+  --pulse-coral-fg: color-mix(in oklab, var(--pulse-coral) 60%, white 40%);
+}
+
+/* ============================================================
+   Shared modal scrim — replaces four duplicated `bg-zinc-950/60
+   backdrop-blur-sm` declarations across the Relay Vox modes.
+   Glass is permitted on scrims per the Backdrop-Filter Discipline.
+   ============================================================ */
+.pulse-modal-scrim {
+  background-color: rgba(10, 10, 11, 0.6);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+/* ============================================================
+   Primary button — DESIGN.md §5
+   Solid rose at rest. Hover lifts 1px + paints the coral halo
+   ("alive shadow") via --pulse-shadow-rose. No gradient, no
+   rest-state glow. Coral halo is reserved for this surface and
+   recording/active-call indicators per the Elevation rules.
+   ============================================================ */
+.pulse-btn-primary {
+  background: var(--pulse-rose);
+  transition: transform var(--pulse-duration) var(--pulse-ease),
+              box-shadow var(--pulse-duration) var(--pulse-ease),
+              background var(--pulse-duration) var(--pulse-ease);
+}
+
+.pulse-btn-primary:hover:not(:disabled) {
+  background: var(--pulse-rose-deep);
+  box-shadow: var(--pulse-shadow-rose);
+  transform: translateY(-1px);
+}
+
+.pulse-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.pulse-btn-primary:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-btn-primary {
+    transition: background var(--pulse-duration) var(--pulse-ease);
+  }
+  .pulse-btn-primary:hover:not(:disabled),
+  .pulse-btn-primary:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 /* ============================================================

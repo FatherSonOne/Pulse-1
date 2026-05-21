@@ -20,19 +20,10 @@ import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
 // ============================================
 
 export class RelayFeedbackService {
-  /**
-   * @deprecated — retained for backward compatibility during migration.
-   *   The `ai-router` edge function holds the provider key server-side.
-   *   This field is unused.
-   */
-  private apiKey: string;
-
   private workspaceId?: string;
 
-  constructor(apiKey: string, workspaceId?: string) {
-    this.apiKey = apiKey;
+  constructor(workspaceId?: string) {
     this.workspaceId = workspaceId;
-    void this.apiKey; // silence unused-field warnings in strict TS configs
   }
 
   private resolveWorkspaceId(workspaceId?: string): string {
@@ -416,18 +407,6 @@ Return JSON with a single "options" array:
     };
   }
 
-  // ============================================
-  // API KEY MANAGEMENT (deprecated — kept for API compatibility)
-  // ============================================
-
-  /**
-   * @deprecated — the `ai-router` edge function holds provider keys
-   *   server-side. Calling this is a no-op.
-   */
-  setApiKey(key: string): void {
-    this.apiKey = key;
-  }
-
   /** Set the workspace ID used for router calls. */
   setWorkspaceId(workspaceId: string): void {
     this.workspaceId = workspaceId;
@@ -440,11 +419,9 @@ Return JSON with a single "options" array:
 
 let feedbackServiceInstance: RelayFeedbackService | null = null;
 
-export const getRelayFeedbackService = (apiKey?: string): RelayFeedbackService => {
+export const getRelayFeedbackService = (): RelayFeedbackService => {
   if (!feedbackServiceInstance) {
-    // apiKey is accepted for backward compatibility but unused; the router
-    // handles keys server-side. We accept any value (including empty).
-    feedbackServiceInstance = new RelayFeedbackService(apiKey ?? '');
+    feedbackServiceInstance = new RelayFeedbackService();
   }
   return feedbackServiceInstance;
 };

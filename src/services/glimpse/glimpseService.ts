@@ -2,7 +2,7 @@
 // Includes: Upload, Send, Conversations, Reactions, AI Analysis, Search
 
 import { supabase } from '../supabase';
-import { GoogleGenAI, Type } from '@google/genai';
+import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
 import type {
   GlimpseMessage,
   GlimpseConversation,
@@ -21,7 +21,6 @@ import type {
 
 class GlimpseService {
   private userId: string | null = null;
-  private geminiApiKey: string | null = null;
 
   // ============================================
   // INITIALIZATION
@@ -47,18 +46,6 @@ class GlimpseService {
     }
 
     return '';
-  }
-
-  private getGeminiApiKey(): string {
-    if (this.geminiApiKey) return this.geminiApiKey;
-
-    const key = import.meta.env.VITE_API_KEY ||
-                import.meta.env.VITE_GEMINI_API_KEY ||
-                localStorage.getItem('gemini_api_key') ||
-                '';
-
-    this.geminiApiKey = key;
-    return key;
   }
 
   // ============================================
@@ -152,6 +139,9 @@ class GlimpseService {
     );
 
     // Step 2: full conversations + last-message embed, ordered server-side.
+    // Embed includes AI peek fields (summary / action_items / processing_status)
+    // so the Triage Cockpit conversations list can render its 2-line summary
+    // peek + action-count pill + transcribing skeleton without a per-row fetch.
     const { data: convs, error: convError } = await supabase
       .from('video_vox_conversations')
       .select(`
@@ -160,7 +150,10 @@ class GlimpseService {
           caption,
           sender_name,
           duration,
-          thumbnail_url
+          thumbnail_url,
+          summary,
+          action_items,
+          processing_status
         )
       `)
       .in('id', conversationIds)
@@ -194,10 +187,7 @@ class GlimpseService {
         avatarColor: string;
       }>;
       const mapped = this.mapDbToConversation(conv, participants);
-      // Attach unread for completeness — currently the type doesn't carry it,
-      // but consumers may extend GlimpseConversation later.
-      (mapped as GlimpseConversation & { unreadCount?: number }).unreadCount =
-        unreadByConv.get(conv.id) ?? 0;
+      mapped.unreadCount = unreadByConv.get(conv.id) ?? 0;
       return mapped;
     });
   }
@@ -259,24 +249,23 @@ class GlimpseService {
   // ============================================
 
   /**
-   * Upload a file to Supabase Storage via XMLHttpRequest for real progress tracking.
-   * The Supabase JS SDK's `.upload()` does not expose upload progress events,
-   * so we use XHR against the Storage REST API directly.
+   * One XHR attempt against the Supabase Storage REST API. Used internally by
+   * `uploadWithProgress` which wraps this in a retry loop.
    */
-  private uploadWithProgress(
+  private uploadAttempt(
     bucket: string,
     path: string,
     blob: Blob,
     contentType: string,
     onProgress?: (percent: number) => void
-  ): Promise<{ error: Error | null }> {
+  ): Promise<{ status: number; error: Error | null }> {
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       if (!supabaseUrl || !supabaseKey) {
-        resolve({ error: new Error('Supabase config not available for XHR upload') });
+        resolve({ status: 0, error: new Error('Supabase config not available for XHR upload') });
         return;
       }
 
@@ -291,28 +280,89 @@ class GlimpseService {
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          resolve({ error: null });
+          resolve({ status: xhr.status, error: null });
         } else {
-          resolve({ error: new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`) });
+          resolve({
+            status: xhr.status,
+            error: new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`),
+          });
         }
       };
 
       xhr.onerror = () => {
-        resolve({ error: new Error('Network error during upload') });
+        resolve({ status: 0, error: new Error('Network error during upload') });
       };
 
       xhr.onabort = () => {
-        resolve({ error: new Error('Upload aborted') });
+        resolve({ status: 0, error: new Error('Upload aborted') });
       };
 
       xhr.open('POST', url, true);
       xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`);
       xhr.setRequestHeader('apikey', supabaseKey);
       xhr.setRequestHeader('Content-Type', contentType);
-      // x-upsert header set to false to match original behavior
       xhr.setRequestHeader('x-upsert', 'false');
       xhr.send(blob);
     });
+  }
+
+  /**
+   * Upload a file to Supabase Storage via XMLHttpRequest for real progress
+   * tracking, with retry-with-backoff on transient failures.
+   *
+   * Retried statuses: 0 (network), 408 (request timeout), 425 (too early),
+   * 429 (rate limit), 5xx (incl. Supabase's 544 DatabaseTimeout which the
+   * Storage backend emits when the Postgres metadata insert times out).
+   *
+   * 4xx other than the above are NOT retried — they indicate a permanent
+   * client/auth error and would just waste time + bandwidth.
+   */
+  private async uploadWithProgress(
+    bucket: string,
+    path: string,
+    blob: Blob,
+    contentType: string,
+    onProgress?: (percent: number) => void
+  ): Promise<{ error: Error | null }> {
+    const MAX_ATTEMPTS = 3;
+    const BASE_DELAY_MS = 1500;
+
+    const isRetryable = (status: number) =>
+      status === 0 ||
+      status === 408 ||
+      status === 425 ||
+      status === 429 ||
+      status >= 500;
+
+    let lastError: Error | null = null;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const { status, error } = await this.uploadAttempt(
+        bucket,
+        path,
+        blob,
+        contentType,
+        onProgress,
+      );
+
+      if (!error) return { error: null };
+      lastError = error;
+
+      if (!isRetryable(status) || attempt === MAX_ATTEMPTS) {
+        return { error };
+      }
+
+      // Reset progress to 0 for the next attempt so the user sees the upload
+      // restart rather than continuing from a stale percentage.
+      onProgress?.(0);
+
+      const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
+      console.warn(
+        `[glimpse] upload attempt ${attempt}/${MAX_ATTEMPTS} failed (status ${status}); retrying in ${delay}ms…`,
+      );
+      await new Promise((r) => setTimeout(r, delay));
+    }
+
+    return { error: lastError ?? new Error('Upload failed after retries') };
   }
 
   /**
@@ -867,9 +917,9 @@ class GlimpseService {
    * Process video with Gemini AI
    */
   async processVideoWithAI(messageId: string, videoBlob: Blob): Promise<GlimpseAIAnalysis | null> {
-    const apiKey = this.getGeminiApiKey();
-    if (!apiKey) {
-      console.warn('No Gemini API key available - skipping AI processing');
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) {
+      console.warn('No active workspace — skipping Glimpse AI processing');
       return null;
     }
 
@@ -888,43 +938,40 @@ class GlimpseService {
       // Convert blob to base64
       const base64 = await this.blobToBase64(videoBlob);
 
-      // Initialize Gemini
-      const ai = new GoogleGenAI({ apiKey });
-
-      // Analyze video with Gemini 2.5
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: {
-          parts: [
-            { inlineData: { mimeType: 'video/webm', data: base64 } },
-            { text: `Analyze this video message and provide:
+      // Route through gemini-video edge function. Schema mirrors the previous
+      // inline SDK schema so the parsed payload matches GlimpseAIAnalysis.
+      const { data: invokeData, error: invokeError } = await supabase.functions.invoke('gemini-video', {
+        body: {
+          action: 'analyze',
+          video_base64: base64,
+          mime_type: 'video/webm',
+          prompt: `Analyze this video message and provide:
 1. Full transcript of everything spoken
 2. A concise 1-2 sentence summary
 3. Key topics/themes (as a list of keywords)
 4. Overall sentiment (positive, neutral, negative, or mixed)
 5. Any action items or tasks mentioned
 
-Return as JSON.` }
-          ]
-        },
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
+Return as JSON.`,
+          model: 'gemini-2.5-flash',
+          workspace_id: workspaceId,
+          schema: {
+            type: 'OBJECT',
             properties: {
-              transcript: { type: Type.STRING, description: "Full speech transcript" },
-              summary: { type: Type.STRING, description: "1-2 sentence summary" },
-              topics: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Key topics/keywords" },
-              sentiment: { type: Type.STRING, enum: ['positive', 'neutral', 'negative', 'mixed'] },
-              actionItems: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Action items mentioned" }
+              transcript: { type: 'STRING', description: 'Full speech transcript' },
+              summary: { type: 'STRING', description: '1-2 sentence summary' },
+              topics: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Key topics/keywords' },
+              sentiment: { type: 'STRING', enum: ['positive', 'neutral', 'negative', 'mixed'] },
+              actionItems: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Action items mentioned' },
             },
-            required: ["transcript", "summary", "topics", "sentiment", "actionItems"]
-          }
-        }
+            required: ['transcript', 'summary', 'topics', 'sentiment', 'actionItems'],
+          },
+        },
       });
 
-      const resultText = response.text || '{}';
-      const analysis: GlimpseAIAnalysis = JSON.parse(resultText);
+      if (invokeError) throw invokeError;
+      const analysis = (invokeData as { data?: GlimpseAIAnalysis } | null)?.data;
+      if (!analysis) throw new Error('gemini-video returned no analysis');
 
       // Update message with AI results
       await supabase
@@ -1386,6 +1433,7 @@ Return as JSON.` }
     avatarColor: string;
   }>): GlimpseConversation {
     const lastMessage = db.video_vox_messages;
+    const actionItems: string[] | undefined = lastMessage?.action_items;
 
     return {
       id: db.id,
@@ -1398,6 +1446,9 @@ Return as JSON.` }
       lastMessageSender: lastMessage?.sender_name,
       lastMessageDuration: lastMessage?.duration,
       lastMessageThumbnail: lastMessage?.thumbnail_url,
+      lastMessageSummary: lastMessage?.summary,
+      lastMessageActionCount: Array.isArray(actionItems) ? actionItems.length : undefined,
+      lastMessageProcessingStatus: lastMessage?.processing_status,
       createdBy: db.created_by,
       createdAt: new Date(db.created_at),
       updatedAt: new Date(db.updated_at || db.created_at),

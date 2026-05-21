@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Copy,
   Check,
+  Mountain,
 } from 'lucide-react';
 import { AppView, User } from '../../types';
 import { pulseAssistantService, SECTION_LABELS, SuggestedAction } from '../../services/pulseAssistantService';
@@ -65,7 +66,7 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
   );
 
   // ── Bridge to shared PulseAI context (for voice chat integration) ──
-  const { setAssistantContext, setTextConversationSummary } = usePulseAI();
+  const { setAssistantContext, setTextConversationSummary, setPendingHandoff } = usePulseAI();
 
   // ── AI error handler — shows the cap-exceeded / provider-down toasts ──
   const handleAIError = useAIErrorHandler();
@@ -311,6 +312,41 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
     handleSend(userQuery);
   };
 
+  // ── Take to Summit (Phase 2 handoff) ──
+  // Carries the entire visible thread up to and including the message the user
+  // clicked from. Stages a handoff in PulseAIContext, navigates to AppView.LIVE,
+  // and closes the sidebar. Summit consumes the handoff on mount.
+  const handleTakeToSummit = (msgId: string) => {
+    const idx = messages.findIndex(m => m.id === msgId);
+    if (idx < 0) return;
+    const thread = messages
+      .slice(0, idx + 1)
+      .filter(m => m.content && (m.role === 'user' || m.role === 'assistant'))
+      .map(m => ({ role: m.role, content: m.content }));
+    if (thread.length === 0) return;
+
+    // Build a one-line "picking up from…" hint. Prefer the latest user query
+    // since that's the most recent intent; fall back to a snippet of the AI
+    // response so the user always sees something.
+    const lastUser = [...thread].reverse().find(m => m.role === 'user');
+    const lastAssistant = [...thread].reverse().find(m => m.role === 'assistant');
+    const hintSource = lastUser?.content ?? lastAssistant?.content ?? '';
+    const openingHint = hintSource.length > 120 ? hintSource.slice(0, 117) + '…' : hintSource;
+
+    setPendingHandoff({
+      source: 'sidebar',
+      originSection: activeView,
+      thread,
+      openingHint,
+      createdAt: Date.now(),
+    });
+
+    window.dispatchEvent(
+      new CustomEvent('pulse:navigate', { detail: { view: AppView.LIVE } }),
+    );
+    onClose();
+  };
+
   // ── Export conversation (4D) ──
   const handleExport = async (mode: 'clipboard' | 'download') => {
     const md = pulseAssistantService.exportConversation(messages, 'markdown');
@@ -470,7 +506,49 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
               )}
               {message.role === 'assistant' ? (
                 <div className={`pa-msg-text pa-msg-markdown${isLoading && message.id === messages[messages.length - 1]?.id ? ' pa-streaming-cursor' : ''}`}>
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                  <ReactMarkdown
+                    // react-markdown's default urlTransform drops non-http(s) schemes,
+                    // which would strip our `pulse://section/...` hrefs before the
+                    // custom anchor renderer ever sees them. Pass the URL through
+                    // untouched — sanitization happens in the renderer below.
+                    urlTransform={(url) => url}
+                    components={{
+                      a: ({ href, children, ...props }) => {
+                        // pulse://section/<APPVIEW> — emitted by the AI when the
+                        // user asks about data outside the current section.
+                        // Intercept and route through the global pulse:navigate
+                        // event so the user stays in the same window.
+                        if (href?.startsWith('pulse://section/')) {
+                          const view = href.replace('pulse://section/', '');
+                          return (
+                            <button
+                              type="button"
+                              className="pa-inline-nav-link"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                window.dispatchEvent(
+                                  new CustomEvent('pulse:navigate', { detail: { view } }),
+                                );
+                              }}
+                            >
+                              {children}
+                            </button>
+                          );
+                        }
+                        // Only allow http(s) for external links — anything else
+                        // (javascript:, data:, etc.) is rendered as plain text.
+                        const safe = href && /^https?:\/\//i.test(href);
+                        if (!safe) return <span>{children}</span>;
+                        return (
+                          <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+                            {children}
+                          </a>
+                        );
+                      },
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
                 </div>
               ) : (
                 <div className="pa-msg-text">{message.content}</div>
@@ -508,6 +586,18 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
                   >
                     <RefreshCw size={12} />
                   </button>
+                  {activeView !== AppView.LIVE && (
+                    <button
+                      type="button"
+                      className="pa-feedback-btn pa-feedback-btn--summit"
+                      onClick={() => handleTakeToSummit(message.id)}
+                      aria-label="Take this thread to Summit"
+                      title="Take to Summit"
+                    >
+                      <Mountain size={12} />
+                      <span className="pa-feedback-btn-label">Summit</span>
+                    </button>
+                  )}
                 </div>
               )}
               {/* Suggested actions */}

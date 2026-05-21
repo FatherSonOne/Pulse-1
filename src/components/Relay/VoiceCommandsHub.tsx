@@ -333,7 +333,7 @@ export const VoiceCommandsHub: React.FC<VoiceCommandsHubProps> = ({
   const categories = Object.keys(CATEGORY_CONFIG) as VoiceCommandCategory[];
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-zinc-950">
+    <div className="h-full flex flex-col bg-white dark:bg-[#080808]">
       {/* Listening Overlay */}
       <VoiceListeningOverlay
         isListening={isListening}
@@ -377,7 +377,7 @@ export const VoiceCommandsHub: React.FC<VoiceCommandsHubProps> = ({
         <button
           onClick={startListening}
           disabled={!isEnabled || isListening}
-          className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 disabled:from-zinc-300 disabled:to-zinc-400 text-white rounded-2xl font-bold text-lg transition transform hover:scale-[1.02] disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+          className="btn-brand-primary w-full py-4 rounded-2xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
         >
           <Mic className="text-xl" />
           {isListening ? 'Listening...' : `Say "${wakeWordConfig.wakeWord}"`}

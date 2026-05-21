@@ -1,0 +1,576 @@
+/*
+ * GoogleAccountSelector — Auth Menu
+ *
+ * Single source of truth: --pulse-* tokens (see src/styles/pulse-tokens.css).
+ * No Tailwind zinc-* / neutral hex anywhere; the menu lives entirely on tokens.
+ *
+ * Coral discipline: ONE coral surface in this menu — the header avatar +
+ * its 1px coral hairline. Trigger avatar is flat tinted-neutral. Sign-in
+ * button uses the brand only on hover focus, never as a wallpaper.
+ */
+
+/* ─── Sign-in (pre-auth) ─── */
+
+.pulse-account-menu__signin {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  color: var(--pulse-ink);
+  font-family: var(--pulse-font);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              border-color var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-account-menu__signin:hover {
+  background: var(--pulse-surface-raised);
+  border-color: var(--pulse-border-strong);
+}
+.pulse-account-menu__signin:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
+.pulse-account-menu__signin-collapsed {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  color: var(--pulse-ink-2);
+  transition: background var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-account-menu__signin-collapsed:hover {
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink);
+}
+.pulse-account-menu__signin-collapsed:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
+/* ─── Trigger row (in sidebar) ─── */
+
+.pulse-account-menu__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  /* Background-only hover; never translate (2px-Lift-Cap rule). */
+  transition: background var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-account-menu__trigger:hover {
+  background: var(--pulse-surface-raised);
+}
+.pulse-account-menu__trigger:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+.pulse-account-menu__trigger--collapsed {
+  justify-content: center;
+  padding: 8px;
+}
+
+.pulse-account-menu__trigger-avatar {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: var(--pulse-surface-raised);
+  border: 1px solid var(--pulse-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pulse-account-menu__trigger-avatar > span {
+  font-family: var(--pulse-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--pulse-ink-2);
+}
+
+.pulse-account-menu__trigger-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+}
+.pulse-account-menu__trigger-name {
+  font-family: var(--pulse-font);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pulse-ink);
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pulse-account-menu__trigger-email {
+  font-family: var(--pulse-font);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--pulse-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.pulse-account-menu__trigger-caret {
+  flex-shrink: 0;
+  color: var(--pulse-ink-3);
+  transition: transform var(--pulse-duration) var(--pulse-ease),
+              color var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-account-menu__trigger:hover .pulse-account-menu__trigger-caret {
+  color: var(--pulse-ink-2);
+}
+.pulse-account-menu__trigger-caret.is-open {
+  transform: rotate(180deg);
+}
+
+/* ─── Dropdown panel ─── */
+
+.pulse-account-menu__panel {
+  position: absolute;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 280px;
+  max-width: 320px;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  border-radius: 12px;
+  box-shadow: var(--pulse-shadow-md);
+  overflow: hidden;
+  /* Open animation: instant in reduced-motion. */
+  animation: pulse-account-menu-fade var(--pulse-duration) var(--pulse-ease);
+}
+@keyframes pulse-account-menu-fade {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.pulse-account-menu__panel--inline {
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 8px;
+}
+.pulse-account-menu__panel--collapsed {
+  left: 100%;
+  margin-left: 8px;
+  top: 0;
+}
+
+/* In dark mode, the panel needs the translucent stack treatment + blur. */
+:where(.dark) .pulse-account-menu__panel {
+  background: rgba(20, 20, 20, 0.92);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+
+/* ─── Header (signature coral moment) ─── */
+
+.pulse-account-menu__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--pulse-surface);
+  border-bottom: 1px solid var(--pulse-border);
+}
+:where(.dark) .pulse-account-menu__header {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* The ONE coral element in this menu. */
+.pulse-account-menu__header-avatar {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--pulse-rose) 0%, var(--pulse-pink) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  /* The signature: a 1px coral hairline that earns the avatar's appearance. */
+  box-shadow: 0 0 0 1px var(--pulse-rose-soft), 0 4px 12px var(--pulse-rose-glow);
+}
+.pulse-account-menu__header-avatar > span {
+  font-family: var(--pulse-font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+}
+
+.pulse-account-menu__header-text {
+  flex: 1;
+  min-width: 0;
+}
+.pulse-account-menu__header-name {
+  font-family: var(--pulse-font);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pulse-ink);
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pulse-account-menu__header-email {
+  font-family: var(--pulse-font);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--pulse-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* ─── Scrollable middle ─── */
+
+.pulse-account-menu__scroll {
+  padding: 6px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.pulse-account-menu__group {
+  padding: 4px 0;
+}
+.pulse-account-menu__group + .pulse-account-menu__group {
+  margin-top: 2px;
+}
+.pulse-account-menu__group-label {
+  padding: 6px 10px 4px;
+  /* pulse-label sets font/uppercase/tracking — we just position it. */
+}
+
+/* ─── Action item ─── */
+
+.pulse-account-menu__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pulse-ink);
+  font-family: var(--pulse-font);
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              color var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-account-menu__item + .pulse-account-menu__item {
+  margin-top: 1px;
+}
+.pulse-account-menu__item:hover {
+  background: var(--pulse-surface-raised);
+}
+.pulse-account-menu__item:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: -2px;
+  background: var(--pulse-surface-raised);
+}
+.pulse-account-menu__item-icon {
+  color: var(--pulse-ink-3);
+  flex-shrink: 0;
+  transition: color var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-account-menu__item:hover .pulse-account-menu__item-icon,
+.pulse-account-menu__item:focus-visible .pulse-account-menu__item-icon {
+  color: var(--pulse-ink-2);
+}
+.pulse-account-menu__item-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pulse-account-menu__item-trailing {
+  color: var(--pulse-ink-3);
+  flex-shrink: 0;
+}
+
+.pulse-account-menu__item-kbd {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--pulse-surface-raised);
+  border: 1px solid var(--pulse-border);
+  color: var(--pulse-ink-3);
+  font-family: var(--pulse-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.pulse-account-menu__item:hover .pulse-account-menu__item-kbd,
+.pulse-account-menu__item:focus-visible .pulse-account-menu__item-kbd {
+  color: var(--pulse-ink-2);
+  border-color: var(--pulse-border-strong);
+}
+
+/* Warning + danger states use the canonical status tokens. */
+.pulse-account-menu__item--warning {
+  color: var(--pulse-tone-warning);
+}
+.pulse-account-menu__item--warning .pulse-account-menu__item-icon {
+  color: var(--pulse-tone-warning);
+}
+.pulse-account-menu__item--warning:hover {
+  background: var(--pulse-tone-warning-soft);
+}
+
+.pulse-account-menu__item--danger {
+  color: var(--pulse-tone-overdue);
+}
+.pulse-account-menu__item--danger .pulse-account-menu__item-icon {
+  color: var(--pulse-tone-overdue);
+}
+.pulse-account-menu__item--danger:hover {
+  background: var(--pulse-tone-overdue-soft);
+}
+.pulse-account-menu__item--danger:focus-visible {
+  outline-color: var(--pulse-tone-overdue);
+}
+
+/* ─── Advanced (collapsed) ─── */
+
+.pulse-account-menu__advanced {
+  margin: 6px 0 0;
+  padding: 6px 0 0;
+  border-top: 1px dashed var(--pulse-border);
+}
+.pulse-account-menu__advanced-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  transition: background var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-account-menu__advanced-summary::-webkit-details-marker { display: none; }
+.pulse-account-menu__advanced-summary::marker { content: ''; }
+.pulse-account-menu__advanced-summary:hover {
+  background: var(--pulse-surface-raised);
+}
+.pulse-account-menu__advanced-caret {
+  color: var(--pulse-ink-3);
+  transition: transform var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-account-menu__advanced[open] .pulse-account-menu__advanced-caret {
+  transform: rotate(90deg);
+}
+.pulse-account-menu__advanced-body {
+  padding: 4px 0 0;
+}
+.pulse-account-menu__advanced-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 4px 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--pulse-tone-warning-soft);
+  color: var(--pulse-tone-warning);
+  font-family: var(--pulse-font);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.pulse-account-menu__advanced-warn > svg { flex-shrink: 0; margin-top: 1px; }
+
+/* ─── Footer (Sign Out, pinned) ─── */
+
+.pulse-account-menu__footer {
+  padding: 6px;
+  border-top: 1px solid var(--pulse-border);
+  background: var(--pulse-surface);
+}
+:where(.dark) .pulse-account-menu__footer {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ─── Reduced motion ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-account-menu__panel { animation: none; }
+  .pulse-account-menu__trigger,
+  .pulse-account-menu__trigger-caret,
+  .pulse-account-menu__item,
+  .pulse-account-menu__item-icon,
+  .pulse-account-menu__advanced-summary,
+  .pulse-account-menu__advanced-caret,
+  .pulse-account-menu__signin,
+  .pulse-account-menu__signin-collapsed { transition: none; }
+}
+
+/* ============================================================
+ * Danger confirm modal (Disconnect / Revoke)
+ * ============================================================ */
+
+.pulse-danger-modal__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: pulse-danger-fade 160ms var(--pulse-ease);
+}
+@keyframes pulse-danger-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pulse-danger-modal {
+  width: 100%;
+  max-width: 380px;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  border-radius: 16px;
+  box-shadow: var(--pulse-shadow-md);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: pulse-danger-rise 220ms var(--pulse-ease);
+}
+:where(.dark) .pulse-danger-modal {
+  background: rgba(20, 20, 20, 0.96);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+@keyframes pulse-danger-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pulse-danger-modal__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pulse-tone-overdue-soft);
+  color: var(--pulse-tone-overdue);
+}
+
+.pulse-danger-modal__title {
+  margin: 4px 0 0;
+  font-family: var(--pulse-font);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--pulse-ink);
+  letter-spacing: -0.01em;
+}
+
+.pulse-danger-modal__body {
+  margin: 0;
+  font-family: var(--pulse-font);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--pulse-ink-2);
+  max-width: 65ch;
+}
+
+.pulse-danger-modal__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pulse-danger-modal__cancel,
+.pulse-danger-modal__confirm {
+  font-family: var(--pulse-font);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              border-color var(--pulse-duration) var(--pulse-ease),
+              color var(--pulse-duration) var(--pulse-ease);
+}
+
+.pulse-danger-modal__cancel {
+  background: transparent;
+  border-color: var(--pulse-border);
+  color: var(--pulse-ink-2);
+}
+.pulse-danger-modal__cancel:hover:not(:disabled) {
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink);
+}
+.pulse-danger-modal__cancel:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
+.pulse-danger-modal__confirm {
+  background: var(--pulse-tone-overdue);
+  color: #ffffff;
+  border-color: var(--pulse-tone-overdue);
+}
+.pulse-danger-modal__confirm:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+.pulse-danger-modal__confirm:focus-visible {
+  outline: 2px solid var(--pulse-tone-overdue);
+  outline-offset: 2px;
+}
+.pulse-danger-modal__confirm:disabled,
+.pulse-danger-modal__cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-danger-modal__scrim,
+  .pulse-danger-modal { animation: none; }
+  .pulse-danger-modal__cancel,
+  .pulse-danger-modal__confirm { transition: none; }
+}

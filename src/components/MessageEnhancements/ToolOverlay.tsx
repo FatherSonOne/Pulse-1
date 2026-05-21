@@ -36,12 +36,7 @@ import { PriorityInbox } from './PriorityInbox';
 import { ConversationArchive } from './ConversationArchive';
 import { QuickReplies } from './QuickReplies';
 import { MessageStatusTimeline } from './MessageStatusTimeline';
-import { AutoResponseRules } from './AutoResponseRules';
 import { FormattingToolbar } from './FormattingToolbar';
-import { ContactNotes } from './ContactNotes';
-import { ConversationModes } from './ConversationModes';
-import { NotificationSounds } from './NotificationSounds';
-import { DraftManager } from './DraftManager';
 import { MessageEncryption } from './MessageEncryption';
 import { ReadTimeEstimation } from './ReadTimeEstimation';
 import { MessageVersioning } from './MessageVersioning';
@@ -50,7 +45,6 @@ import { ConversationInsights } from './ConversationInsights';
 import { FocusTimer } from './FocusTimer';
 import { TranslationHub } from './TranslationHub';
 import { AnalyticsExport } from './AnalyticsExport';
-import { TemplatesLibrary } from './TemplatesLibrary';
 import { AttachmentManager } from './AttachmentManager';
 import { BackupSync } from './BackupSync';
 import { SmartSuggestions } from './SmartSuggestions';
@@ -65,8 +59,8 @@ interface ToolOverlayProps {
   conversationId?: string;
   otherUserId?: string;
   // Tab states
-  analyticsView: 'response' | 'engagement' | 'flow' | 'insights';
-  setAnalyticsView: (v: 'response' | 'engagement' | 'flow' | 'insights') => void;
+  analyticsView: 'pace' | 'flow' | 'insights';
+  setAnalyticsView: (v: 'pace' | 'flow' | 'insights') => void;
   collaborationTab: string;
   setCollaborationTab: (v: any) => void;
   productivityTab: string;
@@ -85,16 +79,19 @@ interface ToolOverlayProps {
   setMediaHubTab: (v: any) => void;
 }
 
-const toolConfig: Record<string, { title: string; icon: string; bgColor: string; textColor: string }> = {
-  analytics: { title: 'Conversation Analytics', icon: 'fa-chart-pie', bgColor: 'bg-indigo-500', textColor: 'text-indigo-500' },
-  collaboration: { title: 'Collaboration Tools', icon: 'fa-users-gear', bgColor: 'bg-purple-500', textColor: 'text-purple-500' },
-  productivity: { title: 'Productivity Tools', icon: 'fa-rocket', bgColor: 'bg-cyan-500', textColor: 'text-cyan-500' },
-  intelligence: { title: 'Intelligence & Organization', icon: 'fa-brain', bgColor: 'bg-violet-500', textColor: 'text-violet-500' },
-  proactive: { title: 'Smart Reminders & More', icon: 'fa-bell', bgColor: 'bg-rose-500', textColor: 'text-rose-500' },
-  communication: { title: 'Communication Tools', icon: 'fa-comments', bgColor: 'bg-amber-500', textColor: 'text-amber-500' },
-  personalization: { title: 'Personalization & Automation', icon: 'fa-sliders', bgColor: 'bg-fuchsia-500', textColor: 'text-fuchsia-500' },
-  security: { title: 'Security & Insights', icon: 'fa-shield-halved', bgColor: 'bg-emerald-500', textColor: 'text-emerald-500' },
-  mediaHub: { title: 'Media Hub & Export', icon: 'fa-photo-film', bgColor: 'bg-cyan-500', textColor: 'text-cyan-500' },
+// Coral-As-Signal: every overlay uses the same rose tint for its icon
+// tile, active-tab pill, and primary CTA. Differentiation comes from
+// the title + mono section label, not a coloured swatch.
+const toolConfig: Record<string, { title: string; icon: string }> = {
+  analytics: { title: 'Analytics', icon: 'fa-chart-pie' },
+  collaboration: { title: 'Collaboration', icon: 'fa-users-gear' },
+  productivity: { title: 'Productivity', icon: 'fa-rocket' },
+  intelligence: { title: 'Intelligence', icon: 'fa-brain' },
+  proactive: { title: 'Proactive', icon: 'fa-bell' },
+  communication: { title: 'Communication', icon: 'fa-comments' },
+  personalization: { title: 'Personalization', icon: 'fa-sliders' },
+  security: { title: 'Security', icon: 'fa-shield-halved' },
+  mediaHub: { title: 'Media Hub', icon: 'fa-photo-film' },
 };
 
 const ToolOverlay: React.FC<ToolOverlayProps> = ({
@@ -125,40 +122,45 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
 
   const config = toolConfig[activeTool];
 
-  const TabButton: React.FC<{ id: string; label: string; icon: string; isActive: boolean; onClick: () => void; color: string }> =
-    ({ id, label, icon, isActive, onClick, color }) => (
+  const TabButton: React.FC<{ id: string; label: string; icon: string; isActive: boolean; onClick: () => void; color?: string }> =
+    ({ label, icon, isActive, onClick }) => (
       <button
+        type="button"
         onClick={onClick}
-        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap ${
+        aria-pressed={isActive}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
           isActive
-            ? `${color} text-white shadow-lg`
-            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+            ? 'bg-rose-500/[0.10] dark:bg-rose-500/[0.15] text-rose-600 dark:text-rose-bright'
+            : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
         }`}
       >
-        <i className={`fa-solid ${icon}`} />
+        <i className={`fa-solid ${icon} text-[10px] opacity-70`} />
         {label}
       </button>
     );
 
   return (
-    <div className="absolute inset-0 z-40 bg-white dark:bg-zinc-950 flex flex-col" style={{ animation: 'slideDown 0.3s ease-out' }}>
+    <div className="absolute inset-0 z-40 bg-[#f8f8f8] dark:bg-black flex flex-col" style={{ animation: 'slideDown 0.3s ease-out' }}>
       {/* Tool Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[rgba(255,255,255,0.03)]">
         <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-xl ${config.bgColor} flex items-center justify-center shadow-lg`}>
-            <i className={`fa-solid ${config.icon} text-white text-lg`}></i>
+          <div className="w-10 h-10 rounded-lg bg-rose-500/[0.10] dark:bg-rose-500/[0.15] flex items-center justify-center">
+            <i className={`fa-solid ${config.icon} text-rose-600 dark:text-rose-bright text-base`}></i>
           </div>
           <div>
-            <h3 className="font-bold text-lg text-zinc-900 dark:text-white">{config.title}</h3>
-            <p className="text-sm text-zinc-500">Select a feature below</p>
+            <div className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-rose-600 dark:text-rose-bright">
+              MESSAGE TOOL
+            </div>
+            <h3 className="text-base font-medium text-zinc-900 dark:text-white leading-tight">{config.title}</h3>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="w-12 h-12 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-500 flex items-center justify-center transition group"
-          title="Close and return to chat"
+          className="w-8 h-8 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-rose-500/[0.08] dark:hover:bg-rose-500/[0.10] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+          title="Close and return to chat (Esc)"
+          aria-label="Close"
         >
-          <X className="text-zinc-400 group-hover:text-red-500 text-lg" />
+          <X className="w-4 h-4" />
         </button>
       </div>
 
@@ -168,14 +170,17 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
         {activeTool === 'analytics' && (
           <div className="p-4">
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              <TabButton id="response" label="Response Time" icon="fa-stopwatch" isActive={analyticsView === 'response'} onClick={() => setAnalyticsView('response')} color="bg-indigo-500" />
-              <TabButton id="engagement" label="Engagement" icon="fa-fire" isActive={analyticsView === 'engagement'} onClick={() => setAnalyticsView('engagement')} color="bg-indigo-500" />
-              <TabButton id="flow" label="Flow" icon="fa-diagram-project" isActive={analyticsView === 'flow'} onClick={() => setAnalyticsView('flow')} color="bg-indigo-500" />
-              <TabButton id="insights" label="AI Insights" icon="fa-lightbulb" isActive={analyticsView === 'insights'} onClick={() => setAnalyticsView('insights')} color="bg-indigo-500" />
+              <TabButton id="pace" label="Pace" icon="fa-stopwatch" isActive={analyticsView === 'pace'} onClick={() => setAnalyticsView('pace')} color="rose" />
+              <TabButton id="flow" label="Flow" icon="fa-diagram-project" isActive={analyticsView === 'flow'} onClick={() => setAnalyticsView('flow')} color="rose" />
+              <TabButton id="insights" label="AI Insights" icon="fa-lightbulb" isActive={analyticsView === 'insights'} onClick={() => setAnalyticsView('insights')} color="rose" />
             </div>
-            <div className="min-h-[60vh]">
-              {analyticsView === 'response' && <ResponseTimeTracker />}
-              {analyticsView === 'engagement' && <EngagementScoring />}
+            <div className="min-h-[60vh] space-y-4">
+              {analyticsView === 'pace' && (
+                <>
+                  <EngagementScoring />
+                  <ResponseTimeTracker />
+                </>
+              )}
               {analyticsView === 'flow' && <ConversationFlowViz />}
               {analyticsView === 'insights' && <ProactiveInsightsEnhanced />}
             </div>
@@ -186,12 +191,12 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
         {activeTool === 'collaboration' && (
           <div className="p-4">
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              <TabButton id="collab" label="Team" icon="fa-users" isActive={collaborationTab === 'collab'} onClick={() => setCollaborationTab('collab')} color="bg-purple-500" />
-              <TabButton id="links" label="Links" icon="fa-link" isActive={collaborationTab === 'links'} onClick={() => setCollaborationTab('links')} color="bg-purple-500" />
-              <TabButton id="kb" label="Knowledge" icon="fa-book" isActive={collaborationTab === 'kb'} onClick={() => setCollaborationTab('kb')} color="bg-purple-500" />
-              <TabButton id="search" label="Search" icon="fa-magnifying-glass" isActive={collaborationTab === 'search'} onClick={() => setCollaborationTab('search')} color="bg-purple-500" />
-              <TabButton id="pins" label="Pins" icon="fa-thumbtack" isActive={collaborationTab === 'pins'} onClick={() => setCollaborationTab('pins')} color="bg-purple-500" />
-              <TabButton id="annotations" label="Notes" icon="fa-sticky-note" isActive={collaborationTab === 'annotations'} onClick={() => setCollaborationTab('annotations')} color="bg-purple-500" />
+              <TabButton id="collab" label="Team" icon="fa-users" isActive={collaborationTab === 'collab'} onClick={() => setCollaborationTab('collab')} color="rose" />
+              <TabButton id="links" label="Links" icon="fa-link" isActive={collaborationTab === 'links'} onClick={() => setCollaborationTab('links')} color="rose" />
+              <TabButton id="kb" label="Knowledge" icon="fa-book" isActive={collaborationTab === 'kb'} onClick={() => setCollaborationTab('kb')} color="rose" />
+              <TabButton id="search" label="Search" icon="fa-magnifying-glass" isActive={collaborationTab === 'search'} onClick={() => setCollaborationTab('search')} color="rose" />
+              <TabButton id="pins" label="Pins" icon="fa-thumbtack" isActive={collaborationTab === 'pins'} onClick={() => setCollaborationTab('pins')} color="rose" />
+              <TabButton id="annotations" label="Notes" icon="fa-sticky-note" isActive={collaborationTab === 'annotations'} onClick={() => setCollaborationTab('annotations')} color="rose" />
             </div>
             <div className="min-h-[60vh]">
               {collaborationTab === 'collab' && <ThreadCollaboration threadId={conversationId || ''} />}
@@ -208,12 +213,12 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
         {activeTool === 'productivity' && (
           <div className="p-4">
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              <TabButton id="templates" label="Templates" icon="fa-file-lines" isActive={productivityTab === 'templates'} onClick={() => setProductivityTab('templates')} color="bg-cyan-500" />
-              <TabButton id="schedule" label="Schedule" icon="fa-clock" isActive={productivityTab === 'schedule'} onClick={() => setProductivityTab('schedule')} color="bg-cyan-500" />
-              <TabButton id="summary" label="Summary" icon="fa-list-check" isActive={productivityTab === 'summary'} onClick={() => setProductivityTab('summary')} color="bg-cyan-500" />
-              <TabButton id="export" label="Export" icon="fa-file-export" isActive={productivityTab === 'export'} onClick={() => setProductivityTab('export')} color="bg-cyan-500" />
-              <TabButton id="shortcuts" label="Shortcuts" icon="fa-keyboard" isActive={productivityTab === 'shortcuts'} onClick={() => setProductivityTab('shortcuts')} color="bg-cyan-500" />
-              <TabButton id="notifications" label="Notifications" icon="fa-bell" isActive={productivityTab === 'notifications'} onClick={() => setProductivityTab('notifications')} color="bg-cyan-500" />
+              <TabButton id="templates" label="Templates" icon="fa-file-lines" isActive={productivityTab === 'templates'} onClick={() => setProductivityTab('templates')} color="rose" />
+              <TabButton id="schedule" label="Schedule" icon="fa-clock" isActive={productivityTab === 'schedule'} onClick={() => setProductivityTab('schedule')} color="rose" />
+              <TabButton id="summary" label="Summary" icon="fa-list-check" isActive={productivityTab === 'summary'} onClick={() => setProductivityTab('summary')} color="rose" />
+              <TabButton id="export" label="Export" icon="fa-file-export" isActive={productivityTab === 'export'} onClick={() => setProductivityTab('export')} color="rose" />
+              <TabButton id="shortcuts" label="Shortcuts" icon="fa-keyboard" isActive={productivityTab === 'shortcuts'} onClick={() => setProductivityTab('shortcuts')} color="rose" />
+              <TabButton id="notifications" label="Notifications" icon="fa-bell" isActive={productivityTab === 'notifications'} onClick={() => setProductivityTab('notifications')} color="rose" />
             </div>
             <div className="min-h-[60vh]">
               {productivityTab === 'templates' && <SmartTemplates onTemplateSelect={(t) => console.log(t)} />}
@@ -230,12 +235,12 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
         {activeTool === 'intelligence' && (
           <div className="p-4">
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              <TabButton id="contacts" label="Insights" icon="fa-address-card" isActive={intelligenceTab === 'contacts'} onClick={() => setIntelligenceTab('contacts')} color="bg-violet-500" />
-              <TabButton id="reactions" label="Reactions" icon="fa-face-smile" isActive={intelligenceTab === 'reactions'} onClick={() => setIntelligenceTab('reactions')} color="bg-violet-500" />
-              <TabButton id="commands" label="Commands" icon="fa-terminal" isActive={intelligenceTab === 'commands'} onClick={() => setIntelligenceTab('commands')} color="bg-violet-500" />
-              <TabButton id="bookmarks" label="Bookmarks" icon="fa-bookmark" isActive={intelligenceTab === 'bookmarks'} onClick={() => setIntelligenceTab('bookmarks')} color="bg-violet-500" />
-              <TabButton id="tags" label="Tags" icon="fa-tags" isActive={intelligenceTab === 'tags'} onClick={() => setIntelligenceTab('tags')} color="bg-violet-500" />
-              <TabButton id="receipts" label="Read Status" icon="fa-check-double" isActive={intelligenceTab === 'receipts'} onClick={() => setIntelligenceTab('receipts')} color="bg-violet-500" />
+              <TabButton id="contacts" label="Insights" icon="fa-address-card" isActive={intelligenceTab === 'contacts'} onClick={() => setIntelligenceTab('contacts')} color="rose" />
+              <TabButton id="reactions" label="Reactions" icon="fa-face-smile" isActive={intelligenceTab === 'reactions'} onClick={() => setIntelligenceTab('reactions')} color="rose" />
+              <TabButton id="commands" label="Commands" icon="fa-terminal" isActive={intelligenceTab === 'commands'} onClick={() => setIntelligenceTab('commands')} color="rose" />
+              <TabButton id="bookmarks" label="Bookmarks" icon="fa-bookmark" isActive={intelligenceTab === 'bookmarks'} onClick={() => setIntelligenceTab('bookmarks')} color="rose" />
+              <TabButton id="tags" label="Tags" icon="fa-tags" isActive={intelligenceTab === 'tags'} onClick={() => setIntelligenceTab('tags')} color="rose" />
+              <TabButton id="receipts" label="Read Status" icon="fa-check-double" isActive={intelligenceTab === 'receipts'} onClick={() => setIntelligenceTab('receipts')} color="rose" />
             </div>
             <div className="min-h-[60vh]">
               {intelligenceTab === 'contacts' && <ContactInsights contactId={otherUserId} />}
@@ -252,12 +257,12 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
         {activeTool === 'proactive' && (
           <div className="p-4">
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              <TabButton id="reminders" label="Reminders" icon="fa-bell" isActive={proactiveTab === 'reminders'} onClick={() => setProactiveTab('reminders')} color="bg-rose-500" />
-              <TabButton id="threading" label="Threading" icon="fa-code-branch" isActive={proactiveTab === 'threading'} onClick={() => setProactiveTab('threading')} color="bg-rose-500" />
-              <TabButton id="sentiment" label="Sentiment" icon="fa-heart-pulse" isActive={proactiveTab === 'sentiment'} onClick={() => setProactiveTab('sentiment')} color="bg-rose-500" />
-              <TabButton id="groups" label="Groups" icon="fa-users-rectangle" isActive={proactiveTab === 'groups'} onClick={() => setProactiveTab('groups')} color="bg-rose-500" />
-              <TabButton id="nlsearch" label="Smart Search" icon="fa-wand-magic-sparkles" isActive={proactiveTab === 'nlsearch'} onClick={() => setProactiveTab('nlsearch')} color="bg-rose-500" />
-              <TabButton id="highlights" label="Highlights" icon="fa-highlighter" isActive={proactiveTab === 'highlights'} onClick={() => setProactiveTab('highlights')} color="bg-rose-500" />
+              <TabButton id="reminders" label="Reminders" icon="fa-bell" isActive={proactiveTab === 'reminders'} onClick={() => setProactiveTab('reminders')} color="rose" />
+              <TabButton id="threading" label="Threading" icon="fa-code-branch" isActive={proactiveTab === 'threading'} onClick={() => setProactiveTab('threading')} color="rose" />
+              <TabButton id="sentiment" label="Sentiment" icon="fa-heart-pulse" isActive={proactiveTab === 'sentiment'} onClick={() => setProactiveTab('sentiment')} color="rose" />
+              <TabButton id="groups" label="Groups" icon="fa-users-rectangle" isActive={proactiveTab === 'groups'} onClick={() => setProactiveTab('groups')} color="rose" />
+              <TabButton id="nlsearch" label="Smart Search" icon="fa-wand-magic-sparkles" isActive={proactiveTab === 'nlsearch'} onClick={() => setProactiveTab('nlsearch')} color="rose" />
+              <TabButton id="highlights" label="Highlights" icon="fa-highlighter" isActive={proactiveTab === 'highlights'} onClick={() => setProactiveTab('highlights')} color="rose" />
             </div>
             <div className="min-h-[60vh]">
               {proactiveTab === 'reminders' && <SmartReminders onReminderCreate={(r) => console.log(r)} />}
@@ -274,12 +279,12 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
         {activeTool === 'communication' && (
           <div className="p-4">
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              <TabButton id="voice" label="Voice" icon="fa-microphone" isActive={communicationTab === 'voice'} onClick={() => setCommunicationTab('voice')} color="bg-amber-500" />
-              <TabButton id="emoji" label="Emoji" icon="fa-face-smile" isActive={communicationTab === 'emoji'} onClick={() => setCommunicationTab('emoji')} color="bg-amber-500" />
-              <TabButton id="priority" label="Priority" icon="fa-arrow-up-wide-short" isActive={communicationTab === 'priority'} onClick={() => setCommunicationTab('priority')} color="bg-amber-500" />
-              <TabButton id="archive" label="Archive" icon="fa-box-archive" isActive={communicationTab === 'archive'} onClick={() => setCommunicationTab('archive')} color="bg-amber-500" />
-              <TabButton id="quickreply" label="Quick Reply" icon="fa-reply" isActive={communicationTab === 'quickreply'} onClick={() => setCommunicationTab('quickreply')} color="bg-amber-500" />
-              <TabButton id="status" label="Status" icon="fa-circle-check" isActive={communicationTab === 'status'} onClick={() => setCommunicationTab('status')} color="bg-amber-500" />
+              <TabButton id="voice" label="Voice" icon="fa-microphone" isActive={communicationTab === 'voice'} onClick={() => setCommunicationTab('voice')} color="rose" />
+              <TabButton id="emoji" label="Emoji" icon="fa-face-smile" isActive={communicationTab === 'emoji'} onClick={() => setCommunicationTab('emoji')} color="rose" />
+              <TabButton id="priority" label="Priority" icon="fa-arrow-up-wide-short" isActive={communicationTab === 'priority'} onClick={() => setCommunicationTab('priority')} color="rose" />
+              <TabButton id="archive" label="Archive" icon="fa-box-archive" isActive={communicationTab === 'archive'} onClick={() => setCommunicationTab('archive')} color="rose" />
+              <TabButton id="quickreply" label="Quick Reply" icon="fa-reply" isActive={communicationTab === 'quickreply'} onClick={() => setCommunicationTab('quickreply')} color="rose" />
+              <TabButton id="status" label="Status" icon="fa-circle-check" isActive={communicationTab === 'status'} onClick={() => setCommunicationTab('status')} color="rose" />
             </div>
             <div className="min-h-[60vh]">
               {communicationTab === 'voice' && <VoiceRecorder onSendVoice={(b, d) => console.log('Voice recorded:', b, d)} />}
@@ -292,24 +297,17 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
           </div>
         )}
 
-        {/* Personalization Tool */}
+        {/* Personalization Tool — only Formatting remains; the
+            remaining tabs (Auto Rules, Notes, Modes, Sounds, Drafts)
+            were deleted as stubs. The shell stays so existing call
+            sites that open the personalization overlay don't break. */}
         {activeTool === 'personalization' && (
           <div className="p-4">
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              <TabButton id="rules" label="Auto Rules" icon="fa-robot" isActive={personalizationTab === 'rules'} onClick={() => setPersonalizationTab('rules')} color="bg-fuchsia-500" />
-              <TabButton id="formatting" label="Formatting" icon="fa-text-height" isActive={personalizationTab === 'formatting'} onClick={() => setPersonalizationTab('formatting')} color="bg-fuchsia-500" />
-              <TabButton id="notes" label="Contact Notes" icon="fa-note-sticky" isActive={personalizationTab === 'notes'} onClick={() => setPersonalizationTab('notes')} color="bg-fuchsia-500" />
-              <TabButton id="modes" label="Modes" icon="fa-toggle-on" isActive={personalizationTab === 'modes'} onClick={() => setPersonalizationTab('modes')} color="bg-fuchsia-500" />
-              <TabButton id="sounds" label="Sounds" icon="fa-volume-high" isActive={personalizationTab === 'sounds'} onClick={() => setPersonalizationTab('sounds')} color="bg-fuchsia-500" />
-              <TabButton id="drafts" label="Drafts" icon="fa-floppy-disk" isActive={personalizationTab === 'drafts'} onClick={() => setPersonalizationTab('drafts')} color="bg-fuchsia-500" />
+              <TabButton id="formatting" label="Formatting" icon="fa-text-height" isActive={personalizationTab === 'formatting'} onClick={() => setPersonalizationTab('formatting')} color="rose" />
             </div>
             <div className="min-h-[60vh]">
-              {personalizationTab === 'rules' && <AutoResponseRules onRuleCreate={(r) => console.log(r)} />}
-              {personalizationTab === 'formatting' && <FormattingToolbar onFormat={(t) => console.log(t)} />}
-              {personalizationTab === 'notes' && <ContactNotes contactId={otherUserId} />}
-              {personalizationTab === 'modes' && <ConversationModes onModeChange={(m) => console.log(m)} />}
-              {personalizationTab === 'sounds' && <NotificationSounds onSoundChange={(s) => console.log(s)} />}
-              {personalizationTab === 'drafts' && <DraftManager onLoadDraft={(d) => console.log(d)} onDeleteDraft={(id) => console.log(id)} />}
+              <FormattingToolbar onFormat={(t) => console.log(t)} />
             </div>
           </div>
         )}
@@ -318,12 +316,12 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
         {activeTool === 'security' && (
           <div className="p-4">
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              <TabButton id="encryption" label="Encryption" icon="fa-lock" isActive={securityTab === 'encryption'} onClick={() => setSecurityTab('encryption')} color="bg-emerald-500" />
-              <TabButton id="readtime" label="Read Time" icon="fa-hourglass-half" isActive={securityTab === 'readtime'} onClick={() => setSecurityTab('readtime')} color="bg-emerald-500" />
-              <TabButton id="versions" label="Versions" icon="fa-clock-rotate-left" isActive={securityTab === 'versions'} onClick={() => setSecurityTab('versions')} color="bg-emerald-500" />
-              <TabButton id="folders" label="Folders" icon="fa-folder-tree" isActive={securityTab === 'folders'} onClick={() => setSecurityTab('folders')} color="bg-emerald-500" />
-              <TabButton id="insights" label="Insights" icon="fa-chart-pie" isActive={securityTab === 'insights'} onClick={() => setSecurityTab('insights')} color="bg-emerald-500" />
-              <TabButton id="focus" label="Focus Timer" icon="fa-hourglass-start" isActive={securityTab === 'focus'} onClick={() => setSecurityTab('focus')} color="bg-emerald-500" />
+              <TabButton id="encryption" label="Encryption" icon="fa-lock" isActive={securityTab === 'encryption'} onClick={() => setSecurityTab('encryption')} color="rose" />
+              <TabButton id="readtime" label="Read Time" icon="fa-hourglass-half" isActive={securityTab === 'readtime'} onClick={() => setSecurityTab('readtime')} color="rose" />
+              <TabButton id="versions" label="Versions" icon="fa-clock-rotate-left" isActive={securityTab === 'versions'} onClick={() => setSecurityTab('versions')} color="rose" />
+              <TabButton id="folders" label="Folders" icon="fa-folder-tree" isActive={securityTab === 'folders'} onClick={() => setSecurityTab('folders')} color="rose" />
+              <TabButton id="insights" label="Insights" icon="fa-chart-pie" isActive={securityTab === 'insights'} onClick={() => setSecurityTab('insights')} color="rose" />
+              <TabButton id="focus" label="Focus Timer" icon="fa-hourglass-start" isActive={securityTab === 'focus'} onClick={() => setSecurityTab('focus')} color="rose" />
             </div>
             <div className="min-h-[60vh]">
               {securityTab === 'encryption' && <MessageEncryption onSettingsChange={(s) => console.log(s)} />}
@@ -340,17 +338,15 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
         {activeTool === 'mediaHub' && (
           <div className="p-4">
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              <TabButton id="translation" label="Translation" icon="fa-language" isActive={mediaHubTab === 'translation'} onClick={() => setMediaHubTab('translation')} color="bg-cyan-500" />
-              <TabButton id="export" label="Export" icon="fa-file-export" isActive={mediaHubTab === 'export'} onClick={() => setMediaHubTab('export')} color="bg-cyan-500" />
-              <TabButton id="templates" label="Templates" icon="fa-file-lines" isActive={mediaHubTab === 'templates'} onClick={() => setMediaHubTab('templates')} color="bg-cyan-500" />
-              <TabButton id="attachments" label="Attachments" icon="fa-paperclip" isActive={mediaHubTab === 'attachments'} onClick={() => setMediaHubTab('attachments')} color="bg-cyan-500" />
-              <TabButton id="backup" label="Backup" icon="fa-cloud-arrow-up" isActive={mediaHubTab === 'backup'} onClick={() => setMediaHubTab('backup')} color="bg-cyan-500" />
-              <TabButton id="suggestions" label="Suggestions" icon="fa-wand-magic-sparkles" isActive={mediaHubTab === 'suggestions'} onClick={() => setMediaHubTab('suggestions')} color="bg-cyan-500" />
+              <TabButton id="translation" label="Translation" icon="fa-language" isActive={mediaHubTab === 'translation'} onClick={() => setMediaHubTab('translation')} color="rose" />
+              <TabButton id="export" label="Export" icon="fa-file-export" isActive={mediaHubTab === 'export'} onClick={() => setMediaHubTab('export')} color="rose" />
+              <TabButton id="attachments" label="Attachments" icon="fa-paperclip" isActive={mediaHubTab === 'attachments'} onClick={() => setMediaHubTab('attachments')} color="rose" />
+              <TabButton id="backup" label="Backup" icon="fa-cloud-arrow-up" isActive={mediaHubTab === 'backup'} onClick={() => setMediaHubTab('backup')} color="rose" />
+              <TabButton id="suggestions" label="Suggestions" icon="fa-wand-magic-sparkles" isActive={mediaHubTab === 'suggestions'} onClick={() => setMediaHubTab('suggestions')} color="rose" />
             </div>
             <div className="min-h-[60vh]">
               {mediaHubTab === 'translation' && <TranslationHub onTranslate={(t, f, to) => console.log(t, f, to)} />}
               {mediaHubTab === 'export' && <AnalyticsExport onExportStart={(j) => console.log(j)} />}
-              {mediaHubTab === 'templates' && <TemplatesLibrary onTemplateSelect={(t) => console.log(t)} />}
               {mediaHubTab === 'attachments' && <AttachmentManager onAttachmentSelect={(a) => console.log(a)} />}
               {mediaHubTab === 'backup' && <BackupSync onBackupCreate={(b) => console.log(b)} />}
               {mediaHubTab === 'suggestions' && <SmartSuggestions onSuggestionSelect={(s) => console.log(s)} />}
@@ -360,13 +356,13 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
       </div>
 
       {/* Bottom action bar */}
-      <div className="border-t border-zinc-200 dark:border-zinc-800 px-4 py-3 bg-zinc-50 dark:bg-zinc-900">
+      <div className="border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] px-4 py-3 bg-white dark:bg-[rgba(255,255,255,0.03)]">
         <button
           onClick={onClose}
-          className={`w-full py-3 rounded-xl ${config.bgColor} text-white font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition shadow-lg`}
+          className="btn-brand-primary w-full"
         >
-          <Check />
-          Done - Return to Chat
+          <Check className="w-4 h-4" />
+          Done, return to chat
         </button>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { dataService } from '../../services/dataService';
 import { createGoogleCalendarEvent, getSessionUserSync } from '../../services/authService';
 import { googleCalendarService } from '../../services/googleCalendarService';
 
-import { CalendarCheck, ChevronLeft, ChevronRight, ExternalLink, Loader2, MapPin, Plus, Search, Trash2, Users, Video, X } from 'lucide-react';
+import { CalendarCheck, ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Loader2, MapPin, Plus, Search, Trash2, Users, Video, X } from 'lucide-react';
 
 interface ScheduledEvent {
   id: string;
@@ -34,6 +34,10 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([]);
   const [loadingGoogleEvents, setLoadingGoogleEvents] = useState(false);
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
+
+  // Month grid is hidden by default — today's schedule is the front door. The grid
+  // is one click away via the date chip. Frees ~280px of vertical real estate.
+  const [showFullCalendar, setShowFullCalendar] = useState(false);
 
   // Attendee search state
   const [attendeeSearch, setAttendeeSearch] = useState('');
@@ -91,8 +95,14 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
         setGoogleEvents(events);
       }
     } catch (error) {
-      // Only log error if not aborted
-      if (!signal?.aborted && error instanceof Error && error.name !== 'AbortError') {
+      // Only log error if not aborted, and skip the expected "not connected" case
+      // (session.connectedProviders.google can be stale after token revocation/sign-out)
+      if (
+        !signal?.aborted &&
+        error instanceof Error &&
+        error.name !== 'AbortError' &&
+        (error as { code?: string }).code !== 'GOOGLE_CALENDAR_NOT_CONNECTED'
+      ) {
         console.error('Failed to load Google Calendar events:', error);
       }
     } finally {
@@ -497,8 +507,28 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
         </div>
       )}
 
-      {/* Mini Calendar */}
-      <div className="mb-6">
+      {/* Compact date chip — toggles the month grid. Default-closed so the day's schedule is the front door. */}
+      <button
+        type="button"
+        onClick={() => setShowFullCalendar(v => !v)}
+        aria-expanded={showFullCalendar}
+        aria-controls="quick-scheduler-grid"
+        className="flex items-center justify-between w-full mb-4 px-3 py-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 transition-colors duration-150"
+      >
+        <span className="flex items-baseline gap-2">
+          <span className="pulse-label text-rose-600 dark:text-rose-400">TODAY</span>
+          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+            {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          </span>
+        </span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 transition-transform duration-200 widget-spring ${showFullCalendar ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {/* Mini Calendar — collapsible. */}
+      {showFullCalendar && (
+      <div id="quick-scheduler-grid" className="mb-6 animate-fade-in">
         {/* Month Navigation */}
         <div className="flex items-center justify-between mb-4 px-1">
           <button
@@ -584,6 +614,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
           })}
         </div>
       </div>
+      )}
 
       {/* Selected Day Events */}
       <div className="flex-1">

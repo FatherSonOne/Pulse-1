@@ -95,7 +95,10 @@ export const sendInvitationEmail = async (
   workspaceName: string = 'Pulse Team'
 ): Promise<InviteResult> => {
   const resendApiKey = import.meta.env.VITE_RESEND_API_KEY;
-  const appUrl = import.meta.env.VITE_APP_URL || 'https://pulse.logosvision.org';
+  // Invite emails go to external recipients — always use the public URL so
+  // links don't 404 against the sender's localhost. Mirrors the hardcoded
+  // appUrl in sendInvitationViaGmail below.
+  const appUrl = 'https://pulse.logosvision.org';
 
   // If no Resend API key, fall back to mailto link
   if (!resendApiKey) {
@@ -363,30 +366,6 @@ export const getSentInvitations = async (userId: string): Promise<TeamInvite[]> 
   } catch (error) {
     console.error('Get sent invitations error:', error);
     return [];
-  }
-};
-
-// Accept an invitation
-export const acceptInvitation = async (inviteToken: string, _userId: string): Promise<InviteResult> => {
-  try {
-    const { error } = await supabase
-      .from('workspace_invites')
-      .update({ accepted_at: new Date().toISOString() })
-      .eq('token', inviteToken)
-      .is('accepted_at', null);
-
-    if (error) throw error;
-
-    return {
-      success: true,
-      message: 'Invitation accepted successfully'
-    };
-  } catch (error: any) {
-    console.error('Accept invitation error:', error);
-    return {
-      success: false,
-      message: error.message || 'Failed to accept invitation'
-    };
   }
 };
 

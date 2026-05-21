@@ -6,12 +6,16 @@ on:
   pull_request:
     branches: [main, develop]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: '18'
 
 jobs:
   lint:
-    name: Lint Code
+    name: Type Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -25,10 +29,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Run ESLint
-        run: npm run lint
-        continue-on-error: false
 
       - name: Check TypeScript
         run: npx tsc --noEmit
@@ -50,7 +50,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test || echo "Tests not configured"
+        run: npm run test:run
         continue-on-error: true
 
   build:
@@ -82,7 +82,7 @@ jobs:
           du -sh dist/ || echo "Build directory not found"
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: dist/

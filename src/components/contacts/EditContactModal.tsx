@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Contact } from '../../types';
-import LocationEditModal from './map/LocationEditModal';
+import LocationEditModal from '../map/contacts/LocationEditModal';
 import toast from 'react-hot-toast';
 
 import { Check, Loader2, UserPen, X } from 'lucide-react';
@@ -12,6 +12,16 @@ interface EditContactModalProps {
   onSave: (contact: Contact) => Promise<void>;
 }
 
+const buildForm = (c: Contact | null) => ({
+  name: c?.name || '',
+  email: c?.email || '',
+  phone: c?.phone || '',
+  role: c?.role || '',
+  company: c?.company || '',
+  notes: c?.notes || '',
+  groups: c?.groups || [],
+});
+
 export const EditContactModal: React.FC<EditContactModalProps> = ({
   isOpen,
   contact,
@@ -20,35 +30,19 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
 }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [showLocationEdit, setShowLocationEdit] = useState(false);
+  // Lazy-init from contact so first paint already has correct values (no flash).
   const [localContact, setLocalContact] = useState<Contact | null>(contact);
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    role: '',
-    company: '',
-    notes: '',
-    groups: [] as string[],
-  });
+  const [form, setForm] = useState(() => buildForm(contact));
 
-  // Sync localContact when contact prop changes
-  useEffect(() => { setLocalContact(contact); }, [contact]);
-
-  // Sync form with contact when modal opens
+  // Single sync: re-hydrate state when the contact identity changes
+  // (re-opening with a different contact). Keyed on contact?.id, not the
+  // whole object, to avoid re-syncing on every parent re-render.
   useEffect(() => {
-    if (contact && isOpen) {
+    if (contact) {
       setLocalContact(contact);
-      setForm({
-        name: contact.name || '',
-        email: contact.email || '',
-        phone: contact.phone || '',
-        role: contact.role || '',
-        company: contact.company || '',
-        notes: contact.notes || '',
-        groups: contact.groups || [],
-      });
+      setForm(buildForm(contact));
     }
-  }, [contact, isOpen]);
+  }, [contact?.id]);
 
   const handleSubmit = async () => {
     if (!contact || !form.name.trim() || !form.email.trim()) return;

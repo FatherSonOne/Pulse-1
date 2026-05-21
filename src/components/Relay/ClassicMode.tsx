@@ -51,6 +51,7 @@ import { dataService } from '../../services/dataService';
 import { userContactService } from '../../services/userContactService';
 import { whisperService } from '../../services/relay/whisperService';
 import { audioEnhancementService } from '../../services/relay/audioEnhancementService';
+import { voxModeService } from '../../services/relay/voxModeService';
 import type { EnrichedUserProfile } from '../../types/userContact';
 import toast from 'react-hot-toast';
 import './ClassicMode.css';
@@ -89,6 +90,7 @@ import { getEmptyStateConfig } from './voxEmptyStates';
 import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
 import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 
 // ============================================
 // TYPES
@@ -130,6 +132,28 @@ interface Recording {
 // Quick reactions for Vox messages
 const QUICK_REACTIONS = ['❤️', '👍', '😂', '😮', '🔥', '👏'];
 
+// Deterministic bar-height pattern keyed off a recording id, so each message's
+// placeholder waveform stays stable across renders and looks unique per row.
+// Real peak extraction from the decoded AudioBuffer is a follow-up; this kills
+// the worst tell (Math.random per paint) at single-helper cost.
+function hashRecordingId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) {
+    h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return h;
+}
+
+function deterministicBarHeight(seed: number, index: number): number {
+  // Two-frequency superposition gives a believable "spoken word" envelope
+  // without looking sinusoidal. Output range stays in [30, 80] for the same
+  // visual presence the prior random version had.
+  const a = Math.sin((seed + index * 17) * 0.13);
+  const b = Math.cos((seed + index * 11) * 0.23);
+  const t = (a + b) / 2; // [-1, 1]
+  return 30 + ((t + 1) / 2) * 50; // [30, 80]
+}
+
 // Settings interface
 interface ClassicModeSettings {
   audioQuality: 'standard' | 'high' | 'ultra';
@@ -170,6 +194,22 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [playingId, setPlayingId] = useState<string | null>(null);
+
+  // Safety net: ensure `quick_vox_status.is_recording` clears if the tab is
+  // closed or this view unmounts mid-recording. The hook-based modes get this
+  // via useVoxRecording; ClassicMode owns its own MediaRecorder, so it owns
+  // its own cleanup too.
+  useEffect(() => {
+    if (!isRecording) return;
+    const flipFalse = () => voxModeService.updateQuickVoxStatus(false).catch(() => {});
+    window.addEventListener('pagehide', flipFalse);
+    window.addEventListener('beforeunload', flipFalse);
+    return () => {
+      window.removeEventListener('pagehide', flipFalse);
+      window.removeEventListener('beforeunload', flipFalse);
+      flipFalse();
+    };
+  }, [isRecording]);
   const [showNewVoxModal, setShowNewVoxModal] = useState(false);
   const [pendingRecording, setPendingRecording] = useState<{
     blob: Blob;
@@ -547,22 +587,18 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               } else {
                 // Fallback to Gemini if Whisper not configured
                 toast.loading('Transcribing...', { id: 'transcribe' });
-                if (apiKey) {
-                  const base64 = await blobToBase64(blob);
-                  const transcriptText = await transcribeMedia(apiKey, base64, 'audio/webm');
-                  setTranscript(transcriptText || '');
-                }
+                const base64 = await blobToBase64(blob);
+                const transcriptText = await transcribeMedia(base64, 'audio/webm');
+                setTranscript(transcriptText || '');
                 toast.success('Transcribed', { id: 'transcribe' });
               }
             } else {
               // Use Gemini
-              if (apiKey) {
-                toast.loading('Transcribing with Gemini...', { id: 'transcribe' });
-                const base64 = await blobToBase64(blob);
-                const transcriptText = await transcribeMedia(apiKey, base64, 'audio/webm');
-                setTranscript(transcriptText || '');
-                toast.success('Transcribed', { id: 'transcribe' });
-              }
+              toast.loading('Transcribing with Gemini...', { id: 'transcribe' });
+              const base64 = await blobToBase64(blob);
+              const transcriptText = await transcribeMedia(base64, 'audio/webm');
+              setTranscript(transcriptText || '');
+              toast.success('Transcribed', { id: 'transcribe' });
             }
           } catch (e) {
             console.error('Transcription error:', e);
@@ -575,6 +611,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       startTimeRef.current = Date.now();
       mediaRecorderRef.current.start(100);
       setIsRecording(true);
+      voxModeService.updateQuickVoxStatus(true).catch(() => {});
 
       // Update duration timer
       timerRef.current = setInterval(() => {
@@ -603,6 +640,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       setIsRecording(false);
       setRecordingDuration(0);
       setAudioLevel(0);
+      voxModeService.updateQuickVoxStatus(false).catch(() => {});
     }
   }, [isRecording]);
 
@@ -1243,6 +1281,16 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                   }}
                 />
               ) : (
+                // TODO(impeccable phase 3 task 6 — RelayVoiceMessage migration):
+                // Migrate this Direct bubble to <RelayVoiceMessage /> from
+                // `./RelayVoiceMessage`. Surface slots needed:
+                // replyToContext (already supported), plus pending API
+                // additions: onReply, onReact + reaction picker state,
+                // selectionCheckbox, statusIndicator (delivered/read),
+                // reactionsDisplay, chapterButton, per-message
+                // PlaybackSpeedControl. Do this after the surface-migration
+                // API gap noted at the top of RelayVoiceMessage.tsx is
+                // filled. Migrate Direct first per the original plan.
                 activeThreadRecordings.map(recording => (
                   <div
                     key={recording.id}
@@ -1272,12 +1320,12 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                           }}
                           className={`absolute top-3 ${recording.sender === 'me' ? 'left-3' : 'right-3'} w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
                             isSelected(recording.id)
-                              ? 'bg-orange-500 border-2 border-orange-600'
+                              ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
                               : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
                           }`}
                           style={{
                             boxShadow: isSelected(recording.id)
-                              ? '0 4px 12px rgba(249, 115, 22, 0.4)'
+                              ? '0 4px 12px rgba(244, 63, 94, 0.4)'
                               : '0 2px 8px rgba(0, 0, 0, 0.2)',
                           }}
                         >
@@ -1323,21 +1371,29 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                         )}
                       </button>
 
-                      {/* Waveform placeholder */}
-                      <div className="classic-waveform">
-                        <div className="classic-waveform-bars">
-                          {[...Array(24)].map((_, i) => (
-                            <div
-                              key={i}
-                              className="classic-waveform-bar"
-                              style={{
-                                height: `${30 + Math.random() * 50}%`,
-                                opacity: playingId === recording.id ? 1 : 0.5,
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </div>
+                      {/* Waveform placeholder — deterministic per-recording
+                          peaks (was Math.random() per render, which re-shuffled
+                          on every paint). Real peak extraction from the decoded
+                          AudioBuffer is a follow-up. */}
+                      {(() => {
+                        const seed = hashRecordingId(recording.id);
+                        return (
+                          <div className="classic-waveform">
+                            <div className="classic-waveform-bars">
+                              {[...Array(24)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="classic-waveform-bar"
+                                  style={{
+                                    height: `${deterministicBarHeight(seed, i)}%`,
+                                    opacity: playingId === recording.id ? 1 : 0.5,
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {/* Phase 6: Playback Speed Control */}
                       <PlaybackSpeedControl
@@ -1441,9 +1497,13 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       </div>
                     )}
 
-                    {/* Transcription */}
+                    {/* Transcription — provenance chip makes the machine-generated
+                        block legible as an AI artifact, not the sender's typed text. */}
                     {recording.transcription && (
                       <div className="classic-transcription">
+                        <div className="mb-1.5">
+                          <AIProvenanceChip vendor="PULSE AI" type="TRANSCRIPT" />
+                        </div>
                         <p>{recording.transcription}</p>
                       </div>
                     )}
@@ -1453,7 +1513,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       <button
                         type="button"
                         onClick={() => handleGenerateChapters(recording)}
-                        className="text-xs text-cyan-600 dark:text-cyan-400 hover:underline mt-1 flex items-center gap-1"
+                        className="text-xs text-[#e11d48] dark:text-[#fb7185] hover:underline mt-1 flex items-center gap-1"
                         title="Generate AI chapter markers for this message"
                       >
                         <List className="w-3 h-3" />
@@ -1521,24 +1581,20 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
             </div>
           </>
         ) : (
-          /* Empty State */
-          <div className="classic-empty-state">
-            <div className="classic-empty-icon">
-              <div className="classic-empty-rings">
-                <div className="ring ring-1" />
-                <div className="ring ring-2" />
-                <div className="ring ring-3" />
+          /* Empty state — quieter pattern matching VoiceRooms / Notes. The
+              walkie-talkie SVG + concentric rings were category-reflex
+              decoration ("voice → walkie-talkie"); a single Radio glyph
+              carries the same meaning without the AI-slop tell. */
+          <div className="flex-1 flex items-center justify-center px-6">
+            <div className="text-center max-w-sm">
+              <div className="w-20 h-20 rounded-full bg-white/[0.03] border border-[rgba(255,255,255,0.06)] flex items-center justify-center mx-auto mb-5">
+                <Radio className="w-8 h-8 text-zinc-500" />
               </div>
-              <div className="classic-walkie">
-                <div className="walkie-antenna" />
-                <div className="walkie-body">
-                  <div className="walkie-speaker" />
-                  <div className="walkie-indicator" />
-                </div>
-              </div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-2">DIRECT</p>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Pick a contact, or start a new conversation to record.
+              </p>
             </div>
-            <h2>Ready to record</h2>
-            <p>Select a contact or start a new conversation</p>
           </div>
         )}
       </main>
@@ -1715,7 +1771,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                 setActiveChapters([]);
                 setChapterRecordingId(null);
               }}
-              className="absolute -top-2 -right-2 z-10 w-8 h-8 rounded-full bg-cyan-500 text-white hover:bg-cyan-600 transition flex items-center justify-center shadow-lg"
+              className="absolute -top-2 -right-2 z-10 w-8 h-8 rounded-full bg-[#f43f5e] text-white hover:bg-[#e11d48] transition flex items-center justify-center shadow-lg"
               title="Close chapters"
             >
               <X className="w-4 h-4" />

@@ -1,7 +1,8 @@
-import { AppView, User, Contact, CalendarEvent, Thread, ArchiveItem } from "../types";
-import { DecisionWithVotes } from "./decisionService";
-import { Task } from "./taskService";
-import { CachedEmail } from "./emailSyncService";
+import { AppView } from "../types";
+import type { User, Contact, CalendarEvent, Thread, ArchiveItem } from "../types";
+import type { DecisionWithVotes } from "./decisionService";
+import type { Task } from "./taskService";
+import type { CachedEmail } from "./emailSyncService";
 import { invokeAI } from "./ai/aiService";
 import { getCurrentWorkspaceId } from "./ai/getWorkspaceId";
 
@@ -45,7 +46,7 @@ The left sidebar groups sections into five categories. Use these exact labels wh
 
 ### Experimental (collapsed by default in the sidebar)
 
-- **Pulse Chat.** Voice-first AI chat using Gemini Live. Bidirectional realtime voice with optional camera input, audio visualizers, auto-transcription, and session logging to Archives.
+- **Summit.** Voice-first 1-on-1 AI session for debriefs and prep. Multi-turn voice with the OpenAI Realtime model, structured artifact capture (decisions, tasks, references, open questions), and exports to Markdown, War Room, or Decisions & Tasks.
 
 ### Footer (always visible)
 
@@ -271,9 +272,11 @@ export const SECTION_LABELS: Partial<Record<AppView, string>> = {
   [AppView.SETTINGS]: 'Settings',
   [AppView.MULTI_MODAL]: 'Search',
   [AppView.USERS_GUIDE]: 'User Guide',
-  [AppView.LIVE]: 'Pulse Chat',
-  [AppView.CONTACT_MAP]: 'Contacts',
-  [AppView.TEST_MATRIX]: 'Test Matrix',
+  [AppView.LIVE]: 'Summit',
+  [AppView.MAP]: 'Map',
+  // Legacy alias — kept so existing analytics + deep-links resolve. The
+  // canonical section is AppView.MAP; CONTACT_MAP redirects to it in App.tsx.
+  [AppView.CONTACT_MAP]: 'Map',
   [AppView.MESSAGE_ANALYTICS]: 'Message Analytics',
 };
 
@@ -455,6 +458,25 @@ const SECTION_SUGGESTED_ACTIONS: Partial<Record<AppView, SuggestedAction[]>> = {
   ],
 };
 
+// ─── Section data map (drives section-aware navigation hints) ────────────────
+// Maps each AppView to the topics it holds live data for. Used by the system
+// prompt so the AI can tell the user "this is in the Messages section — open it
+// here" with an inline navigation link instead of bluffing or refusing.
+const SECTION_DATA_TOPICS: Partial<Record<AppView, string[]>> = {
+  [AppView.DASHBOARD]: ['decisions', 'tasks', 'recent threads (top 8)', 'recent emails (top 5) + unread count', "today's calendar"],
+  [AppView.DECISIONS_TASKS]: ['decisions', 'tasks'],
+  [AppView.MESSAGES]: ['message threads', 'conversations', 'unread messages', 'pinned threads'],
+  [AppView.EMAIL]: ['email inbox', 'unread email count', 'email subjects/senders/snippets'],
+  [AppView.CALENDAR]: ["today's events", 'upcoming events (7 days)'],
+  [AppView.MEETINGS]: ["today's meetings", 'upcoming meetings'],
+  [AppView.CONTACTS]: ['contacts', 'contact details (name, email, company, last seen)'],
+  [AppView.RELAY]: ['Relay voice recordings'],
+  [AppView.ANALYTICS]: ['productivity metrics (tasks completed, response time, meetings)'],
+  [AppView.SETTINGS]: ['workspace info', 'plan', 'members', 'teams', 'theme', 'AI model', 'integrations'],
+  [AppView.MULTI_MODAL]: ['recent searches', 'saved searches'],
+  [AppView.ARCHIVES]: ['archived items'],
+};
+
 // ─── System instruction builder (pure, testable) ─────────────────────────────
 
 function buildSystemInstruction(context: AssistantContext): string {
@@ -611,6 +633,20 @@ function buildSystemInstruction(context: AssistantContext): string {
     contextBlocks.push('(No data loaded for this section yet.)');
   }
 
+  // ─── Section-awareness block ──────────────────────────────────────────────
+  // Tell the AI exactly which topics this section's loaded data covers, and
+  // where to send the user for topics it doesn't have. The AI emits inline
+  // navigation links of the form `[Open Messages](pulse://section/MESSAGES)`
+  // which the chat renderer turns into one-click section switches.
+  const currentTopics = SECTION_DATA_TOPICS[context.section] ?? [];
+  const otherSectionLines = Object.entries(SECTION_DATA_TOPICS)
+    .filter(([view]) => view !== context.section)
+    .map(([view, topics]) => {
+      const label = SECTION_LABELS[view as AppView] ?? view;
+      return `- **${label}** (link: pulse://section/${view}) → ${(topics as string[]).join(', ')}`;
+    })
+    .join('\n');
+
   return `You are Pulse AI, an intelligent assistant embedded in the Pulse productivity app.
 
 ${PULSE_APP_KNOWLEDGE}
@@ -621,6 +657,21 @@ CURRENT CONTEXT:
 - Current section: ${sectionLabel}
 - User: ${context.user.name}
 - Today's date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+
+SECTION-AWARE DATA SCOPE:
+You are section-aware. You only have live data for the user's CURRENT section.
+
+This section (${sectionLabel}) gives you live data for: ${currentTopics.length > 0 ? currentTopics.join(', ') : 'general guidance only — no live data loaded'}.
+
+Other sections hold data you do NOT currently have access to:
+${otherSectionLines}
+
+WHEN THE USER ASKS ABOUT DATA YOU DON'T HAVE:
+If the user asks something that requires data from a different section (e.g. asking "who messaged me last?" while in Email, or "what's on my calendar?" while in Messages), DO NOT bluff and DO NOT refuse generically. Instead:
+1. Briefly say which section holds that data — one short sentence.
+2. Provide an inline markdown link to switch sections, using EXACTLY this format: \`[Open <Section Name>](pulse://section/<APPVIEW>)\`. Example: \`[Open Messages](pulse://section/MESSAGES)\`. The link will switch the user to that section in one click.
+3. Optionally add: "Ask me again from there and I'll have the live data."
+Do NOT use the pulse://section/ link format for anything else — only for these cross-section navigation hints.
 
 ${hasRealData
   ? `CRITICAL INSTRUCTION: You have been given the user's REAL, LIVE data from their ${sectionLabel} section. You MUST:

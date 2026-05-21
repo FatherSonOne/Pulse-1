@@ -32,9 +32,7 @@ export const VoxKeyboardShortcutsHelp: React.FC<VoxKeyboardShortcutsHelpProps> =
       <div
         className="relative max-w-2xl w-full rounded-2xl shadow-2xl overflow-hidden"
         style={{
-          background: isDarkMode
-            ? 'linear-gradient(135deg, #1f2937 0%, #111827 100%)'
-            : 'linear-gradient(135deg, #fafafa 0%, #f9fafb 100%)',
+          background: isDarkMode ? '#0a0a0a' : '#ffffff',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -42,7 +40,7 @@ export const VoxKeyboardShortcutsHelp: React.FC<VoxKeyboardShortcutsHelpProps> =
         <div
           className="px-6 py-5 border-b"
           style={{
-            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+            borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)',
           }}
         >
           <div className="flex items-center justify-between">
@@ -50,7 +48,7 @@ export const VoxKeyboardShortcutsHelp: React.FC<VoxKeyboardShortcutsHelpProps> =
               <div
                 className="p-2 rounded-xl"
                 style={{
-                  background: isDarkMode ? '#374151' : '#e5e7eb',
+                  background: 'rgba(244,63,94,0.10)',
                   color: '#f43f5e',
                 }}
               >

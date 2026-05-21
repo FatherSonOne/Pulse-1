@@ -105,7 +105,7 @@ Requirements:
 
       setProgress(30);
 
-      const response = await processWithModel(apiKey, prompt);
+      const response = await processWithModel(prompt);
       setProgress(80);
 
       if (!response) {
