@@ -174,7 +174,7 @@ export function FindTeammatesSheet({ isOpen, onClose, workspaceId, onAdd }: Prop
                       <AvatarFallback name={user.display_name} />
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold truncate" style={{ color: 'var(--pulse-ink)' }}>{user.display_name ?? 'Unnamed'}</div>
+                      <div className="text-sm font-semibold truncate" style={{ color: 'var(--pulse-ink)' }}>{user.display_name ?? 'Pulse User'}</div>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {user.handle && (
                           <span className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>@{user.handle}</span>
@@ -215,7 +215,7 @@ export function FindTeammatesSheet({ isOpen, onClose, workspaceId, onAdd }: Prop
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--pulse-ink)' }}>Your workspace is just you, for now.</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--pulse-ink-2)' }}>Nobody else has joined this workspace yet. Invite someone and they'll appear here automatically.</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--pulse-ink-2)' }}>Nobody else has joined yet. Invite someone and they'll show up here.</p>
               </div>
               <button
                 type="button"
@@ -234,7 +234,7 @@ export function FindTeammatesSheet({ isOpen, onClose, workspaceId, onAdd }: Prop
                 <Lock className="w-6 h-6" style={{ color: 'var(--pulse-tone-neutral)' }} aria-hidden="true" />
               </div>
               <div>
-                <p className="text-sm font-semibold" style={{ color: 'var(--pulse-ink)' }}>You don't have access to this workspace's member list.</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--pulse-ink)' }}>You can't see this workspace's members.</p>
                 <p className="text-xs mt-1" style={{ color: 'var(--pulse-ink-2)' }}>Contact your workspace admin.</p>
               </div>
             </div>

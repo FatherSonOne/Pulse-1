@@ -1732,7 +1732,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold">Find teammates on Pulse</div>
                   <div className="text-xs mt-0.5" style={{ color: 'var(--pulse-ink-3)' }}>
-                    Surface people in your workspace already on Pulse.
+                    See who's already here. Add them in one tap.
                   </div>
                 </div>
               </button>
