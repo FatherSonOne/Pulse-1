@@ -349,11 +349,12 @@
   <a href="#branches"><span class="n">03</span>Branches</a>
   <a href="#pr-cycle"><span class="n">04</span>The PR cycle</a>
   <a href="#pulse-tools"><span class="n">05</span>Pulse slash commands</a>
-  <a href="#parallel"><span class="n">06</span>Parallel work</a>
-  <a href="#sync"><span class="n">07</span>Syncing sessions</a>
-  <a href="#recovery"><span class="n">08</span>Recovery</a>
-  <a href="#ide"><span class="n">09</span>In your IDE</a>
-  <a href="#reference"><span class="n">10</span>Reference card</a>
+  <a href="#daily-ritual"><span class="n">06</span>Your daily ritual</a>
+  <a href="#parallel"><span class="n">07</span>Parallel work</a>
+  <a href="#sync"><span class="n">08</span>Syncing sessions</a>
+  <a href="#recovery"><span class="n">09</span>Recovery</a>
+  <a href="#ide"><span class="n">10</span>In your IDE</a>
+  <a href="#reference"><span class="n">11</span>Reference card</a>
 </nav>
 
 <!-- ─── 1. MENTAL MODEL ──────────────────────────────── -->
@@ -775,8 +776,149 @@
   </p>
 </div>
 
-<!-- ─── 6. PARALLEL ──────────────────────────────────── -->
-<h2 id="parallel">06 — Parallel work (when you need it)</h2>
+<!-- ─── 6. DAILY RITUAL ──────────────────────────────── -->
+<h2 id="daily-ritual">06 — Your daily ritual</h2>
+<p class="lead">
+  If you only memorize one workflow from this whole doc, memorize this one.
+</p>
+<p>
+  The recommended ritual is <strong>one worktree per Claude session, always</strong> — even if you only ever start one session that day. The cost is a folder of <code>node_modules</code>; the benefit is that you stop making decisions like <em>"do I need a worktree this time?"</em> and you never lose work to a branch swap again. Same gesture every time. <code>f:\pulse1\</code> becomes your read-only reference window into <code>main</code>; all work happens in sibling folders.
+</p>
+
+<div class="diagram">
+  <svg viewBox="0 0 720 660" width="720" height="660" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrDR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="var(--coral)" />
+      </marker>
+      <marker id="arrDRpos" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="var(--positive)" />
+      </marker>
+    </defs>
+
+    <!-- Stage 0: Day start -->
+    <rect x="60" y="20" width="600" height="42" rx="8" fill="var(--surface-2)" stroke="var(--border)" />
+    <text class="commit-label" x="360" y="40" text-anchor="middle">DAY START</text>
+    <text class="commit-label muted" x="360" y="56" text-anchor="middle" font-size="10">open VSCode at your saved multi-root workspace (pulse1 is the read-only reference window)</text>
+
+    <line stroke="var(--coral)" stroke-width="2" x1="360" y1="62" x2="360" y2="86" marker-end="url(#arrDR)" />
+
+    <!-- Stage 1: Spawn session -->
+    <rect x="60" y="90" width="600" height="64" rx="8" fill="var(--coral-soft)" stroke="var(--coral)" />
+    <text class="commit-label" x="80" y="110" style="fill:var(--coral)">1 · SPAWN A SESSION</text>
+    <text class="commit-label muted" x="80" y="128" font-size="10">double-click start-session.cmd · type a slug (e.g. "fix-radio-bug")</text>
+    <text class="commit-label muted" x="80" y="144" font-size="10">→ creates ..\pulse1-&lt;slug&gt;\ on feat/&lt;slug&gt; off origin/main</text>
+    <text class="commit-label muted" x="640" y="124" text-anchor="end" font-size="9" style="fill:var(--coral)">repeat per parallel</text>
+    <text class="commit-label muted" x="640" y="138" text-anchor="end" font-size="9">session you start</text>
+
+    <line stroke="var(--coral)" stroke-width="2" x1="360" y1="154" x2="360" y2="178" marker-end="url(#arrDR)" />
+
+    <!-- Stage 2: Attach + work -->
+    <rect x="60" y="182" width="600" height="64" rx="8" fill="var(--surface-2)" stroke="var(--border)" />
+    <text class="commit-label" x="80" y="202">2 · ATTACH TO VSCODE + WORK</text>
+    <text class="commit-label muted" x="80" y="220" font-size="10">File → Add Folder to Workspace → pick the new folder</text>
+    <text class="commit-label muted" x="80" y="236" font-size="10">open a Claude tab there · do the work · commit small + often</text>
+
+    <line stroke="var(--coral)" stroke-width="2" x1="360" y1="246" x2="360" y2="270" marker-end="url(#arrDR)" />
+
+    <!-- Stage 3: Ship first PR -->
+    <rect x="60" y="274" width="600" height="64" rx="8" fill="var(--positive-soft)" stroke="var(--positive)" />
+    <text class="commit-label" x="80" y="294" style="fill:var(--positive)">3 · SHIP THE FIRST PR</text>
+    <text class="commit-label muted" x="80" y="312" font-size="10">in that session: /git-commit-merge</text>
+    <text class="commit-label muted" x="80" y="328" font-size="10">→ commit → sync main → push → PR → human merge → tear down worktree</text>
+
+    <line stroke="var(--coral)" stroke-width="2" x1="360" y1="338" x2="360" y2="362" marker-end="url(#arrDR)" />
+
+    <!-- Decision diamond: more worktrees to ship? -->
+    <polygon points="360,366 460,406 360,446 260,406" fill="var(--surface)" stroke="var(--info)" stroke-width="2" />
+    <text class="commit-label" x="360" y="402" text-anchor="middle" font-size="10">Another worktree</text>
+    <text class="commit-label" x="360" y="416" text-anchor="middle" font-size="10">left to ship?</text>
+
+    <!-- NO branch (left, to "Done" pill) -->
+    <line stroke="var(--positive)" stroke-width="2" x1="260" y1="406" x2="118" y2="406" marker-end="url(#arrDRpos)" />
+    <rect x="40" y="394" width="74" height="24" rx="12" fill="var(--positive-soft)" stroke="var(--positive)" />
+    <text class="commit-label" x="77" y="410" text-anchor="middle" font-size="11" style="fill:var(--positive)">✓ DONE</text>
+    <text class="commit-label muted" x="190" y="400" text-anchor="middle" font-size="9" style="fill:var(--positive)">NO</text>
+
+    <!-- YES branch (right then down) -->
+    <line stroke="var(--coral)" stroke-width="2" x1="460" y1="406" x2="610" y2="406" />
+    <line stroke="var(--coral)" stroke-width="2" x1="610" y1="406" x2="610" y2="470" />
+    <line stroke="var(--coral)" stroke-width="2" x1="610" y1="470" x2="362" y2="470" marker-end="url(#arrDR)" />
+    <text class="commit-label muted" x="538" y="400" text-anchor="middle" font-size="9" style="fill:var(--coral)">YES</text>
+
+    <!-- Stage 4: /git-main-check -->
+    <rect x="60" y="474" width="600" height="64" rx="8" fill="var(--warning-soft)" stroke="var(--warning)" />
+    <text class="commit-label" x="80" y="494" style="fill:var(--warning)">4 · CHECK BEFORE THE NEXT SHIP</text>
+    <text class="commit-label muted" x="80" y="512" font-size="10">in the next session: /git-main-check  (dry-run, no side effects)</text>
+    <text class="commit-label muted" x="80" y="528" font-size="10">→ ✓ SAFE: skip to step 6   |   ⚠ CONFLICTS: do step 5 first</text>
+
+    <line stroke="var(--coral)" stroke-width="2" x1="360" y1="538" x2="360" y2="562" marker-end="url(#arrDR)" />
+
+    <!-- Stage 5: conflict resolution -->
+    <rect x="60" y="566" width="600" height="64" rx="8" fill="var(--surface-2)" stroke="var(--border)" />
+    <text class="commit-label" x="80" y="586">5 · RESOLVE CONFLICTS (only if step 4 said ⚠)</text>
+    <text class="commit-label muted" x="80" y="604" font-size="10">git merge origin/main · resolve in your editor · git add · git commit</text>
+    <text class="commit-label muted" x="80" y="620" font-size="10">then continue to step 6 with a clean, pre-resolved branch</text>
+
+    <!-- Stage 6 marker as text -->
+    <text class="commit-label" x="40" y="652" font-size="11" style="fill:var(--positive)">6 · /git-commit-merge → ✓ DONE  (loop back to step 4 if more worktrees remain)</text>
+  </svg>
+  <div class="diagram-caption">The whole arc — from day start to multiple PRs merged — in six steps. Repeat step 1 for every parallel session you spawn; loop back to step 4 for every additional worktree you ship.</div>
+</div>
+
+<h3>The one-session day</h3>
+<p>
+  Most days are this:
+</p>
+<ol class="steps">
+  <li><strong>start-session.cmd</strong> — type a slug, e.g. <code>fix-broken-link</code></li>
+  <li><strong>File → Add Folder to Workspace</strong> — pick <code>..\pulse1-fix-broken-link\</code></li>
+  <li><strong>Work</strong> in Claude inside that folder</li>
+  <li><strong>/git-commit-merge</strong> — answer each pause, click Merge on GitHub when prompted, reply <code>merged</code></li>
+  <li><strong>Done.</strong> Worktree gone, branch deleted, you're back to a clean state</li>
+</ol>
+
+<h3>The multi-session day (two or more worktrees)</h3>
+<p>
+  Same start, then a twist at ship time:
+</p>
+<ol class="steps">
+  <li><strong>Spawn Session A:</strong> <code>start-session.cmd</code> → slug <code>feature-a</code>. Add to workspace.</li>
+  <li><strong>Spawn Session B</strong> (any time later): <code>start-session.cmd</code> → slug <code>feature-b</code>. Add to workspace. Each lives in its own folder; they can't touch each other's working tree.</li>
+  <li><strong>Work in both</strong>, sometimes simultaneously, sometimes alternating. Push commits often so the other session can see them.</li>
+  <li><strong>Ship whichever finishes first</strong> with <code>/git-commit-merge</code>. PR goes through normally. Main now has Session A.</li>
+  <li><strong>Before shipping Session B,</strong> run <strong><code>/git-main-check</code></strong> first. Three outcomes:
+    <ul>
+      <li><strong>✓ Already in sync</strong> — Session A's PR didn't change anything B needs. Just run <code>/git-commit-merge</code>.</li>
+      <li><strong>✓ Safe to merge</strong> — main has new commits, but they don't conflict with B. Reply <code>merge now</code> to absorb them, then <code>/git-commit-merge</code>.</li>
+      <li><strong>⚠ Conflicts detected</strong> — A's PR touched files B also changed. Run <code>git merge origin/main</code> manually, resolve in your editor (VSCode shows inline Accept Current / Accept Incoming buttons), <code>git add</code> the resolved files, <code>git commit</code> to finish the merge. Then <code>/git-commit-merge</code> ships a clean, pre-resolved branch.</li>
+    </ul>
+  </li>
+  <li><strong>Loop step 5</strong> for every additional worktree. The newest one always runs <code>/git-main-check</code> before shipping.</li>
+</ol>
+
+<div class="callout do">
+  <span class="label">Why conflicts resolved THIS way never bite</span>
+  <p>
+    GitHub's conflict UI is a text box with no syntax highlighting and no dev server. Resolving in your editor — with VSCode's three-way merge view + your running dev server — means you can <em>see</em> whether the resolution is correct before pushing. <code>/git-main-check</code> just tells you in advance whether you're walking into that situation.
+  </p>
+</div>
+
+<h3>TL;DR — the only commands you need</h3>
+<div class="cmd"><span class="prompt">PS&gt;</span> .\start-session.cmd                <span class="comment"># begin every session</span>
+<span class="comment"># work in the new folder ...</span>
+<span class="prompt">/</span>git-main-check                          <span class="comment"># before shipping a 2nd / 3rd / Nth PR</span>
+<span class="prompt">/</span>git-commit-merge                        <span class="comment"># ship — handles commit, sync, push, PR, tear-down</span></div>
+
+<div class="callout tip">
+  <span class="label">Cleanup is automatic</span>
+  <p>
+    <code>/git-commit-merge</code>'s step 7 removes the worktree and deletes the merged branch — but only after <code>gh pr view --json state</code> confirms the PR is actually <code>MERGED</code>. You don't have to remember any manual <code>git worktree remove</code> or <code>git branch -d</code>; it does both, in the right order, in the main <code>f:\pulse1\</code> worktree.
+  </p>
+</div>
+
+<!-- ─── 7. PARALLEL ──────────────────────────────────── -->
+<h2 id="parallel">07 — Parallel work (when you need it)</h2>
 <p>
   By default in Pulse, <strong>one Claude session at a time per working tree.</strong> This was locked in <code>CLAUDE.md</code> § 1 after three lost-work incidents in May 2026, all caused by two sessions both calling <code>git checkout</code> in <code>f:/pulse1/</code>.
 </p>
@@ -915,8 +1057,8 @@
   </p>
 </div>
 
-<!-- ─── 7. SYNC ──────────────────────────────────────── -->
-<h2 id="sync">07 — Syncing across parallel sessions</h2>
+<!-- ─── 8. SYNC ──────────────────────────────────────── -->
+<h2 id="sync">08 — Syncing across parallel sessions</h2>
 <p>
   Once two worktrees are running, you'll inevitably hit one of these: <em>"Session A just fixed something Session B needs"</em>, or <em>"Sessions A and B are both touching the same area."</em> Worktrees don't prevent this — they make it visible. The mechanics are the same three primitives git always gives you: <code>fetch</code>, <code>merge</code>, and <code>cherry-pick</code>.
 </p>
@@ -1062,8 +1204,8 @@
   </p>
 </div>
 
-<!-- ─── 8. RECOVERY ──────────────────────────────────── -->
-<h2 id="recovery">08 — Recovery (when things go wrong)</h2>
+<!-- ─── 9. RECOVERY ──────────────────────────────────── -->
+<h2 id="recovery">09 — Recovery (when things go wrong)</h2>
 <p>
   Almost nothing in git is permanently lost. Commits live forever (until garbage collection, which takes weeks); branches are just labels you can recreate; even "deleted" branches stay around in the reflog. <strong>Always diagnose before recovering.</strong>
 </p>
@@ -1138,8 +1280,8 @@
   </p>
 </div>
 
-<!-- ─── 9. IDE ──────────────────────────────────────── -->
-<h2 id="ide">09 — Working with Git in your IDE (Cursor / VS Code)</h2>
+<!-- ─── 10. IDE ──────────────────────────────────────── -->
+<h2 id="ide">10 — Working with Git in your IDE (Cursor / VS Code)</h2>
 <p>
   Everything in this guide works from the terminal. But your IDE has a built-in view of the same information, and once you can read it, you'll catch problems before they become incidents. Cursor and VS Code share the same Source Control panel — the keyboard shortcut and the UI are identical.
 </p>
@@ -1451,8 +1593,8 @@
 </div>
 
 
-<!-- ─── 10. REFERENCE ────────────────────────────────── -->
-<h2 id="reference">10 — Reference card</h2>
+<!-- ─── 11. REFERENCE ────────────────────────────────── -->
+<h2 id="reference">11 — Reference card</h2>
 
 <h3>Pulse loop (the four commands)</h3>
 <div class="cmd"><span class="prompt">/</span>task-start feat/&lt;slug&gt;                       <span class="comment"># 1. start fresh</span>
