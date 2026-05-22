@@ -227,9 +227,14 @@ const ConversationItem: React.FC<{
           </span>
         )}
         {hasSummary && (
-          <span className="gl-ai-chip gl-tc-ai-chip">Claude</span>
+          // Muted in triage rows: the summary IS the AI signal — a coral chip
+          // here just doubles the attention hit and busts the row's coral
+          // budget. Provenance stays via the leading-dot pattern + label.
+          <span className="gl-ai-chip muted gl-tc-ai-chip">Claude</span>
         )}
         {processing && !hasSummary && (
+          // Pending state stays loud: this is signaling active work in
+          // progress, which IS earned attention.
           <span className="gl-ai-chip pending gl-tc-ai-chip">Transcribing</span>
         )}
         {/* Absence of action items is inferred from absence of pill — no need
@@ -239,7 +244,7 @@ const ConversationItem: React.FC<{
       <div className="gl-tc-duration">
         {conversation.lastMessageDuration
           ? formatDuration(conversation.lastMessageDuration)
-          : '—'}
+          : '·'}
       </div>
 
       <div className="gl-tc-when">
@@ -402,13 +407,18 @@ const MessageBubble: React.FC<{
 
       {/* Summary block — the headline. Provenance chip celebrates AI success;
           processing shows a soft pending state; failure demotes to a ghost row
-          so a broken AI doesn't dominate the card. */}
+          so a broken AI doesn't dominate the card. Caption now lives INSIDE
+          the summary block (when both exist) so the card has one content
+          spine instead of two parallel paragraphs. */}
       {(hasSummary || isProcessing) && (
         <div className="gl-summary">
           {hasSummary && (
             <>
               <span className="gl-ai-chip">CLAUDE · SUMMARY</span>
               <p className="gl-summary-text">{message.summary}</p>
+              {message.caption && (
+                <p className="gl-card-caption">“{message.caption}”</p>
+              )}
             </>
           )}
           {isProcessing && !hasSummary && (
@@ -422,12 +432,7 @@ const MessageBubble: React.FC<{
         </div>
       )}
 
-      {/* Caption (when present, distinct from AI summary) */}
-      {message.caption && hasSummary && (
-        <p className="gl-summary-text" style={{ color: 'var(--gl-ink-cloth)', fontStyle: 'italic' }}>
-          “{message.caption}”
-        </p>
-      )}
+      {/* Standalone caption — only when there's no AI summary block to host it. */}
       {message.caption && !hasSummary && !isProcessing && (
         <p className="gl-summary-text">{message.caption}</p>
       )}
@@ -458,15 +463,6 @@ const MessageBubble: React.FC<{
             );
           })}
         </ul>
-      )}
-
-      {/* Topics */}
-      {topics.length > 0 && (
-        <div className="gl-topics">
-          {topics.slice(0, 6).map((topic, i) => (
-            <span key={i} className="gl-topic">{topic}</span>
-          ))}
-        </div>
       )}
 
       {/* Inline player */}
@@ -536,11 +532,27 @@ const MessageBubble: React.FC<{
         </div>
       </div>
 
-      {/* Full transcript (collapsed by default) */}
-      {message.transcript && (
+      {/* Full transcript (collapsed by default). Topics ride along inside the
+          disclosure — they're metadata, not signal, and they don't earn a
+          peer content block at rest. */}
+      {(message.transcript || topics.length > 0) && (
         <details className="gl-transcript">
-          <summary>Full transcript</summary>
-          <p>{message.transcript}</p>
+          <summary>
+            Full transcript
+            {topics.length > 0 && (
+              <span className="gl-label dim" style={{ marginLeft: 8 }}>
+                · {topics.length} {topics.length === 1 ? 'topic' : 'topics'}
+              </span>
+            )}
+          </summary>
+          {topics.length > 0 && (
+            <div className="gl-topics">
+              {topics.slice(0, 6).map((topic, i) => (
+                <span key={i} className="gl-topic">{topic}</span>
+              ))}
+            </div>
+          )}
+          {message.transcript && <p>{message.transcript}</p>}
         </details>
       )}
 
@@ -665,7 +677,8 @@ const RecipientSelector: React.FC<{
           >
             <div
               className="vvb-recipient-avatar"
-              style={{ background: contact.avatarColor || '#06B6D4' }}
+              style={contact.avatarColor ? { background: contact.avatarColor } : undefined}
+              data-fallback={contact.avatarColor ? undefined : true}
             >
               {contact.name[0]}
             </div>
@@ -1354,7 +1367,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
                 <p className="gl-tc-empty-body">
                   When someone sends a glimpse, it lands here with a transcript,
                   summary, and action items already extracted. You'll see what
-                  to watch — and what to skip — before pressing play.
+                  to watch, and what to skip, before pressing play.
                 </p>
                 <button
                   type="button"
@@ -1383,7 +1396,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
                     pattern. The strip is honest visual chrome. */}
                 <div className="gl-tc-colhead" aria-hidden="true">
                   <span />
-                  <span className="gl-label">From · Signal</span>
+                  <span className="gl-label">From · Last</span>
                   <span className="gl-label">Actions</span>
                   <span className="gl-label" style={{ textAlign: 'right' }}>Length</span>
                   <span className="gl-label" style={{ textAlign: 'right' }}>When</span>
@@ -1888,12 +1901,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
             type="button"
             onClick={() => setShowSmartReplies(false)}
             aria-label="Dismiss smart replies"
-            className="absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full flex items-center justify-center"
-            style={{
-              background: isDarkMode ? 'rgba(255,255,255,0.06)' : '#f2f2f2',
-              color: isDarkMode ? '#b4b4b8' : '#52525b',
-              border: '1px solid ' + (isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)'),
-            }}
+            className="gl-floating-dismiss absolute -top-2 -right-2 z-10"
           >
             <X className="w-3 h-3" />
           </button>
