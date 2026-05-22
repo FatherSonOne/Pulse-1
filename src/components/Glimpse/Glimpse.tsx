@@ -407,13 +407,18 @@ const MessageBubble: React.FC<{
 
       {/* Summary block — the headline. Provenance chip celebrates AI success;
           processing shows a soft pending state; failure demotes to a ghost row
-          so a broken AI doesn't dominate the card. */}
+          so a broken AI doesn't dominate the card. Caption now lives INSIDE
+          the summary block (when both exist) so the card has one content
+          spine instead of two parallel paragraphs. */}
       {(hasSummary || isProcessing) && (
         <div className="gl-summary">
           {hasSummary && (
             <>
               <span className="gl-ai-chip">CLAUDE · SUMMARY</span>
               <p className="gl-summary-text">{message.summary}</p>
+              {message.caption && (
+                <p className="gl-card-caption">“{message.caption}”</p>
+              )}
             </>
           )}
           {isProcessing && !hasSummary && (
@@ -427,12 +432,7 @@ const MessageBubble: React.FC<{
         </div>
       )}
 
-      {/* Caption (when present, distinct from AI summary) */}
-      {message.caption && hasSummary && (
-        <p className="gl-summary-text" style={{ color: 'var(--gl-ink-cloth)', fontStyle: 'italic' }}>
-          “{message.caption}”
-        </p>
-      )}
+      {/* Standalone caption — only when there's no AI summary block to host it. */}
       {message.caption && !hasSummary && !isProcessing && (
         <p className="gl-summary-text">{message.caption}</p>
       )}
@@ -463,15 +463,6 @@ const MessageBubble: React.FC<{
             );
           })}
         </ul>
-      )}
-
-      {/* Topics */}
-      {topics.length > 0 && (
-        <div className="gl-topics">
-          {topics.slice(0, 6).map((topic, i) => (
-            <span key={i} className="gl-topic">{topic}</span>
-          ))}
-        </div>
       )}
 
       {/* Inline player */}
@@ -541,11 +532,27 @@ const MessageBubble: React.FC<{
         </div>
       </div>
 
-      {/* Full transcript (collapsed by default) */}
-      {message.transcript && (
+      {/* Full transcript (collapsed by default). Topics ride along inside the
+          disclosure — they're metadata, not signal, and they don't earn a
+          peer content block at rest. */}
+      {(message.transcript || topics.length > 0) && (
         <details className="gl-transcript">
-          <summary>Full transcript</summary>
-          <p>{message.transcript}</p>
+          <summary>
+            Full transcript
+            {topics.length > 0 && (
+              <span className="gl-label dim" style={{ marginLeft: 8 }}>
+                · {topics.length} {topics.length === 1 ? 'topic' : 'topics'}
+              </span>
+            )}
+          </summary>
+          {topics.length > 0 && (
+            <div className="gl-topics">
+              {topics.slice(0, 6).map((topic, i) => (
+                <span key={i} className="gl-topic">{topic}</span>
+              ))}
+            </div>
+          )}
+          {message.transcript && <p>{message.transcript}</p>}
         </details>
       )}
 

@@ -691,6 +691,19 @@
   max-width: 65ch;
 }
 
+/* Card caption — lives inside the .gl-summary block as a quieter sub-line
+   when both AI summary and user caption exist. Italic + cloth color is the
+   only differentiator from the summary text above it. No side stripe, no
+   separator rule; the typographic shift is enough. */
+.gl-card-caption {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--gl-ink-cloth);
+  font-style: italic;
+  max-width: 65ch;
+}
+
 .gl-summary-skeleton {
   display: flex;
   flex-direction: column;
@@ -1009,6 +1022,16 @@
   max-width: 65ch;
 }
 
+/* Topics live inside the transcript disclosure now — give them a small
+   gap from the summary line above and a slightly larger gap from the
+   transcript prose below. */
+.gl-transcript .gl-topics {
+  margin: 10px 0 0;
+}
+.gl-transcript .gl-topics + p {
+  margin-top: 8px;
+}
+
 /* Footer */
 .gl-card-footer {
   display: flex;
@@ -1089,7 +1112,22 @@
   background: transparent;
   color: var(--gl-ink-fog);
   cursor: pointer;
-  transition: all var(--gl-fast) var(--gl-ease);
+  /* Hidden at rest — the dashed-border affordance is visual chrome that
+     doesn't earn its place on every card. Reveal on card hover or button
+     focus; touch devices keep it semi-visible (no hover available). */
+  opacity: 0;
+  transition: opacity var(--gl-fast) var(--gl-ease),
+              border-color var(--gl-fast) var(--gl-ease),
+              color var(--gl-fast) var(--gl-ease);
+}
+
+.gl-card:hover .gl-reaction-add,
+.gl-reaction-add:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .gl-reaction-add { opacity: 0.7; }
 }
 
 .gl-reaction-add:hover {
