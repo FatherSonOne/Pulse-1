@@ -171,6 +171,12 @@ docs/*.md
 !docs/*_GUIDE.md
 !docs/USER_GUIDE.md
 !docs/contacts_maps*.md
+!docs/*-spec.md
+!docs/*-data-design.md
+!docs/*-ux.md
+
+# Playwright HTML report — generated artifact, never commit.
+playwright-report/
 
 # Generated helper files
 generate-*.js

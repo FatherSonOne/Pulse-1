@@ -34,9 +34,11 @@ import { ReceivedTab } from './cards/ReceivedTab';
 import { ShareCardModal } from './cards/ShareCardModal';
 import { ShareCardBundleModal } from './cards/ShareCardBundleModal';
 import { SentCardsView } from './cards/SentCardsView';
+import { FindTeammatesSheet } from './FindTeammatesSheet';
+import type { DiscoveredPulseUser } from '../../services/pulseUserDiscoveryService';
 import './Contacts.css';
 
-import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronDown, ChevronRight, Clock, Copy, Flame, LayoutGrid, List, MessageSquare, Moon, Network, Plus, Radio, RefreshCw, Search, Snowflake, Star, UserPlus, UserX, Users, Video, Wand2, X, Zap } from 'lucide-react';
+import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronDown, ChevronRight, Clock, Copy, Flame, LayoutGrid, List, MessageSquare, Moon, Network, Plus, Radio, RefreshCw, Search, Snowflake, Star, UserPlus, UserSearch, UserX, Users, Video, Wand2, X, Zap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 // ============================================
@@ -715,6 +717,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   const [isSyncing, setIsSyncing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddChooser, setShowAddChooser] = useState(false);
+  const [showFindTeammates, setShowFindTeammates] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
   const [showAlertsPanel, setShowAlertsPanel] = useState(false);
@@ -1710,6 +1713,30 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
               </p>
             </div>
             <div className="p-3 space-y-2">
+              {/* Tile #1 — Find teammates on Pulse (info-soft slot) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddChooser(false);
+                  setShowFindTeammates(true);
+                }}
+                className="w-full flex items-start gap-3 p-3 rounded-xl border text-left hover:border-rose-300 dark:hover:border-rose-400/40 transition-colors"
+                style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
+              >
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'var(--pulse-tone-info-soft)' }}
+                >
+                  <UserSearch className="w-4 h-4" style={{ color: 'var(--pulse-tone-info)' }} aria-hidden="true" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold">Find teammates on Pulse</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--pulse-ink-3)' }}>
+                    See who's already here. Add them in one tap.
+                  </div>
+                </div>
+              </button>
+              {/* Tile #2 — Import from Google */}
               <button
                 type="button"
                 onClick={() => {
@@ -1732,6 +1759,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
                   </div>
                 </div>
               </button>
+              {/* Tile #3 — Add manually (reassigned to neutral-soft per palette §1.1) */}
               <button
                 type="button"
                 onClick={() => {
@@ -1743,9 +1771,9 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
               >
                 <div
                   className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'var(--pulse-tone-info-soft)' }}
+                  style={{ background: 'var(--pulse-tone-neutral-soft)' }}
                 >
-                  <UserPlus className="w-4 h-4" style={{ color: 'var(--pulse-tone-info)' }} aria-hidden="true" />
+                  <UserPlus className="w-4 h-4" style={{ color: 'var(--pulse-tone-neutral)' }} aria-hidden="true" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold">Add manually</div>
@@ -1768,6 +1796,25 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
           </div>
         </div>
       )}
+
+      {/* Find teammates sheet — workspace-native Pulse user discovery */}
+      <FindTeammatesSheet
+        isOpen={showFindTeammates}
+        onClose={() => setShowFindTeammates(false)}
+        workspaceId={currentWorkspace?.id ?? ''}
+        onAdd={async (user: DiscoveredPulseUser) => {
+          await handleAddContactWrapper({
+            name: user.display_name,
+            email: '',
+            role: user.shared_workspace_role,
+            avatarColor: '#3b82f6',
+            avatarUrl: user.avatar_url ?? undefined,
+            status: (user.online_status as Contact['status']) ?? 'offline',
+            source: 'local',
+            pulseUserId: user.user_id,
+          });
+        }}
+      />
 
       {/* Phase C — contact-card sharing modals (gated by feature flag) */}
       {phaseCEnabled && (
