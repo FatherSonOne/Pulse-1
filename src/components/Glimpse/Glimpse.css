@@ -153,6 +153,15 @@
   color: var(--gl-ink-fog);
 }
 
+/* Muted chip variant — used on the Triage Cockpit row where the summary's
+   presence already signals AI did the work, so the chip becomes redundant
+   provenance metadata. Drops the coral so the row's coral budget stays for
+   the unread dot + action-count pill. */
+.gl-ai-chip.muted {
+  background: var(--gl-surface-soft);
+  color: var(--gl-ink-cloth);
+}
+
 /* Soft acknowledgment when AI transcription has failed — never the loudest
    element on the card. */
 .gl-transcript-fail {

@@ -227,9 +227,14 @@ const ConversationItem: React.FC<{
           </span>
         )}
         {hasSummary && (
-          <span className="gl-ai-chip gl-tc-ai-chip">Claude</span>
+          // Muted in triage rows: the summary IS the AI signal — a coral chip
+          // here just doubles the attention hit and busts the row's coral
+          // budget. Provenance stays via the leading-dot pattern + label.
+          <span className="gl-ai-chip muted gl-tc-ai-chip">Claude</span>
         )}
         {processing && !hasSummary && (
+          // Pending state stays loud: this is signaling active work in
+          // progress, which IS earned attention.
           <span className="gl-ai-chip pending gl-tc-ai-chip">Transcribing</span>
         )}
         {/* Absence of action items is inferred from absence of pill — no need
