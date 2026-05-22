@@ -239,7 +239,7 @@ const ConversationItem: React.FC<{
       <div className="gl-tc-duration">
         {conversation.lastMessageDuration
           ? formatDuration(conversation.lastMessageDuration)
-          : '—'}
+          : '·'}
       </div>
 
       <div className="gl-tc-when">
@@ -1354,7 +1354,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
                 <p className="gl-tc-empty-body">
                   When someone sends a glimpse, it lands here with a transcript,
                   summary, and action items already extracted. You'll see what
-                  to watch — and what to skip — before pressing play.
+                  to watch, and what to skip, before pressing play.
                 </p>
                 <button
                   type="button"
@@ -1383,7 +1383,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
                     pattern. The strip is honest visual chrome. */}
                 <div className="gl-tc-colhead" aria-hidden="true">
                   <span />
-                  <span className="gl-label">From · Signal</span>
+                  <span className="gl-label">From · Last</span>
                   <span className="gl-label">Actions</span>
                   <span className="gl-label" style={{ textAlign: 'right' }}>Length</span>
                   <span className="gl-label" style={{ textAlign: 'right' }}>When</span>

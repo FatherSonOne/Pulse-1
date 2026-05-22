@@ -288,11 +288,14 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
         </button>
       )}
 
-      {/* Selection toggle — always last */}
+      {/* Selection toggle — always last. aria-label is essential here: the
+          CheckCheck glyph is unlabelled visually, so screen-reader users
+          would otherwise hear only "button" without context. */}
       <button
         type="button"
         onClick={onToggleSelection}
         title={isSelectionMode ? 'Exit selection mode' : 'Select messages'}
+        aria-label={isSelectionMode ? 'Exit selection mode' : 'Select messages'}
         className={actionBtnBase}
         style={
           isSelectionMode
