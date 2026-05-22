@@ -677,7 +677,8 @@ const RecipientSelector: React.FC<{
           >
             <div
               className="vvb-recipient-avatar"
-              style={{ background: contact.avatarColor || '#06B6D4' }}
+              style={contact.avatarColor ? { background: contact.avatarColor } : undefined}
+              data-fallback={contact.avatarColor ? undefined : true}
             >
               {contact.name[0]}
             </div>
@@ -1900,12 +1901,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
             type="button"
             onClick={() => setShowSmartReplies(false)}
             aria-label="Dismiss smart replies"
-            className="absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full flex items-center justify-center"
-            style={{
-              background: isDarkMode ? 'rgba(255,255,255,0.06)' : '#f2f2f2',
-              color: isDarkMode ? '#b4b4b8' : '#52525b',
-              border: '1px solid ' + (isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)'),
-            }}
+            className="gl-floating-dismiss absolute -top-2 -right-2 z-10"
           >
             <X className="w-3 h-3" />
           </button>

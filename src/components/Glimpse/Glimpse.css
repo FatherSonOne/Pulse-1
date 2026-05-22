@@ -2120,6 +2120,137 @@
 }
 
 /* ============================================
+   DRAFT PANEL (AI reply draft, single longer-form)
+   Floating panel anchored bottom-right. Consumes gl-* tokens directly
+   rather than raw Tailwind / hardcoded zinc — token consolidation
+   pass 2026-05-21.
+   ============================================ */
+.gl-draft-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--gl-border);
+  background: var(--gl-surface);
+  color: var(--gl-ink);
+}
+
+.video-vox-mode.dark .gl-draft-panel {
+  background: var(--gl-canvas);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.50);
+}
+
+.gl-draft-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gl-draft-panel-tone {
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gl-ink-cloth);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gl-draft-panel-textarea {
+  width: 100%;
+  resize: none;
+  border-radius: 10px;
+  border: 1px solid var(--gl-border);
+  background: var(--gl-surface-soft);
+  padding: 12px;
+  font-family: var(--gl-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--gl-ink);
+  outline: none;
+  transition: border-color var(--gl-fast) var(--gl-ease),
+              box-shadow var(--gl-fast) var(--gl-ease);
+}
+
+.gl-draft-panel-textarea:focus {
+  border-color: var(--gl-rose);
+  box-shadow: 0 0 0 3px var(--gl-accent-soft);
+}
+
+.gl-draft-panel-next {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--gl-ink-cloth);
+}
+
+.gl-draft-panel-next-tag {
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gl-rose-deep);
+  margin-right: 6px;
+}
+
+.video-vox-mode.dark .gl-draft-panel-next-tag {
+  color: var(--gl-rose-bright);
+}
+
+.gl-draft-panel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Floating dismiss button — small X in a circle. Shared by the draft panel
+   header and the smart-replies floating overlay. Uses tokens, not hardcoded
+   zinc / rgba. */
+.gl-floating-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--gl-border);
+  background: var(--gl-surface-soft);
+  color: var(--gl-ink-cloth);
+  cursor: pointer;
+  transition: border-color var(--gl-fast) var(--gl-ease),
+              color var(--gl-fast) var(--gl-ease),
+              background var(--gl-fast) var(--gl-ease);
+}
+
+.gl-floating-dismiss:hover {
+  border-color: var(--gl-border-strong);
+  color: var(--gl-ink);
+  background: var(--gl-surface);
+}
+
+.gl-floating-dismiss:focus-visible {
+  outline: 2px solid var(--gl-rose);
+  outline-offset: 2px;
+}
+
+/* Recipient selector — neutral avatar fallback when contact.avatarColor is
+   missing. Replaces the inline cyan #06B6D4 leak that contradicted the
+   coral-as-only-signal rule. */
+.vvb-recipient-avatar[data-fallback] {
+  background: var(--gl-surface-soft);
+  color: var(--gl-ink-cloth);
+  font-family: var(--gl-mono);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 @media (max-width: 480px) {

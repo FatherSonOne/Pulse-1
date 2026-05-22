@@ -50,36 +50,26 @@ export const GlimpseReplyDraftPanel: React.FC<GlimpseReplyDraftPanelProps> = ({
     }
   };
 
-  const tc = {
-    bg: isDarkMode ? 'bg-zinc-900' : 'bg-white',
-    border: isDarkMode ? 'border-zinc-700' : 'border-zinc-200',
-    text: isDarkMode ? 'text-white' : 'text-zinc-900',
-    textMuted: isDarkMode ? 'text-zinc-400' : 'text-zinc-600',
-    textareaBg: isDarkMode ? 'bg-zinc-950/40' : 'bg-zinc-50',
-    secondaryBtn: isDarkMode
-      ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-      : 'border-zinc-200 text-zinc-700 hover:bg-zinc-50',
-  };
+  // Styles are token-based in Glimpse.css — theme context cascades from the
+  // .video-vox-mode wrapper in Glimpse.tsx, so no wrapper needed here.
+  // isDarkMode is accepted for API parity with the AI panels but unused now
+  // that we consume tokens directly.
+  void isDarkMode;
 
   return (
-    <div
-      className={`p-4 rounded-xl border ${tc.border} ${tc.bg} flex flex-col gap-3`}
-      role="region"
-      aria-label="AI reply draft"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
+    <div className="gl-draft-panel" role="region" aria-label="AI reply draft">
+      <div className="gl-draft-panel-head">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <AIProvenanceChip vendor="PULSE AI" type="DRAFT" fresh />
-          <span className={`font-mono text-[10px] uppercase tracking-[0.12em] ${tc.textMuted} truncate`}>
-            tone · {draft.tone}
-          </span>
+          <span className="gl-draft-panel-tone">tone · {draft.tone}</span>
         </div>
         <button
           type="button"
           onClick={onDismiss}
-          className={`p-1.5 rounded-md ${tc.secondaryBtn}`}
+          className="gl-floating-dismiss"
           title="Dismiss draft"
           aria-label="Dismiss draft"
+          style={{ width: 28, height: 28, borderRadius: 8 }}
         >
           <X className="w-4 h-4" />
         </button>
@@ -89,34 +79,35 @@ export const GlimpseReplyDraftPanel: React.FC<GlimpseReplyDraftPanelProps> = ({
         ref={textareaRef}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className={`w-full resize-none rounded-lg border ${tc.border} ${tc.textareaBg} ${tc.text} p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-rose-500/40`}
+        className="gl-draft-panel-textarea"
         rows={4}
         aria-label="Editable draft text"
       />
 
       {draft.suggestedAction && (
-        <p className={`text-xs ${tc.textMuted}`}>
-          <span className="font-mono uppercase tracking-[0.1em] text-rose-500 mr-1.5">next</span>
+        <p className="gl-draft-panel-next">
+          <span className="gl-draft-panel-next-tag">next</span>
           {draft.suggestedAction}
         </p>
       )}
 
-      <div className="flex items-center justify-end gap-2 flex-wrap">
+      <div className="gl-draft-panel-actions">
         <button
           type="button"
           onClick={handleCopy}
-          className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm ${tc.secondaryBtn}`}
+          className="gl-action-pill"
           title="Copy draft to clipboard"
         >
-          {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+          {copied ? <Check className="icon" /> : <Copy className="icon" />}
           <span>{copied ? 'Copied' : 'Copy'}</span>
         </button>
         {onUseAsCaption && (
           <button
             type="button"
             onClick={() => onUseAsCaption(text)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-500 text-white text-sm font-medium hover:bg-rose-600 transition-colors"
+            className="gl-send-btn"
             title="Open the recorder with this draft as the caption"
+            style={{ width: 'auto', padding: '10px 16px' }}
           >
             <Video className="w-4 h-4" />
             <span>Use as caption</span>
