@@ -43,13 +43,12 @@ async function loginAndOpenMessages(page: import('@playwright/test').Page) {
   await messagesNav.waitFor({ state: 'visible', timeout: 15000 });
   await messagesNav.click();
 
-  // Wait for any Messages V2 surface to mount. Multiple candidate roots so
-  // that tests still find SOMETHING even if the empty-pane (TriageBrief)
-  // hasn't rendered (e.g. a conversation auto-selected from URL state).
+  // Wait for the V2 surface section header — this renders unconditionally
+  // once MessagesSplitView mounts, regardless of whether there are any
+  // conversations to show. Role-based selectors are stable across V2
+  // CSS refactors; data-testid hooks don't exist on the V2 chrome yet.
   await page
-    .locator(
-      '[data-testid="triage-brief"], .triage-brief, [data-testid="conversation-sidebar"], aside[class*="ConversationSidebar"], [data-testid="message-input"]',
-    )
+    .getByRole('heading', { name: 'MESSAGES', level: 2 })
     .first()
     .waitFor({ state: 'visible', timeout: 15000 });
 }

@@ -31,6 +31,28 @@ setup('authenticate', async ({ page }) => {
     fs.mkdirSync(AUTH_DIR, { recursive: true });
   }
 
+  // Short-circuit: if a storageState file already exists and contains a
+  // Supabase auth token, trust it and skip the OAuth dance. Tokens auto-
+  // refresh inside the SDK on first navigation, so a slightly-expired
+  // file still works as long as the refresh window hasn't elapsed.
+  // To force a fresh capture, delete e2e/.auth/user.json before running.
+  if (fs.existsSync(STORAGE_FILE)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(STORAGE_FILE, 'utf8'));
+      const ls = parsed?.origins?.[0]?.localStorage ?? [];
+      const hasAuth = ls.some(
+        (e: { name?: string }) =>
+          typeof e?.name === 'string' && e.name.startsWith('sb-') && e.name.endsWith('-auth-token'),
+      );
+      if (hasAuth) {
+        console.log(`[auth.setup] Reusing existing storageState at ${STORAGE_FILE}`);
+        return;
+      }
+    } catch {
+      // Malformed file — fall through to the full capture path.
+    }
+  }
+
   // Land on the V2 surface — the URL param flips the override AND persists
   // it to localStorage so subsequent navigations stay on V2.
   await page.goto('/?ff_pulseMessagesV2=on');
