@@ -26,31 +26,29 @@ git commit -m "wip: scaffold <thing>"
 …makes it safe. You can amend or rewrite later. This single discipline
 makes everything else in this section a fallback, not a tightrope.
 
-### Default workflow (use this 95% of the time)
+### Default workflow — direct to main
 
-Single directory, feature branch, commit, push, PR, merge. No
-worktrees. No `start-session.cmd`. No multi-folder dance.
+**Work happens on `main`.** No feature branches, no PRs, no worktrees.
+Edit, commit, push. The user owns rollback discipline (`git revert
+<sha>` if a commit goes wrong).
 
 ```bash
 cd f:/pulse1
 git pull origin main
-git checkout -b feat/<short-task-slug>
 # ... edit, save, commit as pieces complete
-# when ready to ship:
-git push -u origin HEAD
-gh pr create --fill          # or use /git-commit-merge slash command
-# review the Vercel preview, click Merge on GitHub
-git checkout main && git pull
+git push origin main
 ```
 
-Naming: `feat/...` for new work, `fix/...` for bug fixes, `refactor/...`
-for restructuring. Keep the slug under ~30 chars.
+Commit messages still follow conventional-commit form
+(`feat(scope): ...`, `fix(scope): ...`, `refactor(scope): ...`) for
+readable history. HEREDOC the body, sign with the
+`Co-Authored-By: Claude Opus 4.7 (1M context)` line per the harness
+convention.
 
-Why feature branches (not pushing straight to main): cheap rollback
-(`git revert <merge-sha>`), Vercel preview before merge, self-review
-via the PR diff. Branch protection isn't enforced on `main` — this is
-voluntary discipline, but it pays for itself the first time you ship
-a regression.
+Claude does NOT create branches. If a piece of work feels genuinely
+PR-worthy (large refactor, risky cutover, multi-day surface), surface
+that judgment to the user and ask — the user decides whether to spin
+up a branch. Default is no.
 
 ### Always at session start
 
@@ -67,12 +65,9 @@ the actual route to lost work.
 
 ### Hard nevers (without explicit user request)
 
-- **`git checkout -b <new-branch>`** — Claude must NOT create a new
-  feature branch without an explicit user instruction to do so. Stay on
-  the current branch (typically the active feature branch or main) and
-  ask before branching. If multiple commits need to be sequenced as
-  separate units, stack them on the existing branch and discuss
-  branching strategy with the user first.
+- **`git checkout -b <new-branch>`** — never. Pulse works on `main`.
+  If a task genuinely needs a branch (large refactor, risky cutover),
+  surface the judgment and ask before branching.
 - **`git checkout <other-branch>`** mid-session with uncommitted work.
 - **`git stash pop`** without confirming the stash belongs to the
   current branch.
@@ -119,14 +114,13 @@ disappears.
 
 ### When a worktree is actually justified
 
-- Long-running surface (e.g. a multi-day redesign branch) plus an
-  unrelated quick fix you need to ship today, and they touch nearby
-  files.
+- Long-running surface (e.g. a multi-day redesign) plus an unrelated
+  quick fix you need to ship today, and they touch nearby files.
 - Experimenting with a risky refactor while keeping a clean dev
-  server running on a stable branch.
+  server running on the main canvas.
 - The user explicitly says "spawn a worktree" / "parallel session."
 
-If none of those apply, work in `f:/pulse1/` on feature branches.
+If none of those apply, work in `f:/pulse1/` directly on `main`.
 
 ### Spawning a worktree (when escalating)
 
@@ -162,23 +156,25 @@ unexpectedly, STOP and diagnose with `git reflog` before continuing.
 
 ---
 
-## 3. Multi-PR chains
+## 3. Multi-commit work sequences
 
-When a single task produces multiple feature-flagged PRs in sequence
-(e.g. the May 2026 Messages Tools Redesign shipped PR 1 → 2 → 3a → 3b):
+When a single task produces a series of commits (e.g. an
+impeccable critique pass shipping Action 1 → 2 → 3 → ...), all of
+them land on `main` as separate commits. Branches and PRs only enter
+the picture if the user explicitly asks for them.
 
-- **Commit each PR independently** with its own `git commit` before
-  starting the next agent / step
+- **Commit each unit independently** with its own `git commit` before
+  starting the next step
 - Commit messages should follow the existing repo style — conventional
   commits with scope, e.g. `feat(messages): ...` or `fix(billing): ...`
 - Use HEREDOC for multi-paragraph commit bodies; include
   `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>`
   at the end per the harness convention
-- Do NOT batch unrelated changes into one commit — keep PRs reviewable
+- Do NOT batch unrelated changes into one commit — keep history readable
 
-This discipline was added after PR 3a returned BLOCKED in May 2026
-because PR 1's files were never persisted between agent spawns — the
-fix was to verify and commit after each agent return.
+This discipline was added after a multi-step task in May 2026 returned
+BLOCKED because earlier-step files were never persisted between agent
+spawns — the fix was to verify and commit after each step.
 
 ---
 
