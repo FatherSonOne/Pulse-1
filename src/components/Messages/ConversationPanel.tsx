@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EnhancedLoadingScreen from '../EnhancedLoadingScreen';
 import { ChannelMessage } from '../../types/messages';
@@ -41,6 +41,13 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const prevMessageCountRef = useRef(messages.length);
+
+  // Screen-reader announcement for incoming messages (WCAG 4.1.3 Status Messages).
+  // Announces only NEW messages from OTHER users — your own sends don't get
+  // announced, and a full thread reload doesn't either (count diff, not
+  // identity check, is intentional: works for both append and prepend).
+  const [announcement, setAnnouncement] = useState('');
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -48,6 +55,20 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+
+  // Announce incoming messages
+  useEffect(() => {
+    const prevCount = prevMessageCountRef.current;
+    if (messages.length > prevCount) {
+      const last = messages[messages.length - 1];
+      if (last && last.sender_id !== currentUserId) {
+        const sender = last.sender_name || 'Someone';
+        const preview = (last.content || '').slice(0, 100);
+        setAnnouncement(`New message from ${sender}: ${preview}`);
+      }
+    }
+    prevMessageCountRef.current = messages.length;
+  }, [messages, currentUserId]);
 
   // Format timestamp for message
   const formatMessageTime = (timestamp: string) => {
@@ -271,6 +292,11 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* SR-only live region for incoming-message announcements */}
+          <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+            {announcement}
           </div>
 
           {/* Messages area */}
