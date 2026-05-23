@@ -121,6 +121,13 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   const [goal, setGoal] = useState<ContactGoal | null>(null);
   const [goalModalOpen, setGoalModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  // Delete-confirmation modal state. Replaces the previous native
+  // `confirm()` dialog which broke visual continuity at the
+  // highest-stakes moment in the section. Typed-confirmation
+  // ("DELETE") prevents misclicks; real undo would need backend
+  // soft-delete plumbing in the parent (future enhancement).
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
   // ----- Email history (Phase 3) -----
@@ -811,16 +818,9 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
           <div className="px-6 py-4 border-t border-red-100 dark:border-red-900/30">
             <button
               type="button"
-              onClick={async () => {
-                if (!confirm('Are you sure you want to delete this contact? This action cannot be undone.')) return;
-                setIsDeleting(true);
-                try {
-                  await onDelete();
-                  toast.success('Contact deleted');
-                } catch {
-                  toast.error('Failed to delete contact');
-                  setIsDeleting(false);
-                }
+              onClick={() => {
+                setDeleteConfirmText('');
+                setShowDeleteConfirm(true);
               }}
               disabled={isDeleting}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
@@ -849,6 +849,107 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
         }}
         onClose={() => setGoalModalOpen(false)}
       />
+    )}
+
+    {/* ── Delete Confirmation Modal ──
+        Typed-confirmation pattern: user must type DELETE before the
+        button activates. Replaces the previous native `confirm()` which
+        popped OS chrome on top of the dark canvas at the highest-stakes
+        moment in the section. */}
+    {showDeleteConfirm && onDelete && (
+      <div
+        className="pulse-modal-scrim fixed inset-0 z-50 flex items-center justify-center p-4"
+        onClick={() => {
+          if (!isDeleting) setShowDeleteConfirm(false);
+        }}
+        role="presentation"
+      >
+        <div
+          className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-200 dark:border-white/[0.06] max-w-sm w-full overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-contact-heading"
+        >
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-md flex-shrink-0"
+                style={{ backgroundColor: contact.avatarColor || '#6366f1' }}
+              >
+                {contact.name.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3
+                  id="delete-contact-heading"
+                  className="text-base font-semibold text-zinc-900 dark:text-white truncate"
+                >
+                  Delete {contact.name}?
+                </h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                  {contact.role || 'Contact'}
+                  {contact.company ? ` · ${contact.company}` : ''}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm text-zinc-600 dark:text-zinc-300 mb-4">
+              This removes the contact from your network. Notes,
+              relationship history, and AI insights for this person
+              go with it. The action cannot be undone.
+            </p>
+
+            <label className="block">
+              <span
+                className="block mb-1.5 text-[11px] uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400"
+                style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
+              >
+                Type <span className="text-rose-600 dark:text-rose-400">DELETE</span> to confirm
+              </span>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                autoFocus
+                disabled={isDeleting}
+                className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 disabled:opacity-50"
+                aria-label="Type DELETE to confirm"
+              />
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 px-6 py-4 bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-200 dark:border-white/[0.06]">
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={isDeleting}
+              className="px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] rounded-lg transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (deleteConfirmText !== 'DELETE') return;
+                setIsDeleting(true);
+                try {
+                  await onDelete();
+                  toast.success(`Deleted ${contact.name}`, { duration: 5000 });
+                  setShowDeleteConfirm(false);
+                } catch {
+                  toast.error('Failed to delete contact');
+                  setIsDeleting(false);
+                }
+              }}
+              disabled={deleteConfirmText !== 'DELETE' || isDeleting}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isDeleting ? <Loader2 className="animate-spin text-sm" /> : <Trash2 className="text-sm" />}
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
     )}
     </>
   );
