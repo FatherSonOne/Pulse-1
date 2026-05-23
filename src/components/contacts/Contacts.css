@@ -1384,23 +1384,9 @@
 .contacts-node-status.offline { background: var(--cnt-status-offline); }
 .contacts-node-status.busy { background: var(--cnt-status-busy); }
 
-/* VIP Badge */
-.contacts-node-vip {
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  width: 22px;
-  height: 22px;
-  background: linear-gradient(135deg, #f59e0b, #eab308);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  color: white;
-  z-index: 3;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
-}
+/* VIP badge removed — VIP is already a Smart List filter; the
+   per-card gold-amber gradient was decorative redundancy plus an
+   off-system hue. */
 
 /* Node Info */
 .contacts-node-info {

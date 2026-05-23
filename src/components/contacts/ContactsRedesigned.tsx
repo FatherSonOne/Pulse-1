@@ -522,11 +522,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
           {contact.name.charAt(0)}
         </div>
         <div className={`contacts-node-status ${contact.status || 'offline'}`} />
-        {profile?.isVip && (
-          <div className="contacts-node-vip">
-            <Star />
-          </div>
-        )}
+        {/* VIP badge removed — exposed via the "VIP Contacts" smart list. */}
       </div>
 
       {/* Info */}

@@ -4,7 +4,7 @@ import { Contact } from '../../types';
 import { OnlineIndicator } from '../UserContact/OnlineIndicator';
 import { RelationshipScoreBadge } from './RelationshipHealthCard';
 import { LeadGradeBadge } from './LeadScoreIndicator';
-import { ArrowDown, ArrowUp, Building2, Flame, Handshake, Loader2, Mail, Star, UserX } from 'lucide-react';
+import { ArrowDown, ArrowUp, Building2, Flame, Handshake, Loader2, Mail, UserX } from 'lucide-react';
 import {
 
   RelationshipProfile,
@@ -194,11 +194,7 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                     <div className={`w-8 h-8 rounded-full ${contact.avatarColor} flex items-center justify-center text-white text-xs font-bold`}>
                       {contact.name.charAt(0)}
                     </div>
-                    {profile?.isVip && (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
-                        <Star className="text-[8px] text-white" />
-                      </div>
-                    )}
+                    {/* VIP badge removed — exposed via "VIP Contacts" smart list. */}
                     {insight && (
                       <div className="absolute -bottom-0.5 -right-0.5">
                         <BriefingDot tone={insight.tone} title={insight.dotTitle} />
@@ -311,11 +307,7 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                     ) : (
                       <div className="absolute bottom-0 right-0">{renderStatus(contact.status)}</div>
                     )}
-                    {profile?.isVip && (
-                      <div className="absolute -top-1 -left-1 w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center shadow-sm">
-                        <Star className="text-[10px] text-white" />
-                      </div>
-                    )}
+                    {/* VIP badge removed — exposed via "VIP Contacts" smart list. */}
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-zinc-900 dark:text-white font-semibold text-base truncate">{contact.name}</h3>

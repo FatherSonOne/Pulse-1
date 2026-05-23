@@ -25,7 +25,7 @@ import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import { CardSourceChip } from './cards/CardSourceChip';
 
 import toast from 'react-hot-toast';
-import { ArrowRight, Cake, Check, Clock, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Send, Sparkles, Star, Target, Trash2, Video, X } from 'lucide-react';
+import { ArrowRight, Cake, Check, Clock, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Send, Sparkles, Target, Trash2, Video, X } from 'lucide-react';
 import MapPreview from '../map/MapPreview';
 
 // ==================== TYPES ====================
@@ -280,12 +280,9 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
               >
                 {contact.name.charAt(0)}
               </div>
-              {/* VIP star */}
-              {profile?.isVip && (
-                <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center shadow-sm">
-                  <Star className="text-xs text-white" />
-                </div>
-              )}
+              {/* VIP star removed — VIP status is already exposed via the
+                  "VIP Contacts" smart list filter. The per-card gold-amber
+                  badge was decorative redundancy. */}
             </div>
 
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white">{contact.name}</h2>
@@ -346,28 +343,34 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             </div>
           )}
 
-          {/* Action buttons */}
+          {/* Action buttons — neutral cluster. Previously Message=blue,
+              Vox=orange, Meet=green, which blew the coral budget on
+              routes (not state) and read like Salesforce-in-coral-wrapper.
+              These three actions are channels, not signal — they share
+              one chrome treatment and inherit coral only via hover.
+              When unread state lands (future PR), the relevant channel
+              can adopt rose-soft to actually signal urgency. */}
           <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => onAction('message', contact.id)}
-              className="flex flex-col items-center gap-1 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
+              className="flex flex-col items-center gap-1 p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-white/[0.06] hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-200 dark:hover:border-rose-500/30 transition"
             >
               <MessageSquare className="text-lg" />
-              <span className="text-xs font-bold uppercase">Message</span>
+              <span className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Message</span>
             </button>
             <button
               onClick={() => onAction('vox', contact.id)}
-              className="flex flex-col items-center gap-1 p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition"
+              className="flex flex-col items-center gap-1 p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-white/[0.06] hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-200 dark:hover:border-rose-500/30 transition"
             >
               <Radio className="text-lg" />
-              <span className="text-xs font-bold uppercase">Vox</span>
+              <span className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Vox</span>
             </button>
             <button
               onClick={() => onAction('meet', contact.id)}
-              className="flex flex-col items-center gap-1 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition"
+              className="flex flex-col items-center gap-1 p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-white/[0.06] hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-200 dark:hover:border-rose-500/30 transition"
             >
               <Video className="text-lg" />
-              <span className="text-xs font-bold uppercase">Meet</span>
+              <span className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Meet</span>
             </button>
           </div>
         </div>
