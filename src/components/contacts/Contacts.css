@@ -774,30 +774,8 @@
   color: #a8a29e;
 }
 
-/* Lead Grade Badges - Light Mode adjustments */
-.light-mode .contacts-node-lead.A,
-[data-theme="light"] .contacts-node-lead.A,
-:root:not(.dark) .contacts-node-lead.A {
-  background: rgba(16, 185, 129, 0.12);
-}
-
-.light-mode .contacts-node-lead.B,
-[data-theme="light"] .contacts-node-lead.B,
-:root:not(.dark) .contacts-node-lead.B {
-  background: rgba(59, 130, 246, 0.12);
-}
-
-.light-mode .contacts-node-lead.C,
-[data-theme="light"] .contacts-node-lead.C,
-:root:not(.dark) .contacts-node-lead.C {
-  background: rgba(234, 179, 8, 0.12);
-}
-
-.light-mode .contacts-node-lead.D,
-[data-theme="light"] .contacts-node-lead.D,
-:root:not(.dark) .contacts-node-lead.D {
-  background: rgba(107, 114, 128, 0.12);
-}
+/* Lead Grade Badges — light/dark cascade handled by var(--pulse-surface-raised)
+   in the base rule above. No per-mode overrides needed. */
 
 /* Scrollbar - Light Mode */
 .light-mode .contacts-container ::-webkit-scrollbar-thumb,
@@ -1537,22 +1515,28 @@
 .contacts-node-health-trend.up { color: var(--cnt-status-online); }
 .contacts-node-health-trend.down { color: var(--cnt-status-busy); }
 
-/* Lead Grade Badge */
+/* Lead Grade Badge — neutral surface, hierarchy via weight + opacity.
+   The previous A=emerald / B=blue / C=yellow / D=grey palette violated
+   the Status-Stays-Status rule (lead grade is a numeric quality, not a
+   state) and shipped four-color confetti on every grid view. Mono
+   labels + weight stepping carry the hierarchy without color noise. */
 .contacts-node-lead {
   position: absolute;
   top: 16px;
   right: 16px;
   padding: 4px 8px;
   border-radius: 6px;
+  font-family: var(--pulse-font-mono);
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink);
 }
 
-.contacts-node-lead.A { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-.contacts-node-lead.B { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-.contacts-node-lead.C { background: rgba(234, 179, 8, 0.2); color: #eab308; }
-.contacts-node-lead.D { background: rgba(107, 114, 128, 0.2); color: #6b7280; }
+.contacts-node-lead.A { font-weight: 700; }
+.contacts-node-lead.B { font-weight: 600; }
+.contacts-node-lead.C { font-weight: 500; opacity: 0.75; }
+.contacts-node-lead.D { font-weight: 500; opacity: 0.5; }
 
 /* Quick Actions on Hover */
 .contacts-node-actions {

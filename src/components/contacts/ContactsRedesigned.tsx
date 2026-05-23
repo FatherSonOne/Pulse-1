@@ -112,11 +112,16 @@ const SMART_LISTS: SmartListConfig[] = [
   { id: 'recent_contacts', label: 'Recent', Icon: Zap },
 ];
 
+// Tags are user-applied labels, not state. The previous CRM-Kanban
+// palette (blue/green/purple/cyan) violated the Status-Stays-Status
+// rule and reintroduced the Salesforce reflex PRODUCT.md anti-references
+// explicitly reject. Label text now carries identity; the dot reflects
+// selection state via coral.
 const TAGS = [
-  { id: 'prospect', label: 'Prospect', activeColor: '#3b82f6' },
-  { id: 'customer', label: 'Customer', activeColor: '#10b981' },
-  { id: 'partner', label: 'Partner', activeColor: '#a855f7' },
-  { id: 'vendor', label: 'Vendor', activeColor: '#06b6d4' },
+  { id: 'prospect', label: 'Prospect' },
+  { id: 'customer', label: 'Customer' },
+  { id: 'partner', label: 'Partner' },
+  { id: 'vendor', label: 'Vendor' },
 ];
 
 // ============================================
@@ -296,7 +301,11 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="contacts-filter-btn-content">
               <div
                 className="contacts-tag-dot"
-                style={{ backgroundColor: isActive ? tag.activeColor : 'currentColor' }}
+                style={{
+                  backgroundColor: isActive
+                    ? 'var(--pulse-rose)'
+                    : 'var(--pulse-ink-3)',
+                }}
               />
               <span className="contacts-filter-btn-label">{tag.label}</span>
             </div>
