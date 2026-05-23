@@ -431,7 +431,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <span className="text-xs text-[#6b7280] uppercase tracking-wider">Duration</span>
+                      <span className="font-mono text-xs text-[#6b7280] uppercase tracking-[0.1em]">Duration</span>
                     </div>
                     <div className="text-2xl font-bold text-white">
                       <AnimatedCounter value={stats.duration} suffix="m" />
@@ -449,7 +449,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                         </svg>
                       </div>
-                      <span className="text-xs text-[#6b7280] uppercase tracking-wider">Blocked</span>
+                      <span className="font-mono text-xs text-[#6b7280] uppercase tracking-[0.1em]">Blocked</span>
                     </div>
                     <div className="text-2xl font-bold text-white">
                       <AnimatedCounter value={stats.messagesBlocked} />
@@ -467,7 +467,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <span className="text-xs text-[#6b7280] uppercase tracking-wider">Score</span>
+                      <span className="font-mono text-xs text-[#6b7280] uppercase tracking-[0.1em]">Score</span>
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className={`text-2xl font-bold ${scoreGrade.color}`}>{scoreGrade.grade}</span>
@@ -488,7 +488,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z" />
                         </svg>
                       </div>
-                      <span className="text-xs text-[#6b7280] uppercase tracking-wider">Breaks</span>
+                      <span className="font-mono text-xs text-[#6b7280] uppercase tracking-[0.1em]">Breaks</span>
                     </div>
                     <div className="text-2xl font-bold text-white">
                       <AnimatedCounter value={stats.breaksTaken} />

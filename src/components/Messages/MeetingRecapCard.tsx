@@ -140,7 +140,7 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
           {/* Action Items summary */}
           {metadata.actionItems?.length && (
             <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/15 p-3">
-              <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+              <div className="font-mono text-xs font-medium text-emerald-400 uppercase tracking-[0.1em] mb-2 flex items-center gap-1">
                 <CheckSquare className="w-3 h-3" />
                 Action Items ({metadata.actionItems.length})
               </div>

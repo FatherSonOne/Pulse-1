@@ -89,7 +89,7 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
         {/* Pinned */}
         {filteredPinned.length > 0 && (
           <div className="pinned-threads-section mb-2">
-            <div className="px-4 py-2 text-[10px] font-bold text-[var(--pulse-rose)] uppercase tracking-[2px]">
+            <div className="px-4 py-2 font-mono text-[10px] font-medium text-[var(--pulse-rose)] uppercase tracking-[0.1em]">
               Pinned
             </div>
             {filteredPinned.map((c) => {
@@ -111,7 +111,7 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
         {filteredRegular.length > 0 && (
           <div className="regular-threads-section">
             {filteredPinned.length > 0 && (
-              <div className="px-4 py-2 text-[10px] font-bold text-[var(--pulse-ink-2)] uppercase tracking-[2px]">
+              <div className="px-4 py-2 font-mono text-[10px] font-medium text-[var(--pulse-ink-2)] uppercase tracking-[0.1em]">
                 All Threads
               </div>
             )}

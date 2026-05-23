@@ -226,7 +226,7 @@ export const DistractionBlockingOverlay: React.FC<DistractionBlockingOverlayProp
                       }}
                       transition={{ duration: 1.5, repeat: Infinity }}
                     />
-                    <span className={`text-xs font-semibold uppercase tracking-wider ${colors.accent}`}>
+                    <span className={`font-mono text-xs font-medium uppercase tracking-[0.1em] ${colors.accent}`}>
                       {mode === 'work' ? 'Focus Time' : 'Break Time'}
                     </span>
                   </div>
@@ -281,7 +281,7 @@ export const DistractionBlockingOverlay: React.FC<DistractionBlockingOverlayProp
                 {/* Session Goal */}
                 {sessionGoal && (
                   <div className="mb-4 p-3 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.10)]/50">
-                    <p className="text-xs text-[#6b7280] uppercase tracking-wider mb-1">Session Goal</p>
+                    <p className="font-mono text-xs text-[#6b7280] uppercase tracking-[0.1em] mb-1">Session Goal</p>
                     <p className="text-sm text-[#fafafa] line-clamp-2">{sessionGoal}</p>
                   </div>
                 )}

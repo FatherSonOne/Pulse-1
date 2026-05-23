@@ -85,7 +85,7 @@ export const LinkPreviewCard: React.FC<LinkPreviewCardProps> = ({
       )}
       <div className="p-3">
         {preview.site_name && (
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1 flex items-center gap-1">
+          <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400 mb-1 flex items-center gap-1">
             <ExternalLink className="w-2.5 h-2.5" />
             <span className="truncate">{preview.site_name}</span>
           </div>
