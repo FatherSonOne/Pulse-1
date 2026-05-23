@@ -7,7 +7,11 @@ interface MessageContainerProps {
 
 /**
  * MessageContainer - Main layout wrapper for Messages component
- * Provides consistent container styling and layout structure
+ * Provides consistent container styling and layout structure.
+ *
+ * Keyframes (slideInRight, slideOutRight, fade-in, scale-in) and the
+ * .animate-fade-in / .animate-scale-in classes used here live in
+ * messages.css — no per-mount inline <style> injection.
  */
 export const MessageContainer = memo<MessageContainerProps>(({ children, className = '' }) => {
   return (
@@ -15,49 +19,6 @@ export const MessageContainer = memo<MessageContainerProps>(({ children, classNa
       className={`h-full flex bg-[var(--pulse-canvas)] rounded-2xl overflow-hidden border border-[var(--pulse-border)] relative animate-fade-in shadow-xl ${className}`}
     >
       {children}
-
-      <style>{`
-        @keyframes slideInRight {
-          from {
-            transform: translateX(100%);
-          }
-          to {
-            transform: translateX(0);
-          }
-        }
-        @keyframes slideOutRight {
-          from {
-            transform: translateX(0);
-          }
-          to {
-            transform: translateX(100%);
-          }
-        }
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-        @keyframes scale-in {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.2s ease-out;
-        }
-        .animate-scale-in {
-          animation: scale-in 0.2s ease-out;
-        }
-      `}</style>
     </div>
   );
 });

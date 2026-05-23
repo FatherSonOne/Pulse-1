@@ -483,30 +483,45 @@
               box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── Received message — quote-style. Coral 1px leading hairline,
-      no bubble background, no perimeter border. Reads like Linear /
-      email thread, not like Slack. */
+/* ── Received message — quote-style. Coral 1px leading hairline via
+      ::before pseudo-element (NOT border-left as side-stripe — that's
+      banned by the project absolute-bans list). No bubble background,
+      no perimeter border. Reads like Linear / email thread, not Slack. */
 .message-bubble-received {
+  position: relative;
   background: transparent;
   border: 0;
-  border-left: 1px solid rgba(244, 63, 94, 0.30);
   border-radius: 0;
   padding: 0.125rem 0 0.125rem 14px;
   color: var(--msg-text-main, #0f0f0f);
 }
 
+.message-bubble-received::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: 1px;
+  background: rgba(244, 63, 94, 0.30);
+  transition: background 0.2s ease-out, width 0.2s ease-out;
+}
+
 .dark .message-bubble-received {
   color: #fafafa;
-  border-left-color: rgba(244, 63, 94, 0.40);
 }
 
-/* Hover on received — coral hairline thickens 1 → 2px, no jitter */
-.message-bubble-received:hover {
-  border-left-color: rgba(244, 63, 94, 0.55);
+.dark .message-bubble-received::before {
+  background: rgba(244, 63, 94, 0.40);
 }
 
-.dark .message-bubble-received:hover {
-  border-left-color: rgba(244, 63, 94, 0.65);
+/* Hover on received — coral hairline brightens (no width jitter) */
+.message-bubble-received:hover::before {
+  background: rgba(244, 63, 94, 0.55);
+}
+
+.dark .message-bubble-received:hover::before {
+  background: rgba(244, 63, 94, 0.65);
 }
 
 /* ── Sent message — coral-glass card. Symmetric 12px (no chat tail).
@@ -965,4 +980,40 @@ button:focus-visible {
   backdrop-filter: blur(16px);
   border-top-color: rgba(255, 255, 255, 0.06);
   color: #fafafa;
+}
+
+/* ============================================================
+   Shared container animations — moved from inline <style> in
+   MessageContainer.tsx so they're not re-injected per mount.
+   ============================================================ */
+@keyframes msg-slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes msg-slideOutRight {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+@keyframes msg-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes msg-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: msg-fade-in 0.2s ease-out;
+}
+
+.animate-scale-in {
+  animation: msg-scale-in 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-scale-in {
+    animation: none;
+  }
 }

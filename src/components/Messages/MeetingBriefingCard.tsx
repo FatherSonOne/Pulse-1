@@ -106,7 +106,7 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
                     <span className="text-[#f43f5e] mt-0.5 flex-shrink-0">•</span>
                     <div>
                       <span className="font-medium text-zinc-200">{p.name}</span>
-                      {p.role && <span className="text-zinc-500 ml-1">— {p.role}</span>}
+                      {p.role && <span className="text-zinc-500 ml-1">· {p.role}</span>}
                       {p.meetingCount != null && (
                         <span className="text-zinc-600 ml-1">
                           ({p.meetingCount} previous meeting{p.meetingCount !== 1 ? 's' : ''})

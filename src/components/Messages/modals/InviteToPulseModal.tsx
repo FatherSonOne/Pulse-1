@@ -7,7 +7,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
-import { Calendar, Check, ChevronRight, Mail, MessageSquare, Mic, Rocket, Users, Wand2, X } from 'lucide-react';
+import { Calendar, Check, ChevronRight, Copy, Mail, MessageSquare, Mic, Rocket, Users, Wand2, X } from 'lucide-react';
 
 interface InviteTargetContact {
   name: string;
@@ -133,7 +133,7 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                     className="w-full p-4 rounded-xl bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.20)] hover:border-[#f43f5e] transition flex items-center gap-4 group"
                   >
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f43f5e] to-[#ec4899] text-white flex items-center justify-center transition shadow-lg">
-                      <i className={`fa-solid ${isCopied ? 'fa-check' : 'fa-copy'} text-lg`}></i>
+                      {isCopied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
                     </div>
                     <div className="text-left flex-1">
                       <div className="font-bold text-zinc-900 dark:text-white">

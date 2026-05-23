@@ -7,7 +7,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
-import { Check, Loader2, Send, UserPlus, X } from 'lucide-react';
+import { AlertCircle, Check, Info, Loader2, Send, UserPlus, X } from 'lucide-react';
 
 type InviteStatus = 'idle' | 'sending' | 'success' | 'error';
 
@@ -109,11 +109,13 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
                 inviteStatus === 'error' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
                 'bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] text-zinc-600 dark:text-zinc-400'
               }`}>
-                <i className={`fa-solid ${
-                  inviteStatus === 'success' ? 'fa-check-circle' :
-                  inviteStatus === 'error' ? 'fa-exclamation-circle' :
-                  'fa-circle-info'
-                }`}></i>
+                {inviteStatus === 'success' ? (
+                  <Check className="w-4 h-4 flex-shrink-0" />
+                ) : inviteStatus === 'error' ? (
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                ) : (
+                  <Info className="w-4 h-4 flex-shrink-0" />
+                )}
                 {inviteMessage}
               </div>
             )}

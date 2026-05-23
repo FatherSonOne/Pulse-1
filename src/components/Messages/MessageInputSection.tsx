@@ -1,6 +1,6 @@
 import React from 'react';
 import { lazy, Suspense } from 'react';
-import { Clock, File, Gavel, Image, Link, Lock, MessageCircle, MessageSquare, Plus, Rocket, Scale, Smile, Smartphone, Video, Wand2, X, Zap, ArrowUp } from 'lucide-react';
+import { Clock, File, Gavel, Image, Link, Loader2, Lock, MessageCircle, MessageSquare, Mic, Plus, Rocket, Scale, Smile, Smartphone, Square, Video, Wand2, X, Zap, ArrowUp } from 'lucide-react';
 import MessageInputPortal from './MessageInputPortal';
 import { SmartCompose } from '../MessageEnhancements/SmartCompose';
 import { QuickActions } from '../MessageEnhancements/QuickActions';
@@ -673,7 +673,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
               className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
               title={isRecording ? "Stop Recording" : "Voice Message"}
            >
-              <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'} text-xs sm:text-sm`}></i>
+              {isRecording ? <Square className="w-4 h-4 fill-current" /> : <Mic className="w-4 h-4" />}
            </button>
              </>
            )}
@@ -700,7 +700,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
               className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] disabled:opacity-40"
               title="AI Smart Reply"
            >
-              <i className={`fa-solid ${loadingAI ? 'fa-circle-notch fa-spin' : 'fa-wand-magic-sparkles'} text-xs sm:text-sm`}></i>
+              {loadingAI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
            </button>
            {isNonPulseThread && canSendNativeSms ? (
              // SMS Send Button for non-Pulse users on mobile

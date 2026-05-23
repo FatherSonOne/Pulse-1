@@ -178,7 +178,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
             aria-label={isPinned ? 'Unpin thread' : 'Pin thread'}
             title={isPinned ? 'Unpin thread' : 'Pin thread'}
           >
-            <i className={`fa-solid fa-thumbtack text-xs ${isPinned ? 'text-[var(--pulse-rose)]' : 'text-[var(--pulse-ink-2)]'}`}></i>
+            <Pin className={`w-3 h-3 ${isPinned ? 'text-[var(--pulse-rose)] fill-current' : 'text-[var(--pulse-ink-2)]'}`} />
           </button>
           <button
             className="p-1 rounded hover:bg-white/[0.08] transition-colors"
