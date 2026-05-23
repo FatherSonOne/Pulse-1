@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, ExternalLink, Clock, Users, AlertTriangle, Sparkles } from 'lucide-react';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 import type { BotMessageMetadata, BotAction } from '../../types/messages';
 
 interface MeetingBriefingCardProps {
@@ -51,10 +52,7 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium px-1.5 py-0.5 rounded bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185] inline-flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#f43f5e]" aria-hidden="true" />
-            PULSE AI · MEETING BRIEFING
-          </span>
+          <AIProvenanceTag source="pulse-ai" kind="briefing" />
           <div className="flex items-center gap-2 flex-wrap">
             {profileName && (
               <span className="text-[9px] font-mono font-medium uppercase tracking-[0.1em] text-[#52525b] dark:text-[#b4b4b8] bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] px-1.5 py-0.5 rounded-full flex items-center gap-1">

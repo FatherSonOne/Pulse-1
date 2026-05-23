@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Plus, Sparkles, Clock, AtSign, Pin } from 'lucide-react';
+import { Plus, Clock, AtSign, Pin } from 'lucide-react';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 import type { PulseConversation } from '../../services/pulseService';
 
 /**
@@ -98,12 +99,8 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
         {/* AI Brief — provenance tag + summary. Renders only when host populates aiSummary. */}
         {aiSummary && (
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-rose-500/10 dark:bg-rose-500/15">
-              <Sparkles className="w-3 h-3 text-rose-600 dark:text-rose-400" aria-hidden="true" />
-              <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-rose-700 dark:text-rose-300">
-                PULSE AI · BRIEF
-              </span>
-            </div>
+            <AIProvenanceTag source="pulse-ai" kind="briefing" />
+
             <p className="text-[15px] leading-[1.5] text-zinc-700 dark:text-zinc-300 max-w-[65ch]">
               {aiSummary}
             </p>
