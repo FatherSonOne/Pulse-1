@@ -248,10 +248,15 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
       <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center justify-between mb-1">
           <div>
-            <h2 className="text-lg font-bold text-zinc-800 dark:text-zinc-100">Your Day</h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Relationships that need your attention
-            </p>
+            <div
+              className="text-[11px] uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400 mb-0.5"
+              style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
+            >
+              Your Day
+            </div>
+            <h2 className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
+              {new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date())}
+            </h2>
           </div>
           <div className="flex items-center gap-1.5">
             {/* Time / Route view mode toggle. Persisted to localStorage so
