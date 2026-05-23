@@ -35,6 +35,9 @@ export const ThreadActionsMenu: React.FC<ThreadActionsMenuProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        aria-label="Thread actions"
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
       >
         <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
       </button>

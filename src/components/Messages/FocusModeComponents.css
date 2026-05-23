@@ -79,7 +79,7 @@
   /* Text Colors */
   --focus-text-primary: #fafafa;
   --focus-text-secondary: #a1a1aa;
-  --focus-text-muted: #71717a;
+  --focus-text-muted: #a1a1aa; /* a11y: was #71717a = 3.59:1 on #18181b, failed AA */
   --focus-text-disabled: #52525b;
 
   /* Shadows */

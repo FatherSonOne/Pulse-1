@@ -46,7 +46,7 @@ export const AIProvenanceTag: React.FC<AIProvenanceTagProps> = ({
     <span
       role="note"
       aria-label={ariaLabel}
-      className={`inline-flex items-center gap-1.5 bg-rose-500/[0.10] dark:bg-rose-500/[0.15] text-rose-600 dark:text-rose-400 font-mono text-[11px] font-medium uppercase tracking-[0.1em] px-2 py-1 rounded ${className}`}
+      className={`inline-flex items-center gap-1.5 bg-rose-500/[0.10] dark:bg-rose-500/[0.15] text-rose-700 dark:text-rose-400 font-mono text-[11px] font-medium uppercase tracking-[0.1em] px-2 py-1 rounded ${className}`}
     >
       {showDot && (
         <span
@@ -60,7 +60,7 @@ export const AIProvenanceTag: React.FC<AIProvenanceTagProps> = ({
           type="button"
           onClick={onDismiss}
           aria-label={`Dismiss AI ${kind}`}
-          className="ml-0.5 -mr-1 inline-flex items-center justify-center w-4 h-4 rounded-sm text-rose-600/70 dark:text-rose-400/70 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/[0.15] transition-colors"
+          className="ml-0.5 -mr-1 inline-flex items-center justify-center w-4 h-4 rounded-sm text-rose-700 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 hover:bg-rose-500/[0.15] transition-colors"
         >
           <X className="w-3 h-3" />
         </button>

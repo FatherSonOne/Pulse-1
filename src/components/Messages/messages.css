@@ -17,7 +17,7 @@
   --msg-primary-glow:   rgba(244, 63, 94, 0.20);
   --msg-text-main:      #0f172a;
   --msg-text-secondary: #64748b;
-  --msg-text-muted:     #94a3b8;
+  --msg-text-muted:     #64748b; /* a11y: was #94a3b8 = 3.95:1 on white, failed AA */
   --msg-shadow-sm:      0 1px 3px rgba(0,0,0,0.08);
   --msg-shadow-md:      0 4px 16px rgba(0,0,0,0.12);
   --msg-shadow-rose:    0 0 0 1px var(--msg-primary), 0 4px 24px var(--msg-primary-glow);
@@ -35,7 +35,7 @@
   --msg-primary-glow:   rgba(244, 63, 94, 0.30);
   --msg-text-main:      #fafafa;
   --msg-text-secondary: #b4b4b8;
-  --msg-text-muted:     #6b7280;
+  --msg-text-muted:     #b4b4b8; /* a11y: was #6b7280 = 4.34:1 on black, failed AA */
   --msg-shadow-sm:      0 1px 4px rgba(0,0,0,0.5);
   --msg-shadow-md:      0 4px 16px rgba(0,0,0,0.6);
   --msg-shadow-rose:    0 0 0 1px var(--msg-primary), 0 4px 24px var(--msg-primary-glow);
@@ -194,7 +194,7 @@
 
 .dark .thread-list-footer {
   border-top-color: rgba(255, 255, 255, 0.06);
-  color: #6b7280;
+  color: #b4b4b8; /* a11y: was #6b7280 = 4.34:1 on black, failed AA */
 }
 
 /* =========================
@@ -439,7 +439,7 @@
 }
 
 .msg-sender-header .msg-timestamp {
-  color: #6b7280;
+  color: var(--pulse-ink-2); /* a11y: was #6b7280 = 4.34:1 on dark canvas */
 }
 
 /* Read / Delivered receipt — JetBrains Mono, sits under sent bubbles */
@@ -453,7 +453,7 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #6b7280;
+  color: var(--pulse-ink-2); /* a11y: was #6b7280 = 4.34:1 on dark canvas */
 }
 
 .msg-receipt[data-state="read"] {

@@ -233,7 +233,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                  setShowInviteToPulseModal(true);
                }
              }}
-             className="ml-auto text-rose-600 dark:text-rose-400 hover:underline font-medium"
+             className="ml-auto text-rose-700 dark:text-rose-400 hover:underline font-medium"
            >
              Invite to Pulse
            </button>
@@ -341,7 +341,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      onClick={() => { setShowSmartCompose(true); setShowQuickPhrases(false); }}
                      className={`px-2 py-1 rounded text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                        !showQuickPhrases
-                         ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                         ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-700 dark:text-rose-bright'
                          : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-bright'
                      }`}
                    >
@@ -354,7 +354,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      onClick={() => { setShowSmartCompose(false); setShowQuickPhrases(true); }}
                      className={`px-2 py-1 rounded text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                        showQuickPhrases
-                         ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                         ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-700 dark:text-rose-bright'
                          : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-bright'
                      }`}
                    >
@@ -559,7 +559,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      </div>
                      <div>
                        <div className="text-sm font-medium dark:text-white">Photo</div>
-                       <div className="text-xs text-zinc-500">Upload an image</div>
+                       <div className="text-xs text-zinc-500 dark:text-zinc-400">Upload an image</div>
                      </div>
                    </button>
 
@@ -572,7 +572,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      </div>
                      <div>
                        <div className="text-sm font-medium dark:text-white">Video</div>
-                       <div className="text-xs text-zinc-500">Upload a video</div>
+                       <div className="text-xs text-zinc-500 dark:text-zinc-400">Upload a video</div>
                      </div>
                    </button>
 
@@ -585,7 +585,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      </div>
                      <div>
                        <div className="text-sm font-medium dark:text-white">File</div>
-                       <div className="text-xs text-zinc-500">Upload a document</div>
+                       <div className="text-xs text-zinc-500 dark:text-zinc-400">Upload a document</div>
                      </div>
                    </button>
 
@@ -608,7 +608,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                        </div>
                        <div>
                          <div className="text-sm font-medium dark:text-white">Voice Message</div>
-                         <div className="text-xs text-zinc-500">Record an audio reply</div>
+                         <div className="text-xs text-zinc-500 dark:text-zinc-400">Record an audio reply</div>
                        </div>
                      </button>
                    )}
@@ -622,7 +622,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      </div>
                      <div>
                        <div className="text-sm font-medium dark:text-white">Link</div>
-                       <div className="text-xs text-zinc-500">Add a URL</div>
+                       <div className="text-xs text-zinc-500 dark:text-zinc-400">Add a URL</div>
                      </div>
                    </button>
                  </div>
@@ -755,7 +755,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              // Disabled button for view-only mode
              <button
                disabled
-               className="w-12 h-12 rounded-lg bg-[#e8e8e8] dark:bg-[rgba(255,255,255,0.055)] text-zinc-500 flex items-center justify-center cursor-not-allowed"
+               className="w-12 h-12 rounded-lg bg-[#e8e8e8] dark:bg-[rgba(255,255,255,0.055)] text-zinc-600 dark:text-zinc-400 flex items-center justify-center cursor-not-allowed"
                title="Send from your mobile device"
              >
                <Lock className="text-xs sm:text-sm" />
@@ -776,10 +776,10 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
        {/* Scheduled Messages Indicator */}
        {scheduledMessages.filter(m => m.threadId === activeThreadId).length > 0 && (
-         <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
+         <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
            <Clock />
            <span>{scheduledMessages.filter(m => m.threadId === activeThreadId).length} message(s) scheduled for this conversation</span>
-           <button onClick={() => setShowScheduleModal(true)} className="text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 hover:underline">View</button>
+           <button onClick={() => setShowScheduleModal(true)} className="text-rose-700 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 hover:underline">View</button>
          </div>
        )}
     </MessageInputPortal>

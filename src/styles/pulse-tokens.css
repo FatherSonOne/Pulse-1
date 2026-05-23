@@ -120,7 +120,7 @@
   /* ─── Ink — dark ─── */
   --pulse-ink: #fafafa;
   --pulse-ink-2: #b4b4b8;
-  --pulse-ink-3: #6b7280;
+  --pulse-ink-3: #a1a1aa; /* a11y: was #6b7280 = 4.34:1 on #000, failed AA */
 
   /* AI provenance chip — dark override only; bg-12/08 use transparent
      mix and composite correctly over any surface in either theme.

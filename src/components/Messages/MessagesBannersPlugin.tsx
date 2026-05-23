@@ -98,7 +98,7 @@ export const MessagesBannersPlugin: React.FC<MessagesBannersPluginProps> = ({
             type="button"
             onClick={handleInviteClick}
             disabled={!activeContact}
-            className="ml-auto text-rose-600 dark:text-rose-400 hover:underline font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="ml-auto text-rose-700 dark:text-rose-400 hover:underline font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Invite to Pulse
           </button>

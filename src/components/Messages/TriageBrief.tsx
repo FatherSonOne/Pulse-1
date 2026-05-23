@@ -89,7 +89,7 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
             </h1>
           )}
           {lastSeen && (
-            <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-500 inline-flex items-center gap-1.5">
+            <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-400 inline-flex items-center gap-1.5">
               <Clock className="w-3 h-3" aria-hidden="true" />
               LAST ACTIVITY · {formatRelative(lastSeen)}
             </p>
@@ -110,7 +110,7 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
         {/* Top urgent threads — quiet rows, click to open */}
         {urgent.length > 0 && (
           <div className="space-y-2">
-            <h2 className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-600 dark:text-zinc-500">
+            <h2 className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
               NEEDS YOU · {urgent.length}
             </h2>
             <ul className="space-y-px">
@@ -139,14 +139,14 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
                             </span>
                           )}
                           {ago && (
-                            <span className="font-mono text-[10px] text-zinc-600 dark:text-zinc-500">
+                            <span className="font-mono text-[10px] text-zinc-600 dark:text-zinc-400">
                               {ago}
                             </span>
                           )}
                         </span>
                       </div>
                       {preview && (
-                        <p className="mt-0.5 text-[12px] leading-[1.4] text-zinc-600 dark:text-zinc-500 line-clamp-1">
+                        <p className="mt-0.5 text-[12px] leading-[1.4] text-zinc-600 dark:text-zinc-400 line-clamp-1">
                           {preview}
                         </p>
                       )}
@@ -162,14 +162,14 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
         <div className="pt-2">
           <button
             onClick={onNewConversation}
-            className="inline-flex items-center gap-2 px-3 py-2 -ml-3 rounded-md text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="inline-flex items-center gap-2 px-3 py-2 -ml-3 rounded-md text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
           >
             <Plus className="w-3.5 h-3.5" aria-hidden="true" />
             <span className="text-[13px] font-medium">New conversation</span>
-            <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-500">⌘N</span>
+            <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-400">⌘N</span>
           </button>
           {total > 0 && caughtUp && (
-            <p className="mt-2 font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-500">
+            <p className="mt-2 font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-400">
               {total} {total === 1 ? 'CONVERSATION' : 'CONVERSATIONS'} · ALL READ
             </p>
           )}
