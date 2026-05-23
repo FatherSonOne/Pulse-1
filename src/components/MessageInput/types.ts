@@ -16,6 +16,14 @@ export interface MessageInputProps {
   disabled?: boolean;
   initialValue?: string;
   setActiveToolOverlay?: (overlayType: 'analytics' | 'collaboration' | 'productivity' | 'intelligence' | 'proactive' | 'communication' | 'personalization' | 'security' | 'mediaHub') => void;
+  /**
+   * Slash-command launcher for tools that toggle an inline composer
+   * panel (Smart Compose, AI Coach, AI Mediator, Voice Note, Schedule,
+   * Smart Reply, Proposal Mode). When provided, the slash dispatcher
+   * routes inline-panel tool IDs here instead of (or before) the
+   * overlay map. See `INLINE_PANEL_TOOLS` in services/toolRegistry.ts.
+   */
+  onInlinePanelLaunch?: (toolId: string) => void;
 }
 
 export interface AISuggestion {

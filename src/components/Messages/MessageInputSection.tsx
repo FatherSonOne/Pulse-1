@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { lazy, Suspense } from 'react';
-import { Clock, File, Gavel, Image, Link, Loader2, Lock, MessageCircle, MessageSquare, Mic, Plus, Rocket, Scale, Smile, Smartphone, Square, Video, Wand2, X, Zap, ArrowUp } from 'lucide-react';
+import { Clock, File, Image, Link, Lock, MessageSquare, Mic, Plus, Rocket, Scale, Smile, Smartphone, Video, X, ArrowUp } from 'lucide-react';
 import MessageInputPortal from './MessageInputPortal';
 import { SmartCompose } from '../MessageEnhancements/SmartCompose';
 import { QuickActions } from '../MessageEnhancements/QuickActions';
@@ -11,7 +11,10 @@ import { VoiceTextButton } from '../shared/VoiceTextButton';
 import { MeetingDeflector } from '../attention';
 import { IntentComposer } from '../context';
 import MessageInput from '../MessageInput';
-import { MESSAGE_TEMPLATES, REACTION_CATEGORIES, generateSmartTemplateText } from './messageConstants';
+import SlashCommandDropdown from '../MessageInput/SlashCommandDropdown';
+import { useSlashCommands } from '../../hooks/useSlashCommands';
+import { getToolOverlayType, isInlinePanelTool } from '../../services/toolRegistry';
+import { REACTION_CATEGORIES } from './messageConstants';
 import { Thread, Contact } from '../../types';
 
 const BundleAI = lazy(() => import('../MessageEnhancements/BundleAI'));
@@ -83,7 +86,13 @@ interface MessageInputSectionProps {
   activeThreadId: string | null;
   showMeetingDeflector: boolean;
   setShowMeetingDeflector: (v: boolean) => void;
-  useTemplate: (template: typeof MESSAGE_TEMPLATES[0]) => void;
+  /**
+   * Legacy: the Templates panel was removed in PR 3.1 (the audit's
+   * #1 cognitive-load offender). The prop stays for now so the
+   * Messages.tsx call site keeps compiling; future cleanup can prune
+   * `showTemplates`, `setShowTemplates`, and `useTemplate` together.
+   */
+  useTemplate: (template: any) => void;
 }
 
 export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
@@ -111,9 +120,67 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
   loadingAI, isBotChat,
   setShowScheduleModal, scheduledMessages, activeThreadId,
   showMeetingDeflector, setShowMeetingDeflector,
-  useTemplate,
+  useTemplate: _useTemplate,
 }) => {
   if (!activeThread || activePulseConversation) return null;
+
+  // Slash-command palette — replaces the old chrome of one-button-per-
+  // feature with a typed `/<cmd>` palette inside the textarea. Only
+  // active on the basic textarea path; the AI-augmented MessageInput
+  // owns its own slash via the same hook.
+  const slashEditorRef = useRef<HTMLDivElement>(null);
+  const { state: slashState, handlers: slashHandlers } = useSlashCommands(
+    inputText,
+    slashEditorRef,
+    (toolId) => handleSlashLaunch(toolId),
+  );
+
+  const stripSlashPrefix = useCallback(() => {
+    setInputText(prev => {
+      const trimmed = (typeof prev === 'string' ? prev : '').trimStart();
+      if (!trimmed.startsWith('/')) return prev;
+      const firstSpace = trimmed.indexOf(' ');
+      return firstSpace === -1 ? '' : trimmed.slice(firstSpace + 1);
+    });
+  }, [setInputText]);
+
+  const handleSlashLaunch = useCallback((toolId: string) => {
+    stripSlashPrefix();
+    if (isInlinePanelTool(toolId)) {
+      switch (toolId) {
+        case 'smart-compose':
+          setShowSmartCompose(true);
+          setShowQuickPhrases(false);
+          break;
+        case 'ai-coach':
+          setShowAICoach(true);
+          break;
+        case 'ai-mediator':
+          setShowAIMediator(true);
+          break;
+        case 'voice-extractor':
+          setShowVoiceExtractor(true);
+          break;
+        case 'schedule-message':
+          setShowScheduleModal(true);
+          break;
+        case 'smart-reply':
+          handleSmartReply();
+          break;
+        case 'proposal-mode':
+          if (proposalModeEnabled) setIsProposalMode(!isProposalMode);
+          break;
+      }
+      return;
+    }
+    const overlay = getToolOverlayType(toolId);
+    if (overlay) setActiveToolOverlay(overlay);
+  }, [
+    stripSlashPrefix, setShowSmartCompose, setShowQuickPhrases,
+    setShowAICoach, setShowAIMediator, setShowVoiceExtractor,
+    setShowScheduleModal, handleSmartReply, proposalModeEnabled,
+    isProposalMode, setIsProposalMode, setActiveToolOverlay,
+  ]);
 
   return (
     <MessageInputPortal
@@ -172,43 +239,23 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
          </div>
        )}
 
-       {/* Message Templates Popup */}
-       {showTemplates && (
-         <div className="absolute bottom-full left-4 right-4 mb-2 bg-white dark:bg-[rgba(255,255,255,0.03)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] rounded-xl shadow-xl p-3 animate-slide-up z-30">
-           <div className="flex items-center justify-between mb-3">
-             <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-400">Quick Templates</span>
-             <button onClick={() => setShowTemplates(false)} className="text-zinc-400 hover:text-zinc-600">
-               <X className="text-xs" />
-             </button>
-           </div>
-           <div className="grid grid-cols-2 gap-2">
-             {MESSAGE_TEMPLATES.map(template => {
-               // Generate smart preview text
-               const previewText = activeThread
-                 ? generateSmartTemplateText(
-                     template.id,
-                     template.baseText,
-                     activeThread.contactName,
-                     activeThread.messages[activeThread.messages.length - 1]?.sender === 'other'
-                       ? activeThread.messages[activeThread.messages.length - 1]?.text
-                       : undefined
-                   )
-                 : template.baseText;
-               return (
-                 <button
-                   key={template.id}
-                   onClick={() => useTemplate(template)}
-                   className="text-left p-2 rounded-lg bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] transition"
-                 >
-                   <div className="text-xs font-medium dark:text-white flex items-center gap-1.5">
-                     <Wand2 className="text-zinc-400 dark:text-zinc-500 text-[8px]" />
-                     {template.label}
-                   </div>
-                   <div className="text-[10px] text-zinc-500 truncate">{previewText}</div>
-                 </button>
-               );
-             })}
-           </div>
+       {/* Slash-command palette — `/<cmd>` typed in the textarea
+           reveals the tool launcher (Smart Compose, AI Coach, Mediator,
+           Voice Note, Schedule, Smart Reply, Proposal Mode, plus
+           analyze tools). Replaces the prior chrome of one-button-per-
+           feature that the audit flagged as the #1 cognitive-load
+           incident in this surface. The dropdown owns its own absolute
+           positioning (`bottom: calc(100% + 8px)`) anchored against
+           this 0-height relative wrapper. */}
+       {slashState.isActive && (
+         <div className="relative">
+           <SlashCommandDropdown
+             matches={slashState.matches}
+             selectedIndex={slashState.selectedIndex}
+             query={slashState.query}
+             onSelect={slashHandlers.handleSelect}
+             onClose={slashHandlers.handleDismiss}
+           />
          </div>
        )}
 
@@ -454,38 +501,32 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
          </div>
        )}
 
-       {/* Meeting Deflector - Suggests async alternatives when meeting intent is detected */}
+       {/* Meeting Deflector — auto-fires when "let's meet" intent is
+           detected. Renders inline (above the input row, in normal
+           flow) instead of absolute-stacking, so it occupies the same
+           slot that AI panels use and never pushes the composer past
+           the thread. */}
        {showMeetingDeflector && inputText.length > 20 && (
-         <MeetingDeflector
-           messageText={inputText}
-           apiKey={apiKey}
-           onAcceptSuggestion={(type, template) => {
-             setInputText(template);
-             setShowMeetingDeflector(false);
-           }}
-           onDismiss={() => setShowMeetingDeflector(false)}
-         />
+         <div className="mb-3">
+           <MeetingDeflector
+             messageText={inputText}
+             apiKey={apiKey}
+             onAcceptSuggestion={(_type, template) => {
+               setInputText(template);
+               setShowMeetingDeflector(false);
+             }}
+             onDismiss={() => setShowMeetingDeflector(false)}
+           />
+         </div>
        )}
 
        <div className={`flex gap-1 sm:gap-2 items-end relative bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.03)] p-1.5 sm:p-2 rounded-xl border transition-colors ${proposalModeEnabled && isProposalMode ? 'border-amber-500/50' : isRecording ? 'border-red-500/50' : 'border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]'}`}>
-         {/* Left Action Buttons - Collapsed on mobile */}
+         {/* Left Action Buttons — 4-button target: Attach + Emoji on
+             this side; Voice-to-Text + Send on the right. Templates /
+             Proposal / Schedule / Voice Note / Smart Reply / Smart
+             Compose / AI Coach / AI Mediator all moved behind the
+             `/<cmd>` slash palette typed in the textarea. */}
          <div className="flex gap-0.5 sm:gap-1 relative flex-shrink-0">
-           {proposalModeEnabled && (
-             <button
-                onClick={() => setIsProposalMode(!isProposalMode)}
-                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${isProposalMode ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
-                title="Make Proposal (Ctrl+Shift+P)"
-             >
-                <Gavel className="text-xs sm:text-sm" />
-             </button>
-           )}
-           <button
-              onClick={() => setShowTemplates(!showTemplates)}
-              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showTemplates ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
-              title="Message Templates (Ctrl+Shift+T)"
-           >
-              <Zap className="text-xs sm:text-sm" />
-           </button>
            <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showEmojiPicker ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
@@ -493,10 +534,6 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            >
               <Smile className="text-xs sm:text-sm" />
            </button>
-
-           {/* Quick Phrases now live inside the Smart Compose panel
-               (Suggest / Phrases tabs). Open Smart Compose from the
-               Tools menu to access either mode. */}
 
            {/* Attachment Menu Button */}
            <div className="relative" ref={attachmentMenuRef}>
@@ -552,6 +589,28 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                    </button>
 
                    <div className="border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] my-1"></div>
+
+                   {/* Voice Message — moved from a dedicated chrome
+                       button to the Attach dropdown so the composer
+                       lands on 4 base buttons total. Starting a
+                       recording reveals the inline Recording banner
+                       (above the input row), which owns the Stop &
+                       Send affordance. */}
+                   {!apiKey && (
+                     <button
+                       onClick={() => { setShowAttachmentMenu(false); if (!isRecording) startRecording(); }}
+                       disabled={isRecording}
+                       className="w-full px-4 py-3 text-left hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex items-center gap-3 group disabled:opacity-40 disabled:cursor-not-allowed"
+                     >
+                       <div className="w-10 h-10 rounded-lg bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                         <Mic className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
+                       </div>
+                       <div>
+                         <div className="text-sm font-medium dark:text-white">Voice Message</div>
+                         <div className="text-xs text-zinc-500">Record an audio reply</div>
+                       </div>
+                     </button>
+                   )}
 
                    <button
                      onClick={handleAddLink}
@@ -641,67 +700,46 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                channelId={activeThread?.id}
                apiKey={apiKey}
                setActiveToolOverlay={setActiveToolOverlay}
+               onInlinePanelLaunch={handleSlashLaunch}
              />
            </div>
          ) : (
            <textarea
              aria-label="Type a message"
              className="flex-1 bg-transparent dark:text-white text-zinc-900 placeholder-zinc-400 text-sm focus:outline-none resize-none py-2.5 max-h-32 scrollbar-hide font-light"
-             placeholder={isProposalMode ? "State your proposal clearly..." : isRecording ? "Recording voice message..." : "Type a message..."}
+             placeholder={isProposalMode ? "State your proposal clearly..." : isRecording ? "Recording voice message..." : "Type a message — `/` for tools…"}
              rows={1}
              value={inputText}
              onChange={(e) => setInputText(e.target.value)}
-             onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); isNonPulseThread && canSendNativeSms ? handleSendSms(inputText) : !isViewOnlyMode && handleSend(); }}}
+             onKeyDown={(e) => {
+               // Slash palette keyboard nav (↑↓/Enter/Tab/Esc). When the
+               // palette is active, slashHandlers swallows the event and
+               // we skip the normal send path.
+               if (slashHandlers.handleKeyDown(e as unknown as React.KeyboardEvent)) return;
+               if (e.key === 'Enter' && !e.shiftKey) {
+                 e.preventDefault();
+                 if (isNonPulseThread && canSendNativeSms) handleSendSms(inputText);
+                 else if (!isViewOnlyMode) handleSend();
+               }
+             }}
              disabled={isRecording}
            />
          )}
 
-         {/* Right Action Buttons - Collapsed on mobile */}
+         {/* Right Action Buttons — Voice-to-Text dictation + Send. The
+             former Schedule (Clock), Voice Extractor (MessageCircle),
+             Smart Reply (Wand2), and standalone voice-message (Mic)
+             buttons all moved behind `/schedule`, `/voicenote`,
+             `/reply`, and the Attach menu's Voice Message entry. */}
          <div className="flex gap-0.5 sm:gap-1 flex-shrink-0">
-           {/* Voice buttons only shown when NOT using MessageInput component */}
            {!apiKey && (
-             <>
-               {/* Voice-to-Text Dictation Button */}
-               <VoiceTextButton
-              onTranscript={(text) => setInputText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
-              size="sm"
-              disabled={isRecording}
-              className="text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] w-8 h-8 sm:w-10 sm:h-10"
-           />
-           <button
-              onClick={isRecording ? stopRecording : startRecording}
-              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
-              title={isRecording ? "Stop Recording" : "Voice Message"}
-           >
-              {isRecording ? <Square className="w-4 h-4 fill-current" /> : <Mic className="w-4 h-4" />}
-           </button>
-             </>
+             <VoiceTextButton
+               onTranscript={(text) => setInputText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
+               size="sm"
+               disabled={isRecording}
+               className="text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] w-8 h-8 sm:w-10 sm:h-10"
+             />
            )}
-           {/* Hidden on mobile */}
-           <button
-              onClick={() => setShowScheduleModal(true)}
-              disabled={!inputText.trim()}
-              className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] disabled:opacity-40"
-              title="Schedule Message"
-           >
-              <Clock className="text-xs sm:text-sm" />
-           </button>
-           {/* Phase 2: Voice Context Extractor Toggle - Hidden on mobile */}
-           <button
-              onClick={() => setShowVoiceExtractor(!showVoiceExtractor)}
-              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showVoiceExtractor ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
-              title="AI Voice Transcription"
-           >
-              <MessageCircle className="text-xs sm:text-sm" />
-           </button>
-           <button
-              onClick={handleSmartReply}
-              disabled={loadingAI || isBotChat}
-              className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] disabled:opacity-40"
-              title="AI Smart Reply"
-           >
-              {loadingAI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-           </button>
            {isNonPulseThread && canSendNativeSms ? (
              // SMS Send Button for non-Pulse users on mobile
              <button

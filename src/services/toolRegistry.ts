@@ -25,11 +25,14 @@ export interface ToolAction {
 // can pop a tool open without first opening the drawer.
 const TOOL_SHORTCUTS: Record<string, string> = {
   'smart-compose': 'Ctrl+Shift+W',
-  'templates': 'Ctrl+Shift+T',
+  'smart-reply': 'Ctrl+Shift+R',
+  'voice-extractor': 'Ctrl+Shift+V',
+  'schedule-message': 'Ctrl+Shift+S',
+  'proposal-mode': 'Ctrl+Shift+P',
   'message-formatting': 'Ctrl+Shift+F',
   'translation': 'Ctrl+Shift+L',
-  'conversation-summary': 'Ctrl+Shift+S',
-  'pace': 'Ctrl+Shift+P',
+  'conversation-summary': 'Ctrl+Shift+U',
+  'pace': 'Ctrl+Shift+B',
   'sentiment': 'Ctrl+Shift+Y',
   'conversation-flow': 'Ctrl+Shift+G',
   'ai-coach': 'Ctrl+Shift+K',
@@ -41,11 +44,11 @@ const TOOL_SHORTCUTS: Record<string, string> = {
  * Map message-tool IDs to overlay categories. Used when a tool is
  * launched via keyboard shortcut or command palette so the right
  * surface opens. Tools without an overlay entry are inline-toggled
- * (Smart Compose, AI Coach, AI Mediator).
+ * via INLINE_PANEL_TOOLS below (Smart Compose, AI Coach, AI Mediator,
+ * Voice Note, Schedule, Smart Reply, Proposal Mode).
  */
 export const TOOL_OVERLAY_MAP: Record<string, 'analytics' | 'collaboration' | 'productivity' | 'intelligence' | 'proactive' | 'communication' | 'personalization' | 'security' | 'mediaHub'> = {
   // WRITE
-  'templates': 'productivity',
   'message-formatting': 'personalization',
   'translation': 'mediaHub',
 
@@ -58,6 +61,35 @@ export const TOOL_OVERLAY_MAP: Record<string, 'analytics' | 'collaboration' | 'p
   // COACH
   'insights': 'security',
 };
+
+/**
+ * Tool IDs that the composer toggles inline (a panel above the input
+ * row, no overlay). The slash-command dispatcher first asks the parent
+ * to handle these via `onInlinePanelLaunch`; if not handled, it falls
+ * back to the overlay map above.
+ */
+export type InlinePanelToolId =
+  | 'smart-compose'
+  | 'ai-coach'
+  | 'ai-mediator'
+  | 'voice-extractor'
+  | 'schedule-message'
+  | 'smart-reply'
+  | 'proposal-mode';
+
+export const INLINE_PANEL_TOOLS: ReadonlySet<InlinePanelToolId> = new Set([
+  'smart-compose',
+  'ai-coach',
+  'ai-mediator',
+  'voice-extractor',
+  'schedule-message',
+  'smart-reply',
+  'proposal-mode',
+]);
+
+export function isInlinePanelTool(toolId: string): toolId is InlinePanelToolId {
+  return INLINE_PANEL_TOOLS.has(toolId as InlinePanelToolId);
+}
 
 /**
  * Get the ToolOverlay category for a given tool ID

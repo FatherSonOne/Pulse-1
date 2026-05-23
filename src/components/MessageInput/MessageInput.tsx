@@ -11,7 +11,7 @@ import AttachmentPreview from './AttachmentPreview';
 import SlashCommandDropdown from './SlashCommandDropdown';
 import InlineToolsMenu from './InlineToolsMenu';
 import { useSlashCommands } from '../../hooks/useSlashCommands';
-import { getToolOverlayType, saveRecentTool } from '../../services/toolRegistry';
+import { getToolOverlayType, isInlinePanelTool, saveRecentTool } from '../../services/toolRegistry';
 import { useFeatures } from '../../contexts/FeatureContext';
 import './MessageInput.css';
 import {
@@ -81,6 +81,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   disabled = false,
   initialValue = '',
   setActiveToolOverlay,
+  onInlinePanelLaunch,
 }) => {
   const { t: tr } = useTranslation();
   const placeholderText = placeholder ?? tr('messages.input.placeholder', 'Type your message...');
@@ -149,9 +150,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
   const handleToolLaunch = useCallback(
     (toolId: string) => {
-      const overlayType = getToolOverlayType(toolId);
-      if (overlayType && setActiveToolOverlay) {
-        setActiveToolOverlay(overlayType);
+      // Inline-panel tools (Smart Compose, AI Coach, AI Mediator,
+      // Voice Note, Schedule, Smart Reply, Proposal Mode) ask the
+      // composer host to flip the matching state. Overlay tools open
+      // the right-side ToolOverlay.
+      if (isInlinePanelTool(toolId) && onInlinePanelLaunch) {
+        onInlinePanelLaunch(toolId);
+      } else {
+        const overlayType = getToolOverlayType(toolId);
+        if (overlayType && setActiveToolOverlay) {
+          setActiveToolOverlay(overlayType);
+        }
       }
       saveRecentTool(toolId);
       setContent('');
@@ -159,7 +168,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         editorRef.current.textContent = '';
       }
     },
-    [setActiveToolOverlay],
+    [setActiveToolOverlay, onInlinePanelLaunch],
   );
 
   const slashCommands = useSlashCommands(content, editorRef, handleToolLaunch);
