@@ -62,9 +62,9 @@ const TrimRow: React.FC<{
       className="px-3"
     >
       <div
-        className={`h-[56px] rounded-lg border flex items-center gap-3 px-3 transition-opacity ${isKept ? '' : 'opacity-50 border-l-4'}`}
+        className={`h-[56px] rounded-lg border flex items-center gap-3 px-3 transition-opacity ${isKept ? '' : 'opacity-50'}`}
         style={{
-          background: 'var(--pulse-surface)',
+          background: isKept ? 'var(--pulse-surface)' : 'var(--pulse-tone-overdue-soft)',
           borderColor: isKept ? 'var(--pulse-border)' : 'var(--pulse-tone-overdue)',
         }}
       >
@@ -291,7 +291,7 @@ export const TrimWizard: React.FC<TrimWizardProps> = ({
             <div className="p-4 space-y-4" style={{ background: 'var(--pulse-canvas)' }}>
               <div
                 role="alert"
-                className="rounded-lg border-l-4 p-3 text-sm font-semibold"
+                className="rounded-lg border p-3 text-sm font-semibold"
                 style={{
                   borderColor: invertedDefault ? 'var(--pulse-tone-warning)' : 'var(--pulse-rose)',
                   background: invertedDefault ? 'var(--pulse-tone-warning-soft)' : 'var(--pulse-rose-soft)',
