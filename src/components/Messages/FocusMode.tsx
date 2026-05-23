@@ -355,7 +355,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     <AnimatePresence>
       {isActive && (
         <motion.div
-          className="fixed inset-0 z-50 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col items-center justify-center"
+          className="fixed inset-0 z-50 bg-[var(--pulse-canvas)] flex flex-col items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
