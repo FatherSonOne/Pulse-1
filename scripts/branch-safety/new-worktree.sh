@@ -64,6 +64,25 @@ echo ""
 
 git worktree add -b "${branch}" "${target_dir}" "${base_branch}"
 
+# Copy env files (.env*) from source worktree into the new one.
+# These are gitignored by design, so `git worktree add` does NOT carry
+# them along — but every parallel session needs them to run the dev
+# server. Copying them here avoids the silent "Available VITE_ vars:
+# none" surprise on first npm run dev.
+source_root="$(git rev-parse --show-toplevel)"
+shopt -s nullglob dotglob
+env_files=("${source_root}"/.env*)
+shopt -u dotglob nullglob
+if [ ${#env_files[@]} -gt 0 ]; then
+  echo ""
+  echo "Copying env files from source worktree (gitignored, don't follow spawns):"
+  for f in "${env_files[@]}"; do
+    [ -f "$f" ] || continue
+    cp "$f" "${target_dir}/"
+    echo "  $(basename "$f")"
+  done
+fi
+
 echo ""
 echo "Done. To start a parallel Claude session there:"
 echo "  cd '${target_dir}'"

@@ -67,6 +67,14 @@ Open a new Claude Code window pointed at the new directory. It will
 have its own working tree, its own branch, its own running state.
 Branch swaps in one session no longer affect the other.
 
+The spawner also copies any `.env*` files from the source worktree
+into the new one. These are gitignored (they hold secrets) so
+`git worktree add` alone leaves them behind — and Vite would fail
+on first `npm run dev` with "Available VITE_ vars: none". The copy
+keeps the dev server runnable out of the box. If you'd rather a
+worktree use a different env (e.g. staging), edit the copied file
+after spawn.
+
 When the task is done:
 
 ```bash

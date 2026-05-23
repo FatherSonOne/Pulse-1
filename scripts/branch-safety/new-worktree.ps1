@@ -67,6 +67,22 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
+# Copy env files (.env*) from source worktree into the new one.
+# These are gitignored by design, so `git worktree add` does NOT carry
+# them along — but every parallel session needs them to run the dev
+# server. Copying them here avoids the silent "Available VITE_ vars:
+# none" surprise on first npm run dev.
+$sourceRoot = (git rev-parse --show-toplevel).Trim()
+$envFiles = @(Get-ChildItem -Path $sourceRoot -Filter ".env*" -File -Force -ErrorAction SilentlyContinue)
+if ($envFiles.Count -gt 0) {
+    Write-Host ""
+    Write-Host "Copying env files from source worktree (gitignored, don't follow spawns):" -ForegroundColor Cyan
+    foreach ($f in $envFiles) {
+        Copy-Item -LiteralPath $f.FullName -Destination $targetDir -Force
+        Write-Host "  $($f.Name)"
+    }
+}
+
 Write-Host ""
 Write-Host "Done. To start a parallel Claude session there:" -ForegroundColor Green
 Write-Host "  cd '$targetDir'"

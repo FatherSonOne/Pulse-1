@@ -1,107 +1,132 @@
 # Pulse — Claude Session Conventions
 
-These rules are mandatory for every Claude session working in this repo.
-The branch-discipline section is at the top because we have lost work
-twice to silent branch swaps during parallel sessions.
+Pulse is a solo project. One person ships everything, sometimes with
+multiple Claude sessions in flight. The rules below are tuned for
+that reality — light by default, with an escalation tier for the rare
+case it's actually needed.
 
 ---
 
-## 1. Branch discipline (MANDATORY — read first)
+## 1. Branch & session discipline
 
-### At session start, BEFORE any file changes:
+### The one rule that matters
 
-1. **Check the branch.** Run `git branch --show-current` as one of the
-   first commands of any non-trivial session.
-2. **Check working-tree state.** Run `git status --short` — note any
-   pre-existing untracked or modified files so you don't accidentally
-   stage them later.
-3. **If the task is anything more than a 1-line read-only question,
-   create a dedicated feature branch:**
-   ```
-   git checkout -b feat/<short-task-slug>
-   ```
-   Naming convention: `feat/...` for new work, `fix/...` for bug fixes,
-   `refactor/...` for restructuring. Keep the slug under ~30 chars.
+**Commit new files and folders before walking away from them.** Every
+lost-work incident in this repo has the same shape: a session created
+new files, never `git add`ed them, then something (a checkout, a
+worktree teardown, a window close) made them vanish. Tracked files
+always survive; untracked files don't. If you create a folder, even
+empty:
 
-### During the session:
+```bash
+git add <new-folder-or-file>
+git commit -m "wip: scaffold <thing>"
+```
 
-- **NEVER run `git checkout <other-branch>` mid-session** unless the
-  user explicitly asks for it. Switching branches with uncommitted work
-  silently discards anything that lives in the working tree but isn't
-  in git's tracked state for the new branch — which is how PR 1's
-  ~2000 LOC vanished in May 2026.
-- **NEVER run `git stash pop`** without first confirming the current
-  branch matches the branch the stash was created on.
-- **NEVER run `git reset --hard`** unless the user explicitly asks for it.
-- **Commit early, commit often.** After each substantial change
-  (one PR-shaped commit), `git add` + `git commit`. Uncommitted files
-  are at risk; committed files are safe. See § Multi-PR chains below.
+…makes it safe. You can amend or rewrite later. This single discipline
+makes everything else in this section a fallback, not a tightrope.
 
-### At session end (or when the user requests):
+### Default workflow (use this 95% of the time)
 
-- Push the branch: `git push -u origin <branch-name>`
-- Open a PR from that branch to `main` (or wherever the user directs)
-- Do NOT merge into another in-flight branch unless the user explicitly
-  asks for it
+Single directory, feature branch, commit, push, PR, merge. No
+worktrees. No `start-session.cmd`. No multi-folder dance.
 
-### If you find work missing (recovery checklist):
+```bash
+cd f:/pulse1
+git pull origin main
+git checkout -b feat/<short-task-slug>
+# ... edit, save, commit as pieces complete
+# when ready to ship:
+git push -u origin HEAD
+gh pr create --fill          # or use /git-commit-merge slash command
+# review the Vercel preview, click Merge on GitHub
+git checkout main && git pull
+```
+
+Naming: `feat/...` for new work, `fix/...` for bug fixes, `refactor/...`
+for restructuring. Keep the slug under ~30 chars.
+
+Why feature branches (not pushing straight to main): cheap rollback
+(`git revert <merge-sha>`), Vercel preview before merge, self-review
+via the PR diff. Branch protection isn't enforced on `main` — this is
+voluntary discipline, but it pays for itself the first time you ship
+a regression.
+
+### Always at session start
+
+Two cheap commands, run them before any file changes:
+
+```bash
+git branch --show-current        # know where you are
+git status --short               # note pre-existing changes — don't stage them later
+```
+
+If the working tree is dirty or you're on a branch you don't recognise,
+STOP and surface to the user. Don't `git checkout` to "fix" it — that's
+the actual route to lost work.
+
+### Hard nevers (without explicit user request)
+
+- **`git checkout <other-branch>`** mid-session with uncommitted work.
+- **`git stash pop`** without confirming the stash belongs to the
+  current branch.
+- **`git reset --hard`** — ever, unless asked.
+- **`git push --force`** to `main` — ever.
+
+### When work seems missing (recovery checklist)
 
 1. `git branch --show-current` — which branch are you actually on?
-2. `git branch -a` — list all branches (local + remote)
-3. `git reflog --oneline -30` — recent HEAD movements; look for unexpected
-   `checkout: moving from X to Y` entries
-4. `git log --oneline --all -- <missing-file-path>` — find which branch
-   has the missing file in its history
-5. Surface the diagnosis to the user before taking recovery actions;
-   never silently `git checkout` to recover
+2. `git status --short` — note `??` files; untracked-only work only
+   exists in the working tree.
+3. `git reflog --oneline -30` — every HEAD movement; look for
+   unexpected `checkout: moving from X to Y` entries.
+4. `git log --all --oneline -- <missing-file-path>` — does the file
+   live in any branch's history?
+5. `git branch -a` + `git worktree list` — what branches/worktrees
+   exist?
+6. Surface the diagnosis to the user. Never silently `git checkout`,
+   `reset`, or `clean` to recover.
 
-### Session policy (locked 2026-05-18):
+### Cross-branch coordination
 
-**Default: serial.** One Claude session runs at a time in this repo.
-The user opens a session on a fresh branch off `main`, the session
-works, commits, pushes, opens a PR, and is closed before another
-session begins. This is the safe default — no two sessions ever share
-a working tree at the same time, so the branch-swap collisions that
-plagued the May 2026 redesign window cannot occur.
+Use commit-level operations, never working-tree-level ones:
 
-**Escalation: worktrees, only when explicitly requested.** When the
-user says they want two surfaces worked in parallel (e.g. "finish the
-messages redesign while I prototype the new dashboard"), spawn an
-isolated worktree via `scripts/branch-safety/new-worktree.{sh,ps1}`.
-Each parallel session lives in its own sibling directory
-(`f:/pulse1-<slug>/`) and can never reach into another session's
-working tree. See "Worktree workflow" below for the commands.
+- `git fetch && git merge <branch>` — preferred, preserves history.
+- `git cherry-pick <commit>` — surgical, specific commits only.
+- NEVER do an in-place `git checkout` swap that abandons the current
+  branch's uncommitted state.
 
-**Never run two sessions in the same `f:/pulse1/` directory.** This is
-not a soft rule; it is the root cause of every lost-work incident in
-the May 2026 window. Two sessions in two physical directories are
-fine; two sessions in one directory are forbidden.
+---
 
-If a session inherits a dirty / unexpected working tree state (e.g.
-discovers it's not on the branch it expected), STOP immediately and
-surface the diagnosis. Don't `git checkout` to "fix" it — that's how
-work disappears.
+## 2. Parallel worktrees (escalation tier — opt-in, rarely needed)
 
-### Cross-branch coordination (when you need work from another branch):
+The worktree apparatus exists for one specific case: you're touching
+overlapping files in two surfaces simultaneously and need them
+physically isolated. **For 95% of work, skip this entirely.**
 
-Always use commit-level operations, never working-tree-level ones:
+Multiple parallel Claude sessions in the same `f:/pulse1/` directory
+are fine — IF every session follows the "commit before walking away"
+rule above. The May 2026 incident that motivated the worktree
+machinery was specifically about untracked files vanishing during a
+mid-session checkout. With commits eagerly made, that failure mode
+disappears.
 
-- `git fetch && git merge <branch>` (preserve both histories) — preferred
-- `git cherry-pick <commit>` (specific commits only) — surgical
-- NEVER do an in-place `git checkout` swap that abandons the
-  current branch's uncommitted state
+### When a worktree is actually justified
 
-### Worktree workflow (use when escalating to parallel sessions):
+- Long-running surface (e.g. a multi-day redesign branch) plus an
+  unrelated quick fix you need to ship today, and they touch nearby
+  files.
+- Experimenting with a risky refactor while keeping a clean dev
+  server running on a stable branch.
+- The user explicitly says "spawn a worktree" / "parallel session."
 
-Instead of switching branches in-place within `f:/pulse1`, spawn an
-isolated working tree at a sibling directory. Each Claude session
-opens its own directory; they share commits via push/fetch, never
-through working-tree state.
+If none of those apply, work in `f:/pulse1/` on feature branches.
 
-Helper script (preferred):
+### Spawning a worktree (when escalating)
 
 ```powershell
-.\scripts\branch-safety\new-worktree.ps1 -Slug fix-message-overflow
+.\scripts\branch-safety\start-session.ps1 -Slug fix-message-overflow
+# or just double-click start-session.cmd
 ```
 
 ```bash
@@ -109,41 +134,29 @@ Helper script (preferred):
 ```
 
 Creates `f:/pulse1-fix-message-overflow/` on branch
-`feat/fix-message-overflow`. Open a fresh Claude Code window pointed
-at that directory and the session is fully isolated from any work
-happening in `f:/pulse1/`.
+`feat/fix-message-overflow` off `origin/main`, and auto-copies
+gitignored `.env*` files from the source worktree so the dev server
+runs out of the box. Open a fresh Claude Code window pointed at that
+directory.
 
-Manual equivalent:
-
-```bash
-git worktree add -b feat/<slug> ../pulse1-<slug> main
-```
-
-When done with a worktree:
+Tear down when the PR is merged:
 
 ```bash
 git worktree remove ../pulse1-<slug>
+git branch -d feat/<slug>     # only if merged
 ```
 
 List active worktrees: `git worktree list`.
 
-### The post-checkout safety banner:
+### The post-checkout safety banner
 
-`.git/hooks/post-checkout` is configured to print a loud banner on
-every branch swap, showing:
-- previous → new branch, with short SHAs
-- the new tip commit
-- commit deltas in both directions (lost / gained)
-- a warning if another session might have uncommitted work that just
-  vanished from the working tree
-- count of untracked files at risk of loss on the next swap
-
-If you see that banner unexpectedly, STOP — diagnose with `git reflog`
-before taking further action.
+`.git/hooks/post-checkout` prints a loud banner on every branch swap
+showing commit deltas + untracked-file count at risk. If you see it
+unexpectedly, STOP and diagnose with `git reflog` before continuing.
 
 ---
 
-## 2. Multi-PR chains
+## 3. Multi-PR chains
 
 When a single task produces multiple feature-flagged PRs in sequence
 (e.g. the May 2026 Messages Tools Redesign shipped PR 1 → 2 → 3a → 3b):
@@ -163,7 +176,7 @@ fix was to verify and commit after each agent return.
 
 ---
 
-## 3. Pulse-specific gotchas
+## 4. Pulse-specific gotchas
 
 - **Coral as signal, not decoration.** `--pulse-coral` and its derived
   tokens (`--pulse-coral-fg`, `--pulse-coral-bg-12`, `--pulse-coral-bg-08`)
@@ -184,7 +197,7 @@ fix was to verify and commit after each agent return.
 
 ---
 
-## 4. Pulse-specific commands
+## 5. Pulse-specific commands
 
 - Type-check: `npx tsc --noEmit` (full-repo, slow). For a targeted check
   on changed files only, pipe through `grep -E "<scope>"`.
@@ -195,7 +208,7 @@ fix was to verify and commit after each agent return.
 
 ---
 
-## 5. Documentation conventions
+## 6. Documentation conventions
 
 - Spec docs live in `docs/`. Naming: `<feature>-redesign.md` for in-flight
   redesigns; `<DATE>_<feature>_HANDOFF.md` for handoffs (see
