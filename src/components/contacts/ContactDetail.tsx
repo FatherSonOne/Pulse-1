@@ -59,14 +59,6 @@ function getRelationshipRingClass(score: number): string {
   return 'ring-4 ring-rose-400 dark:ring-rose-500';
 }
 
-function getScoreLabel(score: number): string {
-  if (score >= 80) return 'Excellent';
-  if (score >= 60) return 'Good';
-  if (score >= 40) return 'Fair';
-  if (score >= 20) return 'Weak';
-  return 'At Risk';
-}
-
 const CHANNEL_ICON: Record<string, string> = {
   email:    'fa-solid fa-envelope',
   calendar: 'fa-solid fa-calendar',
@@ -300,46 +292,40 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             )}
           </div>
 
-          {/* Quick stats row */}
+          {/* Quick stats — inline mono summary instead of the previous
+              3-up hero-metric grid. Hero-metric (big number + small label,
+              repeated three times) is the forbidden template per the
+              impeccable critique; the three facts stay visible but no
+              longer compete as identical card chrome. */}
           {profile && (
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {/* Connection strength */}
-              <div className="bg-zinc-50 dark:bg-zinc-900 rounded-xl p-3 text-center border border-zinc-100 dark:border-zinc-800">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <span className="text-lg font-bold" style={{ color: healthColor }}>{score}</span>
-                  {trendIcon && (
-                    <i className={`${trendIcon} text-xs`} style={{ color: trendColor }} />
-                  )}
-                </div>
-                <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {score !== undefined ? getScoreLabel(score) : 'No data'}
-                </div>
-                {/* Mini bar */}
-                <div className="h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full mt-1.5 overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{ width: `${score ?? 0}%`, backgroundColor: healthColor }}
-                  />
-                </div>
-              </div>
-
-              {/* Last interaction */}
-              <div className="bg-zinc-50 dark:bg-zinc-900 rounded-xl p-3 text-center border border-zinc-100 dark:border-zinc-800">
-                <div className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-0.5 leading-tight">
-                  {formatLastInteraction(profile.lastInteractionAt)}
-                </div>
-                <div className="text-xs text-zinc-500 dark:text-zinc-400">Last contact</div>
-              </div>
-
-              {/* Preferred channel */}
-              <div className="bg-zinc-50 dark:bg-zinc-900 rounded-xl p-3 text-center border border-zinc-100 dark:border-zinc-800">
-                <div className="flex items-center justify-center mb-0.5">
-                  <i className={`${CHANNEL_ICON[profile.preferredChannel] ?? 'fa-solid fa-message'} text-rose-500 text-sm`} />
-                </div>
-                <div className="text-xs text-zinc-500 dark:text-zinc-400 capitalize">
-                  {profile.preferredChannel ?? 'Unknown'}
-                </div>
-              </div>
+            <div
+              className="flex items-center justify-center gap-2.5 mb-4 text-[11px] uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400 flex-wrap"
+              style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
+            >
+              {/* Score + trend */}
+              <span className="inline-flex items-center gap-1">
+                <span className="font-semibold" style={{ color: healthColor }}>
+                  Score {score ?? '—'}
+                </span>
+                {trendIcon && (
+                  <i className={`${trendIcon} text-[10px]`} style={{ color: trendColor }} />
+                )}
+              </span>
+              <span className="text-zinc-300 dark:text-zinc-600" aria-hidden="true">·</span>
+              {/* Last contact */}
+              <span>
+                Last {formatLastInteraction(profile.lastInteractionAt)}
+              </span>
+              {profile.preferredChannel && (
+                <>
+                  <span className="text-zinc-300 dark:text-zinc-600" aria-hidden="true">·</span>
+                  {/* Preferred channel */}
+                  <span className="inline-flex items-center gap-1">
+                    <i className={`${CHANNEL_ICON[profile.preferredChannel] ?? 'fa-solid fa-message'} text-[10px]`} />
+                    <span>Prefers {profile.preferredChannel}</span>
+                  </span>
+                </>
+              )}
             </div>
           )}
 
