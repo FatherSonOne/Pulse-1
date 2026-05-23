@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 import { BarChart, X } from 'lucide-react';
 
@@ -32,6 +33,8 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
   onClose,
   stats,
 }) => {
+  const dialogRef = useFocusTrap<HTMLDivElement>({ active: isOpen, onEscape: onClose });
+
   if (!isOpen || !stats) return null;
 
   return (
@@ -44,6 +47,10 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
         onClick={onClose}
       >
         <motion.div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Conversation statistics"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}

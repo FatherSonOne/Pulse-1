@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 import { ChevronRight, Inbox, Share, X } from 'lucide-react';
 
@@ -23,7 +24,7 @@ interface Thread {
   avatarColor: string;
 }
 
-interface ForwardMessageModalProps {
+export interface ForwardMessageModalProps {
   isOpen: boolean;
   onClose: () => void;
   message: ForwardingMessage | null;
@@ -40,6 +41,8 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
   activeThreadId,
   onForward,
 }) => {
+  const dialogRef = useFocusTrap<HTMLDivElement>({ active: isOpen, onEscape: onClose });
+
   if (!isOpen || !message) return null;
 
   const availableThreads = threads.filter(t => t.id !== activeThreadId);
@@ -54,6 +57,10 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
         onClick={onClose}
       >
         <motion.div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Forward message"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}

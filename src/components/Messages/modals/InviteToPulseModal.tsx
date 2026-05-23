@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 import { Calendar, Check, ChevronRight, Mail, MessageSquare, Mic, Rocket, Users, Wand2, X } from 'lucide-react';
 
@@ -37,6 +38,8 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
   onSendSMS,
   onDone,
 }) => {
+  const dialogRef = useFocusTrap<HTMLDivElement>({ active: isOpen, onEscape: onClose });
+
   if (!isOpen || !targetContact) return null;
 
   return (
@@ -49,6 +52,10 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
         onClick={onClose}
       >
         <motion.div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Invite ${targetContact.name} to Pulse`}
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}

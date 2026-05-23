@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 import { Clock, X } from 'lucide-react';
 
@@ -37,6 +38,8 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
   scheduledMessages,
   onSchedule,
 }) => {
+  const dialogRef = useFocusTrap<HTMLDivElement>({ active: isOpen, onEscape: onClose });
+
   if (!isOpen) return null;
 
   const canSchedule = messageText.trim() && scheduleDate && scheduleTime;
@@ -51,6 +54,10 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
         onClick={onClose}
       >
         <motion.div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Schedule message"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}

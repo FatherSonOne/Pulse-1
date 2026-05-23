@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 import { Check, Loader2, Send, UserPlus, X } from 'lucide-react';
 
@@ -29,6 +30,8 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
   inviteMessage,
   onSendInvite,
 }) => {
+  const dialogRef = useFocusTrap<HTMLDivElement>({ active: isOpen, onEscape: onClose });
+
   if (!isOpen) return null;
 
   const handleClose = () => {
@@ -51,6 +54,10 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
         onClick={handleClose}
       >
         <motion.div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Invite team member"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
