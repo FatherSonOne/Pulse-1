@@ -65,14 +65,44 @@ the actual route to lost work.
 
 ### Hard nevers (without explicit user request)
 
+**Prime directive: Claude must never run a git command that can
+destroy uncommitted work.** If a recovery or workflow step would
+require any of the operations below, STOP and ask the user first —
+even if it looks like the obvious fix. The user owns the decision
+to discard work; Claude does not.
+
+The full risk catalog (each one is forbidden without explicit
+instruction):
+
 - **`git checkout -b <new-branch>`** — never. Pulse works on `main`.
   If a task genuinely needs a branch (large refactor, risky cutover),
   surface the judgment and ask before branching.
-- **`git checkout <other-branch>`** mid-session with uncommitted work.
-- **`git stash pop`** without confirming the stash belongs to the
-  current branch.
-- **`git reset --hard`** — ever, unless asked.
-- **`git push --force`** to `main` — ever.
+- **`git checkout <other-branch>`** mid-session with uncommitted work
+  — branch swaps where the target branch has conflicting changes to
+  the same file can lose the working-tree edits (git may warn, may
+  refuse, may proceed depending on the conflict shape).
+- **`git stash pop`** or **`git stash drop`** without confirming the
+  stash belongs to the current branch and the user actually wants it
+  discarded / re-applied.
+- **`git reset --hard`** — ever, unless asked. This destroys ALL
+  uncommitted changes (staged AND unstaged) in the working tree.
+- **`git restore <file>`** or **`git checkout -- <file>`** — discards
+  unstaged changes to that specific file. Ask first.
+- **`git clean -f`** / **`git clean -fd`** — deletes untracked files
+  and (with `-d`) untracked directories. Per "the one rule that
+  matters" up top, untracked is exactly the state most at risk;
+  `git clean` formalizes the loss.
+- **Manual file deletion** (`rm`, `Remove-Item`, `Delete` in IDE)
+  on files Claude did not create in this session.
+- **`git push --force`** / **`git push --force-with-lease`** to
+  `main` — ever. To any other branch — only with explicit OK and a
+  clearly stated reason (e.g. fixing a polluted commit on a
+  feature branch nobody else is on).
+
+Adjacent risk that Claude can't directly cause but should warn
+about: **editor crashes lose unsaved buffer contents.** If Claude
+generates a large pending change, encourage the user to save and
+commit before walking away from the session.
 
 ### When work seems missing (recovery checklist)
 
