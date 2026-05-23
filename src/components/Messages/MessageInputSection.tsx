@@ -14,6 +14,7 @@ import MessageInput from '../MessageInput';
 import SlashCommandDropdown from '../MessageInput/SlashCommandDropdown';
 import { useSlashCommands } from '../../hooks/useSlashCommands';
 import { getToolOverlayType, isInlinePanelTool } from '../../services/toolRegistry';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 import { REACTION_CATEGORIES } from './messageConstants';
 import { Thread, Contact } from '../../types';
 
@@ -329,9 +330,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            <section className="bg-white dark:bg-[rgba(255,255,255,0.03)] ring-1 ring-[rgba(0,0,0,0.08)] dark:ring-[rgba(255,255,255,0.06)] rounded-xl overflow-hidden">
              <header className="flex items-center justify-between gap-3 px-3 pt-2 pb-2 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
                <div className="flex items-center gap-3 min-w-0">
-                 <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-rose-600 dark:text-rose-bright flex-shrink-0">
-                   PULSE AI · COMPOSE
-                 </span>
+                 {/* PR 4.4: migrated from hand-rolled coral text label
+                     to the shared AIProvenanceTag chip. */}
+                 <AIProvenanceTag source="pulse-ai" kind={showQuickPhrases ? 'phrase' : 'draft'} className="flex-shrink-0" />
                  <nav role="tablist" aria-label="Compose mode" className="flex gap-0.5 ml-1">
                    <button
                      type="button"

@@ -3,11 +3,12 @@
 // Bot messages bypass E2EE — they use bot_content (plaintext)
 
 import React, { useState } from 'react';
-import { ExternalLink, Bot, Star, Loader2 } from 'lucide-react';
+import { ExternalLink, Star, Loader2 } from 'lucide-react';
 import { SmartTimestamp } from './SmartTimestamp';
 import { MeetingRecapCard } from './MeetingRecapCard';
 import { MeetingBriefingCard } from './MeetingBriefingCard';
 import { ActionItemsCard } from './ActionItemsCard';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 import { supabase } from '../../services/supabase';
 import { getMeetingRecordingById, exportMeetingToEntomate } from '../../services/meetingService';
 import type { BotChannelMessage, BotAction } from '../../types/messages';
@@ -118,10 +119,11 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
         {/* Header */}
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           <span className="text-sm font-semibold text-zinc-200">{bot.name}</span>
-          <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 bg-transparent ring-1 ring-zinc-300/50 dark:ring-white/[0.08] px-1.5 py-0.5 rounded-full flex items-center gap-1">
-            <Bot className="w-2.5 h-2.5" />
-            PULSE AI · BOT
-          </span>
+          {/* PR 4.4: bot messages ARE AI-generated content, so the
+              badge is provenance, not a neutral identity tag.
+              Migrated from a hand-rolled zinc chip to the shared
+              coral AIProvenanceTag. */}
+          <AIProvenanceTag source="pulse-ai" kind="bot" showDot={false} />
           <SmartTimestamp time={message.created_at} />
         </div>
 

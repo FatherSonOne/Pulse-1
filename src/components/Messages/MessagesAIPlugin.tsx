@@ -59,6 +59,7 @@ import {
   analyzeDraftIntent,
   detectMeetingIntent,
 } from '../../services/geminiService';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 import type {
   AsyncSuggestion,
   CatchUpSummary,
@@ -278,9 +279,8 @@ export const MessagesCatchUpCard: React.FC<MessagesCatchUpCardProps> = ({
           <Sparkles className="w-4 h-4 text-rose-500 dark:text-rose-bright" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
-            PULSE AI · CATCH UP
-          </div>
+          {/* PR 4.4: migrated to shared AIProvenanceTag (coral, kind="recap"). */}
+          <AIProvenanceTag source="pulse-ai" kind="recap" className="mb-1" />
           <div className="flex items-center justify-between mb-1">
             <h4 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
               Catch up
@@ -423,8 +423,16 @@ export const MessagesNudgeBar: React.FC<MessagesNudgeBarProps> = ({
       {nudge.type === 'de_escalate' && <Sparkles className="w-4 h-4" />}
       {nudge.type === 'praise' && <CheckCircle2 className="w-4 h-4" />}
     </div>
-    <div className="flex-1 min-w-0">
-      <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium opacity-70 mr-2">PULSE AI · {NUDGE_LABELS[nudge.type].toUpperCase()}</span>
+    <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+      {/* PR 4.4: migrated to shared AIProvenanceTag. The bar already
+          carries its own type tint (NUDGE_TONES), so the chip drops
+          its own background and inherits the bar surface. */}
+      <AIProvenanceTag
+        source="pulse-ai"
+        kind={NUDGE_LABELS[nudge.type].toLowerCase()}
+        showDot={false}
+        className="!bg-transparent dark:!bg-transparent !px-0 !py-0 opacity-70"
+      />
       <span className="text-xs opacity-90">{nudge.message}</span>
     </div>
     <div className="flex items-center gap-1 flex-shrink-0">
