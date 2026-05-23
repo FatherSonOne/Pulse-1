@@ -251,6 +251,12 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
+  /* iOS HIG / Apple HIG minimum tap target — paired with the
+     composer's 48px primary buttons in PR 4.1. Was an effective
+     ~30px box (8px vertical padding + 14px icon) which mobile users
+     would over- or under-tap. */
+  min-height: 44px;
+  min-width: 44px;
   background-color: var(--split-view-bg-primary);
   border: 1px solid var(--split-view-border-color);
   border-radius: 8px;

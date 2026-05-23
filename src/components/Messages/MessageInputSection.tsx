@@ -529,7 +529,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
          <div className="flex gap-0.5 sm:gap-1 relative flex-shrink-0">
            <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showEmojiPicker ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
+              className={`w-12 h-12 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showEmojiPicker ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
               title="Add Emoji (Ctrl+Shift+E)"
            >
               <Smile className="text-xs sm:text-sm" />
@@ -539,7 +539,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            <div className="relative" ref={attachmentMenuRef}>
              <button
                 onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showAttachmentMenu ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
+                className={`w-12 h-12 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showAttachmentMenu ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
                 title="Attach File, Image, Video, or Link"
              >
                 <Plus className="text-xs sm:text-sm" />
@@ -737,7 +737,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                onTranscript={(text) => setInputText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
                size="sm"
                disabled={isRecording}
-               className="text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] w-8 h-8 sm:w-10 sm:h-10"
+               className="text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] w-12 h-12"
              />
            )}
            {isNonPulseThread && canSendNativeSms ? (
@@ -745,7 +745,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              <button
                onClick={() => handleSendSms(inputText)}
                disabled={!inputText.trim()}
-               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shadow-[0_2px_8px_rgba(244,63,94,0.20)] hover:shadow-[0_4px_12px_rgba(244,63,94,0.30)] disabled:opacity-50 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+               className="w-12 h-12 rounded-lg bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shadow-[0_2px_8px_rgba(244,63,94,0.20)] hover:shadow-[0_4px_12px_rgba(244,63,94,0.30)] disabled:opacity-50 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                title="Send SMS"
              >
                <MessageSquare className="text-xs sm:text-sm" />
@@ -754,7 +754,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              // Disabled button for view-only mode
              <button
                disabled
-               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#e8e8e8] dark:bg-[rgba(255,255,255,0.055)] text-zinc-500 flex items-center justify-center cursor-not-allowed"
+               className="w-12 h-12 rounded-lg bg-[#e8e8e8] dark:bg-[rgba(255,255,255,0.055)] text-zinc-500 flex items-center justify-center cursor-not-allowed"
                title="Send from your mobile device"
              >
                <Lock className="text-xs sm:text-sm" />
@@ -764,7 +764,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              <button
                onClick={() => handleSend()}
                disabled={isRecording || (!inputText.trim())}
-               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shadow-[0_2px_8px_rgba(244,63,94,0.20)] hover:shadow-[0_4px_12px_rgba(244,63,94,0.30)] disabled:opacity-50 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+               className="w-12 h-12 rounded-lg bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shadow-[0_2px_8px_rgba(244,63,94,0.20)] hover:shadow-[0_4px_12px_rgba(244,63,94,0.30)] disabled:opacity-50 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                title="Send (Enter)"
              >
                <ArrowUp className="text-xs sm:text-sm" />
