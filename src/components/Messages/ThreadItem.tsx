@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import {
   Conversation,
   conversationDisplayName,
@@ -7,6 +6,7 @@ import {
   conversationLastMessagePreview,
   conversationUnreadCount,
   conversationIsGroup,
+  conversationId,
 } from '../../types/conversations';
 
 import { BellOff, Lock, MessageCircle, Pin, Users } from 'lucide-react';
@@ -72,15 +72,13 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
   const dmAvatarUrl = conversation.kind === 'dm' ? conversation.pulse.other_user?.avatar_url : null;
 
   return (
-    <motion.div
-      className={`thread-item relative px-4 py-3 cursor-pointer transition-colors ${
+    <div
+      className={`thread-item group relative px-4 py-3 cursor-pointer transition-[background-color,transform] duration-200 ease-out hover:translate-x-[2px] motion-reduce:hover:translate-x-0 ${
         isActive
           ? 'active bg-rose-500/[0.08]'
           : 'hover:bg-white/[0.04]'
       }`}
       onClick={onClick}
-      whileHover={{ x: 2 }}
-      transition={{ duration: 0.2 }}
       role="button"
       tabIndex={0}
       aria-label={`Thread: ${name}`}
@@ -99,6 +97,8 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
             <img
               src={dmAvatarUrl}
               alt={name}
+              loading="lazy"
+              decoding="async"
               className="w-12 h-12 rounded-full object-cover"
             />
           ) : isGroup ? (
@@ -193,8 +193,28 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
           </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
-export default ThreadItem;
+/**
+ * Custom comparator: re-render only when stable identity, active state,
+ * pin state, unread count, or last-message time actually changes.
+ * Skips onClick reference changes (parent typically passes a fresh arrow
+ * each render — including it would defeat memoization entirely).
+ */
+const arePropsEqual = (
+  prev: ThreadItemProps,
+  next: ThreadItemProps,
+): boolean => {
+  if (prev.isActive !== next.isActive) return false;
+  if (prev.isPinned !== next.isPinned) return false;
+  if (conversationId(prev.conversation) !== conversationId(next.conversation)) return false;
+  if (conversationUnreadCount(prev.conversation) !== conversationUnreadCount(next.conversation)) return false;
+  if (conversationLastMessageAt(prev.conversation) !== conversationLastMessageAt(next.conversation)) return false;
+  if (conversationLastMessagePreview(prev.conversation) !== conversationLastMessagePreview(next.conversation)) return false;
+  if (conversationDisplayName(prev.conversation) !== conversationDisplayName(next.conversation)) return false;
+  return true;
+};
+
+export default React.memo(ThreadItem, arePropsEqual);

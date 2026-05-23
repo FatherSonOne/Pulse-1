@@ -247,6 +247,8 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                       <img
                         src={dmAvatarUrl}
                         alt={name}
+                        loading="lazy"
+                        decoding="async"
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     );
