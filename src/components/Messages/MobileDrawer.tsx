@@ -128,11 +128,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             initial="hidden"
             animate="visible"
             exit="hidden"
-            transition={{
-              type: 'spring',
-              damping: 30,
-              stiffness: 300,
-            }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             drag={swipeToClose ? 'x' : false}
             dragConstraints={
               side === 'left'

@@ -48,11 +48,7 @@ const cardVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 500,
-      damping: 30,
-    },
+    transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
   },
 };
 

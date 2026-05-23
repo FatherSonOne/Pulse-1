@@ -67,9 +67,8 @@ const cardVariants = {
     scale: 1,
     y: 0,
     transition: {
-      type: 'spring',
-      stiffness: 300,
-      damping: 25,
+      duration: 0.22,
+      ease: [0.16, 1, 0.3, 1],
       staggerChildren: 0.1,
       delayChildren: 0.2,
     },
@@ -87,11 +86,7 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 500,
-      damping: 30,
-    },
+    transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
   },
 };
 
@@ -100,12 +95,7 @@ const trophyVariants = {
   visible: {
     scale: 1,
     rotate: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 200,
-      damping: 15,
-      delay: 0.3,
-    },
+    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.3 },
   },
 };
 
@@ -114,11 +104,7 @@ const statCountVariants = {
   visible: {
     opacity: 1,
     scale: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 500,
-      damping: 30,
-    },
+    transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
   },
 };
 

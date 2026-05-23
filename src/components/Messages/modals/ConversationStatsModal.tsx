@@ -54,7 +54,7 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]"
           onClick={e => e.stopPropagation()}
         >
