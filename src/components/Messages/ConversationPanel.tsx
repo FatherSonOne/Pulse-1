@@ -1,6 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EnhancedLoadingScreen from '../EnhancedLoadingScreen';
+import { VirtualMessageList } from '../Performance/VirtualMessageList';
 import { ChannelMessage } from '../../types/messages';
 import {
   Conversation,
@@ -10,6 +11,19 @@ import {
 } from '../../types/conversations';
 
 import { Info, MessageSquare, MessagesSquare, Search, Users } from 'lucide-react';
+
+/**
+ * Threshold at which we switch from the animated AnimatePresence path
+ * to the virtualized react-window path. Short threads keep the
+ * decorative motion; long threads stay 60fps by dropping the per-row
+ * framer-motion overhead.
+ */
+const VIRTUALIZATION_THRESHOLD = 100;
+
+/** Flattened row used by both the virtualized and non-virtualized paths. */
+type MessageRow =
+  | { id: string; type: 'divider'; date: string }
+  | { id: string; type: 'message'; message: ChannelMessage; grouped: boolean };
 
 interface ConversationPanelProps {
   /** The selected conversation — channel or Pulse DM. */
@@ -117,6 +131,22 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
       return { message: m, grouped };
     });
   };
+
+  // Pre-flatten dividers + grouped messages into a single rows array.
+  // The virtualized path consumes this directly; the non-virtualized
+  // path still groups by date below for visual parity.
+  const rows: MessageRow[] = useMemo(() => {
+    const result: MessageRow[] = [];
+    Object.entries(messageGroups).forEach(([date, dateMessages]) => {
+      result.push({ id: `divider-${date}`, type: 'divider', date });
+      annotateGrouping(dateMessages).forEach(({ message, grouped }) => {
+        result.push({ id: message.id, type: 'message', message, grouped });
+      });
+    });
+    return result;
+  }, [messageGroups]);
+
+  const useVirtualization = rows.length > VIRTUALIZATION_THRESHOLD;
 
   // Identify the latest own-message — that's the one carrying the
   // DELIVERED / READ receipt. Older own-messages just show their bubble.
@@ -325,7 +355,32 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                   </p>
                 </div>
               </div>
+            ) : useVirtualization ? (
+              // Long thread (>100 rows): virtualize via react-window.
+              // Drops the per-row framer-motion entry animation in exchange
+              // for 60fps scroll on threads with thousands of messages.
+              <VirtualMessageList
+                messages={rows as unknown as Array<{ id: string; content: string; sender: string; timestamp: string }>}
+                estimatedItemSize={96}
+                overscanCount={5}
+                renderMessage={(row) => {
+                  const r = row as unknown as MessageRow;
+                  if (r.type === 'divider') {
+                    return (
+                      <div className="date-divider">
+                        <span className="date-divider-dot" aria-hidden="true" />
+                        <span className="date-divider-label">{r.date}</span>
+                        <span className="date-divider-line" aria-hidden="true" />
+                      </div>
+                    );
+                  }
+                  return renderMessageBubble
+                    ? renderMessageBubble(r.message)
+                    : defaultRenderMessageBubble(r.message, r.grouped);
+                }}
+              />
             ) : (
+              // Short thread: keep the animated path for the entry/exit polish.
               <AnimatePresence mode="popLayout">
                 {Object.entries(messageGroups).map(([date, dateMessages]) => {
                   const annotated = annotateGrouping(dateMessages);
@@ -349,7 +404,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                 })}
               </AnimatePresence>
             )}
-            <div ref={messagesEndRef} />
+            {!useVirtualization && <div ref={messagesEndRef} />}
           </div>
 
           {/* Message input area */}
