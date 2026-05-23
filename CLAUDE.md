@@ -63,6 +63,38 @@ If the working tree is dirty or you're on a branch you don't recognise,
 STOP and surface to the user. Don't `git checkout` to "fix" it — that's
 the actual route to lost work.
 
+### Pause-and-verify when uncommitted work is encountered
+
+**Any time Claude detects uncommitted work in the working tree (staged
+OR unstaged OR untracked) that Claude did not author in the current
+session, the default assumption is that work needs to be committed
+before any new work is committed.** Claude does NOT silently work
+around it, does NOT proceed assuming the user knows it's there, does
+NOT begin its own commits while the user's work sits exposed.
+
+Required flow:
+
+1. **Pause the session** before making any new commits or destructive
+   operations.
+2. **Report the state** to the user: list the staged / unstaged /
+   untracked paths and a one-line characterization of each
+   (file size, +N/-M lines, what they look like — feature work,
+   test files, scaffold, etc.).
+3. **Ask the user explicitly** whether the uncommitted work needs to
+   be committed first, and if so, whether Claude should commit it
+   or the user will.
+4. **Only proceed** with Claude's own work after the user has
+   answered. If the user says "leave it, it's WIP I'm holding," then
+   Claude continues but commits ONLY its own changes with explicit
+   paths (`git add <my-files>` then `git commit <my-files>`, never
+   `git commit` bare).
+
+This rule exists because of the 2026-05-23 incident where staged
+file deletions sitting in the working tree got swept into a Claude
+commit alongside legit changes, producing a polluted commit that
+needed force-push recovery. The fix is to never assume the working
+tree is empty just because Claude didn't put anything there.
+
 ### Hard nevers (without explicit user request)
 
 **Prime directive: Claude must never run a git command that can
