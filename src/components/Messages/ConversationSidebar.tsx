@@ -321,7 +321,12 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                         </div>
                       )}
                     </button>
-                    <div onClick={() => handleSelectConversation(conv.id)} className="flex-1 overflow-hidden min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectConversation(conv.id)}
+                      className="flex-1 overflow-hidden min-w-0 text-left bg-transparent border-0 p-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] focus-visible:ring-offset-1 rounded"
+                      aria-label={`Open conversation with ${otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}`}
+                    >
                       <div className="flex justify-between items-baseline mb-0.5">
                         <div className="flex items-center gap-1.5 flex-1 min-w-0">
                           <h3
@@ -364,7 +369,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                           />
                         )}
                       </div>
-                    </div>
+                    </button>
                     {/* Thread Badges - Pin/Star indicators */}
                     <ThreadBadges actions={messageEnhancements.getThreadActions(conv.id)} />
                     {hasUnread && (

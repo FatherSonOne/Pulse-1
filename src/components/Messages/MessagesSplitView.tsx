@@ -231,7 +231,11 @@ const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
     : '';
 
   return (
-    <div className={`messages-split-view full-height ${fullPage ? 'full-page' : ''} ${mobileViewClass} ${className}`}>
+    <div
+      className={`messages-split-view full-height ${fullPage ? 'full-page' : ''} ${mobileViewClass} ${className}`}
+      role="region"
+      aria-label="Messages"
+    >
       {/* Optional banner rendered above both panels */}
       {renderTopBanner?.()}
 

@@ -82,8 +82,9 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
             {/* Date/Time Selection */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Date</label>
+                <label htmlFor="schedule-message-date" className="text-xs text-zinc-500 mb-1 block">Date</label>
                 <input
+                  id="schedule-message-date"
                   type="date"
                   value={scheduleDate}
                   onChange={e => onDateChange(e.target.value)}
@@ -91,8 +92,9 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Time</label>
+                <label htmlFor="schedule-message-time" className="text-xs text-zinc-500 mb-1 block">Time</label>
                 <input
+                  id="schedule-message-time"
                   type="time"
                   value={scheduleTime}
                   onChange={e => onTimeChange(e.target.value)}

@@ -203,6 +203,8 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
   return (
     <motion.div
       className={`conversation-panel flex flex-col h-full bg-[var(--pulse-canvas)] ${className}`}
+      role="region"
+      aria-label="Active conversation"
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}

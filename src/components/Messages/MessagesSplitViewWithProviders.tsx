@@ -452,6 +452,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ draft, setDraft, onSend, onSendVo
       {voice.isRecording && <voice.RecordingBanner />}
       <div className="flex items-end gap-2">
         <textarea
+          aria-label="Type a message"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {

@@ -645,6 +645,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            </div>
          ) : (
            <textarea
+             aria-label="Type a message"
              className="flex-1 bg-transparent dark:text-white text-zinc-900 placeholder-zinc-400 text-sm focus:outline-none resize-none py-2.5 max-h-32 scrollbar-hide font-light"
              placeholder={isProposalMode ? "State your proposal clearly..." : isRecording ? "Recording voice message..." : "Type a message..."}
              rows={1}

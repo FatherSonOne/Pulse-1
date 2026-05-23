@@ -70,10 +70,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
     }
   };
 
-  const handleDeleteChannel = async (channelId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm('Delete this channel? This cannot be undone.')) return;
-
+  const performDeleteChannel = async (channelId: string) => {
     try {
       await messageChannelService.deleteChannel(channelId);
       const remaining = channels.filter((c) => c.id !== channelId);
@@ -86,6 +83,32 @@ export const ChannelList: React.FC<ChannelListProps> = ({
       console.error('Failed to delete channel:', error);
       toast.error('Failed to delete channel. Please try again.');
     }
+  };
+
+  const handleDeleteChannel = (channelId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    toast((t) => (
+      <div className="flex flex-col gap-2 min-w-[240px]">
+        <p className="text-sm font-medium text-zinc-900 dark:text-white">Delete this channel?</p>
+        <p className="text-xs text-zinc-600 dark:text-zinc-400">This cannot be undone.</p>
+        <div className="flex gap-2 justify-end mt-1">
+          <button
+            type="button"
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 text-xs rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => { toast.dismiss(t.id); performDeleteChannel(channelId); }}
+            className="px-3 py-1.5 text-xs rounded-md bg-[var(--pulse-tone-overdue)] text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-tone-overdue)]"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 10000 });
   };
 
   return (

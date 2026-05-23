@@ -17,6 +17,7 @@ import {
   FocusPreferences,
   FocusTimerState,
 } from '../../services/focusModeService';
+import toast from 'react-hot-toast';
 
 interface FocusModeProps {
   isActive: boolean;
@@ -282,13 +283,29 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   // Handle close (with confirmation if session active)
   const handleClose = useCallback(() => {
     if (isTimerActive) {
-      const confirmed = window.confirm(
-        'You have an active focus session. Are you sure you want to exit?'
-      );
-      if (!confirmed) return;
-
-      // Stop the session
-      handleStop();
+      toast((t) => (
+        <div className="flex flex-col gap-2 min-w-[240px]">
+          <p className="text-sm font-medium text-zinc-900 dark:text-white">Exit focus session?</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">Your active session will be stopped.</p>
+          <div className="flex gap-2 justify-end mt-1">
+            <button
+              type="button"
+              onClick={() => toast.dismiss(t.id)}
+              className="px-3 py-1.5 text-xs rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)]"
+            >
+              Stay
+            </button>
+            <button
+              type="button"
+              onClick={() => { toast.dismiss(t.id); handleStop(); onClose(); }}
+              className="px-3 py-1.5 text-xs rounded-md bg-[var(--pulse-rose)] text-white hover:bg-[var(--pulse-rose-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)]"
+            >
+              Exit
+            </button>
+          </div>
+        </div>
+      ), { duration: 10000 });
+      return;
     }
 
     onClose();

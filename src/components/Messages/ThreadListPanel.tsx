@@ -55,6 +55,8 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
   return (
     <motion.div
       className={`thread-list-panel flex flex-col h-full bg-[var(--pulse-canvas)] border-r border-[var(--pulse-border)] ${className}`}
+      role="navigation"
+      aria-label="Conversations"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
