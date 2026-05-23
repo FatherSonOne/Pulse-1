@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../../../entomate"
+		},
+		{
+			"path": "../../../pulse1-general-fix"
 		}
 	],
 	"settings": {}
