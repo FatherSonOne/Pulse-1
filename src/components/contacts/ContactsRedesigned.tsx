@@ -1825,7 +1825,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
             name: user.display_name,
             email: '',
             role: user.shared_workspace_role,
-            avatarColor: '#3b82f6',
+            avatarColor: '#f43f5e',
             avatarUrl: user.avatar_url ?? undefined,
             status: (user.online_status as Contact['status']) ?? 'offline',
             source: 'local',

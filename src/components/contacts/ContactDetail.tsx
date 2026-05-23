@@ -54,9 +54,9 @@ interface ContactDetailProps {
 // ==================== HELPERS ====================
 
 function getRelationshipRingClass(score: number): string {
-  if (score >= 70) return 'ring-4 ring-emerald-400 dark:ring-emerald-500';
-  if (score >= 40) return 'ring-4 ring-amber-400 dark:ring-amber-500';
-  return 'ring-4 ring-rose-400 dark:ring-rose-500';
+  if (score >= 70) return 'ring-2 ring-emerald-400 dark:ring-emerald-500';
+  if (score >= 40) return 'ring-2 ring-amber-400 dark:ring-amber-500';
+  return 'ring-2 ring-rose-400 dark:ring-rose-500';
 }
 
 const CHANNEL_ICON: Record<string, string> = {

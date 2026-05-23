@@ -168,7 +168,10 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
   });
 
   return (
-    <div className="flex flex-col h-full bg-zinc-50 dark:bg-black overflow-hidden">
+    <div
+      className="flex flex-col h-full overflow-hidden"
+      style={{ background: 'var(--pulse-canvas)' }}
+    >
 
       {/* Tab bar */}
       <div className="flex-shrink-0 bg-white dark:bg-white/[0.03] border-b border-zinc-200 dark:border-white/[0.06]">
