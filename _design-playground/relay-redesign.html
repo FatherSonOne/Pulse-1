@@ -1,0 +1,1707 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Relay Redesign — Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  /* ─── Pulse design tokens (mirrors src/styles/pulse-tokens.css) ─── */
+  :root {
+    --pulse-rose: #f43f5e;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-bright: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+    --pulse-tone-positive: #22c55e;
+    --pulse-tone-warning: #f97316;
+    --pulse-tone-info: #3b82f6;
+    --pulse-tone-neutral: #6b7280;
+    --pulse-canvas: #f8f8f8;
+    --pulse-canvas-soft: #f2f2f2;
+    --pulse-surface: #ffffff;
+    --pulse-surface-raised: #f2f2f2;
+    --pulse-border: rgba(0, 0, 0, 0.08);
+    --pulse-border-strong: rgba(0, 0, 0, 0.16);
+    --pulse-ink: #0f0f0f;
+    --pulse-ink-2: #52525b;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral: var(--pulse-rose);
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 35%, black 65%);
+    --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-rose) 12%, transparent);
+    --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-rose) 8%, transparent);
+    --pulse-font: 'Inter', system-ui, sans-serif;
+    --pulse-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --pulse-sidebar-bg: #ffffff;
+    --pulse-shadow-main: 0 6px 24px rgba(0, 0, 0, 0.08);
+  }
+  html[data-theme='dark'] {
+    --pulse-canvas: #000000;
+    --pulse-canvas-soft: #080808;
+    --pulse-surface: rgba(255, 255, 255, 0.03);
+    --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+    --pulse-border: rgba(255, 255, 255, 0.06);
+    --pulse-border-strong: rgba(255, 255, 255, 0.10);
+    --pulse-ink: #fafafa;
+    --pulse-ink-2: #b4b4b8;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 60%, white 40%);
+    --pulse-rose: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.12);
+    --pulse-sidebar-bg: #0a0a0b;
+    --pulse-shadow-main: 0 10px 40px rgba(0, 0, 0, 0.4);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--pulse-font);
+    background: var(--pulse-canvas);
+    color: var(--pulse-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .pulse-bg { background: var(--pulse-canvas); }
+  .pulse-bg-soft { background: var(--pulse-canvas-soft); }
+  .pulse-surface { background: var(--pulse-surface); }
+  .pulse-surface-raised { background: var(--pulse-surface-raised); }
+  .pulse-ink-color { color: var(--pulse-ink); }
+  .pulse-ink-2-color { color: var(--pulse-ink-2); }
+  .pulse-ink-3-color { color: var(--pulse-ink-3); }
+  .pulse-border-color { border-color: var(--pulse-border); }
+  .pulse-border-strong-color { border-color: var(--pulse-border-strong); }
+  .pulse-coral-fg-color { color: var(--pulse-coral-fg); }
+  .pulse-coral-bg-color { background: var(--pulse-coral-bg-12); }
+  .pulse-rose-color { color: var(--pulse-rose); }
+  .pulse-rose-bg-color { background: var(--pulse-rose); }
+  .pulse-rose-bg-soft-color { background: var(--pulse-rose-soft); }
+  .pulse-rose-glow-shadow { box-shadow: 0 0 0 1px var(--pulse-rose), 0 4px 28px var(--pulse-rose-glow); }
+  .font-mono-pulse { font-family: var(--pulse-mono); font-feature-settings: 'tnum' 1; }
+
+  /* ─── Scrollbars (thin, theme-aware) ─── */
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background: var(--pulse-border-strong);
+    border-radius: 3px;
+  }
+  *::-webkit-scrollbar-thumb:hover { background: var(--pulse-ink-3); }
+
+  /* ─── Motion ─── */
+  @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+  .pulse-dot-anim { animation: pulseDot 1.4s ease-in-out infinite; }
+  @keyframes waveLive {
+    0%, 100% { transform: scaleY(0.3); }
+    50% { transform: scaleY(1); }
+  }
+  .wave-live-bar { animation: waveLive 0.9s ease-in-out infinite; transform-origin: center; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes ringPulse {
+    0% { box-shadow: 0 0 0 0 var(--pulse-rose-glow); }
+    100% { box-shadow: 0 0 0 14px transparent; }
+  }
+  .ring-pulse-anim { animation: ringPulse 1.6s ease-out infinite; }
+
+  /* ─── Waveform (static) ─── */
+  .wf { display: inline-flex; align-items: center; gap: 2px; }
+  .wf > i {
+    display: block;
+    width: 2px;
+    border-radius: 1px;
+    background: currentColor;
+    opacity: 0.55;
+  }
+  .wf-tall > i { width: 3px; opacity: 0.75; }
+
+  /* ─── Path B / C extras ─── */
+  .glass-border { border: 1px solid var(--pulse-border); }
+  .selectable-row { transition: background 160ms ease; }
+  .selectable-row:hover { background: var(--pulse-surface-raised); }
+  .selectable-row[data-active='true'] { background: var(--pulse-coral-bg-08); }
+
+  /* ─── Path C — Studio frame ─── */
+  .studio-card {
+    background: var(--pulse-surface);
+    border: 1px solid var(--pulse-border);
+    border-radius: 14px;
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms;
+  }
+  .studio-card:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); border-color: var(--pulse-border-strong); }
+  .studio-card[data-active='true'] {
+    box-shadow: 0 0 0 1px var(--pulse-rose), 0 8px 28px var(--pulse-rose-glow);
+  }
+  html[data-theme='dark'] .studio-card:hover { box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4); }
+
+  /* ─── Playground chrome ─── */
+  .pg-bar {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  html[data-theme='light'] .pg-bar { background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent); }
+  .pg-pill { transition: background 180ms, color 180ms, transform 120ms; }
+  .pg-pill[data-active='true'] {
+    background: var(--pulse-rose);
+    color: white;
+  }
+  .pg-pill:not([data-active='true']):hover { background: var(--pulse-surface-raised); }
+
+  /* ─── Letter-spacing helpers ─── */
+  .tracking-tight-mono { letter-spacing: 0.06em; }
+  .tracking-wide-mono { letter-spacing: 0.18em; }
+
+  /* ─── Honest placeholder ─── */
+  .placeholder-block {
+    background: repeating-linear-gradient(
+      135deg,
+      var(--pulse-border),
+      var(--pulse-border) 4px,
+      transparent 4px,
+      transparent 8px
+    );
+  }
+</style>
+</head>
+<body class="overflow-hidden">
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect } = React;
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED MOCK DATA — same voice messages from your TRIAGE screenshot,
+   plus plausible content for the other 5 subsections.
+   ════════════════════════════════════════════════════════════════════════ */
+
+const TRIAGE_VOICES = [
+  { id: 'v1', sender: 'Frankie Messana', type: 'quick', dur: '0:02', ago: '1w', transcript: null, needsReply: false, source: 'direct', unread: true,  aiSummary: false },
+  { id: 'v2', sender: 'Note 5/13/2026',  type: 'note',  dur: '0:03', ago: '1w', transcript: '00:00 You got a movie to take it very rich man.', needsReply: false, source: 'notes',  unread: false, aiSummary: true },
+  { id: 'v3', sender: 'Unknown',         type: 'dm',    dur: '0:19', ago: '1w', transcript: "Hey, Frankie, I'm just calling to test your test and I want you to meet Monday and send me a mail to the zoo and get your opinion on thr…", needsReply: true, source: 'direct', unread: true, aiSummary: true },
+  { id: 'v4', sender: 'Frankie Messana', type: 'quick', dur: '0:04', ago: '1w', transcript: null, needsReply: false, source: 'direct', unread: false, aiSummary: false },
+  { id: 'v5', sender: 'Note 4/27/2026',  type: 'note',  dur: '0:08', ago: '3w', transcript: '.', needsReply: false, source: 'notes', unread: false, aiSummary: true },
+  { id: 'v6', sender: 'Unknown',         type: 'dm',    dur: '0:07', ago: '3w', transcript: null, needsReply: false, source: 'direct', unread: false, aiSummary: false },
+];
+
+const DIRECT_THREADS = [
+  { id: 'd1', name: 'Frankie Messana', last: 'Quick · 0:04', ago: '1w', unread: 2, active: true,
+    messages: [
+      { id: 'dm1', who: 'them', dur: '0:02', when: 'Mon 9:14 AM', transcript: null },
+      { id: 'dm2', who: 'me',   dur: '0:11', when: 'Mon 9:15 AM', transcript: 'On it — sending the deck over before lunch.' },
+      { id: 'dm3', who: 'them', dur: '0:04', when: 'Mon 9:32 AM', transcript: null },
+    ] },
+  { id: 'd2', name: 'Unknown',         last: 'DM · 0:19',    ago: '1w', unread: 1, active: false, messages: [] },
+  { id: 'd3', name: 'Maria Schaefer',  last: 'Quick · 0:08', ago: '2w', unread: 0, active: false, messages: [] },
+  { id: 'd4', name: 'Jaylen Park',     last: 'DM · 0:42',    ago: '3w', unread: 0, active: false, messages: [] },
+];
+
+const CHANNELS = [
+  { id: 'c1', name: 'general',   workspace: 'My Workspace', unread: 4, active: true,
+    posts: [
+      { id: 'p1', who: 'Frankie Messana', dur: '0:34', when: 'Today · 11:02 AM', mentions: ['@maria'], transcript: 'Hey @maria — can you walk me through the Q1 plan tomorrow? Want to sync before the broadcast.' },
+      { id: 'p2', who: 'Maria Schaefer',  dur: '0:18', when: 'Today · 11:14 AM', mentions: [],          transcript: 'Yes — 10am your time? I have the deck ready.' },
+      { id: 'p3', who: 'Jaylen Park',     dur: '0:09', when: 'Today · 11:21 AM', mentions: [],          transcript: '+1, I will hop on too.' },
+    ] },
+  { id: 'c2', name: 'standups',  workspace: 'My Workspace', unread: 0, active: false, posts: [] },
+  { id: 'c3', name: 'design',    workspace: 'My Workspace', unread: 12, active: false, posts: [] },
+  { id: 'c4', name: 'random',    workspace: 'My Workspace', unread: 0, active: false, posts: [] },
+];
+
+const BROADCASTS = [
+  { id: 'b1', title: 'Q1 retro thoughts',          host: 'Frankie Messana', listeners: 24, dur: '4:12', when: 'Today · 10:02 AM', active: true,
+    summary: 'Three wins, two misses, one new bet for next quarter. Skim the AI summary or play in full.' },
+  { id: 'b2', title: 'Friday brief — shipping log', host: 'Frankie Messana', listeners: 41, dur: '6:48', when: 'Fri · 4:30 PM',  active: false, summary: '' },
+  { id: 'b3', title: 'Hiring philosophy v3',        host: 'Maria Schaefer',  listeners: 18, dur: '8:21', when: 'Wed · 2:15 PM',  active: false, summary: '' },
+];
+
+const NOTES_TIMELINE = [
+  { id: 'n1', title: 'Note 5/13/2026', dur: '0:03', when: 'May 13', transcript: '00:00 You got a movie to take it very rich man.', tags: ['ideas'] },
+  { id: 'n2', title: 'Note 5/08/2026', dur: '1:22', when: 'May 8',  transcript: 'Three things to remember for the Tuesday review — first, the deck is not the meeting…', tags: ['work', 'review'] },
+  { id: 'n3', title: 'Note 4/27/2026', dur: '0:08', when: 'Apr 27', transcript: '.', tags: [] },
+  { id: 'n4', title: 'Note 4/14/2026', dur: '2:41', when: 'Apr 14', transcript: 'Walking notes after the client call — biggest takeaway: we are not pitching the right axis…', tags: ['client'] },
+];
+
+const VOICE_ROOMS = [
+  { id: 'r1', name: 'Design jam',      live: true,  speakers: 3, total: 5, host: 'Frankie Messana', color: '#fb7185' },
+  { id: 'r2', name: 'Q1 retro',        live: true,  speakers: 2, total: 8, host: 'Maria Schaefer',  color: '#60a5fa' },
+  { id: 'r3', name: 'Coffee chat',     live: false, speakers: 0, total: 0, host: '—',               color: '#a78bfa' },
+];
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED HELPERS — color from id, deterministic waveform bars
+   ════════════════════════════════════════════════════════════════════════ */
+
+const AVATAR_PALETTE = ['#6366f1','#8b5cf6','#d946ef','#ec4899','#0ea5e9','#06b6d4','#14b8a6','#64748b'];
+function colorForId(id = '') {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+}
+function initials(name = '') {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || '?';
+}
+
+/** Deterministic waveform bars — same id always renders same shape. */
+function waveformBars(seed, count = 40) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const bars = [];
+  for (let i = 0; i < count; i++) {
+    h = (h * 1664525 + 1013904223) >>> 0;
+    const v = 0.18 + ((h % 1000) / 1000) * 0.82;
+    bars.push(v);
+  }
+  return bars;
+}
+
+const TYPE_LABELS = {
+  quick:     { label: 'QUICK',    tone: 'rose' },
+  note:      { label: 'NOTE',     tone: 'neutral' },
+  dm:        { label: 'DM',       tone: 'neutral' },
+  broadcast: { label: 'BROADCAST',tone: 'info' },
+  channel:   { label: 'CHANNEL',  tone: 'neutral' },
+};
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED ICON SET (inline SVG — icons, never imagery)
+   ════════════════════════════════════════════════════════════════════════ */
+
+function Icon({ name, className = 'w-4 h-4' }) {
+  const common = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  switch (name) {
+    case 'play':     return <svg viewBox="0 0 24 24" className={className} {...common}><polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none"/></svg>;
+    case 'pause':    return <svg viewBox="0 0 24 24" className={className} {...common}><rect x="6" y="5" width="4" height="14" fill="currentColor" stroke="none"/><rect x="14" y="5" width="4" height="14" fill="currentColor" stroke="none"/></svg>;
+    case 'mic':      return <svg viewBox="0 0 24 24" className={className} {...common}><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>;
+    case 'settings': return <svg viewBox="0 0 24 24" className={className} {...common}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06A2 2 0 1 1 4.14 16.93l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9.4a1.7 1.7 0 0 0-.34-1.87l-.06-.06A2 2 0 1 1 7.07 4.64l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1.03Z"/></svg>;
+    case 'check':    return <svg viewBox="0 0 24 24" className={className} {...common}><polyline points="20 6 9 17 4 12"/></svg>;
+    case 'reply':    return <svg viewBox="0 0 24 24" className={className} {...common}><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>;
+    case 'search':   return <svg viewBox="0 0 24 24" className={className} {...common}><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+    case 'inbox':    return <svg viewBox="0 0 24 24" className={className} {...common}><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>;
+    case 'user':     return <svg viewBox="0 0 24 24" className={className} {...common}><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>;
+    case 'users':    return <svg viewBox="0 0 24 24" className={className} {...common}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+    case 'radio':    return <svg viewBox="0 0 24 24" className={className} {...common}><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.48"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>;
+    case 'edit':     return <svg viewBox="0 0 24 24" className={className} {...common}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>;
+    case 'live':     return <svg viewBox="0 0 24 24" className={className} {...common}><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="7"/></svg>;
+    case 'at':       return <svg viewBox="0 0 24 24" className={className} {...common}><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg>;
+    case 'bookmark': return <svg viewBox="0 0 24 24" className={className} {...common}><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"/></svg>;
+    case 'chevR':    return <svg viewBox="0 0 24 24" className={className} {...common}><polyline points="9 6 15 12 9 18"/></svg>;
+    case 'chevD':    return <svg viewBox="0 0 24 24" className={className} {...common}><polyline points="6 9 12 15 18 9"/></svg>;
+    case 'sparkles': return <svg viewBox="0 0 24 24" className={className} {...common}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>;
+    case 'sun':      return <svg viewBox="0 0 24 24" className={className} {...common}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>;
+    case 'moon':     return <svg viewBox="0 0 24 24" className={className} {...common}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>;
+    case 'dot':      return <svg viewBox="0 0 24 24" className={className}><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>;
+    case 'volume':   return <svg viewBox="0 0 24 24" className={className} {...common}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>;
+    case 'filter':   return <svg viewBox="0 0 24 24" className={className} {...common}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>;
+    case 'plus':     return <svg viewBox="0 0 24 24" className={className} {...common}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+    case 'hash':     return <svg viewBox="0 0 24 24" className={className} {...common}><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>;
+    case 'logo':     return <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h3l2-7 4 14 2-7h7"/></svg>;
+    default:         return null;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   WAVEFORM — static (with optional active fill)
+   ════════════════════════════════════════════════════════════════════════ */
+
+function Waveform({ seed, height = 24, count = 36, progress = 0, className = '', tall = false, color }) {
+  const bars = useMemo(() => waveformBars(seed, count), [seed, count]);
+  return (
+    <span className={`wf ${tall ? 'wf-tall' : ''} ${className}`} style={{ height, color: color || 'currentColor' }}>
+      {bars.map((v, i) => (
+        <i key={i} style={{
+          height: Math.max(2, v * height),
+          opacity: i / count <= progress ? 1 : (tall ? 0.4 : 0.45),
+        }}/>
+      ))}
+    </span>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED PULSE SIDEBAR — same in all 3 paths (the screenshot's left rail)
+   ════════════════════════════════════════════════════════════════════════ */
+
+function PulseSidebar({ theme, onToggleTheme }) {
+  const items = [
+    { group: 'Overview',      rows: [{ icon: 'inbox',    label: 'Dashboard' }] },
+    { group: 'Communication', rows: [
+        { icon: 'inbox',   label: 'Messages' },
+        { icon: 'inbox',   label: 'Email' },
+        { icon: 'radio',   label: 'Relay', active: true },
+        { icon: 'live',    label: 'Glimpse' },
+      ] },
+    { group: 'Work & People', rows: [
+        { icon: 'inbox',   label: 'Calendar' },
+        { icon: 'users',   label: 'Meetings' },
+        { icon: 'user',    label: 'Contacts' },
+        { icon: 'check',   label: 'Decisions & Tasks' },
+      ] },
+    { group: 'Intelligence',  rows: [
+        { icon: 'search',  label: 'Search' },
+        { icon: 'sparkles',label: 'Analytics' },
+        { icon: 'bookmark',label: 'War Room' },
+        { icon: 'inbox',   label: 'Archives' },
+        { icon: 'sparkles',label: 'User Guide' },
+      ] },
+  ];
+
+  return (
+    <aside className="h-full w-[232px] shrink-0 flex flex-col border-r pulse-border-color" style={{ background: 'var(--pulse-sidebar-bg)' }}>
+      {/* Brand */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center pulse-rose-bg-color text-white shrink-0">
+          <Icon name="logo" className="w-5 h-5"/>
+        </div>
+        <div className="leading-tight">
+          <div className="text-lg font-semibold pulse-rose-color">Pulse</div>
+          <div className="text-[10px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">JCK</div>
+        </div>
+        <div className="ml-auto flex items-center gap-2 pulse-ink-3-color">
+          <button className="hover:pulse-ink-color"><Icon name="settings" className="w-4 h-4"/></button>
+          <button className="hover:pulse-ink-color"><Icon name="dot" className="w-2 h-2"/></button>
+        </div>
+      </div>
+
+      {/* Workspace switch */}
+      <div className="mx-3 mb-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--pulse-surface-raised)' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md pulse-rose-bg-color"/>
+          <span className="text-sm font-medium pulse-ink-color">My Workspace</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse pulse-coral-bg-color pulse-coral-fg-color tracking-tight-mono">OWNER</span>
+          <Icon name="chevD" className="w-3 h-3 pulse-ink-3-color"/>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        {items.map(grp => (
+          <div key={grp.group} className="mb-3">
+            <div className="flex items-center gap-2 px-2 py-1.5 text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color">
+              <Icon name="dot" className="w-1.5 h-1.5"/>
+              <span>{grp.group.toUpperCase()}</span>
+            </div>
+            {grp.rows.map(r => (
+              <button key={r.label} className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition ${r.active ? 'pulse-rose-color pulse-rose-bg-soft-color' : 'pulse-ink-2-color hover:pulse-ink-color'}`} style={r.active ? {} : {}}>
+                <Icon name={r.icon} className="w-4 h-4 opacity-90"/>
+                <span>{r.label}</span>
+              </button>
+            ))}
+          </div>
+        ))}
+        <div className="px-2 py-1.5 text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color flex items-center gap-2">
+          <Icon name="dot" className="w-1.5 h-1.5"/>
+          <span>EXPERIMENTAL</span>
+          <Icon name="chevR" className="w-3 h-3 ml-auto pulse-ink-3-color"/>
+        </div>
+      </nav>
+
+      {/* AI button */}
+      <div className="px-3 pb-2">
+        <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl pulse-rose-bg-soft-color">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="sparkles" className="w-4 h-4"/></div>
+            <span className="text-sm font-medium pulse-rose-color">Pulse AI</span>
+          </div>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono-pulse pulse-ink-3-color border pulse-border-color">Ctrl·/</span>
+        </button>
+      </div>
+
+      {/* Footer rows */}
+      <div className="border-t pulse-border-color px-3 py-2 space-y-1">
+        <button onClick={onToggleTheme} className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm pulse-ink-2-color hover:pulse-ink-color">
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4"/>
+          <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+        </button>
+        <button className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm pulse-ink-2-color hover:pulse-ink-color">
+          <Icon name="settings" className="w-4 h-4"/>
+          <span>Settings</span>
+        </button>
+        <div className="mt-2 pt-2 border-t pulse-border-color flex items-center gap-2.5 px-2 py-1">
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: colorForId('Frankie Messana') }}>FM</div>
+          <div className="leading-tight">
+            <div className="text-xs font-medium pulse-ink-color">Frankie Messana</div>
+            <div className="text-[10px] pulse-ink-3-color truncate max-w-[140px]">jehovahsneaky83@gmail.com</div>
+          </div>
+          <Icon name="chevD" className="w-3 h-3 ml-auto pulse-ink-3-color"/>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH HEADER — top of each Relay pane, switches subsection
+   ════════════════════════════════════════════════════════════════════════ */
+
+const SUBSECTIONS = [
+  { id: 'triage',    label: 'Triage' },
+  { id: 'direct',    label: 'Direct' },
+  { id: 'channel',   label: 'Channel' },
+  { id: 'broadcast', label: 'Broadcast' },
+  { id: 'notes',     label: 'Notes' },
+  { id: 'live',      label: 'Live' },
+];
+
+/* ════════════════════════════════════════════════════════════════════════
+   ABOUT-THIS-PATH BANNER
+   ════════════════════════════════════════════════════════════════════════ */
+
+function AboutPath({ name, archetype, iaFix, vibe }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="mx-4 mt-3 rounded-lg border pulse-border-color overflow-hidden text-xs" style={{ background: 'var(--pulse-surface)' }}>
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-2 px-3 py-2 pulse-ink-2-color">
+        <Icon name="sparkles" className="w-3.5 h-3.5 pulse-rose-color"/>
+        <span className="font-mono-pulse tracking-wide-mono pulse-rose-color">PATH {name.split(' ')[0]}</span>
+        <span className="pulse-ink-color font-medium">{name.split(' ').slice(1).join(' ')}</span>
+        <span className="ml-auto pulse-ink-3-color">{open ? 'hide' : 'show'} notes</span>
+        <Icon name={open ? 'chevD' : 'chevR'} className="w-3.5 h-3.5 pulse-ink-3-color"/>
+      </button>
+      {open && (
+        <div className="grid grid-cols-3 gap-3 px-3 pb-3 border-t pulse-border-color pt-3">
+          <div>
+            <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-1">ARCHETYPE</div>
+            <div className="pulse-ink-color leading-snug">{archetype}</div>
+          </div>
+          <div>
+            <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-1">IA FIX</div>
+            <div className="pulse-ink-color leading-snug">{iaFix}</div>
+          </div>
+          <div>
+            <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-1">VIBE</div>
+            <div className="pulse-ink-color leading-snug">{vibe}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════
+   PATH A — REFINED TRIAGE  (Conservative · Linear/Superhuman polish)
+   IA fix: keep 6 primary tabs, rename Triage sub-tabs to 4 non-redundant
+           filters (All / Unheard / @Mentions / Saved).
+   ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════ */
+
+function PathA({ subsection, setSubsection }) {
+  return (
+    <div className="h-full flex flex-col">
+      {/* Primary mode tabs */}
+      <div className="flex items-center gap-1 px-4 py-2.5 border-b pulse-border-color">
+        {SUBSECTIONS.map(s => (
+          <button key={s.id}
+            data-section={s.id}
+            onClick={() => setSubsection(s.id)}
+            className={`px-3 py-1.5 rounded-md text-[11px] font-mono-pulse uppercase tracking-wide-mono transition ${subsection === s.id ? 'pulse-rose-bg-soft-color pulse-rose-color' : 'pulse-ink-2-color hover:pulse-surface-raised'}`}>
+            {s.label}
+          </button>
+        ))}
+        <div className="ml-auto flex items-center gap-1.5 pulse-ink-3-color">
+          <button className="p-1.5 rounded-md hover:pulse-surface-raised"><Icon name="search" className="w-4 h-4"/></button>
+          <button className="p-1.5 rounded-md hover:pulse-surface-raised"><Icon name="settings" className="w-4 h-4"/></button>
+        </div>
+      </div>
+
+      <AboutPath name="A Refined Triage"
+        archetype="Linear / Superhuman — same shape, executed at 95%."
+        iaFix="Triage sub-tabs renamed to non-redundant filters: All / Unheard / @Mentions / Saved. NOTES & LIVE dropped (already in primary nav)."
+        vibe="Tight typography. Inline waveform on hover. Coral reserved for unread dot + AI chips + composer CTA." />
+
+      <div className="flex-1 overflow-hidden relative">
+        {subsection === 'triage'    && <PathATriage />}
+        {subsection === 'direct'    && <PathADirect />}
+        {subsection === 'channel'   && <PathAChannel />}
+        {subsection === 'broadcast' && <PathABroadcast />}
+        {subsection === 'notes'     && <PathANotes />}
+        {subsection === 'live'      && <PathALive />}
+      </div>
+    </div>
+  );
+}
+
+function PathATriage() {
+  const [filter, setFilter] = useState('all');
+  const filtered = TRIAGE_VOICES.filter(v => {
+    if (filter === 'unheard') return v.unread;
+    if (filter === 'mentions') return false; // none in mock
+    if (filter === 'saved') return false;    // none in mock
+    return true;
+  });
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Filter chips — IA fix: 4 non-redundant filters, no dupes */}
+      <div className="flex items-center gap-1.5 px-4 py-2 border-b pulse-border-color">
+        {[
+          { id: 'all',      label: 'All',       count: TRIAGE_VOICES.length },
+          { id: 'unheard',  label: 'Unheard',   count: TRIAGE_VOICES.filter(v => v.unread).length },
+          { id: 'mentions', label: '@Mentions', count: 0 },
+          { id: 'saved',    label: 'Saved',     count: 0 },
+        ].map(f => (
+          <button key={f.id} onClick={() => setFilter(f.id)}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${filter === f.id ? 'pulse-ink-color pulse-surface-raised' : 'pulse-ink-3-color hover:pulse-surface-raised'}`}>
+            <span>{f.label}</span>
+            {f.count > 0 && <span className="text-[10px] font-mono-pulse opacity-70">{f.count}</span>}
+          </button>
+        ))}
+        <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">SHOWING {filtered.length}</span>
+      </div>
+
+      {/* Needs-reply banner — compact, no big CTA */}
+      {filtered.some(v => v.needsReply) && (
+        <div className="mx-4 mt-3 mb-2 flex items-center gap-2 px-3 py-2 rounded-md pulse-rose-bg-soft-color">
+          <span className="w-1.5 h-1.5 rounded-full pulse-rose-bg-color pulse-dot-anim"/>
+          <span className="text-xs pulse-rose-color font-medium">1 voice needs a reply</span>
+          <button className="ml-auto text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color hover:pulse-ink-color">MARK ALL READ</button>
+        </div>
+      )}
+
+      {/* Rows */}
+      <div className="flex-1 overflow-y-auto px-2 pb-32">
+        {filtered.map(v => <PathARow key={v.id} v={v} />)}
+      </div>
+
+      {/* Floating composer */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2">
+        <button className="pulse-rose-bg-color text-white pulse-rose-glow-shadow rounded-full pl-4 pr-3 py-2.5 flex items-center gap-2 hover:scale-[1.02] transition">
+          <Icon name="mic" className="w-4 h-4"/>
+          <span className="text-sm font-medium">New voice message</span>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono-pulse bg-white/15 tracking-wide-mono">SPACE</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PathARow({ v }) {
+  const t = TYPE_LABELS[v.type];
+  return (
+    <div className="group flex items-start gap-3 px-3 py-3 mx-1 rounded-md hover:pulse-surface-raised transition relative">
+      {/* Play */}
+      <button className={`shrink-0 w-9 h-9 rounded-full border-2 flex items-center justify-center transition ${v.unread ? 'pulse-rose-bg-color text-white border-transparent' : 'pulse-border-strong-color pulse-ink-2-color hover:pulse-rose-color'}`} style={v.unread ? {} : { borderColor: 'var(--pulse-border-strong)' }}>
+        <Icon name="play" className="w-3.5 h-3.5"/>
+      </button>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          {v.unread && <span className="w-1.5 h-1.5 rounded-full pulse-rose-bg-color"/>}
+          <span className="text-sm font-semibold pulse-ink-color truncate">{v.sender}</span>
+          <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-wide-mono ${t.tone === 'rose' ? 'pulse-coral-bg-color pulse-coral-fg-color' : 'pulse-surface-raised pulse-ink-3-color'}`}>{t.label}</span>
+          <span className="text-[11px] font-mono-pulse pulse-ink-3-color">{v.dur}</span>
+          <span className="text-[11px] pulse-ink-3-color">·</span>
+          <span className="text-[11px] pulse-ink-3-color truncate">{v.transcript || 'No transcript'}</span>
+          <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color shrink-0">{v.ago} ago</span>
+        </div>
+        {v.aiSummary && (
+          <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded pulse-coral-bg-color">
+            <Icon name="sparkles" className="w-3 h-3 pulse-coral-fg-color"/>
+            <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · SUMMARY</span>
+          </div>
+        )}
+      </div>
+      {/* Hover actions */}
+      <div className="absolute right-3 top-2.5 opacity-0 group-hover:opacity-100 transition flex items-center gap-1">
+        <button className="p-1.5 rounded-md pulse-surface hover:pulse-surface-raised pulse-ink-2-color" title="Reply"><Icon name="reply" className="w-3.5 h-3.5"/></button>
+        <button className="p-1.5 rounded-md pulse-surface hover:pulse-surface-raised pulse-ink-2-color" title="Save"><Icon name="bookmark" className="w-3.5 h-3.5"/></button>
+        <button className="p-1.5 rounded-md pulse-surface hover:pulse-surface-raised pulse-ink-2-color" title="Mark read"><Icon name="check" className="w-3.5 h-3.5"/></button>
+      </div>
+    </div>
+  );
+}
+
+function PathADirect() {
+  const t = DIRECT_THREADS.find(t => t.active) || DIRECT_THREADS[0];
+  return (
+    <div className="h-full grid grid-cols-[280px_1fr]">
+      <div className="border-r pulse-border-color overflow-y-auto">
+        <div className="px-4 py-3 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">PEOPLE · {DIRECT_THREADS.length}</div>
+        {DIRECT_THREADS.map(d => (
+          <button key={d.id} className={`w-full flex items-center gap-3 px-3 py-2.5 hover:pulse-surface-raised text-left transition ${d.active ? 'pulse-surface-raised' : ''}`}>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: colorForId(d.name) }}>{initials(d.name)}</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium pulse-ink-color truncate">{d.name}</span>
+                {d.unread > 0 && <span className="ml-auto text-[10px] font-mono-pulse pulse-rose-color">{d.unread}</span>}
+              </div>
+              <div className="text-[11px] pulse-ink-3-color truncate">{d.last} · {d.ago} ago</div>
+            </div>
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-col">
+        <div className="px-5 py-3 border-b pulse-border-color flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: colorForId(t.name) }}>{initials(t.name)}</div>
+          <div>
+            <div className="text-sm font-semibold pulse-ink-color">{t.name}</div>
+            <div className="text-[11px] pulse-ink-3-color">Active 14m ago</div>
+          </div>
+          <div className="ml-auto flex items-center gap-1 pulse-ink-3-color">
+            <button className="p-1.5 rounded hover:pulse-surface-raised"><Icon name="bookmark" className="w-4 h-4"/></button>
+            <button className="p-1.5 rounded hover:pulse-surface-raised"><Icon name="settings" className="w-4 h-4"/></button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+          {t.messages.map(m => (
+            <div key={m.id} className={`flex gap-2 ${m.who === 'me' ? 'flex-row-reverse' : ''}`}>
+              <div className={`max-w-[70%] px-3 py-2 rounded-2xl ${m.who === 'me' ? 'pulse-rose-bg-soft-color' : 'pulse-surface-raised'}`}>
+                <div className="flex items-center gap-2">
+                  <button className={`w-7 h-7 rounded-full flex items-center justify-center ${m.who === 'me' ? 'pulse-rose-bg-color text-white' : 'pulse-surface pulse-ink-color'}`}><Icon name="play" className="w-3 h-3"/></button>
+                  <Waveform seed={m.id} height={20} count={28} className={m.who === 'me' ? 'pulse-rose-color' : 'pulse-ink-2-color'}/>
+                  <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{m.dur}</span>
+                </div>
+                {m.transcript && <div className="text-[12px] pulse-ink-2-color mt-1.5 leading-snug">{m.transcript}</div>}
+                <div className="text-[10px] font-mono-pulse pulse-ink-3-color mt-1">{m.when}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="p-4 border-t pulse-border-color flex items-center justify-center">
+          <button className="pulse-rose-bg-color text-white pulse-rose-glow-shadow rounded-full pl-4 pr-3 py-2.5 flex items-center gap-2"><Icon name="mic" className="w-4 h-4"/><span className="text-sm font-medium">Reply with voice</span><span className="px-1.5 py-0.5 rounded text-[10px] font-mono-pulse bg-white/15 tracking-wide-mono">SPACE</span></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PathAChannel() {
+  const c = CHANNELS.find(c => c.active) || CHANNELS[0];
+  return (
+    <div className="h-full grid grid-cols-[240px_1fr]">
+      <div className="border-r pulse-border-color overflow-y-auto">
+        <div className="px-4 py-3 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color flex items-center justify-between">
+          <span>CHANNELS · {c.workspace.toUpperCase()}</span>
+          <button className="pulse-ink-3-color hover:pulse-ink-color"><Icon name="plus" className="w-3.5 h-3.5"/></button>
+        </div>
+        {CHANNELS.map(ch => (
+          <button key={ch.id} className={`w-full flex items-center gap-2 px-4 py-2 text-sm transition ${ch.active ? 'pulse-rose-color pulse-surface-raised' : 'pulse-ink-2-color hover:pulse-surface-raised'}`}>
+            <Icon name="hash" className="w-3.5 h-3.5 opacity-70"/>
+            <span>{ch.name}</span>
+            {ch.unread > 0 && <span className="ml-auto text-[10px] font-mono-pulse pulse-rose-color">{ch.unread}</span>}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-col">
+        <div className="px-5 py-3 border-b pulse-border-color flex items-center gap-2">
+          <Icon name="hash" className="w-4 h-4 pulse-ink-3-color"/>
+          <span className="text-sm font-semibold pulse-ink-color">{c.name}</span>
+          <span className="text-[11px] pulse-ink-3-color">· 8 members · 3 active</span>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {c.posts.map(p => (
+            <div key={p.id} className="flex gap-3">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0" style={{ background: colorForId(p.who) }}>{initials(p.who)}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm font-semibold pulse-ink-color">{p.who}</span>
+                  <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{p.when}</span>
+                </div>
+                <div className="mt-1 flex items-center gap-2 px-2.5 py-1.5 rounded-lg pulse-surface-raised inline-flex">
+                  <button className="w-6 h-6 rounded-full pulse-ink-color flex items-center justify-center" style={{ background: 'var(--pulse-surface)' }}><Icon name="play" className="w-3 h-3"/></button>
+                  <Waveform seed={p.id} height={18} count={32} className="pulse-ink-2-color"/>
+                  <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{p.dur}</span>
+                </div>
+                {p.transcript && (
+                  <div className="text-[13px] pulse-ink-color leading-snug mt-1.5">
+                    {p.mentions.length > 0
+                      ? p.transcript.split(/(@\w+)/).map((s, i) => /^@\w+$/.test(s) ? <span key={i} className="pulse-coral-bg-color pulse-coral-fg-color px-1 rounded">{s}</span> : <span key={i}>{s}</span>)
+                      : p.transcript}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="p-4 border-t pulse-border-color flex items-center gap-2">
+          <button className="p-2 rounded-full pulse-surface-raised pulse-ink-2-color"><Icon name="at" className="w-4 h-4"/></button>
+          <div className="flex-1 px-3 py-2.5 rounded-full pulse-surface-raised flex items-center text-sm pulse-ink-3-color">Reply in #{c.name} — press space to record</div>
+          <button className="p-2 rounded-full pulse-rose-bg-color text-white"><Icon name="mic" className="w-4 h-4"/></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PathABroadcast() {
+  const b = BROADCASTS[0];
+  return (
+    <div className="h-full grid grid-cols-[300px_1fr]">
+      <div className="border-r pulse-border-color overflow-y-auto">
+        <div className="px-4 py-3 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">BROADCASTS</div>
+        {BROADCASTS.map(br => (
+          <button key={br.id} className={`w-full text-left px-4 py-3 border-b pulse-border-color transition ${br.active ? 'pulse-surface-raised' : 'hover:pulse-surface-raised'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <Icon name="radio" className="w-3.5 h-3.5 pulse-rose-color"/>
+              <span className="text-sm font-medium pulse-ink-color truncate">{br.title}</span>
+            </div>
+            <div className="text-[11px] pulse-ink-3-color">{br.host} · {br.listeners} listeners · {br.dur}</div>
+            <div className="text-[10px] font-mono-pulse pulse-ink-3-color mt-1">{br.when}</div>
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-col">
+        <div className="px-6 py-5 border-b pulse-border-color">
+          <div className="flex items-center gap-2 text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color"><Icon name="radio" className="w-3 h-3"/>BROADCAST · {b.when.toUpperCase()}</div>
+          <h2 className="text-2xl font-semibold pulse-ink-color mt-1">{b.title}</h2>
+          <div className="flex items-center gap-2 text-[12px] pulse-ink-3-color mt-1.5">
+            <span>{b.host}</span><span>·</span><span>{b.listeners} listeners</span><span>·</span><span>{b.dur}</span>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="flex items-center gap-3 mb-5">
+            <button className="w-12 h-12 rounded-full pulse-rose-bg-color text-white flex items-center justify-center pulse-rose-glow-shadow"><Icon name="play" className="w-5 h-5"/></button>
+            <Waveform seed={b.id} height={40} count={80} className="pulse-rose-color flex-1" tall/>
+            <span className="text-[11px] font-mono-pulse pulse-ink-3-color">0:00 / {b.dur}</span>
+          </div>
+          <div className="rounded-lg border pulse-border-color p-4 pulse-coral-bg-color">
+            <div className="flex items-center gap-2 mb-2"><Icon name="sparkles" className="w-3.5 h-3.5 pulse-coral-fg-color"/><span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · SUMMARY</span></div>
+            <div className="text-sm pulse-ink-color leading-relaxed">{b.summary}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PathANotes() {
+  return (
+    <div className="h-full overflow-y-auto px-6 py-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-xl font-semibold pulse-ink-color">Voice notes</h2>
+          <div className="text-[11px] pulse-ink-3-color">{NOTES_TIMELINE.length} notes · personal, never shared</div>
+        </div>
+        <button className="pulse-rose-bg-color text-white pulse-rose-glow-shadow rounded-full px-4 py-2 flex items-center gap-2 text-sm"><Icon name="mic" className="w-4 h-4"/>New note</button>
+      </div>
+      <div className="space-y-2">
+        {NOTES_TIMELINE.map(n => (
+          <div key={n.id} className="flex items-start gap-3 px-3 py-3 rounded-md hover:pulse-surface-raised transition">
+            <button className="shrink-0 w-9 h-9 rounded-full border-2 pulse-border-strong-color pulse-ink-2-color flex items-center justify-center hover:pulse-rose-color"><Icon name="play" className="w-3.5 h-3.5"/></button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold pulse-ink-color">{n.title}</span>
+                <span className="text-[11px] font-mono-pulse pulse-ink-3-color">{n.dur}</span>
+                <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{n.when}</span>
+              </div>
+              <div className="text-[12px] pulse-ink-2-color truncate mt-0.5">{n.transcript || 'No transcript'}</div>
+              {n.tags.length > 0 && (
+                <div className="flex items-center gap-1.5 mt-1.5">
+                  {n.tags.map(t => <span key={t} className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-wide-mono pulse-surface-raised pulse-ink-3-color">#{t.toUpperCase()}</span>)}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PathALive() {
+  return (
+    <div className="h-full overflow-y-auto px-6 py-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-xl font-semibold pulse-ink-color flex items-center gap-2">Voice rooms <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full pulse-rose-bg-color pulse-dot-anim"/>2 LIVE</span></h2>
+          <div className="text-[11px] pulse-ink-3-color">Drop in, talk over voice, walk away.</div>
+        </div>
+        <button className="px-4 py-2 rounded-md pulse-surface-raised text-sm pulse-ink-color flex items-center gap-2"><Icon name="plus" className="w-4 h-4"/>New room</button>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {VOICE_ROOMS.map(r => (
+          <div key={r.id} className="rounded-lg border pulse-border-color p-4 hover:pulse-surface-raised transition cursor-pointer">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full pulse-dot-anim" style={{ background: r.live ? 'var(--pulse-rose)' : 'var(--pulse-ink-3)' }}/>
+              <span className="text-[10px] font-mono-pulse tracking-wide-mono" style={{ color: r.live ? 'var(--pulse-rose)' : 'var(--pulse-ink-3)' }}>{r.live ? 'LIVE' : 'EMPTY'}</span>
+              <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{r.total} in</span>
+            </div>
+            <div className="text-base font-semibold pulse-ink-color">{r.name}</div>
+            <div className="text-[12px] pulse-ink-3-color mt-0.5">{r.live ? `${r.host} · ${r.speakers} speaking` : 'No one yet'}</div>
+            {r.live && (
+              <div className="mt-3 flex items-center gap-1.5">
+                <span className="wf inline-flex items-end gap-0.5" style={{ height: 16 }}>
+                  {[0.4, 0.7, 0.5, 0.9, 0.6].map((v, i) => <i key={i} className="wave-live-bar" style={{ width: 2, height: v * 16, background: r.color, animationDelay: `${i * 0.1}s` }}/>) }
+                </span>
+                <span className="text-[10px] font-mono-pulse pulse-ink-3-color ml-auto">JOIN →</span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════
+   PATH B — STREAM + SPOTLIGHT  (Bold · Things 3 / Notion two-pane)
+   IA fix: kill Triage sub-tabs. Single chip row (Status: All/Unheard/Needs
+           reply) + a source dropdown. Selecting a row opens a right detail
+           pane with player + transcript + AI summary + reply box.
+   ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════ */
+
+function PathB({ subsection, setSubsection }) {
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center gap-1 px-4 py-2.5 border-b pulse-border-color">
+        {SUBSECTIONS.map(s => (
+          <button key={s.id} data-section={s.id} onClick={() => setSubsection(s.id)}
+            className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition ${subsection === s.id ? 'pulse-ink-color pulse-surface-raised' : 'pulse-ink-3-color hover:pulse-surface-raised'}`}>
+            {s.label}
+          </button>
+        ))}
+        <div className="ml-auto flex items-center gap-1.5 pulse-ink-3-color">
+          <button className="p-1.5 rounded-md hover:pulse-surface-raised"><Icon name="search" className="w-4 h-4"/></button>
+          <button className="p-1.5 rounded-md hover:pulse-surface-raised"><Icon name="settings" className="w-4 h-4"/></button>
+        </div>
+      </div>
+
+      <AboutPath name="B Stream + Spotlight"
+        archetype="Things 3 / Notion — two-pane stream + spotlight detail."
+        iaFix="Triage sub-tabs gone. One chip row (Status: All / Unheard / Needs reply) plus a source dropdown. Click a row → detail pane opens right with player, transcript, AI, reply."
+        vibe="Conversational. Breathing room. Avatars always shown. Composer lives inside the detail pane, no floating CTA." />
+
+      <div className="flex-1 overflow-hidden">
+        {subsection === 'triage'    && <PathBTriage />}
+        {subsection === 'direct'    && <PathBDirect />}
+        {subsection === 'channel'   && <PathBChannel />}
+        {subsection === 'broadcast' && <PathBBroadcast />}
+        {subsection === 'notes'     && <PathBNotes />}
+        {subsection === 'live'      && <PathBLive />}
+      </div>
+    </div>
+  );
+}
+
+function PathBTriage() {
+  const [status, setStatus] = useState('all');
+  const [source, setSource] = useState('all');
+  const [selectedId, setSelectedId] = useState(TRIAGE_VOICES[2].id);
+  const selected = TRIAGE_VOICES.find(v => v.id === selectedId);
+
+  const filtered = TRIAGE_VOICES.filter(v => {
+    if (status === 'unheard' && !v.unread) return false;
+    if (status === 'needs' && !v.needsReply) return false;
+    if (source !== 'all' && v.source !== source) return false;
+    return true;
+  });
+
+  return (
+    <div className="h-full grid grid-cols-[1fr_460px]">
+      {/* Left — stream */}
+      <div className="flex flex-col border-r pulse-border-color overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-3 border-b pulse-border-color">
+          <div className="flex items-center gap-1 p-0.5 rounded-md pulse-surface-raised">
+            {[
+              { id: 'all',     label: 'All' },
+              { id: 'unheard', label: 'Unheard' },
+              { id: 'needs',   label: 'Needs reply' },
+            ].map(s => (
+              <button key={s.id} onClick={() => setStatus(s.id)}
+                className={`px-2.5 py-1 rounded text-[11px] font-medium transition ${status === s.id ? 'pulse-surface pulse-ink-color' : 'pulse-ink-3-color'}`}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <select value={source} onChange={e => setSource(e.target.value)} className="px-2 py-1 rounded-md text-[11px] pulse-surface-raised pulse-ink-color border-0 outline-none">
+            <option value="all">From any source</option>
+            <option value="direct">Direct only</option>
+            <option value="channel">Channels only</option>
+            <option value="notes">Notes only</option>
+          </select>
+          <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">{filtered.length} VOICES</span>
+        </div>
+        <div className="flex-1 overflow-y-auto py-2">
+          {filtered.map(v => (
+            <div key={v.id} data-active={v.id === selectedId} onClick={() => setSelectedId(v.id)}
+              className="selectable-row mx-2 px-3 py-3 rounded-lg flex items-start gap-3 cursor-pointer">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0" style={{ background: colorForId(v.sender) }}>{initials(v.sender)}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-semibold pulse-ink-color truncate">{v.sender}</span>
+                  {v.unread && <span className="w-1.5 h-1.5 rounded-full pulse-rose-bg-color shrink-0"/>}
+                  <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color shrink-0">{v.ago}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <Waveform seed={v.id} height={14} count={24} className="pulse-ink-2-color"/>
+                  <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{v.dur}</span>
+                </div>
+                <div className="text-[12px] pulse-ink-2-color line-clamp-2 mt-1 leading-snug">{v.transcript || (v.aiSummary ? 'No transcript — AI summary available.' : 'No transcript.')}</div>
+                {v.needsReply && (
+                  <div className="inline-flex items-center gap-1 mt-1.5 px-1.5 py-0.5 rounded pulse-rose-bg-soft-color">
+                    <span className="w-1 h-1 rounded-full pulse-rose-bg-color"/>
+                    <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color">NEEDS REPLY</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Right — spotlight */}
+      <PathBSpotlight v={selected} />
+    </div>
+  );
+}
+
+function PathBSpotlight({ v }) {
+  if (!v) return (
+    <div className="flex flex-col items-center justify-center text-center px-8 pulse-ink-3-color">
+      <Icon name="inbox" className="w-10 h-10 mb-3 opacity-50"/>
+      <div className="text-sm pulse-ink-2-color">Select a voice to see the detail</div>
+    </div>
+  );
+  const t = TYPE_LABELS[v.type];
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="px-6 py-5 border-b pulse-border-color">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold text-white" style={{ background: colorForId(v.sender) }}>{initials(v.sender)}</div>
+          <div>
+            <div className="text-base font-semibold pulse-ink-color">{v.sender}</div>
+            <div className="text-[11px] pulse-ink-3-color flex items-center gap-1.5">
+              <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-wide-mono ${t.tone === 'rose' ? 'pulse-coral-bg-color pulse-coral-fg-color' : 'pulse-surface-raised pulse-ink-3-color'}`}>{t.label}</span>
+              <span>·</span>
+              <span>{v.ago} ago</span>
+            </div>
+          </div>
+          <button className="ml-auto p-2 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="bookmark" className="w-4 h-4"/></button>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="w-12 h-12 rounded-full pulse-rose-bg-color text-white pulse-rose-glow-shadow flex items-center justify-center"><Icon name="play" className="w-5 h-5"/></button>
+          <Waveform seed={v.id} height={36} count={60} className="pulse-rose-color flex-1" tall progress={0.0}/>
+          <span className="text-[11px] font-mono-pulse pulse-ink-3-color">0:00 / {v.dur}</span>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div>
+          <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">TRANSCRIPT</div>
+          <div className="text-sm pulse-ink-color leading-relaxed">{v.transcript || <span className="pulse-ink-3-color italic">No transcript generated yet.</span>}</div>
+        </div>
+        {v.aiSummary && (
+          <div className="rounded-lg pulse-coral-bg-color p-4 border-l-2" style={{ borderColor: 'var(--pulse-rose)' }}>
+            <div className="flex items-center gap-2 mb-1.5"><Icon name="sparkles" className="w-3.5 h-3.5 pulse-coral-fg-color"/><span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · SUMMARY</span></div>
+            <div className="text-sm pulse-ink-color leading-relaxed">Asks to meet Monday, send mail to the zoo, and share an opinion on a third point that got cut off. Likely needs a 2-line reply with availability.</div>
+          </div>
+        )}
+        <div>
+          <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">QUICK ACTIONS</div>
+          <div className="flex flex-wrap gap-2">
+            {['Confirm Monday', 'Push to next week', 'Ask for context', 'Save to War Room'].map(a => <button key={a} className="px-3 py-1.5 rounded-md pulse-surface-raised text-[12px] pulse-ink-color hover:pulse-rose-color">{a}</button>)}
+          </div>
+        </div>
+      </div>
+      <div className="border-t pulse-border-color p-4 flex items-center gap-2">
+        <button className="p-2.5 rounded-full pulse-surface-raised pulse-ink-2-color"><Icon name="at" className="w-4 h-4"/></button>
+        <div className="flex-1 px-3 py-2.5 rounded-full pulse-surface-raised flex items-center text-sm pulse-ink-3-color">Reply with voice — hold space</div>
+        <button className="p-2.5 rounded-full pulse-rose-bg-color text-white pulse-rose-glow-shadow"><Icon name="mic" className="w-4 h-4"/></button>
+      </div>
+    </div>
+  );
+}
+
+function PathBDirect() {
+  const t = DIRECT_THREADS.find(t => t.active) || DIRECT_THREADS[0];
+  return (
+    <div className="h-full grid grid-cols-[1fr_460px]">
+      <div className="border-r pulse-border-color overflow-y-auto py-2">
+        {DIRECT_THREADS.map(d => (
+          <div key={d.id} className="selectable-row mx-2 px-3 py-3 rounded-lg flex items-center gap-3 cursor-pointer" data-active={d.active}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: colorForId(d.name) }}>{initials(d.name)}</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] font-semibold pulse-ink-color truncate">{d.name}</span>
+                {d.unread > 0 && <span className="ml-auto text-[10px] font-mono-pulse pulse-rose-color">{d.unread}</span>}
+              </div>
+              <div className="text-[11px] pulse-ink-3-color truncate">{d.last} · {d.ago}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col">
+        <div className="px-5 py-4 border-b pulse-border-color flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: colorForId(t.name) }}>{initials(t.name)}</div>
+          <div>
+            <div className="text-base font-semibold pulse-ink-color">{t.name}</div>
+            <div className="text-[11px] pulse-ink-3-color">Active 14m ago · 3 voices today</div>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {t.messages.map(m => (
+            <div key={m.id} className={`flex gap-2 ${m.who === 'me' ? 'flex-row-reverse' : ''}`}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0" style={{ background: m.who === 'me' ? 'var(--pulse-rose)' : colorForId(t.name) }}>{m.who === 'me' ? 'You' : initials(t.name)}</div>
+              <div className={`max-w-[75%] rounded-2xl px-3 py-2.5 ${m.who === 'me' ? 'pulse-rose-bg-soft-color' : 'pulse-surface-raised'}`}>
+                <div className="flex items-center gap-2">
+                  <button className={`w-7 h-7 rounded-full flex items-center justify-center ${m.who === 'me' ? 'pulse-rose-bg-color text-white' : 'pulse-surface pulse-ink-color'}`}><Icon name="play" className="w-3 h-3"/></button>
+                  <Waveform seed={m.id} height={20} count={30} className="pulse-ink-2-color"/>
+                  <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{m.dur}</span>
+                </div>
+                {m.transcript && <div className="text-[12px] pulse-ink-color mt-2 leading-snug">{m.transcript}</div>}
+                <div className="text-[10px] font-mono-pulse pulse-ink-3-color mt-1.5">{m.when}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="border-t pulse-border-color p-4 flex items-center gap-2">
+          <button className="p-2.5 rounded-full pulse-surface-raised pulse-ink-2-color"><Icon name="at" className="w-4 h-4"/></button>
+          <div className="flex-1 px-3 py-2.5 rounded-full pulse-surface-raised flex items-center text-sm pulse-ink-3-color">Reply with voice — hold space</div>
+          <button className="p-2.5 rounded-full pulse-rose-bg-color text-white pulse-rose-glow-shadow"><Icon name="mic" className="w-4 h-4"/></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PathBChannel() {
+  const c = CHANNELS.find(c => c.active) || CHANNELS[0];
+  return (
+    <div className="h-full grid grid-cols-[220px_1fr_320px]">
+      <div className="border-r pulse-border-color overflow-y-auto">
+        <div className="px-4 py-3 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">CHANNELS</div>
+        {CHANNELS.map(ch => (
+          <button key={ch.id} className={`w-full flex items-center gap-2 px-4 py-2 text-sm transition ${ch.active ? 'pulse-rose-color pulse-rose-bg-soft-color' : 'pulse-ink-2-color hover:pulse-surface-raised'}`}>
+            <Icon name="hash" className="w-3.5 h-3.5 opacity-70"/>
+            <span>{ch.name}</span>
+            {ch.unread > 0 && <span className="ml-auto text-[10px] font-mono-pulse">{ch.unread}</span>}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-col overflow-hidden">
+        <div className="px-6 py-4 border-b pulse-border-color flex items-center gap-2">
+          <Icon name="hash" className="w-5 h-5 pulse-ink-3-color"/>
+          <span className="text-lg font-semibold pulse-ink-color">{c.name}</span>
+          <span className="text-[11px] pulse-ink-3-color ml-1">· 8 members</span>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+          {c.posts.map(p => (
+            <div key={p.id} className="flex gap-3">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0" style={{ background: colorForId(p.who) }}>{initials(p.who)}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm font-semibold pulse-ink-color">{p.who}</span>
+                  <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{p.when}</span>
+                </div>
+                <div className="mt-2 flex items-center gap-2 pulse-surface-raised rounded-2xl px-3 py-2 inline-flex">
+                  <button className="w-7 h-7 rounded-full pulse-ink-color flex items-center justify-center" style={{ background: 'var(--pulse-surface)' }}><Icon name="play" className="w-3 h-3"/></button>
+                  <Waveform seed={p.id} height={20} count={36} className="pulse-ink-2-color"/>
+                  <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{p.dur}</span>
+                </div>
+                {p.transcript && (
+                  <div className="text-[13px] pulse-ink-color leading-relaxed mt-2">
+                    {p.mentions.length > 0
+                      ? p.transcript.split(/(@\w+)/).map((s, i) => /^@\w+$/.test(s) ? <span key={i} className="pulse-coral-bg-color pulse-coral-fg-color px-1 rounded">{s}</span> : <span key={i}>{s}</span>)
+                      : p.transcript}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="border-t pulse-border-color p-4 flex items-center gap-2">
+          <button className="p-2.5 rounded-full pulse-surface-raised pulse-ink-2-color"><Icon name="at" className="w-4 h-4"/></button>
+          <div className="flex-1 px-3 py-2.5 rounded-full pulse-surface-raised flex items-center text-sm pulse-ink-3-color">Reply in #{c.name}</div>
+          <button className="p-2.5 rounded-full pulse-rose-bg-color text-white pulse-rose-glow-shadow"><Icon name="mic" className="w-4 h-4"/></button>
+        </div>
+      </div>
+      <div className="border-l pulse-border-color overflow-y-auto px-4 py-4">
+        <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">MEMBERS</div>
+        {['Frankie Messana', 'Maria Schaefer', 'Jaylen Park', 'Theo Bridgewater'].map(n => (
+          <div key={n} className="flex items-center gap-2 py-1.5">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: colorForId(n) }}>{initials(n)}</div>
+            <span className="text-[12px] pulse-ink-color">{n}</span>
+            {n === 'Frankie Messana' && <span className="ml-auto text-[10px] font-mono-pulse pulse-rose-color">HOST</span>}
+          </div>
+        ))}
+        <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mt-5 mb-2">CHANNEL AI</div>
+        <div className="rounded-lg pulse-coral-bg-color p-3 border-l-2" style={{ borderColor: 'var(--pulse-rose)' }}>
+          <div className="text-[12px] pulse-ink-color leading-relaxed">Quick sync planned for tomorrow 10am · 1 unresolved question from Maria about Q1 baseline.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PathBBroadcast() {
+  const b = BROADCASTS[0];
+  return (
+    <div className="h-full grid grid-cols-[1fr_460px]">
+      <div className="border-r pulse-border-color overflow-y-auto py-2">
+        {BROADCASTS.map(br => (
+          <div key={br.id} className="selectable-row mx-2 px-3 py-3 rounded-lg flex gap-3 cursor-pointer" data-active={br.active}>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center pulse-rose-bg-soft-color pulse-rose-color shrink-0"><Icon name="radio" className="w-4 h-4"/></div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-semibold pulse-ink-color truncate">{br.title}</div>
+              <div className="text-[11px] pulse-ink-3-color truncate">{br.host} · {br.listeners} listeners · {br.dur}</div>
+              <div className="text-[10px] font-mono-pulse pulse-ink-3-color mt-1">{br.when}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col">
+        <div className="px-6 py-5 border-b pulse-border-color">
+          <div className="flex items-center gap-2 text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color"><Icon name="radio" className="w-3 h-3"/>BROADCAST</div>
+          <h2 className="text-xl font-semibold pulse-ink-color mt-1.5">{b.title}</h2>
+          <div className="flex items-center gap-2 text-[11px] pulse-ink-3-color mt-1">{b.host} · {b.listeners} listeners · {b.dur}</div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          <div className="flex items-center gap-3">
+            <button className="w-12 h-12 rounded-full pulse-rose-bg-color text-white pulse-rose-glow-shadow flex items-center justify-center"><Icon name="play" className="w-5 h-5"/></button>
+            <Waveform seed={b.id} height={36} count={60} className="pulse-rose-color flex-1" tall/>
+            <span className="text-[11px] font-mono-pulse pulse-ink-3-color">0:00 / {b.dur}</span>
+          </div>
+          <div className="rounded-lg pulse-coral-bg-color p-4 border-l-2" style={{ borderColor: 'var(--pulse-rose)' }}>
+            <div className="flex items-center gap-2 mb-2"><Icon name="sparkles" className="w-3.5 h-3.5 pulse-coral-fg-color"/><span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · SUMMARY</span></div>
+            <div className="text-sm pulse-ink-color leading-relaxed">{b.summary}</div>
+          </div>
+          <div>
+            <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">CHAPTERS</div>
+            {[
+              { t: '0:00', l: 'Wins recap' },
+              { t: '1:14', l: 'Two misses' },
+              { t: '2:48', l: 'Bet for Q2' },
+              { t: '3:36', l: 'Ask: who owns research?' },
+            ].map(c => (
+              <button key={c.t} className="w-full flex items-center gap-3 px-2 py-1.5 rounded-md hover:pulse-surface-raised text-left">
+                <span className="text-[10px] font-mono-pulse pulse-rose-color w-10">{c.t}</span>
+                <span className="text-[13px] pulse-ink-color">{c.l}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PathBNotes() {
+  return (
+    <div className="h-full grid grid-cols-[1fr_460px]">
+      <div className="overflow-y-auto px-5 py-4 border-r pulse-border-color">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-semibold pulse-ink-color">Voice notes</h2>
+          <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{NOTES_TIMELINE.length} TOTAL</span>
+        </div>
+        {NOTES_TIMELINE.map(n => (
+          <div key={n.id} className="selectable-row px-3 py-3 rounded-lg flex items-start gap-3 cursor-pointer mb-1" data-active={n.id === 'n1'}>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center pulse-surface-raised pulse-ink-2-color shrink-0"><Icon name="edit" className="w-4 h-4"/></div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] font-semibold pulse-ink-color">{n.title}</span>
+                <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{n.dur}</span>
+                <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{n.when}</span>
+              </div>
+              <div className="text-[12px] pulse-ink-2-color truncate mt-0.5">{n.transcript || 'No transcript'}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col">
+        <div className="px-6 py-5 border-b pulse-border-color">
+          <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">PERSONAL NOTE · MAY 13</div>
+          <h2 className="text-lg font-semibold pulse-ink-color mt-1">Note 5/13/2026</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+          <div className="flex items-center gap-3">
+            <button className="w-11 h-11 rounded-full pulse-rose-bg-color text-white pulse-rose-glow-shadow flex items-center justify-center"><Icon name="play" className="w-4 h-4"/></button>
+            <Waveform seed="n1" height={32} count={50} className="pulse-rose-color flex-1" tall/>
+            <span className="text-[11px] font-mono-pulse pulse-ink-3-color">0:03</span>
+          </div>
+          <div>
+            <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-1.5">TRANSCRIPT</div>
+            <div className="text-sm pulse-ink-color leading-relaxed">"00:00 You got a movie to take it very rich man."</div>
+          </div>
+          <div className="rounded-lg pulse-coral-bg-color p-4 border-l-2" style={{ borderColor: 'var(--pulse-rose)' }}>
+            <div className="flex items-center gap-2 mb-2"><Icon name="sparkles" className="w-3.5 h-3.5 pulse-coral-fg-color"/><span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · IDEA</span></div>
+            <div className="text-sm pulse-ink-color leading-relaxed">Sounds like a fragment — could be a film recommendation. Want me to add it to your Watchlist note?</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PathBLive() {
+  return (
+    <div className="h-full overflow-y-auto px-8 py-6">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h2 className="text-2xl font-semibold pulse-ink-color flex items-center gap-2">Voice rooms <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full pulse-rose-bg-color pulse-dot-anim"/>2 LIVE</span></h2>
+          <div className="text-[12px] pulse-ink-3-color mt-1">Persistent voice channels — drop in, talk, walk away.</div>
+        </div>
+        <button className="pulse-rose-bg-color text-white pulse-rose-glow-shadow rounded-full px-4 py-2 flex items-center gap-2 text-sm"><Icon name="plus" className="w-4 h-4"/>New room</button>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        {VOICE_ROOMS.map(r => (
+          <div key={r.id} className="rounded-xl border pulse-border-color p-5 hover:pulse-surface-raised transition cursor-pointer">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full pulse-dot-anim" style={{ background: r.live ? 'var(--pulse-rose)' : 'var(--pulse-ink-3)' }}/>
+              <span className="text-[10px] font-mono-pulse tracking-wide-mono" style={{ color: r.live ? 'var(--pulse-rose)' : 'var(--pulse-ink-3)' }}>{r.live ? 'LIVE' : 'EMPTY'}</span>
+              <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{r.total} present</span>
+            </div>
+            <div className="text-lg font-semibold pulse-ink-color">{r.name}</div>
+            <div className="text-[12px] pulse-ink-3-color mt-0.5">{r.live ? `Hosted by ${r.host}` : 'No one yet'}</div>
+            {r.live && (
+              <div className="mt-4 flex items-center gap-2">
+                <div className="flex -space-x-1.5">
+                  {['F','M','J'].slice(0, r.speakers).map((c, i) => (
+                    <div key={i} className="w-7 h-7 rounded-full ring-2 flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: r.color, ringColor: 'var(--pulse-surface)' }}>{c}</div>
+                  ))}
+                </div>
+                <span className="text-[11px] pulse-ink-3-color">{r.speakers} speaking now</span>
+                <button className="ml-auto px-3 py-1 rounded-md pulse-rose-bg-color text-white text-[11px] font-medium">Join</button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════
+   PATH C — VOICE STUDIO  (Experimental · waveform-native, media-app feel)
+   IA fix: replace horizontal 6-tab strip with a vertical sources rail
+           inside Relay. Triage becomes "Inbox" (smart playlist). Persistent
+           studio footer player at the bottom. Big floating mic, not a pill.
+   ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════ */
+
+const C_RAIL = [
+  { id: 'triage',    label: 'Inbox',     icon: 'inbox',    desc: 'Smart playlist' },
+  { id: 'direct',    label: 'Direct',    icon: 'user',     desc: '1:1 voice' },
+  { id: 'channel',   label: 'Channels',  icon: 'hash',     desc: 'Team voice' },
+  { id: 'broadcast', label: 'Broadcast', icon: 'radio',    desc: 'One to many' },
+  { id: 'notes',     label: 'Notes',     icon: 'edit',     desc: 'Personal' },
+  { id: 'live',      label: 'Live',      icon: 'live',     desc: 'Rooms' },
+];
+
+function PathC({ subsection, setSubsection }) {
+  const [nowPlaying, setNowPlaying] = useState(TRIAGE_VOICES[2]);
+
+  return (
+    <div className="h-full flex flex-col">
+      <AboutPath name="C Voice Studio"
+        archetype="Voice Memos / pro audio — media app, not chat app."
+        iaFix="Top 6-tab strip replaced by vertical sources rail. Triage → Inbox (smart playlist of all sources). Persistent studio footer player. Floating mic, not a pill."
+        vibe="Waveform-native. Full-width audio cards. Karaoke-style transcript on play. Coral reserved for record indicator + AI + active source." />
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sources rail */}
+        <aside className="w-[200px] shrink-0 border-r pulse-border-color overflow-y-auto py-2">
+          <div className="px-4 py-2 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">SOURCES</div>
+          {C_RAIL.map(r => (
+            <button key={r.id} data-section={r.id} onClick={() => setSubsection(r.id)}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 transition text-left ${subsection === r.id ? 'pulse-rose-color pulse-rose-bg-soft-color' : 'pulse-ink-2-color hover:pulse-surface-raised'}`}>
+              <Icon name={r.icon} className="w-4 h-4 opacity-90"/>
+              <div>
+                <div className="text-[13px] font-medium">{r.label}</div>
+                <div className="text-[10px] pulse-ink-3-color">{r.desc}</div>
+              </div>
+              {r.id === 'triage' && <span className="ml-auto w-1.5 h-1.5 rounded-full pulse-rose-bg-color pulse-dot-anim"/>}
+            </button>
+          ))}
+          <div className="px-4 py-2 mt-4 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">SMART PLAYLISTS</div>
+          {[
+            { label: 'Unheard',         count: 3 },
+            { label: 'Needs reply',     count: 1 },
+            { label: 'Bookmarked',      count: 12 },
+            { label: 'Today',           count: 6 },
+          ].map(p => (
+            <button key={p.label} className="w-full flex items-center gap-2 px-4 py-1.5 pulse-ink-2-color hover:pulse-surface-raised text-[12px] text-left">
+              <Icon name="bookmark" className="w-3.5 h-3.5 opacity-60"/>
+              <span>{p.label}</span>
+              <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{p.count}</span>
+            </button>
+          ))}
+        </aside>
+
+        {/* Main */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-7 pt-6 pb-28">
+            {subsection === 'triage'    && <PathCInbox nowPlaying={nowPlaying} onPlay={setNowPlaying} />}
+            {subsection === 'direct'    && <PathCDirect />}
+            {subsection === 'channel'   && <PathCChannel />}
+            {subsection === 'broadcast' && <PathCBroadcast />}
+            {subsection === 'notes'     && <PathCNotes />}
+            {subsection === 'live'      && <PathCLive />}
+          </div>
+
+          {/* Studio footer — persistent player */}
+          <StudioFooter v={nowPlaying} />
+        </div>
+      </div>
+
+      {/* Floating mic — record affordance */}
+      <button className="absolute bottom-24 right-6 w-14 h-14 rounded-full pulse-rose-bg-color text-white pulse-rose-glow-shadow flex items-center justify-center ring-pulse-anim" style={{ position: 'absolute' }} title="Hold space to record">
+        <Icon name="mic" className="w-6 h-6"/>
+      </button>
+    </div>
+  );
+}
+
+function StudioFooter({ v }) {
+  if (!v) return null;
+  return (
+    <div className="border-t pulse-border-color px-6 py-3 flex items-center gap-4" style={{ background: 'var(--pulse-canvas-soft)' }}>
+      <button className="w-11 h-11 rounded-full pulse-rose-bg-color text-white pulse-rose-glow-shadow flex items-center justify-center shrink-0"><Icon name="play" className="w-5 h-5"/></button>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[13px] font-semibold pulse-ink-color truncate">{v.sender}</span>
+          <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{TYPE_LABELS[v.type].label}</span>
+          <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">0:00 / {v.dur}</span>
+        </div>
+        <div className="flex items-center gap-2 mt-1">
+          <Waveform seed={v.id} height={20} count={80} className="pulse-rose-color" progress={0.0}/>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button className="px-2 py-1 rounded-md pulse-surface-raised text-[10px] font-mono-pulse pulse-ink-2-color">1.0×</button>
+        <button className="p-2 rounded-md hover:pulse-surface-raised pulse-ink-2-color"><Icon name="sparkles" className="w-4 h-4"/></button>
+        <button className="p-2 rounded-md hover:pulse-surface-raised pulse-ink-2-color"><Icon name="bookmark" className="w-4 h-4"/></button>
+        <button className="p-2 rounded-md hover:pulse-surface-raised pulse-ink-2-color"><Icon name="volume" className="w-4 h-4"/></button>
+      </div>
+    </div>
+  );
+}
+
+function PathCInbox({ nowPlaying, onPlay }) {
+  return (
+    <div>
+      <header className="mb-5">
+        <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">RELAY · INBOX</div>
+        <div className="flex items-end justify-between mt-1">
+          <h1 className="text-3xl font-semibold pulse-ink-color leading-tight">Today's voice</h1>
+          <div className="flex items-center gap-2 pulse-ink-3-color text-[12px]">
+            <Icon name="filter" className="w-3.5 h-3.5"/>
+            <span>All sources</span>
+            <Icon name="chevD" className="w-3.5 h-3.5"/>
+          </div>
+        </div>
+      </header>
+      <div className="space-y-3">
+        {TRIAGE_VOICES.map(v => <PathCCard key={v.id} v={v} active={v.id === nowPlaying?.id} onPlay={() => onPlay(v)} />)}
+      </div>
+    </div>
+  );
+}
+
+function PathCCard({ v, active, onPlay }) {
+  const t = TYPE_LABELS[v.type];
+  return (
+    <div className="studio-card p-4" data-active={active}>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-semibold text-white" style={{ background: colorForId(v.sender) }}>{initials(v.sender)}</div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] font-semibold pulse-ink-color truncate">{v.sender}</span>
+            <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-wide-mono ${t.tone === 'rose' ? 'pulse-coral-bg-color pulse-coral-fg-color' : 'pulse-surface-raised pulse-ink-3-color'}`}>{t.label}</span>
+            {v.unread && <span className="w-1.5 h-1.5 rounded-full pulse-rose-bg-color"/>}
+            <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{v.ago} · {v.dur}</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <button onClick={onPlay} className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center transition ${active ? 'pulse-rose-bg-color text-white' : 'pulse-surface-raised pulse-ink-color hover:pulse-rose-color'}`}>
+          <Icon name={active ? 'pause' : 'play'} className="w-4 h-4"/>
+        </button>
+        <Waveform seed={v.id} height={32} count={80} className={active ? 'pulse-rose-color' : 'pulse-ink-2-color'} tall progress={active ? 0.35 : 0}/>
+      </div>
+      {(v.transcript || v.aiSummary) && (
+        <div className="mt-3 pl-13" style={{ paddingLeft: 52 }}>
+          {v.transcript && (
+            <div className="text-[13px] pulse-ink-2-color leading-relaxed">
+              {active ? (
+                <span>
+                  <span className="pulse-ink-color">{v.transcript.slice(0, Math.floor(v.transcript.length * 0.35))}</span>
+                  <span className="opacity-60">{v.transcript.slice(Math.floor(v.transcript.length * 0.35))}</span>
+                </span>
+              ) : v.transcript}
+            </div>
+          )}
+          {v.aiSummary && (
+            <div className="mt-2 flex items-start gap-2 px-3 py-2 rounded-lg pulse-coral-bg-color">
+              <Icon name="sparkles" className="w-3.5 h-3.5 pulse-coral-fg-color mt-0.5"/>
+              <div className="flex-1">
+                <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · KEY POINT</div>
+                <div className="text-[12px] pulse-ink-color leading-snug">Asks for Monday meet + mail to the zoo + an opinion on a third item.</div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PathCDirect() {
+  const t = DIRECT_THREADS.find(t => t.active) || DIRECT_THREADS[0];
+  return (
+    <div>
+      <header className="mb-5 flex items-center gap-4">
+        <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-semibold text-white" style={{ background: colorForId(t.name) }}>{initials(t.name)}</div>
+        <div>
+          <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">DIRECT VOICE</div>
+          <div className="text-2xl font-semibold pulse-ink-color">{t.name}</div>
+          <div className="text-[12px] pulse-ink-3-color">Active 14m ago · 3 voices today</div>
+        </div>
+      </header>
+      <div className="space-y-3">
+        {t.messages.map(m => (
+          <div key={m.id} className="studio-card p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: m.who === 'me' ? 'var(--pulse-rose)' : colorForId(t.name) }}>{m.who === 'me' ? 'You' : initials(t.name)}</div>
+              <span className="text-[12px] font-semibold pulse-ink-color">{m.who === 'me' ? 'You' : t.name}</span>
+              <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{m.when} · {m.dur}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button className="w-9 h-9 rounded-full pulse-surface-raised pulse-ink-color flex items-center justify-center"><Icon name="play" className="w-3.5 h-3.5"/></button>
+              <Waveform seed={m.id} height={28} count={60} className="pulse-ink-2-color" tall/>
+            </div>
+            {m.transcript && <div className="text-[13px] pulse-ink-color mt-2 leading-relaxed" style={{ paddingLeft: 48 }}>{m.transcript}</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PathCChannel() {
+  const c = CHANNELS[0];
+  return (
+    <div>
+      <header className="mb-5 flex items-center gap-3">
+        <Icon name="hash" className="w-7 h-7 pulse-ink-3-color"/>
+        <div>
+          <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">CHANNEL · {c.workspace.toUpperCase()}</div>
+          <div className="text-2xl font-semibold pulse-ink-color">{c.name}</div>
+          <div className="text-[12px] pulse-ink-3-color">8 members · 3 active now</div>
+        </div>
+      </header>
+      <div className="space-y-3">
+        {c.posts.map(p => (
+          <div key={p.id} className="studio-card p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: colorForId(p.who) }}>{initials(p.who)}</div>
+              <span className="text-[12px] font-semibold pulse-ink-color">{p.who}</span>
+              {p.mentions.length > 0 && <span className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-wide-mono pulse-coral-bg-color pulse-coral-fg-color">@MENTION</span>}
+              <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{p.when} · {p.dur}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button className="w-9 h-9 rounded-full pulse-surface-raised pulse-ink-color flex items-center justify-center"><Icon name="play" className="w-3.5 h-3.5"/></button>
+              <Waveform seed={p.id} height={28} count={60} className="pulse-ink-2-color" tall/>
+            </div>
+            {p.transcript && (
+              <div className="text-[13px] pulse-ink-color mt-2 leading-relaxed" style={{ paddingLeft: 48 }}>
+                {p.mentions.length > 0
+                  ? p.transcript.split(/(@\w+)/).map((s, i) => /^@\w+$/.test(s) ? <span key={i} className="pulse-coral-bg-color pulse-coral-fg-color px-1 rounded">{s}</span> : <span key={i}>{s}</span>)
+                  : p.transcript}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PathCBroadcast() {
+  const b = BROADCASTS[0];
+  return (
+    <div>
+      <header className="mb-6">
+        <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color flex items-center gap-1.5"><Icon name="radio" className="w-3 h-3"/>BROADCAST · {b.when.toUpperCase()}</div>
+        <h1 className="text-3xl font-semibold pulse-ink-color mt-2 leading-tight">{b.title}</h1>
+        <div className="text-[13px] pulse-ink-3-color mt-1.5">{b.host} · {b.listeners} listeners · {b.dur}</div>
+      </header>
+      <div className="studio-card p-5" data-active="true">
+        <div className="flex items-center gap-4 mb-4">
+          <button className="w-14 h-14 rounded-full pulse-rose-bg-color text-white pulse-rose-glow-shadow flex items-center justify-center"><Icon name="play" className="w-6 h-6"/></button>
+          <div className="flex-1">
+            <Waveform seed={b.id} height={48} count={120} className="pulse-rose-color" tall progress={0.0}/>
+            <div className="flex items-center justify-between mt-2 text-[11px] font-mono-pulse pulse-ink-3-color">
+              <span>0:00</span>
+              <span>{b.dur}</span>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-lg pulse-coral-bg-color p-4">
+          <div className="flex items-center gap-2 mb-2"><Icon name="sparkles" className="w-3.5 h-3.5 pulse-coral-fg-color"/><span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · SUMMARY</span></div>
+          <div className="text-sm pulse-ink-color leading-relaxed">{b.summary}</div>
+        </div>
+      </div>
+      <div className="mt-5">
+        <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-3">RELATED BROADCASTS</div>
+        <div className="grid grid-cols-2 gap-3">
+          {BROADCASTS.slice(1).map(br => (
+            <div key={br.id} className="studio-card p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Icon name="radio" className="w-3.5 h-3.5 pulse-rose-color"/>
+                <span className="text-[13px] font-semibold pulse-ink-color truncate">{br.title}</span>
+              </div>
+              <div className="text-[11px] pulse-ink-3-color">{br.host} · {br.listeners} · {br.dur}</div>
+              <div className="text-[10px] font-mono-pulse pulse-ink-3-color mt-1">{br.when}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PathCNotes() {
+  return (
+    <div>
+      <header className="mb-5">
+        <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">PERSONAL NOTES</div>
+        <h1 className="text-3xl font-semibold pulse-ink-color mt-1 leading-tight">Voice notes</h1>
+        <div className="text-[12px] pulse-ink-3-color mt-1">Personal · never shared · auto-transcribed</div>
+      </header>
+      <div className="space-y-3">
+        {NOTES_TIMELINE.map(n => (
+          <div key={n.id} className="studio-card p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded-lg pulse-surface-raised flex items-center justify-center pulse-ink-2-color"><Icon name="edit" className="w-4 h-4"/></div>
+              <span className="text-[13px] font-semibold pulse-ink-color">{n.title}</span>
+              <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{n.when} · {n.dur}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button className="w-9 h-9 rounded-full pulse-surface-raised pulse-ink-color flex items-center justify-center"><Icon name="play" className="w-3.5 h-3.5"/></button>
+              <Waveform seed={n.id} height={24} count={60} className="pulse-ink-2-color" tall/>
+            </div>
+            {n.transcript && n.transcript !== '.' && (
+              <div className="text-[13px] pulse-ink-color mt-2 leading-relaxed" style={{ paddingLeft: 48 }}>{n.transcript}</div>
+            )}
+            {n.tags.length > 0 && (
+              <div className="flex items-center gap-1.5 mt-2" style={{ paddingLeft: 48 }}>
+                {n.tags.map(t => <span key={t} className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-wide-mono pulse-surface-raised pulse-ink-3-color">#{t.toUpperCase()}</span>)}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PathCLive() {
+  return (
+    <div>
+      <header className="mb-5">
+        <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full pulse-rose-bg-color pulse-dot-anim"/>LIVE NOW · 2 ROOMS</div>
+        <h1 className="text-3xl font-semibold pulse-ink-color mt-1 leading-tight">Voice rooms</h1>
+        <div className="text-[12px] pulse-ink-3-color mt-1">Drop in. Talk over voice. Walk away.</div>
+      </header>
+      <div className="grid grid-cols-2 gap-4">
+        {VOICE_ROOMS.map(r => (
+          <div key={r.id} className="studio-card p-5 cursor-pointer">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full pulse-dot-anim" style={{ background: r.live ? 'var(--pulse-rose)' : 'var(--pulse-ink-3)' }}/>
+              <span className="text-[10px] font-mono-pulse tracking-wide-mono" style={{ color: r.live ? 'var(--pulse-rose)' : 'var(--pulse-ink-3)' }}>{r.live ? 'LIVE' : 'EMPTY'}</span>
+              <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{r.total} present</span>
+            </div>
+            <div className="text-xl font-semibold pulse-ink-color">{r.name}</div>
+            <div className="text-[12px] pulse-ink-3-color mt-0.5">{r.live ? `Hosted by ${r.host}` : 'No one yet'}</div>
+            {r.live && (
+              <>
+                <div className="mt-4 flex items-end gap-1" style={{ height: 28 }}>
+                  {[0.4, 0.7, 0.5, 0.9, 0.6, 0.85, 0.4, 0.7, 0.55].map((v, i) => (
+                    <i key={i} className="wave-live-bar block" style={{ width: 3, height: v * 28, background: r.color, borderRadius: 1.5, animationDelay: `${i * 0.08}s` }}/>
+                  ))}
+                  <button className="ml-auto px-3 py-1.5 rounded-md pulse-rose-bg-color text-white text-[11px] font-medium">Join room</button>
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PLAYGROUND SHELL — top bar + path switcher + theme toggle
+   ════════════════════════════════════════════════════════════════════════ */
+
+function App() {
+  const [theme, setTheme] = useState('dark');
+  const [path, setPath] = useState('A');
+  const [subsection, setSubsection] = useState('triage');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
+  return (
+    <div className="h-screen w-screen flex flex-col overflow-hidden pulse-bg">
+      {/* Playground top bar */}
+      <div className="pg-bar flex items-center gap-3 px-4 py-2 border-b pulse-border-color shrink-0" style={{ height: 48 }}>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="sparkles" className="w-3.5 h-3.5"/></div>
+          <span className="text-sm font-semibold pulse-ink-color">Relay Redesign</span>
+          <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">· PLAYGROUND</span>
+        </div>
+
+        <div className="ml-6 flex items-center gap-1 p-0.5 rounded-lg pulse-surface-raised">
+          {[
+            { id: 'A', label: 'A · Refined Triage' },
+            { id: 'B', label: 'B · Stream + Spotlight' },
+            { id: 'C', label: 'C · Voice Studio' },
+          ].map(p => (
+            <button key={p.id} data-active={path === p.id} onClick={() => setPath(p.id)}
+              className="pg-pill px-3 py-1.5 rounded-md text-[12px] font-medium pulse-ink-2-color">
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="ml-auto flex items-center gap-1">
+          <button onClick={toggleTheme} className="px-2.5 py-1.5 rounded-md text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color hover:pulse-surface-raised flex items-center gap-1.5">
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5"/>
+            {theme === 'dark' ? 'LIGHT' : 'DARK'}
+          </button>
+          <a href="https://github.com" className="hidden" aria-hidden="true"/>
+        </div>
+      </div>
+
+      {/* App body */}
+      <div className="flex-1 flex overflow-hidden">
+        <PulseSidebar theme={theme} onToggleTheme={toggleTheme}/>
+        <main className="flex-1 overflow-hidden m-3 rounded-2xl border pulse-border-color pulse-bg-soft relative" style={{ boxShadow: 'var(--pulse-shadow-main)' }}>
+          {path === 'A' && <PathA subsection={subsection} setSubsection={setSubsection}/>}
+          {path === 'B' && <PathB subsection={subsection} setSubsection={setSubsection}/>}
+          {path === 'C' && <PathC subsection={subsection} setSubsection={setSubsection}/>}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
