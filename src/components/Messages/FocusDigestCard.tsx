@@ -8,6 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AIProvenanceTag } from '../shared/AIProvenanceTag';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 // Types
 export interface DigestMessage {
@@ -143,6 +144,7 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
 }) => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [snoozeMenuOpen, setSnoozeMenuOpen] = useState<string | null>(null);
+  const dialogRef = useFocusTrap<HTMLDivElement>({ active: isVisible, onEscape: onClose });
 
   // Group messages by thread/sender
   const groupedMessages = useMemo<DigestGroup[]>(() => {
@@ -234,6 +236,10 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Focus session digest"
             className="w-full max-w-lg max-h-[85vh] overflow-hidden rounded-2xl bg-[#0a0a0a] border border-[rgba(255,255,255,0.10)] shadow-2xl"
             variants={containerVariants}
             initial="hidden"

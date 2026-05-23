@@ -4,6 +4,7 @@
  * End-of-return modal stack extracted from Messages.tsx (lines 5997–6267).
  */
 import React, { lazy, Suspense } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { FileOutput, GitFork, Layers, ListChecks, TrendingUp, X } from 'lucide-react';
 import { Contact, Thread } from '../../types';
 import { PulseConversation } from '../../services/pulseService';
@@ -92,6 +93,24 @@ export interface MessagesEndModalsProps {
 }
 
 export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
+  // Focus traps for each inline modal (sub-component modals manage their own traps).
+  const analyticsRef = useFocusTrap<HTMLDivElement>({
+    active: props.showAnalyticsDashboard,
+    onEscape: () => props.setShowAnalyticsDashboard(false),
+  });
+  const networkRef = useFocusTrap<HTMLDivElement>({
+    active: props.showNetworkGraph,
+    onEscape: () => props.setShowNetworkGraph(false),
+  });
+  const taskExtractorRef = useFocusTrap<HTMLDivElement>({
+    active: props.showTaskExtractor && !!(props.activeThread || props.activePulseConv),
+    onEscape: () => props.setShowTaskExtractor(false),
+  });
+  const artifactPanelRef = useFocusTrap<HTMLDivElement>({
+    active: props.showChannelArtifactPanel && !!(props.activeThread || props.activePulseConv),
+    onEscape: () => props.setShowChannelArtifactPanel(false),
+  });
+
   const anyVisible =
     props.showInviteToPulseModal ||
     props.showContactPanel ||
@@ -190,7 +209,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
       {/* Message Analytics Dashboard Modal */}
       {props.showAnalyticsDashboard && (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
+          <div ref={analyticsRef} role="dialog" aria-modal="true" aria-label="Message analytics dashboard" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
                 <TrendingUp className="text-[#f43f5e]" />
@@ -213,7 +232,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
       {/* Network Graph Modal */}
       {props.showNetworkGraph && (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-3xl max-h-[80vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
+          <div ref={networkRef} role="dialog" aria-modal="true" aria-label="Connection network" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-3xl max-h-[80vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
                 <GitFork className="text-[#f43f5e]" />
@@ -278,7 +297,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
       {/* Task Extractor Panel */}
       {props.showTaskExtractor && (props.activeThread || props.activePulseConv) && (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-3xl max-h-[85vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
+          <div ref={taskExtractorRef} role="dialog" aria-modal="true" aria-label="Extract tasks from conversation" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-3xl max-h-[85vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
                 <ListChecks className="text-emerald-500" />
@@ -308,7 +327,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
       {/* Channel Artifact Panel */}
       {props.showChannelArtifactPanel && (props.activeThread || props.activePulseConv) && (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
+          <div ref={artifactPanelRef} role="dialog" aria-modal="true" aria-label="Channel artifact" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
                 <FileOutput className="text-[#f43f5e]" />

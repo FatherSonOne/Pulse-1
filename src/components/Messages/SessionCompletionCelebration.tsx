@@ -6,6 +6,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface SessionStats {
   duration: number; // minutes
@@ -278,6 +279,7 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const controls = useAnimation();
+  const dialogRef = useFocusTrap<HTMLDivElement>({ active: isVisible, onEscape: onClose });
 
   useEffect(() => {
     if (isVisible) {
@@ -338,6 +340,10 @@ export const SessionCompletionCelebration: React.FC<SessionCompletionCelebration
             onClick={onClose}
           >
             <motion.div
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Focus session complete"
               className="relative w-full max-w-md overflow-hidden rounded-3xl bg-gradient-to-b from-gray-800 to-gray-900 border border-[rgba(255,255,255,0.10)] shadow-2xl"
               variants={cardVariants}
               initial="hidden"

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import {
   AtSign,
   CheckCircle2,
@@ -126,6 +127,28 @@ export interface MessagesTopModalsProps {
 }
 
 export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
+  // Focus traps for each inline modal (sub-component modals manage their own traps).
+  const newChatRef = useFocusTrap<HTMLDivElement>({
+    active: props.showNewChatModal,
+    onEscape: () => { props.setShowNewChatModal(false); props.setPulseUserSearch(''); props.setPulseSearchResults([]); },
+  });
+  const artifactRef = useFocusTrap<HTMLDivElement>({
+    active: props.showArtifactModal,
+    onEscape: () => props.setShowArtifactModal(false),
+  });
+  const forwardRef = useFocusTrap<HTMLDivElement>({
+    active: props.showForwardModal && !!props.forwardingMessage,
+    onEscape: () => props.setShowForwardModal(false),
+  });
+  const shortcutsRef = useFocusTrap<HTMLDivElement>({
+    active: props.showShortcuts,
+    onEscape: () => props.setShowShortcuts(false),
+  });
+  const deleteRef = useFocusTrap<HTMLDivElement>({
+    active: props.showDeleteConfirm && !!props.threadToDelete,
+    onEscape: () => { props.setShowDeleteConfirm(false); props.setThreadToDelete(null); },
+  });
+
   const anyVisible =
     props.showNewChatModal ||
     props.showArtifactModal ||
@@ -144,7 +167,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
       {/* New Chat Modal */}
       {props.showNewChatModal && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
+          <div ref={newChatRef} role="dialog" aria-modal="true" aria-label="New conversation" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
             <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
               <h3 className="font-bold dark:text-white flex items-center gap-2">
                 <Plus className="text-rose-500" /> New Conversation
@@ -315,7 +338,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
       {/* Artifact Modal */}
       {props.showArtifactModal && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-2xl h-[80%] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
+          <div ref={artifactRef} role="dialog" aria-modal="true" aria-label="Channel artifact" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-2xl h-[80%] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
             <div className="p-4 border-b border-[var(--pulse-border)] flex justify-between items-center bg-[var(--pulse-canvas)]">
               <h3 className="font-bold dark:text-white flex items-center gap-2"><FileText /> Channel Artifact</h3>
               <button onClick={() => props.setShowArtifactModal(false)}><X className="text-zinc-500" /></button>
@@ -387,7 +410,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
       {/* Forward Message Modal — Pulse conversations only. */}
       {props.showForwardModal && props.forwardingMessage && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
+          <div ref={forwardRef} role="dialog" aria-modal="true" aria-label="Forward message" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
             <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
               <h3 className="font-bold dark:text-white flex items-center gap-2">
                 <Share className="text-[#f43f5e]" /> Forward Message
@@ -439,7 +462,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
       {/* Keyboard Shortcuts Modal */}
       {props.showShortcuts && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4" onClick={() => props.setShowShortcuts(false)}>
-          <div className="bg-[var(--pulse-surface)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[var(--pulse-border)]" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Keyboard shortcuts">
+          <div ref={shortcutsRef} className="bg-[var(--pulse-surface)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[var(--pulse-border)]" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
             <div className="p-4 border-b border-zinc-200 dark:border-white/[0.06] flex justify-between items-center">
               <h3 className="font-medium text-zinc-900 dark:text-white flex items-center gap-2">
                 <Keyboard className="w-4 h-4 text-zinc-400 dark:text-zinc-500" /> Keyboard Shortcuts
@@ -485,7 +508,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
       {/* Delete Confirmation Modal */}
       {props.showDeleteConfirm && props.threadToDelete && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-sm rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
+          <div ref={deleteRef} role="alertdialog" aria-modal="true" aria-label="Delete conversation confirmation" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-sm rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
             <div className="p-6 text-center">
               <div className="w-16 h-16 rounded-full bg-red-500/15 dark:bg-red-500/20 ring-1 ring-red-500/30 flex items-center justify-center mx-auto mb-4">
                 <Trash2 className="text-2xl text-red-600 dark:text-red-400" />

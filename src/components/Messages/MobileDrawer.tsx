@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 import { X } from 'lucide-react';
 
@@ -49,21 +50,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   swipeToClose = true,
   swipeThreshold = 100,
 }) => {
-  const drawerRef = useRef<HTMLDivElement>(null);
-
-  // Close on escape key
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
+  // Focus trap + Escape handling + focus restoration
+  const drawerRef = useFocusTrap<HTMLDivElement>({ active: isOpen, onEscape: onClose });
 
   // Prevent body scroll when drawer is open
   useEffect(() => {

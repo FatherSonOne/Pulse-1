@@ -8,6 +8,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FocusSessionStats } from '../../services/focusModeService';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 type TimeRange = 'daily' | 'weekly' | 'monthly';
 
@@ -290,6 +291,7 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
 }) => {
   const [timeRange, setTimeRange] = useState<TimeRange>('weekly');
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
+  const dialogRef = useFocusTrap<HTMLDivElement>({ active: isVisible, onEscape: onClose });
 
   // Filter data based on time range
   const filteredData = useMemo(() => {
@@ -344,6 +346,10 @@ export const FocusStatsDashboard: React.FC<FocusStatsDashboardProps> = ({
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Focus statistics"
             className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl bg-[#0a0a0a] border border-[rgba(255,255,255,0.10)] shadow-2xl"
             variants={cardVariants}
             onClick={(e) => e.stopPropagation()}

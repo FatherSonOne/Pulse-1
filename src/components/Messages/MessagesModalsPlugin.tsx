@@ -58,6 +58,7 @@ import {
 } from './modals';
 import type { Contact, Message, Thread } from '../../types';
 import type { PulseConversation } from '../../services/pulseService';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 // Lazy-loaded — the feature settings panel is heavy (~580 LOC + the
 // FeatureContext-driven toggle UI for 30+ enhancements) and rarely
@@ -443,13 +444,14 @@ const PulseForwardModal: React.FC<PulseForwardModalProps> = ({
   legacyThreads,
   onForwardLegacy,
 }) => {
+  const dialogRef = useFocusTrap<HTMLDivElement>({ active: isOpen, onEscape: onClose });
   if (!isOpen) return null;
   const targets = pulseConversations.filter(
     (c) => c.id !== activePulseConversationId && c.other_user,
   );
   return (
     <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Forward message" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
         <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
           <h3 className="font-bold dark:text-white">Forward Message</h3>
           <button
@@ -523,12 +525,18 @@ const PulseForwardModal: React.FC<PulseForwardModalProps> = ({
   );
 };
 
-const KeyboardShortcutsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
+const KeyboardShortcutsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const dialogRef = useFocusTrap<HTMLDivElement>({ active: true, onEscape: onClose });
+  return (
   <div
     className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
     onClick={onClose}
   >
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Keyboard shortcuts"
       className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]"
       onClick={(e) => e.stopPropagation()}
     >
@@ -550,18 +558,25 @@ const KeyboardShortcutsModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
       </dl>
     </div>
   </div>
-);
+  );
+};
 
 const DeleteThreadConfirmModal: React.FC<{
   threadId: string;
   onCancel: () => void;
   onConfirm: () => void;
-}> = ({ threadId, onCancel, onConfirm }) => (
+}> = ({ threadId, onCancel, onConfirm }) => {
+  const dialogRef = useFocusTrap<HTMLDivElement>({ active: true, onEscape: onCancel });
+  return (
   <div
     className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
     onClick={onCancel}
   >
     <div
+      ref={dialogRef}
+      role="alertdialog"
+      aria-modal="true"
+      aria-label="Delete thread confirmation"
       className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-sm rounded-2xl shadow-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] p-5"
       onClick={(e) => e.stopPropagation()}
     >
@@ -586,6 +601,7 @@ const DeleteThreadConfirmModal: React.FC<{
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default MessagesModalsPlugin;
