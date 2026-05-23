@@ -12,6 +12,7 @@ import {
   getTrendColor,
   formatLastInteraction,
 } from '../../types/relationshipTypes';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 
 interface RelationshipHealthCardProps {
   profile: RelationshipProfile;
@@ -69,6 +70,11 @@ export const RelationshipHealthCard: React.FC<RelationshipHealthCardProps> = ({
       }`}
       onClick={onClick}
     >
+      {/* Provenance — the relationship score is AI-derived */}
+      <div className="mb-3">
+        <AIProvenanceChip vendor="PULSE AI" type="RELATIONSHIP SCORE" />
+      </div>
+
       {/* Score Display */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">

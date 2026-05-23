@@ -21,6 +21,7 @@ import { supabase } from '../../services/supabase';
 import { useWorkspaceData } from '../../contexts/WorkspaceContext';
 import { listWorkspaceContacts, type WorkspaceSharedContact } from '../../services/workspaceContactsService';
 import { ProvenanceChip, type ContactProvenanceSource } from './ProvenanceChip';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import { CardSourceChip } from './cards/CardSourceChip';
 
 import toast from 'react-hot-toast';
@@ -385,15 +386,12 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
               <div className="space-y-3">
                 {/* AI Summary (collapsible) */}
                 {profile.aiRelationshipSummary && (
-                  <div className="bg-gradient-to-br from-rose-50 to-rose-50 dark:from-rose-900/15 dark:to-rose-900/15 rounded-xl p-3.5 border border-rose-100 dark:border-rose-900/30">
+                  <div className="bg-rose-50/60 dark:bg-rose-900/15 rounded-xl p-3.5 border border-rose-100 dark:border-rose-900/30">
                     <button
                       onClick={() => setSummaryExpanded(v => !v)}
                       className="w-full flex items-center justify-between text-left mb-1.5"
                     >
-                      <span className="text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
-                        <Sparkles className="text-xs" />
-                        AI Summary
-                      </span>
+                      <AIProvenanceChip vendor="PULSE AI" type="SUMMARY" />
                       <i className={`fa-solid fa-chevron-${summaryExpanded ? 'up' : 'down'} text-xs text-rose-400`} />
                     </button>
                     {summaryExpanded && (
@@ -406,20 +404,17 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
 
                 {/* Suggested next action */}
                 {profile.aiNextActionSuggestion && (
-                  <div className="flex items-start gap-3 p-3 bg-rose-50 dark:bg-rose-900/15 rounded-xl border border-rose-100 dark:border-rose-900/30">
-                    <div className="w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Lightbulb className="text-xs text-rose-500" />
+                  <div className="p-3 bg-rose-50 dark:bg-rose-900/15 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <AIProvenanceChip vendor="PULSE AI" type="SUGGESTION" />
+                      <button
+                        onClick={() => onAction('message', contact.id)}
+                        className="flex-shrink-0 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-lg transition"
+                      >
+                        Act
+                      </button>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-xs font-semibold text-rose-700 dark:text-rose-300 mb-0.5">Suggested next step</p>
-                      <p className="text-sm text-rose-800 dark:text-rose-200">{profile.aiNextActionSuggestion}</p>
-                    </div>
-                    <button
-                      onClick={() => onAction('message', contact.id)}
-                      className="flex-shrink-0 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-lg transition"
-                    >
-                      Act
-                    </button>
+                    <p className="text-sm text-rose-800 dark:text-rose-200">{profile.aiNextActionSuggestion}</p>
                   </div>
                 )}
 
@@ -471,7 +466,9 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                 {/* Talking points */}
                 {insights && insights.talkingPoints.length > 0 && (
                   <div>
-                    <p className="text-xs text-zinc-400 mb-1.5">Talking points</p>
+                    <div className="mb-1.5">
+                      <AIProvenanceChip vendor="PULSE AI" type="TALKING POINTS" />
+                    </div>
                     <ul className="space-y-1.5">
                       {insights.talkingPoints.slice(0, 3).map((point, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
@@ -487,7 +484,11 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
 
                 {/* Suggested actions from insights */}
                 {insights && insights.suggestions.length > 0 && (
-                  <div className="space-y-1.5">
+                  <div>
+                    <div className="mb-1.5">
+                      <AIProvenanceChip vendor="PULSE AI" type="INSIGHTS" />
+                    </div>
+                    <div className="space-y-1.5">
                     {insights.suggestions.slice(0, 2).map((suggestion, idx) => (
                       <button
                         key={idx}
@@ -519,6 +520,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                         </p>
                       </button>
                     ))}
+                    </div>
                   </div>
                 )}
               </div>

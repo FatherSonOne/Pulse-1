@@ -12,6 +12,7 @@ import {
   getRelationshipHealthColor,
   formatLastInteraction,
 } from '../../types/relationshipTypes';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 
 interface MeetingPrepCardProps {
   card: MeetingPrepCardType;
@@ -146,9 +147,9 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
         {/* Summary */}
         {card.aiSummary && (
           <div>
-            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
-              Context
-            </h4>
+            <div className="mb-2">
+              <AIProvenanceChip vendor="PULSE AI" type="CONTEXT" />
+            </div>
             <p className="text-sm text-zinc-700 dark:text-zinc-300">
               {card.aiSummary}
             </p>
@@ -158,9 +159,9 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
         {/* Talking Points */}
         {card.aiTalkingPoints.length > 0 && (
           <div>
-            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
-              Talking Points
-            </h4>
+            <div className="mb-2">
+              <AIProvenanceChip vendor="PULSE AI" type="TALKING POINTS" />
+            </div>
             <ul className="space-y-1.5">
               {card.aiTalkingPoints.map((point, idx) => (
                 <li
@@ -178,9 +179,9 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
         {/* Questions to Ask */}
         {card.aiQuestionsToAsk.length > 0 && (
           <div>
-            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
-              Questions to Ask
-            </h4>
+            <div className="mb-2">
+              <AIProvenanceChip vendor="PULSE AI" type="QUESTIONS" />
+            </div>
             <ul className="space-y-1.5">
               {card.aiQuestionsToAsk.map((question, idx) => (
                 <li
