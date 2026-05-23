@@ -8,9 +8,17 @@
  * Each test is scoped to the specific surface under test so violations
  * are traceable to the component, not the whole page.
  *
- * Prerequisites: dev server running on http://localhost:5173 (configured
- * in playwright.config.ts). The app must be in a logged-in state — the
- * beforeEach block handles login.
+ * Prerequisites:
+ *   1. Dev server running on http://localhost:5173 (Playwright will start
+ *      one automatically via webServer config).
+ *   2. A captured auth session at e2e/.auth/user.json. Run once:
+ *        npx playwright test --project=setup --headed
+ *      then sign in via Google OAuth in the opened browser.
+ *
+ * Pulse is a single-page app with NO URL routes for views — `view` state
+ * (AppView enum) drives the active surface. The helper below clicks the
+ * Sidebar "Messages" button to switch the SPA into Messages V2; it does
+ * NOT call page.waitForURL.
  */
 
 import { test, expect } from '@playwright/test';
@@ -18,23 +26,32 @@ import AxeBuilder from '@axe-core/playwright';
 
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] as const;
 
-/** Log into the app and navigate to the Messages section. */
+/**
+ * Open the Pulse app and switch the view to Messages V2.
+ *
+ * Auth comes from storageState (e2e/.auth/user.json — see auth.setup.ts).
+ * The V2 flag override is persisted in localStorage by the setup step, but
+ * we re-apply it via the URL param as a belt-and-braces guard for clean
+ * test runs.
+ */
 async function loginAndOpenMessages(page: import('@playwright/test').Page) {
-  await page.goto('/');
-  // Attempt standard login flow — skips if already authenticated.
-  const loginBtn = page.locator('[data-testid="login-button"]');
-  if (await loginBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await page.fill('[data-testid="email-input"]', 'test@example.com');
-    await page.fill('[data-testid="password-input"]', 'password123');
-    await page.click('[data-testid="login-button"]');
-    await page.waitForURL('**/dashboard', { timeout: 15000 });
-  }
-  // Navigate to Messages.
-  const messagesNav = page.locator('[data-testid="messages-nav"]');
-  if (await messagesNav.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await messagesNav.click();
-    await page.waitForURL('**/messages', { timeout: 10000 });
-  }
+  await page.goto('/?ff_pulseMessagesV2=on');
+
+  // The sidebar lists Messages, Email, Relay, Glimpse... — target the
+  // exact-name button to avoid colliding with the page heading.
+  const messagesNav = page.getByRole('button', { name: 'Messages', exact: true }).first();
+  await messagesNav.waitFor({ state: 'visible', timeout: 15000 });
+  await messagesNav.click();
+
+  // Wait for any Messages V2 surface to mount. Multiple candidate roots so
+  // that tests still find SOMETHING even if the empty-pane (TriageBrief)
+  // hasn't rendered (e.g. a conversation auto-selected from URL state).
+  await page
+    .locator(
+      '[data-testid="triage-brief"], .triage-brief, [data-testid="conversation-sidebar"], aside[class*="ConversationSidebar"], [data-testid="message-input"]',
+    )
+    .first()
+    .waitFor({ state: 'visible', timeout: 15000 });
 }
 
 /** Switch to dark mode via the theme toggle. */

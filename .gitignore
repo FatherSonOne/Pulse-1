@@ -108,6 +108,8 @@ docs/archive/scripts/
 # Test artifacts (screenshots, probes, browser profiles)
 .test-artifacts/
 test-results/
+# Playwright auth fixture — contains a Supabase JWT, never commit
+e2e/.auth/
 
 # /git-tracker runtime state (issue number for current branch)
 .claude/.git-tracker-issue
