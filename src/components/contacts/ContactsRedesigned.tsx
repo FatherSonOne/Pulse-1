@@ -550,7 +550,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
               <div
                 className="contacts-node-health-fill"
                 style={{
-                  width: `${profile.relationshipScore}%`,
+                  transform: `scaleX(${Math.max(0, Math.min(100, profile.relationshipScore)) / 100})`,
                   backgroundColor: healthColor,
                 }}
               />

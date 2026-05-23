@@ -1443,8 +1443,10 @@
 
 .contacts-node-health-fill {
   height: 100%;
+  width: 100%;
   border-radius: 2px;
-  transition: width 0.5s ease;
+  transform-origin: left center;
+  transition: transform 0.5s var(--pulse-ease);
 }
 
 .contacts-node-health-value {
@@ -1950,11 +1952,8 @@
   margin-bottom: 8px;
 }
 
-.contacts-detail-health-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.5s ease;
-}
+/* .contacts-detail-health-fill removed — no JSX consumer existed; the
+   rule was dead code carrying the banned `transition: width` pattern. */
 
 .contacts-detail-health-label {
   font-size: 11px;

@@ -115,7 +115,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
 
           {/* AI Summary */}
           {insights?.profile.aiRelationshipSummary && (
-            <div className="bg-gradient-to-br from-rose-50 to-rose-50 dark:from-rose-900/20 dark:to-rose-900/20 rounded-xl p-4 border border-rose-100 dark:border-rose-900/30">
+            <div className="bg-rose-50/60 dark:bg-rose-900/20 rounded-xl p-4 border border-rose-100 dark:border-rose-900/30">
               <h3 className="font-semibold text-rose-900 dark:text-rose-300 mb-2 flex items-center gap-2">
                 <Wand2 />
                 AI Summary
@@ -272,7 +272,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
 
               {/* AI Predictions */}
               {leadScore.aiNextActionPrediction && (
-                <div className="bg-gradient-to-br from-rose-50 to-rose-50 dark:from-rose-900/20 dark:to-rose-900/20 rounded-xl p-4 border border-rose-100 dark:border-rose-900/30">
+                <div className="bg-rose-50/60 dark:bg-rose-900/20 rounded-xl p-4 border border-rose-100 dark:border-rose-900/30">
                   <h3 className="font-semibold text-rose-900 dark:text-rose-300 mb-2 flex items-center gap-2">
                     <Globe />
                     AI Prediction
