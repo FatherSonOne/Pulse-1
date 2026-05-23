@@ -314,22 +314,32 @@ const Sidebar: React.FC<SidebarProps> = ({
       })}
     </div>
 
-    {/* Alerts Banner */}
+    {/* Alerts Banner — coral signals urgency per Coral-As-Signal.
+        The previous orange+yellow gradient was pre-Coral-Cockpit
+        leftover (project_pulse_relay_css_legacy.md) and shipped a hue
+        that exists nowhere else in Pulse. Alerts are exactly what
+        coral was reserved for. */}
     {alertCount > 0 && (
       <div className="contacts-sidebar-section" style={{ paddingTop: 0 }}>
         <button
           onClick={onViewAlerts}
-          className="contacts-filter-btn active"
+          className="contacts-filter-btn"
           style={{
-            background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(234, 179, 8, 0.1))',
-            border: '1px solid rgba(249, 115, 22, 0.2)',
+            background: 'var(--pulse-rose-soft)',
+            border: '1px solid var(--pulse-rose-soft)',
           }}
         >
           <div className="contacts-filter-btn-content">
-            <div className="contacts-filter-btn-icon" style={{ background: 'rgba(249, 115, 22, 0.2)' }}>
+            <div
+              className="contacts-filter-btn-icon"
+              style={{ background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' }}
+            >
               <Bell />
             </div>
-            <span className="contacts-filter-btn-label" style={{ color: '#f97316' }}>
+            <span
+              className="contacts-filter-btn-label"
+              style={{ color: 'var(--pulse-rose-deep)' }}
+            >
               {alertCount} Alert{alertCount !== 1 ? 's' : ''}
             </span>
           </div>
@@ -1402,13 +1412,16 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
           </div>
         </div>
 
-        {/* Duplicates Alert */}
+        {/* Duplicates Alert — informational, not urgent. Neutral
+            surface with ink text reads as "FYI" instead of "fix this
+            now". The previous yellow rgba(234, 179, 8, ...) was
+            off-system and competed with coral for "urgent" meaning. */}
         {duplicates.length > 0 && (
           <div
             style={{
               padding: '12px 24px',
-              background: 'rgba(234, 179, 8, 0.1)',
-              borderBottom: '1px solid rgba(234, 179, 8, 0.2)',
+              background: 'var(--pulse-canvas-soft)',
+              borderBottom: '1px solid var(--pulse-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -1416,7 +1429,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Copy />
-              <span style={{ fontSize: 13, color: '#eab308' }}>
+              <span style={{ fontSize: 13, color: 'var(--pulse-ink-2)' }}>
                 {duplicates.length} potential duplicate{duplicates.length !== 1 ? 's' : ''} detected
               </span>
             </div>
@@ -1425,7 +1438,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#eab308',
+                color: 'var(--pulse-rose)',
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
