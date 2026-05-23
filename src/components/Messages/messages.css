@@ -285,12 +285,8 @@
 .conversation-panel {
   display: flex;
   flex-direction: column;
-  background: var(--msg-bg, #f8f8f8);
+  background: var(--pulse-canvas);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-}
-
-.dark .conversation-panel {
-  background: #000000;
 }
 
 .conversation-header {
@@ -359,13 +355,8 @@
 
 .message-input-area {
   flex-shrink: 0;
-  border-top: 1px solid var(--msg-border, #e2e8f0);
-  background: var(--msg-bg, #ffffff);
-}
-
-.dark .message-input-area {
-  border-top-color: rgba(255, 255, 255, 0.06);
-  background: #000000;
+  border-top: 1px solid var(--pulse-border);
+  background: var(--pulse-surface);
 }
 
 /* =========================

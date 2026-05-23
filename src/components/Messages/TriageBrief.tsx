@@ -72,7 +72,7 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
     ?? (pulseConversations.length > 0 ? pulseConversations[0].last_message_at : null);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-8 py-12 bg-[#f8f8f8] dark:bg-black overflow-y-auto">
+    <div className="flex-1 flex flex-col items-center justify-center px-8 py-12 bg-[var(--pulse-canvas)] overflow-y-auto">
       <div className="w-full max-w-md space-y-8">
         {/* Headline — display weight per DESIGN.md "Light-Display Rule" */}
         <div className="space-y-2">
@@ -82,7 +82,7 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
             </h1>
           ) : (
             <h1 className="text-[30px] leading-[1.25] tracking-[-0.025em] font-light text-zinc-900 dark:text-zinc-100">
-              <span className="font-medium text-rose-600 dark:text-rose-400">{unread}</span>
+              <span className="font-medium text-[var(--pulse-rose)]">{unread}</span>
               {' '}
               {unread === 1 ? 'conversation needs you' : 'conversations need you'}.
             </h1>

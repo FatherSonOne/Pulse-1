@@ -113,7 +113,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
 
           {/* Unread badge */}
           {unread > 0 && (
-            <div className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-[#f43f5e] text-white text-xs font-bold flex items-center justify-center">
+            <div className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-[var(--pulse-rose)] text-white text-xs font-bold flex items-center justify-center">
               {unread > 99 ? '99+' : unread}
             </div>
           )}
@@ -126,8 +126,8 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
               <h3
                 className={`text-sm font-semibold truncate ${
                   isActive
-                    ? 'text-[#fb7185]'
-                    : 'text-[#e2e8f0]'
+                    ? 'text-[var(--pulse-rose)]'
+                    : 'text-[var(--pulse-ink)]'
                 }`}
               >
                 {name}
@@ -140,7 +140,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
               )}
             </div>
 
-            <span className="text-xs text-[#94a3b8] flex-shrink-0 ml-2">
+            <span className="text-xs text-[var(--pulse-ink-2)] flex-shrink-0 ml-2">
               {formatTimestamp(lastAt)}
             </span>
           </div>
@@ -149,8 +149,8 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
           <p
             className={`text-sm truncate ${
               unread > 0
-                ? 'text-[#e2e8f0] font-medium'
-                : 'text-[#94a3b8]'
+                ? 'text-[var(--pulse-ink)] font-medium'
+                : 'text-[var(--pulse-ink-2)]'
             }`}
           >
             {truncateMessage(preview)}
@@ -158,7 +158,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
 
           {/* Thread count (channels only — DMs don't have threads) */}
           {conversation.kind === 'channel' && (conversation.channel as any).thread_count > 0 && (
-            <div className="flex items-center gap-1 mt-1 text-xs text-[#94a3b8]">
+            <div className="flex items-center gap-1 mt-1 text-xs text-[var(--pulse-ink-2)]">
               <MessageCircle />
               <span>{(conversation.channel as any).thread_count} replies</span>
             </div>
@@ -178,7 +178,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
             aria-label={isPinned ? 'Unpin thread' : 'Pin thread'}
             title={isPinned ? 'Unpin thread' : 'Pin thread'}
           >
-            <i className={`fa-solid fa-thumbtack text-xs ${isPinned ? 'text-[#f43f5e]' : 'text-[#94a3b8]'}`}></i>
+            <i className={`fa-solid fa-thumbtack text-xs ${isPinned ? 'text-[var(--pulse-rose)]' : 'text-[var(--pulse-ink-2)]'}`}></i>
           </button>
           <button
             className="p-1 rounded hover:bg-white/[0.08] transition-colors"
@@ -189,7 +189,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
             aria-label="Mute thread"
             title="Mute thread"
           >
-            <BellOff className="text-xs text-[#94a3b8]" />
+            <BellOff className="text-xs text-[var(--pulse-ink-2)]" />
           </button>
         </div>
       </div>

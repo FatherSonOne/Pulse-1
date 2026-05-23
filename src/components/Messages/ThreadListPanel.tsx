@@ -54,7 +54,7 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
 
   return (
     <motion.div
-      className={`thread-list-panel flex flex-col h-full bg-[#0f172a] border-r border-white/[0.07] ${className}`}
+      className={`thread-list-panel flex flex-col h-full bg-[var(--pulse-canvas)] border-r border-[var(--pulse-border)] ${className}`}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
@@ -62,7 +62,7 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
       {/* Header */}
       <div className="thread-list-header flex-shrink-0 px-4 py-3 border-b border-white/[0.07]">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-[#e2e8f0]">
+          <h2 className="text-lg font-bold text-[var(--pulse-ink)]">
             Messages
           </h2>
           <button
@@ -70,7 +70,7 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
             aria-label="Create new thread"
             title="Create new thread"
           >
-            <Plus className="text-[#fb7185]" />
+            <Plus className="text-[var(--pulse-rose)]" />
           </button>
         </div>
 
@@ -87,7 +87,7 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
         {/* Pinned */}
         {filteredPinned.length > 0 && (
           <div className="pinned-threads-section mb-2">
-            <div className="px-4 py-2 text-[10px] font-bold text-[#f43f5e] uppercase tracking-[2px]">
+            <div className="px-4 py-2 text-[10px] font-bold text-[var(--pulse-rose)] uppercase tracking-[2px]">
               Pinned
             </div>
             {filteredPinned.map((c) => {
@@ -109,7 +109,7 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
         {filteredRegular.length > 0 && (
           <div className="regular-threads-section">
             {filteredPinned.length > 0 && (
-              <div className="px-4 py-2 text-[10px] font-bold text-[#94a3b8] uppercase tracking-[2px]">
+              <div className="px-4 py-2 text-[10px] font-bold text-[var(--pulse-ink-2)] uppercase tracking-[2px]">
                 All Threads
               </div>
             )}
@@ -132,13 +132,13 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
         {filteredPinned.length === 0 && filteredRegular.length === 0 && (
           <div className="empty-state px-4 py-12 text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-500/[0.1] flex items-center justify-center">
-              <Inbox className="text-2xl text-[#fb7185]" />
+              <Inbox className="text-2xl text-[var(--pulse-rose)]" />
             </div>
-            <p className="text-sm text-[#94a3b8]">
+            <p className="text-sm text-[var(--pulse-ink-2)]">
               {searchQuery ? 'No threads found' : 'No threads yet'}
             </p>
             {!searchQuery && (
-              <p className="text-xs text-[#94a3b8]/70 mt-1">
+              <p className="text-xs text-[var(--pulse-ink-3)] mt-1">
                 Start a new conversation to get started
               </p>
             )}
@@ -147,7 +147,7 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="thread-list-footer flex-shrink-0 px-4 py-2 border-t border-white/[0.07] text-[11px] text-[#94a3b8]">
+      <div className="thread-list-footer flex-shrink-0 px-4 py-2 border-t border-[var(--pulse-border)] text-[11px] text-[var(--pulse-ink-2)]">
         {conversations.length > 0 ? (
           <span>
             {conversations.length} thread{conversations.length !== 1 ? 's' : ''}

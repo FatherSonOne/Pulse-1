@@ -202,7 +202,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
 
   return (
     <motion.div
-      className={`conversation-panel flex flex-col h-full bg-black ${className}`}
+      className={`conversation-panel flex flex-col h-full bg-[var(--pulse-canvas)] ${className}`}
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
@@ -237,14 +237,14 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
 
                 {/* Channel/DM info */}
                 <div>
-                  <h2 className="text-lg font-bold text-[#e2e8f0]">
+                  <h2 className="text-lg font-bold text-[var(--pulse-ink)]">
                     {conversationDisplayName(conversation)}
                   </h2>
                   {conversationDescription(conversation) && (
-                    <p className="text-sm text-[#94a3b8]">{conversationDescription(conversation)}</p>
+                    <p className="text-sm text-[var(--pulse-ink-2)]">{conversationDescription(conversation)}</p>
                   )}
                   {conversation.kind === 'channel' && conversation.channel.members && conversation.channel.members.length > 0 && (
-                    <p className="text-xs text-[#94a3b8]/70">
+                    <p className="text-xs text-[var(--pulse-ink-3)]">
                       {conversation.channel.members.length} member{conversation.channel.members.length !== 1 ? 's' : ''}
                     </p>
                   )}
@@ -258,14 +258,14 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                   aria-label="Thread details"
                   title="Thread details"
                 >
-                  <Info className="text-[#94a3b8] hover:text-[#fb7185]" />
+                  <Info className="text-[var(--pulse-ink-2)] hover:text-[var(--pulse-rose)]" />
                 </button>
                 <button
                   className="p-2 rounded-lg hover:bg-rose-500/[0.12] transition-colors"
                   aria-label="Search in thread"
                   title="Search in thread"
                 >
-                  <Search className="text-[#94a3b8] hover:text-[#fb7185]" />
+                  <Search className="text-[var(--pulse-ink-2)] hover:text-[var(--pulse-rose)]" />
                 </button>
               </div>
             </div>
@@ -287,10 +287,10 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-500/[0.1] flex items-center justify-center">
-                    <MessageSquare className="text-2xl text-[#fb7185]" />
+                    <MessageSquare className="text-2xl text-[var(--pulse-rose)]" />
                   </div>
-                  <p className="text-sm text-[#94a3b8]">No messages yet</p>
-                  <p className="text-xs text-[#94a3b8]/60 mt-1">
+                  <p className="text-sm text-[var(--pulse-ink-2)]">No messages yet</p>
+                  <p className="text-xs text-[var(--pulse-ink-3)] mt-1">
                     Start the conversation!
                   </p>
                 </div>
@@ -332,12 +332,12 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
         <div className="flex items-center justify-center h-full">
           <div className="text-center max-w-sm">
             <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-rose-500/[0.1] border border-rose-500/20 flex items-center justify-center">
-              <MessagesSquare className="text-3xl text-[#fb7185]" />
+              <MessagesSquare className="text-3xl text-[var(--pulse-rose)]" />
             </div>
-            <h3 className="text-lg font-bold text-[#e2e8f0] mb-2">
+            <h3 className="text-lg font-bold text-[var(--pulse-ink)] mb-2">
               Select a thread
             </h3>
-            <p className="text-sm text-[#94a3b8]">
+            <p className="text-sm text-[var(--pulse-ink-2)]">
               Choose a conversation from the list to start messaging
             </p>
           </div>

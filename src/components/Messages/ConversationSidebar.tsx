@@ -115,7 +115,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   ];
 
   return (
-    <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-zinc-200 dark:border-white/[0.06] bg-[#f8f8f8] dark:bg-black flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
+    <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-[var(--pulse-border)] bg-[var(--pulse-canvas)] flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
       {/* Header — mono section label + actions */}
       <div className="px-5 pt-5 pb-3 flex justify-between items-center">
         <h2 className="font-mono uppercase tracking-[0.1em] text-[11px] text-zinc-600 dark:text-zinc-400 flex items-center gap-2">

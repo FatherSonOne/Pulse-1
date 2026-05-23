@@ -12,7 +12,7 @@ interface MessageContainerProps {
 export const MessageContainer = memo<MessageContainerProps>(({ children, className = '' }) => {
   return (
     <div
-      className={`h-full flex bg-[#f8f8f8] dark:bg-black rounded-2xl overflow-hidden border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] relative animate-fade-in shadow-xl ${className}`}
+      className={`h-full flex bg-[var(--pulse-canvas)] rounded-2xl overflow-hidden border border-[var(--pulse-border)] relative animate-fade-in shadow-xl ${className}`}
     >
       {children}
 

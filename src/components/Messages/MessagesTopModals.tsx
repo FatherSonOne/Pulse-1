@@ -316,7 +316,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
       {props.showArtifactModal && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
           <div className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-2xl h-[80%] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
-            <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center bg-[#f8f8f8] dark:bg-black">
+            <div className="p-4 border-b border-[var(--pulse-border)] flex justify-between items-center bg-[var(--pulse-canvas)]">
               <h3 className="font-bold dark:text-white flex items-center gap-2"><FileText /> Channel Artifact</h3>
               <button onClick={() => props.setShowArtifactModal(false)}><X className="text-zinc-500" /></button>
             </div>
@@ -439,7 +439,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
       {/* Keyboard Shortcuts Modal */}
       {props.showShortcuts && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4" onClick={() => props.setShowShortcuts(false)}>
-          <div className="bg-white dark:bg-black w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-white/[0.06]" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Keyboard shortcuts">
+          <div className="bg-[var(--pulse-surface)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[var(--pulse-border)]" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Keyboard shortcuts">
             <div className="p-4 border-b border-zinc-200 dark:border-white/[0.06] flex justify-between items-center">
               <h3 className="font-medium text-zinc-900 dark:text-white flex items-center gap-2">
                 <Keyboard className="w-4 h-4 text-zinc-400 dark:text-zinc-500" /> Keyboard Shortcuts

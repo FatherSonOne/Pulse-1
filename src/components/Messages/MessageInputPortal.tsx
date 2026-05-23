@@ -38,7 +38,7 @@ const MessageInputPortal: React.FC<MessageInputPortalProps> = ({
   // If not using portal, render in normal flex flow with flex-shrink-0
   if (!usePortal) {
     return (
-      <div className="flex-shrink-0 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] bg-[#f8f8f8] dark:bg-black p-4">
+      <div className="flex-shrink-0 border-t border-[var(--pulse-border)] bg-[var(--pulse-canvas)] p-4">
         {children}
       </div>
     );
