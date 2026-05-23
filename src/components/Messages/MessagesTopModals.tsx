@@ -210,7 +210,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               onClick={() => props.startPulseConversation(user)}
                               className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition text-left"
                             >
-                              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white font-bold text-sm">
+                              <div className="w-9 h-9 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] font-medium text-sm">
                                 {user.avatar_url ? (
                                   <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                                 ) : (
@@ -244,7 +244,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               onClick={() => props.startPulseConversation(user)}
                               className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition text-left"
                             >
-                              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white font-bold text-sm">
+                              <div className="w-9 h-9 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] font-medium text-sm">
                                 {user.avatar_url ? (
                                   <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                                 ) : (
@@ -297,7 +297,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                         onClick={() => props.startPulseConversation(user)}
                         className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition text-left border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800"
                       >
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white font-bold">
+                        <div className="w-10 h-10 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] font-medium">
                           {user.avatar_url ? (
                             <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                           ) : (
@@ -439,7 +439,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                           }}
                           className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
                         >
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] text-xs font-medium flex-shrink-0">
                             {other.avatar_url
                               ? <img src={other.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                               : label.charAt(0).toUpperCase()}
@@ -585,7 +585,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                           className={`p-3 rounded-xl cursor-pointer transition flex items-center gap-3
                             ${props.activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]/50'}`}
                         >
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] text-sm font-medium flex-shrink-0">
                             {otherUser.avatar_url ? (
                               <img src={otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                             ) : (

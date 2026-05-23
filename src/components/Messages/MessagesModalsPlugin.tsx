@@ -481,7 +481,7 @@ const PulseForwardModal: React.FC<PulseForwardModalProps> = ({
                     }}
                     className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
                   >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] text-xs font-medium flex-shrink-0">
                       {other.avatar_url
                         ? <img src={other.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                         : label.charAt(0).toUpperCase()}

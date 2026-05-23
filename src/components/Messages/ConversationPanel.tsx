@@ -182,7 +182,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
         <div className={`flex gap-2.5 max-w-[78%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
           {/* Avatar — only rendered on first message of a received block */}
           {!isOwnMessage && !grouped && (
-            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-mono font-semibold tracking-[0.05em] mt-[2px]">
+            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] text-[10px] font-mono font-semibold tracking-[0.05em] mt-[2px]">
               {senderInitials}
             </div>
           )}
@@ -284,8 +284,8 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                     );
                   }
                   return (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white font-bold">
-                      {isGroup ? <Users /> : name.slice(0, 2).toUpperCase()}
+                    <div className="w-10 h-10 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] font-medium">
+                      {isGroup ? <Users className="w-4 h-4" /> : name.slice(0, 2).toUpperCase()}
                     </div>
                   );
                 })()}

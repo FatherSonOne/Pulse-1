@@ -116,7 +116,7 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                       onClick={onSendEmail}
                       className="w-full p-4 rounded-xl bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.20)] hover:border-[#f43f5e] transition flex items-center gap-4 group"
                     >
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f43f5e] to-[#ec4899] text-white flex items-center justify-center transition shadow-lg">
+                      <div className="w-12 h-12 rounded-full bg-[var(--pulse-rose-soft)] text-[var(--pulse-coral-fg)] flex items-center justify-center transition">
                         <Mail className="text-lg" />
                       </div>
                       <div className="text-left flex-1">

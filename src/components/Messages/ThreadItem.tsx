@@ -102,11 +102,11 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
               className="w-12 h-12 rounded-full object-cover"
             />
           ) : isGroup ? (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-600 to-rose-400 flex items-center justify-center text-white font-bold text-sm">
-              <Users />
+            <div className="w-12 h-12 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] font-medium text-sm">
+              <Users className="w-5 h-5" />
             </div>
           ) : (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-12 h-12 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] font-medium text-sm">
               {getInitials(name)}
             </div>
           )}
