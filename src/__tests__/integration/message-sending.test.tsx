@@ -33,7 +33,7 @@ describe('Message Sending Integration', () => {
   describe('Message with AI Assist', () => {
     it.todo('should show AI suggestions while typing', async () => {
       // const user = userEvent.setup();
-      // renderWithProviders(<MessagesView channelId="channel-1" />);
+      // renderWithProviders(<MessagesSplitView channelId="channel-1" />);
 
       // const input = screen.getByRole('textbox');
       // await user.type(input, 'Can we schedule a meeting');
@@ -56,7 +56,7 @@ describe('Message Sending Integration', () => {
     it.todo('should upload and send message with file attachment', async () => {
       // const file = new File(['test content'], 'test.txt', { type: 'text/plain' });
       // const user = userEvent.setup();
-      // renderWithProviders(<MessagesView channelId="channel-1" />);
+      // renderWithProviders(<MessagesSplitView channelId="channel-1" />);
 
       // const attachButton = screen.getByRole('button', { name: /attach/i });
       // const fileInput = screen.getByLabelText(/file input/i);
@@ -81,7 +81,7 @@ describe('Message Sending Integration', () => {
   describe('Draft Auto-save', () => {
     it.todo('should auto-save draft while typing', async () => {
       // const user = userEvent.setup();
-      // renderWithProviders(<MessagesView channelId="channel-1" />);
+      // renderWithProviders(<MessagesSplitView channelId="channel-1" />);
 
       // await user.type(screen.getByRole('textbox'), 'Draft message');
 
@@ -110,7 +110,7 @@ describe('Message Sending Integration', () => {
   describe('Threading', () => {
     it.todo('should send message as thread reply', async () => {
       // const user = userEvent.setup();
-      // renderWithProviders(<MessagesView channelId="channel-1" />);
+      // renderWithProviders(<MessagesSplitView channelId="channel-1" />);
 
       // // Click reply on existing message
       // const replyButton = screen.getAllByRole('button', { name: /reply/i })[0];
@@ -133,7 +133,7 @@ describe('Message Sending Integration', () => {
   describe('Message Formatting', () => {
     it.todo('should send message with bold formatting', async () => {
       // const user = userEvent.setup();
-      // renderWithProviders(<MessagesView channelId="channel-1" />);
+      // renderWithProviders(<MessagesSplitView channelId="channel-1" />);
 
       // await user.type(screen.getByRole('textbox'), 'Normal');
       // await user.click(screen.getByRole('button', { name: /bold/i }));
@@ -158,7 +158,7 @@ describe('Message Sending Integration', () => {
   describe('Mentions and Notifications', () => {
     it.todo('should send message with @mention', async () => {
       // const user = userEvent.setup();
-      // renderWithProviders(<MessagesView channelId="channel-1" />);
+      // renderWithProviders(<MessagesSplitView channelId="channel-1" />);
 
       // await user.type(screen.getByRole('textbox'), '@Alice ');
 

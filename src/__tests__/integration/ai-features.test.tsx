@@ -32,7 +32,7 @@ describe('AI Features Integration', () => {
   describe('Tone Analysis', () => {
     it.todo('should analyze tone in real-time', async () => {
       // const user = userEvent.setup();
-      // renderWithProviders(<MessagesView channelId="channel-1" aiEnabled={true} />);
+      // renderWithProviders(<MessagesSplitView channelId="channel-1" aiEnabled={true} />);
 
       // const input = screen.getByRole('textbox');
       // await user.type(input, 'I am very frustrated with this delay!');
@@ -92,7 +92,7 @@ describe('AI Features Integration', () => {
   describe('Conversation Intelligence', () => {
     it.todo('should analyze conversation sentiment', async () => {
       // const user = userEvent.setup();
-      // renderWithProviders(<MessagesView channelId="channel-1" />);
+      // renderWithProviders(<MessagesSplitView channelId="channel-1" />);
 
       // await user.click(screen.getByRole('button', { name: /insights/i }));
 
