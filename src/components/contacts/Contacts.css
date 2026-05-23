@@ -1,93 +1,54 @@
 /* ============================================
-   PULSE CONTACTS - LIVING NETWORK AESTHETIC
-   A constellation-inspired interface where contacts
-   feel like nodes in a living, breathing network
-   ============================================ */
-
-/* ============================================
-   CSS VARIABLES
+   PULSE CONTACTS
+   Token aliases — every --cnt-* below resolves to a canonical
+   --pulse-* value from src/styles/pulse-tokens.css. Light/dark
+   cascade is provided by pulse-tokens.css (.dark on <html>);
+   no per-mode override block needed here.
    ============================================ */
 :root {
-  /* Core Palette - Pulse Premium Dark */
-  --cnt-bg-void: #000000;
-  --cnt-bg-primary: rgba(255, 255, 255, 0.02);
-  --cnt-bg-secondary: rgba(255, 255, 255, 0.03);
-  --cnt-bg-tertiary: rgba(255, 255, 255, 0.055);
-  --cnt-bg-elevated: rgba(255, 255, 255, 0.08);
-  --cnt-bg-glass: rgba(0, 0, 0, 0.70);
+  /* Surfaces */
+  --cnt-bg-void:      var(--pulse-canvas);
+  --cnt-bg-primary:   var(--pulse-surface);
+  --cnt-bg-secondary: var(--pulse-canvas-soft);
+  --cnt-bg-tertiary:  var(--pulse-surface-raised);
+  --cnt-bg-elevated:  var(--pulse-surface-raised);
+  --cnt-bg-glass:     rgba(10, 10, 11, 0.6);
 
-  /* Node Colors - Rose Accent */
-  --cnt-node-core: #f43f5e;
-  --cnt-node-inner: #fb7185;
-  --cnt-node-outer: #fda4af;
-  --cnt-node-glow: rgba(244, 63, 94, 0.4);
+  /* Brand accent */
+  --cnt-node-core:  var(--pulse-rose);
+  --cnt-node-inner: var(--pulse-rose-bright);
+  --cnt-node-outer: var(--pulse-rose-bright);
+  --cnt-node-glow:  var(--pulse-rose-glow);
 
-  /* Status Colors - Organic */
-  --cnt-status-online: #34d399;
-  --cnt-status-away: #fbbf24;
-  --cnt-status-offline: #6b7280;
-  --cnt-status-busy: #f87171;
+  /* Status vocabulary (Status-Stays-Status rule) */
+  --cnt-status-online:  var(--pulse-tone-positive);
+  --cnt-status-away:    var(--pulse-tone-warning);
+  --cnt-status-offline: var(--pulse-tone-neutral);
+  --cnt-status-busy:    var(--pulse-tone-overdue);
 
-  /* Accent Spectrum */
-  --cnt-accent-primary: #f43f5e;
-  --cnt-accent-secondary: #ec4899;
-  --cnt-accent-warm: #f59e0b;
-  --cnt-accent-rose: #f43f5e;
-  --cnt-accent-emerald: #10b981;
+  /* Accent spectrum */
+  --cnt-accent-primary:   var(--pulse-rose);
+  --cnt-accent-secondary: var(--pulse-pink);
+  --cnt-accent-warm:      var(--pulse-tone-warning);
+  --cnt-accent-rose:      var(--pulse-rose);
+  --cnt-accent-emerald:   var(--pulse-tone-positive);
 
   /* Text */
-  --cnt-text-primary: #fafafa;
-  --cnt-text-secondary: #d4d4d4;
-  --cnt-text-muted: #737373;
-  --cnt-text-ghost: #525252;
+  --cnt-text-primary:   var(--pulse-ink);
+  --cnt-text-secondary: var(--pulse-ink-2);
+  --cnt-text-muted:     var(--pulse-ink-3);
+  --cnt-text-ghost:     var(--pulse-ink-3);
 
-  /* Borders & Lines */
-  --cnt-border: rgba(255, 255, 255, 0.07);
-  --cnt-border-active: rgba(244, 63, 94, 0.5);
-  --cnt-connection-line: rgba(244, 63, 94, 0.15);
+  /* Borders */
+  --cnt-border:          var(--pulse-border);
+  --cnt-border-active:   var(--pulse-rose);
+  --cnt-connection-line: var(--pulse-rose-soft);
 
-  /* Gradients */
-  --cnt-gradient-void: radial-gradient(ellipse at 30% 20%, rgba(244, 63, 94, 0.06) 0%, transparent 50%),
-                       radial-gradient(ellipse at 70% 80%, rgba(236, 72, 153, 0.04) 0%, transparent 50%);
-  --cnt-gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-  --cnt-gradient-node: linear-gradient(135deg, var(--cnt-node-core) 0%, var(--cnt-accent-primary) 100%);
-}
-
-/* ============================================
-   LIGHT MODE - Full Theme Override
-   ============================================ */
-.light-mode .contacts-container,
-[data-theme="light"] .contacts-container,
-:root:not(.dark) .contacts-container {
-  /* Core Palette - Warm Stone */
-  --cnt-bg-void: #f8f8f8;
-  --cnt-bg-primary: #ffffff;
-  --cnt-bg-secondary: #f5f4f1;
-  --cnt-bg-tertiary: #ede9e6;
-  --cnt-bg-elevated: #ffffff;
-  --cnt-bg-glass: rgba(255, 255, 255, 0.97);
-
-  /* Node Colors - Rose for light */
-  --cnt-node-core: #f43f5e;
-  --cnt-node-inner: #fb7185;
-  --cnt-node-outer: #fda4af;
-  --cnt-node-glow: rgba(244, 63, 94, 0.2);
-
-  /* Text - Dark on light */
-  --cnt-text-primary: #1c1917;
-  --cnt-text-secondary: #57534e;
-  --cnt-text-muted: #78716c;
-  --cnt-text-ghost: #a8a29e;
-
-  /* Borders - Subtle definition */
-  --cnt-border: rgba(0, 0, 0, 0.07);
-  --cnt-border-active: rgba(244, 63, 94, 0.4);
-  --cnt-connection-line: rgba(244, 63, 94, 0.12);
-
-  /* Gradients - Light versions */
-  --cnt-gradient-void: radial-gradient(ellipse at 30% 20%, rgba(244, 63, 94, 0.04) 0%, transparent 50%),
-                       radial-gradient(ellipse at 70% 80%, rgba(236, 72, 153, 0.03) 0%, transparent 50%);
-  --cnt-gradient-card: linear-gradient(135deg, #ffffff 0%, #f5f4f1 100%);
+  /* Gradient slot kept for callsite compatibility — flattened to
+     a single coral fill. The rose-to-pink brand gradient was
+     decoration on chrome (active filter icons); flat rose
+     restores the Coral-As-Signal rule. */
+  --cnt-gradient-node: var(--pulse-rose);
 }
 
 /* Light mode specific component overrides */
@@ -100,14 +61,14 @@
 .light-mode .contacts-sidebar,
 [data-theme="light"] .contacts-sidebar,
 :root:not(.dark) .contacts-sidebar {
-  background: linear-gradient(180deg, #ffffff 0%, #f5f4f1 100%);
-  border-right-color: rgba(0, 0, 0, 0.06);
+  background: var(--pulse-canvas-soft);
+  border-right-color: var(--pulse-border);
 }
 
 .light-mode .contacts-search-input,
 [data-theme="light"] .contacts-search-input,
 :root:not(.dark) .contacts-search-input {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
   border-color: rgba(0, 0, 0, 0.06);
 }
 
@@ -487,7 +448,7 @@
 .light-mode .contacts-filter-btn:hover,
 [data-theme="light"] .contacts-filter-btn:hover,
 :root:not(.dark) .contacts-filter-btn:hover {
-  background: #ede9e6;
+  background: var(--pulse-surface-raised);
 }
 
 .light-mode .contacts-filter-btn.active,
@@ -500,26 +461,26 @@
 .light-mode .contacts-filter-btn-icon,
 [data-theme="light"] .contacts-filter-btn-icon,
 :root:not(.dark) .contacts-filter-btn-icon {
-  background: #ede9e6;
+  background: var(--pulse-surface-raised);
 }
 
 .light-mode .contacts-filter-btn.active .contacts-filter-btn-icon,
 [data-theme="light"] .contacts-filter-btn.active .contacts-filter-btn-icon,
 :root:not(.dark) .contacts-filter-btn.active .contacts-filter-btn-icon {
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  background: var(--pulse-rose);
 }
 
 .light-mode .contacts-filter-btn-count,
 [data-theme="light"] .contacts-filter-btn-count,
 :root:not(.dark) .contacts-filter-btn-count {
-  background: #ede9e6;
-  color: #78716c;
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink-3);
 }
 
 .light-mode .contacts-smart-list:hover,
 [data-theme="light"] .contacts-smart-list:hover,
 :root:not(.dark) .contacts-smart-list:hover {
-  background: #ede9e6;
+  background: var(--pulse-surface-raised);
 }
 
 .light-mode .contacts-smart-list.active,
@@ -545,13 +506,13 @@
 .light-mode .contacts-stat,
 [data-theme="light"] .contacts-stat,
 :root:not(.dark) .contacts-stat {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
 }
 
 .light-mode .contacts-view-toggle,
 [data-theme="light"] .contacts-view-toggle,
 :root:not(.dark) .contacts-view-toggle {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
 }
 
 .light-mode .contacts-view-btn.active,
@@ -564,13 +525,13 @@
 .light-mode .contacts-action-btn,
 [data-theme="light"] .contacts-action-btn,
 :root:not(.dark) .contacts-action-btn {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
 }
 
 .light-mode .contacts-action-btn:hover,
 [data-theme="light"] .contacts-action-btn:hover,
 :root:not(.dark) .contacts-action-btn:hover {
-  background: #ede9e6;
+  background: var(--pulse-surface-raised);
 }
 
 /* Node Cards - Light Mode */
@@ -611,26 +572,26 @@
 .light-mode .contacts-node-company,
 [data-theme="light"] .contacts-node-company,
 :root:not(.dark) .contacts-node-company {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
 }
 
 .light-mode .contacts-node-health-track,
 [data-theme="light"] .contacts-node-health-track,
 :root:not(.dark) .contacts-node-health-track {
-  background: #ede9e6;
+  background: var(--pulse-surface-raised);
 }
 
 .light-mode .contacts-node-action,
 [data-theme="light"] .contacts-node-action,
 :root:not(.dark) .contacts-node-action {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
   border-color: rgba(0, 0, 0, 0.06);
 }
 
 .light-mode .contacts-node-action:hover,
 [data-theme="light"] .contacts-node-action:hover,
 :root:not(.dark) .contacts-node-action:hover {
-  background: #ede9e6;
+  background: var(--pulse-surface-raised);
   border-color: #f43f5e;
 }
 
@@ -638,7 +599,7 @@
 .light-mode .contacts-list-header,
 [data-theme="light"] .contacts-list-header,
 :root:not(.dark) .contacts-list-header {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
   border-bottom-color: rgba(0, 0, 0, 0.06);
 }
 
@@ -651,7 +612,7 @@
 .light-mode .contacts-list-row:hover,
 [data-theme="light"] .contacts-list-row:hover,
 :root:not(.dark) .contacts-list-row:hover {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
 }
 
 .light-mode .contacts-list-row.selected,
@@ -663,7 +624,7 @@
 .light-mode .contacts-list-checkbox,
 [data-theme="light"] .contacts-list-checkbox,
 :root:not(.dark) .contacts-list-checkbox {
-  border-color: #d6d3d1;
+  border-color: var(--pulse-border-strong);
 }
 
 .light-mode .contacts-list-avatar-status,
@@ -675,7 +636,7 @@
 .light-mode .contacts-list-health-bar,
 [data-theme="light"] .contacts-list-health-bar,
 :root:not(.dark) .contacts-list-health-bar {
-  background: #ede9e6;
+  background: var(--pulse-surface-raised);
 }
 
 /* Detail Panel - Light Mode */
@@ -695,7 +656,7 @@
 .light-mode .contacts-detail-close:hover,
 [data-theme="light"] .contacts-detail-close:hover,
 :root:not(.dark) .contacts-detail-close:hover {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
 }
 
 .light-mode .contacts-detail-avatar-ring,
@@ -713,20 +674,20 @@
 .light-mode .contacts-detail-company,
 [data-theme="light"] .contacts-detail-company,
 :root:not(.dark) .contacts-detail-company {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
 }
 
 .light-mode .contacts-detail-action,
 [data-theme="light"] .contacts-detail-action,
 :root:not(.dark) .contacts-detail-action {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
   border-color: rgba(0, 0, 0, 0.06);
 }
 
 .light-mode .contacts-detail-action:hover,
 [data-theme="light"] .contacts-detail-action:hover,
 :root:not(.dark) .contacts-detail-action:hover {
-  background: #ede9e6;
+  background: var(--pulse-surface-raised);
   border-color: #f43f5e;
 }
 
@@ -739,7 +700,7 @@
 .light-mode .contacts-detail-tab:hover,
 [data-theme="light"] .contacts-detail-tab:hover,
 :root:not(.dark) .contacts-detail-tab:hover {
-  color: #57534e;
+  color: var(--pulse-ink-2);
 }
 
 .light-mode .contacts-detail-info-item,
@@ -751,27 +712,27 @@
 .light-mode .contacts-detail-info-icon,
 [data-theme="light"] .contacts-detail-info-icon,
 :root:not(.dark) .contacts-detail-info-icon {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
 }
 
 .light-mode .contacts-detail-health,
 [data-theme="light"] .contacts-detail-health,
 :root:not(.dark) .contacts-detail-health {
-  background: #f5f4f1;
+  background: var(--pulse-canvas-soft);
 }
 
 .light-mode .contacts-detail-health-bar,
 [data-theme="light"] .contacts-detail-health-bar,
 :root:not(.dark) .contacts-detail-health-bar {
-  background: #ede9e6;
+  background: var(--pulse-surface-raised);
 }
 
 /* Empty State - Light Mode */
 .light-mode .contacts-empty-icon,
 [data-theme="light"] .contacts-empty-icon,
 :root:not(.dark) .contacts-empty-icon {
-  background: #f5f4f1;
-  color: #a8a29e;
+  background: var(--pulse-canvas-soft);
+  color: var(--pulse-ink-3);
 }
 
 /* Lead Grade Badges - Light Mode adjustments */

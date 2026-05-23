@@ -633,9 +633,9 @@ const ListRow: React.FC<ListRowProps> = ({
             className="contacts-list-avatar-status"
             style={{
               backgroundColor:
-                contact.status === 'online' ? 'var(--cnt-status-online)' :
-                contact.status === 'busy' ? 'var(--cnt-status-busy)' :
-                'var(--cnt-status-offline)'
+                contact.status === 'online' ? 'var(--pulse-tone-positive)' :
+                contact.status === 'busy' ? 'var(--pulse-tone-overdue)' :
+                'var(--pulse-tone-neutral)'
             }}
           />
         </div>
@@ -669,7 +669,7 @@ const ListRow: React.FC<ListRowProps> = ({
             <span className="contacts-list-health-value">{profile.relationshipScore}</span>
           </>
         ) : (
-          <span className="contacts-list-health-value" style={{ color: 'var(--cnt-text-muted)' }}>-</span>
+          <span className="contacts-list-health-value" style={{ color: 'var(--pulse-ink-3)' }}>-</span>
         )}
       </div>
 
@@ -682,7 +682,7 @@ const ListRow: React.FC<ListRowProps> = ({
             {leadScore.leadGrade}
           </span>
         ) : (
-          <span style={{ color: 'var(--cnt-text-muted)', fontSize: 11 }}>-</span>
+          <span style={{ color: 'var(--pulse-ink-3)', fontSize: 11 }}>-</span>
         )}
       </div>
     </div>
@@ -1591,7 +1591,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
           <div
             style={{
               width: 400,
-              background: 'var(--cnt-bg-secondary)',
+              background: 'var(--pulse-canvas-soft)',
               height: '100%',
               display: 'flex',
               flexDirection: 'column',
@@ -1600,12 +1600,12 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
           >
             <div style={{
               padding: 16,
-              borderBottom: '1px solid var(--cnt-border)',
+              borderBottom: '1px solid var(--pulse-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}>
-              <span style={{ fontWeight: 600, color: 'var(--cnt-text-primary)' }}>
+              <span style={{ fontWeight: 600, color: 'var(--pulse-ink)' }}>
                 <Bell />
                 Relationship Alerts
               </span>
@@ -1614,7 +1614,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: 'var(--cnt-text-muted)',
+                  color: 'var(--pulse-ink-3)',
                   cursor: 'pointer',
                   padding: 8,
                 }}
