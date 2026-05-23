@@ -67,6 +67,12 @@ the actual route to lost work.
 
 ### Hard nevers (without explicit user request)
 
+- **`git checkout -b <new-branch>`** — Claude must NOT create a new
+  feature branch without an explicit user instruction to do so. Stay on
+  the current branch (typically the active feature branch or main) and
+  ask before branching. If multiple commits need to be sequenced as
+  separate units, stack them on the existing branch and discuss
+  branching strategy with the user first.
 - **`git checkout <other-branch>`** mid-session with uncommitted work.
 - **`git stash pop`** without confirming the stash belongs to the
   current branch.
