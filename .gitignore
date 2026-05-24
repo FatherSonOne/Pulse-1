@@ -228,3 +228,4 @@ env-debug.html
 clear-cache.html
 package.json.patch
 build-output.txt
+.relay-verify/
