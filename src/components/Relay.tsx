@@ -79,7 +79,20 @@ import {
   SourcesRail,
   StudioFooter,
   FloatingMic,
+  useRelayStudio,
 } from './Relay/studio';
+
+// Stops async playback when entering a Live room — you're in a synchronous
+// call, so a recorded voice shouldn't keep playing under it. Lives inside the
+// provider so it can reach the studio transport (Relay itself renders the
+// provider, so it can't call useRelayStudio directly).
+const StudioLiveSync: React.FC<{ inLive: boolean }> = ({ inLive }) => {
+  const { stop } = useRelayStudio();
+  useEffect(() => {
+    if (inLive) stop();
+  }, [inLive, stop]);
+  return null;
+};
 
 interface RelayProps {
   /** @deprecated no-op — AI routing is server-side via edge functions. */
@@ -170,6 +183,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
   return (
     <div className="h-full bg-white dark:bg-[#080808] rounded-2xl overflow-hidden border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] animate-fade-in shadow-xl">
       <RelayStudioProvider>
+        <StudioLiveSync inLive={view === 'live'} />
         <div className="h-full flex">
           {/* Vertical sources rail — replaces the horizontal tab strip. */}
           <SourcesRail
@@ -271,20 +285,24 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
               )}
             </div>
 
-            {/* Persistent player. Renders idle hint until a mode body calls
-                studio.play(v); recording-state surface stays dormant in
-                Phase 1 (no caller flips studio.isRecording). */}
-            <StudioFooter />
-
-            {/* Record affordance. Phase 1 routes the click to the existing
-                composer modal — keeps real audio capture working without
-                rewiring useVoxRecording. forceIdleIcon prevents the button
-                from flipping to "Stop" while studio.isRecording is still
-                always false in Phase 1. */}
-            <FloatingMic
-              onClick={() => openComposer(null)}
-              forceIdleIcon
-            />
+            {/* Persistent player + record affordance — hidden in Live, where
+                you're in a synchronous WebRTC room (VoiceRooms owns its own
+                controls) and the async playback / compose chrome would just
+                be noise. Entering Live also stops any playing voice via
+                <StudioLiveSync>. */}
+            {view !== 'live' && (
+              <>
+                <StudioFooter />
+                {/* Record affordance routes to the existing composer modal —
+                    keeps real audio capture working without rewiring
+                    useVoxRecording. forceIdleIcon keeps it on the Mic icon
+                    since studio.isRecording isn't driven yet. */}
+                <FloatingMic
+                  onClick={() => openComposer(null)}
+                  forceIdleIcon
+                />
+              </>
+            )}
           </div>
         </div>
 

@@ -66,7 +66,6 @@ import {
 // Phase 6: Final Polish
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
-import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { useRelayStudio } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
@@ -141,7 +140,6 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
 
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
-  const { playbackSpeed, setPlaybackSpeed } = usePlaybackSpeed();
 
   // Message Menu & Download States
   const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
@@ -228,11 +226,6 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
     },
     onShowHelp: () => setShowShortcutsHelp(true),
   }, true);
-
-  // Push the persisted speed preference into the shared studio audio.
-  useEffect(() => {
-    studio.setPlaybackRate(playbackSpeed);
-  }, [playbackSpeed, studio]);
 
   // ============================================
   // HANDLERS
@@ -890,8 +883,8 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                             <span>{formatDate(broadcast.publishedAt)}</span>
                             {/* Phase 6: Playback Speed Control */}
                             <PlaybackSpeedControl
-                              speed={playbackSpeed}
-                              onSpeedChange={setPlaybackSpeed}
+                              speed={studio.playbackRate}
+                              onSpeedChange={studio.setPlaybackRate}
                               isDarkMode={isDarkMode}
                               compact={true}
                             />

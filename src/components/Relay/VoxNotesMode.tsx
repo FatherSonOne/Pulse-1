@@ -55,7 +55,6 @@ import type { ConversationSummary, SmartReply } from '../../services/relay/relay
 // Phase 6: Final Polish
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
-import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { useRelayStudio } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
@@ -130,7 +129,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
 
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
-  const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed } = usePlaybackSpeed();
   const emptyConfig = getEmptyStateConfig('vox_notes');
 
   // Use the recording hook for click-to-record with preview
@@ -322,11 +320,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     onSummarize: handleSummarizeNotes,
     onShowHelp: () => setShowShortcutsHelp(true),
   }, true);
-
-  // Push the persisted speed preference into the shared studio audio.
-  useEffect(() => {
-    studio.setPlaybackRate(globalPlaybackSpeed);
-  }, [globalPlaybackSpeed, studio]);
 
   // Save recording as a new note
   const handleSendRecording = async () => {
@@ -1039,14 +1032,10 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                   </div>
                   {/* Phase 6: Playback Speed Control */}
                   <PlaybackSpeedControl
-                    speed={globalPlaybackSpeed}
-                    onSpeedChange={(newSpeed) => {
-                      setGlobalPlaybackSpeed(newSpeed);
-                      studio.setPlaybackRate(newSpeed);
-                    }}
-                    mode="compact"
+                    speed={studio.playbackRate}
+                    onSpeedChange={studio.setPlaybackRate}
+                    compact
                     isDarkMode={isDarkMode}
-                    accentColor="#f43f5e"
                   />
                 </div>
               </div>

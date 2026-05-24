@@ -19,6 +19,9 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { resolveAudioUrl, legacyAudioUrl } from '../../../services/relay/resolveAudioUrl';
+import { type PlaybackSpeed, PLAYBACK_SPEEDS } from '../../../hooks/usePlaybackSpeed';
+
+export type { PlaybackSpeed };
 
 /** A voice the studio can play. Sender-shape is intentionally permissive so
  *  every mode body can hand off whatever it has without a transform. */
@@ -49,10 +52,10 @@ export interface RelayStudioState {
   currentTime: number;
   /** Seconds — real audio duration (0 until metadata loads). */
   duration: number;
-  /** Playback rate (0.75 / 1 / 1.25 / 1.5 / 2). Applies to the shared audio,
-   *  so the footer's speed control + any mode's per-message speed picker all
-   *  drive the same value. */
-  playbackRate: number;
+  /** Playback rate (0.5 / 0.75 / 1 / 1.25 / 1.5 / 2). Single source of truth:
+   *  the footer's speed control AND every mode's per-message speed picker read
+   *  + write this, so they can never disagree. Persisted to localStorage. */
+  playbackRate: PlaybackSpeed;
 
   // ── recording ───────────────────────────────────────────────────────────
   isRecording: boolean;
@@ -73,7 +76,7 @@ export interface RelayStudioApi extends RelayStudioState {
   /** Scrub to a 0→1 fraction of the current voice. */
   seek: (fraction: number) => void;
   /** Set the shared playback rate; applies immediately to the audio element. */
-  setPlaybackRate: (rate: number) => void;
+  setPlaybackRate: (rate: PlaybackSpeed) => void;
   /** Cycle to the next preset rate (0.75 → 1 → 1.25 → 1.5 → 2 → 0.75). */
   cyclePlaybackRate: () => void;
   /** Toggle the recording surface. Auto-pauses playback when starting. */
@@ -89,6 +92,9 @@ export interface RelayStudioApi extends RelayStudioState {
 const RelayStudioContext = createContext<RelayStudioApi | null>(null);
 
 const RAIL_COLLAPSED_KEY = 'pulse.relay.railCollapsed';
+// Shared with the legacy usePlaybackSpeed hook so an existing saved preference
+// carries over to the unified studio rate.
+const PLAYBACK_RATE_KEY = 'voxer-playback-speed';
 
 function readInitialRailCollapsed(): boolean {
   if (typeof window === 'undefined') return false;
@@ -97,6 +103,17 @@ function readInitialRailCollapsed(): boolean {
   } catch {
     return false;
   }
+}
+
+function readInitialPlaybackRate(): PlaybackSpeed {
+  if (typeof window === 'undefined') return 1;
+  try {
+    const saved = parseFloat(window.localStorage.getItem(PLAYBACK_RATE_KEY) || '');
+    if ((PLAYBACK_SPEEDS as readonly number[]).includes(saved)) return saved as PlaybackSpeed;
+  } catch {
+    /* ignore */
+  }
+  return 1;
 }
 
 interface ProviderProps {
@@ -116,7 +133,7 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSec, setRecordingSec] = useState(0);
   const [railCollapsed, setRailCollapsed] = useState<boolean>(readInitialRailCollapsed);
-  const [playbackRate, setPlaybackRateState] = useState(1);
+  const [playbackRate, setPlaybackRateState] = useState<PlaybackSpeed>(readInitialPlaybackRate);
 
   // Single shared <audio>. Created once; lives for the provider's lifetime.
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -179,8 +196,17 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
 
   // playbackRate in a ref so the []-dep play() reads the current rate, not a
   // stale capture.
-  const playbackRateRef = useRef(playbackRate);
+  const playbackRateRef = useRef<PlaybackSpeed>(playbackRate);
   playbackRateRef.current = playbackRate;
+
+  // Persist the rate so it survives reloads (shared key with usePlaybackSpeed).
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PLAYBACK_RATE_KEY, String(playbackRate));
+    } catch {
+      /* ignore */
+    }
+  }, [playbackRate]);
 
   const play = useCallback((v: NowPlayingVoice) => {
     const audio = audioRef.current;
@@ -278,16 +304,15 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
 
   const toggleRail = useCallback(() => setRailCollapsed(c => !c), []);
 
-  const setPlaybackRate = useCallback((rate: number) => {
+  const setPlaybackRate = useCallback((rate: PlaybackSpeed) => {
     setPlaybackRateState(rate);
     if (audioRef.current) audioRef.current.playbackRate = rate;
   }, []);
 
-  const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5, 2];
   const cyclePlaybackRate = useCallback(() => {
     setPlaybackRateState(prev => {
-      const idx = PLAYBACK_RATES.indexOf(prev);
-      const next = PLAYBACK_RATES[(idx + 1) % PLAYBACK_RATES.length];
+      const idx = PLAYBACK_SPEEDS.indexOf(prev);
+      const next = PLAYBACK_SPEEDS[(idx + 1) % PLAYBACK_SPEEDS.length];
       if (audioRef.current) audioRef.current.playbackRate = next;
       return next;
     });

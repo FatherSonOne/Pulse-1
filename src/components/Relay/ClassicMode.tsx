@@ -81,7 +81,6 @@ import {
 // Phase 6: Final Polish
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
-import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { useRelayStudio } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
@@ -294,7 +293,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
 
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
-  const { playbackSpeed, setPlaybackSpeed } = usePlaybackSpeed();
   const emptyConfig = getEmptyStateConfig('classic');
 
   // Refs
@@ -433,13 +431,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [recordings, activeContactId]);
-
-  // Push the per-message playback-speed preference into the shared studio
-  // audio, so the persisted PlaybackSpeedControl and the footer's speed
-  // control both govern the one element actually playing.
-  useEffect(() => {
-    studio.setPlaybackRate(playbackSpeed);
-  }, [playbackSpeed, studio]);
 
   // Contacts with Vox conversations (Pulse users who have recordings)
   const contactsWithVoxes = useMemo(() => {
@@ -1403,8 +1394,8 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
 
                       {/* Phase 6: Playback Speed Control */}
                       <PlaybackSpeedControl
-                        speed={playbackSpeed}
-                        onSpeedChange={setPlaybackSpeed}
+                        speed={studio.playbackRate}
+                        onSpeedChange={studio.setPlaybackRate}
                         isDarkMode={isDarkMode}
                         compact={true}
                       />
