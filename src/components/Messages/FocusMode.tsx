@@ -8,10 +8,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FocusTimer } from './FocusTimer';
 import { FocusControls } from './FocusControls';
-import { DistractionBlockingOverlay } from './DistractionBlockingOverlay';
-import { SessionCompletionCelebration } from './SessionCompletionCelebration';
-import { FocusDigestCard } from './FocusDigestCard';
-import { FocusStatsDashboard } from './FocusStatsDashboard';
 import {
   focusModeService,
   FocusPreferences,

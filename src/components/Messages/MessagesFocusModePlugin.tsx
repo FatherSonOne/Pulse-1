@@ -3,12 +3,10 @@
  *
  * Phase 5d.3 — Focus Mode for `MessagesSplitView`.
  *
- * The existing `<FocusMode>` component (and its sub-components —
- * FocusTimer, FocusControls, DistractionBlockingOverlay,
- * SessionCompletionCelebration, FocusDigestCard, FocusStatsDashboard)
- * is already self-contained: it owns its own timer state, persists to
- * localStorage, and renders a full-screen overlay. ~3000 LOC of
- * focus-related UI lives in those files and remains unchanged.
+ * The existing `<FocusMode>` component (and its live sub-components,
+ * FocusTimer + FocusControls) is already self-contained: it owns its
+ * own timer state, persists to localStorage, and renders a full-screen
+ * overlay.
  *
  * What was missing was a clean *trigger* contract. The legacy
  * `Messages.tsx` toggled focus mode via a local `useState` + threaded
