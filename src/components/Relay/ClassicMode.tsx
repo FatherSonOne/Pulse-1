@@ -83,6 +83,7 @@ import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { useRelayStudio } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
@@ -193,7 +194,10 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
-  const [playingId, setPlayingId] = useState<string | null>(null);
+  // Playback flows through the shared Voice Studio transport so the persistent
+  // StudioFooter reflects + controls whatever plays here. "Which row is active"
+  // is derived from studio.nowPlaying rather than a local playingId.
+  const studio = useRelayStudio();
 
   // Safety net: ensure `quick_vox_status.is_recording` clears if the tab is
   // closed or this view unmounts mid-recording. The hook-based modes get this
@@ -290,7 +294,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
 
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
-  const { playbackSpeed, setPlaybackSpeed, applyToElement } = usePlaybackSpeed();
+  const { playbackSpeed, setPlaybackSpeed } = usePlaybackSpeed();
   const emptyConfig = getEmptyStateConfig('classic');
 
   // Refs
@@ -301,7 +305,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   const chunksRef = useRef<Blob[]>([]);
   const startTimeRef = useRef<number>(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Track all blob URLs created via URL.createObjectURL() so they can be
@@ -431,12 +434,12 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [recordings, activeContactId]);
 
-  // Phase 6: Apply playback speed to audio elements
+  // Push the per-message playback-speed preference into the shared studio
+  // audio, so the persisted PlaybackSpeedControl and the footer's speed
+  // control both govern the one element actually playing.
   useEffect(() => {
-    if (audioRef.current) {
-      applyToElement(audioRef.current);
-    }
-  }, [playbackSpeed, applyToElement]);
+    studio.setPlaybackRate(playbackSpeed);
+  }, [playbackSpeed, studio]);
 
   // Contacts with Vox conversations (Pulse users who have recordings)
   const contactsWithVoxes = useMemo(() => {
@@ -721,19 +724,22 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // ============================================
 
   const playRecording = useCallback((recording: Recording) => {
-    if (audioRef.current) {
-      audioRef.current.src = recording.url;
-      audioRef.current.play();
-      setPlayingId(recording.id);
-    }
-  }, []);
+    studio.play({
+      id: recording.id,
+      sender: recording.sender === 'me'
+        ? 'You'
+        : (activeContact?.displayName || activeContact?.handle || 'Direct'),
+      dur: formatDuration(recording.duration),
+      type: 'DM',
+      transcript: recording.transcription ?? null,
+      source: 'direct',
+      audioUrl: recording.url,
+    });
+  }, [studio, activeContact]);
 
   const pausePlayback = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setPlayingId(null);
-    }
-  }, []);
+    studio.togglePlay();
+  }, [studio]);
 
   const toggleStar = useCallback(async (recordingId: string) => {
     setRecordings(prev => prev.map(r =>
@@ -1098,9 +1104,9 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
         const firstSelectedId = Array.from(selectedItems)[0];
         const rec = recordings.find(r => r.id === firstSelectedId);
         if (rec) handleDownloadMessage(rec);
-      } else if (playingId) {
+      } else if (studio.nowPlaying) {
         // Download the currently playing message
-        const playing = recordings.find(r => r.id === playingId);
+        const playing = recordings.find(r => r.id === studio.nowPlaying!.id);
         if (playing) handleDownloadMessage(playing);
       }
     },
@@ -1127,14 +1133,14 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // RENDER
   // ============================================
 
+  // Playback active-state helpers — derived from the shared studio transport.
+  const isItemActive = (id: string) => studio.nowPlaying?.id === id;
+  const isItemPlaying = (id: string) => isItemActive(id) && studio.isPlaying;
+
   return (
     <div className={`classic-mode ${isDarkMode ? 'dark' : 'light'}`}>
-      {/* Hidden audio element */}
-      <audio
-        ref={audioRef}
-        onEnded={() => setPlayingId(null)}
-        onPause={() => setPlayingId(null)}
-      />
+      {/* Audio playback is owned by the shared RelayStudioProvider (single
+          <audio>), so there's no local element here anymore. */}
 
       {/* Contact List Sidebar */}
       <aside className={`classic-sidebar ${mobileView === 'list' ? 'visible' : 'hidden-mobile'}`}>
@@ -1358,13 +1364,13 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       <button
                         type="button"
                         onClick={() =>
-                          playingId === recording.id
+                          isItemActive(recording.id)
                             ? pausePlayback()
                             : playRecording(recording)
                         }
                         className="classic-play-btn"
                       >
-                        {playingId === recording.id ? (
+                        {isItemPlaying(recording.id) ? (
                           <Pause className="w-4 h-4" />
                         ) : (
                           <Play className="w-4 h-4" />
@@ -1386,7 +1392,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                                   className="classic-waveform-bar"
                                   style={{
                                     height: `${deterministicBarHeight(seed, i)}%`,
-                                    opacity: playingId === recording.id ? 1 : 0.5,
+                                    opacity: isItemPlaying(recording.id) ? 1 : 0.5,
                                   }}
                                 />
                               ))}

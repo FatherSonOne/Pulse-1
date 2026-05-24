@@ -37,10 +37,12 @@ export const StudioFooter: React.FC = () => {
     progress,
     currentTime,
     duration,
+    playbackRate,
     isRecording,
     recordingSec,
     togglePlay,
     seek,
+    cyclePlaybackRate,
     cancelRecording,
     stopAndSendRecording,
   } = useRelayStudio();
@@ -123,7 +125,7 @@ export const StudioFooter: React.FC = () => {
       </div>
 
       <div className="pulse-studio-footer__actions">
-        <button type="button" className="pulse-studio-footer__speed" aria-label="Playback speed">1.0×</button>
+        <button type="button" onClick={cyclePlaybackRate} className="pulse-studio-footer__speed" aria-label={`Playback speed ${playbackRate}×, tap to change`}>{playbackRate}×</button>
         <button type="button" className="pulse-studio-footer__action pulse-studio-footer__action--ai" title="Pulse AI summary" aria-label="AI summary">
           <Sparkles className="w-4 h-4" />
         </button>

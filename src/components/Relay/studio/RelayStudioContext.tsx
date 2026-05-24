@@ -49,6 +49,10 @@ export interface RelayStudioState {
   currentTime: number;
   /** Seconds — real audio duration (0 until metadata loads). */
   duration: number;
+  /** Playback rate (0.75 / 1 / 1.25 / 1.5 / 2). Applies to the shared audio,
+   *  so the footer's speed control + any mode's per-message speed picker all
+   *  drive the same value. */
+  playbackRate: number;
 
   // ── recording ───────────────────────────────────────────────────────────
   isRecording: boolean;
@@ -68,6 +72,10 @@ export interface RelayStudioApi extends RelayStudioState {
   stop: () => void;
   /** Scrub to a 0→1 fraction of the current voice. */
   seek: (fraction: number) => void;
+  /** Set the shared playback rate; applies immediately to the audio element. */
+  setPlaybackRate: (rate: number) => void;
+  /** Cycle to the next preset rate (0.75 → 1 → 1.25 → 1.5 → 2 → 0.75). */
+  cyclePlaybackRate: () => void;
   /** Toggle the recording surface. Auto-pauses playback when starting. */
   toggleRecording: () => void;
   /** Cancel the active recording (no send). */
@@ -108,6 +116,7 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSec, setRecordingSec] = useState(0);
   const [railCollapsed, setRailCollapsed] = useState<boolean>(readInitialRailCollapsed);
+  const [playbackRate, setPlaybackRateState] = useState(1);
 
   // Single shared <audio>. Created once; lives for the provider's lifetime.
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -168,6 +177,11 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
   const nowPlayingRef = useRef<NowPlayingVoice | null>(null);
   nowPlayingRef.current = nowPlaying;
 
+  // playbackRate in a ref so the []-dep play() reads the current rate, not a
+  // stale capture.
+  const playbackRateRef = useRef(playbackRate);
+  playbackRateRef.current = playbackRate;
+
   const play = useCallback((v: NowPlayingVoice) => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -191,6 +205,7 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
     audio.pause();
     audio.src = resolveAudioUrl(v.audioUrl);
     audio.currentTime = 0;
+    audio.playbackRate = playbackRateRef.current;
 
     // Dual-read fallback: if the canonical relay URL errors (legacy asset
     // pre-cutover), retry once against the voxer bucket before giving up.
@@ -263,6 +278,21 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
 
   const toggleRail = useCallback(() => setRailCollapsed(c => !c), []);
 
+  const setPlaybackRate = useCallback((rate: number) => {
+    setPlaybackRateState(rate);
+    if (audioRef.current) audioRef.current.playbackRate = rate;
+  }, []);
+
+  const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5, 2];
+  const cyclePlaybackRate = useCallback(() => {
+    setPlaybackRateState(prev => {
+      const idx = PLAYBACK_RATES.indexOf(prev);
+      const next = PLAYBACK_RATES[(idx + 1) % PLAYBACK_RATES.length];
+      if (audioRef.current) audioRef.current.playbackRate = next;
+      return next;
+    });
+  }, []);
+
   // Derive progress from real currentTime / duration. Falls back to 0 before
   // metadata loads (duration === 0).
   const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0;
@@ -273,6 +303,7 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
     progress,
     currentTime,
     duration,
+    playbackRate,
     isRecording,
     recordingSec,
     railCollapsed,
@@ -280,13 +311,15 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
     togglePlay,
     stop,
     seek,
+    setPlaybackRate,
+    cyclePlaybackRate,
     toggleRecording,
     cancelRecording,
     stopAndSendRecording,
     toggleRail,
   }), [
-    nowPlaying, isPlaying, progress, currentTime, duration, isRecording, recordingSec, railCollapsed,
-    play, togglePlay, stop, seek, toggleRecording, cancelRecording, stopAndSendRecording, toggleRail,
+    nowPlaying, isPlaying, progress, currentTime, duration, playbackRate, isRecording, recordingSec, railCollapsed,
+    play, togglePlay, stop, seek, setPlaybackRate, cyclePlaybackRate, toggleRecording, cancelRecording, stopAndSendRecording, toggleRail,
   ]);
 
   return <RelayStudioContext.Provider value={value}>{children}</RelayStudioContext.Provider>;
