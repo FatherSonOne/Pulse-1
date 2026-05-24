@@ -455,6 +455,31 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
   }, [recordings, activeContactId]);
 
+  // Tier 3 (Path C): bucket the conversation into Today / Yesterday / Last week
+  // / older runs so the thread reads like the mock's day-grouped timeline.
+  // Recordings are already sorted ascending, so consecutive items share a label.
+  const groupedThreadRecordings = useMemo(() => {
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const today = startOfDay(new Date());
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    const weekAgo = new Date(today); weekAgo.setDate(today.getDate() - 6);
+    const labelFor = (ts: Date): string => {
+      const d = startOfDay(ts);
+      if (d.getTime() === today.getTime()) return 'Today';
+      if (d.getTime() === yesterday.getTime()) return 'Yesterday';
+      if (d >= weekAgo) return 'Last week';
+      return ts.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+    };
+    const groups: { label: string; items: Recording[] }[] = [];
+    for (const r of activeThreadRecordings) {
+      const label = labelFor(new Date(r.timestamp));
+      const last = groups[groups.length - 1];
+      if (last && last.label === label) last.items.push(r);
+      else groups.push({ label, items: [r] });
+    }
+    return groups;
+  }, [activeThreadRecordings]);
+
   const activeContact = pulseUsers.find(u => u.id === activeContactId);
 
   // ============================================
@@ -1301,7 +1326,16 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                 // PlaybackSpeedControl. Do this after the surface-migration
                 // API gap noted at the top of RelayVoiceMessage.tsx is
                 // filled. Migrate Direct first per the original plan.
-                activeThreadRecordings.map(recording => (
+                groupedThreadRecordings.map(group => (
+                  <React.Fragment key={group.label}>
+                    {/* Day separator — Today / Yesterday / Last week (Path C). */}
+                    <div className="flex items-center gap-3 my-3 px-1 select-none">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400 shrink-0">
+                        {group.label}
+                      </span>
+                      <span className="flex-1 h-px" style={{ background: 'var(--pulse-border)' }} aria-hidden="true" />
+                    </div>
+                    {group.items.map(recording => (
                   <div
                     key={recording.id}
                     id={`vox-msg-${recording.id}`}
@@ -1554,6 +1588,8 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       )}
                     </div>
                   </div>
+                    ))}
+                  </React.Fragment>
                 ))
               )}
               <div ref={messagesEndRef} />
