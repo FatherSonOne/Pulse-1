@@ -7,7 +7,6 @@ import {
   Loader2,
   X,
   RotateCcw,
-  Mic,
   Check
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
@@ -106,49 +105,39 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
     <div
       className="rounded-2xl overflow-hidden"
       style={{
-        background: isDarkMode ? '#0a0a0a' : '#ffffff',
-        border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'}`,
-        boxShadow: isDarkMode
-          ? '0 20px 40px rgba(0,0,0,0.6)'
-          : '0 20px 40px rgba(0,0,0,0.08)',
+        background: 'var(--pulse-surface)',
+        border: '1px solid var(--pulse-border)',
+        boxShadow: '0 8px 28px rgba(0,0,0,0.12)',
       }}
     >
-      {/* Preview Header */}
+      {/* Header — studio masthead: a coral record dot (sanctioned signal) + a
+          mono eyebrow + the duration. The old coral-gradient mic tile and the
+          modal-grade drop shadow are gone (Voice Studio style). */}
       <div
-        className="px-5 py-4 flex items-center justify-between"
-        style={{
-          background: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-          borderBottom: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
-        }}
+        className="px-5 py-3.5 flex items-center justify-between"
+        style={{ borderBottom: '1px solid var(--pulse-border)' }}
       >
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{
-              background: `linear-gradient(135deg, ${ROSE} 0%, #ec4899 100%)`,
-              boxShadow: `0 4px 12px rgba(244, 63, 94, 0.30)`,
-            }}
-          >
-            <Mic className="w-5 h-5 text-white" />
-          </div>
+        <div className="flex items-center gap-2.5">
+          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--pulse-rose)' }} aria-hidden="true" />
           <div>
-            <span className={`text-sm font-semibold ${textPrimary}`}>
-              Recording Preview
-            </span>
-            <div className={`text-xs ${textMuted}`}>
-              {formatDuration(recordingData.duration)} duration
+            <div className="font-mono text-[10px] uppercase tracking-[0.18em]" style={{ color: 'var(--pulse-ink-3)' }}>
+              New recording
+            </div>
+            <div className="text-sm font-semibold leading-tight mt-0.5" style={{ color: 'var(--pulse-ink)' }}>
+              {formatDuration(recordingData.duration)}
             </div>
           </div>
         </div>
         <button
           type="button"
           onClick={onCancel}
-          className={`p-2 rounded-xl transition-colors ${
+          className={`p-2 rounded-lg transition-colors ${
             isDarkMode
               ? 'hover:bg-[rgba(255,255,255,0.055)] text-[#b4b4b8]'
               : 'hover:bg-[#f2f2f2] text-[#52525b]'
           }`}
           title="Discard recording"
+          aria-label="Discard recording"
         >
           <X className="w-5 h-5" />
         </button>
@@ -157,16 +146,22 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
       {/* Audio Player */}
       <div className="p-5">
         <div className="flex items-center gap-4">
-          {/* Play Button — brand coral, no scale lift */}
+          {/* Play button — studio style: neutral at rest, coral while playing
+              (the active-state coral pattern shared with Inbox + the footer). */}
           <button
             type="button"
             onClick={handlePlayPause}
-            className="btn-brand-primary w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+            className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+            style={{
+              background: isPlaying ? 'var(--pulse-rose)' : 'var(--pulse-surface-raised)',
+              color: isPlaying ? '#ffffff' : 'var(--pulse-ink)',
+            }}
+            aria-label={isPlaying ? 'Pause preview' : 'Play preview'}
           >
             {isPlaying ? (
-              <Pause className="w-6 h-6 text-white" />
+              <Pause className="w-5 h-5" />
             ) : (
-              <Play className="w-6 h-6 text-white ml-0.5" />
+              <Play className="w-5 h-5 ml-0.5" />
             )}
           </button>
 
@@ -309,16 +304,9 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
               )}
             </div>
           ) : (
-            <div
-              className="p-4 rounded-xl text-center"
-              style={{
-                background: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
-              }}
-            >
-              <p className={`text-sm ${textMuted}`}>
-                Ready to send. Click send to deliver or re-record to try again.
-              </p>
-            </div>
+            <p className="text-center text-[13px]" style={{ color: 'var(--pulse-ink-3)' }}>
+              Ready to send — or re-record to try again.
+            </p>
           )}
         </div>
       )}
