@@ -57,6 +57,7 @@ import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { useRelayStudio } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
@@ -87,8 +88,9 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
 }) => {
   const [notes, setNotes] = useState<VoxNote[]>([]);
   const [selectedNote, setSelectedNote] = useState<VoxNote | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackProgress, setPlaybackProgress] = useState(0);
+  // Playback flows through the shared Voice Studio transport. Active-note
+  // state derives from studio.nowPlaying / studio.isPlaying / studio.progress.
+  const studio = useRelayStudio();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -104,7 +106,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   const [showTagInput, setShowTagInput] = useState(false);
   const [newTagText, setNewTagText] = useState('');
 
-  const audioRef = useRef<HTMLAudioElement>(null);
 
   // Phase 2: Selection Mode State
   const {
@@ -129,7 +130,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
 
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
-  const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed, applyToElement } = usePlaybackSpeed();
+  const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed } = usePlaybackSpeed();
   const emptyConfig = getEmptyStateConfig('vox_notes');
 
   // Use the recording hook for click-to-record with preview
@@ -322,12 +323,10 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     onShowHelp: () => setShowShortcutsHelp(true),
   }, true);
 
-  // Phase 6: Apply playback speed to audio elements
+  // Push the persisted speed preference into the shared studio audio.
   useEffect(() => {
-    if (audioRef.current) {
-      applyToElement(audioRef.current);
-    }
-  }, [globalPlaybackSpeed, applyToElement]);
+    studio.setPlaybackRate(globalPlaybackSpeed);
+  }, [globalPlaybackSpeed, studio]);
 
   // Save recording as a new note
   const handleSendRecording = async () => {
@@ -420,23 +419,29 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   };
 
   const handlePlayNote = () => {
-    if (!selectedNote || !audioRef.current) return;
-
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current.src = selectedNote.audioUrl;
-      audioRef.current.play();
-      setIsPlaying(true);
+    if (!selectedNote) return;
+    if (studio.nowPlaying?.id === selectedNote.id) {
+      studio.togglePlay();
+      return;
     }
+    studio.play({
+      id: selectedNote.id,
+      sender: selectedNote.title || 'Voice note',
+      dur: formatDuration(selectedNote.duration),
+      type: 'NOTE',
+      transcript: selectedNote.transcript ?? null,
+      source: 'notes',
+      audioUrl: selectedNote.audioUrl,
+    });
   };
 
   const handleSeek = (position: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = position * audioRef.current.duration;
-    }
+    studio.seek(position);
   };
+
+  // Selected-note playback state, derived from the shared studio transport.
+  const notePlaying = !!selectedNote && studio.nowPlaying?.id === selectedNote.id && studio.isPlaying;
+  const noteProgress = selectedNote && studio.nowPlaying?.id === selectedNote.id ? studio.progress : 0;
 
   const handleToggleFavorite = async (note: VoxNote) => {
     const updatedNote = { ...note, isFavorite: !note.isFavorite };
@@ -723,8 +728,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                 onClick={() => {
                   if (!isSelectionMode) {
                     setSelectedNote(note);
-                    setIsPlaying(false);
-                    setPlaybackProgress(0);
+                    studio.stop();
                     setShowMobileSidebar(false);
                   }
                 }}
@@ -738,8 +742,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                     e.preventDefault();
                     if (!isSelectionMode) {
                       setSelectedNote(note);
-                      setIsPlaying(false);
-                      setPlaybackProgress(0);
+                      studio.stop();
                       setShowMobileSidebar(false);
                     }
                   }
@@ -1013,9 +1016,9 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                   <button
                     onClick={handlePlayNote}
                     className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200 bg-rose-500 hover:bg-rose-600"
-                    aria-label={isPlaying ? 'Pause' : 'Play'}
+                    aria-label={notePlaying ? 'Pause' : 'Play'}
                   >
-                    {isPlaying ? (
+                    {notePlaying ? (
                       <Pause className="w-5 h-5 md:w-6 md:h-6 text-white" />
                     ) : (
                       <Play className="w-5 h-5 md:w-6 md:h-6 text-white ml-1" />
@@ -1025,8 +1028,8 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                     <VoxAudioVisualizer
                       analyser={null}
                       isActive={false}
-                      isPlaying={isPlaying}
-                      playbackProgress={playbackProgress}
+                      isPlaying={notePlaying}
+                      playbackProgress={noteProgress}
                       mode="waveform"
                       color={MODE_COLOR}
                       height={56}
@@ -1039,7 +1042,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                     speed={globalPlaybackSpeed}
                     onSpeedChange={(newSpeed) => {
                       setGlobalPlaybackSpeed(newSpeed);
-                      if (audioRef.current) audioRef.current.playbackRate = newSpeed;
+                      studio.setPlaybackRate(newSpeed);
                     }}
                     mode="compact"
                     isDarkMode={isDarkMode}
@@ -1222,18 +1225,8 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         </div>
       )}
 
-      {/* Hidden audio element */}
-      <audio
-        ref={audioRef}
-        onTimeUpdate={(e) => {
-          const audio = e.target as HTMLAudioElement;
-          setPlaybackProgress(audio.currentTime / audio.duration);
-        }}
-        onEnded={() => {
-          setIsPlaying(false);
-          setPlaybackProgress(0);
-        }}
-      />
+      {/* Audio playback is owned by the shared RelayStudioProvider (single
+          <audio>) — no local element here. */}
 
       {/* Link Modal — single-line list pattern; description rows + coral icon tiles were tautological */}
       {showLinkModal && (
