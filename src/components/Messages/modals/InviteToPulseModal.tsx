@@ -175,7 +175,7 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                       <span>Smart calendar</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                      <Mic className="text-[#a1a1aa]" />
+                      <Mic className="text-[var(--pulse-ink-3)]" />
                       <span>Meeting transcription</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">

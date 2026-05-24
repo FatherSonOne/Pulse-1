@@ -224,8 +224,8 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                     key={emoji}
                     className={`reaction-badge px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-colors ${
                       users.includes(currentUserId)
-                        ? 'bg-rose-500/20 border border-rose-500/30 text-[#fb7185]'
-                        : 'bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] text-[#94a3b8] hover:bg-[rgba(255,255,255,0.06)]'
+                        ? 'bg-rose-500/20 border border-rose-500/30 text-[var(--pulse-rose-bright)]'
+                        : 'bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] text-[var(--pulse-ink-2)] hover:bg-[rgba(255,255,255,0.06)]'
                     }`}
                     onClick={() => onAddReaction?.(message.id, emoji)}
                     aria-label={`${emoji} reaction (${users.length})`}

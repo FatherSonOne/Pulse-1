@@ -116,7 +116,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
       {/* Header */}
       <div className="px-4 py-4 border-b border-white/[0.07] bg-[#0f172a] flex items-center justify-between">
         <h2 className="text-[#e2e8f0] font-bold flex items-center gap-2">
-          <Hash className="text-[#fb7185]" />
+          <Hash className="text-[var(--pulse-rose-bright)]" />
           Pulse Messages
         </h2>
         <button
@@ -291,7 +291,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
       <div className="px-4 py-3 border-t border-white/[0.07]">
         <button
           onClick={() => setShowNewChannel(true)}
-          className="w-full py-2 text-sm text-[#94a3b8] hover:text-[var(--pulse-rose-bright)] hover:bg-rose-500/[0.08] rounded-lg transition flex items-center justify-center gap-2"
+          className="w-full py-2 text-sm text-[var(--pulse-ink-2)] hover:text-[var(--pulse-rose-bright)] hover:bg-rose-500/[0.08] rounded-lg transition flex items-center justify-center gap-2"
         >
           <Plus className="text-xs" />
           Add Channel
