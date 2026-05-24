@@ -30,7 +30,16 @@ function fmtTime(totalSec: number): string {
   return `${m}:${s}`;
 }
 
-export const StudioFooter: React.FC = () => {
+export interface StudioFooterProps {
+  /** Suppress the passive idle hint row. Source views that own an in-pane
+   *  record block (Direct / Channel / Broadcast / Notes) pass this so the
+   *  footer is a pure transport — it surfaces only while a voice is playing
+   *  (or recording) and never shows a "hit space to record" hint redundant
+   *  with the in-pane recorder. Inbox (no in-pane recorder) keeps the hint. */
+  suppressIdle?: boolean;
+}
+
+export const StudioFooter: React.FC<StudioFooterProps> = ({ suppressIdle = false }) => {
   const {
     nowPlaying,
     isPlaying,
@@ -52,6 +61,7 @@ export const StudioFooter: React.FC = () => {
   }
 
   if (!nowPlaying) {
+    if (suppressIdle) return null;
     return (
       <div className="pulse-studio-footer pulse-studio-footer--idle">
         <span className="pulse-studio-footer__idle-dot" aria-hidden="true" />

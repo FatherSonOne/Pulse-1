@@ -285,23 +285,31 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
               )}
             </div>
 
-            {/* Persistent player + record affordance — hidden in Live, where
-                you're in a synchronous WebRTC room (VoiceRooms owns its own
-                controls) and the async playback / compose chrome would just
-                be noise. Entering Live also stops any playing voice via
-                <StudioLiveSync>. */}
-            {view !== 'live' && (
-              <>
-                <StudioFooter />
-                {/* Record affordance routes to the existing composer modal —
-                    keeps real audio capture working without rewiring
-                    useVoxRecording. forceIdleIcon keeps it on the Mic icon
-                    since studio.isRecording isn't driven yet. */}
-                <FloatingMic
-                  onClick={() => openComposer(null)}
-                  forceIdleIcon
-                />
-              </>
+            {/* Persistent transport — hidden in Live, where you're in a
+                synchronous WebRTC room (VoiceRooms owns its own controls) and
+                async playback chrome would just be noise. Entering Live also
+                stops any playing voice via <StudioLiveSync>.
+
+                Tier 2 dedupe (fallback): the five source views own an in-pane
+                record block (VoxRecordArea), so outside Inbox the footer runs
+                as a PURE TRANSPORT (suppressIdle) — it appears only while a
+                voice plays/records and never shows a "hit space to record"
+                hint redundant with the in-pane recorder. */}
+            {view !== 'live' && <StudioFooter suppressIdle={view !== 'triage'} />}
+
+            {/* Record affordance — Inbox only. The other source views record
+                through their own contextual in-pane block; floating a mic over
+                them too would stack two record affordances (see the Notes /
+                Broadcast screenshots). Inbox has no in-pane recorder, so it's
+                the cross-cutting quick-capture surface. Routes to the composer
+                modal; forceIdleIcon keeps the Mic glyph since studio.isRecording
+                isn't driven yet. (Full unification — real capture into the
+                footer's RECORDING surface — is the Tier 2 rewire.) */}
+            {view === 'triage' && (
+              <FloatingMic
+                onClick={() => openComposer(null)}
+                forceIdleIcon
+              />
             )}
           </div>
         </div>

@@ -42,15 +42,6 @@ const VoxRecordArea: React.FC<VoxRecordAreaProps> = ({
   recordingState,
   children,
 }) => {
-  // Theme classes — translucent surfaces over the true-black canvas in dark
-  // mode (was opaque grey, the Slack/Teams reflex).
-  const tc = {
-    cardBg: isDarkMode
-      ? 'bg-white/[0.03]'
-      : 'bg-white',
-    border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-gray-200/60',
-  };
-
   // Convert hex color to RGB for opacity
   const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -77,13 +68,14 @@ const VoxRecordArea: React.FC<VoxRecordAreaProps> = ({
 
   return (
     <div
-      className={`relative p-6 rounded-2xl border ${tc.border} ${tc.cardBg} transition-all duration-300`}
+      className="relative p-6 rounded-2xl border transition-all duration-300"
       style={{
+        borderColor: 'var(--pulse-border)',
+        // Resting surface consumes the studio token; while recording the
+        // coral glow takes over (record is a sanctioned coral signal).
         background: isRecording
-          ? isDarkMode
-            ? `radial-gradient(circle at center, ${glowColor} 0%, transparent 70%)`
-            : `radial-gradient(circle at center, ${glowColor} 0%, transparent 70%)`
-          : undefined,
+          ? `radial-gradient(circle at center, ${glowColor} 0%, transparent 70%)`
+          : 'var(--pulse-surface)',
       }}
     >
       {/* Optional Custom Controls (Visualizers, Playback, etc.) */}
