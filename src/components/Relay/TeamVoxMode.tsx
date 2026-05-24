@@ -58,7 +58,7 @@ import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
-import { useRelayStudio } from './studio';
+import { useRelayStudio, useRelayModeRecorder } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
@@ -175,6 +175,17 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     onRecordingComplete: (_data) => {
       // Recording complete - ready for preview
     },
+  });
+
+  // Tier 2 (unify trigger): the studio shell's FloatingMic + footer RECORDING
+  // surface drive this channel's capture. Enabled only when a channel is
+  // selected (the send target); the in-pane record button is retired.
+  useRelayModeRecorder({
+    start: startRecording,
+    stop: stopRecording,
+    cancel: cancelRecording,
+    recording: recordingState === 'recording',
+    enabled: !!selectedChannel,
   });
 
   // Phase 5: AI Handler Functions (defined before keyboard shortcuts to avoid TDZ)
@@ -1414,21 +1425,14 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   />
                 </div>
               ) : (
-                <VoxRecordArea
-                  modeColor={MODE_COLOR}
-                  isDarkMode={isDarkMode}
-                  isRecording={recordingState === 'recording'}
-                  isPreviewing={recordingState === 'preview'}
-                  recordingMode={recordingMode}
-                  onModeToggle={() => setRecordingMode(recordingMode === 'hold' ? 'tap' : 'hold')}
-                  onPointerDown={handlePointerDown}
-                  onPointerUp={handlePointerUp}
-                  onToggleRecording={handleToggleRecording}
-                  recordingDuration={recordingDuration}
-                  recordingState={recordingState}
-                >
+                /* Compose bar — the in-pane record button is retired (Tier 2:
+                   the FloatingMic + StudioFooter RECORDING surface drive
+                   capture). The channel-specific composition controls (message
+                   type + mention) stay; they apply when the recording is sent
+                   from the preview. */
+                <div className={`px-4 md:px-6 py-3 border-t ${tc.border} ${tc.panelBg}`}>
                   {/* Message Type Selector */}
-                  <div className="flex items-center gap-2 mb-3 flex-wrap justify-center">
+                  <div className="flex items-center gap-2 flex-wrap justify-center">
                     <span className={`text-xs ${tc.textMuted}`}>Message type:</span>
                     {(['normal', 'standup', 'announcement'] as const).map((type) => {
                       const tooltips = {
@@ -1455,33 +1459,16 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                         </button>
                       );
                     })}
-                  </div>
-
-                  {/* Mention Button */}
-                  <div className="flex items-center gap-4 mb-4 justify-center">
                     <button
                       onClick={() => setShowMentionPicker(!showMentionPicker)}
-                      className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
+                      className={`ml-1 p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
                       aria-label="Mention someone"
+                      title="Mention someone"
                     >
                       <AtSign className="w-5 h-5" />
                     </button>
                   </div>
-
-                  {/* Live Waveform */}
-                  {recordingState === 'recording' && (
-                    <div className="w-full max-w-md mx-auto mt-4">
-                      <VoxAudioVisualizer
-                        analyser={analyser}
-                        isActive={true}
-                        mode="waveform"
-                        color={MODE_COLOR}
-                        height={48}
-                        isDarkMode={isDarkMode}
-                      />
-                    </div>
-                  )}
-                </VoxRecordArea>
+                </div>
               )}
             </>
           ) : (
