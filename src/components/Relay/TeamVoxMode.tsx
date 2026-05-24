@@ -1064,7 +1064,12 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                             </div>
                           )}
 
-                          <div className={`group rounded-xl p-4 ${tc.cardBg} border ${tc.border} ${getMessageTypeStyle(message.messageType)} relative`}>
+                          <div
+                            className={`group rounded-xl p-4 ${tc.cardBg} border ${tc.border} ${getMessageTypeStyle(message.messageType)} relative transition-shadow`}
+                            style={isMsgActive(message.id)
+                              ? { boxShadow: '0 0 0 1px var(--pulse-rose), 0 8px 28px var(--pulse-rose-glow)', borderColor: 'transparent' }
+                              : undefined}
+                          >
                             {/* Phase 2: Selection Checkbox */}
                             {isSelectionMode && (
                               <button

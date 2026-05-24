@@ -728,6 +728,9 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                 className={`w-full p-4 text-left border-b ${tc.border} transition-all relative cursor-pointer ${
                   selectedNote?.id === note.id ? tc.activeBg : tc.hoverBg
                 }`}
+                style={studio.nowPlaying?.id === note.id && studio.isPlaying
+                  ? { background: 'var(--pulse-rose-softer)' }
+                  : undefined}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
@@ -789,6 +792,12 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                       <span className={`font-medium truncate ${tc.text}`}>
                         {note.title || 'Untitled Note'}
                       </span>
+                      {studio.nowPlaying?.id === note.id && studio.isPlaying && (
+                        <span className="inline-flex items-center gap-1 shrink-0 text-[10px] font-mono uppercase tracking-[0.1em] text-rose-500">
+                          <span className="w-1 h-1 rounded-full bg-rose-500 pulse-dot-anim" />
+                          Playing
+                        </span>
+                      )}
                       {note.isFavorite && (
                         <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" />
                       )}

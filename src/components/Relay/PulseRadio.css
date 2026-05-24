@@ -333,15 +333,23 @@
   padding: 14px 16px;
   background: var(--pulse-surface);
   border: 1px solid var(--pulse-border);
-  border-radius: 12px;
-  transition: background var(--pulse-duration) var(--pulse-ease);
+  border-radius: 14px;
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              box-shadow var(--pulse-duration) var(--pulse-ease),
+              border-color var(--pulse-duration) var(--pulse-ease);
 }
 
 .pulse-radio-broadcast:hover { background: var(--pulse-surface-raised); }
 
+/* Now-playing — coral ring + glow, the shared studio active treatment. */
 .pulse-radio-broadcast.playing {
   background: var(--pulse-rose-softer);
-  border-color: var(--pulse-rose);
+  border-color: transparent;
+  box-shadow: 0 0 0 1px var(--pulse-rose), 0 8px 28px var(--pulse-rose-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-radio-broadcast { transition: none; }
 }
 
 .pulse-radio-play-btn {
