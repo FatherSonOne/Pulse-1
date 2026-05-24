@@ -534,10 +534,13 @@
    COMPONENT-SPECIFIC CLASSES
    ============================================ */
 
-/* Message Input Container */
+/* Message Input Container — theme-aware via canonical pulse tokens.
+   Previously hardcoded #18181B / #27272A painted the composer dark in
+   both themes, causing #737373 on #1c1c1c = 3.59:1 contrast hits in
+   light mode (4 axe failures on the #90 verification pass). */
 .message-input-container {
-  background: #18181B;
-  border: 1px solid #27272A;
+  background: var(--pulse-canvas);
+  border: 1px solid var(--pulse-border);
   border-radius: var(--ai-radius-lg);
   box-shadow: var(--ai-shadow-md);
   transition: all var(--animation-base);
@@ -548,14 +551,15 @@
   box-shadow: var(--ai-glow-shadow), var(--ai-shadow-lg);
 }
 
-/* AI Composer Overlay */
+/* AI Composer Overlay — sits above the input, slight elevation via
+   canvas-soft so it reads as a layered surface in both themes. */
 .ai-composer-overlay {
   position: absolute;
   bottom: calc(100% + var(--ai-overlay-offset));
   left: 0;
   right: 0;
-  background: #18181B;
-  border: 1px solid var(--ai-border);
+  background: var(--pulse-canvas-soft);
+  border: 1px solid var(--pulse-border);
   border-radius: var(--ai-radius-lg);
   padding: var(--space-3);
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3),
