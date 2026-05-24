@@ -68,6 +68,7 @@ import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { useRelayStudio } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
@@ -97,14 +98,14 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const [channels, setChannels] = useState<PulseChannel[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<PulseChannel | null>(null);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playingBroadcastId, setPlayingBroadcastId] = useState<string | null>(null);
   const [showNewChannel, setShowNewChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelDesc, setNewChannelDesc] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [broadcastTitle, setBroadcastTitle] = useState('');
-  const [playbackProgress, setPlaybackProgress] = useState(0);
+  // Playback flows through the shared Voice Studio transport. Active-broadcast
+  // state derives from studio.nowPlaying / studio.isPlaying / studio.progress.
+  const studio = useRelayStudio();
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [showChannelSettings, setShowChannelSettings] = useState(false);
   const [showNotifyUsers, setShowNotifyUsers] = useState(false);
@@ -140,7 +141,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
 
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
-  const { playbackSpeed, setPlaybackSpeed, applyToElement } = usePlaybackSpeed();
+  const { playbackSpeed, setPlaybackSpeed } = usePlaybackSpeed();
 
   // Message Menu & Download States
   const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
@@ -149,7 +150,6 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
   const emptyConfig = getEmptyStateConfig('pulse_radio');
 
-  const audioRef = useRef<HTMLAudioElement>(null);
 
   const {
     state: recordingState,
@@ -229,12 +229,10 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
     onShowHelp: () => setShowShortcutsHelp(true),
   }, true);
 
-  // Phase 6: Apply playback speed to audio
+  // Push the persisted speed preference into the shared studio audio.
   useEffect(() => {
-    if (audioRef.current) {
-      applyToElement(audioRef.current);
-    }
-  }, [playbackSpeed, applyToElement]);
+    studio.setPlaybackRate(playbackSpeed);
+  }, [playbackSpeed, studio]);
 
   // ============================================
   // HANDLERS
@@ -513,22 +511,19 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   };
 
   const handlePlayBroadcast = (broadcast: Broadcast) => {
-    if (playingBroadcastId === broadcast.id) {
-      if (isPlaying) {
-        audioRef.current?.pause();
-        setIsPlaying(false);
-      } else {
-        audioRef.current?.play();
-        setIsPlaying(true);
-      }
-    } else {
-      if (audioRef.current) {
-        audioRef.current.src = broadcast.audioUrl;
-        audioRef.current.play();
-        setPlayingBroadcastId(broadcast.id);
-        setIsPlaying(true);
-      }
+    if (studio.nowPlaying?.id === broadcast.id) {
+      studio.togglePlay();
+      return;
     }
+    studio.play({
+      id: broadcast.id,
+      sender: broadcast.title || 'Broadcast',
+      dur: formatDuration(broadcast.duration),
+      type: 'BROADCAST',
+      transcript: broadcast.transcript ?? null,
+      source: 'broadcast',
+      audioUrl: broadcast.audioUrl,
+    });
   };
 
   const handleArchiveBroadcast = async (broadcast: any) => {
@@ -583,20 +578,14 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   // RENDER
   // ============================================
 
+  // Playback active-state helpers — derived from the shared studio transport.
+  const isBroadcastActive = (id: string) => studio.nowPlaying?.id === id;
+  const isBroadcastPlaying = (id: string) => isBroadcastActive(id) && studio.isPlaying;
+
   return (
     <div className={`pulse-radio ${isDarkMode ? 'dark' : 'light'}`}>
-      {/* Hidden audio element */}
-      <audio
-        ref={audioRef}
-        onTimeUpdate={(e) => {
-          const audio = e.target as HTMLAudioElement;
-          setPlaybackProgress(audio.currentTime / audio.duration);
-        }}
-        onEnded={() => {
-          setIsPlaying(false);
-          setPlaybackProgress(0);
-        }}
-      />
+      {/* Audio playback is owned by the shared RelayStudioProvider (single
+          <audio>) — no local element here. */}
 
       {/* Header */}
       <VoxModeToolbar
@@ -834,7 +823,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                       gap noted at the top of RelayVoiceMessage.tsx is filled. */}
                   {broadcasts.map((broadcast) => {
                     const isLiked = likedBroadcasts.has(broadcast.id);
-                    const isCurrentlyPlaying = playingBroadcastId === broadcast.id && isPlaying;
+                    const isCurrentlyPlaying = isBroadcastPlaying(broadcast.id);
 
                     return (
                       <article key={broadcast.id} className={`pulse-radio-broadcast ${isCurrentlyPlaying ? 'playing' : ''}`} style={{position: 'relative'}}>
@@ -987,13 +976,13 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                           </div>
                         </div>
 
-                        {playingBroadcastId === broadcast.id && (
+                        {isBroadcastActive(broadcast.id) && (
                           <div className="pulse-radio-playback-visualizer">
                             <VoxAudioVisualizer
                               analyser={null}
                               isActive={false}
-                              isPlaying={isPlaying}
-                              playbackProgress={playbackProgress}
+                              isPlaying={studio.isPlaying}
+                              playbackProgress={studio.progress}
                               duration={broadcast.duration}
                               mode="waveform"
                               color={MODE_COLOR}
@@ -1333,9 +1322,9 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
               <button
                 type="button"
                 onClick={() => handlePlayBroadcast(activeBroadcastRoom)}
-                className={`pulse-radio-mini-play ${playingBroadcastId === activeBroadcastRoom.id && isPlaying ? 'playing' : ''}`}
+                className={`pulse-radio-mini-play ${isBroadcastPlaying(activeBroadcastRoom.id) ? 'playing' : ''}`}
               >
-                {playingBroadcastId === activeBroadcastRoom.id && isPlaying ? (
+                {isBroadcastPlaying(activeBroadcastRoom.id) ? (
                   <Pause className="w-5 h-5" />
                 ) : (
                   <Play className="w-5 h-5 ml-0.5" />
