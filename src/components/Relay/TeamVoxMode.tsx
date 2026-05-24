@@ -660,10 +660,11 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   const getMessageTypeStyle = (type: string) => {
     switch (type) {
       case 'standup':
-        // Full hairline + tinted bg; status carried by the existing "Standup" pill.
+        // Neutral hairline + faint surface; status is carried by the existing
+        // "Standup" pill, so coral here was decorative wallpaper (coral budget).
         return isDarkMode
-          ? 'border-[#f43f5e]/40 bg-[#f43f5e]/10'
-          : 'border-[#f43f5e]/40 bg-[#f43f5e]/5';
+          ? 'border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.03)]'
+          : 'border-zinc-200 bg-zinc-50';
       case 'announcement':
         // Full hairline + tinted bg; status carried by the existing "Announcement" pill.
         return isDarkMode
@@ -833,8 +834,8 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       <VoxModeToolbar
         onBack={onBack}
         modeIcon={<Users className="w-5 h-5" />}
-        modeTitle={selectedChannel?.name || 'Team Vox'}
-        modeSubtitle="Workspace Voice Channels"
+        eyebrow={selectedWorkspace ? `CHANNEL · ${selectedWorkspace.name.toUpperCase()}` : 'CHANNELS'}
+        modeTitle={selectedChannel?.name || 'Channels'}
         accentColor="#f43f5e"
         isDarkMode={isDarkMode}
         showAI={!!(selectedChannel)}
