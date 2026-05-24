@@ -19,6 +19,9 @@ test('relay path-c screenshot tour', async ({ page }) => {
   test.setTimeout(180_000);
   if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
 
+  // Wide viewport so the app nav + SourcesRail + a mode's md/lg side columns
+  // (Channel channels-list + members rail) all have room to render.
+  await page.setViewportSize({ width: 1600, height: 900 });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 
   // Prove auth: WAIT for the left app sidebar to render past the
@@ -84,6 +87,32 @@ test('relay path-c screenshot tour', async ({ page }) => {
   }
 
   expect(authed).toBe(true);
+});
+
+test('channel members rail', async ({ page }) => {
+  test.setTimeout(120_000);
+  if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  const relayNav = page.getByRole('button', { name: 'Relay', exact: true }).first();
+  await relayNav.waitFor({ state: 'visible', timeout: 90_000 });
+  await relayNav.click();
+  await page.getByText('Channels', { exact: true }).first().click();
+
+  // Wait for the workspace/channel data to load + auto-select (async from
+  // Supabase; racy). Poll up to ~20s for the "Select a channel" empty state to
+  // clear (i.e. a channel became active), then try a channel button as backup.
+  for (let i = 0; i < 10; i++) {
+    await page.waitForTimeout(2000);
+    const empty = await page.getByText('Select a channel', { exact: false }).isVisible().catch(() => false);
+    if (!empty) break;
+    const ch = page.locator('button', { hasText: 'General' }).first();
+    if (await ch.isVisible().catch(() => false)) { await ch.click().catch(() => {}); }
+  }
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${OUT}/channel-rail.png` });
+  console.log('[verify] captured channel-rail');
 });
 
 test('direct conversation day-grouping', async ({ page }) => {
