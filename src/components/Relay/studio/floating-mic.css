@@ -1,0 +1,59 @@
+/* Floating mic — absolute-positioned record affordance. Lives in the
+   bottom-right of the Relay pane, above the StudioFooter visually but
+   outside its layout flow. Two states swap icon, color, and halo. */
+
+.pulse-floating-mic {
+  position: absolute;
+  bottom: 88px;
+  right: 24px;
+  z-index: 20;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: background-color 180ms ease, transform 180ms ease;
+}
+.pulse-floating-mic:focus-visible {
+  outline: 3px solid var(--pulse-rose);
+  outline-offset: 3px;
+}
+.pulse-floating-mic:active {
+  transform: scale(0.96);
+}
+
+/* Idle — rose surface, halo ring telegraphs "press to record". */
+.pulse-floating-mic--idle {
+  background: var(--pulse-rose);
+  box-shadow: 0 0 0 1px var(--pulse-rose), 0 4px 28px var(--pulse-rose-glow);
+  animation: pulseRing 1.6s ease-out infinite;
+}
+.pulse-floating-mic--idle:hover {
+  transform: scale(1.04);
+}
+
+/* Recording — red surface, no halo (button is already the only "what's
+   happening" affordance — adding ring noise would compete with the footer). */
+.pulse-floating-mic--recording {
+  background: #ef4444;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+}
+.pulse-floating-mic--recording:hover {
+  background: #dc2626;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-floating-mic--idle {
+    animation: none;
+  }
+  .pulse-floating-mic {
+    transition: none;
+  }
+  .pulse-floating-mic:active {
+    transform: none;
+  }
+}

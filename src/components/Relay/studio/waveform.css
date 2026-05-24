@@ -1,0 +1,59 @@
+/* Waveform — primitive bars + recording animation.
+   Color is inherited via currentColor so consumers theme by wrapping in a
+   span with `color: var(--pulse-rose)` / `var(--pulse-ink-2)` / etc. */
+
+.pulse-wf {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.pulse-wf > i {
+  display: block;
+  width: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+.pulse-wf.pulse-wf--tall > i {
+  width: 3px;
+  opacity: 0.75;
+}
+
+/* Live recording — animated bars that pulse independently. Only used by the
+   StudioFooter's recording state. Frequency stagger comes from per-bar
+   animation-delay, set inline by the renderer. */
+@keyframes pulseWaveLive {
+  0%, 100% { transform: scaleY(0.3); }
+  50%      { transform: scaleY(1); }
+}
+.pulse-wf-live-bar {
+  display: block;
+  border-radius: 1px;
+  transform-origin: center;
+  animation: pulseWaveLive 0.9s ease-in-out infinite;
+}
+
+/* Pulsing dot for RECORDING / LIVE / NOW-PLAYING badges. */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.85); }
+}
+.pulse-dot-anim {
+  animation: pulseDot 1.4s ease-in-out infinite;
+}
+
+/* Ring expansion around the floating mic — telegraphs "press to record". */
+@keyframes pulseRing {
+  0%   { box-shadow: 0 0 0 0 var(--pulse-rose-glow); }
+  100% { box-shadow: 0 0 0 14px transparent; }
+}
+.pulse-ring-anim {
+  animation: pulseRing 1.6s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-wf-live-bar,
+  .pulse-dot-anim,
+  .pulse-ring-anim {
+    animation: none;
+  }
+}

@@ -1,0 +1,223 @@
+/* Studio footer — persistent player at the bottom of the Relay pane. */
+
+.pulse-studio-footer {
+  background: var(--pulse-canvas-soft);
+  border-top: 1px solid var(--pulse-border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+/* ─── Idle state ─── */
+.pulse-studio-footer--idle {
+  padding: 14px 24px;
+  gap: 12px;
+}
+.pulse-studio-footer__idle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pulse-ink-3);
+  flex-shrink: 0;
+}
+.pulse-studio-footer__idle-text {
+  font-size: 12px;
+  color: var(--pulse-ink-3);
+}
+
+/* ─── Playing state ─── */
+.pulse-studio-footer__play {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--pulse-rose);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px var(--pulse-rose), 0 4px 24px var(--pulse-rose-glow);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pulse-studio-footer__play:hover { transform: scale(1.04); }
+.pulse-studio-footer__play:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 2px;
+}
+
+.pulse-studio-footer__center {
+  flex: 1;
+  min-width: 0;
+}
+.pulse-studio-footer__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.pulse-studio-footer__sender {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pulse-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.pulse-studio-footer__type {
+  font-family: var(--pulse-font-mono, monospace);
+  font-size: 10px;
+  color: var(--pulse-ink-3);
+  letter-spacing: 0.18em;
+}
+.pulse-studio-footer__playing-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--pulse-font-mono, monospace);
+  font-size: 10px;
+  color: var(--pulse-rose);
+  letter-spacing: 0.12em;
+}
+.pulse-studio-footer__playing-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--pulse-rose);
+}
+.pulse-studio-footer__time {
+  margin-left: auto;
+  font-family: var(--pulse-font-mono, monospace);
+  font-size: 10px;
+  color: var(--pulse-ink-3);
+}
+
+.pulse-studio-footer__wave-wrap {
+  position: relative;
+  margin-top: 6px;
+}
+.pulse-studio-footer__playhead {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1px;
+  background: var(--pulse-rose);
+  pointer-events: none;
+}
+
+.pulse-studio-footer__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.pulse-studio-footer__speed {
+  padding: 4px 8px;
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink-2);
+  border: none;
+  border-radius: 6px;
+  font-family: var(--pulse-font-mono, monospace);
+  font-size: 10px;
+  cursor: pointer;
+}
+.pulse-studio-footer__action {
+  padding: 8px;
+  background: transparent;
+  color: var(--pulse-ink-2);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.pulse-studio-footer__action:hover {
+  background: var(--pulse-surface-raised);
+}
+.pulse-studio-footer__action--ai {
+  /* AI button picks up coral when something's playing — signals "summarize this voice". */
+  color: var(--pulse-coral-fg, var(--pulse-rose));
+}
+
+/* ─── Recording state ─── */
+.pulse-studio-footer--recording {
+  border-top: 2px solid #ef4444;
+  padding: 16px 24px;
+  position: relative;
+  z-index: 20;
+}
+.pulse-studio-footer__rec-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--pulse-font-mono, monospace);
+  font-size: 11px;
+  color: #ef4444;
+  letter-spacing: 0.18em;
+  flex-shrink: 0;
+}
+.pulse-studio-footer__rec-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+.pulse-studio-footer__rec-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.pulse-studio-footer__rec-time {
+  font-family: var(--pulse-font-mono, monospace);
+  font-size: 16px;
+  color: #ef4444;
+  font-variant-numeric: tabular-nums;
+}
+.pulse-studio-footer__rec-wave {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 1;
+  height: 28px;
+}
+.pulse-studio-footer__rec-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.pulse-studio-footer__rec-cancel {
+  padding: 6px 12px;
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink-2);
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.pulse-studio-footer__rec-stop {
+  padding: 6px 16px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pulse-studio-footer__rec-stop:hover { background: #dc2626; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-studio-footer__play {
+    transition: none;
+  }
+}
