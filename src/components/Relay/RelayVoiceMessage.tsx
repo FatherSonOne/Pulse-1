@@ -70,7 +70,8 @@ export interface RelayVoiceMessageProps {
   // Hooks
   onStar?: () => void;
   onBookmark?: () => void;
-  onMore?: () => void;
+  /** Receives the click event so the surface can anchor its own menu. */
+  onMore?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onReply?: () => void;
   onReact?: () => void;
   onTranscriptClick?: () => void;
@@ -253,6 +254,12 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
             <div className={`px-1 mt-1 ${isMe ? 'self-end' : 'self-start'}`}>{reactionsDisplay}</div>
           )}
 
+          {/* Footer extras — always-visible per-message controls (speed,
+              chapters, tags, linked-items). */}
+          {footerExtras && (
+            <div className={`px-1 mt-1 ${isMe ? 'self-end' : 'self-start'}`}>{footerExtras}</div>
+          )}
+
           {/* Action row — revealed on hover/focus by the parent's `group` */}
           <div className={`flex items-center gap-0.5 px-1 mt-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity ${isMe ? 'flex-row-reverse' : ''}`}>
             {onStar && (
@@ -313,7 +320,6 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
                 <MoreVertical className="w-3.5 h-3.5" />
               </button>
             )}
-            {footerExtras}
           </div>
         </div>
       </div>

@@ -82,6 +82,7 @@ import {
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { RelayVoiceMessage, type RelayVoiceMessageProps } from './RelayVoiceMessage';
 import { useRelayStudio, useRelayModeRecorder } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
@@ -1342,11 +1343,36 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                   <div
                     key={recording.id}
                     id={`vox-msg-${recording.id}`}
-                    className={`classic-message ${recording.sender === 'me' ? 'sent' : 'received'} ${isItemActive(recording.id) ? 'studio-active' : ''}`}
+                    className={`group relative flex mb-3 ${recording.sender === 'me' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className="classic-message-content">
-                      {/* Selection mode checkbox */}
-                      {isSelectionMode && (
+                    <RelayVoiceMessage
+                      id={recording.id}
+                      audioUrl={recording.url}
+                      duration={recording.duration}
+                      timestamp={recording.timestamp}
+                      sender={recording.sender === 'me' ? 'me' : 'other'}
+                      senderName={recording.sender === 'me' ? 'You' : (activeContact?.displayName || activeContact?.handle || 'Contact')}
+                      isPlaying={isItemPlaying(recording.id)}
+                      onPlay={() => playRecording(recording)}
+                      onPause={pausePlayback}
+                      isActive={isItemActive(recording.id)}
+                      progress={studio.progress}
+                      transcript={recording.transcription || undefined}
+                      status={recording.status as RelayVoiceMessageProps['status']}
+                      starred={recording.starred}
+                      bookmarked={recording.bookmarked}
+                      waveformSeed={recording.id}
+                      isDarkMode={isDarkMode}
+                      onStar={() => toggleStar(recording.id)}
+                      onBookmark={() => toggleBookmark(recording.id)}
+                      onReply={() => setReplyContext(recording)}
+                      onReact={() => setShowReactionPicker(showReactionPicker === recording.id ? null : recording.id)}
+                      onMore={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setMenuAnchorRect(rect);
+                        setShowMessageMenu(showMessageMenu === recording.id ? null : recording.id);
+                      }}
+                      selectionCheckbox={isSelectionMode ? (
                         <button
                           type="button"
                           onClick={(e) => {
@@ -1365,29 +1391,23 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                             };
                             toggleSelection(selectionItem);
                           }}
-                          className={`absolute top-3 ${recording.sender === 'me' ? 'left-3' : 'right-3'} w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
+                          className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-all ${
                             isSelected(recording.id)
                               ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
                               : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
                           }`}
-                          style={{
-                            boxShadow: isSelected(recording.id)
-                              ? '0 4px 12px rgba(244, 63, 94, 0.4)'
-                              : '0 2px 8px rgba(0, 0, 0, 0.2)',
-                          }}
+                          aria-label={isSelected(recording.id) ? 'Deselect message' : 'Select message'}
                         >
-                          {isSelected(recording.id) && <Check className="w-5 h-5 text-white font-bold" />}
+                          {isSelected(recording.id) && <Check className="w-4 h-4 text-white" />}
                         </button>
-                      )}
-
-                      {/* Reply-to context indicator */}
-                      {recording.replyToId && (() => {
+                      ) : undefined}
+                      replyToContext={recording.replyToId ? (() => {
                         const parent = activeThreadRecordings.find(r => r.id === recording.replyToId);
                         return (
-                          <div
+                          <button
+                            type="button"
                             className="classic-reply-indicator"
                             onClick={() => {
-                              // Scroll to parent message
                               const el = document.getElementById(`vox-msg-${recording.replyToId}`);
                               el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }}
@@ -1397,118 +1417,47 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                               {parent?.transcription?.slice(0, 40) || 'Voice message'}
                               {parent?.transcription && parent.transcription.length > 40 ? '...' : ''}
                             </span>
-                          </div>
+                          </button>
                         );
-                      })()}
+                      })() : undefined}
+                      statusIndicator={recording.sender === 'me' ? (
+                        <span className="classic-status-icon">
+                          {recording.status === 'read' ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}
+                        </span>
+                      ) : undefined}
+                      reactionsDisplay={recording.reactions && recording.reactions.length > 0 ? (
+                        <div className="flex items-center gap-1">
+                          {recording.reactions.map((reaction, idx) => (
+                            <span key={idx} className="classic-reaction-badge">{reaction.emoji}</span>
+                          ))}
+                        </div>
+                      ) : undefined}
+                      footerExtras={
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <PlaybackSpeedControl
+                            speed={studio.playbackRate}
+                            onSpeedChange={studio.setPlaybackRate}
+                            isDarkMode={isDarkMode}
+                            compact={true}
+                          />
+                          {recording.transcription && recording.duration >= 30 && (
+                            <button
+                              type="button"
+                              onClick={() => handleGenerateChapters(recording)}
+                              className="text-xs text-[#e11d48] dark:text-[#fb7185] hover:underline flex items-center gap-1"
+                              title="Generate AI chapter markers for this message"
+                            >
+                              <List className="w-3 h-3" />
+                              {chapterRecordingId === recording.id
+                                ? 'Chapters shown below ↓'
+                                : `Generate Chapters (${Math.round(recording.duration)}s)`}
+                            </button>
+                          )}
+                        </div>
+                      }
+                    />
 
-                      {/* Playback controls */}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          isItemActive(recording.id)
-                            ? pausePlayback()
-                            : playRecording(recording)
-                        }
-                        className="classic-play-btn"
-                      >
-                        {isItemPlaying(recording.id) ? (
-                          <Pause className="w-4 h-4" />
-                        ) : (
-                          <Play className="w-4 h-4" />
-                        )}
-                      </button>
-
-                      {/* Waveform placeholder — deterministic per-recording
-                          peaks (was Math.random() per render, which re-shuffled
-                          on every paint). Real peak extraction from the decoded
-                          AudioBuffer is a follow-up. */}
-                      {(() => {
-                        const seed = hashRecordingId(recording.id);
-                        const active = isItemActive(recording.id);
-                        // Bars fill left→right as playback progresses — the
-                        // signature studio waveform behavior, shared with Inbox
-                        // + the footer. Unplayed bars dim; idle rows sit at 0.5.
-                        return (
-                          <div className="classic-waveform">
-                            <div className="classic-waveform-bars">
-                              {[...Array(24)].map((_, i) => {
-                                const filled = active && (i / 24) <= studio.progress;
-                                return (
-                                  <div
-                                    key={i}
-                                    className={`classic-waveform-bar ${filled ? 'filled' : ''}`}
-                                    style={{
-                                      height: `${deterministicBarHeight(seed, i)}%`,
-                                      opacity: filled ? 1 : active ? 0.3 : 0.5,
-                                    }}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Phase 6: Playback Speed Control */}
-                      <PlaybackSpeedControl
-                        speed={studio.playbackRate}
-                        onSpeedChange={studio.setPlaybackRate}
-                        isDarkMode={isDarkMode}
-                        compact={true}
-                      />
-
-                    </div>
-
-                    {/* Message Actions Bar */}
-                    <div className="classic-message-actions-bar">
-                      <button
-                        type="button"
-                        onClick={() => toggleStar(recording.id)}
-                        className={`classic-action-icon ${recording.starred ? 'active' : ''}`}
-                        title="Star"
-                      >
-                        <Star className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleBookmark(recording.id)}
-                        className={`classic-action-icon ${recording.bookmarked ? 'active' : ''}`}
-                        title="Bookmark"
-                      >
-                        {recording.bookmarked ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setReplyContext(recording)}
-                        className="classic-action-icon"
-                        title="Reply"
-                      >
-                        <Reply className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowReactionPicker(showReactionPicker === recording.id ? null : recording.id)}
-                        className="classic-action-icon"
-                        title="Add reaction"
-                      >
-                        <Smile className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                          setMenuAnchorRect(rect);
-                          setShowMessageMenu(showMessageMenu === recording.id ? null : recording.id);
-                        }}
-                        className="classic-action-icon"
-                        title="More actions"
-                      >
-                        <MoreVertical className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {/* Reaction Picker */}
+                    {/* Reaction picker — sibling overlay near the row */}
                     {showReactionPicker === recording.id && (
                       <div className="classic-reaction-picker">
                         {QUICK_REACTIONS.map(emoji => (
@@ -1524,7 +1473,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       </div>
                     )}
 
-                    {/* Message Menu */}
+                    {/* Message menu — sibling overlay anchored to the More button */}
                     {showMessageMenu === recording.id && (
                       <VoxMessageMenu
                         isDarkMode={isDarkMode}
@@ -1539,57 +1488,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                         onClose={() => setShowMessageMenu(null)}
                       />
                     )}
-
-                    {/* Reactions Display */}
-                    {recording.reactions && recording.reactions.length > 0 && (
-                      <div className="classic-reactions-display">
-                        {recording.reactions.map((reaction, idx) => (
-                          <span key={idx} className="classic-reaction-badge">
-                            {reaction.emoji}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Transcription — provenance chip makes the machine-generated
-                        block legible as an AI artifact, not the sender's typed text. */}
-                    {recording.transcription && (
-                      <div className="classic-transcription">
-                        <div className="mb-1.5">
-                          <AIProvenanceChip vendor="PULSE AI" type="TRANSCRIPT" />
-                        </div>
-                        <p>{recording.transcription}</p>
-                      </div>
-                    )}
-
-                    {/* Chapter button — visible for any transcribed message >= 30s */}
-                    {recording.transcription && recording.duration >= 30 && (
-                      <button
-                        type="button"
-                        onClick={() => handleGenerateChapters(recording)}
-                        className="text-xs text-[#e11d48] dark:text-[#fb7185] hover:underline mt-1 flex items-center gap-1"
-                        title="Generate AI chapter markers for this message"
-                      >
-                        <List className="w-3 h-3" />
-                        {chapterRecordingId === recording.id
-                          ? 'Chapters shown below ↓'
-                          : `Generate Chapters (${Math.round(recording.duration)}s)`}
-                      </button>
-                    )}
-
-                    {/* Meta info */}
-                    <div className="classic-message-meta">
-                      <span>{recording.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      {recording.sender === 'me' && (
-                        <span className="classic-status-icon">
-                          {recording.status === 'read' ? (
-                            <CheckCheck className="w-3 h-3" />
-                          ) : (
-                            <Check className="w-3 h-3" />
-                          )}
-                        </span>
-                      )}
-                    </div>
                   </div>
                     ))}
                   </React.Fragment>
