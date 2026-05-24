@@ -97,6 +97,10 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const [channels, setChannels] = useState<PulseChannel[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<PulseChannel | null>(null);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
+  // Single-pane (narrow) nav: channels list vs the selected channel's feed.
+  // Decoupled from selectedChannel; inert when the pane is wide enough. Mirrors
+  // Direct/Channel. 'detail' = the broadcast feed for the selected channel.
+  const [mobileView, setMobileView] = useState<'list' | 'detail'>('list');
   const [showNewChannel, setShowNewChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelDesc, setNewChannelDesc] = useState('');
@@ -589,7 +593,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const isBroadcastPlaying = (id: string) => isBroadcastActive(id) && studio.isPlaying;
 
   return (
-    <div className={`pulse-radio ${isDarkMode ? 'dark' : 'light'}`}>
+    <div className={`pulse-radio ${isDarkMode ? 'dark' : 'light'} ${studio.singlePane ? 'pulse-radio--single-pane' : ''}`}>
       {/* Audio playback is owned by the shared RelayStudioProvider (single
           <audio>) — no local element here. */}
 
@@ -644,6 +648,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                     type="button"
                     onClick={() => {
                       setSelectedChannel(channel);
+                      setMobileView('detail');
                       setShowMobileSidebar(false);
                     }}
                     className={`pulse-radio-channel ${selectedChannel?.id === channel.id ? 'active' : ''}`}
@@ -668,8 +673,12 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
           </div>
         )}
 
-        {/* Desktop Sidebar */}
-        <aside className="pulse-radio-sidebar">
+        {/* Channels sidebar. Pane-driven single-pane (see .pulse-radio--single-pane
+            CSS): full-width list when single-pane, hidden once a channel's feed
+            is open (back chevron returns). Side-by-side when the pane is wide. */}
+        <aside className={`pulse-radio-sidebar ${
+          studio.singlePane ? (selectedChannel && mobileView === 'detail' ? 'pane-hidden' : 'pane-visible') : ''
+        }`}>
           <div className="pulse-radio-sidebar-header">
             <h2>My Channels</h2>
           </div>
@@ -678,7 +687,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
               <button
                 key={channel.id}
                 type="button"
-                onClick={() => setSelectedChannel(channel)}
+                onClick={() => { setSelectedChannel(channel); setMobileView('detail'); }}
                 className={`pulse-radio-channel ${selectedChannel?.id === channel.id ? 'active' : ''}`}
               >
                 <div className="pulse-radio-channel-icon">
@@ -716,12 +725,25 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
         </aside>
 
         {/* Main Content */}
-        <main className="pulse-radio-main">
+        <main className={`pulse-radio-main ${
+          studio.singlePane ? (selectedChannel && mobileView === 'detail' ? 'pane-visible' : 'pane-hidden') : ''
+        }`}>
           {selectedChannel ? (
             <>
               {/* Channel Header */}
               <div className="pulse-radio-channel-header">
                 <div className="pulse-radio-channel-hero">
+                  {studio.singlePane && (
+                    <button
+                      type="button"
+                      onClick={() => setMobileView('list')}
+                      className="shrink-0 -ml-1 mr-1 p-1.5 rounded-lg text-[var(--pulse-ink-2)] hover:bg-[var(--pulse-surface-raised)] transition self-start"
+                      aria-label="Back to channels"
+                      title="Back to channels"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                  )}
                   {/* Hero glyph is chrome — coral is reserved for live state
                       (recording, active broadcast). The concentric ring
                       decoration was retired during /impeccable distill:

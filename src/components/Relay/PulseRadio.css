@@ -67,6 +67,18 @@
   .pulse-radio-sidebar { display: flex; }
 }
 
+/* Single-pane (master-detail) is pane-driven, not viewport-driven: Relay sits
+   behind the global nav + sources rail, so a viewport media query keeps the
+   channels list + broadcast feed side-by-side on a narrow pane and crushes
+   them. The .pulse-radio--single-pane modifier (set when studio.singlePane)
+   makes the sidebar full-bleed and toggles list/feed via the mobileView pane
+   classes, with a back chevron in the feed header. */
+.pulse-radio--single-pane .pulse-radio-sidebar { width: 100%; }
+.pulse-radio--single-pane .pulse-radio-sidebar.pane-visible { display: flex; }
+.pulse-radio--single-pane .pulse-radio-sidebar.pane-hidden { display: none; }
+.pulse-radio--single-pane .pulse-radio-main.pane-visible { display: flex; }
+.pulse-radio--single-pane .pulse-radio-main.pane-hidden { display: none; }
+
 .pulse-radio-sidebar-header {
   padding: 14px 16px;
   border-bottom: 1px solid var(--pulse-border);
