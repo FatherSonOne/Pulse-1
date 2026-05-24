@@ -252,19 +252,28 @@
 .classic-message.sent { align-self: flex-end; }
 .classic-message.received { align-self: flex-start; }
 
+/* Voice Studio card (Path C). Both sides are neutral studio cards; "me" gets
+   a soft rose wash + a coral-tinted play button, "received" a plain surface.
+   The asymmetric corner is retained as a from/to cue. Active (now-playing)
+   rows get the coral ring + glow — see .studio-active below. */
 .classic-message-content {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
-  border-radius: 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
   position: relative;
+  transition:
+    transform var(--pulse-duration) var(--pulse-ease),
+    box-shadow var(--pulse-duration) var(--pulse-ease),
+    border-color var(--pulse-duration) var(--pulse-ease);
 }
 
-/* "Me" rows — flat coral, neutral asymmetric corner. */
+/* "Me" rows — soft rose wash, ink text (was flat coral). */
 .classic-message.sent .classic-message-content {
-  background: var(--pulse-rose);
-  color: #ffffff;
+  background: var(--pulse-rose-soft);
+  border: 1px solid var(--pulse-border);
+  color: var(--pulse-ink);
   border-bottom-right-radius: 6px;
 }
 
@@ -274,6 +283,21 @@
   border: 1px solid var(--pulse-border);
   color: var(--pulse-ink);
   border-bottom-left-radius: 6px;
+}
+
+/* Hover lift — quiet, shared by both sides. */
+.classic-message-content:hover {
+  border-color: var(--pulse-border-strong);
+}
+
+/* Now-playing — coral ring + glow, the studio active treatment. */
+.classic-message.studio-active .classic-message-content {
+  border-color: transparent;
+  box-shadow: 0 0 0 1px var(--pulse-rose), 0 8px 28px var(--pulse-rose-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .classic-message-content { transition: none; }
 }
 
 .classic-play-btn {
@@ -286,22 +310,13 @@
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  transition: opacity var(--pulse-duration) var(--pulse-ease);
-}
-
-.classic-message.sent .classic-play-btn {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-}
-
-.classic-message.sent .classic-play-btn:hover { background: rgba(255, 255, 255, 0.3); }
-
-.classic-message.received .classic-play-btn {
   background: var(--pulse-rose);
   color: #ffffff;
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              opacity var(--pulse-duration) var(--pulse-ease);
 }
 
-.classic-message.received .classic-play-btn:hover { background: var(--pulse-rose-deep); }
+.classic-play-btn:hover { background: var(--pulse-rose-deep); }
 
 .classic-waveform {
   flex: 1;
@@ -320,11 +335,13 @@
 .classic-waveform-bar {
   width: 3px;
   border-radius: 2px;
-  transition: opacity var(--pulse-duration) var(--pulse-ease);
+  background: var(--pulse-ink-3);
+  transition: opacity var(--pulse-duration) var(--pulse-ease),
+              background var(--pulse-duration) var(--pulse-ease);
 }
 
-.classic-message.sent .classic-waveform-bar { background: rgba(255, 255, 255, 0.6); }
-.classic-message.received .classic-waveform-bar { background: var(--pulse-rose); opacity: 0.5; }
+/* Filled bars (left of the playhead, while this row is playing) light coral. */
+.classic-waveform-bar.filled { background: var(--pulse-rose); }
 
 .classic-transcription {
   display: flex;
@@ -336,11 +353,14 @@
   line-height: 1.5;
 }
 
+/* Sent + received transcripts share the neutral treatment now that "me"
+   rows are a soft rose wash (ink text) rather than flat coral. */
 .classic-message.sent .classic-transcription {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--pulse-canvas-soft);
+  border: 1px solid var(--pulse-border);
+  color: var(--pulse-ink-2);
 }
-.classic-message.sent .classic-transcription svg { color: rgba(255, 255, 255, 0.6); flex-shrink: 0; margin-top: 2px; }
+.classic-message.sent .classic-transcription svg { color: var(--pulse-ink-3); flex-shrink: 0; margin-top: 2px; }
 
 .classic-message.received .classic-transcription {
   background: var(--pulse-canvas-soft);

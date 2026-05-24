@@ -1292,7 +1292,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                   <div
                     key={recording.id}
                     id={`vox-msg-${recording.id}`}
-                    className={`classic-message ${recording.sender === 'me' ? 'sent' : 'received'}`}
+                    className={`classic-message ${recording.sender === 'me' ? 'sent' : 'received'} ${isItemActive(recording.id) ? 'studio-active' : ''}`}
                   >
                     <div className="classic-message-content">
                       {/* Selection mode checkbox */}
@@ -1374,19 +1374,26 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                           AudioBuffer is a follow-up. */}
                       {(() => {
                         const seed = hashRecordingId(recording.id);
+                        const active = isItemActive(recording.id);
+                        // Bars fill left→right as playback progresses — the
+                        // signature studio waveform behavior, shared with Inbox
+                        // + the footer. Unplayed bars dim; idle rows sit at 0.5.
                         return (
                           <div className="classic-waveform">
                             <div className="classic-waveform-bars">
-                              {[...Array(24)].map((_, i) => (
-                                <div
-                                  key={i}
-                                  className="classic-waveform-bar"
-                                  style={{
-                                    height: `${deterministicBarHeight(seed, i)}%`,
-                                    opacity: isItemPlaying(recording.id) ? 1 : 0.5,
-                                  }}
-                                />
-                              ))}
+                              {[...Array(24)].map((_, i) => {
+                                const filled = active && (i / 24) <= studio.progress;
+                                return (
+                                  <div
+                                    key={i}
+                                    className={`classic-waveform-bar ${filled ? 'filled' : ''}`}
+                                    style={{
+                                      height: `${deterministicBarHeight(seed, i)}%`,
+                                      opacity: filled ? 1 : active ? 0.3 : 0.5,
+                                    }}
+                                  />
+                                );
+                              })}
                             </div>
                           </div>
                         );
