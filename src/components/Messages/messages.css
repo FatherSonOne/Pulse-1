@@ -2,44 +2,10 @@
  * Messages Split-View Layout — Premium Dark Redesign
  * Aligned with UnifiedSearchRedesign design language
  * 30% thread list | 70% conversation panel
+ *
+ * Token system: consumes canonical --pulse-* tokens from
+ * src/styles/pulse-tokens.css. No local --msg-* sprawl.
  */
-
-/* ── CSS Variable System ────────────────────────────────────────── */
-:root {
-  --msg-bg:             #ffffff;
-  --msg-surface:        #f8fafc;
-  --msg-surface-raised: #f1f5f9;
-  --msg-border:         #e2e8f0;
-  --msg-primary:        #f43f5e;
-  --msg-primary-alt:    #ec4899;
-  --msg-primary-soft:   rgba(244, 63, 94, 0.08);
-  --msg-primary-softer: rgba(244, 63, 94, 0.04);
-  --msg-primary-glow:   rgba(244, 63, 94, 0.20);
-  --msg-text-main:      #0f172a;
-  --msg-text-secondary: #64748b;
-  --msg-text-muted:     #64748b; /* a11y: was #94a3b8 = 3.95:1 on white, failed AA */
-  --msg-shadow-sm:      0 1px 3px rgba(0,0,0,0.08);
-  --msg-shadow-md:      0 4px 16px rgba(0,0,0,0.12);
-  --msg-shadow-rose:    0 0 0 1px var(--msg-primary), 0 4px 24px var(--msg-primary-glow);
-}
-
-.dark {
-  --msg-bg:             #000000;
-  --msg-surface:        rgba(255, 255, 255, 0.03);
-  --msg-surface-raised: rgba(255, 255, 255, 0.055);
-  --msg-border:         rgba(255, 255, 255, 0.06);
-  --msg-primary:        #f43f5e;
-  --msg-primary-alt:    #ec4899;
-  --msg-primary-soft:   rgba(244, 63, 94, 0.12);
-  --msg-primary-softer: rgba(244, 63, 94, 0.06);
-  --msg-primary-glow:   rgba(244, 63, 94, 0.30);
-  --msg-text-main:      #fafafa;
-  --msg-text-secondary: #b4b4b8;
-  --msg-text-muted:     #b4b4b8; /* a11y: was #6b7280 = 4.34:1 on black, failed AA */
-  --msg-shadow-sm:      0 1px 4px rgba(0,0,0,0.5);
-  --msg-shadow-md:      0 4px 16px rgba(0,0,0,0.6);
-  --msg-shadow-rose:    0 0 0 1px var(--msg-primary), 0 4px 24px var(--msg-primary-glow);
-}
 
 /* ── Heartbeat glow keyframe (same as Search) ───────────────────── */
 @keyframes msgHeartbeat {
@@ -132,24 +98,20 @@
 .thread-list-panel {
   display: flex;
   flex-direction: column;
-  background: var(--msg-bg, #f8f8f8);
-  border-right: 1px solid var(--msg-border, #e4e4e4);
+  background: var(--pulse-canvas);
+  border-right: 1px solid var(--pulse-border);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+/* Dark column lift — slightly above true-black canvas for column separation */
 .dark .thread-list-panel {
   background: #080808;
-  border-right-color: rgba(255, 255, 255, 0.06);
 }
 
 .thread-list-header {
   flex-shrink: 0;
   padding: 1rem;
-  border-bottom: 1px solid var(--msg-border, #e4e4e4);
-}
-
-.dark .thread-list-header {
-  border-bottom-color: rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--pulse-border);
 }
 
 .thread-list-content {
@@ -177,24 +139,15 @@
 }
 
 .thread-list-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(244, 63, 94, 0.25);
-}
-
-.dark .thread-list-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(244, 63, 94, 0.3);
+  background: var(--pulse-rose-glow);
 }
 
 .thread-list-footer {
   flex-shrink: 0;
   padding: 0.5rem 1rem;
-  border-top: 1px solid var(--msg-border, #e4e4e4);
+  border-top: 1px solid var(--pulse-border);
   font-size: 0.6875rem;           /* 11px — BG spec for metadata */
-  color: var(--msg-text-muted, #6b7280);
-}
-
-.dark .thread-list-footer {
-  border-top-color: rgba(255, 255, 255, 0.06);
-  color: #b4b4b8; /* a11y: was #6b7280 = 4.34:1 on black, failed AA */
+  color: var(--pulse-ink-2);
 }
 
 /* =========================
@@ -215,14 +168,14 @@
   font-size: 0.9375rem;               /* 15px */
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: var(--msg-text-main, #0f0f0f);
+  color: var(--pulse-ink);
 }
 
 .thread-item .thread-preview,
 .thread-item .last-message {
   font-size: 0.8125rem;               /* 13px */
   font-weight: 400;
-  color: var(--msg-text-muted, #6b7280);
+  color: var(--pulse-ink-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -232,13 +185,13 @@
 .thread-item .thread-time {
   font-size: 0.6875rem;               /* 11px */
   font-weight: 400;
-  color: var(--msg-text-muted, #6b7280);
+  color: var(--pulse-ink-2);
 }
 
 .thread-item .unread-badge {
   font-size: 0.625rem;                /* 10px */
   font-weight: 700;
-  background: var(--msg-primary, #f43f5e);
+  background: var(--pulse-rose);
   color: #ffffff;
   border-radius: 999px;
   padding: 1px 5px;
@@ -256,16 +209,16 @@
 
 /* Active thread — coral text + tinted background, no stripe */
 .thread-item.active {
-  background-color: rgba(244, 63, 94, 0.06);
+  background-color: var(--pulse-rose-softer);
 }
 
 .thread-item.active .thread-name,
 .thread-item.active .channel-name {
-  color: var(--msg-primary, #f43f5e);
+  color: var(--pulse-rose);
 }
 
 .dark .thread-item.active {
-  background-color: rgba(244, 63, 94, 0.08);
+  background-color: var(--pulse-rose-soft);
 }
 
 /* Hover actions - show on hover */
@@ -292,13 +245,13 @@
 .conversation-header {
   flex-shrink: 0;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--msg-border, #e4e4e4);
-  background: var(--msg-bg, #f8f8f8);
+  border-bottom: 1px solid var(--pulse-border);
+  background: var(--pulse-canvas);
 }
 
+/* Dark column lift — match thread-list-panel for visual continuity */
 .dark .conversation-header {
   background: #080808;
-  border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
 /* Channel name in header */
@@ -308,14 +261,14 @@
   font-size: 1rem;                    /* 16px */
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: var(--msg-text-main, #0f0f0f);
+  color: var(--pulse-ink);
 }
 
 /* Channel description in header */
 .conversation-header .channel-description,
 .conversation-header p {
   font-size: 0.8125rem;               /* 13px */
-  color: var(--msg-text-muted, #6b7280);
+  color: var(--pulse-ink-2);
   font-weight: 400;
 }
 
@@ -346,11 +299,7 @@
 }
 
 .messages-area::-webkit-scrollbar-thumb:hover {
-  background: rgba(244, 63, 94, 0.3);
-}
-
-.dark .messages-area::-webkit-scrollbar-thumb:hover {
-  background: rgba(244, 63, 94, 0.35);
+  background: var(--pulse-rose-glow);
 }
 
 .message-input-area {
@@ -364,9 +313,10 @@
    ========================= */
 
 /* ── Pulse Coral Cockpit thread ─────────────────────────────────────
-   Hybrid bubble system: received = quote-style (coral hairline,
-   no bubble, mono header). Sent = coral-glass card, symmetric 12px,
-   right-edge heartbeat hairline. Bubbles never wear chat tails.
+   Hybrid bubble system: received = plain (no bubble, no stripe),
+   sent = coral-glass card with symmetric 12px corners and right-edge
+   heartbeat hairline. Sender identity is conveyed by avatar + mono
+   header — no coral side-stripe (#94 task 4.2, DESIGN.md absolute-ban).
    Group siblings (data-grouped) tighten to read as one block. */
 
 .message-bubble-wrapper {
@@ -428,7 +378,7 @@
 }
 
 .msg-sender-header .msg-sender-name {
-  color: var(--msg-primary, #f43f5e);
+  color: var(--pulse-rose);
 }
 
 .msg-sender-header .msg-sep {
@@ -439,7 +389,7 @@
 }
 
 .msg-sender-header .msg-timestamp {
-  color: var(--pulse-ink-2); /* a11y: was #6b7280 = 4.34:1 on dark canvas */
+  color: var(--pulse-ink-2);
 }
 
 /* Read / Delivered receipt — JetBrains Mono, sits under sent bubbles */
@@ -453,11 +403,11 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--pulse-ink-2); /* a11y: was #6b7280 = 4.34:1 on dark canvas */
+  color: var(--pulse-ink-2);
 }
 
 .msg-receipt[data-state="read"] {
-  color: var(--msg-primary, #f43f5e);
+  color: var(--pulse-rose);
 }
 
 .msg-receipt .msg-receipt-dot {
@@ -477,57 +427,28 @@
   font-size: 0.9375rem;             /* 15px */
   font-weight: 400;
   line-height: 1.5;
-  color: var(--msg-text-main, #0f0f0f);
+  color: var(--pulse-ink);
   transition: background 200ms cubic-bezier(0.16, 1, 0.3, 1),
               border-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── Received message — quote-style. Coral 1px leading hairline via
-      ::before pseudo-element (NOT border-left as side-stripe — that's
-      banned by the project absolute-bans list). No bubble background,
-      no perimeter border. Reads like Linear / email thread, not Slack. */
+/* ── Received message — plain text block. No bubble, no border, no
+      side-stripe pseudo-element. Sender identity comes from the mono
+      header + avatar. Reads like Linear / email thread. Removing the
+      coral hairline closes #94 task 4.2 and the DESIGN.md side-stripe ban. */
 .message-bubble-received {
-  position: relative;
   background: transparent;
   border: 0;
   border-radius: 0;
-  padding: 0.125rem 0 0.125rem 14px;
-  color: var(--msg-text-main, #0f0f0f);
-}
-
-.message-bubble-received::before {
-  content: '';
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 0;
-  width: 1px;
-  background: rgba(244, 63, 94, 0.30);
-  transition: background 0.2s ease-out, width 0.2s ease-out;
-}
-
-.dark .message-bubble-received {
-  color: #fafafa;
-}
-
-.dark .message-bubble-received::before {
-  background: rgba(244, 63, 94, 0.40);
-}
-
-/* Hover on received — coral hairline brightens (no width jitter) */
-.message-bubble-received:hover::before {
-  background: rgba(244, 63, 94, 0.55);
-}
-
-.dark .message-bubble-received:hover::before {
-  background: rgba(244, 63, 94, 0.65);
+  padding: 0.125rem 0;
+  color: var(--pulse-ink);
 }
 
 /* ── Sent message — coral-glass card. Symmetric 12px (no chat tail).
       Right-edge coral hairline acts as the "you" heartbeat signal. */
 .message-bubble-sent {
-  background: rgba(244, 63, 94, 0.05);
+  background: var(--pulse-rose-softer);
   border-color: rgba(244, 63, 94, 0.18);
   position: relative;
 }
@@ -581,13 +502,13 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--msg-primary, #f43f5e);
+  color: var(--pulse-rose);
   margin-bottom: 3px;
 }
 
 .dark .msg-sender-name,
 .dark .message-sender {
-  color: var(--msg-primary, #f43f5e);
+  color: var(--pulse-rose);
 }
 
 /* Inline timestamp — mono, muted, small */
@@ -597,7 +518,7 @@
   font-size: 10px;
   font-weight: 400;
   letter-spacing: 0.04em;
-  color: #6b7280;
+  color: var(--pulse-ink-2);
 }
 
 /* ── Date dividers — left-aligned mono header with leading coral
@@ -615,13 +536,8 @@
 .messages-date-divider::after {
   flex: 1;
   height: 1px;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--pulse-border);
   content: '';
-}
-
-.dark .date-divider-line,
-.dark .messages-date-divider::after {
-  background: rgba(255, 255, 255, 0.06);
 }
 
 .messages-date-divider::before { display: none; }
@@ -630,9 +546,9 @@
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: var(--msg-primary, #f43f5e);
+  background: var(--pulse-rose);
   flex-shrink: 0;
-  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.12);
+  box-shadow: 0 0 0 3px var(--pulse-rose-soft);
 }
 
 .date-divider-label,
@@ -642,14 +558,9 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #6b7280;
+  color: var(--pulse-ink-2);
   white-space: nowrap;
   padding: 0;
-}
-
-.dark .date-divider-label,
-.dark .messages-date-divider span {
-  color: #b4b4b8;
 }
 
 /* Reaction badges */
@@ -660,15 +571,15 @@
   padding: 0.25rem 0.5rem;
   border-radius: 9999px;
   font-size: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--pulse-border);
+  background: var(--pulse-surface);
   transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
 }
 
 .reaction-badge:hover {
   border-color: rgba(244, 63, 94, 0.3);
-  background: rgba(244, 63, 94, 0.06);
+  background: var(--pulse-rose-soft);
   transform: translateY(-1px);
 }
 
@@ -718,7 +629,7 @@
   }
 
   .mobile-back-button:hover {
-    background-color: #f3f4f6;
+    background-color: var(--pulse-canvas-soft);
   }
 
   .dark .mobile-back-button:hover {
@@ -784,7 +695,7 @@
 .thread-item:focus-visible,
 .thread-search input:focus-visible,
 button:focus-visible {
-  outline: 2px solid var(--msg-primary, #f43f5e);
+  outline: 2px solid var(--pulse-rose);
   outline-offset: 2px;
 }
 
@@ -804,7 +715,7 @@ button:focus-visible {
 @media (prefers-contrast: high) {
   .thread-item.active {
     background-color: rgba(244, 63, 94, 0.18);
-    outline: 2px solid var(--msg-primary, #f43f5e);
+    outline: 2px solid var(--pulse-rose);
     outline-offset: -2px;
   }
 
@@ -859,12 +770,12 @@ button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f3f4f6;
+  background: var(--pulse-canvas-soft);
 }
 
 .dark .empty-state-icon {
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--pulse-border);
 }
 
 /* =========================
@@ -912,9 +823,9 @@ button:focus-visible {
   padding: 1rem 1.5rem;
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 
-  background: var(--msg-bg, #ffffff);
-  border-top: 1px solid var(--msg-border, #e2e8f0);
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+  background: var(--pulse-canvas);
+  border-top: 1px solid var(--pulse-border);
+  box-shadow: var(--pulse-shadow-sm);
 
   display: flex;
   flex-direction: column;
@@ -925,6 +836,8 @@ button:focus-visible {
   transform: translateZ(0);
   will-change: transform;
 
+  color: var(--pulse-ink);
+
   /* Left is set via inline style based on sidebar width */
 }
 
@@ -932,9 +845,7 @@ button:focus-visible {
   background: rgba(0, 0, 0, 0.92);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6),
-              0 -1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: var(--pulse-shadow-md);
 }
 
 /* Mobile: Full width */
@@ -957,11 +868,6 @@ button:focus-visible {
   }
 }
 
-/* Text colors in portal — adapts to light/dark mode */
-.message-input-portal-container {
-  color: #0f172a;
-}
-
 .message-input-portal-container input,
 .message-input-portal-container textarea {
   color: inherit !important;
@@ -970,16 +876,7 @@ button:focus-visible {
 
 .message-input-portal-container input::placeholder,
 .message-input-portal-container textarea::placeholder {
-  color: #94a3b8 !important;
-}
-
-/* Dark mode: deeper black */
-.dark .message-input-portal-container {
-  background: rgba(0, 0, 0, 0.92);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  border-top-color: rgba(255, 255, 255, 0.06);
-  color: #fafafa;
+  color: var(--pulse-ink-2) !important;
 }
 
 /* ============================================================
