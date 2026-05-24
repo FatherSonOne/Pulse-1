@@ -381,12 +381,12 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
               <button
                 onClick={props.handleExportToDocs}
                 disabled={props.loadingArtifact || !props.artifact || props.exportingToDocs}
-                className="bg-[rgba(244,63,94,0.06)] hover:bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185] border border-[rgba(244,63,94,0.20)] px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition disabled:opacity-50 mr-3 flex items-center gap-2"
+                className="bg-[rgba(244,63,94,0.06)] hover:bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185] border border-[rgba(244,63,94,0.20)] px-6 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 mr-3 flex items-center gap-2"
               >
                 {props.exportingToDocs ? <Loader2 className="animate-spin" /> : <FileText />}
                 Export to Docs
               </button>
-              <button onClick={props.handleSaveArtifact} disabled={props.loadingArtifact || !props.artifact} className="btn-brand-primary px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition disabled:opacity-50">
+              <button onClick={props.handleSaveArtifact} disabled={props.loadingArtifact || !props.artifact} className="btn-brand-primary px-6 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50">
                 Save to Wiki
               </button>
             </div>
