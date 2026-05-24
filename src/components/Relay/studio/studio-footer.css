@@ -99,6 +99,12 @@
 .pulse-studio-footer__wave-wrap {
   position: relative;
   margin-top: 6px;
+  cursor: pointer;
+}
+.pulse-studio-footer__wave-wrap:focus-visible {
+  outline: 2px solid var(--pulse-rose);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 .pulse-studio-footer__playhead {
   position: absolute;

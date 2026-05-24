@@ -2,26 +2,30 @@
 //
 // One provider sits inside Relay.tsx and exposes state to the SourcesRail,
 // StudioFooter, FloatingMic, and any mode body (RelayTriageStream, ClassicMode,
-// …) that wants to drive playback or react to recording. Mode bodies that
-// don't need it can ignore it — the existing per-mode local-only behavior
-// keeps working until they're migrated to the studio-card pattern (Phase 2).
+// …) that wants to drive playback or react to recording.
 //
 // Why a context, not a hook:
 // - StudioFooter + FloatingMic live at the shell level (outside the mode
 //   body), and need to stay in sync with whatever the mode body is playing.
 // - SPACE → record is a global shortcut; centralizing the toggle means the
 //   shortcut handler and the floating mic both call the same function.
-// - Playback progress animates on a single interval; keeping it in context
-//   means we never have two timers fighting each other.
+// - The provider owns a SINGLE real <audio> element. That buys three things
+//   for free: (a) only one voice plays at a time across the whole Relay
+//   surface, (b) the StudioFooter is a true transport — its play/pause/scrub
+//   drive the actual audio, its progress is the actual currentTime, and (c)
+//   playback survives a mode switch (start a voice in Inbox, navigate to
+//   Direct, it keeps playing in the footer). URL resolution + the legacy
+//   `voxer` bucket fallback live here so every mode inherits them.
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { resolveAudioUrl, legacyAudioUrl } from '../../../services/relay/resolveAudioUrl';
 
 /** A voice the studio can play. Sender-shape is intentionally permissive so
  *  every mode body can hand off whatever it has without a transform. */
 export interface NowPlayingVoice {
   id: string;
   sender: string;
-  /** "0:19" — mm:ss. parseDur() in StudioFooter splits this. */
+  /** "0:19" — mm:ss. Display fallback when real duration metadata is absent. */
   dur: string;
   /** Free-form: 'dm' | 'quick' | 'note' | 'broadcast' | 'channel' | string. */
   type: string;
@@ -29,14 +33,22 @@ export interface NowPlayingVoice {
   transcript?: string | null;
   /** Optional source tag for analytics / smart playlists. */
   source?: string;
+  /** Raw stored audio_url (bare path or full URL). Resolved + dual-read
+   *  fallback handled internally by play(). When absent, the voice can be
+   *  set as "selected" but won't actually play. */
+  audioUrl?: string | null;
 }
 
 export interface RelayStudioState {
   // ── playback ────────────────────────────────────────────────────────────
   nowPlaying: NowPlayingVoice | null;
   isPlaying: boolean;
-  /** 0 → 1, advanced by an interval while isPlaying && !isRecording. */
+  /** 0 → 1, real audio currentTime / duration. */
   progress: number;
+  /** Seconds — real audio currentTime. */
+  currentTime: number;
+  /** Seconds — real audio duration (0 until metadata loads). */
+  duration: number;
 
   // ── recording ───────────────────────────────────────────────────────────
   isRecording: boolean;
@@ -47,12 +59,15 @@ export interface RelayStudioState {
 }
 
 export interface RelayStudioApi extends RelayStudioState {
-  /** Set nowPlaying and start playback from 0. */
+  /** Load + play a voice from 0. Resumes in place if it's already nowPlaying
+   *  and merely paused. */
   play: (v: NowPlayingVoice) => void;
-  /** Toggle pause/resume on the current nowPlaying. No-op if nothing playing. */
+  /** Pause/resume the current voice. No-op if nothing is loaded. */
   togglePlay: () => void;
   /** Stop playback and clear nowPlaying. */
   stop: () => void;
+  /** Scrub to a 0→1 fraction of the current voice. */
+  seek: (fraction: number) => void;
   /** Toggle the recording surface. Auto-pauses playback when starting. */
   toggleRecording: () => void;
   /** Cancel the active recording (no send). */
@@ -66,11 +81,6 @@ export interface RelayStudioApi extends RelayStudioState {
 const RelayStudioContext = createContext<RelayStudioApi | null>(null);
 
 const RAIL_COLLAPSED_KEY = 'pulse.relay.railCollapsed';
-/** Progress increment per tick. 0.008 over 100ms ≈ 12.5s for a full pass —
- *  long enough that short voices (0:02 … 0:19) feel like they're actually
- *  playing, short enough that demo loops don't bore reviewers. */
-const PROGRESS_TICK = 0.008;
-const PROGRESS_TICK_MS = 100;
 
 function readInitialRailCollapsed(): boolean {
   if (typeof window === 'undefined') return false;
@@ -93,20 +103,45 @@ interface ProviderProps {
 export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecordingSent, onRecordingCancelled }) => {
   const [nowPlaying, setNowPlaying] = useState<NowPlayingVoice | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSec, setRecordingSec] = useState(0);
   const [railCollapsed, setRailCollapsed] = useState<boolean>(readInitialRailCollapsed);
 
-  // Progress ticker — runs only while playing and not recording. Auto-loops
-  // when it hits 1 so the demo state stays alive without consumer intervention.
+  // Single shared <audio>. Created once; lives for the provider's lifetime.
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   useEffect(() => {
-    if (!isPlaying || isRecording) return;
-    const id = window.setInterval(() => {
-      setProgress(p => (p >= 0.99 ? 0 : Math.min(1, p + PROGRESS_TICK)));
-    }, PROGRESS_TICK_MS);
-    return () => window.clearInterval(id);
-  }, [isPlaying, isRecording]);
+    if (typeof Audio === 'undefined') return;
+    const audio = new Audio();
+    audio.preload = 'none';
+    audioRef.current = audio;
+
+    const onTime = () => setCurrentTime(audio.currentTime || 0);
+    const onMeta = () => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    const onEnded = () => { setIsPlaying(false); setCurrentTime(0); };
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+
+    audio.addEventListener('timeupdate', onTime);
+    audio.addEventListener('loadedmetadata', onMeta);
+    audio.addEventListener('durationchange', onMeta);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+
+    return () => {
+      audio.removeEventListener('timeupdate', onTime);
+      audio.removeEventListener('loadedmetadata', onMeta);
+      audio.removeEventListener('durationchange', onMeta);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+      audio.pause();
+      audio.src = '';
+      audioRef.current = null;
+    };
+  }, []);
 
   // Recording timer — increments every 1s while recording.
   useEffect(() => {
@@ -115,8 +150,7 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
     return () => window.clearInterval(id);
   }, [isRecording]);
 
-  // Persist rail-collapsed state across sessions. CLAUDE.md: cheap UX win,
-  // no DB schema needed.
+  // Persist rail-collapsed state across sessions.
   useEffect(() => {
     try {
       window.localStorage.setItem(RAIL_COLLAPSED_KEY, railCollapsed ? '1' : '0');
@@ -125,26 +159,82 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
     }
   }, [railCollapsed]);
 
-  // Stable handler refs so consumers in shortcut hooks don't trigger re-renders.
   const recordingSentRef = useRef(onRecordingSent);
   const recordingCancelledRef = useRef(onRecordingCancelled);
   recordingSentRef.current = onRecordingSent;
   recordingCancelledRef.current = onRecordingCancelled;
 
+  // nowPlaying in a ref so play() can compare without re-creating the callback.
+  const nowPlayingRef = useRef<NowPlayingVoice | null>(null);
+  nowPlayingRef.current = nowPlaying;
+
   const play = useCallback((v: NowPlayingVoice) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    // Re-play of the already-loaded voice → resume in place, don't reload.
+    if (nowPlayingRef.current?.id === v.id && audio.src) {
+      audio.play().catch(() => setIsPlaying(false));
+      return;
+    }
+
     setNowPlaying(v);
-    setProgress(0);
-    setIsPlaying(true);
+    setCurrentTime(0);
+    setDuration(0);
+
+    if (!v.audioUrl) {
+      // Nothing to actually play — leave it "selected" but paused.
+      setIsPlaying(false);
+      return;
+    }
+
+    audio.pause();
+    audio.src = resolveAudioUrl(v.audioUrl);
+    audio.currentTime = 0;
+
+    // Dual-read fallback: if the canonical relay URL errors (legacy asset
+    // pre-cutover), retry once against the voxer bucket before giving up.
+    const onError = () => {
+      audio.removeEventListener('error', onError);
+      const fallback = legacyAudioUrl(v.audioUrl);
+      if (fallback && fallback !== audio.src) {
+        audio.src = fallback;
+        audio.play().catch(() => setIsPlaying(false));
+      } else {
+        setIsPlaying(false);
+      }
+    };
+    audio.addEventListener('error', onError, { once: true });
+    audio.play().catch(() => setIsPlaying(false));
   }, []);
 
   const togglePlay = useCallback(() => {
-    setIsPlaying(p => !p);
+    const audio = audioRef.current;
+    if (!audio || !audio.src) return;
+    if (audio.paused) {
+      audio.play().catch(() => setIsPlaying(false));
+    } else {
+      audio.pause();
+    }
   }, []);
 
   const stop = useCallback(() => {
-    setIsPlaying(false);
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
     setNowPlaying(null);
-    setProgress(0);
+    setCurrentTime(0);
+    setDuration(0);
+  }, []);
+
+  const seek = useCallback((fraction: number) => {
+    const audio = audioRef.current;
+    if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
+    const clamped = Math.max(0, Math.min(1, fraction));
+    audio.currentTime = clamped * audio.duration;
+    setCurrentTime(audio.currentTime);
   }, []);
 
   const toggleRecording = useCallback(() => {
@@ -154,7 +244,7 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
         return false;
       }
       // Starting a recording — pause any playback so audio doesn't compete.
-      setIsPlaying(false);
+      audioRef.current?.pause();
       return true;
     });
   }, []);
@@ -173,23 +263,30 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
 
   const toggleRail = useCallback(() => setRailCollapsed(c => !c), []);
 
+  // Derive progress from real currentTime / duration. Falls back to 0 before
+  // metadata loads (duration === 0).
+  const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0;
+
   const value = useMemo<RelayStudioApi>(() => ({
     nowPlaying,
     isPlaying,
     progress,
+    currentTime,
+    duration,
     isRecording,
     recordingSec,
     railCollapsed,
     play,
     togglePlay,
     stop,
+    seek,
     toggleRecording,
     cancelRecording,
     stopAndSendRecording,
     toggleRail,
   }), [
-    nowPlaying, isPlaying, progress, isRecording, recordingSec, railCollapsed,
-    play, togglePlay, stop, toggleRecording, cancelRecording, stopAndSendRecording, toggleRail,
+    nowPlaying, isPlaying, progress, currentTime, duration, isRecording, recordingSec, railCollapsed,
+    play, togglePlay, stop, seek, toggleRecording, cancelRecording, stopAndSendRecording, toggleRail,
   ]);
 
   return <RelayStudioContext.Provider value={value}>{children}</RelayStudioContext.Provider>;

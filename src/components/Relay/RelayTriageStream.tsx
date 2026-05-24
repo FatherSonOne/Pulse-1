@@ -1,14 +1,30 @@
-// RelayTriageStream — Pulse "what voice needs me now?" surface.
+// RelayTriageStream — Pulse "what voice needs me now?" surface, Voice Studio
+// edition (Path C, Phase 2a).
 //
-// Default landing for /relay. Renders the unified TriageItem feed from
-// useRelayTriage with filter chips (ALL / NEEDS REPLY / MESSAGES / NOTES /
-// LIVE), a needs-reply banner, per-row sender + audience metadata, empty
-// states, a 5-row loading skeleton, and a coral compose pill that opens the
-// RelayComposer (the new-voice-message launcher).
+// Default landing for /relay, rendered as "Inbox" in the SourcesRail. Shows
+// the unified TriageItem feed from useRelayTriage as full-width studio cards:
+// avatar + sender + audience chip, a deterministic waveform that fills coral
+// while playing, a karaoke transcript that reveals at the playback rate, and
+// an inline Pulse AI summary callout. Playback flows through the shared
+// RelayStudioContext so the persistent StudioFooter is a true transport for
+// whatever's playing here — and keeps playing if you navigate to another
+// source.
+//
+// Phase 2a changes vs the prior list view:
+// - List rows → StudioCard primitives; active card gets the coral ring.
+// - Local <audio> removed; studio.play()/togglePlay() own real playback +
+//   URL resolution + the legacy-bucket fallback.
+// - Filter chip row (ALL / NEEDS REPLY / MESSAGES / NOTES / LIVE) reorganized
+//   into status × source: a "Needs reply" toggle + an "All sources ▾"
+//   dropdown. Source navigation proper lives in the rail now, so the body
+//   filter is cross-cutting only — no redundancy with the rail.
+// - Bottom compose pill removed; the shell's FloatingMic + SPACE own compose.
+// - Header gains the "RELAY · INBOX / Today's voice" masthead.
+// Row actions (reply / snooze / dismiss / mark-read / delete) and all
+// useRelayTriage wiring are preserved verbatim.
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import {
-  Mic,
   Reply,
   Play,
   Pause,
@@ -16,6 +32,7 @@ import {
   CheckCheck,
   Clock,
   ChevronDown,
+  Filter,
   X,
   MoreHorizontal,
   Trash2,
@@ -25,10 +42,11 @@ import type { Contact, User } from '../../types';
 import { useRelayTriage, type TriageItem, type TriageItemKind } from '../../hooks/useRelayTriage';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import { voxModeService } from '../../services/relay/voxModeService';
-import { resolveAudioUrl, legacyAudioUrl } from '../../services/relay/resolveAudioUrl';
+import { useRelayStudio } from './studio';
+import { Waveform } from './studio/Waveform';
+import { StudioCard } from './studio/StudioCard';
 
-// Mirrors Relay.tsx's local RelayView (six peers). Kept as a separate alias
-// so this file's surface is self-explanatory without a parent import.
+// Mirrors Relay.tsx's local RelayView (six peers).
 type RelayTriageView =
   | 'triage'
   | 'direct'
@@ -37,44 +55,33 @@ type RelayTriageView =
   | 'notes'
   | 'live';
 
-type FilterId = 'all' | 'needs_reply' | 'messages' | 'notes' | 'live';
+// Status filter is cross-cutting; source filter slices the unified feed.
+type StatusFilter = 'all' | 'needs_reply';
+type SourceFilter = 'all' | 'messages' | 'broadcast' | 'notes';
 
-const FILTER_ORDER: readonly FilterId[] = ['all', 'needs_reply', 'messages', 'notes', 'live'] as const;
+const SOURCE_OPTIONS: { id: SourceFilter; label: string }[] = [
+  { id: 'all', label: 'All sources' },
+  { id: 'messages', label: 'Direct' },
+  { id: 'broadcast', label: 'Broadcast' },
+  { id: 'notes', label: 'Notes' },
+];
 
-const FILTER_LABELS: Record<FilterId, string> = {
-  all: 'ALL',
-  needs_reply: 'NEEDS REPLY',
-  messages: 'MESSAGES',
-  notes: 'NOTES',
-  live: 'LIVE',
-};
-
-const EMPTY_COPY: Record<FilterId, string> = {
+const EMPTY_COPY: Record<SourceFilter, string> = {
   all: 'No voice activity yet.',
-  needs_reply: 'No messages need a reply.',
-  messages: 'No messages yet. Hold space to record one.',
+  messages: 'No direct messages yet. Hold space to record one.',
+  broadcast: 'No broadcasts yet.',
   notes: 'No voice notes yet. Capture an idea.',
-  live: 'Nothing live right now.',
 };
 
 interface RelayTriageStreamProps {
   user: User | null;
-  // Surfaced for parity with the rest of Relay's view tree; not consumed yet
-  // (audience-picker integration lands in 2.1d.4).
   contacts?: Contact[];
-  /**
-   * Switch the parent Relay view. The optional `focusItem` lets the caller
-   * deep-link straight to the triage row's source — bodies that accept an
-   * `initialItemId` will scroll to + highlight the matching row on mount.
-   */
   onOpenView: (
     view: RelayTriageView,
     focusItem?: { kind: TriageItemKind; id: string; senderId?: string },
   ) => void;
   onCompose: () => void;
-  /** Open the composer with a specific Pulse user prefilled as 1:1 recipient. */
   onReply: (recipientId: string) => void;
-  /** Open the composer in voice-thread reply mode targeting a specific thread. */
   onReplyToThread: (threadId: string, threadLabel?: string) => void;
 }
 
@@ -82,8 +89,12 @@ interface RelayTriageStreamProps {
 function viewForKind(kind: TriageItemKind): RelayTriageView {
   if (kind === 'broadcast') return 'broadcast';
   if (kind === 'note') return 'notes';
-  // 'classic' / 'quick' / 'thread' are all 1:1 message-shaped — Direct.
   return 'direct';
+}
+
+/** Stable studio key — namespaced so kinds with colliding ids stay distinct. */
+function studioKey(item: TriageItem): string {
+  return `${item.kind}-${item.id}`;
 }
 
 /** "2h ago" / "just now" — inline since we ship no date-fns dependency. */
@@ -99,11 +110,10 @@ function formatRelativeTime(date: Date): string {
   if (days < 7) return `${days}d ago`;
   const weeks = Math.floor(days / 7);
   if (weeks < 5) return `${weeks}w ago`;
-  // Fall back to a short locale date for older items.
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-/** "0:42" / "1:05:30" — same inline-only constraint as formatRelativeTime. */
+/** "0:42" / "1:05:30" — same inline-only constraint. */
 function formatDuration(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
   const total = Math.floor(seconds);
@@ -113,314 +123,6 @@ function formatDuration(seconds: number): string {
   const pad = (n: number) => n.toString().padStart(2, '0');
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
-
-/** A single triage row. Memoised on the item identity to keep large feeds smooth. */
-const TriageRow: React.FC<{
-  item: TriageItem;
-  isPlaying: boolean;
-  onClick: () => void;
-  onTogglePlay?: () => void;
-  onReply?: () => void;
-  onMarkRead?: () => void;
-  onSnooze?: (untilMs: number) => void;
-  onDismiss?: () => void;
-  onDelete?: () => void;
-}> = ({
-  item,
-  isPlaying,
-  onClick,
-  onTogglePlay,
-  onReply,
-  onMarkRead,
-  onSnooze,
-  onDismiss,
-  onDelete,
-}) => {
-  const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false);
-  const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
-  const snoozeRef = useRef<HTMLDivElement | null>(null);
-  const overflowRef = useRef<HTMLDivElement | null>(null);
-
-  // Close any open menu on outside click so they don't linger between rows.
-  useEffect(() => {
-    if (!snoozeMenuOpen && !overflowMenuOpen) return;
-    const onDocClick = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (snoozeMenuOpen && snoozeRef.current && !snoozeRef.current.contains(t)) {
-        setSnoozeMenuOpen(false);
-      }
-      if (overflowMenuOpen && overflowRef.current && !overflowRef.current.contains(t)) {
-        setOverflowMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [snoozeMenuOpen, overflowMenuOpen]);
-  // Reply makes sense for 1:1 voice (classic/quick) and for voice threads where
-  // we have a thread_id to target. The actual routing decision (1:1 quick vs
-  // voice-thread message) is made by the caller via onReply — we just expose
-  // the affordance.
-  const hasThreadDestination = item.kind === 'thread' && !!(item.raw as any)?.thread_id;
-  const has11Destination = (item.kind === 'classic' || item.kind === 'quick') && !!item.senderId;
-  const canReply = !!onReply && (hasThreadDestination || has11Destination);
-  const canPlay = !!onTogglePlay && !!item.audioUrl;
-
-  return (
-    <div className="group relative">
-      {/* Row wrapper is a div+role=button (not a <button>) because it hosts an
-          interactive Play <button> as a descendant — nesting buttons is invalid
-          DOM. Keyboard parity is preserved via onKeyDown. */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={onClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onClick();
-          }
-        }}
-        className="w-full text-left px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition flex items-start gap-3 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
-      >
-        {canPlay ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onTogglePlay?.();
-            }}
-            className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
-              isPlaying
-                ? 'bg-rose-500 text-white'
-                : item.needsReply
-                  ? 'bg-rose-500 text-white hover:bg-rose-600'
-                  : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700'
-            }`}
-            aria-label={isPlaying ? `Pause ${item.senderName}` : `Play ${item.senderName}`}
-          >
-            {/* Cross-fade between Play and Pause so the icon swap doesn't pop. */}
-            <span className="relative w-4 h-4 block">
-              <Pause
-                className={`absolute inset-0 w-4 h-4 transition-opacity duration-150 ${
-                  isPlaying ? 'opacity-100' : 'opacity-0'
-                }`}
-              />
-              <Play
-                className={`absolute inset-0 w-4 h-4 transition-opacity duration-150 ${
-                  isPlaying ? 'opacity-0' : 'opacity-100'
-                }`}
-              />
-            </span>
-          </button>
-        ) : (
-          <div
-            className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold ${
-              item.needsReply
-                ? 'bg-rose-500 text-white'
-                : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
-            }`}
-            aria-hidden="true"
-          >
-            {(item.senderName || '?').charAt(0).toUpperCase()}
-          </div>
-        )}
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-              {item.senderName}
-            </span>
-            <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400 shrink-0">
-              {item.audienceLabel}
-            </span>
-            {/* Timestamp shares the right-side region with the action
-                cluster (absolute-positioned above). Fade out on hover /
-                while the snooze menu is open so they don't overlap. */}
-            <span
-              className={`ml-auto font-mono text-[11px] text-zinc-500 dark:text-zinc-400 shrink-0 transition-opacity duration-150 ${
-                snoozeMenuOpen ? 'opacity-0' : 'opacity-100 group-hover:opacity-0 group-focus-within:opacity-0'
-              }`}
-              aria-hidden={snoozeMenuOpen}
-            >
-              {formatRelativeTime(item.createdAt)}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            <span className="font-mono shrink-0">{formatDuration(item.durationSec)}</span>
-            <span aria-hidden="true">•</span>
-            <span className="truncate">{item.summary || 'No transcript'}</span>
-          </div>
-          {item.summary && (
-            <div className="mt-2">
-              <AIProvenanceChip vendor="PULSE AI" type="SUMMARY" />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {(canReply || onDismiss || onSnooze || onMarkRead || onDelete) && (
-        <div
-          className={`absolute right-2 top-2 ${
-            snoozeMenuOpen || overflowMenuOpen
-              ? 'opacity-100'
-              : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
-          } transition flex items-center gap-1.5`}
-        >
-          {/* Archive — primary dismiss. Always available; clears the row from
-              triage without touching the source data. Lowest visual weight of
-              the cluster so Reply still wins the eye. */}
-          {onDismiss && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDismiss();
-              }}
-              className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
-              aria-label={`Dismiss ${item.senderName} from triage`}
-              title="Dismiss from triage"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-          {/* Snooze — secondary outline. Visible enough to discover, quiet
-              enough to defer to Reply. */}
-          {onSnooze && (
-            <div ref={snoozeRef} className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOverflowMenuOpen(false);
-                  setSnoozeMenuOpen((o) => !o);
-                }}
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md bg-transparent text-zinc-600 dark:text-zinc-400 ring-1 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
-                  snoozeMenuOpen
-                    ? 'ring-rose-400 text-rose-600 dark:text-rose-400'
-                    : 'ring-zinc-200 dark:ring-zinc-700 hover:ring-zinc-300 dark:hover:ring-zinc-600'
-                }`}
-                aria-haspopup="menu"
-                aria-expanded={snoozeMenuOpen}
-                aria-label={`Snooze ${item.senderName}`}
-              >
-                <Clock className="w-3 h-3" />
-                <span className="font-mono text-[10px] uppercase tracking-[0.1em]">Snooze</span>
-                <ChevronDown
-                  className={`w-3 h-3 transition-transform duration-150 ${
-                    snoozeMenuOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-              {snoozeMenuOpen && (
-                <div
-                  role="menu"
-                  className="absolute right-0 top-full mt-1.5 w-44 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-[#0a0a0a] py-1 z-10 shadow-md"
-                >
-                  {[
-                    { label: '1 hour', ms: 60 * 60 * 1000 },
-                    { label: 'Tomorrow 9am', ms: msUntilTomorrow9am() },
-                    { label: 'Next week', ms: 7 * 24 * 60 * 60 * 1000 },
-                  ].map((opt) => (
-                    <button
-                      key={opt.label}
-                      type="button"
-                      role="menuitem"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSnoozeMenuOpen(false);
-                        onSnooze(opt.ms);
-                      }}
-                      className="w-full text-left px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition"
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          {/* Reply — primary coral. The action this surface exists to drive. */}
-          {canReply && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onReply?.();
-              }}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-500 hover:bg-rose-600 text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
-              aria-label={`Reply to ${item.senderName}`}
-            >
-              <Reply className="w-3 h-3" />
-              <span className="font-mono text-[10px] uppercase tracking-[0.1em]">Reply</span>
-            </button>
-          )}
-          {/* Overflow — destructive + low-frequency actions. Lives last so
-              the eye traverses Dismiss → Snooze → Reply → "more" left-to-right. */}
-          {(onMarkRead || onDelete) && (
-            <div ref={overflowRef} className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSnoozeMenuOpen(false);
-                  setOverflowMenuOpen((o) => !o);
-                }}
-                className={`inline-flex items-center justify-center w-6 h-6 rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
-                  overflowMenuOpen
-                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
-                    : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800'
-                }`}
-                aria-haspopup="menu"
-                aria-expanded={overflowMenuOpen}
-                aria-label={`More actions for ${item.senderName}`}
-                title="More"
-              >
-                <MoreHorizontal className="w-3.5 h-3.5" />
-              </button>
-              {overflowMenuOpen && (
-                <div
-                  role="menu"
-                  className="absolute right-0 top-full mt-1.5 w-48 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-[#0a0a0a] py-1 z-10 shadow-md"
-                >
-                  {item.needsReply && onMarkRead && (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOverflowMenuOpen(false);
-                        onMarkRead();
-                      }}
-                      className="w-full text-left px-3 py-1.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
-                    >
-                      <Check className="w-3 h-3" />
-                      Mark as read
-                    </button>
-                  )}
-                  {onDelete && (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOverflowMenuOpen(false);
-                        onDelete();
-                      }}
-                      className="w-full text-left px-3 py-1.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Delete forever
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
 
 /** Compute ms-from-now until 09:00 local tomorrow. */
 function msUntilTomorrow9am(): number {
@@ -441,28 +143,289 @@ function formatRelativeFuture(date: Date): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-const SkeletonList: React.FC = () => (
-  <ul className="divide-y divide-zinc-200 dark:divide-zinc-800" aria-hidden="true">
-    {Array.from({ length: 5 }).map((_, idx) => (
-      <li key={idx} className="px-4 py-3 flex items-start gap-3 animate-pulse">
-        <div className="shrink-0 w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800" />
-        <div className="flex-1 space-y-2">
-          <div className="h-3 w-1/3 rounded bg-zinc-100 dark:bg-zinc-800" />
-          <div className="h-3 w-2/3 rounded bg-zinc-100 dark:bg-zinc-800" />
-        </div>
-      </li>
-    ))}
-  </ul>
-);
+/** A single Inbox studio card. */
+const InboxCard: React.FC<{
+  item: TriageItem;
+  active: boolean;
+  isPlaying: boolean;
+  progress: number;
+  onOpen: () => void;
+  onTogglePlay?: () => void;
+  onReply?: () => void;
+  onMarkRead?: () => void;
+  onSnooze?: (untilMs: number) => void;
+  onDismiss?: () => void;
+  onDelete?: () => void;
+}> = ({ item, active, isPlaying, progress, onOpen, onTogglePlay, onReply, onMarkRead, onSnooze, onDismiss, onDelete }) => {
+  const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false);
+  const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
+  const snoozeRef = useRef<HTMLDivElement | null>(null);
+  const overflowRef = useRef<HTMLDivElement | null>(null);
 
-const EmptyState: React.FC<{ filter: FilterId }> = ({ filter }) => (
-  <div className="h-full flex items-center justify-center px-6 py-12 text-center">
-    <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs">{EMPTY_COPY[filter]}</p>
+  useEffect(() => {
+    if (!snoozeMenuOpen && !overflowMenuOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (snoozeMenuOpen && snoozeRef.current && !snoozeRef.current.contains(t)) setSnoozeMenuOpen(false);
+      if (overflowMenuOpen && overflowRef.current && !overflowRef.current.contains(t)) setOverflowMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [snoozeMenuOpen, overflowMenuOpen]);
+
+  const hasThreadDestination = item.kind === 'thread' && !!(item.raw as any)?.thread_id;
+  const has11Destination = (item.kind === 'classic' || item.kind === 'quick') && !!item.senderId;
+  const canReply = !!onReply && (hasThreadDestination || has11Destination);
+  const canPlay = !!onTogglePlay && !!item.audioUrl;
+
+  // Karaoke split — only while this card is actively playing + has a summary.
+  const transcript = item.summary || '';
+  const hasKaraoke = active && isPlaying && transcript.length > 2;
+  const splitIdx = hasKaraoke ? Math.floor(transcript.length * progress) : 0;
+
+  return (
+    <StudioCard active={active} className="relative group p-4">
+      {/* Header row */}
+      <div className="flex items-center gap-3 mb-3">
+        <div
+          className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold ${
+            item.needsReply
+              ? 'bg-rose-500 text-white'
+              : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+          }`}
+          aria-hidden="true"
+        >
+          {(item.senderName || '?').charAt(0).toUpperCase()}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onOpen}
+              className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate hover:underline focus:outline-none"
+            >
+              {item.senderName}
+            </button>
+            <span className="font-mono text-[10px] uppercase tracking-[0.1em] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0">
+              {item.audienceLabel}
+            </span>
+            {active && isPlaying && (
+              <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-rose-600 dark:text-rose-400">
+                <span className="w-1 h-1 rounded-full bg-rose-500 pulse-dot-anim" aria-hidden="true" />
+                Now playing
+              </span>
+            )}
+            <span className="ml-auto font-mono text-[11px] text-zinc-500 dark:text-zinc-400 shrink-0 group-hover:opacity-0 transition-opacity">
+              {formatRelativeTime(item.createdAt)} · {formatDuration(item.durationSec)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Transport + waveform */}
+      <div className="flex items-center gap-3">
+        {canPlay ? (
+          <button
+            type="button"
+            onClick={onTogglePlay}
+            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+              active
+                ? 'bg-rose-500 text-white'
+                : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-rose-500 hover:text-white'
+            }`}
+            aria-label={active && isPlaying ? `Pause ${item.senderName}` : `Play ${item.senderName}`}
+          >
+            <span className="relative w-4 h-4 block">
+              <Pause className={`absolute inset-0 w-4 h-4 transition-opacity duration-150 ${active && isPlaying ? 'opacity-100' : 'opacity-0'}`} />
+              <Play className={`absolute inset-0 w-4 h-4 transition-opacity duration-150 ${active && isPlaying ? 'opacity-0' : 'opacity-100'}`} />
+            </span>
+          </button>
+        ) : (
+          <div className="shrink-0 w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800/60 flex items-center justify-center text-zinc-400" aria-hidden="true">
+            <Play className="w-4 h-4 opacity-40" />
+          </div>
+        )}
+        <div className="relative flex-1">
+          <span style={{ color: active ? 'var(--pulse-rose)' : 'var(--pulse-ink-2)', display: 'block' }}>
+            <Waveform seed={studioKey(item)} height={32} count={72} tall progress={active ? progress : 0} />
+          </span>
+          {active && (
+            <span
+              className="absolute inset-y-0 pointer-events-none"
+              style={{ left: `${Math.round(progress * 100)}%`, width: 2, background: 'var(--pulse-rose)' }}
+              aria-hidden="true"
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Transcript / summary */}
+      {transcript ? (
+        <div className="mt-3 pl-13" style={{ paddingLeft: 52 }}>
+          <p className="text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-300">
+            {hasKaraoke ? (
+              <>
+                <span className="text-zinc-900 dark:text-zinc-100 font-medium">{transcript.slice(0, splitIdx)}</span>
+                <span className="opacity-50">{transcript.slice(splitIdx)}</span>
+              </>
+            ) : (
+              transcript
+            )}
+          </p>
+          <div className="mt-2">
+            <AIProvenanceChip vendor="PULSE AI" type="SUMMARY" />
+          </div>
+        </div>
+      ) : (
+        <div className="mt-3 text-[13px] text-zinc-400 dark:text-zinc-500" style={{ paddingLeft: 52 }}>
+          No transcript
+        </div>
+      )}
+
+      {/* Hover actions */}
+      {(canReply || onDismiss || onSnooze || onMarkRead || onDelete) && (
+        <div
+          className={`absolute right-3 top-3 ${
+            snoozeMenuOpen || overflowMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+          } transition flex items-center gap-1.5`}
+        >
+          {onDismiss && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onDismiss(); }}
+              className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+              aria-label={`Dismiss ${item.senderName} from triage`}
+              title="Dismiss from triage"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {onSnooze && (
+            <div ref={snoozeRef} className="relative">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setOverflowMenuOpen(false); setSnoozeMenuOpen((o) => !o); }}
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md bg-transparent text-zinc-600 dark:text-zinc-400 ring-1 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                  snoozeMenuOpen ? 'ring-rose-400 text-rose-600 dark:text-rose-400' : 'ring-zinc-200 dark:ring-zinc-700 hover:ring-zinc-300 dark:hover:ring-zinc-600'
+                }`}
+                aria-haspopup="menu"
+                aria-expanded={snoozeMenuOpen}
+                aria-label={`Snooze ${item.senderName}`}
+              >
+                <Clock className="w-3 h-3" />
+                <span className="font-mono text-[10px] uppercase tracking-[0.1em]">Snooze</span>
+                <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${snoozeMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {snoozeMenuOpen && (
+                <div role="menu" className="absolute right-0 top-full mt-1.5 w-44 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-[#0a0a0a] py-1 z-20 shadow-md">
+                  {[
+                    { label: '1 hour', ms: 60 * 60 * 1000 },
+                    { label: 'Tomorrow 9am', ms: msUntilTomorrow9am() },
+                    { label: 'Next week', ms: 7 * 24 * 60 * 60 * 1000 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      role="menuitem"
+                      onClick={(e) => { e.stopPropagation(); setSnoozeMenuOpen(false); onSnooze(opt.ms); }}
+                      className="w-full text-left px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {canReply && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onReply?.(); }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-500 hover:bg-rose-600 text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+              aria-label={`Reply to ${item.senderName}`}
+            >
+              <Reply className="w-3 h-3" />
+              <span className="font-mono text-[10px] uppercase tracking-[0.1em]">Reply</span>
+            </button>
+          )}
+          {(onMarkRead || onDelete) && (
+            <div ref={overflowRef} className="relative">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setSnoozeMenuOpen(false); setOverflowMenuOpen((o) => !o); }}
+                className={`inline-flex items-center justify-center w-6 h-6 rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                  overflowMenuOpen ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200' : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800'
+                }`}
+                aria-haspopup="menu"
+                aria-expanded={overflowMenuOpen}
+                aria-label={`More actions for ${item.senderName}`}
+                title="More"
+              >
+                <MoreHorizontal className="w-3.5 h-3.5" />
+              </button>
+              {overflowMenuOpen && (
+                <div role="menu" className="absolute right-0 top-full mt-1.5 w-48 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-[#0a0a0a] py-1 z-20 shadow-md">
+                  {item.needsReply && onMarkRead && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={(e) => { e.stopPropagation(); setOverflowMenuOpen(false); onMarkRead(); }}
+                      className="w-full text-left px-3 py-1.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
+                    >
+                      <Check className="w-3 h-3" />
+                      Mark as read
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={(e) => { e.stopPropagation(); setOverflowMenuOpen(false); onDelete(); }}
+                      className="w-full text-left px-3 py-1.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Delete forever
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </StudioCard>
+  );
+};
+
+const SkeletonList: React.FC = () => (
+  <div className="space-y-3" aria-hidden="true">
+    {Array.from({ length: 4 }).map((_, idx) => (
+      <div key={idx} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 animate-pulse">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800" />
+          <div className="h-3 w-1/3 rounded bg-zinc-100 dark:bg-zinc-800" />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800" />
+          <div className="h-6 flex-1 rounded bg-zinc-100 dark:bg-zinc-800" />
+        </div>
+      </div>
+    ))}
   </div>
 );
 
-export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOpenView, onCompose, onReply, onReplyToThread }) => {
-  const [activeFilter, setActiveFilter] = useState<FilterId>('all');
+const EmptyState: React.FC<{ source: SourceFilter }> = ({ source }) => (
+  <div className="h-full flex items-center justify-center px-6 py-16 text-center">
+    <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs">{EMPTY_COPY[source]}</p>
+  </div>
+);
+
+export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOpenView, onReply, onReplyToThread }) => {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+  const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
+  const sourceMenuRef = useRef<HTMLDivElement | null>(null);
+
   const {
     items,
     needsReplyCount,
@@ -475,66 +438,35 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
     remove,
   } = useRelayTriage(user?.id);
 
-  // Single shared <audio> for inline row playback. Owning it here (rather
-  // than per-row) gives us "only one row plays at a time" for free, lets
-  // the play button on a different row act as a transport switch, and
-  // avoids spawning N HTMLAudioElements for long feeds.
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [playingItemKey, setPlayingItemKey] = useState<string | null>(null);
+  const studio = useRelayStudio();
 
   useEffect(() => {
-    if (typeof Audio === 'undefined') return;
-    const audio = new Audio();
-    audio.preload = 'none';
-    audioRef.current = audio;
-    const handleEnded = () => setPlayingItemKey(null);
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('pause', handleEnded);
-    return () => {
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('pause', handleEnded);
-      audio.pause();
-      audio.src = '';
-      audioRef.current = null;
+    if (!sourceMenuOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (sourceMenuRef.current && !sourceMenuRef.current.contains(e.target as Node)) setSourceMenuOpen(false);
     };
-  }, []);
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [sourceMenuOpen]);
 
-  const togglePlay = (item: TriageItem) => {
-    const audio = audioRef.current;
-    if (!audio || !item.audioUrl) return;
-    const key = `${item.kind}-${item.id}`;
-    if (playingItemKey === key) {
-      audio.pause();
-      setPlayingItemKey(null);
+  // Play / toggle through the shared studio transport. The footer reflects
+  // and controls whatever this starts.
+  const togglePlayItem = (item: TriageItem) => {
+    if (!item.audioUrl) return;
+    const key = studioKey(item);
+    if (studio.nowPlaying?.id === key) {
+      studio.togglePlay();
       return;
     }
-    audio.pause();
-    audio.src = resolveAudioUrl(item.audioUrl);
-    audio.currentTime = 0;
-    // Dual-read fallback: if the canonical relay URL 404s (legacy asset
-    // pre-cutover), retry against the voxer bucket once before giving up.
-    const onError = () => {
-      audio.removeEventListener('error', onError);
-      const fallback = legacyAudioUrl(item.audioUrl);
-      if (fallback && fallback !== audio.src) {
-        audio.src = fallback;
-        audio.play()
-          .then(() => setPlayingItemKey(key))
-          .catch((err) => {
-            console.warn('[Triage] legacy play failed', err);
-            setPlayingItemKey(null);
-          });
-      } else {
-        setPlayingItemKey(null);
-      }
-    };
-    audio.addEventListener('error', onError, { once: true });
-    audio.play()
-      .then(() => setPlayingItemKey(key))
-      .catch((err) => {
-        console.warn('[Triage] play failed', err);
-        setPlayingItemKey(null);
-      });
+    studio.play({
+      id: key,
+      sender: item.senderName,
+      dur: formatDuration(item.durationSec),
+      type: item.audienceLabel || item.kind,
+      transcript: item.summary ?? null,
+      source: item.kind,
+      audioUrl: item.audioUrl,
+    });
   };
 
   const snoozeItem = async (item: TriageItem, msFromNow: number) => {
@@ -568,32 +500,25 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
   };
 
   const filtered = useMemo(() => {
-    switch (activeFilter) {
-      case 'needs_reply':
-        return items.filter((i) => i.needsReply);
+    let list = items;
+    if (statusFilter === 'needs_reply') list = list.filter((i) => i.needsReply);
+    switch (sourceFilter) {
       case 'messages':
-        return items.filter(
-          (i) => i.kind === 'classic' || i.kind === 'thread' || i.kind === 'quick',
-        );
+        return list.filter((i) => i.kind === 'classic' || i.kind === 'thread' || i.kind === 'quick');
+      case 'broadcast':
+        return list.filter((i) => i.kind === 'broadcast');
       case 'notes':
-        return items.filter((i) => i.kind === 'note');
-      case 'live':
-        return items.filter((i) => i.kind === 'broadcast');
+        return list.filter((i) => i.kind === 'note');
       case 'all':
       default:
-        return items;
+        return list;
     }
-  }, [items, activeFilter]);
+  }, [items, statusFilter, sourceFilter]);
 
-  const handleRowClick = (item: TriageItem) => {
-    onOpenView(viewForKind(item.kind), {
-      kind: item.kind,
-      id: item.id,
-      senderId: item.senderId,
-    });
+  const handleRowOpen = (item: TriageItem) => {
+    onOpenView(viewForKind(item.kind), { kind: item.kind, id: item.id, senderId: item.senderId });
   };
 
-  /** Dismiss-from-triage with an Undo toast (5s). */
   const dismissItem = async (item: TriageItem) => {
     await dismiss(item);
     toast.success(
@@ -617,9 +542,6 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
     );
   };
 
-  /** Hard-delete with a confirm-via-toast pattern: the toast itself hosts
-      the destructive action, so we don't ship a full modal for a single
-      decision the user can also reach via the row. */
   const removeItem = async (item: TriageItem) => {
     toast(
       (t) => (
@@ -654,87 +576,128 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
     );
   };
 
+  const activeSourceLabel = SOURCE_OPTIONS.find((o) => o.id === sourceFilter)?.label ?? 'All sources';
+
   return (
     <div className="h-full flex flex-col bg-white dark:bg-[#080808]">
-      {/* Filter chip row */}
-      <div
-        className="flex items-center gap-2 px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto"
-        role="tablist"
-        aria-label="Triage filter"
-      >
-        {FILTER_ORDER.map((filter) => (
-          <button
-            key={filter}
-            type="button"
-            role="tab"
-            aria-selected={activeFilter === filter}
-            onClick={() => setActiveFilter(filter)}
-            className={`shrink-0 px-3 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] transition ${
-              activeFilter === filter
-                ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
-                : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
-            }`}
-          >
-            {FILTER_LABELS[filter]}
-          </button>
-        ))}
+      {/* Masthead */}
+      <div className="px-7 pt-6 pb-4">
+        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+          Relay · Inbox
+        </div>
+        <div className="flex items-end justify-between mt-1 gap-4">
+          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 leading-tight">Today's voice</h1>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Status toggle */}
+            <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-900">
+              {([
+                { id: 'all', label: 'All' },
+                { id: 'needs_reply', label: 'Needs reply' },
+              ] as { id: StatusFilter; label: string }[]).map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setStatusFilter(s.id)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                    statusFilter === s.id
+                      ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
+                      : 'text-zinc-500 dark:text-zinc-400'
+                  }`}
+                >
+                  {s.label}
+                  {s.id === 'needs_reply' && needsReplyCount > 0 && (
+                    <span className="ml-1.5 font-mono text-[10px] text-rose-500">{needsReplyCount}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            {/* Source dropdown */}
+            <div ref={sourceMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setSourceMenuOpen((o) => !o)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                aria-haspopup="menu"
+                aria-expanded={sourceMenuOpen}
+              >
+                <Filter className="w-3.5 h-3.5" />
+                <span>{activeSourceLabel}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${sourceMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {sourceMenuOpen && (
+                <div role="menu" className="absolute right-0 top-full mt-1.5 w-40 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-[#0a0a0a] py-1 z-20 shadow-md">
+                  {SOURCE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => { setSourceFilter(opt.id); setSourceMenuOpen(false); }}
+                      className={`w-full text-left px-3 py-1.5 text-[12px] transition ${
+                        sourceFilter === opt.id
+                          ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
+                          : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Triage banner — heavy coral only when something genuinely needs
-          a reply. With nothing pending it's a quieter neutral chip
-          ("All caught up."), and when the feed is empty entirely the
-          banner hides — the empty state already speaks. */}
-      {needsReplyCount > 0 ? (
-        <div className="px-4 py-3 bg-rose-50 dark:bg-rose-500/10 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-3">
-          <p className="text-sm font-semibold text-rose-700 dark:text-rose-300 flex-1">
-            {needsReplyCount} voice {needsReplyCount === 1 ? 'message' : 'messages'} need a reply
+      {/* Needs-reply banner */}
+      {needsReplyCount > 0 && (
+        <div className="mx-7 mb-3 px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center gap-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 pulse-dot-anim" aria-hidden="true" />
+          <p className="text-sm font-medium text-rose-700 dark:text-rose-300 flex-1">
+            {needsReplyCount} voice {needsReplyCount === 1 ? 'message needs' : 'messages need'} a reply
           </p>
           <button
             type="button"
             onClick={() => markManyRead(items)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-transparent ring-1 ring-rose-200 dark:ring-rose-500/30 hover:ring-rose-300 dark:hover:ring-rose-500/50 text-rose-700 dark:text-rose-300 font-mono text-[10px] uppercase tracking-[0.1em] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+            className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400 hover:text-rose-700 dark:hover:text-rose-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 rounded"
             aria-label="Mark all as read"
           >
             <CheckCheck className="w-3 h-3" />
             Mark all read
           </button>
         </div>
-      ) : items.length > 0 ? (
-        <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800">
-          <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400">
-            All caught up — nothing needs a reply.
-          </p>
-        </div>
-      ) : null}
+      )}
 
-      {/* Stream list */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Card list */}
+      <div className="flex-1 overflow-y-auto px-7 pb-6">
         {error && (
-          <div className="px-4 py-3 text-sm text-rose-600 dark:text-rose-400 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="mb-3 px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-sm text-rose-600 dark:text-rose-400">
             {error}
           </div>
         )}
 
         {isLoading && <SkeletonList />}
 
-        {!isLoading && filtered.length === 0 && <EmptyState filter={activeFilter} />}
+        {!isLoading && filtered.length === 0 && <EmptyState source={sourceFilter} />}
 
         {!isLoading && filtered.length > 0 && (
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
-            {filtered.map((item) => (
-              <li key={`${item.kind}-${item.id}`}>
-                <TriageRow
+          <div className="space-y-3">
+            {filtered.map((item) => {
+              const key = studioKey(item);
+              const active = studio.nowPlaying?.id === key;
+              return (
+                <InboxCard
+                  key={key}
                   item={item}
-                  isPlaying={playingItemKey === `${item.kind}-${item.id}`}
-                  onClick={() => handleRowClick(item)}
-                  onTogglePlay={() => togglePlay(item)}
+                  active={active}
+                  isPlaying={active && studio.isPlaying}
+                  progress={active ? studio.progress : 0}
+                  onOpen={() => handleRowOpen(item)}
+                  onTogglePlay={() => togglePlayItem(item)}
                   onMarkRead={() => markRead(item)}
                   onSnooze={(ms) => snoozeItem(item, ms)}
                   onDismiss={() => dismissItem(item)}
                   onDelete={() => removeItem(item)}
                   onReply={(() => {
-                    // Thread rows reply into the thread; quick/classic rows
-                    // open a 1:1 composer prefilled with the sender.
                     if (item.kind === 'thread') {
                       const threadId = (item.raw as any)?.thread_id;
                       if (!threadId) return undefined;
@@ -743,27 +706,10 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
                     return item.senderId ? () => onReply(item.senderId!) : undefined;
                   })()}
                 />
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </div>
         )}
-      </div>
-
-      {/* Compose pill — opens the RelayComposer (recipient picker + record
-          area + preview). Space anywhere on Relay opens the same composer. */}
-      <div className="border-t border-zinc-200 dark:border-zinc-800 p-3 flex justify-center">
-        <button
-          type="button"
-          onClick={onCompose}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold shadow-lg shadow-rose-500/25 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
-          aria-label="Compose voice message (or press space)"
-        >
-          <Mic className="w-4 h-4" aria-hidden="true" />
-          New voice message
-          <span className="font-mono text-[10px] uppercase tracking-[0.1em] opacity-80 pl-1">
-            SPACE
-          </span>
-        </button>
       </div>
     </div>
   );

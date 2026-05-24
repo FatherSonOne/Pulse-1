@@ -35,9 +35,12 @@ export const StudioFooter: React.FC = () => {
     nowPlaying,
     isPlaying,
     progress,
+    currentTime,
+    duration,
     isRecording,
     recordingSec,
     togglePlay,
+    seek,
     cancelRecording,
     stopAndSendRecording,
   } = useRelayStudio();
@@ -57,10 +60,19 @@ export const StudioFooter: React.FC = () => {
     );
   }
 
-  const totalSec = parseDur(nowPlaying.dur);
-  const curSec   = Math.floor(totalSec * progress);
-  const cur      = fmtTime(curSec);
+  // Prefer real audio metadata; fall back to the display dur string before
+  // the element has loaded (or for voices with no real audio).
+  const realDur = duration > 0 ? duration : parseDur(nowPlaying.dur);
+  const cur     = fmtTime(Math.floor(currentTime || realDur * progress));
+  const total   = duration > 0 ? fmtTime(Math.round(duration)) : nowPlaying.dur;
   const pct      = Math.round(progress * 100);
+
+  // Scrub: translate a click x-position on the wave track to a 0→1 seek.
+  const handleScrub = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    seek((e.clientX - rect.left) / rect.width);
+  };
 
   return (
     <div className="pulse-studio-footer pulse-studio-footer--playing">
@@ -83,9 +95,22 @@ export const StudioFooter: React.FC = () => {
               PLAYING
             </span>
           )}
-          <span className="pulse-studio-footer__time">{cur} / {nowPlaying.dur}</span>
+          <span className="pulse-studio-footer__time">{cur} / {total}</span>
         </div>
-        <div className="pulse-studio-footer__wave-wrap">
+        <div
+          className="pulse-studio-footer__wave-wrap"
+          onClick={handleScrub}
+          role="slider"
+          aria-label="Seek"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={pct}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowRight') seek(progress + 0.05);
+            if (e.key === 'ArrowLeft') seek(progress - 0.05);
+          }}
+        >
           <span style={{ color: 'var(--pulse-rose)', display: 'block' }}>
             <Waveform seed={nowPlaying.id} height={22} count={120} progress={progress} />
           </span>
