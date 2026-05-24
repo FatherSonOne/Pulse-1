@@ -82,7 +82,7 @@ import {
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
-import { useRelayStudio } from './studio';
+import { useRelayStudio, useRelayModeRecorder } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
@@ -709,6 +709,18 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     setTranscript('');
     startRecording();
   }, [startRecording, pendingRecording]);
+
+  // Tier 2 (unify trigger): the studio shell's FloatingMic + footer RECORDING
+  // surface drive Direct's own MediaRecorder; the in-pane record button is
+  // retired. Enabled only when a contact is selected (the send target). The
+  // RecordingPreview (audio enhancement + transcription) → send stays in-pane.
+  useRelayModeRecorder({
+    start: startRecording,
+    stop: stopRecording,
+    cancel: cancelRecording,
+    recording: isRecording,
+    enabled: !!activeContactId,
+  });
 
   // ============================================
   // PLAYBACK FUNCTIONS
@@ -1570,20 +1582,9 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               </div>
             )}
 
-            {/* Recording Controls */}
-            <div className="classic-controls">
-              <VoxRecordArea
-                modeColor="#f43f5e"
-                isDarkMode={isDarkMode}
-                isRecording={isRecording}
-                isPreviewing={isPreviewing}
-                recordingMode={recordingMode}
-                onToggleRecordingMode={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
-                onPointerDown={startRecording}
-                onPointerUp={stopRecording}
-                onToggleRecording={toggleRecording}
-              />
-            </div>
+            {/* The in-pane record button is retired (Tier 2: the FloatingMic
+                + StudioFooter RECORDING surface drive capture via the studio
+                recorder). The RecordingPreview above owns review → send. */}
           </>
         ) : (
           /* Empty state — quieter pattern matching VoiceRooms / Notes. The

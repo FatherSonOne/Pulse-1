@@ -25,33 +25,37 @@ export interface RelayModeRecorderApi {
   cancel: () => void;
   /** True while the mode is actively capturing. Mirrored to the footer. */
   recording: boolean;
+  /** When false, the mode registers no recorder (the FloatingMic hides, the
+   *  footer stays a pure transport). Use for modes that can only record once a
+   *  target exists — a selected channel, broadcast, or contact. Default true. */
+  enabled?: boolean;
 }
 
-export function useRelayModeRecorder({ start, stop, cancel, recording }: RelayModeRecorderApi): void {
+export function useRelayModeRecorder({ start, stop, cancel, recording, enabled = true }: RelayModeRecorderApi): void {
   const { registerRecorder, notifyRecording } = useRelayStudio();
 
   // Latest handlers in a ref so the registered controller stays stable.
   const handlersRef = useRef({ start, stop, cancel });
   handlersRef.current = { start, stop, cancel };
 
-  // Register once; unregister on unmount. registerRecorder is a []-deps
-  // useCallback, so this effect does not re-run on context value changes.
-  useEffect(
-    () =>
-      registerRecorder({
-        start: () => {
-          void handlersRef.current.start();
-        },
-        stop: () => handlersRef.current.stop(),
-        cancel: () => handlersRef.current.cancel(),
-      }),
-    [registerRecorder],
-  );
+  // Register while enabled; unregister on disable/unmount. registerRecorder is
+  // a []-deps useCallback, so this effect only re-runs when `enabled` flips —
+  // never on the context value churning during playback.
+  useEffect(() => {
+    if (!enabled) return;
+    return registerRecorder({
+      start: () => {
+        void handlersRef.current.start();
+      },
+      stop: () => handlersRef.current.stop(),
+      cancel: () => handlersRef.current.cancel(),
+    });
+  }, [registerRecorder, enabled]);
 
   // Mirror the live capture flag — fires only on real recording transitions.
   useEffect(() => {
-    notifyRecording(recording);
-  }, [notifyRecording, recording]);
+    notifyRecording(enabled && recording);
+  }, [notifyRecording, enabled, recording]);
 }
 
 export default useRelayModeRecorder;
