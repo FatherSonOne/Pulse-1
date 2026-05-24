@@ -115,7 +115,17 @@ test('relay path-c NARROW tour (in-app resize, no reload)', async ({ page }) => 
   await relayNav.click();
   await page.waitForTimeout(2000);
 
-  const sources = ['Inbox', 'Direct', 'Channels', 'Broadcast', 'Notes', 'Live'];
+  // Navigate by the rail buttons' data-section ids, NOT by visible label text:
+  // on a narrow pane the rail auto-collapses to icons and the labels leave the
+  // DOM, so getByText('Notes') would miss. data-section is always present.
+  const sources = [
+    { id: 'triage',    name: 'inbox' },
+    { id: 'direct',    name: 'direct' },
+    { id: 'channel',   name: 'channels' },
+    { id: 'broadcast', name: 'broadcast' },
+    { id: 'notes',     name: 'notes' },
+    { id: 'live',      name: 'live' },
+  ];
 
   // Diagnostic widths for the viewport-vs-container mismatch:
   //  980/860 → md: ON (>=768): side columns TRY to render but Relay's pane
@@ -125,15 +135,15 @@ test('relay path-c NARROW tour (in-app resize, no reload)', async ({ page }) => 
   for (const width of [980, 860, 720, 560] as const) {
     await page.setViewportSize({ width, height: 900 });
     await page.waitForTimeout(600);
-    for (const src of sources) {
-      const item = page.getByText(src, { exact: true }).first();
+    for (const s of sources) {
+      const item = page.locator(`[data-section="${s.id}"]`).first();
       if (await seen(item, 3000)) {
         await item.click().catch(() => {});
         await page.waitForTimeout(900);
-        await page.screenshot({ path: `${OUT}/w${width}-${src.toLowerCase()}.png` });
-        console.log(`[verify] captured w${width}-${src}`);
+        await page.screenshot({ path: `${OUT}/w${width}-${s.name}.png` });
+        console.log(`[verify] captured w${width}-${s.name}`);
       } else {
-        console.log(`[verify] w${width} source not found: ${src} (rail/nav may have collapsed)`);
+        console.log(`[verify] w${width} source not found: ${s.id}`);
       }
     }
   }
