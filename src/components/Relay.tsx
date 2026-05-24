@@ -297,19 +297,24 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
                 hint redundant with the in-pane recorder. */}
             {view !== 'live' && <StudioFooter suppressIdle={view !== 'triage'} />}
 
-            {/* Record affordance — Inbox only. The other source views record
-                through their own contextual in-pane block; floating a mic over
-                them too would stack two record affordances (see the Notes /
-                Broadcast screenshots). Inbox has no in-pane recorder, so it's
-                the cross-cutting quick-capture surface. Routes to the composer
-                modal; forceIdleIcon keeps the Mic glyph since studio.isRecording
-                isn't driven yet. (Full unification — real capture into the
-                footer's RECORDING surface — is the Tier 2 rewire.) */}
+            {/* Record affordance.
+                - Inbox: opens the composer (quick-capture needs recipient
+                  picking the rail can't supply). forceIdleIcon keeps the Mic
+                  glyph since this path doesn't drive studio.isRecording.
+                - Source views: the UNIFIED record trigger — drives
+                  studio.toggleRecording, which delegates to the focused mode's
+                  registered recorder (its own capture + preview pipeline), and
+                  the footer lights up its RECORDING surface. requireRecorder
+                  hides it in modes not yet wired to the studio recorder (those
+                  keep their in-pane block), so the rewire rolls out per mode. */}
             {view === 'triage' && (
               <FloatingMic
                 onClick={() => openComposer(null)}
                 forceIdleIcon
               />
+            )}
+            {(view === 'direct' || view === 'channel' || view === 'broadcast' || view === 'notes') && (
+              <FloatingMic requireRecorder />
             )}
           </div>
         </div>

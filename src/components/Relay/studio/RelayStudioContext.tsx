@@ -60,9 +60,24 @@ export interface RelayStudioState {
   // ── recording ───────────────────────────────────────────────────────────
   isRecording: boolean;
   recordingSec: number;
+  /** True once the focused mode has registered a recording controller, so the
+   *  shell (FloatingMic / footer) knows the record gesture drives real capture
+   *  rather than the notional fallback. */
+  hasRecorder: boolean;
 
   // ── chrome ──────────────────────────────────────────────────────────────
   railCollapsed: boolean;
+}
+
+/** A mode's recording controller. The studio shell (FloatingMic / SPACE /
+ *  footer RECORDING surface) drives these, but the mode owns the actual
+ *  capture and its own enhance / transcribe / preview → send pipeline. Tap
+ *  semantics: start() begins, stop() ends and hands off to the mode's in-pane
+ *  preview, cancel() discards. */
+export interface RelayRecorder {
+  start: () => void;
+  stop: () => void;
+  cancel: () => void;
 }
 
 export interface RelayStudioApi extends RelayStudioState {
@@ -79,12 +94,21 @@ export interface RelayStudioApi extends RelayStudioState {
   setPlaybackRate: (rate: PlaybackSpeed) => void;
   /** Cycle to the next preset rate (0.75 → 1 → 1.25 → 1.5 → 2 → 0.75). */
   cyclePlaybackRate: () => void;
-  /** Toggle the recording surface. Auto-pauses playback when starting. */
+  /** Toggle recording. If the focused mode registered a recorder, this drives
+   *  the mode's own capture (tap: start ↔ stop → its preview); otherwise it
+   *  falls back to the notional surface toggle. Auto-pauses playback. */
   toggleRecording: () => void;
-  /** Cancel the active recording (no send). */
+  /** Cancel the active recording (no send) — delegates to the mode recorder. */
   cancelRecording: () => void;
-  /** Stop the active recording and notionally send (delegate decides where). */
+  /** Stop the active recording — delegates to the mode recorder, which hands
+   *  off to its in-pane preview. (Footer label is "Stop".) */
   stopAndSendRecording: () => void;
+  /** Register the focused mode's recording controller; returns an unregister.
+   *  Only one mode is mounted at a time, so only one recorder is ever active. */
+  registerRecorder: (rec: RelayRecorder) => () => void;
+  /** The focused mode reports whether it is currently capturing, so the footer
+   *  RECORDING surface + the FloatingMic icon reflect the truth. */
+  notifyRecording: (active: boolean) => void;
   /** Toggle the sources rail collapsed state. Persists to localStorage. */
   toggleRail: () => void;
 }
@@ -134,6 +158,13 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
   const [recordingSec, setRecordingSec] = useState(0);
   const [railCollapsed, setRailCollapsed] = useState<boolean>(readInitialRailCollapsed);
   const [playbackRate, setPlaybackRateState] = useState<PlaybackSpeed>(readInitialPlaybackRate);
+  const [hasRecorder, setHasRecorder] = useState(false);
+
+  // The focused mode's recording controller + a live mirror of isRecording so
+  // toggleRecording can decide start-vs-stop without a stale capture.
+  const recorderRef = useRef<RelayRecorder | null>(null);
+  const isRecordingRef = useRef(false);
+  isRecordingRef.current = isRecording;
 
   // Single shared <audio>. Created once; lives for the provider's lifetime.
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -279,27 +310,70 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
   }, []);
 
   const toggleRecording = useCallback(() => {
+    const rec = recorderRef.current;
+    if (rec) {
+      // A mode owns capture — drive its tap toggle. Its own state change flows
+      // back through notifyRecording, which updates isRecording + the timer.
+      if (isRecordingRef.current) {
+        rec.stop();
+      } else {
+        audioRef.current?.pause();
+        rec.start();
+      }
+      return;
+    }
+    // Notional fallback (no mode recorder registered).
     setIsRecording(prev => {
       if (prev) {
         setRecordingSec(0);
         return false;
       }
-      // Starting a recording — pause any playback so audio doesn't compete.
       audioRef.current?.pause();
       return true;
     });
   }, []);
 
   const cancelRecording = useCallback(() => {
+    recorderRef.current?.cancel();
     setIsRecording(false);
     setRecordingSec(0);
     recordingCancelledRef.current?.();
   }, []);
 
   const stopAndSendRecording = useCallback(() => {
+    const rec = recorderRef.current;
+    if (rec) {
+      // Stop → the mode shows its in-pane preview; notifyRecording(false) will
+      // clear isRecording. Reset the footer timer now.
+      rec.stop();
+      setRecordingSec(0);
+      return;
+    }
     setIsRecording(false);
     setRecordingSec(0);
     recordingSentRef.current?.();
+  }, []);
+
+  // Mode registration. Only the focused mode is mounted, so the latest
+  // registrant wins; unregister clears recording state if it was mid-capture.
+  const registerRecorder = useCallback((rec: RelayRecorder) => {
+    recorderRef.current = rec;
+    setHasRecorder(true);
+    return () => {
+      if (recorderRef.current === rec) {
+        recorderRef.current = null;
+        setHasRecorder(false);
+        setIsRecording(false);
+        setRecordingSec(0);
+      }
+    };
+  }, []);
+
+  // The focused mode reports its capture state; drives the footer + mic. The
+  // existing recordingSec timer keys off isRecording, so it starts/stops here.
+  const notifyRecording = useCallback((active: boolean) => {
+    setIsRecording(active);
+    if (!active) setRecordingSec(0);
   }, []);
 
   const toggleRail = useCallback(() => setRailCollapsed(c => !c), []);
@@ -331,6 +405,7 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
     playbackRate,
     isRecording,
     recordingSec,
+    hasRecorder,
     railCollapsed,
     play,
     togglePlay,
@@ -341,10 +416,12 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
     toggleRecording,
     cancelRecording,
     stopAndSendRecording,
+    registerRecorder,
+    notifyRecording,
     toggleRail,
   }), [
-    nowPlaying, isPlaying, progress, currentTime, duration, playbackRate, isRecording, recordingSec, railCollapsed,
-    play, togglePlay, stop, seek, setPlaybackRate, cyclePlaybackRate, toggleRecording, cancelRecording, stopAndSendRecording, toggleRail,
+    nowPlaying, isPlaying, progress, currentTime, duration, playbackRate, isRecording, recordingSec, hasRecorder, railCollapsed,
+    play, togglePlay, stop, seek, setPlaybackRate, cyclePlaybackRate, toggleRecording, cancelRecording, stopAndSendRecording, registerRecorder, notifyRecording, toggleRail,
   ]);
 
   return <RelayStudioContext.Provider value={value}>{children}</RelayStudioContext.Provider>;

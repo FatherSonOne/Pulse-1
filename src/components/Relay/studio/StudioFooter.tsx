@@ -187,7 +187,7 @@ const RecordingFooter: React.FC<RecordingFooterProps> = ({ sec, onCancel, onStop
       </button>
       <button type="button" onClick={onStopAndSend} className="pulse-studio-footer__rec-stop">
         <Pause className="w-3.5 h-3.5" />
-        Stop & send
+        Stop
       </button>
     </div>
   </div>

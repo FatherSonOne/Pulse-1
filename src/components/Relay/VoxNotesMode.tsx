@@ -56,7 +56,7 @@ import type { ConversationSummary, SmartReply } from '../../services/relay/relay
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
-import { useRelayStudio } from './studio';
+import { useRelayStudio, useRelayModeRecorder } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
@@ -150,6 +150,16 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     onRecordingComplete: async (_data) => {
       // Recording complete - ready for preview
     },
+  });
+
+  // Tier 2 (unify trigger): the studio shell's FloatingMic + footer RECORDING
+  // surface drive this mode's own capture pipeline; the in-pane record block
+  // is retired. Preview → send still happens in-pane (below).
+  useRelayModeRecorder({
+    start: startRecording,
+    stop: stopRecording,
+    cancel: cancelRecording,
+    recording: recordingState === 'recording',
   });
 
   // Phase 5: AI Handler Functions (defined before keyboard shortcuts to avoid TDZ)
@@ -1180,8 +1190,10 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         </div>
       </div>
 
-      {/* Compose footer — mirrors Direct/Channel bottom-pinned record pattern */}
-      {recordingState === 'preview' && recordingData ? (
+      {/* Preview → send. The in-pane record trigger is retired (Tier 2:
+          the FloatingMic + StudioFooter RECORDING surface drive capture via
+          the studio recorder); the review-before-send step stays here. */}
+      {recordingState === 'preview' && recordingData && (
         <div className={`px-4 md:px-6 py-4 border-t ${tc.border}`}>
           <RecordingPreview
             recordingData={recordingData}
@@ -1193,33 +1205,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
             }}
             isDarkMode={isDarkMode}
           />
-        </div>
-      ) : (
-        <div className={`px-4 md:px-6 py-4 border-t ${tc.border}`}>
-          <VoxRecordArea
-            modeColor={MODE_COLOR}
-            isDarkMode={isDarkMode}
-            isRecording={recordingState === 'recording'}
-            isPreviewing={false}
-            recordingMode={recordingMode}
-            onToggleRecordingMode={() => setRecordingMode(prev => prev === 'hold' ? 'tap' : 'hold')}
-            onPointerDown={handlePointerDown}
-            onPointerUp={handlePointerUp}
-            onToggleRecording={handleToggleRecording}
-            recordingDuration={recordingDuration}
-            recordingState={recordingState}
-          >
-            {recordingState === 'recording' && (
-              <VoxAudioVisualizer
-                analyser={analyser}
-                isActive={true}
-                mode="waveform"
-                color={MODE_COLOR}
-                height={48}
-                isDarkMode={isDarkMode}
-              />
-            )}
-          </VoxRecordArea>
         </div>
       )}
 

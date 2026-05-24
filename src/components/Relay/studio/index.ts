@@ -2,7 +2,10 @@
 // Relay shell import from here; CSS modules ride along automatically.
 
 export { RelayStudioProvider, useRelayStudio, useRelayStudioOptional } from './RelayStudioContext';
-export type { NowPlayingVoice, RelayStudioState, RelayStudioApi } from './RelayStudioContext';
+export type { NowPlayingVoice, RelayStudioState, RelayStudioApi, RelayRecorder } from './RelayStudioContext';
+
+export { useRelayModeRecorder } from './useRelayModeRecorder';
+export type { RelayModeRecorderApi } from './useRelayModeRecorder';
 
 export { Waveform } from './Waveform';
 export type { WaveformProps } from './Waveform';

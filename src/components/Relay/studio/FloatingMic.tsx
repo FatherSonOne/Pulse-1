@@ -22,10 +22,16 @@ export interface FloatingMicProps {
    *  the resting "Mic" affordance instead of "Square (Stop)". Default:
    *  derived from studio.isRecording. */
   forceIdleIcon?: boolean;
+  /** Only render when the focused mode has registered a recording controller
+   *  (studio.hasRecorder). Source views pass this so the mic appears as the
+   *  unified record trigger exactly in modes wired to the studio recorder, and
+   *  stays hidden where the mode still owns an in-pane record block. */
+  requireRecorder?: boolean;
 }
 
-export const FloatingMic: React.FC<FloatingMicProps> = ({ onClick, forceIdleIcon }) => {
-  const { isRecording, toggleRecording } = useRelayStudio();
+export const FloatingMic: React.FC<FloatingMicProps> = ({ onClick, forceIdleIcon, requireRecorder }) => {
+  const { isRecording, hasRecorder, toggleRecording } = useRelayStudio();
+  if (requireRecorder && !hasRecorder) return null;
   const handleClick = onClick ?? toggleRecording;
   const showStopIcon = !forceIdleIcon && isRecording;
 
