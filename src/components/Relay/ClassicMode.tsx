@@ -1137,9 +1137,9 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       <aside className={`classic-sidebar ${mobileView === 'list' ? 'visible' : 'hidden-mobile'}`}>
         {/* Header */}
         <VoxModeHeader
-          modeName="Messages"
-          modeTagline="Hold to talk"
-          modeColor="#f43f5e"
+          modeName="Direct"
+          modeTagline=""
+          eyebrow="DIRECT VOICE"
           modeIcon={Radio}
           onBack={onBack}
           isDarkMode={isDarkMode}
@@ -1240,6 +1240,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
             <VoxModeToolbar
               onBack={() => setMobileView('list')}
               modeIcon={<Phone className="w-5 h-5" />}
+              eyebrow="DIRECT VOICE"
               modeTitle={activeContact.displayName || activeContact.fullName || 'Conversation'}
               modeSubtitle={activeContact.handle ? `@${activeContact.handle}` : activeContact.role || ''}
               accentColor="#f43f5e"
