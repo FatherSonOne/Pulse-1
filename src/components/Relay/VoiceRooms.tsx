@@ -437,18 +437,18 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
   const selectedIsSolo = selectedChannelId === 'solo';
 
   return (
-    <div className="h-full flex bg-[#080808]">
+    <div className="h-full flex bg-[var(--pulse-canvas-soft)]">
       {/* Left rail — channels organized into four mono-labeled sections.
           Persistent across every right-pane state; never overlays the Relay
           top nav (in-flow render, no fixed inset-0). */}
-      <aside className="w-72 shrink-0 border-r border-white/[0.06] bg-white/[0.03] flex flex-col">
+      <aside className="w-72 shrink-0 border-r border-[var(--pulse-border)] bg-[var(--pulse-surface)] flex flex-col">
         {/* Rail header — quiet chrome, no big Create button at top (Create is
             scoped to the AD-HOC section, where it belongs). */}
-        <div className="px-4 py-3 border-b border-white/[0.06]">
-          <h2 className="text-sm font-semibold text-[#fafafa] flex items-center gap-2">
+        <div className="px-4 py-3 border-b border-[var(--pulse-border)]">
+          <h2 className="text-sm font-semibold text-[var(--pulse-ink)] flex items-center gap-2">
             {/* Header glyph is chrome, not brand — coral is reserved for live
                 state (active call, Go Live CTA, AI listening chip). */}
-            <Radio className="w-4 h-4 text-[#b4b4b8]" />
+            <Radio className="w-4 h-4 text-[var(--pulse-ink-2)]" />
             Live
           </h2>
         </div>
@@ -464,7 +464,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
               still render below since they don't depend on voice_rooms. */}
           {!isLoadingRooms && loadError && (
             <div className="px-4 py-3 mb-2 mx-2 rounded-lg bg-red-500/10 border border-red-500/20">
-              <p className="text-xs text-[#b4b4b8] mb-2">{loadError}</p>
+              <p className="text-xs text-[var(--pulse-ink-2)] mb-2">{loadError}</p>
               <button
                 type="button"
                 onClick={() => {
@@ -480,7 +480,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                     })));
                   }).catch(() => setLoadError("Still can't reach rooms.")).finally(() => setIsLoadingRooms(false));
                 }}
-                className="text-xs text-rose-400 hover:text-rose-300 underline transition"
+                className="text-xs text-[var(--pulse-rose)] hover:text-[var(--pulse-rose)] underline transition"
               >
                 Retry
               </button>
@@ -525,7 +525,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
             trailing={
               <button
                 onClick={() => setShowCreateRoom(true)}
-                className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 hover:text-[#fafafa] transition flex items-center gap-1"
+                className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 hover:text-[var(--pulse-ink)] transition flex items-center gap-1"
                 aria-label="Create ad-hoc room"
               >
                 <Plus className="w-3 h-3" />
@@ -547,7 +547,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                   className={`group relative transition flex items-stretch ${
                     isSelected || isJoined
                       ? 'bg-rose-500/10'
-                      : 'hover:bg-white/[0.055]'
+                      : 'hover:bg-[var(--pulse-surface-raised)]'
                   }`}
                 >
                   <button
@@ -560,15 +560,15 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                     }}
                     className="flex-1 min-w-0 pl-4 pr-10 py-2 text-left flex items-center gap-3"
                   >
-                    <div className={`w-8 h-8 rounded-lg ${room.color} flex items-center justify-center text-[#fafafa] shrink-0`}>
+                    <div className={`w-8 h-8 rounded-lg ${room.color} flex items-center justify-center text-[var(--pulse-ink)] shrink-0`}>
                       <RoomIcon name={room.icon} className="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-[#fafafa] text-sm truncate">{room.name}</div>
+                      <div className="font-medium text-[var(--pulse-ink)] text-sm truncate">{room.name}</div>
                       <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500">
                         <span>{room.participants.length}/{room.maxParticipants}</span>
                         {room.isPrivate && <Lock className="w-2.5 h-2.5" />}
-                        {isJoined && <span className="text-rose-400">· LIVE</span>}
+                        {isJoined && <span className="text-[var(--pulse-rose)]">· LIVE</span>}
                       </div>
                     </div>
                   </button>
@@ -582,7 +582,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                       e.stopPropagation();
                       deleteRoom(room.id);
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center text-[#b4b4b8] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-red-300 hover:bg-white/[0.08] transition"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center text-[var(--pulse-ink-2)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-red-600 dark:hover:text-red-300 hover:bg-[var(--pulse-surface-raised)] transition"
                     aria-label={`Delete ${room.name}`}
                     title="Delete room"
                   >
@@ -604,15 +604,15 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
         {activeRoom ? (
           <>
             {/* Room Header */}
-            <div className="px-6 py-4 border-b border-white/[0.06] bg-[rgba(255,255,255,0.03)]">
+            <div className="px-6 py-4 border-b border-[var(--pulse-border)] bg-[rgba(255,255,255,0.03)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className={`w-14 h-14 rounded-xl ${activeRoom.color} flex items-center justify-center text-[#fafafa]`}>
+                  <div className={`w-14 h-14 rounded-xl ${activeRoom.color} flex items-center justify-center text-[var(--pulse-ink)]`}>
                     <RoomIcon name={activeRoom.icon} className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-[#fafafa]">{activeRoom.name}</h3>
-                    <p className="text-sm text-[#b4b4b8]">{activeRoom.description}</p>
+                    <h3 className="text-xl font-bold text-[var(--pulse-ink)]">{activeRoom.name}</h3>
+                    <p className="text-sm text-[var(--pulse-ink-2)]">{activeRoom.description}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -622,8 +622,8 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                     onClick={() => setShowAISidecar(v => !v)}
                     className={`px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] transition flex items-center gap-2 ${
                       showAISidecar
-                        ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-                        : 'text-[#b4b4b8] hover:bg-white/[0.055] border border-transparent'
+                        ? 'bg-rose-500/15 text-[var(--pulse-rose)] border border-rose-500/30'
+                        : 'text-[var(--pulse-ink-2)] hover:bg-[var(--pulse-surface-raised)] border border-transparent'
                     }`}
                     aria-pressed={showAISidecar}
                     title={showAISidecar ? 'Stop AI listening' : 'Start AI listening'}
@@ -637,7 +637,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                   </button>
                   <button
                     onClick={() => setShowSettings(true)}
-                    className="w-10 h-10 rounded-full hover:bg-white/[0.055] flex items-center justify-center text-[#b4b4b8] hover:text-[#fafafa] transition"
+                    className="w-10 h-10 rounded-full hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition"
                   >
                     <Settings />
                   </button>
@@ -651,31 +651,31 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                 {activeRoom.participants.map(participant => (
                   <div
                     key={participant.userId}
-                    className={`p-4 rounded-xl bg-white/[0.03] border transition ${
+                    className={`p-4 rounded-xl bg-[var(--pulse-surface)] border transition ${
                       speakingUsers.has(participant.userId)
                         ? 'border-rose-500 shadow-lg shadow-rose-500/20'
-                        : 'border-white/[0.06]'
+                        : 'border-[var(--pulse-border)]'
                     }`}
                   >
                     <div className="flex flex-col items-center text-center">
-                      <div className={`w-16 h-16 rounded-full ${participant.avatarColor} flex items-center justify-center text-[#fafafa] text-2xl font-bold relative mb-3 ${speakingUsers.has(participant.userId) ? 'ring-4 ring-rose-400 ring-opacity-50 animate-pulse' : ''}`}>
+                      <div className={`w-16 h-16 rounded-full ${participant.avatarColor} flex items-center justify-center text-white text-2xl font-bold relative mb-3 ${speakingUsers.has(participant.userId) ? 'ring-4 ring-rose-400 ring-opacity-50 animate-pulse' : ''}`}>
                         {participant.name.charAt(0)}
                         {participant.isScreenSharing && (
                           <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                            <Monitor className="text-[10px] text-[#fafafa]" />
+                            <Monitor className="text-[10px] text-[var(--pulse-ink)]" />
                           </div>
                         )}
                       </div>
-                      <span className="font-medium text-[#fafafa] text-sm">{participant.name}</span>
+                      <span className="font-medium text-[var(--pulse-ink)] text-sm">{participant.name}</span>
                       <div className="flex items-center gap-2 mt-2">
                         {participant.isMuted && (
                           <span className="w-6 h-6 rounded-full bg-red-500/15 flex items-center justify-center">
-                            <MicOff className="w-3 h-3 text-red-300" aria-hidden />
+                            <MicOff className="w-3 h-3 text-red-600 dark:text-red-300" aria-hidden />
                           </span>
                         )}
                         {participant.isDeafened && (
                           <span className="w-6 h-6 rounded-full bg-red-500/15 flex items-center justify-center">
-                            <VolumeX className="w-3 h-3 text-red-300" aria-hidden />
+                            <VolumeX className="w-3 h-3 text-red-600 dark:text-red-300" aria-hidden />
                           </span>
                         )}
                       </div>
@@ -685,7 +685,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
 
                 {/* Empty slots */}
                 {Array.from({ length: Math.max(0, 4 - activeRoom.participants.length) }).map((_, i) => (
-                  <div key={`empty-${i}`} className="p-4 rounded-xl border border-dashed border-white/[0.06] flex items-center justify-center min-h-[150px]">
+                  <div key={`empty-${i}`} className="p-4 rounded-xl border border-dashed border-[var(--pulse-border)] flex items-center justify-center min-h-[150px]">
                     <div className="text-center text-zinc-600">
                       <UserPlus className="w-6 h-6 mb-2 mx-auto" aria-hidden />
                       <p className="text-xs">Open seat</p>
@@ -696,7 +696,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
             </div>
 
             {/* Controls */}
-            <div className="px-6 py-4 border-t border-white/[0.06] bg-[rgba(255,255,255,0.03)]">
+            <div className="px-6 py-4 border-t border-[var(--pulse-border)] bg-[rgba(255,255,255,0.03)]">
               <div className="flex items-center justify-center gap-4">
                 {/* Mute / Deafen — active state uses the soft-red tint pattern
                     (bg-red-500/15 + border + lifted text) instead of solid red.
@@ -707,8 +707,8 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                   onClick={toggleMute}
                   className={`w-14 h-14 rounded-full flex items-center justify-center transition border ${
                     isMuted
-                      ? 'bg-red-500/15 hover:bg-red-500/25 text-red-300 border-red-500/30'
-                      : 'bg-white/[0.055] hover:bg-white/[0.08] text-[#fafafa] border-transparent'
+                      ? 'bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-300 border-red-500/30'
+                      : 'bg-[var(--pulse-surface-raised)] hover:bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink)] border-transparent'
                   }`}
                   title={isMuted ? 'Unmute' : 'Mute'}
                 >
@@ -719,8 +719,8 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                   onClick={toggleDeafen}
                   className={`w-14 h-14 rounded-full flex items-center justify-center transition border ${
                     isDeafened
-                      ? 'bg-red-500/15 hover:bg-red-500/25 text-red-300 border-red-500/30'
-                      : 'bg-white/[0.055] hover:bg-white/[0.08] text-[#fafafa] border-transparent'
+                      ? 'bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-300 border-red-500/30'
+                      : 'bg-[var(--pulse-surface-raised)] hover:bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink)] border-transparent'
                   }`}
                   title={isDeafened ? 'Unmute speakers' : 'Mute speakers'}
                 >
@@ -728,7 +728,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                 </button>
 
                 <button
-                  className="w-14 h-14 rounded-full bg-white/[0.055] hover:bg-white/[0.08] text-[#fafafa] flex items-center justify-center transition"
+                  className="w-14 h-14 rounded-full bg-[var(--pulse-surface-raised)] hover:bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink)] flex items-center justify-center transition"
                   title="Share screen"
                 >
                   <Monitor className="text-xl" />
@@ -736,7 +736,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
 
                 <button
                   onClick={leaveRoom}
-                  className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 text-[#fafafa] flex items-center justify-center transition"
+                  className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition"
                   title="Leave call"
                 >
                   <PhoneOff className="text-xl" />
@@ -749,17 +749,17 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
           // recording flow (getUserMedia → MediaRecorder → upload → Pulse note).
           <div className="flex-1 flex items-center justify-center px-6">
             <div className="text-center max-w-md">
-              <div className="w-20 h-20 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-5">
+              <div className="w-20 h-20 rounded-full bg-[var(--pulse-surface)] border border-[var(--pulse-border)] flex items-center justify-center mx-auto mb-5">
                 <Mic className="w-8 h-8 text-zinc-500" />
               </div>
               <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-2">LIVE · SOLO</p>
-              <h3 className="text-lg font-semibold text-[#fafafa] mb-2">Talk to yourself, get a Pulse note</h3>
-              <p className="text-sm text-[#b4b4b8] leading-relaxed mb-6">
+              <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-2">Talk to yourself, get a Pulse note</h3>
+              <p className="text-sm text-[var(--pulse-ink-2)] leading-relaxed mb-6">
                 Record 30 seconds to 5 minutes. Pulse transcribes and lands it in Notes.
               </p>
               <button
                 disabled
-                className="px-5 py-2.5 rounded-lg bg-rose-500/40 text-[#fafafa] text-sm font-medium opacity-60 cursor-not-allowed inline-flex items-center gap-2"
+                className="px-5 py-2.5 rounded-lg bg-rose-500/40 text-white text-sm font-medium opacity-60 cursor-not-allowed inline-flex items-center gap-2"
                 title="Recording opens with mic access — wired soon"
               >
                 <Square className="w-4 h-4" />
@@ -772,24 +772,24 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
           // Channel-idle — ad-hoc room is selected but the user hasn't joined.
           // Single Go Live CTA opens the pre-join sheet.
           <div className="flex-1 flex flex-col">
-            <div className="px-6 py-4 border-b border-white/[0.06]">
+            <div className="px-6 py-4 border-b border-[var(--pulse-border)]">
               <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500">LIVE · AD-HOC</p>
             </div>
             <div className="flex-1 flex items-center justify-center px-6">
               <div className="text-center max-w-md">
-                <div className={`w-20 h-20 rounded-2xl ${selectedRoom.color} flex items-center justify-center text-[#fafafa] mx-auto mb-5`}>
+                <div className={`w-20 h-20 rounded-2xl ${selectedRoom.color} flex items-center justify-center text-[var(--pulse-ink)] mx-auto mb-5`}>
                   <RoomIcon name={selectedRoom.icon} className="w-9 h-9" />
                 </div>
-                <h3 className="text-xl font-semibold text-[#fafafa] mb-1">{selectedRoom.name}</h3>
+                <h3 className="text-xl font-semibold text-[var(--pulse-ink)] mb-1">{selectedRoom.name}</h3>
                 {selectedRoom.description && (
-                  <p className="text-sm text-[#b4b4b8] leading-relaxed mb-5">{selectedRoom.description}</p>
+                  <p className="text-sm text-[var(--pulse-ink-2)] leading-relaxed mb-5">{selectedRoom.description}</p>
                 )}
                 <div className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-6">
                   {selectedRoom.participants.length}/{selectedRoom.maxParticipants} · {selectedRoom.isPrivate ? 'PRIVATE' : 'OPEN'}
                 </div>
                 <button
                   onClick={() => setPreJoinRoomId(selectedRoom.id)}
-                  className="px-6 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-[#fafafa] text-sm font-medium transition inline-flex items-center gap-2"
+                  className="px-6 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-sm font-medium transition inline-flex items-center gap-2"
                 >
                   <Radio className="w-4 h-4" />
                   Go Live
@@ -802,11 +802,11 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
           // for Phase 1 the brief's empty copy is the placeholder.
           <div className="flex-1 flex items-center justify-center px-6">
             <div className="text-center max-w-sm">
-              <div className="w-20 h-20 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-5">
+              <div className="w-20 h-20 rounded-full bg-[var(--pulse-surface)] border border-[var(--pulse-border)] flex items-center justify-center mx-auto mb-5">
                 <Radio className="w-8 h-8 text-zinc-600" />
               </div>
               <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-2">LIVE</p>
-              <p className="text-sm text-[#b4b4b8] leading-relaxed">
+              <p className="text-sm text-[var(--pulse-ink-2)] leading-relaxed">
                 Pick a contact or team to go live, or start a solo recording.
               </p>
             </div>
@@ -818,21 +818,21 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
           Always mounted (Phase 2d streams the live transcript here); width
           animates from 0 → 320px so the right-pane reflows smoothly. */}
       <aside
-        className={`shrink-0 border-l border-white/[0.06] bg-white/[0.03] overflow-hidden transition-[width] duration-[220ms] ease-out ${
+        className={`shrink-0 border-l border-[var(--pulse-border)] bg-[var(--pulse-surface)] overflow-hidden transition-[width] duration-[220ms] ease-out ${
           showAISidecar ? 'w-80' : 'w-0'
         }`}
         aria-hidden={!showAISidecar}
       >
         {showAISidecar && (
           <div className="h-full flex flex-col">
-            <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
-              <span className="text-[10px] font-mono uppercase tracking-[0.1em] text-rose-300 flex items-center gap-2">
+            <div className="px-4 py-3 border-b border-[var(--pulse-border)] flex items-center justify-between">
+              <span className="text-[10px] font-mono uppercase tracking-[0.1em] text-[var(--pulse-rose)] flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" aria-hidden />
                 PULSE · LISTENING
               </span>
               <button
                 onClick={() => setShowAISidecar(false)}
-                className="text-zinc-500 hover:text-[#fafafa] transition"
+                className="text-zinc-500 hover:text-[var(--pulse-ink)] transition"
                 aria-label="Close AI sidecar"
               >
                 <X className="w-4 h-4" />
@@ -956,18 +956,18 @@ const RailRow: React.FC<RailRowProps> = ({ icon, label, meta, isActive, isLive, 
     className={`w-full px-4 py-2 text-left transition flex items-center gap-3 ${
       isActive
         ? 'bg-rose-500/10'
-        : 'hover:bg-white/[0.055]'
+        : 'hover:bg-[var(--pulse-surface-raised)]'
     }`}
   >
-    <span className="w-8 h-8 rounded-lg bg-white/[0.055] flex items-center justify-center text-[#fafafa] shrink-0">
+    <span className="w-8 h-8 rounded-lg bg-[var(--pulse-surface-raised)] flex items-center justify-center text-[var(--pulse-ink)] shrink-0">
       {icon}
     </span>
     <span className="flex-1 min-w-0">
-      <span className="block font-medium text-[#fafafa] text-sm truncate">{label}</span>
+      <span className="block font-medium text-[var(--pulse-ink)] text-sm truncate">{label}</span>
       {meta && (
         <span className="block mt-0.5 text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500">
           {meta}
-          {isLive && <span className="text-rose-400"> · LIVE</span>}
+          {isLive && <span className="text-[var(--pulse-rose)]"> · LIVE</span>}
         </span>
       )}
     </span>
@@ -1116,22 +1116,22 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
 
   return (
     <div className="fixed inset-0 pulse-modal-scrim flex items-center justify-center z-[60] animate-fadeIn">
-      <div className="bg-[#080808] rounded-2xl w-full max-w-sm mx-4 border border-white/[0.06] animate-scaleIn">
+      <div className="bg-[var(--pulse-canvas-soft)] rounded-2xl w-full max-w-sm mx-4 border border-[var(--pulse-border)] animate-scaleIn">
         <div className="p-5">
           <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-2">{roomName.toUpperCase()}</p>
-          <h3 className="text-base font-semibold text-[#fafafa] mb-4">Go live in {roomName}?</h3>
+          <h3 className="text-base font-semibold text-[var(--pulse-ink)] mb-4">Go live in {roomName}?</h3>
 
           {permission === 'requesting' && (
-            <p className="text-sm text-[#b4b4b8] leading-relaxed">Requesting mic access…</p>
+            <p className="text-sm text-[var(--pulse-ink-2)] leading-relaxed">Requesting mic access…</p>
           )}
 
           {permission === 'denied' && (
             <div className="text-sm leading-relaxed">
-              <p className="text-[#fafafa] mb-2">Pulse needs mic access to go live.</p>
-              <p className="text-[#b4b4b8]">Open your browser site settings, allow microphone, then retry.</p>
+              <p className="text-[var(--pulse-ink)] mb-2">Pulse needs mic access to go live.</p>
+              <p className="text-[var(--pulse-ink-2)]">Open your browser site settings, allow microphone, then retry.</p>
               <button
                 onClick={() => void acquireStream(selectedDeviceId || undefined)}
-                className="mt-3 text-xs font-mono uppercase tracking-[0.1em] text-rose-300 hover:text-rose-400 transition"
+                className="mt-3 text-xs font-mono uppercase tracking-[0.1em] text-[var(--pulse-rose)] hover:text-[var(--pulse-rose)] transition"
               >
                 Retry
               </button>
@@ -1139,15 +1139,15 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
           )}
 
           {permission === 'no-mic' && (
-            <p className="text-sm text-[#fafafa] leading-relaxed">No microphone detected. Plug one in and retry.</p>
+            <p className="text-sm text-[var(--pulse-ink)] leading-relaxed">No microphone detected. Plug one in and retry.</p>
           )}
 
           {permission === 'error' && (
             <div className="text-sm leading-relaxed">
-              <p className="text-[#fafafa] mb-2">{errorMessage}</p>
+              <p className="text-[var(--pulse-ink)] mb-2">{errorMessage}</p>
               <button
                 onClick={() => void acquireStream(selectedDeviceId || undefined)}
-                className="mt-1 text-xs font-mono uppercase tracking-[0.1em] text-rose-300 hover:text-rose-400 transition"
+                className="mt-1 text-xs font-mono uppercase tracking-[0.1em] text-[var(--pulse-rose)] hover:text-[var(--pulse-rose)] transition"
               >
                 Retry
               </button>
@@ -1164,7 +1164,7 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
                 <select
                   value={selectedDeviceId}
                   onChange={(e) => handleDeviceChange(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/[0.055] rounded-lg text-sm text-[#fafafa] border border-white/[0.08] focus:border-rose-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-[var(--pulse-surface-raised)] rounded-lg text-sm text-[var(--pulse-ink)] border border-[var(--pulse-border-strong)] focus:border-rose-500 focus:outline-none"
                 >
                   {devices.map(d => (
                     <option key={d.deviceId} value={d.deviceId}>
@@ -1200,7 +1200,7 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
                             ? hotZone
                               ? 'bg-red-400'
                               : 'bg-rose-400'
-                            : 'bg-white/[0.08]'
+                            : 'bg-[var(--pulse-surface-raised)]'
                         } ${i < 12 ? 'h-2' : 'h-3'}`}
                       />
                     );
@@ -1209,7 +1209,7 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
               </div>
 
               {/* Mute-on-join — for landing silent in a noisy call. */}
-              <label className="flex items-center gap-2 text-sm text-[#fafafa] cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-sm text-[var(--pulse-ink)] cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={muteOnJoin}
@@ -1222,17 +1222,17 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-white/[0.06] flex gap-3">
+        <div className="px-5 py-4 border-t border-[var(--pulse-border)] flex gap-3">
           <button
             onClick={handleCancel}
-            className="flex-1 py-2 bg-white/[0.055] text-[#fafafa] rounded-lg text-sm font-medium hover:bg-white/[0.08] transition"
+            className="flex-1 py-2 bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink)] rounded-lg text-sm font-medium hover:bg-[var(--pulse-surface-raised)] transition"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={permission !== 'granted'}
-            className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 text-[#fafafa] rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Go Live
           </button>
@@ -1307,10 +1307,10 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
 
   return (
     <div className="fixed inset-0 pulse-modal-scrim flex items-center justify-center z-[60] animate-fadeIn">
-      <div className="bg-[#080808] rounded-2xl w-full max-w-md mx-4 border border-white/[0.06] animate-scaleIn">
-        <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
-          <h3 className="font-bold text-[#fafafa]">Create ad-hoc room</h3>
-          <button onClick={onClose} className="text-[#b4b4b8] hover:text-[#fafafa] transition">
+      <div className="bg-[var(--pulse-canvas-soft)] rounded-2xl w-full max-w-md mx-4 border border-[var(--pulse-border)] animate-scaleIn">
+        <div className="p-4 border-b border-[var(--pulse-border)] flex items-center justify-between">
+          <h3 className="font-bold text-[var(--pulse-ink)]">Create ad-hoc room</h3>
+          <button onClick={onClose} className="text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition">
             <X />
           </button>
         </div>
@@ -1318,7 +1318,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
         <div className="p-4 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-xs text-[#b4b4b8] mb-1">Name</label>
+            <label className="block text-xs text-[var(--pulse-ink-2)] mb-1">Name</label>
             <input
               type="text"
               value={name}
@@ -1326,34 +1326,34 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
               placeholder="Friday briefing"
               maxLength={60}
               aria-invalid={isDuplicate}
-              className={`w-full px-3 py-2 bg-white/[0.055] rounded-lg text-[#fafafa] border focus:outline-none ${
-                isDuplicate ? 'border-red-500/60 focus:border-red-500' : 'border-white/[0.08] focus:border-rose-500'
+              className={`w-full px-3 py-2 bg-[var(--pulse-surface-raised)] rounded-lg text-[var(--pulse-ink)] border focus:outline-none ${
+                isDuplicate ? 'border-red-500/60 focus:border-red-500' : 'border-[var(--pulse-border-strong)] focus:border-rose-500'
               }`}
             />
             {isDuplicate && (
-              <p className="mt-1 text-xs text-red-300">A room with this name already exists.</p>
+              <p className="mt-1 text-xs text-red-600 dark:text-red-300">A room with this name already exists.</p>
             )}
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs text-[#b4b4b8] mb-1">Description (optional)</label>
+            <label className="block text-xs text-[var(--pulse-ink-2)] mb-1">Description (optional)</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What's this for?"
-              className="w-full px-3 py-2 bg-white/[0.055] rounded-lg text-[#fafafa] border border-white/[0.08] focus:border-rose-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-[var(--pulse-surface-raised)] rounded-lg text-[var(--pulse-ink)] border border-[var(--pulse-border-strong)] focus:border-rose-500 focus:outline-none"
             />
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-xs text-[#b4b4b8] mb-1">Category</label>
+            <label className="block text-xs text-[var(--pulse-ink-2)] mb-1">Category</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 bg-white/[0.055] rounded-lg text-[#fafafa] border border-white/[0.08] focus:border-rose-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-[var(--pulse-surface-raised)] rounded-lg text-[var(--pulse-ink)] border border-[var(--pulse-border-strong)] focus:border-rose-500 focus:outline-none"
             >
               <option value="General">General</option>
               <option value="Meetings">Meetings</option>
@@ -1365,7 +1365,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
 
           {/* Icon Selection */}
           <div>
-            <label className="block text-xs text-[#b4b4b8] mb-2">Icon</label>
+            <label className="block text-xs text-[var(--pulse-ink-2)] mb-2">Icon</label>
             <div className="flex flex-wrap gap-2">
               {icons.map(icon => (
                 <button
@@ -1373,8 +1373,8 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
                   onClick={() => setSelectedIcon(icon)}
                   className={`w-10 h-10 rounded-lg flex items-center justify-center transition border ${
                     selectedIcon === icon
-                      ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
-                      : 'bg-white/[0.055] text-[#b4b4b8] hover:bg-white/[0.08] border-transparent'
+                      ? 'bg-rose-500/15 text-[var(--pulse-rose)] border-rose-500/30'
+                      : 'bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink-2)] hover:bg-[var(--pulse-surface-raised)] border-transparent'
                   }`}
                 >
                   <RoomIcon name={icon} className="w-4 h-4" />
@@ -1385,14 +1385,14 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
 
           {/* Color Selection */}
           <div>
-            <label className="block text-xs text-[#b4b4b8] mb-2">Color</label>
+            <label className="block text-xs text-[var(--pulse-ink-2)] mb-2">Color</label>
             <div className="flex flex-wrap gap-2">
               {colors.map(color => (
                 <button
                   key={color}
                   onClick={() => setSelectedColor(color)}
                   className={`w-8 h-8 rounded-full ${color} transition transform ${
-                    selectedColor === color ? 'ring-2 ring-[#fafafa] ring-offset-2 ring-offset-[#080808] scale-110' : ''
+                    selectedColor === color ? 'ring-2 ring-[var(--pulse-ink)] ring-offset-2 ring-offset-[var(--pulse-canvas-soft)] scale-110' : ''
                   }`}
                 />
               ))}
@@ -1401,7 +1401,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
 
           {/* Max Participants */}
           <div>
-            <label className="block text-xs text-[#b4b4b8] mb-1">Max people: {maxParticipants}</label>
+            <label className="block text-xs text-[var(--pulse-ink-2)] mb-1">Max people: {maxParticipants}</label>
             <input
               type="range"
               min={2}
@@ -1414,27 +1414,27 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
 
           {/* Private Toggle */}
           <div className="flex items-center justify-between">
-            <span className="text-sm text-[#fafafa]">Private</span>
+            <span className="text-sm text-[var(--pulse-ink)]">Private</span>
             <button
               onClick={() => setIsPrivate(!isPrivate)}
-              className={`w-12 h-6 rounded-full transition ${isPrivate ? 'bg-rose-500' : 'bg-white/[0.08]'}`}
+              className={`w-12 h-6 rounded-full transition ${isPrivate ? 'bg-rose-500' : 'bg-[var(--pulse-surface-raised)]'}`}
             >
               <div className={`w-5 h-5 rounded-full bg-white transform transition ${isPrivate ? 'translate-x-6' : 'translate-x-0.5'}`} />
             </button>
           </div>
         </div>
 
-        <div className="p-4 border-t border-white/[0.06] flex gap-3">
+        <div className="p-4 border-t border-[var(--pulse-border)] flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 bg-white/[0.055] text-[#fafafa] rounded-lg font-medium hover:bg-white/[0.08] transition"
+            className="flex-1 py-2.5 bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink)] rounded-lg font-medium hover:bg-[var(--pulse-surface-raised)] transition"
           >
             Cancel
           </button>
           <button
             onClick={handleCreate}
             disabled={!trimmed || isDuplicate}
-            className="flex-1 py-2.5 bg-rose-500 text-[#fafafa] rounded-lg font-medium hover:bg-rose-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 py-2.5 bg-rose-500 text-white rounded-lg font-medium hover:bg-rose-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Create
           </button>
