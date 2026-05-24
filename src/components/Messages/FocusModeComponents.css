@@ -1,149 +1,25 @@
 /**
  * Focus Mode Components - Visual Design System
  *
+ * NOTE: This stylesheet is currently orphaned — no JSX in src/ consumes
+ * any of the `.focus-*` classes below, and the file is not imported.
+ * PR 3.2 (commit d692cf1) rebuilt Focus Mode's surfaces with inline
+ * Tailwind. Kept for now as a reference of the design language; safe
+ * to delete in a follow-up.
+ *
  * Design Language (Pulse Coral Cockpit):
- * - Primary: Coral (#f43f5e) - Focus/Work mode, primary CTAs
- * - Status: Status palette (red overdue / orange blocked / yellow streak /
- *   blue in-progress / green done) used only for semantic states
- * - Surfaces: True-black canvas + translucent layers in dark mode;
- *   #f8f8f8 paper in light mode
+ * - Primary: Coral (var(--pulse-rose)) for Focus / Work mode + primary CTAs
+ * - Status: Tone palette (overdue / warning / info / positive) for semantic state
+ * - Surfaces: var(--pulse-canvas) + var(--pulse-surface*) — true-black
+ *   canvas + translucent layers in dark mode; #f8f8f8 paper in light mode
  *
  * Typography:
- * - Display: Inter, system-ui (bold headings)
- * - Mono: JetBrains Mono (timers, statistics, uppercase labels)
- * - Body: Inter, system-ui (readable content)
+ * - var(--pulse-font) for body / display
+ * - var(--pulse-font-mono) for timers, stats, uppercase labels
  *
- * Spacing Scale: 4px base (0.25rem)
- * Border Radius: 8px (sm), 12px (md), 16px (lg), 24px (xl)
+ * Spacing scale: 4 px base (0.25 rem)
+ * Border radius: 8 px (sm), 12 px (md), 16 px (lg), 24 px (xl)
  */
-
-/* ============================================
-   CSS CUSTOM PROPERTIES - DESIGN TOKENS
-   ============================================ */
-
-:root {
-  /* Pulse Coral Cockpit primary — replaces decorative blue/purple */
-  --focus-blue-50: rgba(244, 63, 94, 0.06);
-  --focus-blue-100: rgba(244, 63, 94, 0.10);
-  --focus-blue-200: rgba(244, 63, 94, 0.15);
-  --focus-blue-300: #fda4af;
-  --focus-blue-400: #fb7185;
-  --focus-blue-500: #f43f5e;
-  --focus-blue-600: #e11d48;
-  --focus-blue-700: #be123c;
-  --focus-blue-800: #9f1239;
-  --focus-blue-900: #881337;
-
-  /* Status: decided/done — kept semantic */
-  --focus-green-50: #ecfdf5;
-  --focus-green-100: #d1fae5;
-  --focus-green-400: #34d399;
-  --focus-green-500: #10b981;
-  --focus-green-600: #059669;
-  --focus-green-900: #064e3b;
-
-  /* Brand companion (pink in coral→pink gradient) — replaces decorative purple */
-  --focus-purple-50: rgba(236, 72, 153, 0.06);
-  --focus-purple-100: rgba(236, 72, 153, 0.10);
-  --focus-purple-400: #f472b6;
-  --focus-purple-500: #ec4899;
-  --focus-purple-600: #db2777;
-
-  --focus-orange-50: #fff7ed;
-  --focus-orange-100: #ffedd5;
-  --focus-orange-400: #fb923c;
-  --focus-orange-500: #f59e0b;
-  --focus-orange-600: #d97706;
-
-  --focus-red-50: #fef2f2;
-  --focus-red-100: #fee2e2;
-  --focus-red-400: #f87171;
-  --focus-red-500: #ef4444;
-  --focus-red-600: #dc2626;
-
-  --focus-yellow-400: #facc15;
-  --focus-yellow-500: #eab308;
-
-  /* Background Colors */
-  --focus-bg-primary: #18181b;
-  --focus-bg-secondary: #27272a;
-  --focus-bg-elevated: #3f3f46;
-  --focus-bg-card: rgba(39, 39, 42, 0.8);
-  --focus-bg-overlay: rgba(0, 0, 0, 0.6);
-
-  /* Border Colors */
-  --focus-border-subtle: rgba(63, 63, 70, 0.5);
-  --focus-border-default: rgba(82, 82, 91, 0.8);
-  --focus-border-strong: rgba(113, 113, 122, 0.8);
-
-  /* Text Colors */
-  --focus-text-primary: #fafafa;
-  --focus-text-secondary: #a1a1aa;
-  --focus-text-muted: #a1a1aa; /* a11y: was #71717a = 3.59:1 on #18181b, failed AA */
-  --focus-text-disabled: #52525b;
-
-  /* Shadows */
-  --focus-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --focus-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-  --focus-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-  --focus-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-  --focus-shadow-glow-blue: 0 0 40px rgba(244, 63, 94, 0.30);
-  --focus-shadow-glow-green: 0 0 40px rgba(16, 185, 129, 0.30);
-  --focus-shadow-glow-purple: 0 0 40px rgba(236, 72, 153, 0.30);
-
-  /* Transitions */
-  --focus-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --focus-transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  --focus-transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
-  --focus-transition-ease: 220ms cubic-bezier(0.16, 1, 0.3, 1);
-
-  /* Typography */
-  --focus-font-display: 'Inter', system-ui, -apple-system, sans-serif;
-  --focus-font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
-  --focus-font-body: 'Inter', system-ui, -apple-system, sans-serif;
-
-  /* Spacing */
-  --focus-space-1: 0.25rem;  /* 4px */
-  --focus-space-2: 0.5rem;   /* 8px */
-  --focus-space-3: 0.75rem;  /* 12px */
-  --focus-space-4: 1rem;     /* 16px */
-  --focus-space-5: 1.25rem;  /* 20px */
-  --focus-space-6: 1.5rem;   /* 24px */
-  --focus-space-8: 2rem;     /* 32px */
-  --focus-space-10: 2.5rem;  /* 40px */
-  --focus-space-12: 3rem;    /* 48px */
-
-  /* Border Radius */
-  --focus-radius-sm: 0.5rem;   /* 8px */
-  --focus-radius-md: 0.75rem;  /* 12px */
-  --focus-radius-lg: 1rem;     /* 16px */
-  --focus-radius-xl: 1.5rem;   /* 24px */
-  --focus-radius-full: 9999px;
-}
-
-/* Light Mode Overrides */
-.light,
-html:not(.dark) {
-  --focus-bg-primary: #fafafa;
-  --focus-bg-secondary: #f4f4f5;
-  --focus-bg-elevated: #e4e4e7;
-  --focus-bg-card: rgba(255, 255, 255, 0.9);
-  --focus-bg-overlay: rgba(0, 0, 0, 0.4);
-
-  --focus-border-subtle: rgba(212, 212, 216, 0.5);
-  --focus-border-default: rgba(161, 161, 170, 0.5);
-  --focus-border-strong: rgba(113, 113, 122, 0.5);
-
-  --focus-text-primary: #18181b;
-  --focus-text-secondary: #52525b;
-  --focus-text-muted: #71717a;
-  --focus-text-disabled: #a1a1aa;
-
-  --focus-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
-  --focus-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --focus-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --focus-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
 
 /* ============================================
    KEYFRAME ANIMATIONS
@@ -264,11 +140,11 @@ html:not(.dark) {
 }
 
 .focus-animate-slide-up {
-  animation: focus-slide-up 0.3s var(--focus-transition-ease) forwards;
+  animation: focus-slide-up 0.3s var(--pulse-ease) forwards;
 }
 
 .focus-animate-slide-down {
-  animation: focus-slide-down 0.3s var(--focus-transition-ease) forwards;
+  animation: focus-slide-down 0.3s var(--pulse-ease) forwards;
 }
 
 .focus-animate-fade-in {
@@ -276,7 +152,7 @@ html:not(.dark) {
 }
 
 .focus-animate-scale-in {
-  animation: focus-scale-in 0.3s var(--focus-transition-ease) forwards;
+  animation: focus-scale-in 0.3s var(--pulse-ease) forwards;
 }
 
 .focus-animate-shimmer {
@@ -295,11 +171,11 @@ html:not(.dark) {
 
 /* Focus Digest Card */
 .focus-digest-card {
-  font-family: var(--focus-font-body);
-  background: var(--focus-bg-card);
-  border: 1px solid var(--focus-border-subtle);
-  border-radius: var(--focus-radius-xl);
-  box-shadow: var(--focus-shadow-xl);
+  font-family: var(--pulse-font);
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  border-radius: 1.5rem;
+  box-shadow: var(--pulse-shadow-md);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -309,12 +185,12 @@ html:not(.dark) {
     rgba(244, 63, 94, 0.15) 0%,
     rgba(236, 72, 153, 0.15) 100%
   );
-  border-bottom: 1px solid var(--focus-border-subtle);
+  border-bottom: 1px solid var(--pulse-border);
 }
 
 .focus-digest-message-group {
-  border-radius: var(--focus-radius-md);
-  transition: background-color var(--focus-transition-fast);
+  border-radius: 0.75rem;
+  transition: background-color 150ms var(--pulse-ease);
 }
 
 .focus-digest-message-group:hover {
@@ -323,26 +199,26 @@ html:not(.dark) {
 
 /* Priority Badges */
 .focus-priority-urgent {
-  background-color: rgba(239, 68, 68, 0.15);
-  color: var(--focus-red-400);
+  background-color: var(--pulse-tone-overdue-soft);
+  color: var(--pulse-tone-overdue);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .focus-priority-high {
-  background-color: rgba(249, 115, 22, 0.15);
-  color: var(--focus-orange-400);
+  background-color: var(--pulse-tone-warning-soft);
+  color: var(--pulse-tone-warning);
   border: 1px solid rgba(249, 115, 22, 0.3);
 }
 
 .focus-priority-normal {
-  background-color: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
+  background-color: var(--pulse-tone-info-soft);
+  color: var(--pulse-tone-info);
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .focus-priority-low {
-  background-color: rgba(113, 113, 122, 0.15);
-  color: var(--focus-text-muted);
+  background-color: var(--pulse-tone-neutral-soft);
+  color: var(--pulse-ink-2);
   border: 1px solid rgba(113, 113, 122, 0.3);
 }
 
@@ -368,10 +244,10 @@ html:not(.dark) {
 }
 
 .focus-session-info-card {
-  background: var(--focus-bg-card);
-  border: 1px solid var(--focus-border-subtle);
-  border-radius: var(--focus-radius-xl);
-  box-shadow: var(--focus-shadow-lg);
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  border-radius: 1.5rem;
+  box-shadow: var(--pulse-shadow-md);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -383,26 +259,26 @@ html:not(.dark) {
     rgba(39, 39, 42, 0.95) 0%,
     rgba(24, 24, 27, 0.98) 100%
   );
-  border: 1px solid var(--focus-border-subtle);
-  border-radius: var(--focus-radius-xl);
-  box-shadow: var(--focus-shadow-xl);
+  border: 1px solid var(--pulse-border);
+  border-radius: 1.5rem;
+  box-shadow: var(--pulse-shadow-md);
   overflow: hidden;
 }
 
 .focus-celebration-trophy {
   background: linear-gradient(
     135deg,
-    var(--focus-yellow-400) 0%,
-    var(--focus-orange-500) 100%
+    #facc15 0%,
+    var(--pulse-tone-warning) 100%
   );
   box-shadow: 0 8px 32px rgba(234, 179, 8, 0.3);
 }
 
 .focus-celebration-stat-card {
   background: rgba(39, 39, 42, 0.5);
-  border: 1px solid var(--focus-border-subtle);
-  border-radius: var(--focus-radius-lg);
-  transition: all var(--focus-transition-fast);
+  border: 1px solid var(--pulse-border);
+  border-radius: 1rem;
+  transition: all 150ms var(--pulse-ease);
 }
 
 .focus-celebration-stat-card:hover {
@@ -412,11 +288,11 @@ html:not(.dark) {
 
 /* Focus Stats Dashboard */
 .focus-stats-dashboard {
-  font-family: var(--focus-font-body);
-  background: var(--focus-bg-primary);
-  border: 1px solid var(--focus-border-subtle);
-  border-radius: var(--focus-radius-xl);
-  box-shadow: var(--focus-shadow-xl);
+  font-family: var(--pulse-font);
+  background: var(--pulse-canvas);
+  border: 1px solid var(--pulse-border);
+  border-radius: 1.5rem;
+  box-shadow: var(--pulse-shadow-md);
 }
 
 .focus-stats-chart-bar {
@@ -425,9 +301,9 @@ html:not(.dark) {
     rgba(255, 255, 255, 0.12) 0%,
     rgba(255, 255, 255, 0.20) 100%
   );
-  border-radius: var(--focus-radius-sm) var(--focus-radius-sm) 0 0;
+  border-radius: 0.5rem 0.5rem 0 0;
   transform-origin: bottom;
-  transition: transform var(--focus-transition-fast), filter var(--focus-transition-fast);
+  transition: transform 150ms var(--pulse-ease), filter 150ms var(--pulse-ease);
 }
 
 .focus-stats-chart-bar:hover {
@@ -437,8 +313,8 @@ html:not(.dark) {
 .focus-stats-chart-bar.today {
   background: linear-gradient(
     to top,
-    #e11d48 0%,
-    #f43f5e 100%
+    var(--pulse-rose-deep) 0%,
+    var(--pulse-rose) 100%
   );
 }
 
@@ -454,21 +330,21 @@ html:not(.dark) {
 .focus-streak-day {
   width: 2rem;
   height: 2rem;
-  border-radius: var(--focus-radius-sm);
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--focus-transition-fast);
+  transition: all 150ms var(--pulse-ease);
 }
 
 .focus-streak-day.completed {
-  background: var(--focus-orange-500);
+  background: var(--pulse-tone-warning);
   color: white;
 }
 
 .focus-streak-day.incomplete {
-  background: var(--focus-bg-elevated);
-  color: var(--focus-text-disabled);
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink-2);
 }
 
 /* ============================================
@@ -479,20 +355,20 @@ html:not(.dark) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--focus-space-2);
-  padding: var(--focus-space-3) var(--focus-space-4);
-  font-family: var(--focus-font-body);
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-family: var(--pulse-font);
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: var(--focus-radius-md);
+  border-radius: 0.75rem;
   border: none;
   cursor: pointer;
-  transition: all var(--focus-transition-fast);
+  transition: all 150ms var(--pulse-ease);
   user-select: none;
 }
 
 .focus-btn:focus-visible {
-  outline: 2px solid #f43f5e;
+  outline: 2px solid var(--pulse-rose);
   outline-offset: 2px;
 }
 
@@ -502,9 +378,9 @@ html:not(.dark) {
 }
 
 .focus-btn-primary {
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  background: linear-gradient(135deg, var(--pulse-rose) 0%, var(--pulse-pink) 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.30);
+  box-shadow: 0 4px 12px var(--pulse-rose-glow);
 }
 
 .focus-btn-primary:hover:not(:disabled) {
@@ -517,20 +393,20 @@ html:not(.dark) {
 }
 
 .focus-btn-secondary {
-  background: var(--focus-bg-elevated);
-  color: var(--focus-text-secondary);
-  border: 1px solid var(--focus-border-default);
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink-2);
+  border: 1px solid var(--pulse-border-strong);
 }
 
 .focus-btn-secondary:hover:not(:disabled) {
-  background: var(--focus-bg-secondary);
-  color: var(--focus-text-primary);
-  border-color: var(--focus-border-strong);
+  background: var(--pulse-canvas-soft);
+  color: var(--pulse-ink);
+  border-color: var(--pulse-border-strong);
 }
 
 .focus-btn-danger {
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--focus-red-400);
+  background: var(--pulse-tone-overdue-soft);
+  color: var(--pulse-tone-overdue);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
@@ -543,7 +419,7 @@ html:not(.dark) {
   width: 2.5rem;
   height: 2.5rem;
   padding: 0;
-  border-radius: var(--focus-radius-md);
+  border-radius: 0.75rem;
 }
 
 /* ============================================
@@ -554,19 +430,19 @@ html:not(.dark) {
   .focus-digest-card,
   .focus-celebration-card,
   .focus-stats-dashboard {
-    margin: var(--focus-space-4);
+    margin: 1rem;
     max-height: calc(100vh - 2rem);
   }
 
   .focus-session-info-card {
-    left: var(--focus-space-4);
-    right: var(--focus-space-4);
-    bottom: var(--focus-space-4);
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
     width: auto;
   }
 
   .focus-celebration-stat-card {
-    padding: var(--focus-space-3);
+    padding: 0.75rem;
   }
 
   .focus-stats-chart-bar {
@@ -578,12 +454,12 @@ html:not(.dark) {
   .focus-digest-card,
   .focus-celebration-card,
   .focus-stats-dashboard {
-    margin: var(--focus-space-2);
-    border-radius: var(--focus-radius-lg);
+    margin: 0.5rem;
+    border-radius: 1rem;
   }
 
   .focus-btn {
-    padding: var(--focus-space-2) var(--focus-space-3);
+    padding: 0.5rem 0.75rem;
     font-size: 0.8125rem;
   }
 }
@@ -620,12 +496,6 @@ html:not(.dark) {
    ============================================ */
 
 @media (prefers-contrast: high) {
-  :root {
-    --focus-border-subtle: rgba(255, 255, 255, 0.3);
-    --focus-border-default: rgba(255, 255, 255, 0.5);
-    --focus-border-strong: rgba(255, 255, 255, 0.7);
-  }
-
   .focus-digest-card,
   .focus-celebration-card,
   .focus-stats-dashboard,
