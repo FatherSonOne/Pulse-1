@@ -87,6 +87,10 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   const [workspaces, setWorkspaces] = useState<VoxWorkspace[]>([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState<VoxWorkspace | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<VoxTeamChannel | null>(null);
+  // Single-pane (narrow) nav: which of the channels list / thread is showing.
+  // Decoupled from selectedChannel (so auto-select doesn't force the thread on
+  // load) and inert when the pane is wide enough to show both. Mirrors Direct.
+  const [mobileView, setMobileView] = useState<'list' | 'thread'>('list');
   const [messages, setMessages] = useState<TeamVoxMessage[]>([]);
   // Playback flows through the shared Voice Studio transport (single <audio>,
   // persistent footer). Active-row state is derived from studio.nowPlaying /
@@ -582,6 +586,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       ));
       setSelectedWorkspace(updatedWorkspace);
       setSelectedChannel(channel);
+      setMobileView('thread');
       setShowNewChannel(false);
       setChannelName('');
     }
@@ -785,6 +790,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   onClick={() => {
                     setSelectedWorkspace(workspace);
                     setSelectedChannel(channel);
+                    setMobileView('thread');
                     setShowMobileSidebar(false);
                   }}
                   className={`w-full px-3 py-2 flex items-center gap-2 rounded-r-lg text-sm transition-all group ${
@@ -984,19 +990,39 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
           </div>
         )}
 
-        {/* Desktop Sidebar */}
-        <div className={`hidden md:flex w-64 shrink-0 border-r ${tc.border} flex-col ${tc.panelBg}`}>
+        {/* Channels sidebar. Pane-driven (not viewport): inline at w-64 when the
+            pane is wide; full-width when single-pane on the list view; hidden
+            when single-pane in a thread (the thread takes over, back returns). */}
+        <div className={`${
+          studio.singlePane
+            ? (selectedChannel && mobileView === 'thread' ? 'hidden' : 'flex w-full')
+            : 'flex w-64'
+        } shrink-0 border-r ${tc.border} flex-col ${tc.panelBg}`}>
           {renderSidebarContent()}
         </div>
 
         {/* Main Content — min-w-0 lets it shrink so the members rail (a
-            shrink-0 sibling) isn't pushed past the overflow-hidden row edge. */}
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+            shrink-0 sibling) isn't pushed past the overflow-hidden row edge.
+            Hidden when single-pane is showing the channels list instead. */}
+        <div className={`flex-1 min-w-0 flex flex-col overflow-hidden ${
+          studio.singlePane && !(selectedChannel && mobileView === 'thread') ? 'hidden' : ''
+        }`}>
           {selectedChannel ? (
             <>
               {/* Channel Header */}
               <div className={`px-4 md:px-6 py-3 md:py-4 border-b ${tc.border} ${tc.cardBg} flex items-center justify-between`}>
                 <div className="flex items-center gap-3 min-w-0">
+                  {studio.singlePane && (
+                    <button
+                      type="button"
+                      onClick={() => setMobileView('list')}
+                      className={`shrink-0 -ml-1 p-1.5 rounded-lg ${tc.btnGhost}`}
+                      aria-label="Back to channels"
+                      title="Back to channels"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                  )}
                   <div className={`p-2 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/80'}`}>
                     {CHANNEL_ICONS[selectedChannel.type]}
                   </div>
@@ -1490,8 +1516,9 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             channel/workspace memberIds × loaded contacts. No online/offline
             split: presence isn't wired here and we don't fabricate it. The
             Channel AI digest reuses the generated channel summary (coral is
-            sanctioned for AI output). Shown at md+ to match the channels
-            sidebar (collapse the SourcesRail if the row feels tight). */}
+            sanctioned for AI output). As the 3rd column it only appears when
+            the body is wide enough for all three (bodyWidth >= 880); on a
+            tighter pane it folds away so the thread keeps usable width. */}
         {selectedChannel && (() => {
           const ids: string[] = (selectedChannel.memberIds?.length
             ? selectedChannel.memberIds
@@ -1500,7 +1527,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             .map((id) => pulseContacts.find((c: any) => c.id === id))
             .filter(Boolean) as any[];
           return (
-            <aside className={`hidden md:flex w-52 shrink-0 flex-col border-l ${tc.border} ${tc.panelBg} overflow-y-auto`}>
+            <aside className={`${!studio.singlePane && studio.bodyWidth >= 880 ? 'flex' : 'hidden'} w-52 shrink-0 flex-col border-l ${tc.border} ${tc.panelBg} overflow-y-auto`}>
               <div className={`px-3 py-2.5 text-[10px] font-mono uppercase tracking-[0.18em] ${tc.textMuted}`}>
                 Members · {ids.length}
               </div>
