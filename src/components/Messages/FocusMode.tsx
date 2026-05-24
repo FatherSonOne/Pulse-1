@@ -351,7 +351,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     <AnimatePresence>
       {isActive && (
         <motion.div
-          className="fixed inset-0 z-50 bg-[var(--pulse-canvas)] flex flex-col items-center justify-center"
+          className="fixed inset-0 z-50 bg-[var(--pulse-bg-deep)] flex flex-col items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -374,7 +374,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
           {/* Close Button */}
           <button
             onClick={handleClose}
-            className="absolute top-6 right-6 p-3 text-[#b4b4b8] hover:text-white bg-[rgba(255,255,255,0.055)] hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors focus:outline-none focus:ring-4 focus:ring-gray-600"
+            className="absolute top-6 right-6 p-3 text-[#b4b4b8] hover:text-white bg-[rgba(255,255,255,0.055)] hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors focus:outline-none focus:ring-4 focus:ring-[rgba(255,255,255,0.20)]"
             aria-label="Exit focus mode"
           >
             <svg
@@ -450,7 +450,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
             {/* Tips */}
             {!isTimerActive && (
               <motion.div
-                className="text-center text-sm text-[#6b7280] max-w-md"
+                className="text-center text-sm text-[#a1a1aa] max-w-md"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
@@ -476,7 +476,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                 onClick={() => setShowSettings(false)}
               >
                 <motion.div
-                  className="bg-[rgba(255,255,255,0.055)] rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
+                  className="bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.10)] rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
@@ -505,7 +505,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                           setPreferences(newPrefs);
                           focusModeService.savePreferences(newPrefs);
                         }}
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
+                        className="w-full px-3 py-2 bg-[rgba(255,255,255,0.055)] border border-[rgba(255,255,255,0.10)] text-white rounded focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
                       />
                     </div>
 
@@ -527,7 +527,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                           setPreferences(newPrefs);
                           focusModeService.savePreferences(newPrefs);
                         }}
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
+                        className="w-full px-3 py-2 bg-[rgba(255,255,255,0.055)] border border-[rgba(255,255,255,0.10)] text-white rounded focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
                       />
                     </div>
 
@@ -548,7 +548,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                           preferences.soundEnabled
                             ? 'bg-[#f43f5e]'
-                            : 'bg-gray-600'
+                            : 'bg-[rgba(255,255,255,0.15)]'
                         }`}
                       >
                         <span
@@ -578,7 +578,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                           preferences.autoStartBreaks
                             ? 'bg-[#f43f5e]'
-                            : 'bg-gray-600'
+                            : 'bg-[rgba(255,255,255,0.15)]'
                         }`}
                       >
                         <span

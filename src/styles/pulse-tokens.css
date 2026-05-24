@@ -47,6 +47,12 @@
   --pulse-border: rgba(0, 0, 0, 0.08);
   --pulse-border-strong: rgba(0, 0, 0, 0.16);
 
+  /* Immersive deep backdrop — stays dark in BOTH themes (focus dims the
+     world). For full-screen focus/cinema overlays whose content is built
+     light-on-dark; theme-following canvas would break them in light mode.
+     No .dark override on purpose — it is theme-independent. */
+  --pulse-bg-deep: #0a0a0b;
+
   /* ─── Elevation — light ─── */
   --pulse-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   --pulse-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);

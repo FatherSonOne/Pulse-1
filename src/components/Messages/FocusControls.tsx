@@ -144,7 +144,7 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
           {/* Skip Button */}
           <button
             onClick={onSkip}
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+            className="flex items-center space-x-2 px-4 py-2 bg-[rgba(255,255,255,0.055)] hover:bg-[rgba(255,255,255,0.10)] text-white rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[rgba(255,255,255,0.20)] focus:ring-opacity-50"
             aria-label={`Skip ${mode === 'work' ? 'to break' : 'break'}`}
           >
             <svg
@@ -190,7 +190,7 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
       {onSettings && !isActive && (
         <motion.button
           onClick={onSettings}
-          className="flex items-center space-x-2 px-4 py-2 text-[#b4b4b8] hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 rounded-lg"
+          className="flex items-center space-x-2 px-4 py-2 text-[#b4b4b8] hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[rgba(255,255,255,0.20)] focus:ring-opacity-50 rounded-lg"
           whileHover={{ scale: 1.05 }}
           aria-label="Focus mode settings"
         >
