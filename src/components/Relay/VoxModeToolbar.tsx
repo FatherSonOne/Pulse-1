@@ -33,6 +33,13 @@ export interface VoxModeToolbarProps {
   modeIcon: React.ReactNode;
   modeTitle: string;
   modeSubtitle?: string;
+  /** Mono eyebrow above the title — the studio masthead pattern
+   *  (e.g. "DIRECT VOICE", "CHANNEL · ACME"). Copied from the Inbox
+   *  treatment in RelayTriageStream. */
+  eyebrow?: string;
+  /** Eyebrow color. 'muted' (default) = ink-3; 'rose' = coral, reserved for
+   *  live/active sections (Broadcast, Live) per the coral budget. */
+  eyebrowTone?: 'muted' | 'rose';
   /**
    * Accent color for the mode-icon tile and active-state tints. Defaults to
    * brand rose (`#f43f5e`) — Coral-As-Signal Rule. The prop is retained for
@@ -90,6 +97,8 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
   modeIcon,
   modeTitle,
   modeSubtitle,
+  eyebrow,
+  eyebrowTone = 'muted',
   accentColor = '#f43f5e',
   isDarkMode = false,
 
@@ -138,21 +147,32 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
         </button>
       )}
 
-      {/* Mode icon badge */}
+      {/* Mode icon badge — neutral studio chrome. Coral is reserved for
+          active / record / AI / primary-CTA surfaces (coral budget), so the
+          old coral-gradient tile is gone. */}
       <div
-        className="p-2 rounded-xl shadow-lg shrink-0"
-        style={{
-          background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}cc 100%)`,
-          boxShadow: `0 4px 12px ${accentColor}40`,
-        }}
+        className={`p-2 rounded-xl shrink-0 flex items-center ${
+          isDarkMode ? 'bg-[rgba(255,255,255,0.055)] text-[#b4b4b8]' : 'bg-[#f2f2f2] text-[#52525b]'
+        }`}
       >
-        <span className="text-white [&>svg]:w-4 [&>svg]:h-4 [&>svg]:md:w-5 [&>svg]:md:h-5 flex items-center">
+        <span className="[&>svg]:w-4 [&>svg]:h-4 [&>svg]:md:w-5 [&>svg]:md:h-5 flex items-center">
           {modeIcon}
         </span>
       </div>
 
-      {/* Title + subtitle */}
+      {/* Eyebrow + title + subtitle — studio masthead treatment. */}
       <div className="flex-1 min-w-0">
+        {eyebrow && (
+          <p
+            className={`font-mono text-[10px] uppercase tracking-[0.18em] leading-none mb-0.5 truncate ${
+              eyebrowTone === 'rose'
+                ? 'text-rose-600 dark:text-rose-400'
+                : 'text-zinc-500 dark:text-zinc-400'
+            }`}
+          >
+            {eyebrow}
+          </p>
+        )}
         <h1 className={`text-base md:text-lg font-bold leading-tight truncate ${textColor}`}>
           {modeTitle}
         </h1>
