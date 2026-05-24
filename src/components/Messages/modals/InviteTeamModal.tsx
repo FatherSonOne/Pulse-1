@@ -87,7 +87,7 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
 
             {/* Email Input */}
             <div>
-              <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-mono font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.1em] mb-2">
                 Email Address
               </label>
               <input
@@ -122,7 +122,7 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
 
             {/* Features Preview */}
             <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)]/50 rounded-xl p-4 border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)]">
-              <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">
+              <div className="text-xs font-mono font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.1em] mb-3">
                 What they'll get
               </div>
               <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">

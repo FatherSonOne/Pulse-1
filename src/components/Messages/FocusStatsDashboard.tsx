@@ -95,7 +95,7 @@ const StatCard: React.FC<{
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-[#6b7280] uppercase tracking-wider mb-1">{label}</p>
+        <p className="text-xs font-mono font-medium text-[#6b7280] uppercase tracking-[0.1em] mb-1">{label}</p>
         <p className="text-xl font-bold text-white truncate">{value}</p>
         {subValue && <p className="text-xs text-[#b4b4b8] mt-0.5">{subValue}</p>}
       </div>

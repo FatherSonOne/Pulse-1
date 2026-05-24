@@ -200,7 +200,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                     {/* Recent Contacts */}
                     {props.recentPulseContacts.length > 0 && (
                       <div>
-                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2 px-1">
+                        <p className="text-[10px] font-mono font-medium text-zinc-500 uppercase tracking-[0.1em] mb-2 px-1">
                           <History className="mr-1" /> Recent
                         </p>
                         <div className="space-y-1">
@@ -234,7 +234,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                     {/* Suggested Users */}
                     {props.suggestedPulseUsers.length > 0 && (
                       <div>
-                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2 px-1">
+                        <p className="text-[10px] font-mono font-medium text-zinc-500 uppercase tracking-[0.1em] mb-2 px-1">
                           <Users className="mr-1" /> Discover Pulse Users
                         </p>
                         <div className="space-y-1">
@@ -355,15 +355,15 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                   <div className="bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] p-4 rounded-xl mb-6 text-[#0f0f0f] dark:text-[#fafafa] italic">
                     {props.artifact.overview}
                   </div>
-                  <h3 className="font-bold uppercase text-xs tracking-wider text-zinc-500 mb-2">Decisions Log</h3>
+                  <h3 className="font-mono font-medium uppercase text-xs tracking-[0.1em] text-zinc-500 mb-2">Decisions Log</h3>
                   <ul className="list-disc list-inside mb-6 space-y-1">
                     {props.artifact.decisions.map((d, i) => <li key={i} className="text-zinc-700 dark:text-zinc-300">{d}</li>)}
                   </ul>
-                  <h3 className="font-bold uppercase text-xs tracking-wider text-zinc-500 mb-2">Specifications</h3>
+                  <h3 className="font-mono font-medium uppercase text-xs tracking-[0.1em] text-zinc-500 mb-2">Specifications</h3>
                   <div className="whitespace-pre-wrap font-mono text-zinc-600 dark:text-zinc-400 bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-4 rounded-xl mb-6">
                     {props.artifact.spec}
                   </div>
-                  <h3 className="font-bold uppercase text-xs tracking-wider text-zinc-500 mb-2">Milestones</h3>
+                  <h3 className="font-mono font-medium uppercase text-xs tracking-[0.1em] text-zinc-500 mb-2">Milestones</h3>
                   <div className="space-y-2">
                     {props.artifact.milestones.map((m, i) => (
                       <div key={i} className="flex items-center gap-2">

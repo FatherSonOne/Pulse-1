@@ -164,7 +164,7 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
 
                 {/* Features Preview */}
                 <div className="mt-6 pt-6 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
-                  <p className="text-xs text-zinc-400 uppercase tracking-wider font-bold mb-3">What they'll get</p>
+                  <p className="text-xs font-mono font-medium text-zinc-400 uppercase tracking-[0.1em] mb-3">What they'll get</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
                       <Wand2 className="text-rose-500" />
