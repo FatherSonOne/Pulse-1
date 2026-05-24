@@ -25,6 +25,7 @@ import {
   Archive,
   MoreVertical,
   ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
@@ -395,7 +396,9 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   // deep-link handed us an initialNoteId, prefer that match — falls back to
   // the first note if the id was stale.
   useEffect(() => {
-    if (notes.length === 0 || selectedNote) return;
+    // In single-pane (narrow) the detail replaces the list, so auto-selecting
+    // would hide the list behind a note on first load — land on the list there.
+    if (notes.length === 0 || selectedNote || studio.singlePane) return;
     if (initialNoteId) {
       const match = notes.find((n) => n.id === initialNoteId);
       if (match) {
@@ -940,18 +943,38 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
           </div>
         )}
 
-        {/* Desktop Notes List Sidebar - Always visible, use responsive width */}
-        <div className={`flex w-80 lg:w-96 border-r ${tc.border} flex-col ${tc.panelBg}`}>
+        {/* Notes list (master). Side-by-side with the detail when the pane is
+            wide; full-width when single-pane, and hidden once a note opens
+            (the detail takes over, with a back affordance). */}
+        <div className={`flex flex-col border-r ${tc.border} ${tc.panelBg} ${
+          studio.singlePane
+            ? (selectedNote ? 'hidden' : 'flex-1 border-r-0')
+            : 'w-80 lg:w-96'
+        }`}>
           {renderNotesList()}
         </div>
 
-        {/* Note Detail */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Note detail. Hidden when single-pane with nothing selected — the
+            list shows full-width instead. */}
+        <div className={`flex-1 flex flex-col overflow-hidden ${
+          studio.singlePane && !selectedNote ? 'hidden' : ''
+        }`}>
           {selectedNote ? (
             <>
               {/* Note Header */}
               <div className={`px-4 md:px-6 py-4 border-b ${tc.border} ${tc.cardBg}`}>
                 <div className="flex items-start justify-between gap-4">
+                  {studio.singlePane && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedNote(null)}
+                      className={`shrink-0 -ml-1 mt-0.5 p-1.5 rounded-lg ${tc.btnGhost}`}
+                      aria-label="Back to notes list"
+                      title="Back to notes"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                  )}
                   <div className="flex-1 min-w-0">
                     {isEditing ? (
                       <div className="flex items-center gap-2">
