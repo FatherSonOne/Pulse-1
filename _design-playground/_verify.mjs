@@ -64,6 +64,34 @@ for (const s of shots) {
   console.log(`✓ ${s.name}`);
 }
 
+// Path C extras — recording state + collapsed sources rail.
+await ensureTheme('dark');
+await page.locator('button[data-active]:has-text("C ·")').first().click().catch(async () => {
+  await page.locator('button:has-text("C ·")').first().click();
+});
+await page.locator('main button[data-section="triage"]').first().click();
+await page.waitForTimeout(300);
+// 30 — collapsed rail
+await page.locator('aside button[title="Collapse rail"]').first().click().catch(() => {});
+await page.waitForTimeout(300);
+await page.screenshot({ path: '_shots/30-C-inbox-rail-collapsed.png', fullPage: false });
+console.log('✓ 30-C-inbox-rail-collapsed');
+// Re-expand
+await page.locator('aside button[title="Expand rail"]').first().click().catch(() => {});
+await page.waitForTimeout(200);
+// 31 — recording state (click floating mic)
+await page.locator('main button[title="Hold space to record"]').first().click();
+await page.waitForTimeout(1100); // let the timer tick once
+await page.screenshot({ path: '_shots/31-C-inbox-recording.png', fullPage: false });
+console.log('✓ 31-C-inbox-recording');
+// 32 — recording state, light mode
+await ensureTheme('light');
+await page.waitForTimeout(200);
+await page.screenshot({ path: '_shots/32-C-inbox-recording-light.png', fullPage: false });
+console.log('✓ 32-C-inbox-recording-light');
+// Cancel recording
+await page.locator('button:has-text("Cancel")').first().click().catch(() => {});
+
 if (errors.length) {
   console.log('\n--- errors ---');
   errors.forEach(e => console.log(e));

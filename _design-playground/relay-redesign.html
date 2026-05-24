@@ -50,6 +50,7 @@
     --pulse-mono: 'JetBrains Mono', ui-monospace, monospace;
     --pulse-sidebar-bg: #ffffff;
     --pulse-shadow-main: 0 6px 24px rgba(0, 0, 0, 0.08);
+    --pulse-dim-overlay: rgba(255, 255, 255, 0.55);
   }
   html[data-theme='dark'] {
     --pulse-canvas: #000000;
@@ -66,6 +67,7 @@
     --pulse-rose-soft: rgba(244, 63, 94, 0.12);
     --pulse-sidebar-bg: #0a0a0b;
     --pulse-shadow-main: 0 10px 40px rgba(0, 0, 0, 0.4);
+    --pulse-dim-overlay: rgba(0, 0, 0, 0.35);
   }
   html, body { height: 100%; }
   body {
@@ -201,27 +203,53 @@ const TRIAGE_VOICES = [
 ];
 
 const DIRECT_THREADS = [
-  { id: 'd1', name: 'Frankie Messana', last: 'Quick · 0:04', ago: '1w', unread: 2, active: true,
+  { id: 'd1', name: 'Frankie Messana', last: 'Quick · 0:04', ago: '14m', unread: 2, online: true, active: true,
     messages: [
-      { id: 'dm1', who: 'them', dur: '0:02', when: 'Mon 9:14 AM', transcript: null },
-      { id: 'dm2', who: 'me',   dur: '0:11', when: 'Mon 9:15 AM', transcript: 'On it — sending the deck over before lunch.' },
-      { id: 'dm3', who: 'them', dur: '0:04', when: 'Mon 9:32 AM', transcript: null },
+      // Today
+      { id: 'dm1',  who: 'them', dur: '0:02', when: 'Today · 9:14 AM',  group: 'Today',     transcript: null },
+      { id: 'dm2',  who: 'me',   dur: '0:11', when: 'Today · 9:15 AM',  group: 'Today',     transcript: 'On it — sending the deck over before lunch.' },
+      { id: 'dm3',  who: 'them', dur: '0:04', when: 'Today · 9:32 AM',  group: 'Today',     transcript: 'Sweet.' },
+      { id: 'dm4',  who: 'them', dur: '0:18', when: 'Today · 11:02 AM', group: 'Today',     transcript: 'One more thing — can you also add the Q2 baseline to slide 4? Maria asked last week.' },
+      { id: 'dm5',  who: 'me',   dur: '0:09', when: 'Today · 11:14 AM', group: 'Today',     transcript: 'Yep — pulling those numbers now.' },
+      // Yesterday
+      { id: 'dm6',  who: 'them', dur: '0:27', when: 'Yesterday · 6:48 PM', group: 'Yesterday', transcript: 'Hey — quick recap from the call. Three things landed, the pricing thing we punted on, and we owe Maria a follow-up by Friday.' },
+      { id: 'dm7',  who: 'me',   dur: '0:14', when: 'Yesterday · 6:55 PM', group: 'Yesterday', transcript: 'Got it. I will draft the Friday follow-up tomorrow morning.' },
+      // Last week
+      { id: 'dm8',  who: 'them', dur: '0:42', when: 'Wed · 3:11 PM', group: 'Last week', transcript: 'So I talked to legal — they are fine with option B as long as we update the disclosure on the second page. Long story short, ship it.' },
+      { id: 'dm9',  who: 'me',   dur: '0:08', when: 'Wed · 3:30 PM', group: 'Last week', transcript: 'Big unblock. Thanks.' },
     ] },
-  { id: 'd2', name: 'Unknown',         last: 'DM · 0:19',    ago: '1w', unread: 1, active: false, messages: [] },
-  { id: 'd3', name: 'Maria Schaefer',  last: 'Quick · 0:08', ago: '2w', unread: 0, active: false, messages: [] },
-  { id: 'd4', name: 'Jaylen Park',     last: 'DM · 0:42',    ago: '3w', unread: 0, active: false, messages: [] },
+  { id: 'd2', name: 'Maria Schaefer',  last: 'Quick · 0:08', ago: '2h',  unread: 1, online: true,  active: false, messages: [] },
+  { id: 'd3', name: 'Jaylen Park',     last: 'DM · 0:42',    ago: '4h',  unread: 0, online: false, active: false, messages: [] },
+  { id: 'd4', name: 'Theo Bridgewater',last: 'Quick · 0:11', ago: '1d',  unread: 3, online: false, active: false, messages: [] },
+  { id: 'd5', name: 'Unknown',         last: 'DM · 0:19',    ago: '1w',  unread: 1, online: false, active: false, messages: [] },
+  { id: 'd6', name: 'Sarah Chen',      last: 'Quick · 0:06', ago: '2w',  unread: 0, online: false, active: false, messages: [] },
 ];
 
 const CHANNELS = [
-  { id: 'c1', name: 'general',   workspace: 'My Workspace', unread: 4, active: true,
+  { id: 'c1', name: 'general',   workspace: 'My Workspace', unread: 4,  active: true,
     posts: [
       { id: 'p1', who: 'Frankie Messana', dur: '0:34', when: 'Today · 11:02 AM', mentions: ['@maria'], transcript: 'Hey @maria — can you walk me through the Q1 plan tomorrow? Want to sync before the broadcast.' },
       { id: 'p2', who: 'Maria Schaefer',  dur: '0:18', when: 'Today · 11:14 AM', mentions: [],          transcript: 'Yes — 10am your time? I have the deck ready.' },
       { id: 'p3', who: 'Jaylen Park',     dur: '0:09', when: 'Today · 11:21 AM', mentions: [],          transcript: '+1, I will hop on too.' },
+      { id: 'p4', who: 'Theo Bridgewater',dur: '0:52', when: 'Today · 11:48 AM', mentions: ['@frankie'],transcript: 'Quick context for the sync: @frankie can you also share where we landed on the pricing question from last week? Wanna make sure Maria is not missing anything.' },
+      { id: 'p5', who: 'Frankie Messana', dur: '0:21', when: 'Today · 12:02 PM', mentions: [],          transcript: 'Already in the doc, page 4. Will pull it up on the call.' },
+      { id: 'p6', who: 'Sarah Chen',      dur: '0:11', when: 'Today · 1:34 PM',  mentions: ['@everyone'],transcript: '@everyone — reminder: standups moved to 9:30 starting Monday.' },
     ] },
-  { id: 'c2', name: 'standups',  workspace: 'My Workspace', unread: 0, active: false, posts: [] },
+  { id: 'c2', name: 'standups',  workspace: 'My Workspace', unread: 0,  active: false, posts: [] },
   { id: 'c3', name: 'design',    workspace: 'My Workspace', unread: 12, active: false, posts: [] },
-  { id: 'c4', name: 'random',    workspace: 'My Workspace', unread: 0, active: false, posts: [] },
+  { id: 'c4', name: 'random',    workspace: 'My Workspace', unread: 0,  active: false, posts: [] },
+  { id: 'c5', name: 'q1-planning',workspace:'My Workspace', unread: 2,  active: false, posts: [] },
+];
+
+const CHANNEL_MEMBERS = [
+  { name: 'Frankie Messana', role: 'HOST',   online: true  },
+  { name: 'Maria Schaefer',  role: 'ADMIN',  online: true  },
+  { name: 'Jaylen Park',     role: null,     online: true  },
+  { name: 'Theo Bridgewater',role: null,     online: false },
+  { name: 'Sarah Chen',      role: null,     online: false },
+  { name: 'Devon Hill',      role: 'GUEST',  online: false },
+  { name: 'Priya Iyer',      role: null,     online: false },
+  { name: 'Marcus Webb',     role: null,     online: false },
 ];
 
 const BROADCASTS = [
@@ -1299,6 +1327,45 @@ const C_RAIL = [
 
 function PathC({ subsection, setSubsection }) {
   const [nowPlaying, setNowPlaying] = useState(TRIAGE_VOICES[2]);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [progress, setProgress] = useState(0.34);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSec, setRecordingSec] = useState(0);
+  const [railCollapsed, setRailCollapsed] = useState(false);
+
+  // Animate playback progress so the active card + footer + transcript karaoke
+  // all stay in sync. Loops 0 → 1 in ~12s; pauses on isPlaying=false.
+  useEffect(() => {
+    if (!isPlaying || isRecording) return;
+    const id = setInterval(() => {
+      setProgress(p => (p >= 0.98 ? 0 : Math.min(1, p + 0.008)));
+    }, 100);
+    return () => clearInterval(id);
+  }, [isPlaying, isRecording]);
+
+  // Recording timer — increments while isRecording is true.
+  useEffect(() => {
+    if (!isRecording) return;
+    const id = setInterval(() => setRecordingSec(s => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [isRecording]);
+
+  const onPlay = (v) => {
+    setNowPlaying(v);
+    setProgress(0);
+    setIsPlaying(true);
+  };
+  const onToggleRecording = () => {
+    if (isRecording) {
+      setIsRecording(false);
+      setRecordingSec(0);
+    } else {
+      setIsRecording(true);
+      setIsPlaying(false);
+    }
+  };
+
+  const railWidth = railCollapsed ? 64 : 200;
 
   return (
     <div className="h-full flex flex-col">
@@ -1307,86 +1374,165 @@ function PathC({ subsection, setSubsection }) {
         iaFix="Top 6-tab strip replaced by vertical sources rail. Triage → Inbox (smart playlist of all sources). Persistent studio footer player. Floating mic, not a pill."
         vibe="Waveform-native. Full-width audio cards. Karaoke-style transcript on play. Coral reserved for record indicator + AI + active source." />
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sources rail */}
-        <aside className="w-[200px] shrink-0 border-r pulse-border-color overflow-y-auto py-2">
-          <div className="px-4 py-2 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">SOURCES</div>
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Sources rail (collapsible) */}
+        <aside className="shrink-0 border-r pulse-border-color overflow-y-auto py-2 relative transition-[width] duration-200" style={{ width: railWidth }}>
+          <div className={`flex items-center px-3 py-2 ${railCollapsed ? 'justify-center' : 'justify-between'}`}>
+            {!railCollapsed && <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">SOURCES</span>}
+            <button onClick={() => setRailCollapsed(c => !c)} className="p-1 rounded hover:pulse-surface-raised pulse-ink-3-color" title={railCollapsed ? 'Expand rail' : 'Collapse rail'}>
+              <Icon name={railCollapsed ? 'chevR' : 'chevD'} className={`w-3.5 h-3.5 ${railCollapsed ? '' : 'rotate-90'}`}/>
+            </button>
+          </div>
           {C_RAIL.map(r => (
             <button key={r.id} data-section={r.id} onClick={() => setSubsection(r.id)}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 transition text-left ${subsection === r.id ? 'pulse-rose-color pulse-rose-bg-soft-color' : 'pulse-ink-2-color hover:pulse-surface-raised'}`}>
-              <Icon name={r.icon} className="w-4 h-4 opacity-90"/>
-              <div>
-                <div className="text-[13px] font-medium">{r.label}</div>
-                <div className="text-[10px] pulse-ink-3-color">{r.desc}</div>
+              title={railCollapsed ? `${r.label} — ${r.desc}` : undefined}
+              className={`w-full flex items-center transition text-left ${railCollapsed ? 'justify-center px-0 py-3' : 'gap-3 px-4 py-2.5'} ${subsection === r.id ? 'pulse-rose-color pulse-rose-bg-soft-color' : 'pulse-ink-2-color hover:pulse-surface-raised'}`}>
+              <div className="relative shrink-0">
+                <Icon name={r.icon} className="w-4 h-4 opacity-90"/>
+                {railCollapsed && r.id === 'triage' && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full pulse-rose-bg-color pulse-dot-anim"/>}
               </div>
-              {r.id === 'triage' && <span className="ml-auto w-1.5 h-1.5 rounded-full pulse-rose-bg-color pulse-dot-anim"/>}
+              {!railCollapsed && (
+                <>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-medium">{r.label}</div>
+                    <div className="text-[10px] pulse-ink-3-color">{r.desc}</div>
+                  </div>
+                  {r.id === 'triage' && <span className="ml-auto w-1.5 h-1.5 rounded-full pulse-rose-bg-color pulse-dot-anim"/>}
+                </>
+              )}
             </button>
           ))}
-          <div className="px-4 py-2 mt-4 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">SMART PLAYLISTS</div>
-          {[
-            { label: 'Unheard',         count: 3 },
-            { label: 'Needs reply',     count: 1 },
-            { label: 'Bookmarked',      count: 12 },
-            { label: 'Today',           count: 6 },
-          ].map(p => (
-            <button key={p.label} className="w-full flex items-center gap-2 px-4 py-1.5 pulse-ink-2-color hover:pulse-surface-raised text-[12px] text-left">
-              <Icon name="bookmark" className="w-3.5 h-3.5 opacity-60"/>
-              <span>{p.label}</span>
-              <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{p.count}</span>
-            </button>
-          ))}
+          {!railCollapsed && (
+            <>
+              <div className="px-4 py-2 mt-4 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">SMART PLAYLISTS</div>
+              {[
+                { label: 'Unheard',     count: 3 },
+                { label: 'Needs reply', count: 1 },
+                { label: 'Bookmarked',  count: 12 },
+                { label: 'Today',       count: 6 },
+              ].map(p => (
+                <button key={p.label} className="w-full flex items-center gap-2 px-4 py-1.5 pulse-ink-2-color hover:pulse-surface-raised text-[12px] text-left">
+                  <Icon name="bookmark" className="w-3.5 h-3.5 opacity-60"/>
+                  <span>{p.label}</span>
+                  <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{p.count}</span>
+                </button>
+              ))}
+            </>
+          )}
         </aside>
 
         {/* Main */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-7 pt-6 pb-28">
-            {subsection === 'triage'    && <PathCInbox nowPlaying={nowPlaying} onPlay={setNowPlaying} />}
-            {subsection === 'direct'    && <PathCDirect />}
-            {subsection === 'channel'   && <PathCChannel />}
-            {subsection === 'broadcast' && <PathCBroadcast />}
-            {subsection === 'notes'     && <PathCNotes />}
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          {isRecording && <div className="absolute inset-0 pointer-events-none z-10" style={{ background: 'var(--pulse-dim-overlay)' }}/>}
+          <div className={`flex-1 overflow-y-auto px-7 pt-6 pb-28 transition-opacity ${isRecording ? 'opacity-40' : ''}`}>
+            {subsection === 'triage'    && <PathCInbox nowPlaying={nowPlaying} progress={progress} isPlaying={isPlaying} onPlay={onPlay} onTogglePlay={() => setIsPlaying(p => !p)} />}
+            {subsection === 'direct'    && <PathCDirect nowPlaying={nowPlaying} onPlay={onPlay} />}
+            {subsection === 'channel'   && <PathCChannel nowPlaying={nowPlaying} onPlay={onPlay} />}
+            {subsection === 'broadcast' && <PathCBroadcast nowPlaying={nowPlaying} progress={progress} isPlaying={isPlaying} onPlay={onPlay} />}
+            {subsection === 'notes'     && <PathCNotes nowPlaying={nowPlaying} onPlay={onPlay} />}
             {subsection === 'live'      && <PathCLive />}
           </div>
 
-          {/* Studio footer — persistent player */}
-          <StudioFooter v={nowPlaying} />
+          {/* Studio footer — switches between idle / playing / recording modes */}
+          <StudioFooter v={nowPlaying} isPlaying={isPlaying} progress={progress} isRecording={isRecording} recordingSec={recordingSec} onTogglePlay={() => setIsPlaying(p => !p)} onCancelRecord={onToggleRecording} onSendRecord={onToggleRecording} />
         </div>
       </div>
 
-      {/* Floating mic — record affordance */}
-      <button className="absolute bottom-24 right-6 w-14 h-14 rounded-full pulse-rose-bg-color text-white pulse-rose-glow-shadow flex items-center justify-center ring-pulse-anim" style={{ position: 'absolute' }} title="Hold space to record">
-        <Icon name="mic" className="w-6 h-6"/>
+      {/* Floating mic — record affordance, swaps to stop while recording */}
+      <button
+        onClick={onToggleRecording}
+        className={`absolute bottom-24 right-6 w-14 h-14 rounded-full flex items-center justify-center transition ${isRecording ? 'bg-red-500 text-white' : 'pulse-rose-bg-color text-white pulse-rose-glow-shadow ring-pulse-anim'}`}
+        style={{ position: 'absolute', zIndex: 20 }}
+        title={isRecording ? 'Stop recording' : 'Hold space to record'}>
+        <Icon name={isRecording ? 'pause' : 'mic'} className="w-6 h-6"/>
       </button>
     </div>
   );
 }
 
-function StudioFooter({ v }) {
-  if (!v) return null;
+function StudioFooter({ v, isPlaying, progress, isRecording, recordingSec, onTogglePlay, onCancelRecord, onSendRecord }) {
+  if (isRecording) {
+    const mm = String(Math.floor(recordingSec / 60)).padStart(1, '0');
+    const ss = String(recordingSec % 60).padStart(2, '0');
+    return (
+      <div className="border-t-2 border-red-500 px-6 py-4 flex items-center gap-4 relative z-20" style={{ background: 'var(--pulse-canvas-soft)' }}>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500 pulse-dot-anim"/>
+          <span className="text-[11px] font-mono-pulse tracking-wide-mono text-red-500">RECORDING</span>
+        </div>
+        <div className="flex-1 flex items-center gap-3 min-w-0">
+          <span className="font-mono-pulse text-base text-red-500">{mm}:{ss}</span>
+          {/* Live waveform — animated bars driven by wave-live-bar keyframes */}
+          <div className="flex items-end gap-0.5 flex-1 h-7">
+            {Array.from({ length: 60 }).map((_, i) => (
+              <i key={i} className="wave-live-bar block" style={{
+                width: 2,
+                height: `${30 + (Math.sin((i + recordingSec) * 0.5) * 0.5 + 0.5) * 70}%`,
+                background: '#ef4444',
+                borderRadius: 1,
+                animationDelay: `${(i % 6) * 0.08}s`,
+              }}/>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button onClick={onCancelRecord} className="px-3 py-1.5 rounded-md pulse-surface-raised text-[12px] pulse-ink-2-color">Cancel</button>
+          <button onClick={onSendRecord} className="px-4 py-1.5 rounded-md bg-red-500 text-white text-[12px] font-medium flex items-center gap-1.5">
+            <Icon name="pause" className="w-3.5 h-3.5"/>Stop & send
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!v) {
+    return (
+      <div className="border-t pulse-border-color px-6 py-4 flex items-center gap-3" style={{ background: 'var(--pulse-canvas-soft)' }}>
+        <span className="w-2 h-2 rounded-full pulse-ink-3-color" style={{ background: 'var(--pulse-ink-3)' }}/>
+        <span className="text-[12px] pulse-ink-3-color">Nothing playing — hit space to record, or pick a voice from the rail.</span>
+      </div>
+    );
+  }
+
+  const pct = Math.round(progress * 100);
+  const totalSec = parseDur(v.dur);
+  const curSec = Math.floor(totalSec * progress);
+  const cur = `${Math.floor(curSec / 60)}:${String(curSec % 60).padStart(2, '0')}`;
+
   return (
     <div className="border-t pulse-border-color px-6 py-3 flex items-center gap-4" style={{ background: 'var(--pulse-canvas-soft)' }}>
-      <button className="w-11 h-11 rounded-full pulse-rose-bg-color text-white pulse-rose-glow-shadow flex items-center justify-center shrink-0"><Icon name="play" className="w-5 h-5"/></button>
+      <button onClick={onTogglePlay} className="w-11 h-11 rounded-full pulse-rose-bg-color text-white pulse-rose-glow-shadow flex items-center justify-center shrink-0">
+        <Icon name={isPlaying ? 'pause' : 'play'} className="w-5 h-5"/>
+      </button>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
           <span className="text-[13px] font-semibold pulse-ink-color truncate">{v.sender}</span>
           <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{TYPE_LABELS[v.type].label}</span>
-          <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">0:00 / {v.dur}</span>
+          {isPlaying && <span className="flex items-center gap-1 text-[10px] font-mono-pulse pulse-rose-color"><span className="w-1 h-1 rounded-full pulse-rose-bg-color pulse-dot-anim"/>PLAYING</span>}
+          <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{cur} / {v.dur}</span>
         </div>
-        <div className="flex items-center gap-2 mt-1">
-          <Waveform seed={v.id} height={20} count={80} className="pulse-rose-color" progress={0.0}/>
+        <div className="flex items-center gap-2 mt-1.5 relative">
+          <Waveform seed={v.id} height={22} count={120} className="pulse-rose-color" progress={progress}/>
+          <div className="absolute inset-y-0 pointer-events-none" style={{ left: `${pct}%`, width: 1, background: 'var(--pulse-rose)', opacity: isPlaying ? 1 : 0.5 }}/>
         </div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         <button className="px-2 py-1 rounded-md pulse-surface-raised text-[10px] font-mono-pulse pulse-ink-2-color">1.0×</button>
-        <button className="p-2 rounded-md hover:pulse-surface-raised pulse-ink-2-color"><Icon name="sparkles" className="w-4 h-4"/></button>
-        <button className="p-2 rounded-md hover:pulse-surface-raised pulse-ink-2-color"><Icon name="bookmark" className="w-4 h-4"/></button>
-        <button className="p-2 rounded-md hover:pulse-surface-raised pulse-ink-2-color"><Icon name="volume" className="w-4 h-4"/></button>
+        <button className="p-2 rounded-md hover:pulse-surface-raised pulse-coral-fg-color" title="AI summary"><Icon name="sparkles" className="w-4 h-4"/></button>
+        <button className="p-2 rounded-md hover:pulse-surface-raised pulse-ink-2-color" title="Bookmark"><Icon name="bookmark" className="w-4 h-4"/></button>
+        <button className="p-2 rounded-md hover:pulse-surface-raised pulse-ink-2-color" title="Volume"><Icon name="volume" className="w-4 h-4"/></button>
       </div>
     </div>
   );
 }
 
-function PathCInbox({ nowPlaying, onPlay }) {
+// "0:19" → 19 (seconds). Used for footer progress timestamp.
+function parseDur(d) {
+  const [m, s] = (d || '0:00').split(':').map(Number);
+  return (m || 0) * 60 + (s || 0);
+}
+
+function PathCInbox({ nowPlaying, progress, isPlaying, onPlay, onTogglePlay }) {
   return (
     <div>
       <header className="mb-5">
@@ -1401,14 +1547,21 @@ function PathCInbox({ nowPlaying, onPlay }) {
         </div>
       </header>
       <div className="space-y-3">
-        {TRIAGE_VOICES.map(v => <PathCCard key={v.id} v={v} active={v.id === nowPlaying?.id} onPlay={() => onPlay(v)} />)}
+        {TRIAGE_VOICES.map(v => {
+          const active = v.id === nowPlaying?.id;
+          return <PathCCard key={v.id} v={v} active={active} isPlaying={active && isPlaying} progress={active ? progress : 0} onPlay={() => onPlay(v)} onTogglePlay={onTogglePlay} />;
+        })}
       </div>
     </div>
   );
 }
 
-function PathCCard({ v, active, onPlay }) {
+function PathCCard({ v, active, isPlaying, progress, onPlay, onTogglePlay }) {
   const t = TYPE_LABELS[v.type];
+  // Karaoke split — only when active AND have transcript.
+  const hasKaraoke = active && v.transcript && v.transcript.length > 2;
+  const splitIdx = hasKaraoke ? Math.floor(v.transcript.length * progress) : 0;
+
   return (
     <div className="studio-card p-4" data-active={active}>
       <div className="flex items-center gap-3 mb-3">
@@ -1418,24 +1571,30 @@ function PathCCard({ v, active, onPlay }) {
             <span className="text-[13px] font-semibold pulse-ink-color truncate">{v.sender}</span>
             <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-wide-mono ${t.tone === 'rose' ? 'pulse-coral-bg-color pulse-coral-fg-color' : 'pulse-surface-raised pulse-ink-3-color'}`}>{t.label}</span>
             {v.unread && <span className="w-1.5 h-1.5 rounded-full pulse-rose-bg-color"/>}
+            {active && isPlaying && <span className="flex items-center gap-1 text-[9px] font-mono-pulse pulse-rose-color"><span className="w-1 h-1 rounded-full pulse-rose-bg-color pulse-dot-anim"/>NOW PLAYING</span>}
             <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{v.ago} · {v.dur}</span>
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <button onClick={onPlay} className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center transition ${active ? 'pulse-rose-bg-color text-white' : 'pulse-surface-raised pulse-ink-color hover:pulse-rose-color'}`}>
-          <Icon name={active ? 'pause' : 'play'} className="w-4 h-4"/>
+      <div className="flex items-center gap-3 relative">
+        <button onClick={active ? onTogglePlay : onPlay} className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center transition ${active ? 'pulse-rose-bg-color text-white' : 'pulse-surface-raised pulse-ink-color hover:pulse-rose-color'}`}>
+          <Icon name={active && isPlaying ? 'pause' : 'play'} className="w-4 h-4"/>
         </button>
-        <Waveform seed={v.id} height={32} count={80} className={active ? 'pulse-rose-color' : 'pulse-ink-2-color'} tall progress={active ? 0.35 : 0}/>
+        <div className="relative flex-1">
+          <Waveform seed={v.id} height={32} count={80} className={active ? 'pulse-rose-color' : 'pulse-ink-2-color'} tall progress={active ? progress : 0}/>
+          {active && (
+            <div className="absolute inset-y-0 pointer-events-none" style={{ left: `${progress * 100}%`, width: 2, background: 'var(--pulse-rose)' }}/>
+          )}
+        </div>
       </div>
       {(v.transcript || v.aiSummary) && (
-        <div className="mt-3 pl-13" style={{ paddingLeft: 52 }}>
+        <div className="mt-3" style={{ paddingLeft: 52 }}>
           {v.transcript && (
             <div className="text-[13px] pulse-ink-2-color leading-relaxed">
-              {active ? (
+              {hasKaraoke ? (
                 <span>
-                  <span className="pulse-ink-color">{v.transcript.slice(0, Math.floor(v.transcript.length * 0.35))}</span>
-                  <span className="opacity-60">{v.transcript.slice(Math.floor(v.transcript.length * 0.35))}</span>
+                  <span className="pulse-ink-color font-medium">{v.transcript.slice(0, splitIdx)}</span>
+                  <span className="opacity-50">{v.transcript.slice(splitIdx)}</span>
                 </span>
               ) : v.transcript}
             </div>
@@ -1455,72 +1614,214 @@ function PathCCard({ v, active, onPlay }) {
   );
 }
 
-function PathCDirect() {
-  const t = DIRECT_THREADS.find(t => t.active) || DIRECT_THREADS[0];
+function PathCDirect({ nowPlaying, onPlay }) {
+  const [activeThreadId, setActiveThreadId] = useState('d1');
+  const t = DIRECT_THREADS.find(x => x.id === activeThreadId) || DIRECT_THREADS[0];
+
+  // Group messages by `group` field, preserving original order.
+  const grouped = useMemo(() => {
+    const map = new Map();
+    t.messages.forEach(m => {
+      if (!map.has(m.group)) map.set(m.group, []);
+      map.get(m.group).push(m);
+    });
+    return Array.from(map.entries());
+  }, [t]);
+
   return (
-    <div>
-      <header className="mb-5 flex items-center gap-4">
-        <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-semibold text-white" style={{ background: colorForId(t.name) }}>{initials(t.name)}</div>
-        <div>
-          <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">DIRECT VOICE</div>
-          <div className="text-2xl font-semibold pulse-ink-color">{t.name}</div>
-          <div className="text-[12px] pulse-ink-3-color">Active 14m ago · 3 voices today</div>
+    <div className="grid grid-cols-[260px_1fr] gap-6 -mx-7 -mt-6 h-full">
+      {/* Thread list — pinned to the left of the studio main */}
+      <div className="border-r pulse-border-color overflow-y-auto px-3 py-4">
+        <div className="px-2 py-1.5 mb-1 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color flex items-center justify-between">
+          <span>PEOPLE · {DIRECT_THREADS.length}</span>
+          <button className="pulse-ink-3-color hover:pulse-ink-color"><Icon name="plus" className="w-3.5 h-3.5"/></button>
         </div>
-      </header>
-      <div className="space-y-3">
-        {t.messages.map(m => (
-          <div key={m.id} className="studio-card p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: m.who === 'me' ? 'var(--pulse-rose)' : colorForId(t.name) }}>{m.who === 'me' ? 'You' : initials(t.name)}</div>
-              <span className="text-[12px] font-semibold pulse-ink-color">{m.who === 'me' ? 'You' : t.name}</span>
-              <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{m.when} · {m.dur}</span>
+        {DIRECT_THREADS.map(d => (
+          <button key={d.id} onClick={() => setActiveThreadId(d.id)}
+            className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-md transition text-left ${d.id === activeThreadId ? 'pulse-surface-raised' : 'hover:pulse-surface-raised'}`}>
+            <div className="relative shrink-0">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-semibold text-white" style={{ background: colorForId(d.name) }}>{initials(d.name)}</div>
+              {d.online && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2" style={{ background: '#22c55e', borderColor: 'var(--pulse-sidebar-bg)' }}/>}
             </div>
-            <div className="flex items-center gap-3">
-              <button className="w-9 h-9 rounded-full pulse-surface-raised pulse-ink-color flex items-center justify-center"><Icon name="play" className="w-3.5 h-3.5"/></button>
-              <Waveform seed={m.id} height={28} count={60} className="pulse-ink-2-color" tall/>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[13px] font-semibold pulse-ink-color truncate">{d.name}</span>
+                {d.unread > 0 && <span className="ml-auto text-[10px] font-mono-pulse pulse-rose-color">{d.unread}</span>}
+              </div>
+              <div className="text-[11px] pulse-ink-3-color truncate">{d.last} · {d.ago}</div>
             </div>
-            {m.transcript && <div className="text-[13px] pulse-ink-color mt-2 leading-relaxed" style={{ paddingLeft: 48 }}>{m.transcript}</div>}
-          </div>
+          </button>
         ))}
+      </div>
+
+      {/* Conversation pane */}
+      <div className="overflow-y-auto pr-7 pt-5 pb-3">
+        <header className="mb-5 flex items-center gap-3 sticky top-0 pb-3 pt-1 z-10" style={{ background: 'var(--pulse-canvas)' }}>
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-semibold text-white" style={{ background: colorForId(t.name) }}>{initials(t.name)}</div>
+            {t.online && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2" style={{ background: '#22c55e', borderColor: 'var(--pulse-canvas)' }}/>}
+          </div>
+          <div>
+            <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">DIRECT VOICE</div>
+            <div className="text-xl font-semibold pulse-ink-color">{t.name}</div>
+            <div className="text-[11px] pulse-ink-3-color">{t.online ? `Active ${t.ago} ago` : `Last active ${t.ago} ago`} · {t.messages.length} voices in thread</div>
+          </div>
+          <div className="ml-auto flex items-center gap-1 pulse-ink-3-color">
+            <button className="p-1.5 rounded hover:pulse-surface-raised"><Icon name="search" className="w-4 h-4"/></button>
+            <button className="p-1.5 rounded hover:pulse-surface-raised"><Icon name="bookmark" className="w-4 h-4"/></button>
+            <button className="p-1.5 rounded hover:pulse-surface-raised"><Icon name="settings" className="w-4 h-4"/></button>
+          </div>
+        </header>
+
+        {t.messages.length === 0 ? (
+          <div className="flex flex-col items-center text-center pt-8 pulse-ink-3-color">
+            <Icon name="mic" className="w-8 h-8 mb-2 opacity-50"/>
+            <div className="text-sm pulse-ink-2-color">No voices yet</div>
+            <div className="text-[11px] mt-1">Hit space to send the first one</div>
+          </div>
+        ) : (
+          grouped.map(([groupLabel, msgs]) => (
+            <div key={groupLabel} className="mb-6">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">{groupLabel.toUpperCase()}</span>
+                <div className="flex-1 h-px pulse-border-strong-color" style={{ background: 'var(--pulse-border)' }}/>
+              </div>
+              <div className="space-y-2.5">
+                {msgs.map(m => {
+                  const isMe = m.who === 'me';
+                  const active = m.id === nowPlaying?.id;
+                  return (
+                    <div key={m.id} className={`studio-card p-3.5 ${isMe ? 'ml-12' : 'mr-12'}`} data-active={active}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0" style={{ background: isMe ? 'var(--pulse-rose)' : colorForId(t.name) }}>{isMe ? 'You' : initials(t.name)}</div>
+                        <span className="text-[12px] font-semibold pulse-ink-color">{isMe ? 'You' : t.name}</span>
+                        <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{m.when} · {m.dur}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => onPlay({ id: m.id, sender: isMe ? 'You' : t.name, type: 'dm', dur: m.dur, transcript: m.transcript, source: 'direct' })}
+                          className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center ${active ? 'pulse-rose-bg-color text-white' : 'pulse-surface-raised pulse-ink-color hover:pulse-rose-color'}`}>
+                          <Icon name="play" className="w-3 h-3"/>
+                        </button>
+                        <Waveform seed={m.id} height={22} count={50} className={active ? 'pulse-rose-color' : 'pulse-ink-2-color'} tall/>
+                      </div>
+                      {m.transcript && <div className="text-[12.5px] pulse-ink-color mt-2 leading-relaxed" style={{ paddingLeft: 44 }}>{m.transcript}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
 }
 
-function PathCChannel() {
-  const c = CHANNELS[0];
+function PathCChannel({ nowPlaying, onPlay }) {
+  const [activeChannelId, setActiveChannelId] = useState('c1');
+  const c = CHANNELS.find(x => x.id === activeChannelId) || CHANNELS[0];
+  const onlineCount = CHANNEL_MEMBERS.filter(m => m.online).length;
+
   return (
-    <div>
-      <header className="mb-5 flex items-center gap-3">
-        <Icon name="hash" className="w-7 h-7 pulse-ink-3-color"/>
-        <div>
-          <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">CHANNEL · {c.workspace.toUpperCase()}</div>
-          <div className="text-2xl font-semibold pulse-ink-color">{c.name}</div>
-          <div className="text-[12px] pulse-ink-3-color">8 members · 3 active now</div>
+    <div className="grid grid-cols-[200px_1fr_220px] gap-6 -mx-7 -mt-6 h-full">
+      {/* Channels list */}
+      <div className="border-r pulse-border-color overflow-y-auto px-3 py-4">
+        <div className="px-2 py-1.5 mb-1 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color flex items-center justify-between">
+          <span>CHANNELS</span>
+          <button className="pulse-ink-3-color hover:pulse-ink-color"><Icon name="plus" className="w-3.5 h-3.5"/></button>
         </div>
-      </header>
-      <div className="space-y-3">
-        {c.posts.map(p => (
-          <div key={p.id} className="studio-card p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: colorForId(p.who) }}>{initials(p.who)}</div>
-              <span className="text-[12px] font-semibold pulse-ink-color">{p.who}</span>
-              {p.mentions.length > 0 && <span className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-wide-mono pulse-coral-bg-color pulse-coral-fg-color">@MENTION</span>}
-              <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{p.when} · {p.dur}</span>
+        {CHANNELS.map(ch => (
+          <button key={ch.id} onClick={() => setActiveChannelId(ch.id)}
+            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[13px] transition text-left ${ch.id === activeChannelId ? 'pulse-rose-color pulse-rose-bg-soft-color font-medium' : 'pulse-ink-2-color hover:pulse-surface-raised'}`}>
+            <Icon name="hash" className="w-3.5 h-3.5 opacity-70 shrink-0"/>
+            <span className="truncate">{ch.name}</span>
+            {ch.unread > 0 && <span className="ml-auto text-[10px] font-mono-pulse">{ch.unread}</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* Channel feed */}
+      <div className="overflow-y-auto pt-5 pb-3">
+        <header className="mb-5 flex items-center gap-3 sticky top-0 pb-3 pt-1 z-10" style={{ background: 'var(--pulse-canvas)' }}>
+          <div className="w-10 h-10 rounded-lg pulse-surface-raised flex items-center justify-center pulse-ink-2-color"><Icon name="hash" className="w-5 h-5"/></div>
+          <div>
+            <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">CHANNEL · {c.workspace.toUpperCase()}</div>
+            <div className="text-xl font-semibold pulse-ink-color">{c.name}</div>
+            <div className="text-[11px] pulse-ink-3-color">{CHANNEL_MEMBERS.length} members · {onlineCount} online · {c.posts.length} voices today</div>
+          </div>
+          <div className="ml-auto flex items-center gap-1 pulse-ink-3-color">
+            <button className="p-1.5 rounded hover:pulse-surface-raised"><Icon name="bookmark" className="w-4 h-4"/></button>
+            <button className="p-1.5 rounded hover:pulse-surface-raised"><Icon name="settings" className="w-4 h-4"/></button>
+          </div>
+        </header>
+
+        {c.posts.length === 0 ? (
+          <div className="flex flex-col items-center text-center pt-8 pulse-ink-3-color">
+            <Icon name="hash" className="w-8 h-8 mb-2 opacity-50"/>
+            <div className="text-sm pulse-ink-2-color">#{c.name} is quiet</div>
+            <div className="text-[11px] mt-1">Be the first to post a voice</div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {c.posts.map(p => {
+              const active = p.id === nowPlaying?.id;
+              return (
+                <div key={p.id} className="studio-card p-4" data-active={active}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0" style={{ background: colorForId(p.who) }}>{initials(p.who)}</div>
+                    <span className="text-[12px] font-semibold pulse-ink-color">{p.who}</span>
+                    {p.mentions.length > 0 && <span className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-wide-mono pulse-coral-bg-color pulse-coral-fg-color">@MENTION</span>}
+                    <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">{p.when} · {p.dur}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => onPlay({ id: p.id, sender: p.who, type: 'channel', dur: p.dur, transcript: p.transcript, source: 'channel' })}
+                      className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center ${active ? 'pulse-rose-bg-color text-white' : 'pulse-surface-raised pulse-ink-color hover:pulse-rose-color'}`}>
+                      <Icon name="play" className="w-3.5 h-3.5"/>
+                    </button>
+                    <Waveform seed={p.id} height={26} count={60} className={active ? 'pulse-rose-color' : 'pulse-ink-2-color'} tall/>
+                  </div>
+                  {p.transcript && (
+                    <div className="text-[13px] pulse-ink-color mt-2 leading-relaxed" style={{ paddingLeft: 48 }}>
+                      {p.mentions.length > 0
+                        ? p.transcript.split(/(@\w+)/).map((s, i) => /^@\w+$/.test(s) ? <span key={i} className="pulse-coral-bg-color pulse-coral-fg-color px-1 rounded">{s}</span> : <span key={i}>{s}</span>)
+                        : p.transcript}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Members rail */}
+      <div className="border-l pulse-border-color overflow-y-auto px-3 py-4">
+        <div className="px-2 py-1.5 mb-1 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">MEMBERS · {CHANNEL_MEMBERS.length}</div>
+        <div className="px-2 py-1 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">ONLINE — {onlineCount}</div>
+        {CHANNEL_MEMBERS.filter(m => m.online).map(m => (
+          <div key={m.name} className="flex items-center gap-2 px-2 py-1.5">
+            <div className="relative">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: colorForId(m.name) }}>{initials(m.name)}</div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border" style={{ background: '#22c55e', borderColor: 'var(--pulse-canvas)' }}/>
             </div>
-            <div className="flex items-center gap-3">
-              <button className="w-9 h-9 rounded-full pulse-surface-raised pulse-ink-color flex items-center justify-center"><Icon name="play" className="w-3.5 h-3.5"/></button>
-              <Waveform seed={p.id} height={28} count={60} className="pulse-ink-2-color" tall/>
-            </div>
-            {p.transcript && (
-              <div className="text-[13px] pulse-ink-color mt-2 leading-relaxed" style={{ paddingLeft: 48 }}>
-                {p.mentions.length > 0
-                  ? p.transcript.split(/(@\w+)/).map((s, i) => /^@\w+$/.test(s) ? <span key={i} className="pulse-coral-bg-color pulse-coral-fg-color px-1 rounded">{s}</span> : <span key={i}>{s}</span>)
-                  : p.transcript}
-              </div>
-            )}
+            <span className="text-[12px] pulse-ink-color truncate flex-1">{m.name}</span>
+            {m.role && <span className="text-[9px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">{m.role}</span>}
           </div>
         ))}
+        <div className="px-2 py-1 mt-3 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">OFFLINE — {CHANNEL_MEMBERS.length - onlineCount}</div>
+        {CHANNEL_MEMBERS.filter(m => !m.online).map(m => (
+          <div key={m.name} className="flex items-center gap-2 px-2 py-1.5 opacity-60">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: colorForId(m.name) }}>{initials(m.name)}</div>
+            <span className="text-[12px] pulse-ink-2-color truncate flex-1">{m.name}</span>
+            {m.role && <span className="text-[9px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">{m.role}</span>}
+          </div>
+        ))}
+
+        <div className="px-2 py-1 mt-5 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">CHANNEL AI</div>
+        <div className="mx-1 mt-1 rounded-lg pulse-coral-bg-color p-3">
+          <div className="flex items-center gap-1.5 mb-1"><Icon name="sparkles" className="w-3 h-3 pulse-coral-fg-color"/><span className="text-[9px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">DIGEST</span></div>
+          <div className="text-[11.5px] pulse-ink-color leading-snug">Q1 sync planned for tomorrow 10am · Theo asked about pricing · standups moving to 9:30 Monday.</div>
+        </div>
       </div>
     </div>
   );
