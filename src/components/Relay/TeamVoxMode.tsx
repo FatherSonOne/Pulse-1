@@ -15,6 +15,7 @@ import {
   Pin,
   CheckSquare,
   AtSign,
+  Sparkles,
   Smile,
   X,
   UserPlus,
@@ -1483,6 +1484,75 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             </div>
           )}
         </div>
+
+        {/* Members rail — Path C 3rd column (Tier 3). Members resolve from the
+            channel/workspace memberIds × loaded contacts. No online/offline
+            split: presence isn't wired here and we don't fabricate it. The
+            Channel AI digest reuses the generated channel summary (coral is
+            sanctioned for AI output). Desktop-wide (lg) only. */}
+        {selectedChannel && (() => {
+          const ids: string[] = (selectedChannel.memberIds?.length
+            ? selectedChannel.memberIds
+            : selectedWorkspace?.memberIds) ?? [];
+          const members = ids
+            .map((id) => pulseContacts.find((c: any) => c.id === id))
+            .filter(Boolean) as any[];
+          return (
+            <aside className={`hidden lg:flex w-56 shrink-0 flex-col border-l ${tc.border} ${tc.panelBg} overflow-y-auto`}>
+              <div className={`px-3 py-2.5 text-[10px] font-mono uppercase tracking-[0.18em] ${tc.textMuted}`}>
+                Members · {ids.length}
+              </div>
+              <div className="px-1.5 pb-2">
+                {members.length === 0 ? (
+                  <p className={`px-2 py-2 text-[11px] ${tc.textMuted} leading-relaxed`}>
+                    {ids.length > 0
+                      ? 'Member profiles sync from your contacts.'
+                      : 'No members yet — add teammates from the channel header.'}
+                  </p>
+                ) : (
+                  members.map((m) => (
+                    <div key={m.id} className="flex items-center gap-2 px-2 py-1.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
+                        style={{ backgroundColor: m.avatarColor || MODE_COLOR }}
+                        aria-hidden="true"
+                      >
+                        {(m.name || '?').charAt(0).toUpperCase()}
+                      </div>
+                      <span className={`text-[12px] truncate flex-1 ${tc.text}`}>{m.name}</span>
+                      {m.role && (
+                        <span className={`text-[9px] font-mono uppercase tracking-[0.1em] shrink-0 ${tc.textMuted}`}>
+                          {m.role}
+                        </span>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className={`px-3 pt-3 pb-1 text-[10px] font-mono uppercase tracking-[0.18em] ${tc.textMuted}`}>
+                Channel AI
+              </div>
+              <div className="px-2 pb-3">
+                {conversationSummary ? (
+                  <div className="rounded-lg p-3" style={{ background: 'var(--pulse-coral-bg-12)' }}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Sparkles className="w-3 h-3" style={{ color: 'var(--pulse-coral-fg)' }} />
+                      <span className="text-[9px] font-mono uppercase tracking-[0.1em]" style={{ color: 'var(--pulse-coral-fg)' }}>
+                        Digest
+                      </span>
+                    </div>
+                    <p className={`text-[11.5px] leading-snug ${tc.text}`}>{conversationSummary.overview}</p>
+                  </div>
+                ) : (
+                  <p className={`px-1 text-[11px] ${tc.textMuted} leading-relaxed`}>
+                    Run <span className="font-medium">Summarize</span> in the toolbar to generate a channel digest.
+                  </p>
+                )}
+              </div>
+            </aside>
+          );
+        })()}
       </div>
 
       {/* Audio playback is owned by the shared RelayStudioProvider (single
