@@ -861,6 +861,52 @@ These surfaces are referenced but their detailed design is owned by other work s
 
 ---
 
+## Shipped — PR Ledger
+
+The original PR sequence above (PR 1 / 2 / 3a / 3b) seeded the work. Execution
+ran under epic **#90** (Messages section overhaul) and expanded into the
+PR 3 / PR 4 / PR 5 streams below. All commits landed direct-to-`main` per
+the repo's solo-project workflow (no feature branches).
+
+### Foundations
+
+| Commit | What |
+|---|---|
+| `f89c97b` | Coral chip tokens for AI provenance (`--pulse-coral-fg` / `-bg-12` / `-bg-08`) — Muse; unblocked the AI tiles |
+| `84b8c11` | PR 3a — Tools menu shell + Translate Settings + Thread Audit (deterministic, no LLM) |
+| `8ed7952` | PR 3b — Thread Summary + Insights AI tiles with provenance chip |
+| `351f99f` | V2 surface color-contrast remediation (closed epic #90) |
+| `7ecbf3b` · `bbbfb63` | e2e storageState auth fixture for the V2 a11y suite |
+
+### PR 3 — Design taming (#93)
+
+| Task | Commits | Notes |
+|---|---|---|
+| 3.1 Composer simplification | `35efc4d` | 4 base buttons + slash-command palette |
+| 3.2 Focus Mode | `d692cf1` · `03ccdb0` · `fdf1560` | Celebration "rebuild" `d692cf1` later found to edit dead code; `03ccdb0` deleted the orphaned Focus subsystem (−2,369 LOC); `fdf1560` fixed the LIVE overlay (light-mode bug + raw grays) + added `--pulse-bg-deep` |
+| 3.3 Coral budget reset | `18542ef` | Flattened avatar gradients; coral at rest dropped to ~3 |
+| 3.4 Motion compliance | `32b2017` · `0e649cc` | `type:'spring'` → project ease-out; `useMotionPreset()` hook + `MotionConfig reducedMotion="user"` for reduced-motion end-to-end |
+
+### PR 4 — Final polish (#94)
+
+| Task | Commits | Notes |
+|---|---|---|
+| 4.1 Touch targets | `f23e8e5` | Composer + mobile back-button to 48px |
+| 4.2 Anti-pattern cleanup | `e220b63` · `a83545d` | `e220b63` first pass; `a83545d` removed the received-bubble coral side-stripe entirely |
+| 4.3 Mono-label discipline | `5fc19ca` · `b27fd9c` · `7aeb62f` | Original 9 sites, then 9 drift sites, then artifact-modal CTAs → sentence case. Zero `uppercase tracking-wider` outliers remain |
+| 4.4 AI provenance | `efc6a5e` | 5 hand-rolled chips → shared `<AIProvenanceTag>` |
+| 4.5 Verification | _in progress_ | This ledger; axe re-run + `/impeccable` re-score pending e2e auth-fixture refresh |
+
+### PR 5 — CSS-layer token cleanup
+
+| Commit | What |
+|---|---|
+| `a83545d` | Retired the local `--msg-*` token sprawl (14 vars, 27 sites) → canonical `--pulse-*`; removed side-stripe |
+| `c44a9ce` | Theme-aware composer + AI overlay backgrounds (killed hardcoded `#18181B`) |
+| `0051869` | Retired the `--focus-*` 50-color sprawl from `FocusModeComponents.css` (later deleted entirely in `03ccdb0`) |
+
+---
+
 ## Open Questions / Future Decisions
 
 None blocking implementation. The 3 questions Palette raised (edit-after-reaction policy, tone chip threshold, translate provenance) are all resolved in § Locked Decisions.
