@@ -67,7 +67,7 @@ import {
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
-import { useRelayStudio } from './studio';
+import { useRelayStudio, useRelayModeRecorder } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
@@ -174,6 +174,19 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   useEffect(() => {
     localStorage.setItem('voxer-recording-mode', recordingMode);
   }, [recordingMode]);
+
+  // Tier 2 (unify trigger): the studio shell's FloatingMic + footer RECORDING
+  // surface drive Broadcast's capture; the in-pane record buttons are retired.
+  // Enabled when a channel is selected (compose a new broadcast) or a broadcast
+  // room is open (discussion response). The title input + preview → send stay
+  // in-pane and route to the right handler based on the active view.
+  useRelayModeRecorder({
+    start: startRecording,
+    stop: stopRecording,
+    cancel: cancelRecording,
+    recording: recordingState === 'recording',
+    enabled: !!(selectedChannel || activeBroadcastRoom),
+  });
 
   // Phase 6: Keyboard Shortcuts
   useRelayKeyboardShortcuts({
@@ -764,39 +777,18 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                       />
                     </div>
                   ) : (
+                    /* The in-pane record button is retired (Tier 2: the
+                       FloatingMic + StudioFooter RECORDING surface drive
+                       capture). The broadcast title stays — it applies when the
+                       recording is sent from the preview. */
                     <div className="pulse-radio-record-ui">
                       <input
                         type="text"
-                        placeholder="Enter broadcast title..."
+                        placeholder="Enter broadcast title, then tap the mic to record…"
                         value={broadcastTitle}
                         onChange={(e) => setBroadcastTitle(e.target.value)}
                         className="pulse-radio-title-input"
                       />
-
-                      <VoxRecordArea
-                        modeColor="#f43f5e"
-                        isDarkMode={isDarkMode}
-                        isRecording={recordingState === 'recording'}
-                        isPreviewing={recordingState === 'preview'}
-                        recordingMode={recordingMode}
-                        onModeToggle={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
-                        onPointerDown={handlePointerDown}
-                        onPointerUp={handlePointerUp}
-                        onToggleRecording={handleToggleRecording}
-                        recordingDuration={recordingDuration}
-                        recordingState={recordingState}
-                      >
-                        {recordingState === 'recording' && (
-                          <VoxAudioVisualizer
-                            analyser={analyser}
-                            isActive={true}
-                            mode="waveform"
-                            color={MODE_COLOR}
-                            height={80}
-                            isDarkMode={isDarkMode}
-                          />
-                        )}
-                      </VoxRecordArea>
                     </div>
                   )}
                 </div>
@@ -1347,40 +1339,13 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                 />
               </div>
             ) : (
-              <>
-                <div className="pulse-radio-discussion-content">
-                  <MessageSquare className="w-12 h-12" />
-                  <p>Join the Discussion</p>
-                  <span>Record a voice response below</span>
-                </div>
-
-                <div className="pulse-radio-discussion-record">
-                  <VoxRecordArea
-                    modeColor="#f43f5e"
-                    isDarkMode={isDarkMode}
-                    isRecording={recordingState === 'recording'}
-                    isPreviewing={recordingState === 'preview'}
-                    recordingMode={recordingMode}
-                    onModeToggle={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
-                    onPointerDown={handlePointerDown}
-                    onPointerUp={handlePointerUp}
-                    onToggleRecording={handleToggleRecording}
-                    recordingDuration={recordingDuration}
-                    recordingState={recordingState}
-                  >
-                    {recordingState === 'recording' && (
-                      <VoxAudioVisualizer
-                        analyser={analyser}
-                        isActive={true}
-                        mode="waveform"
-                        color={MODE_COLOR}
-                        height={48}
-                        isDarkMode={isDarkMode}
-                      />
-                    )}
-                  </VoxRecordArea>
-                </div>
-              </>
+              /* The in-pane record button is retired (Tier 2: the FloatingMic
+                 + StudioFooter RECORDING surface drive the response capture). */
+              <div className="pulse-radio-discussion-content">
+                <MessageSquare className="w-12 h-12" />
+                <p>Join the Discussion</p>
+                <span>Tap the mic to record a voice response</span>
+              </div>
             )}
           </div>
         </div>
