@@ -64,6 +64,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { MotionConfig } from 'framer-motion';
 import { Send } from 'lucide-react';
 import { useMessagesStore } from '../../store/messageStore';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
@@ -119,11 +120,18 @@ export const MessagesSplitViewWithProviders: React.FC<MessagesSplitViewWithProvi
   props,
 ) => {
   return (
-    <MessagesModalsProvider>
-      <MessagesFeaturePanelsProvider>
-        <MessagesSplitViewConnected {...props} />
-      </MessagesFeaturePanelsProvider>
-    </MessagesModalsProvider>
+    // reducedMotion="user" makes every framer-motion descendant honor
+    // prefers-reduced-motion automatically (strips transform/layout
+    // animation, keeps opacity) — the end-to-end guarantee for the V2
+    // component library without touching all 19 animated files.
+    // DESIGN.md §4. See useMotionPreset for explicit per-component presets.
+    <MotionConfig reducedMotion="user">
+      <MessagesModalsProvider>
+        <MessagesFeaturePanelsProvider>
+          <MessagesSplitViewConnected {...props} />
+        </MessagesFeaturePanelsProvider>
+      </MessagesModalsProvider>
+    </MotionConfig>
   );
 };
 

@@ -36,6 +36,10 @@ export { useVirtualList } from './useVirtualList';
 export { useSplitViewMessages } from './useSplitViewMessages';
 export { useResizablePanel } from './useResizablePanel';
 
+// Motion (DESIGN.md §4 — project ease-out, reduced-motion aware)
+export { useMotionPreset, PULSE_EASE, PULSE_DURATION } from './useMotionPreset';
+export type { MotionPreset } from './useMotionPreset';
+
 // Messaging (extracted from Messages.tsx)
 export { usePulseMessaging } from './usePulseMessaging';
 export type { UsePulseMessagingReturn } from './usePulseMessaging';

@@ -5,9 +5,10 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { FocusTimer } from './FocusTimer';
 import { FocusControls } from './FocusControls';
+import { useMotionPreset } from '../../hooks/useMotionPreset';
 import {
   focusModeService,
   FocusPreferences,
@@ -46,6 +47,9 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   const [breakCount, setBreakCount] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+
+  // Project motion presets (DESIGN.md §4 ease-out, reduced-motion aware).
+  const motionPreset = useMotionPreset();
 
   // Session tracking
   const sessionStartTime = useRef<Date | null>(null);
@@ -348,14 +352,16 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   ]);
 
   return (
+    // reducedMotion="user" — the focus overlay is reachable from both the
+    // V2 split-view and the legacy Messages.tsx path, so it self-wraps
+    // rather than relying on an ancestor MotionConfig. Honors
+    // prefers-reduced-motion end-to-end regardless of mount point.
+    <MotionConfig reducedMotion="user">
     <AnimatePresence>
       {isActive && (
         <motion.div
           className="fixed inset-0 z-50 bg-[var(--pulse-bg-deep)] flex flex-col items-center justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          {...motionPreset.fade}
           role="dialog"
           aria-modal="true"
           aria-labelledby="focus-mode-title"
@@ -605,6 +611,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
         </motion.div>
       )}
     </AnimatePresence>
+    </MotionConfig>
   );
 };
 
