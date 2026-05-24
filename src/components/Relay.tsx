@@ -1,3 +1,30 @@
+// Relay — Path C "Voice Studio" shell.
+//
+// Path C lock-in (chosen 2026-05-23 off _design-playground/relay-redesign.html
+// commit c59d4b8, refined at b64747c).
+//
+// Phase 1 cutover (this commit):
+// - Top horizontal 6-tab strip → vertical <SourcesRail/> (200px ↔ 64px
+//   collapsed, persists across sessions).
+// - Persistent <StudioFooter/> at the bottom of the pane (idle by default;
+//   playing state lights up when a mode body calls studio.play(); recording
+//   state is wired but no Phase 1 caller invokes it — Phase 2 turf).
+// - <FloatingMic/> in the bottom-right. Phase 1 keeps opening the existing
+//   <RelayComposer/> modal (real audio capture lives there); the icon
+//   stays in its idle "Mic" form via forceIdleIcon so it doesn't claim a
+//   stop state the studio context isn't actually in.
+// - Triage's user-facing label flips to "Inbox" in the rail. The route id
+//   stays 'triage' so existing deep links, analytics, and the T/D/C/B/N/L
+//   keyboard shortcut contract (useRelayKeyboardShortcuts.VIEW_MAP)
+//   continue to work without churn.
+//
+// Phase 2 (later): rewrite each of the 6 mode bodies (RelayTriageStream,
+// ClassicMode, TeamVoxMode, PulseRadio, VoxNotesMode, VoiceRooms) to the
+// studio-card pattern using shared playback state from the context; swap
+// FloatingMic + SPACE to inline recording via studio.toggleRecording and
+// retire the RelayComposer modal in favor of the StudioFooter recording
+// surface. None of that happens here.
+
 import React, { useEffect, useState } from 'react';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { Contact } from '../types';
@@ -33,11 +60,8 @@ import { useRelayKeyboardShortcuts } from '../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './Relay/VoxKeyboardShortcutsHelp';
 
 // Audience renderers — Relay's six peer views each render one of these.
-// 'direct' / 'channel' / 'broadcast' are what 'messages' used to be; the
-// audience picker has been folded into the top nav (2026-04 brand sweep).
-// 'live' renders VoiceRooms (Discord-style persistent voice channels); the
-// 6-peer refactor (0733367) left it pointed at PulseRadio so Broadcast and
-// Live rendered the same body — fixed 2026-05-12.
+// Unchanged in Phase 1: they keep their existing internals and render inside
+// the new studio shell as-is.
 import {
   ClassicMode,
   VoxNotesMode,
@@ -48,6 +72,14 @@ import {
 import { RelayTriageStream } from './Relay/RelayTriageStream';
 import { RelayComposer, type ComposerReplyTo } from './Relay/RelayComposer';
 import { RelaySettings } from './Relay/RelaySettings';
+
+// Path C — Voice Studio shell.
+import {
+  RelayStudioProvider,
+  SourcesRail,
+  StudioFooter,
+  FloatingMic,
+} from './Relay/studio';
 
 interface RelayProps {
   /** @deprecated no-op — AI routing is server-side via edge functions. */
@@ -70,15 +102,6 @@ const RELAY_VIEWS: readonly RelayView[] = [
   'notes',
   'live',
 ] as const;
-
-const RELAY_VIEW_LABELS: Record<RelayView, string> = {
-  triage: 'Triage',
-  direct: 'Direct',
-  channel: 'Channel',
-  broadcast: 'Broadcast',
-  notes: 'Notes',
-  live: 'Live',
-};
 
 const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, isDarkMode = false }) => {
   // user.id powers the Triage stream's voice-source queries.
@@ -133,8 +156,11 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
   };
 
   // T/D/C/B/N/L switches the view directly. The active-tab style on the
-  // nav already communicates the change, so no toast is fired — repeated
+  // rail already communicates the change, so no toast is fired — repeated
   // taps would otherwise stack toasts in a couple of seconds.
+  //
+  // Phase 1 contract: SPACE opens RelayComposer (existing behavior).
+  // Phase 2 swaps to studio.toggleRecording for inline recording.
   useRelayKeyboardShortcuts({
     onSwitchView: (newView) => setView(newView),
     onShowHelp: () => setShowShortcutsHelp(true),
@@ -142,143 +168,152 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
   }, true);
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-[#080808] rounded-2xl overflow-hidden border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] animate-fade-in shadow-xl">
-      {/* Mode nav — six peers + settings affordance. The Direct / Channel /
-          Broadcast triplet replaces the old "Messages" umbrella so the top
-          nav stays the single mode signal. */}
-      <nav
-        className="flex items-center gap-1 px-3 py-2 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-x-auto"
-        role="tablist"
-        aria-label="Relay views"
-      >
-        {RELAY_VIEWS.map((v) => (
-          <button
-            key={v}
-            type="button"
-            role="tab"
-            aria-selected={view === v}
-            onClick={() => setView(v)}
-            className={`shrink-0 px-3 py-1.5 rounded-md text-xs font-mono uppercase tracking-[0.1em] transition ${
-              view === v
-                ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
-                : 'text-[#52525b] dark:text-[#b4b4b8] hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'
-            }`}
-          >
-            {RELAY_VIEW_LABELS[v]}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => setShowSettings(true)}
-          className="ml-auto shrink-0 p-1.5 rounded-md text-[#52525b] dark:text-[#b4b4b8] hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f43f5e]"
-          aria-label="Open Relay settings"
-          title="Relay settings"
-        >
-          <SettingsIcon className="w-4 h-4" />
-        </button>
-      </nav>
+    <div className="h-full bg-white dark:bg-[#080808] rounded-2xl overflow-hidden border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] animate-fade-in shadow-xl">
+      <RelayStudioProvider>
+        <div className="h-full flex">
+          {/* Vertical sources rail — replaces the horizontal tab strip. */}
+          <SourcesRail
+            view={view}
+            onSelectView={(v) => setView(v)}
+            // Unread + playlist counts will wire to real services in Phase 2.
+            // For now omit them so the rail doesn't show fabricated numbers.
+          />
 
-      <div className="flex-1 overflow-hidden">
-        {view === 'triage' && (
-          <RelayTriageStream
-            user={user}
-            contacts={contacts}
-            onOpenView={(nextView, focus) => {
-              // Stash the focus target for the destination body. Each kind
-              // uses a different "initial*" prop because the bodies key off
-              // different identifiers (Pulse user id vs note id vs broadcast
-              // id vs thread id).
-              if (focus) {
-                if (focus.kind === 'note') {
-                  setFocusNoteId(focus.id);
-                } else if (focus.kind === 'broadcast') {
-                  setFocusBroadcastId(focus.id);
-                } else if (focus.kind === 'thread') {
-                  setFocusThreadId(focus.id);
-                } else if (focus.senderId) {
-                  // 'classic' / 'quick' both store the sender's pulse id;
-                  // ClassicMode lands on that contact's thread.
-                  setFocusContactId(focus.senderId);
-                }
-              }
-              setView(nextView);
-            }}
-            onCompose={() => openComposer(null)}
-            onReply={(recipientId) => openComposer(recipientId)}
-            onReplyToThread={(threadId, threadLabel) =>
-              openComposerReply({ kind: 'thread', threadId, threadLabel })
-            }
-          />
-        )}
-        {view === 'direct' && (
-          <ClassicMode
-            onBack={() => setView('triage')}
-            apiKey={apiKey}
-            isDarkMode={isDarkMode}
-            initialContactId={focusContactId ?? initialContactId}
-          />
-        )}
-        {view === 'channel' && (
-          <TeamVoxMode
-            onBack={() => setView('triage')}
-            apiKey={apiKey}
-            isDarkMode={isDarkMode}
-          />
-        )}
-        {view === 'broadcast' && (
-          <PulseRadio
-            onBack={() => setView('triage')}
-            apiKey={apiKey}
-            isDarkMode={isDarkMode}
-            initialBroadcastId={focusBroadcastId ?? undefined}
-          />
-        )}
-        {view === 'notes' && (
-          <VoxNotesMode
-            onBack={() => setView('triage')}
-            apiKey={apiKey}
-            isDarkMode={isDarkMode}
-            initialNoteId={focusNoteId ?? undefined}
-          />
-        )}
-        {view === 'live' && user && (
-          <VoiceRooms
-            isOpen
-            onClose={() => setView('triage')}
-            contacts={contacts}
-            currentUser={{
-              id: user.id,
-              name: user.name,
-              avatarColor: avatarColorForId(user.id),
-            }}
-          />
-        )}
-      </div>
+          {/* Main pane: mode body + persistent footer + floating mic +
+              top-right settings cog. */}
+          <div className="flex-1 flex flex-col relative overflow-hidden">
+            {/* Settings — moved from the old top-bar to top-right of the
+                main pane. Single click, same modal as before. */}
+            <button
+              type="button"
+              onClick={() => setShowSettings(true)}
+              className="absolute top-2 right-3 z-10 p-1.5 rounded-md text-[#52525b] dark:text-[#b4b4b8] hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f43f5e]"
+              aria-label="Open Relay settings"
+              title="Relay settings"
+            >
+              <SettingsIcon className="w-4 h-4" />
+            </button>
 
-      <VoxKeyboardShortcutsHelp
-        isOpen={showShortcutsHelp}
-        onClose={() => setShowShortcutsHelp(false)}
-        isDarkMode={isDarkMode}
-      />
+            <div className="flex-1 overflow-hidden">
+              {view === 'triage' && (
+                <RelayTriageStream
+                  user={user}
+                  contacts={contacts}
+                  onOpenView={(nextView, focus) => {
+                    // Stash the focus target for the destination body. Each
+                    // kind uses a different "initial*" prop because the
+                    // bodies key off different identifiers (Pulse user id vs
+                    // note id vs broadcast id vs thread id).
+                    if (focus) {
+                      if (focus.kind === 'note') {
+                        setFocusNoteId(focus.id);
+                      } else if (focus.kind === 'broadcast') {
+                        setFocusBroadcastId(focus.id);
+                      } else if (focus.kind === 'thread') {
+                        setFocusThreadId(focus.id);
+                      } else if (focus.senderId) {
+                        // 'classic' / 'quick' both store the sender's pulse id;
+                        // ClassicMode lands on that contact's thread.
+                        setFocusContactId(focus.senderId);
+                      }
+                    }
+                    setView(nextView);
+                  }}
+                  onCompose={() => openComposer(null)}
+                  onReply={(recipientId) => openComposer(recipientId)}
+                  onReplyToThread={(threadId, threadLabel) =>
+                    openComposerReply({ kind: 'thread', threadId, threadLabel })
+                  }
+                />
+              )}
+              {view === 'direct' && (
+                <ClassicMode
+                  onBack={() => setView('triage')}
+                  apiKey={apiKey}
+                  isDarkMode={isDarkMode}
+                  initialContactId={focusContactId ?? initialContactId}
+                />
+              )}
+              {view === 'channel' && (
+                <TeamVoxMode
+                  onBack={() => setView('triage')}
+                  apiKey={apiKey}
+                  isDarkMode={isDarkMode}
+                />
+              )}
+              {view === 'broadcast' && (
+                <PulseRadio
+                  onBack={() => setView('triage')}
+                  apiKey={apiKey}
+                  isDarkMode={isDarkMode}
+                  initialBroadcastId={focusBroadcastId ?? undefined}
+                />
+              )}
+              {view === 'notes' && (
+                <VoxNotesMode
+                  onBack={() => setView('triage')}
+                  apiKey={apiKey}
+                  isDarkMode={isDarkMode}
+                  initialNoteId={focusNoteId ?? undefined}
+                />
+              )}
+              {view === 'live' && user && (
+                <VoiceRooms
+                  isOpen
+                  onClose={() => setView('triage')}
+                  contacts={contacts}
+                  currentUser={{
+                    id: user.id,
+                    name: user.name,
+                    avatarColor: avatarColorForId(user.id),
+                  }}
+                />
+              )}
+            </div>
 
-      <RelayComposer
-        isOpen={composerOpen}
-        onClose={() => {
-          setComposerOpen(false);
-          setComposerPrefillRecipientId(null);
-          setComposerReplyTo(null);
-        }}
-        isDarkMode={isDarkMode}
-        prefillRecipientId={composerPrefillRecipientId}
-        replyTo={composerReplyTo}
-        contacts={contacts}
-      />
+            {/* Persistent player. Renders idle hint until a mode body calls
+                studio.play(v); recording-state surface stays dormant in
+                Phase 1 (no caller flips studio.isRecording). */}
+            <StudioFooter />
 
-      <RelaySettings
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        isDarkMode={isDarkMode}
-      />
+            {/* Record affordance. Phase 1 routes the click to the existing
+                composer modal — keeps real audio capture working without
+                rewiring useVoxRecording. forceIdleIcon prevents the button
+                from flipping to "Stop" while studio.isRecording is still
+                always false in Phase 1. */}
+            <FloatingMic
+              onClick={() => openComposer(null)}
+              forceIdleIcon
+            />
+          </div>
+        </div>
+
+        {/* Modals + helpers — unchanged from the prior shell. */}
+        <VoxKeyboardShortcutsHelp
+          isOpen={showShortcutsHelp}
+          onClose={() => setShowShortcutsHelp(false)}
+          isDarkMode={isDarkMode}
+        />
+
+        <RelayComposer
+          isOpen={composerOpen}
+          onClose={() => {
+            setComposerOpen(false);
+            setComposerPrefillRecipientId(null);
+            setComposerReplyTo(null);
+          }}
+          isDarkMode={isDarkMode}
+          prefillRecipientId={composerPrefillRecipientId}
+          replyTo={composerReplyTo}
+          contacts={contacts}
+        />
+
+        <RelaySettings
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          isDarkMode={isDarkMode}
+        />
+      </RelayStudioProvider>
     </div>
   );
 };
