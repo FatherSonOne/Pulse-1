@@ -357,7 +357,7 @@ const CatchUpSection: React.FC<{
   const toneClasses = {
     emerald: 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/[0.08] ring-1 ring-emerald-500/30',
     amber: 'text-amber-700 dark:text-amber-400 bg-amber-500/[0.08] ring-1 ring-amber-500/30',
-    blue: 'text-[#52525b] dark:text-[#a1a1aa] bg-[rgba(255,255,255,0.06)] ring-1 ring-[rgba(255,255,255,0.10)]',
+    blue: 'text-[var(--pulse-ink-2)] bg-[rgba(255,255,255,0.06)] ring-1 ring-[rgba(255,255,255,0.10)]',
   }[tone];
 
   return (
@@ -400,7 +400,7 @@ const NUDGE_LABELS: Record<Nudge['type'], string> = {
 };
 
 const NUDGE_TONES: Record<Nudge['type'], string> = {
-  follow_up: 'ring-1 ring-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.06)] dark:bg-[rgba(255,255,255,0.06)] text-[#52525b] dark:text-[#a1a1aa]',
+  follow_up: 'ring-1 ring-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.06)] dark:bg-[rgba(255,255,255,0.06)] text-[var(--pulse-ink-2)]',
   clarify: 'ring-1 ring-amber-500/30 bg-amber-500/[0.06] dark:bg-amber-500/[0.08] text-amber-700 dark:text-amber-300',
   de_escalate: 'ring-1 ring-rose-500/30 bg-rose-500/[0.06] dark:bg-rose-500/[0.08] text-rose-700 dark:text-rose-300',
   praise: 'ring-1 ring-emerald-500/30 bg-emerald-500/[0.06] dark:bg-emerald-500/[0.08] text-emerald-700 dark:text-emerald-300',

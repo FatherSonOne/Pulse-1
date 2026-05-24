@@ -479,7 +479,7 @@ const PulseForwardModal: React.FC<PulseForwardModalProps> = ({
                       void onForwardPulse(message.id, other.id);
                       onClose();
                     }}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
+                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--pulse-surface-raised)] transition"
                   >
                     <div className="w-8 h-8 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] text-xs font-medium flex-shrink-0">
                       {other.avatar_url
@@ -508,7 +508,7 @@ const PulseForwardModal: React.FC<PulseForwardModalProps> = ({
                       onForwardLegacy(t.id);
                       onClose();
                     }}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
+                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--pulse-surface-raised)] transition"
                   >
                     <div className={`w-8 h-8 rounded-full ${t.avatarColor} flex items-center justify-center text-white text-xs font-bold`}>
                       {t.contactName.charAt(0)}
@@ -587,7 +587,7 @@ const DeleteThreadConfirmModal: React.FC<{
       <div className="flex justify-end gap-2">
         <button
           onClick={onCancel}
-          className="px-4 py-2 rounded-lg text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
+          className="px-4 py-2 rounded-lg text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[var(--pulse-surface-raised)] transition"
         >
           Cancel
         </button>

@@ -278,7 +278,7 @@ export const MobileDrawerHeader: React.FC<{
       {showCloseButton && (
         <button
           onClick={onClose}
-          className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition"
+          className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-[var(--pulse-surface-raised)] rounded-lg transition"
           aria-label="Close drawer"
         >
           <X className="text-lg" />

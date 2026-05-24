@@ -214,7 +214,7 @@ export const SnoozeMenu: React.FC<SnoozeMenuProps> = ({
                     type="button"
                     onClick={() => void handleSnooze(preset.key)}
                     disabled={!!pendingPreset}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-left text-sm hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition disabled:opacity-50 disabled:cursor-wait"
+                    className="w-full flex items-center gap-3 px-3 py-2 text-left text-sm hover:bg-[var(--pulse-surface-raised)] transition disabled:opacity-50 disabled:cursor-wait"
                     role="menuitem"
                   >
                     <span className="text-zinc-500 dark:text-zinc-400">

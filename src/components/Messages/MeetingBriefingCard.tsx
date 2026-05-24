@@ -55,7 +55,7 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
           <AIProvenanceTag source="pulse-ai" kind="briefing" />
           <div className="flex items-center gap-2 flex-wrap">
             {profileName && (
-              <span className="text-[9px] font-mono font-medium uppercase tracking-[0.1em] text-[#52525b] dark:text-[#b4b4b8] bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] px-1.5 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-[9px] font-mono font-medium uppercase tracking-[0.1em] text-[var(--pulse-ink-2)] bg-[var(--pulse-surface-raised)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] px-1.5 py-0.5 rounded-full flex items-center gap-1">
                 <Sparkles className="w-2.5 h-2.5" />
                 {profileName}
               </span>
@@ -64,7 +64,7 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
               <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-mono uppercase tracking-[0.1em] ${
                 urgent
                   ? 'bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-400'
-                  : 'bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] text-[#52525b] dark:text-[#b4b4b8]'
+                  : 'bg-[var(--pulse-surface-raised)] border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] text-[var(--pulse-ink-2)]'
               }`}>
                 <Clock className="w-2.5 h-2.5" />
                 {timeLabel}
@@ -94,13 +94,13 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
           {/* Participants */}
           {participants.length > 0 && (
             <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
-              <div className="text-[10px] font-mono font-medium text-[#52525b] dark:text-[#b4b4b8] uppercase tracking-[0.1em] mb-2 flex items-center gap-1">
+              <div className="text-[10px] font-mono font-medium text-[var(--pulse-ink-2)] uppercase tracking-[0.1em] mb-2 flex items-center gap-1">
                 <Users className="w-3 h-3" />
                 Participants
               </div>
               <ul className="space-y-1">
                 {participants.map((p: any, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-[#0f0f0f] dark:text-[#fafafa]">
+                  <li key={i} className="flex items-start gap-2 text-sm text-[var(--pulse-ink)]">
                     <span className="text-[#f43f5e] mt-0.5 flex-shrink-0">•</span>
                     <div>
                       <span className="font-medium text-zinc-200">{p.name}</span>
@@ -120,12 +120,12 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
           {/* Context Highlights */}
           {highlights.length > 0 && (
             <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
-              <div className="text-[10px] font-mono font-medium text-[#52525b] dark:text-[#b4b4b8] uppercase tracking-[0.1em] mb-2">
+              <div className="text-[10px] font-mono font-medium text-[var(--pulse-ink-2)] uppercase tracking-[0.1em] mb-2">
                 Context Highlights
               </div>
               <ul className="space-y-1">
                 {highlights.map((h, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-[#0f0f0f] dark:text-[#fafafa]">
+                  <li key={i} className="flex items-start gap-2 text-sm text-[var(--pulse-ink)]">
                     <span className="text-[#f43f5e] mt-0.5 flex-shrink-0">•</span>
                     <span>{h}</span>
                   </li>

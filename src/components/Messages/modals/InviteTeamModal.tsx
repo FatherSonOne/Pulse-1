@@ -73,7 +73,7 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
             </h3>
             <button
               onClick={handleClose}
-              className="w-8 h-8 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center justify-center transition"
+              className="w-8 h-8 rounded-lg hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center transition"
             >
               <X className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300" />
             </button>
@@ -107,7 +107,7 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
               <div className={`p-3 rounded-xl text-sm flex items-center gap-2 ${
                 inviteStatus === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
                 inviteStatus === 'error' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                'bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] text-zinc-600 dark:text-zinc-400'
+                'bg-[var(--pulse-surface-raised)] text-zinc-600 dark:text-zinc-400'
               }`}>
                 {inviteStatus === 'success' ? (
                   <Check className="w-4 h-4 flex-shrink-0" />

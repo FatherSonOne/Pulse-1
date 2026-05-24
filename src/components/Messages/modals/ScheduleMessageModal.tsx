@@ -73,7 +73,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
             </h3>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center justify-center transition"
+              className="w-8 h-8 rounded-lg hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center transition"
             >
               <X className="text-zinc-500" />
             </button>

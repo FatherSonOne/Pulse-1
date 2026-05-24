@@ -31,7 +31,7 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
       transition={{ duration: 0.2 }}
-      className={`flex items-center gap-2 ${padding} bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] rounded-full ${className}`}
+      className={`flex items-center gap-2 ${padding} bg-[var(--pulse-surface-raised)] rounded-full ${className}`}
     >
       <div className="flex items-center gap-1">
         {[0, 1, 2].map((index) => (

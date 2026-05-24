@@ -342,7 +342,7 @@ const KeyboardShortcutsHelper: React.FC = () => {
           </h3>
           <button
             onClick={() => setIsVisible(false)}
-            className="p-2 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors"
+            className="p-2 rounded-lg hover:bg-[var(--pulse-surface-raised)] transition-colors"
             aria-label="Close"
           >
             <X className="text-zinc-600 dark:text-zinc-400" />
@@ -373,7 +373,7 @@ const KeyboardShortcutsHelper: React.FC = () => {
         </div>
 
         <div className="mt-4 pt-4 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] text-xs text-zinc-500 dark:text-zinc-400">
-          Press <kbd className="px-1.5 py-0.5 rounded bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)]">?</kbd> to toggle this help
+          Press <kbd className="px-1.5 py-0.5 rounded bg-[var(--pulse-surface-raised)]">?</kbd> to toggle this help
         </div>
       </div>
     </div>
@@ -392,7 +392,7 @@ const ShortcutItem: React.FC<ShortcutItemProps> = ({ keys, description }) => {
       <div className="flex items-center gap-1">
         {keys.map((key, index) => (
           <React.Fragment key={key}>
-            <kbd className="px-2 py-1 rounded bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] text-zinc-900 dark:text-white font-mono text-xs border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)]">
+            <kbd className="px-2 py-1 rounded bg-[var(--pulse-surface-raised)] text-zinc-900 dark:text-white font-mono text-xs border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)]">
               {key}
             </kbd>
             {index < keys.length - 1 && (

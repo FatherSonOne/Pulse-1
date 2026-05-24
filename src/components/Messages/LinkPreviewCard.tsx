@@ -70,7 +70,7 @@ export const LinkPreviewCard: React.FC<LinkPreviewCardProps> = ({
       title={preview.url}
     >
       {hasImage && (
-        <div className="aspect-video bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] overflow-hidden">
+        <div className="aspect-video bg-[var(--pulse-surface-raised)] overflow-hidden">
           <img
             src={preview.image_url}
             alt=""

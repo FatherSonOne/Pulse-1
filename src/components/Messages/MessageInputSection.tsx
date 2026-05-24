@@ -278,7 +278,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      <button
                        key={emoji}
                        onClick={() => { setInputText(prev => prev + emoji); setShowEmojiPicker(false); }}
-                       className="w-8 h-8 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded text-lg"
+                       className="w-8 h-8 flex items-center justify-center hover:bg-[var(--pulse-surface-raised)] rounded text-lg"
                      >
                        {emoji}
                      </button>
@@ -530,7 +530,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
          <div className="flex gap-0.5 sm:gap-1 relative flex-shrink-0">
            <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className={`w-12 h-12 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showEmojiPicker ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
+              className={`w-12 h-12 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showEmojiPicker ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[var(--pulse-surface-raised)]'}`}
               title="Add Emoji (Ctrl+Shift+E)"
            >
               <Smile className="text-xs sm:text-sm" />
@@ -540,7 +540,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            <div className="relative" ref={attachmentMenuRef}>
              <button
                 onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                className={`w-12 h-12 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showAttachmentMenu ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]'}`}
+                className={`w-12 h-12 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showAttachmentMenu ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[var(--pulse-surface-raised)]'}`}
                 title="Attach File, Image, Video, or Link"
              >
                 <Plus className="text-xs sm:text-sm" />
@@ -552,9 +552,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                  <div className="p-2">
                    <button
                      onClick={() => imageInputRef.current?.click()}
-                     className="w-full px-4 py-3 text-left hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex items-center gap-3 group"
+                     className="w-full px-4 py-3 text-left hover:bg-[var(--pulse-surface-raised)] rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                     <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface-raised)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
                        <Image className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
@@ -565,9 +565,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
                    <button
                      onClick={() => videoInputRef.current?.click()}
-                     className="w-full px-4 py-3 text-left hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex items-center gap-3 group"
+                     className="w-full px-4 py-3 text-left hover:bg-[var(--pulse-surface-raised)] rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                     <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface-raised)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
                        <Video className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
@@ -578,9 +578,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
                    <button
                      onClick={() => fileInputRef.current?.click()}
-                     className="w-full px-4 py-3 text-left hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex items-center gap-3 group"
+                     className="w-full px-4 py-3 text-left hover:bg-[var(--pulse-surface-raised)] rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                     <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface-raised)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
                        <File className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
@@ -601,9 +601,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      <button
                        onClick={() => { setShowAttachmentMenu(false); if (!isRecording) startRecording(); }}
                        disabled={isRecording}
-                       className="w-full px-4 py-3 text-left hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex items-center gap-3 group disabled:opacity-40 disabled:cursor-not-allowed"
+                       className="w-full px-4 py-3 text-left hover:bg-[var(--pulse-surface-raised)] rounded-lg transition flex items-center gap-3 group disabled:opacity-40 disabled:cursor-not-allowed"
                      >
-                       <div className="w-10 h-10 rounded-lg bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                       <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface-raised)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
                          <Mic className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                        </div>
                        <div>
@@ -615,9 +615,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
                    <button
                      onClick={handleAddLink}
-                     className="w-full px-4 py-3 text-left hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex items-center gap-3 group"
+                     className="w-full px-4 py-3 text-left hover:bg-[var(--pulse-surface-raised)] rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                     <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface-raised)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
                        <Link className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
@@ -738,7 +738,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                onTranscript={(text) => setInputText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
                size="sm"
                disabled={isRecording}
-               className="text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] w-12 h-12"
+               className="text-zinc-400 hover:bg-[var(--pulse-surface-raised)] w-12 h-12"
              />
            )}
            {isNonPulseThread && canSendNativeSms ? (

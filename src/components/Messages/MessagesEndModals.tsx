@@ -217,7 +217,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
               </h2>
               <button
                 onClick={() => props.setShowAnalyticsDashboard(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] text-zinc-500"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--pulse-surface-raised)] text-zinc-500"
               >
                 <X />
               </button>
@@ -240,7 +240,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
               </h2>
               <button
                 onClick={() => props.setShowNetworkGraph(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] text-zinc-500"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--pulse-surface-raised)] text-zinc-500"
               >
                 <X />
               </button>
@@ -276,7 +276,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
               </h2>
               <button
                 onClick={() => props.setShowContextPanel(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] text-zinc-500"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--pulse-surface-raised)] text-zinc-500"
               >
                 <X />
               </button>
@@ -305,7 +305,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
               </h2>
               <button
                 onClick={() => props.setShowTaskExtractor(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] text-zinc-500"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--pulse-surface-raised)] text-zinc-500"
               >
                 <X />
               </button>
@@ -335,7 +335,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
               </h2>
               <button
                 onClick={() => props.setShowChannelArtifactPanel(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] text-zinc-500"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--pulse-surface-raised)] text-zinc-500"
               >
                 <X />
               </button>

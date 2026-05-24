@@ -104,10 +104,10 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
             <div className="space-y-3">
               {metadata.profileSections.map((section, i) => (
                 <div key={i} className="rounded-lg bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.03)] border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)] p-3">
-                  <div className="text-[10px] font-mono font-medium text-[#52525b] dark:text-[#b4b4b8] uppercase tracking-[0.1em] mb-1.5">
+                  <div className="text-[10px] font-mono font-medium text-[var(--pulse-ink-2)] uppercase tracking-[0.1em] mb-1.5">
                     {section.title}
                   </div>
-                  <div className="text-sm text-[#0f0f0f] dark:text-[#fafafa] leading-relaxed whitespace-pre-wrap">
+                  <div className="text-sm text-[var(--pulse-ink)] leading-relaxed whitespace-pre-wrap">
                     {section.content}
                   </div>
                 </div>
@@ -128,7 +128,7 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
               </div>
               <ul className="space-y-1">
                 {metadata.keyDecisions.map((d, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-[#0f0f0f] dark:text-[#fafafa]">
+                  <li key={i} className="flex items-start gap-2 text-sm text-[var(--pulse-ink)]">
                     <span className="text-[#f43f5e] mt-0.5 flex-shrink-0">•</span>
                     <span>{d}</span>
                   </li>

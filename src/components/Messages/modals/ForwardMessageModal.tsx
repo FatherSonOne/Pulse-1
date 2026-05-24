@@ -76,7 +76,7 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
             </h3>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center justify-center transition"
+              className="w-8 h-8 rounded-lg hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center transition"
             >
               <X className="text-zinc-500" />
             </button>
@@ -100,7 +100,7 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
                   <button
                     key={thread.id}
                     onClick={() => onForward(thread.id)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition group"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[var(--pulse-surface-raised)] transition group"
                   >
                     <div
                       className={`w-9 h-9 rounded-full ${thread.avatarColor} flex items-center justify-center text-white text-sm font-bold`}

@@ -217,7 +217,7 @@ export const MessagesFeaturePanelHost: React.FC<MessagesFeaturePanelHostProps> =
             <button
               type="button"
               onClick={closePanel}
-              className="p-1.5 rounded-md hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] text-zinc-500 dark:text-zinc-400 transition"
+              className="p-1.5 rounded-md hover:bg-[var(--pulse-surface-raised)] text-zinc-500 dark:text-zinc-400 transition"
               aria-label="Close panel"
               title="Close (Esc)"
             >

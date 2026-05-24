@@ -265,7 +265,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-12 h-12 flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors"
+        className="w-12 h-12 flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-[var(--pulse-surface-raised)] transition-colors"
         title="Tag this conversation"
         aria-label="Tag this conversation"
         aria-expanded={open}
@@ -287,7 +287,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search or create tag…"
-                className="w-full pl-7 pr-2 py-1.5 text-sm rounded-md bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 outline-none focus:ring-2 focus:ring-rose-500/30"
+                className="w-full pl-7 pr-2 py-1.5 text-sm rounded-md bg-[var(--pulse-surface-raised)] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 outline-none focus:ring-2 focus:ring-rose-500/30"
               />
             </div>
           </div>
@@ -313,7 +313,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
                       type="button"
                       onClick={() => void handleToggle(tag)}
                       disabled={!!pendingTagId}
-                      className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition disabled:opacity-50 disabled:cursor-wait"
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--pulse-surface-raised)] transition disabled:opacity-50 disabled:cursor-wait"
                       role="menuitem"
                     >
                       <span
@@ -378,7 +378,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
                 <button
                   type="button"
                   onClick={() => setCreating(false)}
-                  className="px-3 py-1.5 text-xs rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
+                  className="px-3 py-1.5 text-xs rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-[var(--pulse-surface-raised)] transition"
                 >
                   Cancel
                 </button>

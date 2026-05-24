@@ -187,7 +187,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                     value={props.pulseUserSearch}
                     onChange={(e) => props.setPulseUserSearch(e.target.value)}
                     placeholder="Search by @handle or name..."
-                    className="w-full pl-10 pr-4 py-3 bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 bg-[var(--pulse-surface-raised)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     autoFocus
                   />
                   {props.isSearchingPulseUsers && (
@@ -279,7 +279,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                   </div>
                 ) : props.pulseSearchResults.length === 0 && !props.isSearchingPulseUsers ? (
                   <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-[var(--pulse-surface-raised)] rounded-full flex items-center justify-center mx-auto mb-4">
                       <UserX className="text-2xl text-zinc-400" />
                     </div>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -352,7 +352,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
               ) : props.artifact ? (
                 <div className="prose dark:prose-invert max-w-none text-sm">
                   <h1 className="text-2xl font-bold mb-4">{props.artifact.title}</h1>
-                  <div className="bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] p-4 rounded-xl mb-6 text-[#0f0f0f] dark:text-[#fafafa] italic">
+                  <div className="bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] p-4 rounded-xl mb-6 text-[var(--pulse-ink)] italic">
                     {props.artifact.overview}
                   </div>
                   <h3 className="font-mono font-medium uppercase text-xs tracking-[0.1em] text-zinc-500 mb-2">Decisions Log</h3>
@@ -437,7 +437,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               void props.handleForwardPulseMessage(props.forwardingMessage.id, other.id);
                             }
                           }}
-                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition"
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--pulse-surface-raised)] transition"
                         >
                           <div className="w-8 h-8 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] text-xs font-medium flex-shrink-0">
                             {other.avatar_url
@@ -547,7 +547,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
           <div className="flex-1 overflow-y-auto flex flex-col bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.03)]/50">
             <div className="p-5 flex justify-between items-center border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
-              <button onClick={props.closeDrawer} className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition" aria-label="Close drawer">
+              <button onClick={props.closeDrawer} className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-[var(--pulse-surface-raised)] rounded-lg transition" aria-label="Close drawer">
                 <X className="text-lg" />
               </button>
             </div>
@@ -559,7 +559,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
               <button onClick={() => { props.setShowCellularSMS(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
                 <Smartphone className="text-sm" />
               </button>
-              <button onClick={() => { props.setShowShortcuts(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center justify-center transition" title="Keyboard shortcuts">
+              <button onClick={() => { props.setShowShortcuts(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center transition" title="Keyboard shortcuts">
                 <Keyboard className="text-sm" />
               </button>
               <button onClick={() => { props.setShowNewChatModal(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg bg-[#e8e8e8] dark:bg-[rgba(255,255,255,0.055)] text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition" title="New message">
@@ -583,7 +583,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                         <div
                           onClick={() => props.handleSelectConversation(conv.id)}
                           className={`p-3 rounded-xl cursor-pointer transition flex items-center gap-3
-                            ${props.activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)]/50'}`}
+                            ${props.activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-[var(--pulse-surface-raised)]/50'}`}
                         >
                           <div className="w-10 h-10 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] text-sm font-medium flex-shrink-0">
                             {otherUser.avatar_url ? (
