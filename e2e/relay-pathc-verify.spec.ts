@@ -89,6 +89,56 @@ test('relay path-c screenshot tour', async ({ page }) => {
   expect(authed).toBe(true);
 });
 
+test('relay path-c NARROW tour (in-app resize, no reload)', async ({ page }) => {
+  test.setTimeout(180_000);
+  if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
+
+  const seen = async (loc: import('@playwright/test').Locator, ms = 4000) =>
+    loc.waitFor({ state: 'visible', timeout: ms }).then(() => true).catch(() => false);
+
+  // Authenticate ONCE at a wide viewport, THEN resize down WITHOUT reloading.
+  // Reloading per-width re-runs Supabase session restore and races auth — when
+  // it loses, App.tsx renders <LandingPage/> (gated on !user, NOT on width), so
+  // the screenshot misleadingly shows the marketing page. Resizing the already-
+  // loaded app re-evaluates Tailwind md: media queries live, capturing the real
+  // responsive reflow without ever touching auth.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const relayNav = page.getByRole('button', { name: 'Relay', exact: true }).first();
+  let authed = false;
+  try { await relayNav.waitFor({ state: 'visible', timeout: 90_000 }); authed = true; } catch { /* */ }
+  if (!authed) {
+    await page.screenshot({ path: `${OUT}/narrow-auth-failed.png` });
+    console.log('[verify] NARROW auth failed at wide load — token likely expired, re-export e2e/.auth/user.json');
+    return;
+  }
+  await relayNav.click();
+  await page.waitForTimeout(2000);
+
+  const sources = ['Inbox', 'Direct', 'Channels', 'Broadcast', 'Notes', 'Live'];
+
+  // Diagnostic widths for the viewport-vs-container mismatch:
+  //  980/860 → md: ON (>=768): side columns TRY to render but Relay's pane
+  //            (viewport - global nav - SourcesRail) is too narrow => clip.
+  //  720/560 → md: OFF (<768): columns vanish with no drawer fallback; the
+  //            global nav also collapses to a hamburger around here.
+  for (const width of [980, 860, 720, 560] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.waitForTimeout(600);
+    for (const src of sources) {
+      const item = page.getByText(src, { exact: true }).first();
+      if (await seen(item, 3000)) {
+        await item.click().catch(() => {});
+        await page.waitForTimeout(900);
+        await page.screenshot({ path: `${OUT}/w${width}-${src.toLowerCase()}.png` });
+        console.log(`[verify] captured w${width}-${src}`);
+      } else {
+        console.log(`[verify] w${width} source not found: ${src} (rail/nav may have collapsed)`);
+      }
+    }
+  }
+});
+
 test('channel members rail', async ({ page }) => {
   test.setTimeout(120_000);
   if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
