@@ -1,51 +1,27 @@
-import React, { useMemo } from 'react';
-import { Play, Pause, MoreVertical, Star, Bookmark, FileText } from 'lucide-react';
+import React from 'react';
+import { Play, Pause, MoreVertical, Star, Bookmark, FileText, Reply, Smile } from 'lucide-react';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
+import { Waveform } from './studio/Waveform';
 
 /**
  * <RelayVoiceMessage> — the shared voice-message primitive for Relay.
  *
- * Replaces 4 divergent inline implementations (Direct/ClassicMode bubble,
- * Channel/TeamVoxMode message, Broadcast/PulseRadio episode, Notes/VoxNotesMode
- * detail). The chrome — play button, waveform, avatar, timestamp, action menu,
- * AI provenance chip — is standardized; surface-specific extras enter through
- * named slot props.
+ * The Voice Studio bar as one component: a 36px play button (rose only as
+ * state — needs-reply / me / now-playing), the shared <Waveform> primitive
+ * (fills left→right with playback progress, parity with Inbox + the footer),
+ * a senderName-initial avatar, timestamp, AI provenance chip, and a hover
+ * action row. Surface-specific affordances enter through named slot props so
+ * Direct / Channel / Broadcast / Notes render their own extras without
+ * diverging from the bar.
  *
- * TODO(impeccable phase 3 task 6 — surface migration):
- * The component shape is complete for basic chrome, but the 4 call-site
- * migrations are still pending. Each surface needs one or more slot props
- * added before migration is non-regressive:
- *   - Direct (ClassicMode): onReply trigger, onReact + reaction picker
- *     state, selectionCheckbox slot, statusIcon slot (sent/delivered/read),
- *     reactionsDisplay slot, chapterButton slot (footerExtras), per-message
- *     PlaybackSpeedControl slot.
- *   - Channel (TeamVoxMode): meeting-notes button slot, chapters button,
- *     mention-mark slot inside transcript.
- *   - Broadcast (PulseRadio): episode-number badge (already covered by
- *     episodeChip slot), broadcast-listener-count slot.
- *   - Notes (VoxNotesMode): tag-chip row slot, linked-items button slot
- *     in the footerExtras area.
- * The minimal additive expansion: `footerExtras`, `headerExtras`,
- * `selectionCheckbox`, `statusIndicator`, `reactionsDisplay`, and
- * `onReply`/`onReact` callbacks. Once added, migrate Direct first (smallest
- * surface), then verify visually before Channel/Broadcast/Notes.
+ * Coral budget (CLAUDE.md §4): coral is state, never decoration — play-fill on
+ * me / needs-reply / now-playing, the active ring, and AI provenance only.
  *
- * **Standardized chrome:**
- * - 36px play button. Rose-500 fill when status === 'needs-reply', neutral
- *   surface otherwise. Coral as state, not decoration.
- * - Deterministic peak-driven waveform. Pass `audioBuffer` for real peaks, or
- *   `waveformSeed` for a hash-derived stable pattern (no Math.random in render).
- * - 36px senderName-initial avatar with neutral background. No coral on
- *   avatars unless 'me'.
- * - <AIProvenanceChip> for transcript and analysis. Always.
- * - <MoreVertical> trigger for the action menu; surfaces wire onMore.
- *
- * **Surface slots (each surface fills 0-2):**
- * - leadingAudienceLabel — Triage row identity chip
- * - messageTypePill      — Channel message type
- * - episodeChip          — Broadcast episode number
- * - replyToContext       — Direct reply indicator
- * - audienceMeta         — Channel mentions / member count
+ * The four mode call-sites pass: isActive + progress (from the shared studio
+ * transport), selectionCheckbox (selection mode), statusIndicator (me rows),
+ * reactionsDisplay, footerExtras (per-message speed / chapters / tags /
+ * linked-items), and onReply/onReact/onMore (which open the mode's own
+ * pickers/menus, kept as siblings of the row).
  */
 
 export interface RelayVoiceMessageProps {
@@ -59,6 +35,10 @@ export interface RelayVoiceMessageProps {
   isPlaying: boolean;
   onPlay: () => void;
   onPause: () => void;
+  /** This row is the now-playing voice → coral ring + waveform fill. */
+  isActive?: boolean;
+  /** 0 → 1 playback progress; fills the waveform when isActive. */
+  progress?: number;
   // Optional content
   transcript?: string;
   analysis?: {
@@ -76,54 +56,29 @@ export interface RelayVoiceMessageProps {
   episodeChip?: React.ReactNode;
   replyToContext?: React.ReactNode;
   audienceMeta?: React.ReactNode;
+  /** Extra header content, after the timestamp. */
+  headerExtras?: React.ReactNode;
+  /** Extra footer content in the action row (per-message speed control,
+   *  chapter button, tag chips, linked-items — whatever a surface needs). */
+  footerExtras?: React.ReactNode;
+  /** Selection-mode checkbox, rendered at the leading edge of the row. */
+  selectionCheckbox?: React.ReactNode;
+  /** Sent / delivered / read indicator (me rows), shown next to the time. */
+  statusIndicator?: React.ReactNode;
+  /** Reactions row, rendered under the bubble. */
+  reactionsDisplay?: React.ReactNode;
   // Hooks
   onStar?: () => void;
   onBookmark?: () => void;
   onMore?: () => void;
+  onReply?: () => void;
+  onReact?: () => void;
   onTranscriptClick?: () => void;
-  // Waveform data
-  audioBuffer?: AudioBuffer;
+  // Waveform
   waveformSeed?: string;
   // Layout
   isDarkMode?: boolean;
   maxWidth?: string;
-}
-
-const WAVEFORM_BARS = 40;
-
-function seedToHash(seed: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-function deterministicPeaks(seed: string, bars: number): number[] {
-  let h = seedToHash(seed);
-  const peaks: number[] = [];
-  for (let i = 0; i < bars; i++) {
-    h = Math.imul(h, 1664525) + 1013904223;
-    const t = (h >>> 0) / 0xffffffff;
-    peaks.push(0.25 + 0.6 * t);
-  }
-  return peaks;
-}
-
-function bufferToPeaks(buffer: AudioBuffer, bars: number): number[] {
-  const data = buffer.getChannelData(0);
-  const blockSize = Math.max(1, Math.floor(data.length / bars));
-  const peaks: number[] = [];
-  for (let i = 0; i < bars; i++) {
-    let sum = 0;
-    const start = i * blockSize;
-    const end = Math.min(start + blockSize, data.length);
-    for (let j = start; j < end; j++) sum += Math.abs(data[j]);
-    const avg = sum / (end - start || 1);
-    peaks.push(Math.min(1, Math.max(0.1, avg * 3)));
-  }
-  return peaks;
 }
 
 function formatDuration(seconds: number): string {
@@ -147,6 +102,8 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
   isPlaying,
   onPlay,
   onPause,
+  isActive = false,
+  progress = 0,
   transcript,
   analysis,
   status,
@@ -157,37 +114,43 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
   episodeChip,
   replyToContext,
   audienceMeta,
+  headerExtras,
+  footerExtras,
+  selectionCheckbox,
+  statusIndicator,
+  reactionsDisplay,
   onStar,
   onBookmark,
   onMore,
+  onReply,
+  onReact,
   onTranscriptClick,
-  audioBuffer,
   waveformSeed,
   isDarkMode: _isDarkMode = false,
   maxWidth = '75%',
 }) => {
   const isMe = sender === 'me';
   const needsReply = status === 'needs-reply';
-
-  const peaks = useMemo(() => {
-    if (audioBuffer) return bufferToPeaks(audioBuffer, WAVEFORM_BARS);
-    return deterministicPeaks(waveformSeed || id, WAVEFORM_BARS);
-  }, [audioBuffer, waveformSeed, id]);
-
   const initial = (senderName || '?').charAt(0).toUpperCase();
 
   const bubbleClasses = isMe
     ? 'bg-rose-50 dark:bg-[rgba(244,63,94,0.08)] rounded-2xl rounded-br-md'
     : 'bg-white dark:bg-white/[0.03] rounded-2xl rounded-bl-md border border-zinc-200/60 dark:border-white/[0.06]';
+  // Active = now-playing → coral ring. State, not decoration (Coral budget).
+  const activeRing = isActive ? 'ring-2 ring-rose-500/35' : '';
 
   return (
     <div
       className={`flex flex-col gap-1.5 ${isMe ? 'items-end' : 'items-start'}`}
       style={{ maxWidth }}
+      data-active={isActive || undefined}
     >
       {leadingAudienceLabel && <div className="px-2">{leadingAudienceLabel}</div>}
 
       <div className={`flex gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'} w-full`}>
+        {/* Selection checkbox slot — leading edge of the row. */}
+        {selectionCheckbox}
+
         {/* Avatar — neutral background, coral only for 'me' state */}
         <div
           className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center text-sm font-medium ${
@@ -201,7 +164,7 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
         </div>
 
         <div className={`min-w-0 flex-1 flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-          {/* Header line — name + surface chips */}
+          {/* Header line — name + surface chips + time + status */}
           <div className={`flex items-center gap-2 px-1 mb-1 ${isMe ? 'flex-row-reverse' : ''}`}>
             <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
               {senderName}
@@ -211,20 +174,20 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
             <span className="font-mono text-[10px] tabular-nums text-zinc-500 dark:text-zinc-500">
               {formatTimestamp(timestamp)}
             </span>
+            {statusIndicator}
+            {headerExtras}
           </div>
 
           {/* Bubble */}
-          <div className={`px-3 py-2.5 ${bubbleClasses} w-full`}>
+          <div className={`px-3 py-2.5 ${bubbleClasses} ${activeRing} w-full`}>
             {replyToContext && <div className="mb-2">{replyToContext}</div>}
 
             <div className="flex items-center gap-3">
-              {/* Play button — 36px, coral when needs-reply, neutral otherwise */}
+              {/* Play button — 36px, coral when needs-reply / me, neutral else */}
               <button
                 onClick={isPlaying ? onPause : onPlay}
                 className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center transition-colors ${
-                  needsReply
-                    ? 'bg-rose-500 text-white hover:bg-rose-600'
-                    : isMe
+                  needsReply || isMe
                     ? 'bg-rose-500 text-white hover:bg-rose-600'
                     : 'bg-zinc-100 dark:bg-white/[0.06] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.1]'
                 }`}
@@ -234,18 +197,18 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
                 {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
               </button>
 
-              {/* Waveform — deterministic peaks, no Math.random() */}
-              <div className="flex-1 flex items-center gap-[2px] h-7 min-w-[80px]">
-                {peaks.map((p, i) => (
-                  <span
-                    key={i}
-                    className={`w-[3px] rounded-full ${
-                      isMe ? 'bg-rose-400/60' : 'bg-zinc-400 dark:bg-zinc-500'
-                    }`}
-                    style={{ height: `${Math.max(15, p * 100)}%` }}
-                  />
-                ))}
-              </div>
+              {/* Shared Waveform — fills left→right with progress when this row
+                  is the active voice (parity with Inbox + the footer).
+                  currentColor (via the text-* class) drives the bar color. */}
+              <Waveform
+                seed={waveformSeed || id}
+                count={36}
+                height={28}
+                progress={isActive ? progress : 0}
+                className={`flex-1 min-w-[80px] ${
+                  isActive ? 'text-rose-500' : isMe ? 'text-rose-400' : 'text-zinc-400 dark:text-zinc-500'
+                }`}
+              />
 
               {/* Duration */}
               <span className="font-mono text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400 shrink-0">
@@ -285,8 +248,13 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
             )}
           </div>
 
-          {/* Action row — revealed on hover by parent; here always-present low-key */}
-          <div className={`flex items-center gap-0.5 px-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity ${isMe ? 'flex-row-reverse' : ''}`}>
+          {/* Reactions slot — under the bubble */}
+          {reactionsDisplay && (
+            <div className={`px-1 mt-1 ${isMe ? 'self-end' : 'self-start'}`}>{reactionsDisplay}</div>
+          )}
+
+          {/* Action row — revealed on hover/focus by the parent's `group` */}
+          <div className={`flex items-center gap-0.5 px-1 mt-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity ${isMe ? 'flex-row-reverse' : ''}`}>
             {onStar && (
               <button
                 onClick={onStar}
@@ -315,6 +283,26 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
                 <Bookmark className="w-3.5 h-3.5" fill={bookmarked ? 'currentColor' : 'none'} />
               </button>
             )}
+            {onReply && (
+              <button
+                onClick={onReply}
+                className="p-1 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+                aria-label="Reply"
+                type="button"
+              >
+                <Reply className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {onReact && (
+              <button
+                onClick={onReact}
+                className="p-1 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+                aria-label="Add reaction"
+                type="button"
+              >
+                <Smile className="w-3.5 h-3.5" />
+              </button>
+            )}
             {onMore && (
               <button
                 onClick={onMore}
@@ -325,6 +313,7 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
                 <MoreVertical className="w-3.5 h-3.5" />
               </button>
             )}
+            {footerExtras}
           </div>
         </div>
       </div>
