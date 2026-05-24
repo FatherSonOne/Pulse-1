@@ -226,7 +226,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
             onClick={() => setShowArchived(!showArchived)}
             className={`flex-shrink-0 h-6 px-2 rounded font-mono uppercase tracking-[0.1em] text-[10px] font-medium inline-flex items-center gap-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
               showArchived
-                ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
+                ? 'bg-[rgba(244,63,94,0.10)] text-[var(--pulse-rose-text)]'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/[0.04]'
             }`}
             title={showArchived ? 'Hide archived conversations' : 'Show archived conversations'}

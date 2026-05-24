@@ -176,7 +176,7 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
             <button
               key={i}
               onClick={() => onAction?.(action) || (action.url && window.open(action.url, '_blank'))}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[rgba(244,63,94,0.10)] hover:bg-[rgba(244,63,94,0.15)] text-[#e11d48] dark:text-[#fb7185] border border-[rgba(244,63,94,0.20)] hover:border-[rgba(244,63,94,0.35)] transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[rgba(244,63,94,0.10)] hover:bg-[rgba(244,63,94,0.15)] text-[var(--pulse-rose-text)] border border-[rgba(244,63,94,0.20)] hover:border-[rgba(244,63,94,0.35)] transition"
             >
               {action.url && <ExternalLink className="w-3 h-3" />}
               {action.label}

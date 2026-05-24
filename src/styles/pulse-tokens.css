@@ -19,6 +19,10 @@
   --pulse-rose-softer: rgba(244, 63, 94, 0.05);
   --pulse-rose-soft: rgba(244, 63, 94, 0.10);
   --pulse-rose-glow: rgba(244, 63, 94, 0.25);
+  /* Rose accent TEXT — AA-safe per theme (rose-deep on light, rose-bright
+     on dark). The documented link / active-label color (DESIGN.md §2).
+     Use for rose-tinted text; plain --pulse-rose is for fills/icons. */
+  --pulse-rose-text: #e11d48;
   /* Pink companion — second color in the brand gradient pair (DESIGN.md §2). */
   --pulse-pink: #ec4899;
 
@@ -91,6 +95,7 @@
   --pulse-rose-softer: rgba(244, 63, 94, 0.06);
   --pulse-rose-soft: rgba(244, 63, 94, 0.12);
   --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+  --pulse-rose-text: #fb7185;
   --pulse-pink: #f472b6;
 
   /* ─── Status — slightly lifted ─── */

@@ -112,7 +112,7 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
                 <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded text-xs">
                   {stats.decisions.pending} Pending
                 </span>
-                <span className="px-2 py-1 bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] text-[#e11d48] dark:text-[#fb7185] rounded text-xs">
+                <span className="px-2 py-1 bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] text-[var(--pulse-rose-text)] rounded text-xs">
                   {stats.tasksCreated} Tasks
                 </span>
               </div>

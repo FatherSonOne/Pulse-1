@@ -123,7 +123,7 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
           {/* Key Decisions */}
           {metadata.keyDecisions?.length && (
             <div className="rounded-lg bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.15)] p-3">
-              <div className="text-[10px] font-mono font-medium text-[#e11d48] dark:text-[#fb7185] uppercase tracking-[0.1em] mb-2">
+              <div className="text-[10px] font-mono font-medium text-[var(--pulse-rose-text)] uppercase tracking-[0.1em] mb-2">
                 Key Decisions
               </div>
               <ul className="space-y-1">
@@ -185,7 +185,7 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
             <button
               key={i}
               onClick={() => onAction?.(action) || (action.url && window.open(action.url, '_blank'))}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-[rgba(244,63,94,0.10)] hover:bg-[rgba(244,63,94,0.15)] text-[#e11d48] dark:text-[#fb7185] border border-[rgba(244,63,94,0.20)] hover:border-[rgba(244,63,94,0.35)]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-[rgba(244,63,94,0.10)] hover:bg-[rgba(244,63,94,0.15)] text-[var(--pulse-rose-text)] border border-[rgba(244,63,94,0.20)] hover:border-[rgba(244,63,94,0.35)]"
             >
               {action.action === 'rate_meeting' ? (
                 <Star className="w-3 h-3" />
