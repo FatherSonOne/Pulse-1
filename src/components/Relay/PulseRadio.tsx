@@ -584,8 +584,9 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       <VoxModeToolbar
         onBack={onBack}
         modeIcon={<Radio className="w-5 h-5" />}
-        modeTitle="Pulse Radio"
-        modeSubtitle="Broadcast & Public Channels"
+        eyebrow="BROADCAST"
+        eyebrowTone="rose"
+        modeTitle="Broadcast"
         accentColor="#f43f5e"
         isDarkMode={isDarkMode}
         showAI
