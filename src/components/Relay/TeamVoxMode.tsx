@@ -1490,7 +1490,8 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             channel/workspace memberIds × loaded contacts. No online/offline
             split: presence isn't wired here and we don't fabricate it. The
             Channel AI digest reuses the generated channel summary (coral is
-            sanctioned for AI output). Desktop-wide (lg) only. */}
+            sanctioned for AI output). Shown at md+ to match the channels
+            sidebar (collapse the SourcesRail if the row feels tight). */}
         {selectedChannel && (() => {
           const ids: string[] = (selectedChannel.memberIds?.length
             ? selectedChannel.memberIds
@@ -1499,7 +1500,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             .map((id) => pulseContacts.find((c: any) => c.id === id))
             .filter(Boolean) as any[];
           return (
-            <aside className={`hidden lg:flex w-56 shrink-0 flex-col border-l ${tc.border} ${tc.panelBg} overflow-y-auto`}>
+            <aside className={`hidden md:flex w-52 shrink-0 flex-col border-l ${tc.border} ${tc.panelBg} overflow-y-auto`}>
               <div className={`px-3 py-2.5 text-[10px] font-mono uppercase tracking-[0.18em] ${tc.textMuted}`}>
                 Members · {ids.length}
               </div>
