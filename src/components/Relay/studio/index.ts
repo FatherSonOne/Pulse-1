@@ -7,6 +7,8 @@ export type { NowPlayingVoice, RelayStudioState, RelayStudioApi, RelayRecorder }
 export { useRelayModeRecorder } from './useRelayModeRecorder';
 export type { RelayModeRecorderApi } from './useRelayModeRecorder';
 
+export { useElementWidth } from './useElementWidth';
+
 export { Waveform } from './Waveform';
 export type { WaveformProps } from './Waveform';
 

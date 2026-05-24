@@ -80,7 +80,10 @@ export const SourcesRail: React.FC<SourcesRailProps> = ({
   unreadCounts,
   playlistCounts,
 }) => {
-  const { railCollapsed, toggleRail } = useRelayStudio();
+  // railCollapsed here is the EFFECTIVE state (manual pref OR auto). When the
+  // pane forces the collapse (railAutoCollapsed), the manual toggle would be a
+  // no-op, so we hide it — widening the pane restores the labelled rail.
+  const { railCollapsed, railAutoCollapsed, toggleRail } = useRelayStudio();
 
   return (
     <aside
@@ -90,18 +93,20 @@ export const SourcesRail: React.FC<SourcesRailProps> = ({
     >
       <div className={`pulse-rail__head ${railCollapsed ? 'pulse-rail__head--collapsed' : ''}`}>
         {!railCollapsed && <span className="pulse-rail__eyebrow">SOURCES</span>}
-        <button
-          type="button"
-          onClick={toggleRail}
-          className="pulse-rail__toggle"
-          aria-label={railCollapsed ? 'Expand sources rail' : 'Collapse sources rail'}
-          aria-expanded={!railCollapsed}
-          title={railCollapsed ? 'Expand rail' : 'Collapse rail'}
-        >
-          {railCollapsed
-            ? <ChevronRight className="w-3.5 h-3.5" />
-            : <ChevronLeft  className="w-3.5 h-3.5" />}
-        </button>
+        {!railAutoCollapsed && (
+          <button
+            type="button"
+            onClick={toggleRail}
+            className="pulse-rail__toggle"
+            aria-label={railCollapsed ? 'Expand sources rail' : 'Collapse sources rail'}
+            aria-expanded={!railCollapsed}
+            title={railCollapsed ? 'Expand rail' : 'Collapse rail'}
+          >
+            {railCollapsed
+              ? <ChevronRight className="w-3.5 h-3.5" />
+              : <ChevronLeft  className="w-3.5 h-3.5" />}
+          </button>
+        )}
       </div>
 
       <nav className="pulse-rail__items">

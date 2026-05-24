@@ -80,6 +80,7 @@ import {
   StudioFooter,
   FloatingMic,
   useRelayStudio,
+  useElementWidth,
 } from './Relay/studio';
 
 // Stops async playback when entering a Live room — you're in a synchronous
@@ -119,6 +120,11 @@ const RELAY_VIEWS: readonly RelayView[] = [
 const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, isDarkMode = false }) => {
   // user.id powers the Triage stream's voice-source queries.
   const { user } = useAuth();
+
+  // Measure the Relay pane so the studio shell can lay out off the pane's real
+  // width (the global nav + sources rail sit in front of it, so the viewport is
+  // the wrong signal). Feeds RelayStudioProvider's responsive derivation.
+  const [paneRef, paneWidth] = useElementWidth<HTMLDivElement>();
 
   // Initial view priority: parent deep-link > saved Settings preference > triage.
   // ClassicMode owns the per-contact selection (an explicit prop hand-off would
@@ -182,9 +188,9 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
 
   return (
     <div className="h-full bg-white dark:bg-[#080808] rounded-2xl overflow-hidden border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] animate-fade-in shadow-xl">
-      <RelayStudioProvider>
+      <RelayStudioProvider paneWidth={paneWidth}>
         <StudioLiveSync inLive={view === 'live'} />
-        <div className="h-full flex">
+        <div ref={paneRef} className="h-full flex">
           {/* Vertical sources rail — replaces the horizontal tab strip. */}
           <SourcesRail
             view={view}

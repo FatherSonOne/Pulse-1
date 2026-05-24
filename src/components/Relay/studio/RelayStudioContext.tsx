@@ -66,7 +66,22 @@ export interface RelayStudioState {
   hasRecorder: boolean;
 
   // ── chrome ──────────────────────────────────────────────────────────────
+  /** EFFECTIVE collapsed state of the sources rail = the user's manual
+   *  preference OR an auto-collapse forced by a narrow pane. SourcesRail reads
+   *  this to render; `toggleRail` still flips the manual preference. */
   railCollapsed: boolean;
+
+  // ── responsive (driven by the measured Relay pane width) ──────────────────
+  /** Measured Relay pane width in px (0 before the first measure). */
+  paneWidth: number;
+  /** Width available to the mode body = paneWidth − effective rail width. */
+  bodyWidth: number;
+  /** True when the pane is too narrow to afford the labelled rail, so it is
+   *  forced to the icon strip regardless of the user's manual preference. */
+  railAutoCollapsed: boolean;
+  /** True when the mode body is too narrow to show a master + detail pair side
+   *  by side — master-detail modes should show one pane at a time. */
+  singlePane: boolean;
 }
 
 /** A mode's recording controller. The studio shell (FloatingMic / SPACE /
@@ -116,6 +131,15 @@ export interface RelayStudioApi extends RelayStudioState {
 const RelayStudioContext = createContext<RelayStudioApi | null>(null);
 
 const RAIL_COLLAPSED_KEY = 'pulse.relay.railCollapsed';
+
+// Responsive thresholds, all in terms of the measured Relay *pane* width (not
+// the viewport). Below RAIL_AUTOCOLLAPSE_W the labelled rail is forced to the
+// icon strip to reclaim ~136px for the mode body. SINGLE_PANE_W is a *body*
+// width (pane − rail): below it, master + detail can't sit side by side.
+const RAIL_AUTOCOLLAPSE_W = 900;
+const SINGLE_PANE_W = 560;
+const RAIL_W_EXPANDED = 200;
+const RAIL_W_COLLAPSED = 64;
 // Shared with the legacy usePlaybackSpeed hook so an existing saved preference
 // carries over to the unified studio rate.
 const PLAYBACK_RATE_KEY = 'voxer-playback-speed';
@@ -142,6 +166,9 @@ function readInitialPlaybackRate(): PlaybackSpeed {
 
 interface ProviderProps {
   children: React.ReactNode;
+  /** Measured width of the Relay pane in px (from useElementWidth in Relay.tsx).
+   *  Drives the responsive layout signals. 0 until the first measure. */
+  paneWidth?: number;
   /** Optional: called when a recording is sent. The composer / mode body
    *  hooks into this to do the actual upload. */
   onRecordingSent?: () => void;
@@ -149,7 +176,7 @@ interface ProviderProps {
   onRecordingCancelled?: () => void;
 }
 
-export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecordingSent, onRecordingCancelled }) => {
+export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, paneWidth = 0, onRecordingSent, onRecordingCancelled }) => {
   const [nowPlaying, setNowPlaying] = useState<NowPlayingVoice | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -396,6 +423,18 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
   // metadata loads (duration === 0).
   const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0;
 
+  // ── responsive derivation (from the measured pane width) ──────────────────
+  // Auto-collapse the rail when the pane is too narrow to afford labels; the
+  // effective collapsed state is the user's manual preference OR the auto one.
+  // bodyWidth is what's left for the mode body; below SINGLE_PANE_W a master +
+  // detail pair can't coexist. paneWidth === 0 (pre-measure) keeps the wide
+  // defaults so first paint doesn't flash a collapsed layout.
+  const railAutoCollapsed = paneWidth > 0 && paneWidth < RAIL_AUTOCOLLAPSE_W;
+  const effectiveRailCollapsed = railCollapsed || railAutoCollapsed;
+  const railWidthPx = effectiveRailCollapsed ? RAIL_W_COLLAPSED : RAIL_W_EXPANDED;
+  const bodyWidth = paneWidth > 0 ? Math.max(0, paneWidth - railWidthPx) : 0;
+  const singlePane = bodyWidth > 0 && bodyWidth < SINGLE_PANE_W;
+
   const value = useMemo<RelayStudioApi>(() => ({
     nowPlaying,
     isPlaying,
@@ -406,7 +445,11 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
     isRecording,
     recordingSec,
     hasRecorder,
-    railCollapsed,
+    railCollapsed: effectiveRailCollapsed,
+    paneWidth,
+    bodyWidth,
+    railAutoCollapsed,
+    singlePane,
     play,
     togglePlay,
     stop,
@@ -420,7 +463,8 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, onRecor
     notifyRecording,
     toggleRail,
   }), [
-    nowPlaying, isPlaying, progress, currentTime, duration, playbackRate, isRecording, recordingSec, hasRecorder, railCollapsed,
+    nowPlaying, isPlaying, progress, currentTime, duration, playbackRate, isRecording, recordingSec, hasRecorder,
+    effectiveRailCollapsed, paneWidth, bodyWidth, railAutoCollapsed, singlePane,
     play, togglePlay, stop, seek, setPlaybackRate, cyclePlaybackRate, toggleRecording, cancelRecording, stopAndSendRecording, registerRecorder, notifyRecording, toggleRail,
   ]);
 
