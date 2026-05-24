@@ -59,6 +59,7 @@ import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { useRelayStudio } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
@@ -87,9 +88,10 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   const [selectedWorkspace, setSelectedWorkspace] = useState<VoxWorkspace | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<VoxTeamChannel | null>(null);
   const [messages, setMessages] = useState<TeamVoxMessage[]>([]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
-  const [playbackProgress, setPlaybackProgress] = useState(0);
+  // Playback flows through the shared Voice Studio transport (single <audio>,
+  // persistent footer). Active-row state is derived from studio.nowPlaying /
+  // studio.isPlaying / studio.progress rather than local state.
+  const studio = useRelayStudio();
   const [showNewWorkspace, setShowNewWorkspace] = useState(false);
   const [showNewChannel, setShowNewChannel] = useState(false);
   const [workspaceName, setWorkspaceName] = useState('');
@@ -123,7 +125,6 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   // Y5: Reaction picker state
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<string | null>(null);
 
-  const audioRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const workspaceDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -154,7 +155,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
-  const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed, applyToElement } = usePlaybackSpeed();
+  const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed } = usePlaybackSpeed();
   const emptyConfig = getEmptyStateConfig('team_vox');
 
   // Use the recording hook for click-to-record with preview
@@ -462,12 +463,10 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     onShowHelp: () => setShowShortcutsHelp(true),
   }, true);
 
-  // Phase 6: Apply playback speed to audio elements
+  // Push the persisted speed preference into the shared studio audio.
   useEffect(() => {
-    if (audioRef.current) {
-      applyToElement(audioRef.current);
-    }
-  }, [globalPlaybackSpeed, applyToElement]);
+    studio.setPlaybackRate(globalPlaybackSpeed);
+  }, [globalPlaybackSpeed, studio]);
 
   useEffect(() => {
     loadWorkspaces();
@@ -584,22 +583,19 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   };
 
   const handlePlayMessage = (message: TeamVoxMessage) => {
-    if (playingMessageId === message.id) {
-      if (isPlaying) {
-        audioRef.current?.pause();
-        setIsPlaying(false);
-      } else {
-        audioRef.current?.play();
-        setIsPlaying(true);
-      }
-    } else {
-      if (audioRef.current) {
-        audioRef.current.src = message.audioUrl;
-        audioRef.current.play();
-        setPlayingMessageId(message.id);
-        setIsPlaying(true);
-      }
+    if (studio.nowPlaying?.id === message.id) {
+      studio.togglePlay();
+      return;
     }
+    studio.play({
+      id: message.id,
+      sender: message.senderName || 'Channel',
+      dur: formatDuration(message.duration),
+      type: 'CHANNEL',
+      transcript: message.transcript ?? null,
+      source: 'channel',
+      audioUrl: message.audioUrl,
+    });
   };
 
   const handleArchiveMessage = async (msg: any) => {
@@ -833,6 +829,10 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       )}
     </div>
   );
+
+  // Playback active-state helpers — derived from the shared studio transport.
+  const isMsgActive = (id: string) => studio.nowPlaying?.id === id;
+  const isMsgPlaying = (id: string) => isMsgActive(id) && studio.isPlaying;
 
   return (
     <div className={`h-full flex flex-col ${tc.pageBg}`}>
@@ -1140,24 +1140,24 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                     onClick={() => handlePlayMessage(message)}
                                     className="w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200"
                                     style={{
-                                      background: playingMessageId === message.id && isPlaying
+                                      background: isMsgPlaying(message.id)
                                         ? MODE_COLOR
                                         : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)',
-                                      boxShadow: playingMessageId === message.id && isPlaying ? `0 4px 12px ${MODE_COLOR}50` : 'none'
+                                      boxShadow: isMsgPlaying(message.id) ? `0 4px 12px ${MODE_COLOR}50` : 'none'
                                     }}
                                   >
-                                    {playingMessageId === message.id && isPlaying ? (
+                                    {isMsgPlaying(message.id) ? (
                                       <Pause className="w-4 h-4 text-white" />
                                     ) : (
-                                      <Play className={`w-4 h-4 ml-0.5 ${playingMessageId === message.id && isPlaying ? 'text-white' : tc.text}`} />
+                                      <Play className={`w-4 h-4 ml-0.5 ${isMsgPlaying(message.id) ? 'text-white' : tc.text}`} />
                                     )}
                                   </button>
                                   <div className="flex-1 min-w-0">
                                     <VoxAudioVisualizer
                                       analyser={null}
                                       isActive={false}
-                                      isPlaying={playingMessageId === message.id && isPlaying}
-                                      playbackProgress={playingMessageId === message.id ? playbackProgress : 0}
+                                      isPlaying={isMsgPlaying(message.id)}
+                                      playbackProgress={isMsgActive(message.id) ? studio.progress : 0}
                                       mode="waveform"
                                       color={MODE_COLOR}
                                       height={32}
@@ -1169,7 +1169,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                     speed={globalPlaybackSpeed}
                                     onSpeedChange={(newSpeed) => {
                                       setGlobalPlaybackSpeed(newSpeed);
-                                      if (audioRef.current) audioRef.current.playbackRate = newSpeed;
+                                      studio.setPlaybackRate(newSpeed);
                                     }}
                                     mode="compact"
                                     isDarkMode={isDarkMode}
@@ -1503,18 +1503,8 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         </div>
       </div>
 
-      {/* Hidden audio element */}
-      <audio
-        ref={audioRef}
-        onTimeUpdate={(e) => {
-          const audio = e.target as HTMLAudioElement;
-          setPlaybackProgress(audio.currentTime / audio.duration);
-        }}
-        onEnded={() => {
-          setIsPlaying(false);
-          setPlaybackProgress(0);
-        }}
-      />
+      {/* Audio playback is owned by the shared RelayStudioProvider (single
+          <audio>) — no local element here. */}
 
       {/* New Workspace Modal */}
       {showNewWorkspace && (
