@@ -15,8 +15,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Contact } from '../../types';
 import { voiceRoomService } from '../../services/voiceRoomService';
+import { useRelayStudio } from './studio';
 
-import { Brain, Code2, Coffee, Gamepad2, Lock, Mic, MicOff, Monitor, Music, PhoneOff, Plus, Radio, Rocket, Settings, Square, UserPlus, Users, Volume2, VolumeX, X, type LucideIcon } from 'lucide-react';
+import { Brain, ChevronLeft, Code2, Coffee, Gamepad2, Lock, Mic, MicOff, Monitor, Music, PhoneOff, Plus, Radio, Rocket, Settings, Square, UserPlus, Users, Volume2, VolumeX, X, type LucideIcon } from 'lucide-react';
 
 // Maps the legacy `fa-*` icon keys stored on voice_rooms rows to their Lucide
 // equivalents. Existing DB rows keep working without a data migration — only
@@ -111,6 +112,14 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [selectedChannelId, setSelectedChannelId] = useState<SelectedChannelId>(null);
+  const studio = useRelayStudio();
+  // Single-pane (narrow): show the rooms rail OR the room view, one at a time.
+  // Decoupled from selection and inert when the pane is wide. Any selection
+  // (room / solo / contact / active call) flips to the detail view.
+  const [mobileView, setMobileView] = useState<'list' | 'detail'>('list');
+  useEffect(() => {
+    if (activeRoomId || selectedChannelId) setMobileView('detail');
+  }, [activeRoomId, selectedChannelId]);
   const [isMuted, setIsMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -439,9 +448,12 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
   return (
     <div className="h-full flex bg-[var(--pulse-canvas-soft)]">
       {/* Left rail — channels organized into four mono-labeled sections.
-          Persistent across every right-pane state; never overlays the Relay
-          top nav (in-flow render, no fixed inset-0). */}
-      <aside className="w-72 shrink-0 border-r border-[var(--pulse-border)] bg-[var(--pulse-surface)] flex flex-col">
+          Persistent across every right-pane state when wide; pane-driven
+          single-pane (rail OR room view) when narrow, never overlaying the
+          Relay top nav (in-flow render, no fixed inset-0). */}
+      <aside className={`${
+        studio.singlePane ? (mobileView === 'detail' ? 'hidden' : 'flex w-full') : 'flex w-72'
+      } shrink-0 border-r border-[var(--pulse-border)] bg-[var(--pulse-surface)] flex-col`}>
         {/* Rail header — quiet chrome, no big Create button at top (Create is
             scoped to the AD-HOC section, where it belongs). */}
         <div className="px-4 py-3 border-b border-[var(--pulse-border)]">
@@ -557,6 +569,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                       // happens through the explicit PhoneOff control.
                       if (isJoined) return;
                       setSelectedChannelId(`room:${room.id}`);
+                      setMobileView('detail');
                     }}
                     className="flex-1 min-w-0 pl-4 pr-10 py-2 text-left flex items-center gap-3"
                   >
@@ -600,7 +613,21 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
           2. Solo selected → solo recording surface (Phase 2d wires audio)
           3. Ad-hoc room selected (not joined) → channel-idle card
           4. Nothing selected → landing copy */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className={`flex-1 flex flex-col min-w-0 ${
+        studio.singlePane && mobileView !== 'detail' ? 'hidden' : ''
+      }`}>
+        {studio.singlePane && mobileView === 'detail' && (
+          <div className="shrink-0 px-3 py-2 border-b border-[var(--pulse-border)]">
+            <button
+              type="button"
+              onClick={() => setMobileView('list')}
+              className="inline-flex items-center gap-1.5 text-sm text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition"
+              aria-label="Back to rooms"
+            >
+              <ChevronLeft className="w-4 h-4" /> Rooms
+            </button>
+          </div>
+        )}
         {activeRoom ? (
           <>
             {/* Room Header */}
@@ -819,7 +846,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
           animates from 0 → 320px so the right-pane reflows smoothly. */}
       <aside
         className={`shrink-0 border-l border-[var(--pulse-border)] bg-[var(--pulse-surface)] overflow-hidden transition-[width] duration-[220ms] ease-out ${
-          showAISidecar ? 'w-80' : 'w-0'
+          showAISidecar && !studio.singlePane ? 'w-80' : 'w-0'
         }`}
         aria-hidden={!showAISidecar}
       >
