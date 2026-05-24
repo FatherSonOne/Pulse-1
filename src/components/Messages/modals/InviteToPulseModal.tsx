@@ -114,7 +114,7 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                   {targetContact.email && (
                     <button
                       onClick={onSendEmail}
-                      className="w-full p-4 rounded-xl bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.20)] hover:border-[#f43f5e] transition flex items-center gap-4 group"
+                      className="w-full p-4 rounded-xl bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.20)] hover:border-[var(--pulse-rose)] transition flex items-center gap-4 group"
                     >
                       <div className="w-12 h-12 rounded-full bg-[var(--pulse-rose-soft)] text-[var(--pulse-coral-fg)] flex items-center justify-center transition">
                         <Mail className="text-lg" />
@@ -130,7 +130,7 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                   {/* Copy Shareable Link */}
                   <button
                     onClick={onCopyLink}
-                    className="w-full p-4 rounded-xl bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.20)] hover:border-[#f43f5e] transition flex items-center gap-4 group"
+                    className="w-full p-4 rounded-xl bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.20)] hover:border-[var(--pulse-rose)] transition flex items-center gap-4 group"
                   >
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f43f5e] to-[#ec4899] text-white flex items-center justify-center transition shadow-lg">
                       {isCopied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
@@ -171,7 +171,7 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                       <span>AI-powered messaging</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                      <Calendar className="text-[#f43f5e]" />
+                      <Calendar className="text-[var(--pulse-rose)]" />
                       <span>Smart calendar</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">

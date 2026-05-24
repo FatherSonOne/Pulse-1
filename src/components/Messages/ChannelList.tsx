@@ -291,7 +291,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
       <div className="px-4 py-3 border-t border-white/[0.07]">
         <button
           onClick={() => setShowNewChannel(true)}
-          className="w-full py-2 text-sm text-[#94a3b8] hover:text-[#fb7185] hover:bg-rose-500/[0.08] rounded-lg transition flex items-center justify-center gap-2"
+          className="w-full py-2 text-sm text-[#94a3b8] hover:text-[var(--pulse-rose-bright)] hover:bg-rose-500/[0.08] rounded-lg transition flex items-center justify-center gap-2"
         >
           <Plus className="text-xs" />
           Add Channel

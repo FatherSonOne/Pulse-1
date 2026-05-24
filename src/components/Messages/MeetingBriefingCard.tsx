@@ -101,7 +101,7 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
               <ul className="space-y-1">
                 {participants.map((p: any, i: number) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-[var(--pulse-ink)]">
-                    <span className="text-[#f43f5e] mt-0.5 flex-shrink-0">•</span>
+                    <span className="text-[var(--pulse-rose)] mt-0.5 flex-shrink-0">•</span>
                     <div>
                       <span className="font-medium text-zinc-200">{p.name}</span>
                       {p.role && <span className="text-zinc-500 ml-1">· {p.role}</span>}
@@ -126,7 +126,7 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
               <ul className="space-y-1">
                 {highlights.map((h, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-[var(--pulse-ink)]">
-                    <span className="text-[#f43f5e] mt-0.5 flex-shrink-0">•</span>
+                    <span className="text-[var(--pulse-rose)] mt-0.5 flex-shrink-0">•</span>
                     <span>{h}</span>
                   </li>
                 ))}

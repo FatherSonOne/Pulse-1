@@ -68,7 +68,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
           {/* Header */}
           <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
             <h3 className="font-bold dark:text-white flex items-center gap-2">
-              <Clock className="text-[#f43f5e]" />
+              <Clock className="text-[var(--pulse-rose)]" />
               Schedule Message
             </h3>
             <button

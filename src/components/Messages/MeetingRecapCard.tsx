@@ -52,7 +52,7 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
             {hasProfile ? (
               <span className="text-base leading-none">{profile.icon || '📋'}</span>
             ) : (
-              <MessageSquare className="w-4 h-4 text-[#f43f5e]" />
+              <MessageSquare className="w-4 h-4 text-[var(--pulse-rose)]" />
             )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -129,7 +129,7 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
               <ul className="space-y-1">
                 {metadata.keyDecisions.map((d, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-[var(--pulse-ink)]">
-                    <span className="text-[#f43f5e] mt-0.5 flex-shrink-0">•</span>
+                    <span className="text-[var(--pulse-rose)] mt-0.5 flex-shrink-0">•</span>
                     <span>{d}</span>
                   </li>
                 ))}

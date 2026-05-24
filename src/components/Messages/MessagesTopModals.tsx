@@ -220,7 +220,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium dark:text-white truncate text-sm flex items-center gap-1">
                                   {user.display_name || user.full_name || 'Pulse User'}
-                                  {user.is_verified && <CheckCircle2 className="text-[#f43f5e] text-[10px]" />}
+                                  {user.is_verified && <CheckCircle2 className="text-[var(--pulse-rose)] text-[10px]" />}
                                 </div>
                                 {user.handle && <div className="text-[11px] text-emerald-500 truncate">@{user.handle}</div>}
                               </div>
@@ -254,7 +254,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium dark:text-white truncate text-sm flex items-center gap-1">
                                   {user.display_name || user.full_name || 'Pulse User'}
-                                  {user.is_verified && <CheckCircle2 className="text-[#f43f5e] text-[10px]" />}
+                                  {user.is_verified && <CheckCircle2 className="text-[var(--pulse-rose)] text-[10px]" />}
                                 </div>
                                 {user.handle && <div className="text-[11px] text-emerald-500 truncate">@{user.handle}</div>}
                               </div>
@@ -308,7 +308,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                           <div className="font-medium dark:text-white truncate flex items-center gap-2">
                             {user.display_name || user.full_name || 'Pulse User'}
                             {user.is_verified && (
-                              <CheckCircle2 className="text-[#f43f5e] text-xs" />
+                              <CheckCircle2 className="text-[var(--pulse-rose)] text-xs" />
                             )}
                           </div>
                           {user.handle && (
@@ -346,7 +346,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
             <div className="flex-1 overflow-y-auto p-8">
               {props.loadingArtifact ? (
                 <div className="flex flex-col items-center justify-center h-full gap-4">
-                  <Loader2 className="text-2xl text-[#f43f5e] animate-spin" />
+                  <Loader2 className="text-2xl text-[var(--pulse-rose)] animate-spin" />
                   <p className="text-sm text-zinc-500">Generating spec from conversation history...</p>
                 </div>
               ) : props.artifact ? (
@@ -413,7 +413,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
           <div ref={forwardRef} role="dialog" aria-modal="true" aria-label="Forward message" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
             <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
               <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <Share className="text-[#f43f5e]" /> Forward Message
+                <Share className="text-[var(--pulse-rose)]" /> Forward Message
               </h3>
               <button onClick={() => props.setShowForwardModal(false)}><X className="text-zinc-500" /></button>
             </div>

@@ -61,7 +61,7 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
           {/* Header */}
           <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
             <h3 className="font-bold dark:text-white flex items-center gap-2">
-              <BarChart className="text-[#f43f5e]" />
+              <BarChart className="text-[var(--pulse-rose)]" />
               Conversation Statistics
             </h3>
             <button
@@ -77,7 +77,7 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
             {/* Main Stats */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-3 rounded-lg text-center">
-                <div className="text-2xl font-bold text-[#f43f5e]">{stats.totalMessages}</div>
+                <div className="text-2xl font-bold text-[var(--pulse-rose)]">{stats.totalMessages}</div>
                 <div className="text-xs text-zinc-500">Total Messages</div>
               </div>
               <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-3 rounded-lg text-center">

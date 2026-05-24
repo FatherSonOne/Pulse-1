@@ -212,7 +212,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
           <div ref={analyticsRef} role="dialog" aria-modal="true" aria-label="Message analytics dashboard" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <TrendingUp className="text-[#f43f5e]" />
+                <TrendingUp className="text-[var(--pulse-rose)]" />
                 Message Analytics Dashboard
               </h2>
               <button
@@ -235,7 +235,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
           <div ref={networkRef} role="dialog" aria-modal="true" aria-label="Connection network" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-3xl max-h-[80vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <GitFork className="text-[#f43f5e]" />
+                <GitFork className="text-[var(--pulse-rose)]" />
                 Connection Network
               </h2>
               <button
@@ -271,7 +271,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <Layers className="text-[#f43f5e]" />
+                <Layers className="text-[var(--pulse-rose)]" />
                 Context & Insights
               </h2>
               <button
@@ -330,7 +330,7 @@ export const MessagesEndModals = React.memo<MessagesEndModalsProps>((props) => {
           <div ref={artifactPanelRef} role="dialog" aria-modal="true" aria-label="Channel artifact" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <FileOutput className="text-[#f43f5e]" />
+                <FileOutput className="text-[var(--pulse-rose)]" />
                 Export as Living Document
               </h2>
               <button

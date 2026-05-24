@@ -71,7 +71,7 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
           {/* Header */}
           <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
             <h3 className="font-bold dark:text-white flex items-center gap-2">
-              <Share className="text-[#f43f5e]" />
+              <Share className="text-[var(--pulse-rose)]" />
               Forward Message
             </h3>
             <button
@@ -107,7 +107,7 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
                     >
                       {thread.contactName.charAt(0)}
                     </div>
-                    <span className="text-sm dark:text-white font-medium group-hover:text-[#e11d48] dark:group-hover:text-[#fb7185] transition">
+                    <span className="text-sm dark:text-white font-medium group-hover:text-[var(--pulse-rose-deep)] dark:group-hover:text-[var(--pulse-rose-bright)] transition">
                       {thread.contactName}
                     </span>
                     <ChevronRight className="text-xs text-zinc-400 ml-auto opacity-0 group-hover:opacity-100 transition" />
