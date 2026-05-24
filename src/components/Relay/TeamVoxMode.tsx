@@ -985,12 +985,13 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         )}
 
         {/* Desktop Sidebar */}
-        <div className={`hidden md:flex w-64 border-r ${tc.border} flex-col ${tc.panelBg}`}>
+        <div className={`hidden md:flex w-64 shrink-0 border-r ${tc.border} flex-col ${tc.panelBg}`}>
           {renderSidebarContent()}
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Main Content — min-w-0 lets it shrink so the members rail (a
+            shrink-0 sibling) isn't pushed past the overflow-hidden row edge. */}
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {selectedChannel ? (
             <>
               {/* Channel Header */}
