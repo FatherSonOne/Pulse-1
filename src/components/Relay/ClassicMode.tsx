@@ -189,7 +189,10 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalSearchQuery, setModalSearchQuery] = useState('');
-  const [mobileView, setMobileView] = useState<'list' | 'thread'>('list');
+  // 'list' shows the contacts column, 'thread' the conversation. Drives the
+  // single-pane swap (with .classic--single-pane); inert when the pane is wide
+  // enough to show both. A deep-link to a contact opens straight to the thread.
+  const [mobileView, setMobileView] = useState<'list' | 'thread'>(initialContactId ? 'thread' : 'list');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -1166,7 +1169,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   const isItemPlaying = (id: string) => isItemActive(id) && studio.isPlaying;
 
   return (
-    <div className={`classic-mode ${isDarkMode ? 'dark' : 'light'}`}>
+    <div className={`classic-mode ${isDarkMode ? 'dark' : 'light'} ${studio.singlePane ? 'classic--single-pane' : ''}`}>
       {/* Audio playback is owned by the shared RelayStudioProvider (single
           <audio>), so there's no local element here anymore. */}
 

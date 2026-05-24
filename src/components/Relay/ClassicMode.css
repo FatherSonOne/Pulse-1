@@ -712,16 +712,23 @@
    RESPONSIVE
    ============================================ */
 
+/* Single-pane (master-detail) is driven by the shell's pane-width signal, not
+   the viewport: Relay sits behind the global nav + sources rail, so a viewport
+   media query would keep the contact list + thread side-by-side on a narrow
+   pane and crush them. The .classic--single-pane modifier (set when
+   studio.singlePane) makes the sidebar a full-bleed layer and toggles
+   list/thread via the existing mobileView state + its back button. */
+.classic--single-pane .classic-sidebar {
+  width: 100%;
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+}
+.classic--single-pane .classic-sidebar.hidden-mobile { display: none; }
+.classic--single-pane .classic-main.hidden-mobile { display: none; }
+.classic--single-pane .classic-main.visible { display: flex; }
+
 @media (max-width: 768px) {
-  .classic-sidebar {
-    width: 100%;
-    position: absolute;
-    inset: 0;
-    z-index: 20;
-  }
-  .classic-sidebar.hidden-mobile { display: none; }
-  .classic-main.hidden-mobile { display: none; }
-  .classic-main.visible { display: flex; }
   .classic-message { max-width: 85%; }
 }
 
