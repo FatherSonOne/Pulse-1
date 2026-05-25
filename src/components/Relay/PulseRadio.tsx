@@ -67,6 +67,7 @@ import {
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { RelayVoiceMessage } from './RelayVoiceMessage';
 import { useRelayStudio, useRelayModeRecorder } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
@@ -834,174 +835,123 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                     const isCurrentlyPlaying = isBroadcastPlaying(broadcast.id);
 
                     return (
-                      <article key={broadcast.id} className={`pulse-radio-broadcast ${isCurrentlyPlaying ? 'playing' : ''}`} style={{position: 'relative'}}>
-                        {/* Phase 2: Selection Checkbox — coral (was orange, which
-                            collided with the Status-Stays-Status rule: orange =
-                            status-blocked). Matches Direct + Notes selection chrome. */}
-                        {isSelectionMode && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const selectionItem: VoxSelectionItem = {
-                                id: broadcast.id,
-                                type: 'audio',
-                                url: broadcast.audioUrl || '',
-                                duration: broadcast.duration,
-                                timestamp: broadcast.publishedAt,
-                                sender: 'other',
-                                transcript: broadcast.transcript,
-                                mode: 'pulse_radio',
-                                contactId: selectedChannel?.id,
-                                contactName: selectedChannel?.name,
-                              };
-                              toggleSelection(selectionItem);
-                            }}
-                            className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
-                              isSelected(broadcast.id)
-                                ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
-                                : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
-                            }`}
-                            style={{
-                              boxShadow: isSelected(broadcast.id)
-                                ? '0 4px 12px rgba(244, 63, 94, 0.4)'
-                                : '0 2px 8px rgba(0, 0, 0, 0.2)',
-                            }}
-                          >
-                            {isSelected(broadcast.id) && <Check className="w-5 h-5 text-white font-bold" />}
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => handlePlayBroadcast(broadcast)}
-                          className="pulse-radio-play-btn"
-                          title={isCurrentlyPlaying ? 'Pause' : 'Play'}
-                        >
-                          {isCurrentlyPlaying ? (
-                            <Pause className="w-5 h-5" />
-                          ) : (
-                            <Play className="w-5 h-5 ml-0.5" />
-                          )}
-                        </button>
-
-                        <div className="pulse-radio-broadcast-content">
-                          <div className="pulse-radio-broadcast-header">
-                            <h4>{broadcast.title}</h4>
-                            {broadcast.episodeNumber && (
-                              <span className="pulse-radio-episode">EP {broadcast.episodeNumber}</span>
-                            )}
-                          </div>
-
-                          <div className="pulse-radio-broadcast-meta">
-                            <span><Clock className="w-3 h-3" /> {formatDuration(broadcast.duration)}</span>
-                            <span>{formatDate(broadcast.publishedAt)}</span>
-                            {/* Phase 6: Playback Speed Control */}
-                            <PlaybackSpeedControl
-                              speed={studio.playbackRate}
-                              onSpeedChange={studio.setPlaybackRate}
-                              isDarkMode={isDarkMode}
-                              compact={true}
-                            />
-                          </div>
-
-                          {broadcast.transcript && (
-                            <div>
-                              <div className="mb-1">
-                                <AIProvenanceChip vendor="PULSE AI" type="TRANSCRIPT" />
-                              </div>
-                              <p className="pulse-radio-transcript">{broadcast.transcript}</p>
-                            </div>
-                          )}
-
-                          <div className="pulse-radio-broadcast-actions">
-                            <span className="pulse-radio-listens">
-                              <Headphones className="w-3 h-3" />
-                              {broadcast.listenCount}
-                            </span>
-
-                            <button
-                              type="button"
-                              onClick={(e) => handleLikeBroadcast(broadcast.id, e)}
-                              className={`pulse-radio-action-btn ${isLiked ? 'liked' : ''}`}
-                              title={isLiked ? 'Unlike' : 'Like'}
-                            >
-                              <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
-                              <span>Like</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => setActiveBroadcastRoom(broadcast)}
-                              className="pulse-radio-action-btn"
-                              title="Discuss"
-                            >
-                              <MessageSquare className="w-3.5 h-3.5" />
-                              <span>Discuss</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText(broadcast.audioUrl);
-                                toast.success('Link copied!');
-                              }}
-                              className="pulse-radio-action-btn"
-                              title="Share"
-                            >
-                              <Share2 className="w-3.5 h-3.5" />
-                              <span>Share</span>
-                            </button>
-
+                      <div key={broadcast.id} className="group relative mb-2">
+                        <RelayVoiceMessage
+                          id={broadcast.id}
+                          audioUrl={broadcast.audioUrl || ''}
+                          duration={broadcast.duration}
+                          timestamp={broadcast.publishedAt}
+                          sender="other"
+                          senderName={broadcast.title}
+                          isPlaying={isCurrentlyPlaying}
+                          onPlay={() => handlePlayBroadcast(broadcast)}
+                          onPause={() => handlePlayBroadcast(broadcast)}
+                          isActive={isBroadcastActive(broadcast.id)}
+                          progress={studio.progress}
+                          transcript={broadcast.transcript || undefined}
+                          waveformSeed={broadcast.id}
+                          isDarkMode={isDarkMode}
+                          maxWidth="100%"
+                          episodeChip={broadcast.episodeNumber ? (
+                            <span className="pulse-radio-episode">EP {broadcast.episodeNumber}</span>
+                          ) : undefined}
+                          onMore={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setMenuAnchorRect(rect);
+                            setShowMessageMenu(showMessageMenu === broadcast.id ? null : broadcast.id);
+                          }}
+                          selectionCheckbox={isSelectionMode ? (
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                                setMenuAnchorRect(rect);
-                                setShowMessageMenu(showMessageMenu === broadcast.id ? null : broadcast.id);
+                                const selectionItem: VoxSelectionItem = {
+                                  id: broadcast.id,
+                                  type: 'audio',
+                                  url: broadcast.audioUrl || '',
+                                  duration: broadcast.duration,
+                                  timestamp: broadcast.publishedAt,
+                                  sender: 'other',
+                                  transcript: broadcast.transcript,
+                                  mode: 'pulse_radio',
+                                  contactId: selectedChannel?.id,
+                                  contactName: selectedChannel?.name,
+                                };
+                                toggleSelection(selectionItem);
                               }}
-                              className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity"
-                              title="More actions"
+                              className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-all ${
+                                isSelected(broadcast.id)
+                                  ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
+                                  : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
+                              }`}
+                              aria-label={isSelected(broadcast.id) ? 'Deselect broadcast' : 'Select broadcast'}
                             >
-                              <MoreVertical className="w-4 h-4" />
+                              {isSelected(broadcast.id) && <Check className="w-4 h-4 text-white" />}
                             </button>
-                            {showMessageMenu === broadcast.id && (
-                              <VoxMessageMenu
+                          ) : undefined}
+                          footerExtras={
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <PlaybackSpeedControl
+                                speed={studio.playbackRate}
+                                onSpeedChange={studio.setPlaybackRate}
                                 isDarkMode={isDarkMode}
-                                accentColor="#f43f5e"
-                                anchorRect={menuAnchorRect!}
-                                onArchive={() => handleArchiveBroadcast(broadcast)}
-                                onDownload={() => handleDownloadBroadcast(broadcast)}
-                                onDelete={() => {
-                                  setBroadcasts(prev => prev.filter(b => b.id !== broadcast.id));
-                                  setShowMessageMenu(null);
-                                  toast.success('Broadcast deleted');
-                                }}
-                                onClose={() => setShowMessageMenu(null)}
+                                compact={true}
                               />
-                            )}
-                          </div>
-                        </div>
+                              <span className="pulse-radio-listens">
+                                <Headphones className="w-3 h-3" />
+                                {broadcast.listenCount}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => handleLikeBroadcast(broadcast.id, e)}
+                                className={`pulse-radio-action-btn ${isLiked ? 'liked' : ''}`}
+                                title={isLiked ? 'Unlike' : 'Like'}
+                              >
+                                <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
+                                <span>Like</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setActiveBroadcastRoom(broadcast)}
+                                className="pulse-radio-action-btn"
+                                title="Discuss"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                <span>Discuss</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(broadcast.audioUrl);
+                                  toast.success('Link copied!');
+                                }}
+                                className="pulse-radio-action-btn"
+                                title="Share"
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                                <span>Share</span>
+                              </button>
+                            </div>
+                          }
+                        />
 
-                        {isBroadcastActive(broadcast.id) && (
-                          <div className="pulse-radio-playback-visualizer">
-                            <VoxAudioVisualizer
-                              analyser={null}
-                              isActive={false}
-                              isPlaying={studio.isPlaying}
-                              playbackProgress={studio.progress}
-                              duration={broadcast.duration}
-                              mode="waveform"
-                              color={MODE_COLOR}
-                              progressColor={MODE_COLOR_LIGHT}
-                              height={48}
-                              isDarkMode={isDarkMode}
-                              showGlow={false}
-                            />
-                          </div>
+                        {/* More menu — sibling overlay anchored to the More button */}
+                        {showMessageMenu === broadcast.id && (
+                          <VoxMessageMenu
+                            isDarkMode={isDarkMode}
+                            accentColor="#f43f5e"
+                            anchorRect={menuAnchorRect!}
+                            onArchive={() => handleArchiveBroadcast(broadcast)}
+                            onDownload={() => handleDownloadBroadcast(broadcast)}
+                            onDelete={() => {
+                              setBroadcasts(prev => prev.filter(b => b.id !== broadcast.id));
+                              setShowMessageMenu(null);
+                              toast.success('Broadcast deleted');
+                            }}
+                            onClose={() => setShowMessageMenu(null)}
+                          />
                         )}
-                      </article>
+                      </div>
                     );
                   })}
 
