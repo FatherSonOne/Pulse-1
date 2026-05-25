@@ -54,22 +54,9 @@
   --color-primary-hover: #e11d48;
   --color-secondary: #ec4899;
 
-  /* === MESSAGE BUBBLES - LIGHT MODE === */
-  --msg-sent-bg-light: #ffffff;
-  --msg-sent-border-light: rgba(244, 63, 94, 0.2);
-  --msg-received-bg-light: #f9fafb;
-  --msg-received-border-light: transparent;
-
-  /* === MESSAGE BUBBLES - DARK MODE === */
-  /* Next Chapter: Coral gradient sent, deep navy received */
-  --msg-sent-bg-dark: #f43f5e;
-  --msg-sent-border-dark: rgba(244, 63, 94, 0.6);
-  --msg-received-bg-dark: #1e293b;
-  --msg-received-border-dark: rgba(255, 255, 255, 0.06);
-
-  /* === MESSAGE TEXT COLORS === */
-  --msg-text-light: #18181b;
-  --msg-text-dark: #ffffff;
+  /* Message-bubble colors live in src/components/Messages/messages.css
+     (--pulse-msg-* tokens, single source of truth). The legacy --msg-*
+     bubble palette was removed in the Path D neutralization. */
 
   /* === TEXT COLORS - LIGHT MODE === */
   --text-primary: #18181b;
@@ -92,13 +79,6 @@
   --user-color-8: #8b5cf6;
   --user-color-9: #d946ef;
   --user-color-10: #ec4899;
-
-  /* === SPACING & SIZING === */
-  --msg-padding: 12px 16px;
-  --msg-border-radius: 12px;
-  --msg-gap: 8px;
-  --msg-avatar-size: 48px;
-  --msg-avatar-size-mobile: 48px;
 
   /* Touch Targets */
   --touch-target-min: 48px;
@@ -1524,47 +1504,11 @@ html, body {
   animation: messageBubbleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ==========================================
-   MESSAGE BUBBLE STYLES - FLAT REDESIGN
-   Updated: 2026-02-08
-   ========================================== */
-
-/* Message Bubble Base Styles — Next Chapter coral × navy palette
-   Messages section uses always-dark CSS vars (--msg-bg = #0f172a),
-   so bubbles use the same values regardless of global light/dark toggle */
-.message-bubble-sent {
-  background: linear-gradient(135deg, #f43f5e, #ec4899);
-  border-left: none;
-  border-radius: 16px 4px 16px 16px;
-  padding: var(--msg-padding);
-  box-shadow: 0 2px 12px rgba(244, 63, 94, 0.28);
-  transition: background var(--anim-fast), box-shadow var(--anim-fast);
-  color: #ffffff;
-}
-
-.message-bubble-sent:hover {
-  background: linear-gradient(135deg, #e11d48, #db2777);
-  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.4);
-}
-
-/* .dark .message-bubble-sent — defined in messages.css (single source of truth) */
-
-.message-bubble-received {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px 16px 16px 16px;
-  padding: var(--msg-padding);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  transition: background var(--anim-fast), box-shadow var(--anim-fast);
-  color: #0f172a;
-}
-
-.message-bubble-received:hover {
-  background: #f1f5f9;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* .dark .message-bubble-received — defined in messages.css (single source of truth) */
+/* Message bubble styles (.message-bubble-sent / .message-bubble-received)
+   live in src/components/Messages/messages.css — the single source of truth.
+   The legacy "Next Chapter coral × navy" rules that used to sit here were
+   removed in the Path D neutralization; they were dead (messages.css loads
+   later and won the cascade) and conflicted with the neutral bubble system. */
 
 /* Channel List Styles */
 .channel-item {
@@ -1872,12 +1816,6 @@ html, body {
 
   .message-bubble .msg-content {
     font-size: var(--font-size-message-mobile) !important;
-  }
-
-  /* Mobile avatar size */
-  .message-bubble button[style*="--msg-avatar-size"] {
-    width: var(--msg-avatar-size-mobile) !important;
-    height: var(--msg-avatar-size-mobile) !important;
   }
 
   .channel-item,
