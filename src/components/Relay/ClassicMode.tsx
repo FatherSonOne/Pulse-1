@@ -376,7 +376,10 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               timestamp: new Date(dbRec.recorded_at || dbRec.created_at),
               transcription: dbRec.transcript || undefined,
               isTranscribing: false,
-              sender: dbRec.sender === 'me' ? 'me' : 'other',
+              // voxer_recordings has no `sender` column — me/them is carried by
+              // `is_outgoing` (true = I sent it). The old `dbRec.sender` read was
+              // always undefined, so every message rendered as the contact.
+              sender: dbRec.is_outgoing ? 'me' : 'other',
               contactId: dbRec.contact_id || '',
               status: dbRec.status || 'sent',
               analysis: dbRec.analysis || undefined,
