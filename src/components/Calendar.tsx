@@ -9,6 +9,7 @@ import { supabase } from '../services/supabase';
 import { downloadICS } from '../services/calendarExportService';
 import { YearView, MonthView, WeekView, DayView, CalendarHeader, AgendaView, OverlayEvent } from './CalendarViews';
 import { CalendarTimelineView } from './Calendar/CalendarTimelineView';
+import { CalendarTodayView } from './Calendar/CalendarTodayView';
 import DayDetailModal from './DayDetailModal';
 import useSwipeGesture from '../hooks/useSwipeGesture';
 import usePullToRefresh from '../hooks/usePullToRefresh';
@@ -66,7 +67,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [showExportMenu, setShowExportMenu] = useState(false);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>(isMobile ? 'agenda' : 'month');
+  const [viewMode, setViewMode] = useState<ViewMode>(isMobile ? 'agenda' : 'today');
   const viewModeRef = useRef(viewMode);
   useEffect(() => {
     viewModeRef.current = viewMode;
@@ -537,10 +538,10 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       // Switch to appropriate view when screen size changes
-      if (mobile && (viewModeRef.current === 'week' || viewModeRef.current === 'month')) {
+      if (mobile && (viewModeRef.current === 'week' || viewModeRef.current === 'month' || viewModeRef.current === 'today')) {
         setViewMode('agenda');
       } else if (!mobile && viewModeRef.current === 'agenda') {
-        setViewMode('month');
+        setViewMode('today');
       }
     };
 
@@ -762,6 +763,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
       switch (e.key) {
         // View switching
+        case 'h': case 'H': setViewMode('today'); break;
         case 'd': case 'D': setViewMode('day'); break;
         case 'w': case 'W': setViewMode('week'); break;
         case 'm': case 'M': setViewMode('month'); break;
@@ -1850,6 +1852,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       keywords: ['new', 'create', 'add', 'event', 'schedule'],
       run: () => setShowEventModal(true),
     },
+    { id: 'calendar-view-today',  label: 'Switch to Today View',  desc: 'Calendar view', kind: 'action', icon: 'fa-bolt',           keywords: ['today', 'hybrid', 'focus'], run: () => setViewMode('today') },
     { id: 'calendar-view-month',  label: 'Switch to Month View',  desc: 'Calendar view', kind: 'action', icon: 'fa-calendar',       keywords: ['month'],  run: () => setViewMode('month') },
     { id: 'calendar-view-week',   label: 'Switch to Week View',   desc: 'Calendar view', kind: 'action', icon: 'fa-calendar-week',  keywords: ['week'],   run: () => setViewMode('week') },
     { id: 'calendar-view-day',    label: 'Switch to Day View',    desc: 'Calendar view', kind: 'action', icon: 'fa-calendar-day',   keywords: ['day'],    run: () => setViewMode('day') },
@@ -2976,6 +2979,26 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                  progress={pullToRefresh.progress}
                />
              )}
+             {viewMode === 'today' && (
+               <CalendarTodayView
+                 currentDate={currentDate}
+                 events={filteredEvents}
+                 conflicts={conflicts}
+                 focusBlocks={focusBlocks}
+                 aiReady={!!analytics}
+                 onEventClick={openEventDetail}
+                 onDateClick={(date) => {
+                   setNewEventDate(date.toISOString().split('T')[0]);
+                   setShowEventModal(true);
+                 }}
+                 onFocusDateChange={(date) => setCurrentDate(date)}
+                 onOpenAIPanel={() => {
+                   setShowAIPanel(true);
+                   if (!analytics) handleRunAllAnalyses();
+                 }}
+               />
+             )}
+
              {viewMode === 'year' && (
                <YearView
                  currentDate={currentDate}

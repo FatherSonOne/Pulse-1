@@ -1082,11 +1082,11 @@ export const DayView: React.FC<ViewProps> = ({
 
 interface CalendarHeaderProps {
   currentDate: Date;
-  viewMode: 'year' | 'month' | 'week' | 'day' | 'agenda' | 'timeline';
+  viewMode: 'today' | 'year' | 'month' | 'week' | 'day' | 'agenda' | 'timeline';
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
-  onViewChange: (view: 'year' | 'month' | 'week' | 'day' | 'agenda' | 'timeline') => void;
+  onViewChange: (view: 'today' | 'year' | 'month' | 'week' | 'day' | 'agenda' | 'timeline') => void;
 }
 
 export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
@@ -1099,6 +1099,8 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 }) => {
   const getTitle = () => {
     switch (viewMode) {
+      case 'today':
+        return `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getDate()}, ${currentDate.getFullYear()}`;
       case 'year':
         return <span className="cal-title-year">{currentDate.getFullYear()}</span>;
       case 'month':
@@ -1161,8 +1163,8 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
  *  ⌘K continues to address them by name, but first-timers can discover the
  *  full vocabulary via the visible ⋯ button. */
 const CalendarViewSwitcher: React.FC<{
-  viewMode: 'year' | 'month' | 'week' | 'day' | 'agenda' | 'timeline';
-  onViewChange: (view: 'year' | 'month' | 'week' | 'day' | 'agenda' | 'timeline') => void;
+  viewMode: 'today' | 'year' | 'month' | 'week' | 'day' | 'agenda' | 'timeline';
+  onViewChange: (view: 'today' | 'year' | 'month' | 'week' | 'day' | 'agenda' | 'timeline') => void;
 }> = ({ viewMode, onViewChange }) => {
   const [open, setOpen] = useState(false);
   const overflowRef = useRef<HTMLDivElement | null>(null);
@@ -1191,7 +1193,7 @@ const CalendarViewSwitcher: React.FC<{
 
   return (
     <div className="cal-view-switcher" role="group" aria-label="Calendar view">
-      {(['month', 'day'] as const).map(view => (
+      {(['today', 'month', 'day'] as const).map(view => (
         <button
           key={view}
           className={`cal-view-btn ${viewMode === view ? 'active' : ''}`}

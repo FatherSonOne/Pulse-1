@@ -1,6 +1,6 @@
 // Shared types and constants for Calendar components
 
-export type ViewMode = 'month' | 'week' | 'day' | 'year' | 'agenda' | 'timeline';
+export type ViewMode = 'today' | 'month' | 'week' | 'day' | 'year' | 'agenda' | 'timeline';
 export type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 export type ReminderTime = 'none' | '5min' | '15min' | '30min' | '1hour' | '1day';
 
