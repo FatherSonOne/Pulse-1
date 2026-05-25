@@ -1,18 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Users,
-  Mic,
-  Play,
-  Pause,
   Plus,
   Hash,
-  Volume2,
   Bell,
   Settings,
-  ChevronRight,
   ChevronDown,
-  ChevronLeft,
-  Pin,
   CheckSquare,
   AtSign,
   Sparkles,
@@ -21,18 +14,19 @@ import {
   UserPlus,
   Megaphone,
   Calendar,
-  Menu,
   Briefcase,
   Check,
-  Download,
-  Archive,
   MoreVertical,
   List,
+  Bookmark,
+  AlignLeft,
+  Reply,
+  CheckCheck,
+  Loader2,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
 import RecordButton from './RecordButton';
-import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import RelayPanelShell from './RelayPanelShell';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
@@ -59,8 +53,14 @@ import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
-import { useRelayStudio, useRelayModeRecorder } from './studio';
-import { RelayVoiceMessage } from './RelayVoiceMessage';
+import {
+  useRelayStudio,
+  useRelayModeRecorder,
+  StudioMessageCard,
+  StudioMasthead,
+  avatarColorForId,
+  initials,
+} from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
@@ -115,6 +115,11 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   const [pulseContacts, setPulseContacts] = useState<any[]>([]);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
+  // PathC 3-column responsive: when the pane is too narrow for the side
+  // columns to live inline, they become reachable drawer toggles instead of
+  // vanishing (fixes the maximized/narrow-pane vanishing-columns bug).
+  const [showChannelsDrawer, setShowChannelsDrawer] = useState(false);
+  const [showMembersDrawer, setShowMembersDrawer] = useState(false);
   const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
@@ -131,7 +136,6 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const workspaceDropdownRef = useRef<HTMLDivElement>(null);
 
   // Phase 2: Selection Mode State
   const {
@@ -513,22 +517,8 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Close workspace dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (workspaceDropdownRef.current && !workspaceDropdownRef.current.contains(event.target as Node)) {
-        setShowWorkspaceDropdown(false);
-      }
-    };
-
-    if (showWorkspaceDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showWorkspaceDropdown]);
+  // Workspace switcher is a centered RelayPanelShell popover now; it handles
+  // its own Escape / scrim dismissal, so no click-outside listener is needed.
 
   const loadMessages = async () => {
     if (!selectedChannel) return;
@@ -643,16 +633,6 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     setShowDownloadModal(true);
   };
 
-  const toggleWorkspaceExpanded = (workspaceId: string) => {
-    const newExpanded = new Set(expandedWorkspaces);
-    if (newExpanded.has(workspaceId)) {
-      newExpanded.delete(workspaceId);
-    } else {
-      newExpanded.add(workspaceId);
-    }
-    setExpandedWorkspaces(newExpanded);
-  };
-
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -741,354 +721,419 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       : 'bg-white border-[rgba(0,0,0,0.08)]',
   };
 
-  // Render sidebar content (shared between mobile and desktop)
-  const renderSidebarContent = () => (
-    <div className="flex-1 overflow-y-auto py-2">
-      {workspaces.map((workspace, wsIndex) => (
-        <div key={workspace.id} className={wsIndex > 0 ? 'mt-4' : ''}>
-          {/* Workspace Header */}
+  // PathC channels list (col 1): "CHANNELS" header + "+", then "# name" rows
+  // with an unread count; active = rose text + rose-soft bg. Workspace
+  // switching rides above the list (Pulse has multiple workspaces; the
+  // playground assumed one). Reused inline (wide pane) and in the narrow-pane
+  // drawer so channels never become unreachable.
+  const handleSelectChannel = (workspace: VoxWorkspace, channel: VoxTeamChannel) => {
+    setSelectedWorkspace(workspace);
+    setSelectedChannel(channel);
+    setMobileView('thread');
+    setShowMobileSidebar(false);
+    setShowChannelsDrawer(false);
+  };
+
+  const renderChannelsList = () => (
+    <div className="flex-1 overflow-y-auto px-3 py-4">
+      {/* Workspace switcher — kept (multi-workspace), styled as a compact row. */}
+      {workspaces.length > 1 && (
+        <button
+          onClick={() => setShowWorkspaceDropdown(true)}
+          className={`w-full flex items-center gap-2 px-2 py-1.5 mb-2 rounded-md text-[13px] ${tc.textSecondary} ${tc.hoverBg} transition`}
+          title="Switch workspace"
+        >
+          <Briefcase className="w-3.5 h-3.5 shrink-0 opacity-70" />
+          <span className="truncate flex-1 text-left">{selectedWorkspace?.name || 'Workspace'}</span>
+          <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-70" />
+        </button>
+      )}
+
+      <div className={`px-2 py-1.5 mb-1 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] ${tc.textMuted}`}>
+        <span>Channels</span>
+        <button
+          type="button"
+          onClick={() => {
+            if (selectedWorkspace) {
+              setShowNewChannel(true);
+            } else {
+              setShowNewWorkspace(true);
+            }
+          }}
+          className={`p-0.5 rounded ${tc.btnGhost}`}
+          aria-label="New channel"
+          title={selectedWorkspace ? 'New channel' : 'New workspace'}
+        >
+          <Plus className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {(selectedWorkspace?.channels ?? []).map((channel) => {
+        const isActive = selectedChannel?.id === channel.id;
+        return (
           <button
-            onClick={() => toggleWorkspaceExpanded(workspace.id)}
-            className={`w-full px-3 py-2.5 flex items-center gap-2 transition-all border-l ${
-              selectedWorkspace?.id === workspace.id
-                ? `border-[#f43f5e]/60 ${tc.activeBg}`
-                : `border-transparent ${tc.hoverBg}`
+            key={channel.id}
+            onClick={() => handleSelectChannel(selectedWorkspace!, channel)}
+            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[13px] text-left transition ${
+              isActive
+                ? 'text-[var(--pulse-rose-text)] font-medium'
+                : `${tc.textSecondary} ${tc.hoverBg}`
             }`}
+            style={isActive ? { background: 'var(--pulse-rose-soft)' } : undefined}
+            title={`${channel.type.charAt(0).toUpperCase() + channel.type.slice(1)} channel`}
           >
-            {expandedWorkspaces.has(workspace.id) ? (
-              <ChevronDown className={`w-4 h-4 ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.textMuted}`} />
-            ) : (
-              <ChevronRight className={`w-4 h-4 ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.textMuted}`} />
+            <Hash className="w-3.5 h-3.5 shrink-0 opacity-70" />
+            <span className="truncate flex-1">{channel.name}</span>
+            {channel.unreadCount > 0 && (
+              <span className="ml-auto font-mono text-[10px] tabular-nums shrink-0">
+                {channel.unreadCount}
+              </span>
             )}
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm"
-              style={{
-                background: selectedWorkspace?.id === workspace.id
-                  ? MODE_COLOR
-                  : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)'
-              }}
-            >
-              <span className={`text-xs font-bold ${selectedWorkspace?.id === workspace.id ? 'text-white' : tc.textSecondary}`}>
-                {workspace.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 text-left min-w-0">
-              <span className={`font-semibold text-sm truncate block ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.text}`}>
-                {workspace.name}
-              </span>
-              <span className={`text-xs ${tc.textMuted}`}>
-                {workspace.channels.length} channel{workspace.channels.length !== 1 ? 's' : ''}
-              </span>
-            </div>
           </button>
+        );
+      })}
 
-          {/* Channels */}
-          {expandedWorkspaces.has(workspace.id) && (
-            <div className={`ml-8 border-l ${selectedWorkspace?.id === workspace.id ? 'border-[#f43f5e]/30' : tc.border} pl-3 space-y-0.5 mt-1`}>
-              {workspace.channels.map((channel) => (
-                <button
-                  key={channel.id}
-                  onClick={() => {
-                    setSelectedWorkspace(workspace);
-                    setSelectedChannel(channel);
-                    setMobileView('thread');
-                    setShowMobileSidebar(false);
-                  }}
-                  className={`w-full px-3 py-2 flex items-center gap-2 rounded-r-lg text-sm transition-all group ${
-                    selectedChannel?.id === channel.id
-                      ? `${tc.activeBg} text-[#f43f5e] font-medium`
-                      : `${tc.textSecondary} ${tc.hoverBg} hover:text-[#f43f5e]`
-                  }`}
-                  title={`${channel.type.charAt(0).toUpperCase() + channel.type.slice(1)} channel`}
-                >
-                  <span className={selectedChannel?.id === channel.id ? 'text-[#f43f5e]' : tc.textMuted}>
-                    {CHANNEL_ICONS[channel.type]}
-                  </span>
-                  <span className="truncate flex-1 text-left">{channel.name}</span>
-                  {channel.unreadCount > 0 && (
-                    <span className="px-2 py-0.5 text-xs bg-[#f43f5e] text-white rounded-full font-semibold">
-                      {channel.unreadCount}
-                    </span>
-                  )}
-                  {channel.isPinned && (
-                    <Pin className={`w-3 h-3 ${selectedChannel?.id === channel.id ? 'text-[#f43f5e]' : tc.textMuted}`} />
-                  )}
-                </button>
-              ))}
-
-              {/* Add Channel Button */}
-              <button
-                onClick={() => {
-                  setSelectedWorkspace(workspace);
-                  setShowNewChannel(true);
-                }}
-                className={`w-full px-3 py-2 flex items-center gap-2 rounded-r-lg text-sm ${tc.textMuted} hover:text-[#f43f5e] hover:bg-[#f43f5e]/10 transition-all mt-1`}
-                title="Create a new channel in this workspace"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="font-medium">Add Channel</span>
-              </button>
-            </div>
-          )}
-        </div>
-      ))}
-
-      {workspaces.length === 0 && (
-        <div className={`text-center py-12 ${tc.textMuted}`}>
-          <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p className="text-sm">No workspaces yet</p>
-          <p className="text-xs mt-1">Create one to get started</p>
+      {(selectedWorkspace?.channels?.length ?? 0) === 0 && (
+        <div className={`px-2 py-8 text-center ${tc.textMuted}`}>
+          <Hash className="w-8 h-8 mx-auto mb-2 opacity-40" />
+          <p className="text-[12px]">
+            {workspaces.length === 0 ? 'No workspaces yet' : 'No channels yet'}
+          </p>
         </div>
       )}
     </div>
   );
 
+  // PathC members rail (col 3): "MEMBERS · N" + member rows (avatar colorForId +
+  // name + role) + a coral "CHANNEL AI · DIGEST" card. Presence (online/offline)
+  // is NOT wired server-side, so we don't fabricate green dots — members render
+  // as a single resolved list. Reused inline (wide pane) and in the drawer.
+  const resolveChannelMembers = () => {
+    const ids: string[] = (selectedChannel?.memberIds?.length
+      ? selectedChannel.memberIds
+      : selectedWorkspace?.memberIds) ?? [];
+    const members = ids
+      .map((id) => pulseContacts.find((c: any) => c.id === id))
+      .filter(Boolean) as any[];
+    return { ids, members };
+  };
+
+  const renderMembersRail = () => {
+    const { ids, members } = resolveChannelMembers();
+    return (
+      <div className="flex-1 overflow-y-auto px-3 py-4">
+        <div className={`px-2 py-1.5 mb-1 font-mono text-[10px] uppercase tracking-[0.18em] ${tc.textMuted}`}>
+          Members · {ids.length}
+        </div>
+
+        {members.length === 0 ? (
+          <p className={`px-2 py-2 text-[11px] leading-relaxed ${tc.textMuted}`}>
+            {ids.length > 0
+              ? 'Member profiles sync from your contacts.'
+              : 'No members yet — add teammates from the channel header.'}
+          </p>
+        ) : (
+          members.map((m) => (
+            <div key={m.id} className="flex items-center gap-2 px-2 py-1.5">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0 ${avatarColorForId(m.id)}`}
+                aria-hidden="true"
+              >
+                {initials(m.name)}
+              </div>
+              <span className={`text-[12px] truncate flex-1 ${tc.text}`}>{m.name}</span>
+              {m.role && (
+                <span className={`font-mono text-[9px] uppercase tracking-[0.1em] shrink-0 ${tc.textMuted}`}>
+                  {m.role}
+                </span>
+              )}
+            </div>
+          ))
+        )}
+
+        {/* Channel AI — coral digest card. Wired to the server-side channel
+            summary (sanctioned AI surface); falls back to a prompt when none. */}
+        <div className={`px-2 py-1 mt-5 font-mono text-[10px] uppercase tracking-[0.18em] ${tc.textMuted}`}>
+          Channel AI
+        </div>
+        <div className="mx-1 mt-1">
+          {conversationSummary ? (
+            <div className="rounded-lg p-3" style={{ background: 'var(--pulse-coral-bg-12)' }}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Sparkles className="w-3 h-3" style={{ color: 'var(--pulse-coral-fg)' }} />
+                <span className="font-mono text-[9px] uppercase tracking-[0.1em]" style={{ color: 'var(--pulse-coral-fg)' }}>
+                  Digest
+                </span>
+              </div>
+              <p className={`text-[11.5px] leading-snug ${tc.text}`}>{conversationSummary.overview}</p>
+            </div>
+          ) : (
+            <p className={`px-1 text-[11px] leading-relaxed ${tc.textMuted}`}>
+              Run <span className="font-medium">Summarize</span> in the header to generate a channel digest.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Playback active-state helpers — derived from the shared studio transport.
   const isMsgActive = (id: string) => studio.nowPlaying?.id === id;
   const isMsgPlaying = (id: string) => isMsgActive(id) && studio.isPlaying;
 
+  // PathC 3-column responsiveness — pane-width driven (NOT viewport), so the
+  // side columns degrade gracefully and never simply vanish. Below each
+  // threshold the column converts to a header-reachable drawer toggle:
+  //   ≥ 1080px → channels + feed + members all inline (full grid)
+  //   ≥  760px → channels + feed inline, members via drawer
+  //   <  760px → feed only, channels + members via drawers
+  const channelsInline = !studio.singlePane && studio.bodyWidth >= 760;
+  const membersInline = !studio.singlePane && studio.bodyWidth >= 1080;
+  const channelMemberCount =
+    (selectedChannel?.memberIds?.length || selectedWorkspace?.memberIds?.length) ?? 0;
+
   return (
     <div className={`h-full flex flex-col ${tc.pageBg}`}>
-      {/* Unified Mode Header */}
-      <VoxModeToolbar
-        onBack={onBack}
-        modeIcon={<Users className="w-5 h-5" />}
-        eyebrow={selectedWorkspace ? `CHANNEL · ${selectedWorkspace.name.toUpperCase()}` : 'CHANNELS'}
-        modeTitle={selectedChannel?.name || 'Channels'}
-        accentColor="#f43f5e"
-        isDarkMode={isDarkMode}
-        showAI={!!(selectedChannel)}
-        onSummarize={selectedChannel ? handleSummarizeChannel : undefined}
-        onSmartReplies={selectedChannel ? handleGenerateSmartReplies : undefined}
-        onMeetingNotes={selectedChannel ? handleGenerateMeetingNotes : undefined}
-        isSummarizing={isGeneratingAI}
-        isGeneratingReplies={isGeneratingAI}
-        isGeneratingNotes={isGeneratingMeetingNotes}
-        hasContent={messages.length > 0}
-        isSelectionMode={isSelectionMode}
-        onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
-        onShowHelp={() => setShowShortcutsHelp(true)}
-        customActions={[
-          {
-            icon: <Menu className="w-5 h-5" />,
-            title: 'Show workspaces',
-            onClick: () => setShowMobileSidebar(true),
-          },
-          {
-            icon: <Plus className="w-4 h-4" />,
-            title: 'New Workspace',
-            label: 'New Workspace',
-            onClick: () => setShowNewWorkspace(true),
-          },
-        ]}
+      {/* Workspace switcher — a reachable centered popover (was a toolbar-
+          anchored dropdown). Opened from the channels-list workspace row. */}
+      <RelayPanelShell
+        open={showWorkspaceDropdown}
+        onClose={() => setShowWorkspaceDropdown(false)}
+        label="Switch workspace"
+        tc={tc}
+        maxWidth="sm"
+        footer={
+          <button
+            onClick={() => {
+              setShowWorkspaceDropdown(false);
+              setShowNewWorkspace(true);
+            }}
+            className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${tc.hoverBg} hover:text-[#f43f5e]`}
+          >
+            <Plus className="w-4 h-4" />
+            Create New Workspace
+          </button>
+        }
       >
-        {/* Workspace Selector (all viewports — mobile hamburger is hard to discover) */}
-        {selectedWorkspace && (
-          <div ref={workspaceDropdownRef} className="relative">
+        <div className="max-h-72 overflow-y-auto -mx-1">
+          {workspaces.map((workspace) => (
             <button
-              onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnSecondary} border hover:border-[#f43f5e]/50`}
-              title="Switch workspace"
+              key={workspace.id}
+              onClick={() => {
+                setSelectedWorkspace(workspace);
+                setExpandedWorkspaces(new Set([workspace.id]));
+                if (workspace.channels.length > 0) {
+                  setSelectedChannel(workspace.channels[0]);
+                } else {
+                  setSelectedChannel(null);
+                }
+                setShowWorkspaceDropdown(false);
+              }}
+              className={`w-full px-3 py-3 flex items-center gap-3 rounded-lg transition-all ${
+                selectedWorkspace?.id === workspace.id
+                  ? `${tc.activeBg} text-[#f43f5e]`
+                  : `${tc.hoverBg} ${tc.text}`
+              }`}
             >
-              <Briefcase className="w-4 h-4" />
-              <span className="max-w-[150px] truncate">{selectedWorkspace.name}</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${showWorkspaceDropdown ? 'rotate-180' : ''}`} />
-            </button>
-
-            {/* Workspace Dropdown — anchor-positioned popover, shares modal border/scrim vocabulary minus the centered scrim */}
-            {showWorkspaceDropdown && (
-              <div className="absolute top-full right-0 mt-2 w-64 z-50">
-                <div className={`rounded-xl border ${tc.modalBg} shadow-2xl overflow-hidden`}>
-                  <div className={`px-4 py-3 border-b ${tc.border}`}>
-                    <p className={`text-[11px] font-mono uppercase tracking-[0.1em] ${tc.textSecondary}`}>Switch workspace</p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto py-2">
-                    {workspaces.map((workspace) => (
-                      <button
-                        key={workspace.id}
-                        onClick={() => {
-                          setSelectedWorkspace(workspace);
-                          setExpandedWorkspaces(new Set([workspace.id]));
-                          if (workspace.channels.length > 0) {
-                            setSelectedChannel(workspace.channels[0]);
-                          } else {
-                            setSelectedChannel(null);
-                          }
-                          setShowWorkspaceDropdown(false);
-                        }}
-                        className={`w-full px-4 py-3 flex items-center gap-3 transition-all ${
-                          selectedWorkspace?.id === workspace.id
-                            ? `${tc.activeBg} text-[#f43f5e]`
-                            : `${tc.hoverBg} ${tc.text}`
-                        }`}
-                      >
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                          style={{
-                            background: selectedWorkspace?.id === workspace.id
-                              ? MODE_COLOR
-                              : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)'
-                          }}
-                        >
-                          <span className={`text-sm font-bold ${selectedWorkspace?.id === workspace.id ? 'text-white' : tc.textSecondary}`}>
-                            {workspace.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="flex-1 text-left min-w-0">
-                          <p className={`font-medium truncate ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.text}`}>
-                            {workspace.name}
-                          </p>
-                          <p className={`text-xs ${tc.textMuted} truncate`}>
-                            {workspace.channels.length} channel{workspace.channels.length !== 1 ? 's' : ''}
-                          </p>
-                        </div>
-                        {selectedWorkspace?.id === workspace.id && (
-                          <div className="w-2 h-2 rounded-full bg-[#f43f5e]" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <div className={`px-2 py-2 border-t ${tc.border}`}>
-                    <button
-                      onClick={() => {
-                        setShowWorkspaceDropdown(false);
-                        setShowNewWorkspace(true);
-                      }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${tc.hoverBg} hover:text-[#f43f5e]`}
-                    >
-                      <Plus className="w-4 h-4" />
-                      Create New Workspace
-                    </button>
-                  </div>
-                </div>
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style={{
+                  background: selectedWorkspace?.id === workspace.id
+                    ? MODE_COLOR
+                    : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)'
+                }}
+              >
+                <span className={`text-sm font-bold ${selectedWorkspace?.id === workspace.id ? 'text-white' : tc.textSecondary}`}>
+                  {workspace.name.charAt(0).toUpperCase()}
+                </span>
               </div>
-            )}
-          </div>
-        )}
-      </VoxModeToolbar>
+              <div className="flex-1 text-left min-w-0">
+                <p className={`font-medium truncate ${selectedWorkspace?.id === workspace.id ? 'text-[#f43f5e]' : tc.text}`}>
+                  {workspace.name}
+                </p>
+                <p className={`text-xs ${tc.textMuted} truncate`}>
+                  {workspace.channels.length} channel{workspace.channels.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              {selectedWorkspace?.id === workspace.id && (
+                <div className="w-2 h-2 rounded-full bg-[#f43f5e]" />
+              )}
+            </button>
+          ))}
+        </div>
+      </RelayPanelShell>
 
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Mobile Sidebar Overlay */}
-        {showMobileSidebar && (
-          <div className="md:hidden fixed inset-0 z-40">
-            <div
-              className={tc.modalOverlay}
-              onClick={() => setShowMobileSidebar(false)}
-            />
-            <div className={`absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] ${tc.panelBg} border-r ${tc.border} flex flex-col animate-slide-in`}>
-              <div className={`p-4 border-b ${tc.border} flex items-center justify-between`}>
-                <h2 className={`font-semibold ${tc.text}`}>Workspaces</h2>
-                <button
-                  onClick={() => setShowMobileSidebar(false)}
-                  className={`p-2 rounded-lg ${tc.btnGhost}`}
-                  type="button"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              {renderSidebarContent()}
-            </div>
+        {/* Channels list (col 1) — inline when the pane is wide enough; a
+            reachable left drawer otherwise (never vanishes). */}
+        {channelsInline ? (
+          <div className={`w-[200px] shrink-0 border-r ${tc.border} flex flex-col ${tc.panelBg}`}>
+            {renderChannelsList()}
           </div>
+        ) : (
+          showChannelsDrawer && (
+            <div className="absolute inset-0 z-40 flex">
+              <div className={`w-[260px] max-w-[85%] ${tc.panelBg} border-r ${tc.border} flex flex-col animate-slide-in`}>
+                <div className={`px-3 pt-3 flex items-center justify-end`}>
+                  <button
+                    onClick={() => setShowChannelsDrawer(false)}
+                    className={`p-1.5 rounded-md ${tc.btnGhost}`}
+                    type="button"
+                    aria-label="Close channels"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                {renderChannelsList()}
+              </div>
+              <div className={tc.modalOverlay} onClick={() => setShowChannelsDrawer(false)} />
+            </div>
+          )
         )}
 
-        {/* Channels sidebar. Pane-driven (not viewport): inline at w-64 when the
-            pane is wide; full-width when single-pane on the list view; hidden
-            when single-pane in a thread (the thread takes over, back returns). */}
-        <div className={`${
-          studio.singlePane
-            ? (selectedChannel && mobileView === 'thread' ? 'hidden' : 'flex w-full')
-            : 'flex w-64'
-        } shrink-0 border-r ${tc.border} flex-col ${tc.panelBg}`}>
-          {renderSidebarContent()}
-        </div>
-
-        {/* Main Content — min-w-0 lets it shrink so the members rail (a
-            shrink-0 sibling) isn't pushed past the overflow-hidden row edge.
-            Hidden when single-pane is showing the channels list instead. */}
-        <div className={`flex-1 min-w-0 flex flex-col overflow-hidden ${
-          studio.singlePane && !(selectedChannel && mobileView === 'thread') ? 'hidden' : ''
-        }`}>
+        {/* Feed (col 2) — the channel post timeline. */}
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {selectedChannel ? (
             <>
-              {/* Channel Header */}
-              <div className={`px-4 md:px-6 py-3 md:py-4 border-b ${tc.border} ${tc.cardBg} flex items-center justify-between`}>
-                <div className="flex items-center gap-3 min-w-0">
-                  {studio.singlePane && (
+              {/* Feed — sticky PathC channel header rides inside the scroll. */}
+              <div className="flex-1 overflow-y-auto px-4 md:px-6 pt-5 pb-3">
+                {/* PathC channel masthead (sticky) */}
+                <header
+                  className="mb-5 flex items-center gap-3 sticky top-0 z-10 pt-1 pb-3"
+                  style={{ background: 'var(--pulse-canvas)' }}
+                >
+                  {!channelsInline && (
                     <button
                       type="button"
-                      onClick={() => setMobileView('list')}
+                      onClick={() => setShowChannelsDrawer(true)}
                       className={`shrink-0 -ml-1 p-1.5 rounded-lg ${tc.btnGhost}`}
-                      aria-label="Back to channels"
-                      title="Back to channels"
+                      aria-label="Show channels"
+                      title="Channels"
                     >
-                      <ChevronLeft className="w-5 h-5" />
+                      <Hash className="w-5 h-5" />
                     </button>
                   )}
-                  <div className={`p-2 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/80'}`}>
-                    {CHANNEL_ICONS[selectedChannel.type]}
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}
+                  >
+                    <Hash className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    {/* Breadcrumb-style navigation */}
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className={`text-xs ${tc.textMuted} truncate max-w-[120px]`}>
-                        {selectedWorkspace?.name}
-                      </span>
-                      <ChevronRight className={`w-3 h-3 ${tc.textMuted} shrink-0`} />
-                      <h2 className={`text-base md:text-lg font-semibold ${tc.text} truncate`}>
-                        {selectedChannel.name}
-                      </h2>
+                    <div className={`font-mono text-[10px] uppercase tracking-[0.18em] ${tc.textMuted} truncate`}>
+                      Channel · {(selectedWorkspace?.name || '').toUpperCase()}
                     </div>
-                    <p className={`text-xs md:text-sm ${tc.textSecondary}`}>
-                      {selectedChannel.memberIds.length || selectedWorkspace?.memberIds.length || 0} members
-                    </p>
+                    <div className={`text-xl font-semibold truncate ${tc.text}`}>{selectedChannel.name}</div>
+                    <div className={`text-[11px] ${tc.textMuted}`}>
+                      {channelMemberCount} members · {messages.length} {messages.length === 1 ? 'voice' : 'voices'} today
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-1 md:gap-2">
-                  <button
-                    onClick={() => setShowAddMember(true)}
-                    className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
-                    aria-label="Add member"
-                    title="Add team members to this channel"
-                  >
-                    <UserPlus className="w-4 h-4 md:w-5 md:h-5" />
-                  </button>
-                  <button
-                    onClick={() => setShowNotificationSettings(true)}
-                    className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
-                    aria-label="Notification settings"
-                    title="Manage notification preferences"
-                  >
-                    <Bell className="w-4 h-4 md:w-5 md:h-5" />
-                  </button>
-                  <button
-                    onClick={() => setShowChannelSettings(true)}
-                    className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
-                    aria-label="Channel settings"
-                    title="Channel settings and options"
-                  >
-                    <Settings className="w-4 h-4 md:w-5 md:h-5" />
-                  </button>
-                </div>
-              </div>
+                  <div className="ml-auto flex items-center gap-1 shrink-0">
+                    {/* AI cluster (relocated from VoxModeToolbar) */}
+                    {messages.length > 0 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleSummarizeChannel}
+                          disabled={isGeneratingAI}
+                          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition"
+                          title="AI summarize channel"
+                        >
+                          {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <AlignLeft className="w-3 h-3" />}
+                          <span className="hidden lg:inline">Summarize</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleGenerateSmartReplies}
+                          disabled={isGeneratingAI}
+                          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition"
+                          title="Generate smart replies"
+                        >
+                          <Reply className="w-3 h-3" />
+                          <span className="hidden lg:inline">Reply</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleGenerateMeetingNotes}
+                          disabled={isGeneratingMeetingNotes}
+                          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition"
+                          title="Generate meeting notes"
+                        >
+                          {isGeneratingMeetingNotes ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckSquare className="w-3 h-3" />}
+                          <span className="hidden lg:inline">Notes</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => (isSelectionMode ? exitSelectionMode() : enterSelectionMode())}
+                          title={isSelectionMode ? 'Exit selection' : 'Select messages'}
+                          aria-label={isSelectionMode ? 'Exit selection' : 'Select messages'}
+                          className={`p-1.5 rounded-md transition ${
+                            isSelectionMode
+                              ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                              : `${tc.textMuted} hover:bg-zinc-100 dark:hover:bg-zinc-900`
+                          }`}
+                        >
+                          <CheckCheck className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowAddMember(true)}
+                      className={`p-1.5 rounded-md ${tc.btnGhost}`}
+                      aria-label="Add member"
+                      title="Add team members"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowNotificationSettings(true)}
+                      className={`p-1.5 rounded-md ${tc.btnGhost}`}
+                      aria-label="Notification settings"
+                      title="Notifications"
+                    >
+                      <Bell className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      className={`p-1.5 rounded-md ${tc.btnGhost}`}
+                      aria-label="Bookmark channel"
+                      title="Bookmark"
+                    >
+                      <Bookmark className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowChannelSettings(true)}
+                      className={`p-1.5 rounded-md ${tc.btnGhost}`}
+                      aria-label="Channel settings"
+                      title="Channel settings"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                    {!membersInline && (
+                      <button
+                        type="button"
+                        onClick={() => setShowMembersDrawer(true)}
+                        className={`p-1.5 rounded-md ${tc.btnGhost}`}
+                        aria-label="Show members"
+                        title="Members"
+                      >
+                        <Users className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </header>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-6">
                 {messages.length === 0 ? (
-                  <VoxEmptyState
-                    {...emptyConfig}
-                    isDarkMode={isDarkMode}
-                    action={{ label: 'Start Recording', onClick: () => { if (recordingState === 'idle') startRecording(); } }}
-                  />
+                  <div className={`flex flex-col items-center text-center pt-8 ${tc.textMuted}`}>
+                    <Hash className="w-8 h-8 mb-2 opacity-50" />
+                    <div className={`text-sm ${tc.textSecondary}`}>#{selectedChannel.name} is quiet</div>
+                    <div className="text-[11px] mt-1">Be the first to post a voice</div>
+                  </div>
                 ) : (
-                  // TODO(impeccable phase 3 task 6 — RelayVoiceMessage migration):
-                  // Migrate this Channel message render to <RelayVoiceMessage />
-                  // from `./RelayVoiceMessage`. Surface slots needed:
-                  // messageTypePill (already supported), audienceMeta (mentions),
-                  // plus pending API additions: meeting-notes button slot and
-                  // chapters trigger slot in footerExtras. Do this after the
-                  // surface-migration API gap noted at the top of
-                  // RelayVoiceMessage.tsx is filled.
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {messages.map((message, index) => {
                       const showDate = index === 0 ||
                         formatDate(message.createdAt) !== formatDate(messages[index - 1].createdAt);
@@ -1105,35 +1150,38 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                             </div>
                           )}
 
-                          <div className="group relative mb-1">
-                            <RelayVoiceMessage
-                              id={message.id}
-                              audioUrl={message.audioUrl}
-                              duration={message.duration}
-                              timestamp={message.createdAt}
-                              sender="other"
-                              senderName={message.senderName}
+                          <div className="relative">
+                            <StudioMessageCard
+                              active={isMsgActive(message.id)}
                               isPlaying={isMsgPlaying(message.id)}
+                              progress={isMsgActive(message.id) ? studio.progress : 0}
+                              canPlay={!!message.audioUrl}
                               onPlay={() => handlePlayMessage(message)}
-                              onPause={() => handlePlayMessage(message)}
-                              isActive={isMsgActive(message.id)}
-                              progress={studio.progress}
-                              transcript={message.transcript || undefined}
-                              waveformSeed={message.id}
-                              isDarkMode={isDarkMode}
-                              maxWidth="100%"
-                              onMore={!isSelectionMode ? (e) => {
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                setMenuAnchorRect(rect);
-                                setShowMessageMenu(showMessageMenu === message.id ? null : message.id);
-                              } : undefined}
-                              messageTypePill={
+                              avatar={{
+                                label: initials(message.senderName),
+                                colorClass: avatarColorForId(message.senderId),
+                              }}
+                              title={message.senderName}
+                              meta={`${formatTime(message.createdAt)} · ${formatDuration(message.duration)}`}
+                              waveSeed={message.id}
+                              waveCount={60}
+                              playSize="md"
+                              bodyIndent={48}
+                              pills={
                                 <>
+                                  {message.mentions.length > 0 && (
+                                    <span
+                                      className="px-1.5 py-0.5 rounded font-mono text-[9px] uppercase tracking-[0.1em]"
+                                      style={{ background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }}
+                                    >
+                                      @Mention
+                                    </span>
+                                  )}
                                   {message.messageType === 'standup' && (
-                                    <span className="px-2 py-0.5 text-xs bg-[#f43f5e]/20 text-[#f43f5e] rounded-full">Standup</span>
+                                    <span className="px-2 py-0.5 text-[10px] rounded-full bg-[#f43f5e]/15 text-[#e11d48] dark:text-[#fb7185]">Standup</span>
                                   )}
                                   {message.messageType === 'announcement' && (
-                                    <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-500 rounded-full">Announcement</span>
+                                    <span className="px-2 py-0.5 text-[10px] rounded-full bg-red-500/15 text-red-500">Announcement</span>
                                   )}
                                 </>
                               }
@@ -1166,8 +1214,62 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                   {isSelected(message.id) && <Check className="w-4 h-4 text-white" />}
                                 </button>
                               ) : undefined}
-                              audienceMeta={message.actionItems && message.actionItems.length > 0 ? (
-                                <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-900/50' : 'bg-gray-100/80'}`}>
+                              actions={!isSelectionMode ? (
+                                <div className="absolute right-3 top-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setReactionPickerMessageId(
+                                        reactionPickerMessageId === message.id ? null : message.id
+                                      );
+                                    }}
+                                    className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                                    aria-label="Add reaction"
+                                    title="Add reaction"
+                                  >
+                                    <Smile className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setMenuAnchorRect(rect);
+                                      setShowMessageMenu(showMessageMenu === message.id ? null : message.id);
+                                    }}
+                                    className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                                    aria-label="More actions"
+                                  >
+                                    <MoreVertical className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : undefined}
+                            >
+                              {/* Transcript with inline @mention highlighting */}
+                              {message.transcript && (
+                                <div className={`text-[13px] leading-relaxed ${tc.text}`}>
+                                  {message.mentions.length > 0
+                                    ? message.transcript.split(/(@\w+)/).map((s, i) =>
+                                        /^@\w+$/.test(s) ? (
+                                          <span
+                                            key={i}
+                                            className="px-1 rounded"
+                                            style={{ background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }}
+                                          >
+                                            {s}
+                                          </span>
+                                        ) : (
+                                          <span key={i}>{s}</span>
+                                        )
+                                      )
+                                    : message.transcript}
+                                </div>
+                              )}
+
+                              {/* Action items (standup extraction) */}
+                              {message.actionItems && message.actionItems.length > 0 && (
+                                <div className={`mt-2 p-3 rounded-lg ${isDarkMode ? 'bg-gray-900/50' : 'bg-gray-100/80'}`}>
                                   <h4 className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: MODE_COLOR }}>
                                     <CheckSquare className="w-3 h-3" />
                                     Action Items
@@ -1181,159 +1283,99 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                     ))}
                                   </ul>
                                 </div>
-                              ) : undefined}
-                              footerExtras={
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <PlaybackSpeedControl
-                                    speed={studio.playbackRate}
-                                    onSpeedChange={studio.setPlaybackRate}
-                                    compact
-                                    isDarkMode={isDarkMode}
-                                  />
-                                  {message.transcript && message.duration >= 30 && (
+                              )}
+
+                              {/* Footer extras: speed control + chapters */}
+                              <div className="flex items-center gap-2 flex-wrap mt-2">
+                                <PlaybackSpeedControl
+                                  speed={studio.playbackRate}
+                                  onSpeedChange={studio.setPlaybackRate}
+                                  compact
+                                  isDarkMode={isDarkMode}
+                                />
+                                {message.transcript && message.duration >= 30 && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); handleGenerateChapters(message); }}
+                                    className="flex items-center gap-1 text-xs hover:underline"
+                                    style={{ color: MODE_COLOR }}
+                                    title="Generate AI chapter markers for this message"
+                                  >
+                                    <List className="w-3 h-3" />
+                                    {chapterMessageId === message.id
+                                      ? 'Chapters shown ↓'
+                                      : `Generate Chapters (${Math.round(message.duration)}s)`}
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Reactions */}
+                              {(Object.keys(message.reactions).length > 0 || reactionPickerMessageId === message.id) && (
+                                <div className="flex items-center gap-1 flex-wrap mt-2 relative">
+                                  {Object.entries(message.reactions).map(([emoji, userIds]) => (
                                     <button
-                                      type="button"
-                                      onClick={() => handleGenerateChapters(message)}
-                                      className="flex items-center gap-1 text-xs hover:underline"
-                                      style={{ color: MODE_COLOR }}
-                                      title="Generate AI chapter markers for this message"
-                                    >
-                                      <List className="w-3 h-3" />
-                                      {chapterMessageId === message.id
-                                        ? 'Chapters shown ↓'
-                                        : `Generate Chapters (${Math.round(message.duration)}s)`}
-                                    </button>
-                                  )}
-                                </div>
-                              }
-                              reactionsDisplay={
-                                Object.keys(message.reactions).length > 0 ? (
-                                  <div className="flex items-center gap-1 flex-wrap">
-                                    {Object.entries(message.reactions).map(([emoji, userIds]) => (
-                                      <button
-                                        key={emoji}
-                                        className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${tc.cardBg} border ${tc.border} ${tc.hoverBg}`}
-                                        onClick={() => {
-                                          const userId = voxModeService.getUserId();
-                                          setMessages((prev) =>
-                                            prev.map((m) => {
-                                              if (m.id !== message.id) return m;
-                                              const reactions = { ...m.reactions };
-                                              const existing = reactions[emoji] || [];
-                                              if (existing.includes(userId)) {
-                                                reactions[emoji] = existing.filter((id: string) => id !== userId);
-                                                if (reactions[emoji].length === 0) delete reactions[emoji];
-                                              } else {
-                                                reactions[emoji] = [...existing, userId];
-                                              }
-                                              return { ...m, reactions };
-                                            })
-                                          );
-                                        }}
-                                      >
-                                        <span>{emoji}</span>
-                                        <span className={tc.textMuted}>{userIds.length}</span>
-                                      </button>
-                                    ))}
-                                    <div className="relative">
-                                      <button
-                                        className={`p-1 rounded-full ${tc.btnGhost}`}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setReactionPickerMessageId(
-                                            reactionPickerMessageId === message.id ? null : message.id
-                                          );
-                                        }}
-                                        title="Add reaction"
-                                      >
-                                        <Smile className={`w-4 h-4 ${tc.textMuted}`} />
-                                      </button>
-                                      {reactionPickerMessageId === message.id && (
-                                        <div
-                                          className={`absolute bottom-full left-0 mb-1 flex gap-1 p-2 rounded-xl border ${tc.cardBg} ${tc.border} shadow-lg z-20`}
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          {['👍', '❤️', '😂', '🔥', '👏', '🎉'].map((emoji) => (
-                                            <button
-                                              key={emoji}
-                                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f43f5e]/20 transition-colors text-lg"
-                                              onClick={() => {
-                                                const userId = voxModeService.getUserId();
-                                                setMessages((prev) =>
-                                                  prev.map((m) => {
-                                                    if (m.id !== message.id) return m;
-                                                    const reactions = { ...m.reactions };
-                                                    const existing = reactions[emoji] || [];
-                                                    if (existing.includes(userId)) {
-                                                      reactions[emoji] = existing.filter((id: string) => id !== userId);
-                                                      if (reactions[emoji].length === 0) delete reactions[emoji];
-                                                    } else {
-                                                      reactions[emoji] = [...existing, userId];
-                                                    }
-                                                    return { ...m, reactions };
-                                                  })
-                                                );
-                                                setReactionPickerMessageId(null);
-                                              }}
-                                            >
-                                              {emoji}
-                                            </button>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="relative">
-                                    <button
-                                      className={`p-1 rounded-full ${tc.btnGhost} opacity-0 group-hover:opacity-100 transition-opacity`}
+                                      key={emoji}
+                                      className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${tc.cardBg} border ${tc.border} ${tc.hoverBg}`}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setReactionPickerMessageId(
-                                          reactionPickerMessageId === message.id ? null : message.id
+                                        const userId = voxModeService.getUserId();
+                                        setMessages((prev) =>
+                                          prev.map((m) => {
+                                            if (m.id !== message.id) return m;
+                                            const reactions = { ...m.reactions };
+                                            const existing = reactions[emoji] || [];
+                                            if (existing.includes(userId)) {
+                                              reactions[emoji] = existing.filter((id: string) => id !== userId);
+                                              if (reactions[emoji].length === 0) delete reactions[emoji];
+                                            } else {
+                                              reactions[emoji] = [...existing, userId];
+                                            }
+                                            return { ...m, reactions };
+                                          })
                                         );
                                       }}
-                                      title="Add reaction"
                                     >
-                                      <Smile className={`w-4 h-4 ${tc.textMuted}`} />
+                                      <span>{emoji}</span>
+                                      <span className={tc.textMuted}>{userIds.length}</span>
                                     </button>
-                                    {reactionPickerMessageId === message.id && (
-                                      <div
-                                        className={`absolute bottom-full left-0 mb-1 flex gap-1 p-2 rounded-xl border ${tc.cardBg} ${tc.border} shadow-lg z-20`}
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        {['👍', '❤️', '😂', '🔥', '👏', '🎉'].map((emoji) => (
-                                          <button
-                                            key={emoji}
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f43f5e]/20 transition-colors text-lg"
-                                            onClick={() => {
-                                              const userId = voxModeService.getUserId();
-                                              setMessages((prev) =>
-                                                prev.map((m) => {
-                                                  if (m.id !== message.id) return m;
-                                                  const reactions = { ...m.reactions };
-                                                  const existing = reactions[emoji] || [];
-                                                  if (existing.includes(userId)) {
-                                                    reactions[emoji] = existing.filter((id: string) => id !== userId);
-                                                    if (reactions[emoji].length === 0) delete reactions[emoji];
-                                                  } else {
-                                                    reactions[emoji] = [...existing, userId];
-                                                  }
-                                                  return { ...m, reactions };
-                                                })
-                                              );
-                                              setReactionPickerMessageId(null);
-                                            }}
-                                          >
-                                            {emoji}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )
-                              }
-                            />
+                                  ))}
+                                  {reactionPickerMessageId === message.id && (
+                                    <div
+                                      className={`flex gap-1 p-2 rounded-xl border ${tc.cardBg} ${tc.border} shadow-lg`}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {['👍', '❤️', '😂', '🔥', '👏', '🎉'].map((emoji) => (
+                                        <button
+                                          key={emoji}
+                                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f43f5e]/20 transition-colors text-lg"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const userId = voxModeService.getUserId();
+                                            setMessages((prev) =>
+                                              prev.map((m) => {
+                                                if (m.id !== message.id) return m;
+                                                const reactions = { ...m.reactions };
+                                                const existing = reactions[emoji] || [];
+                                                if (existing.includes(userId)) {
+                                                  reactions[emoji] = existing.filter((id: string) => id !== userId);
+                                                  if (reactions[emoji].length === 0) delete reactions[emoji];
+                                                } else {
+                                                  reactions[emoji] = [...existing, userId];
+                                                }
+                                                return { ...m, reactions };
+                                              })
+                                            );
+                                            setReactionPickerMessageId(null);
+                                          }}
+                                        >
+                                          {emoji}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </StudioMessageCard>
 
                             {/* More menu — sibling overlay anchored to the More button */}
                             {!isSelectionMode && showMessageMenu === message.id && (
@@ -1439,76 +1481,35 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
           )}
         </div>
 
-        {/* Members rail — Path C 3rd column (Tier 3). Members resolve from the
-            channel/workspace memberIds × loaded contacts. No online/offline
-            split: presence isn't wired here and we don't fabricate it. The
-            Channel AI digest reuses the generated channel summary (coral is
-            sanctioned for AI output). As the 3rd column it only appears when
-            the body is wide enough for all three (bodyWidth >= 880); on a
-            tighter pane it folds away so the thread keeps usable width. */}
-        {selectedChannel && (() => {
-          const ids: string[] = (selectedChannel.memberIds?.length
-            ? selectedChannel.memberIds
-            : selectedWorkspace?.memberIds) ?? [];
-          const members = ids
-            .map((id) => pulseContacts.find((c: any) => c.id === id))
-            .filter(Boolean) as any[];
-          return (
-            <aside className={`${!studio.singlePane && studio.bodyWidth >= 880 ? 'flex' : 'hidden'} w-52 shrink-0 flex-col border-l ${tc.border} ${tc.panelBg} overflow-y-auto`}>
-              <div className={`px-3 py-2.5 text-[10px] font-mono uppercase tracking-[0.18em] ${tc.textMuted}`}>
-                Members · {ids.length}
-              </div>
-              <div className="px-1.5 pb-2">
-                {members.length === 0 ? (
-                  <p className={`px-2 py-2 text-[11px] ${tc.textMuted} leading-relaxed`}>
-                    {ids.length > 0
-                      ? 'Member profiles sync from your contacts.'
-                      : 'No members yet — add teammates from the channel header.'}
-                  </p>
-                ) : (
-                  members.map((m) => (
-                    <div key={m.id} className="flex items-center gap-2 px-2 py-1.5">
-                      <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
-                        style={{ backgroundColor: m.avatarColor || MODE_COLOR }}
-                        aria-hidden="true"
-                      >
-                        {(m.name || '?').charAt(0).toUpperCase()}
-                      </div>
-                      <span className={`text-[12px] truncate flex-1 ${tc.text}`}>{m.name}</span>
-                      {m.role && (
-                        <span className={`text-[9px] font-mono uppercase tracking-[0.1em] shrink-0 ${tc.textMuted}`}>
-                          {m.role}
-                        </span>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
+        {/* Members rail (col 3) — Path C members + Channel-AI digest. Inline
+            when the pane is wide enough; otherwise a reachable right drawer
+            (header Users button). Presence (online/offline) is NOT wired
+            server-side, so we render one resolved member list rather than
+            fabricate green dots. */}
+        {selectedChannel && membersInline && (
+          <aside className={`w-[220px] shrink-0 flex flex-col border-l ${tc.border} ${tc.panelBg}`}>
+            {renderMembersRail()}
+          </aside>
+        )}
 
-              <div className={`px-3 pt-3 pb-1 text-[10px] font-mono uppercase tracking-[0.18em] ${tc.textMuted}`}>
-                Channel AI
+        {selectedChannel && !membersInline && showMembersDrawer && (
+          <div className="absolute inset-0 z-40 flex justify-end">
+            <div className={tc.modalOverlay} onClick={() => setShowMembersDrawer(false)} />
+            <div className={`relative w-[280px] max-w-[85%] ${tc.panelBg} border-l ${tc.border} flex flex-col animate-slide-in`}>
+              <div className="px-3 pt-3 flex items-center justify-end">
+                <button
+                  onClick={() => setShowMembersDrawer(false)}
+                  className={`p-1.5 rounded-md ${tc.btnGhost}`}
+                  type="button"
+                  aria-label="Close members"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <div className="px-2 pb-3">
-                {conversationSummary ? (
-                  <div className="rounded-lg p-3" style={{ background: 'var(--pulse-coral-bg-12)' }}>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Sparkles className="w-3 h-3" style={{ color: 'var(--pulse-coral-fg)' }} />
-                      <span className="text-[9px] font-mono uppercase tracking-[0.1em]" style={{ color: 'var(--pulse-coral-fg)' }}>
-                        Digest
-                      </span>
-                    </div>
-                    <p className={`text-[11.5px] leading-snug ${tc.text}`}>{conversationSummary.overview}</p>
-                  </div>
-                ) : (
-                  <p className={`px-1 text-[11px] ${tc.textMuted} leading-relaxed`}>
-                    Run <span className="font-medium">Summarize</span> in the toolbar to generate a channel digest.
-                  </p>
-                )}
-              </div>
-            </aside>
-          );
-        })()}
+              {renderMembersRail()}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Audio playback is owned by the shared RelayStudioProvider (single
