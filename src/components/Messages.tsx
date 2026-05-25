@@ -169,7 +169,7 @@ import { TagPicker, TagPills } from './Messages/TagPills';
 import { tagsService, type TagDefinition } from '../services/tagsService';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 
-import { Archive, ArrowLeft, ArrowRight, ArrowUp, AtSign, BarChart, Bold, Bot, Check, CheckCheck, CheckCircle, CheckCircle2, Clock, Copy, Crosshair, Download, Ellipsis, Eye, File, FileOutput, FileText, Flag, Gavel, GitFork, GraduationCap, Handshake, Hash, HeartPulse, History, Image, Keyboard, Languages, Layers, LayoutGrid, Lightbulb, Link, ListChecks, Loader2, Lock, LogOut, Mail, Menu, MessageCircle, MessageSquare, MessagesSquare, Pen, PenTool, Play, Plus, Reply, Rocket, Scale, Search, Send, Share, SlidersHorizontal, Smartphone, Smile, Sparkles, Square, SquarePen, Star, Target, Terminal, ThumbsDown, ThumbsUp, Timer, Trash2, TrendingUp, Trophy, UserPlus, UserX, Users, Video, Wand2, Wrench, X, Zap } from 'lucide-react';
+import { Archive, ArrowLeft, ArrowRight, ArrowUp, AtSign, BarChart, Bold, Bot, Check, CheckCheck, CheckCircle, CheckCircle2, Clock, Copy, Crosshair, Download, Ellipsis, Eye, File, FileOutput, FileText, Flag, Gavel, GitFork, GraduationCap, Handshake, Hash, HeartPulse, History, Image, Keyboard, Languages, Layers, LayoutGrid, Lightbulb, Link, ListChecks, Loader2, Lock, LogOut, Mail, Menu, MessageCircle, MessageSquare, MessagesSquare, PanelRightOpen, Pen, PenTool, Play, Plus, Reply, Rocket, Scale, Search, Send, Share, SlidersHorizontal, Smartphone, Smile, Sparkles, Square, SquarePen, Star, Target, Terminal, ThumbsDown, ThumbsUp, Timer, Trash2, TrendingUp, Trophy, UserPlus, UserX, Users, Video, Wand2, Wrench, X, Zap } from 'lucide-react';
 
 // Extracted Modals
 import {
@@ -1944,6 +1944,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // (PulseMessage) carries neither, so it yields pace + the "all clear"
   // empty state until the Decisions & Tasks surface is wired per-contact.
   const [railCollapsed, setRailCollapsed] = useState(false);
+  // Mobile/tablet: the docked rail is hidden below xl; this opens it as a sheet.
+  const [railSheetOpen, setRailSheetOpen] = useState(false);
   const railMessages: RailMessage[] = useMemo(() => {
     if (activeThread) {
       return activeThread.messages.map(m => ({
@@ -1980,6 +1982,28 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     activePulseConv?.other_user?.full_name ||
     activeThread?.name ||
     undefined;
+
+  // Path D step 4 — open-items become interactive. The legacy inline-task flow
+  // is local-only (handleExtractTask never persists a Task row; it just stamps
+  // relatedTaskId onto the message), so "completing" an open item clears that
+  // message's task link, dropping it from the rail. Real per-contact task
+  // persistence + completion is the deferred schema follow-up. Pulse DMs carry
+  // no task data, so this only fires on the legacy-thread path.
+  const handleToggleOpenItem = useCallback((messageId: string) => {
+    if (!activeThreadId) return;
+    setThreads(prev =>
+      prev.map(t =>
+        t.id === activeThreadId
+          ? {
+              ...t,
+              messages: t.messages.map(m =>
+                m.id === messageId ? { ...m, relatedTaskId: undefined } : m,
+              ),
+            }
+          : t,
+      ),
+    );
+  }, [activeThreadId]);
 
   // Generate smart compose suggestions with debounce
   useEffect(() => {
@@ -3601,6 +3625,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
             {/* Header Action Buttons */}
             <div className="flex items-center gap-2">
+              {/* Path D: relationship rail trigger — mobile/tablet only (the
+                  docked rail is hidden below xl). Opens the rail as a sheet. */}
+              <button
+                type="button"
+                onClick={() => setRailSheetOpen(true)}
+                className="xl:hidden w-12 h-12 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                title="Relationship"
+                aria-label="Show relationship panel"
+              >
+                <PanelRightOpen className="text-zinc-600 dark:text-zinc-400 w-5 h-5" />
+              </button>
               {/* Phase 7b: Tag picker — only when there's an active
                *  workspace (tag definitions are workspace-scoped). */}
               {activePulseConversation && currentWorkspace && (
@@ -4993,6 +5028,26 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
           {/* Header Actions - Clean with Tools Drawer */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {/* Path D: relationship rail trigger — mobile/tablet only (the docked
+                rail is hidden below xl). Opens the rail as a sheet; badges open
+                items. */}
+            <button
+              type="button"
+              onClick={() => setRailSheetOpen(true)}
+              className="xl:hidden relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+              title="Relationship"
+              aria-label="Show relationship panel"
+            >
+              <PanelRightOpen className="w-4 h-4" />
+              {relationshipData.openItems.length > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-0.5 rounded-full inline-flex items-center justify-center text-[9px] font-mono font-semibold tabular-nums"
+                  style={{ color: 'var(--pulse-tone-warning)', background: 'var(--pulse-tone-warning-soft)' }}
+                >
+                  {relationshipData.openItems.length}
+                </span>
+              )}
+            </button>
             {/* Tools Drawer Button - Always visible.
                 Routes to new ToolsMenuV2 dialog when toolsMenuV2 flag is on,
                 else opens the legacy 11-tile drawer. */}
@@ -5543,18 +5598,46 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       )}
 
       {/* Path D relationship rail — docked rightmost column, only when a
-          conversation is open (Tranche 3b). Collapsible; read-only for now.
-          Hidden below xl: a 3rd ~280px column needs the width, and on
-          mobile/tablet the conversation takes priority (a rail-as-sheet is
-          the documented mobile follow-up). */}
+          conversation is open (Tranche 3b). Collapsible; open-items are
+          interactive on legacy threads (step 4). Hidden below xl, where the
+          conversation takes priority — the rail-as-sheet below covers mobile. */}
       {(activePulseConv || activeThread) && (
         <RelationshipRail
           data={relationshipData}
           contactName={railContactName}
           collapsed={railCollapsed}
           onToggleCollapse={() => setRailCollapsed(c => !c)}
+          onToggleOpenItem={activeThread ? handleToggleOpenItem : undefined}
           className="max-xl:hidden"
         />
+      )}
+
+      {/* Path D relationship rail-as-sheet — mobile/tablet (below xl). Slides in
+          over the conversation; the backdrop or the panel's close button
+          dismisses it. Mirrors the docked rail's content + interactivity. */}
+      {(activePulseConv || activeThread) && railSheetOpen && (
+        <div
+          className="xl:hidden fixed inset-0 z-50 flex justify-end"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Relationship"
+        >
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setRailSheetOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="relative h-full animate-slide-in-right">
+            <RelationshipRail
+              data={relationshipData}
+              contactName={railContactName}
+              collapsed={false}
+              onToggleCollapse={() => setRailSheetOpen(false)}
+              onToggleOpenItem={activeThread ? handleToggleOpenItem : undefined}
+              className="h-full shadow-2xl"
+            />
+          </div>
+        </div>
       )}
 
       <MessagesEndModals
