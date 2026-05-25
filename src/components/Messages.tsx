@@ -184,7 +184,7 @@ import { ConversationSidebar } from './Messages/ConversationSidebar';
 import { RelationshipRail } from './Messages/RelationshipRail';
 import { deriveRelationship, type RailMessage } from './Messages/useRelationshipData';
 import { SpineNode } from './Messages/ConversationSpine';
-import { detectMoments } from './Messages/useConversationMoments';
+import { useConversationMoments } from './Messages/useConversationMoments';
 import { MessageInputSection } from './Messages/MessageInputSection';
 import { MESSAGE_TEMPLATES as MSG_TEMPLATES_CONST, REACTION_CATEGORIES as REACTION_CATS_CONST, generateSmartTemplateText as genSmartTemplate } from './Messages/messageConstants';
 import { usePulseMessagesStore } from '../store/pulseMessagesStore';
@@ -1968,8 +1968,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     return [];
   }, [activeThread, activePulseConv, pulseMessages, currentUser?.id]);
   const relationshipData = useMemo(() => deriveRelationship(railMessages), [railMessages]);
-  // Path D intelligence spine — moments anchored to message ids (1b).
-  const conversationMoments = useMemo(() => detectMoments(railMessages), [railMessages]);
+  // Path D intelligence spine — heuristics paint immediately, then the
+  // ai-router-backed detector (server-side; no client key) upgrades them in
+  // place (Phase 2). Gated off bot chats; falls back to heuristics on failure.
+  const conversationMoments = useConversationMoments(railMessages, {
+    conversationId: activePulseConversation || activeThreadId || null,
+    enabled: !!(activePulseConv || activeThread) && !isBotChat,
+  });
   const railContactName =
     activePulseConv?.other_user?.display_name ||
     activePulseConv?.other_user?.full_name ||
