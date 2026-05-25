@@ -60,6 +60,7 @@ import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { useRelayStudio, useRelayModeRecorder } from './studio';
+import { RelayVoiceMessage } from './RelayVoiceMessage';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
@@ -1104,166 +1105,110 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                             </div>
                           )}
 
-                          <div
-                            className={`group rounded-xl p-4 ${tc.cardBg} border ${tc.border} ${getMessageTypeStyle(message.messageType)} relative transition-shadow`}
-                            style={isMsgActive(message.id)
-                              ? { boxShadow: '0 0 0 1px var(--pulse-rose), 0 8px 28px var(--pulse-rose-glow)', borderColor: 'transparent' }
-                              : undefined}
-                          >
-                            {/* Phase 2: Selection Checkbox */}
-                            {isSelectionMode && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const selectionItem: VoxSelectionItem = {
-                                    id: message.id,
-                                    type: 'audio' as const,
-                                    url: message.audioUrl,
-                                    duration: message.duration,
-                                    timestamp: message.createdAt,
-                                    sender: message.senderId === voxModeService.getUserId() ? 'me' : 'other',
-                                    transcript: message.transcript,
-                                    mode: 'team_vox' as const,
-                                    contactId: selectedChannel?.id,
-                                    contactName: selectedChannel?.name,
-                                  };
-                                  toggleSelection(selectionItem);
-                                }}
-                                className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
-                                  isSelected(message.id)
-                                    ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
-                                    : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
-                                }`}
-                                style={{
-                                  boxShadow: isSelected(message.id)
-                                    ? '0 4px 12px rgba(249, 115, 22, 0.4)'
-                                    : '0 2px 8px rgba(0, 0, 0, 0.2)',
-                                }}
-                              >
-                                {isSelected(message.id) && <Check className="w-5 h-5 text-white font-bold" />}
-                              </button>
-                            )}
-
-                            <div className="flex items-start gap-3">
-                              <div
-                                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium shrink-0"
-                                style={{ backgroundColor: MODE_COLOR }}
-                              >
-                                {message.senderName.charAt(0)}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <span className={`font-semibold ${tc.text}`}>
-                                    {message.senderName}
-                                  </span>
+                          <div className="group relative mb-1">
+                            <RelayVoiceMessage
+                              id={message.id}
+                              audioUrl={message.audioUrl}
+                              duration={message.duration}
+                              timestamp={message.createdAt}
+                              sender="other"
+                              senderName={message.senderName}
+                              isPlaying={isMsgPlaying(message.id)}
+                              onPlay={() => handlePlayMessage(message)}
+                              onPause={() => handlePlayMessage(message)}
+                              isActive={isMsgActive(message.id)}
+                              progress={studio.progress}
+                              transcript={message.transcript || undefined}
+                              waveformSeed={message.id}
+                              isDarkMode={isDarkMode}
+                              maxWidth="100%"
+                              onMore={!isSelectionMode ? (e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setMenuAnchorRect(rect);
+                                setShowMessageMenu(showMessageMenu === message.id ? null : message.id);
+                              } : undefined}
+                              messageTypePill={
+                                <>
                                   {message.messageType === 'standup' && (
-                                    <span className="px-2 py-0.5 text-xs bg-[#f43f5e]/20 text-[#f43f5e] rounded-full">
-                                      Standup
-                                    </span>
+                                    <span className="px-2 py-0.5 text-xs bg-[#f43f5e]/20 text-[#f43f5e] rounded-full">Standup</span>
                                   )}
                                   {message.messageType === 'announcement' && (
-                                    <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-500 rounded-full">
-                                      Announcement
-                                    </span>
+                                    <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-500 rounded-full">Announcement</span>
                                   )}
-                                  <span className={`text-xs ${tc.textMuted}`}>
-                                    {formatTime(message.createdAt)}
-                                  </span>
+                                </>
+                              }
+                              selectionCheckbox={isSelectionMode ? (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const selectionItem: VoxSelectionItem = {
+                                      id: message.id,
+                                      type: 'audio' as const,
+                                      url: message.audioUrl,
+                                      duration: message.duration,
+                                      timestamp: message.createdAt,
+                                      sender: message.senderId === voxModeService.getUserId() ? 'me' : 'other',
+                                      transcript: message.transcript,
+                                      mode: 'team_vox' as const,
+                                      contactId: selectedChannel?.id,
+                                      contactName: selectedChannel?.name,
+                                    };
+                                    toggleSelection(selectionItem);
+                                  }}
+                                  className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-all ${
+                                    isSelected(message.id)
+                                      ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
+                                      : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
+                                  }`}
+                                  aria-label={isSelected(message.id) ? 'Deselect message' : 'Select message'}
+                                >
+                                  {isSelected(message.id) && <Check className="w-4 h-4 text-white" />}
+                                </button>
+                              ) : undefined}
+                              audienceMeta={message.actionItems && message.actionItems.length > 0 ? (
+                                <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-900/50' : 'bg-gray-100/80'}`}>
+                                  <h4 className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: MODE_COLOR }}>
+                                    <CheckSquare className="w-3 h-3" />
+                                    Action Items
+                                  </h4>
+                                  <ul className="space-y-1">
+                                    {message.actionItems.map((item, i) => (
+                                      <li key={i} className={`text-xs ${tc.textSecondary} flex items-start gap-2`}>
+                                        <span className={tc.textMuted}>•</span>
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
                                 </div>
-
-                                {/* Audio Player */}
-                                <div className="flex items-center gap-2 md:gap-3 mb-2">
-                                  <button
-                                    onClick={() => handlePlayMessage(message)}
-                                    className="w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200"
-                                    style={{
-                                      background: isMsgPlaying(message.id)
-                                        ? MODE_COLOR
-                                        : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)',
-                                      boxShadow: isMsgPlaying(message.id) ? `0 4px 12px ${MODE_COLOR}50` : 'none'
-                                    }}
-                                  >
-                                    {isMsgPlaying(message.id) ? (
-                                      <Pause className="w-4 h-4 text-white" />
-                                    ) : (
-                                      <Play className={`w-4 h-4 ml-0.5 ${isMsgPlaying(message.id) ? 'text-white' : tc.text}`} />
-                                    )}
-                                  </button>
-                                  <div className="flex-1 min-w-0">
-                                    <VoxAudioVisualizer
-                                      analyser={null}
-                                      isActive={false}
-                                      isPlaying={isMsgPlaying(message.id)}
-                                      playbackProgress={isMsgActive(message.id) ? studio.progress : 0}
-                                      mode="waveform"
-                                      color={MODE_COLOR}
-                                      height={32}
-                                      isDarkMode={isDarkMode}
-                                    />
-                                  </div>
-                                  {/* Phase 6: Playback Speed Control */}
+                              ) : undefined}
+                              footerExtras={
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <PlaybackSpeedControl
                                     speed={studio.playbackRate}
                                     onSpeedChange={studio.setPlaybackRate}
                                     compact
                                     isDarkMode={isDarkMode}
                                   />
-                                  <span className={`text-xs ${tc.textMuted} shrink-0`}>
-                                    {formatDuration(message.duration)}
-                                  </span>
+                                  {message.transcript && message.duration >= 30 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleGenerateChapters(message)}
+                                      className="flex items-center gap-1 text-xs hover:underline"
+                                      style={{ color: MODE_COLOR }}
+                                      title="Generate AI chapter markers for this message"
+                                    >
+                                      <List className="w-3 h-3" />
+                                      {chapterMessageId === message.id
+                                        ? 'Chapters shown ↓'
+                                        : `Generate Chapters (${Math.round(message.duration)}s)`}
+                                    </button>
+                                  )}
                                 </div>
-
-                                {/* Transcript — labeled as machine-generated so the
-                                    feed differentiates AI text from the sender's voice. */}
-                                {message.transcript && (
-                                  <div className="mb-2">
-                                    <div className="mb-1">
-                                      <AIProvenanceChip vendor="PULSE AI" type="TRANSCRIPT" />
-                                    </div>
-                                    <p className={`text-sm ${tc.textSecondary}`}>
-                                      {message.transcript}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* AI Chapters button — for transcribed messages >= 30s */}
-                                {message.transcript && message.duration >= 30 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleGenerateChapters(message)}
-                                    className="mb-2 flex items-center gap-1 text-xs hover:underline"
-                                    style={{ color: MODE_COLOR }}
-                                    title="Generate AI chapter markers for this message"
-                                  >
-                                    <List className="w-3 h-3" />
-                                    {chapterMessageId === message.id
-                                      ? 'Chapters shown ↓'
-                                      : `Generate Chapters (${Math.round(message.duration)}s)`}
-                                  </button>
-                                )}
-
-                                {/* Action Items */}
-                                {message.actionItems && message.actionItems.length > 0 && (
-                                  <div className={`mt-3 p-3 rounded-lg ${isDarkMode ? 'bg-gray-900/50' : 'bg-gray-100/80'}`}>
-                                    <h4 className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: MODE_COLOR }}>
-                                      <CheckSquare className="w-3 h-3" />
-                                      Action Items
-                                    </h4>
-                                    <ul className="space-y-1">
-                                      {message.actionItems.map((item, i) => (
-                                        <li key={i} className={`text-xs ${tc.textSecondary} flex items-start gap-2`}>
-                                          <span className={tc.textMuted}>•</span>
-                                          {item}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-
-                                {/* Reactions */}
-                                {Object.keys(message.reactions).length > 0 ? (
-                                  <div className="flex items-center gap-1 mt-2 flex-wrap">
+                              }
+                              reactionsDisplay={
+                                Object.keys(message.reactions).length > 0 ? (
+                                  <div className="flex items-center gap-1 flex-wrap">
                                     {Object.entries(message.reactions).map(([emoji, userIds]) => (
                                       <button
                                         key={emoji}
@@ -1339,8 +1284,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                     </div>
                                   </div>
                                 ) : (
-                                  /* Y5: Show reaction trigger even when no reactions exist */
-                                  <div className="relative mt-2">
+                                  <div className="relative">
                                     <button
                                       className={`p-1 rounded-full ${tc.btnGhost} opacity-0 group-hover:opacity-100 transition-opacity`}
                                       onClick={(e) => {
@@ -1387,47 +1331,30 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                       </div>
                                     )}
                                   </div>
-                                )}
-                              </div>
-                            </div>
+                                )
+                              }
+                            />
 
-                            {/* More Actions Menu */}
-                            {!isSelectionMode && (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                                    setMenuAnchorRect(rect);
-                                    setShowMessageMenu(showMessageMenu === message.id ? null : message.id);
-                                  }}
-                                  className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity flex-shrink-0 ml-2"
-                                  title="More actions"
-                                >
-                                  <MoreVertical className="w-4 h-4" />
-                                </button>
-                                {showMessageMenu === message.id && (
-                                  <VoxMessageMenu
-                                    isDarkMode={isDarkMode}
-                                    accentColor="#f43f5e"
-                                    anchorRect={menuAnchorRect!}
-                                    onArchive={() => handleArchiveMessage(message)}
-                                    onDownload={() => handleDownloadMessage(message)}
-                                    onDelete={async () => {
-                                      const success = await voxModeService.deleteTeamVoxMessage(message.id);
-                                      if (success) {
-                                        setMessages(prev => prev.filter(m => m.id !== message.id));
-                                        toast.success('Message deleted');
-                                      } else {
-                                        toast.error('Failed to delete message');
-                                      }
-                                      setShowMessageMenu(null);
-                                    }}
-                                    onClose={() => setShowMessageMenu(null)}
-                                  />
-                                )}
-                              </>
+                            {/* More menu — sibling overlay anchored to the More button */}
+                            {!isSelectionMode && showMessageMenu === message.id && (
+                              <VoxMessageMenu
+                                isDarkMode={isDarkMode}
+                                accentColor="#f43f5e"
+                                anchorRect={menuAnchorRect!}
+                                onArchive={() => handleArchiveMessage(message)}
+                                onDownload={() => handleDownloadMessage(message)}
+                                onDelete={async () => {
+                                  const success = await voxModeService.deleteTeamVoxMessage(message.id);
+                                  if (success) {
+                                    setMessages(prev => prev.filter(m => m.id !== message.id));
+                                    toast.success('Message deleted');
+                                  } else {
+                                    toast.error('Failed to delete message');
+                                  }
+                                  setShowMessageMenu(null);
+                                }}
+                                onClose={() => setShowMessageMenu(null)}
+                              />
                             )}
                           </div>
                         </React.Fragment>
