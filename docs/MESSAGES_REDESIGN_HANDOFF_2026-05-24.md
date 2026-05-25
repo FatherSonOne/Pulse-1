@@ -318,3 +318,46 @@ Follow CLAUDE.md: work on main, commit each unit with conventional messages +
 explicit paths (a parallel session may be active — never bare `git commit`,
 never touch files you didn't author), type-check before commit, no --no-verify.
 ```
+
+---
+
+## Status Update — 2026-05-25 (Session 2): Path D steps 2–5 SHIPPED
+
+**This supersedes the continuation prompt above — steps 2 through 5 are done.**
+All landed on `main` as separate conventional commits (legacy surface; V2 frozen).
+
+| Step | Commit | What landed |
+|---|---|---|
+| 1 — spine verified | — | Owner confirmed the spine renders correctly on a DM. |
+| 2 — spine in legacy thread | `5e46db8` | `SpineNode` wired into the legacy `activeThread` render path (mirrors the Pulse-DM wrap: row → `flex` gutter + `SpineNode` + `flex-1`). Legacy threads carry `decisionData`, so DECISION (tone-positive) moments now appear there too. |
+| 3 — spine Phase 2 (AI) | `4ccff32` | `detectMomentsAI` (server-side via `processWithModel` → ai-router; no client key) + a `useConversationMoments` hook: heuristics paint instantly, AI upgrades async (stale-guard + per-conversation cache; gated off bot chats / <4 msgs). `mergeMoments` keeps structured decisions as ground truth + collapses to one trailing needs-reply. **21 unit tests.** |
+| 4 — rail polish | `4d6a158` | Open-items interactive; mobile **rail-as-sheet** (an `xl:hidden` `PanelRightOpen` trigger in both conversation headers opens a right-side slide-in sheet; open-items count badge). |
+| 5a — rail read-path | `b4e9068` | **No schema change needed.** `taskService.getOpenTasksByMessageIds` + `decisionService.getDecisionsByMessageIds` query the real `extracted_tasks` / `decisions` by the conversation's message ids (existing `origin_message_id` / `message_id`, both workspace-RLS'd). Merged into a `railData` memo for the DM path; `handleToggleOpenItem` now completes the real task for DMs (`updateTaskStatus 'done'`). Fixed a latent `railContactName` bug (`Thread.name` → `.contactName`). **6 unit tests.** |
+| 5b — rail write-path | `415d948` | "Create task" / "Propose decision" actions on the live Pulse-DM context menu persist `origin_message_id` / `message_id` (title = trimmed message snippet; `created_by`/`proposed_by` = auth uid for the decisions RLS). The rail now lights up per-conversation. |
+
+**Key discoveries (corrections to this handoff's earlier assumptions):**
+
+- **Step 5 required NO migration / backfill / RLS work.** The feared "no
+  contact/conversation FK" was wrong: `extracted_tasks.origin_message_id` (uuid)
+  and `decisions.message_id` (uuid) already exist and are workspace-RLS'd — the
+  message id *is* the conversation link. Verified live via the Supabase MCP
+  (project `pulse-chat`, ref `ucaeuszgoihoyrvhewxk`). Note: the `tasks` table is
+  a separate legacy/unused table — the real tasks live in `extracted_tasks`.
+  Caveat that forced 5b: 0 of 15 tasks / 15 decisions had the link set (seed
+  data only), so the read-path alone would always show "all clear".
+- **`tsc --noEmit` OOMs at the default Node heap** (exit 134 ~4GB) and dies
+  before reporting — a naive run reads as a false "clean". Use
+  `NODE_OPTIONS=--max-old-space-size=8192`; with 8GB it reports **~1234
+  pre-existing errors** repo-wide (vite/esbuild builds without type-checking).
+  These 5 commits add **zero** new errors. (CLAUDE.md §5 lists the bare command.)
+
+**Still open / needs a human (can't be done headless):**
+
+- **Visual + E2E pass with auth (Google OAuth):** spine on real DMs, mobile
+  sheet at 375px, and the full 5a/5b loop (create task/decision from a DM →
+  rail item appears + DB row written). Headless can't reach these.
+- **V2 context-menu parity:** 5b wired the *live* legacy menu; the
+  `messageContextMenuV2` beta menu (default OFF) still lacks the two actions.
+- **AI-extracted titles** for 5b (currently the raw message snippet) — optional.
+- **AI moment-density tuning** if the spine feels noisy.
+- **V2 `MessagesSplitView`:** rail + spine wiring (still frozen; flag default-OFF).
