@@ -26,6 +26,9 @@ export interface RailMessage {
   isOutbound: boolean;
   /** epoch milliseconds. */
   timestamp: number;
+  /** message body text. Optional — the rail doesn't need it, but the Path D
+   *  intelligence spine's question heuristic does (see useConversationMoments). */
+  text?: string;
   /** present when this message spawned an inline task (the task title). */
   taskTitle?: string;
   /** present when this message carries a decision/proposal. */

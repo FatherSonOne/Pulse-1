@@ -885,3 +885,88 @@ button:focus-visible {
     animation: none;
   }
 }
+
+/* ── Path D intelligence spine ──────────────────────────────────────
+   A vertical timeline in the conversation gutter. Each message row gets a
+   .msg-spine-cell (rendered by <SpineNode>): a connector line plus a neutral
+   dot, or a tone-colored marker for a detected moment. Status tones only —
+   never coral. Motion mirrors the handoff (spineDot / momentPop / nodeRing)
+   on the project ease; reduced-motion disables it. */
+.msg-spine-cell {
+  position: relative;
+  flex-shrink: 0;
+  width: 28px;
+  align-self: stretch;        /* match the message row height */
+  --spine-node-top: 0.7rem;   /* align the node with the first text line */
+}
+
+.msg-spine-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--pulse-border);
+  border-radius: 1px;
+}
+/* Trim the connector above the first node / below the last so the spine
+   doesn't dangle past the conversation. */
+.msg-spine-line.is-first { top: var(--spine-node-top); }
+.msg-spine-line.is-last  { bottom: calc(100% - var(--spine-node-top) - 6px); }
+
+/* Ordinary message — small neutral dot. */
+.msg-spine-dot {
+  position: absolute;
+  left: 50%;
+  top: var(--spine-node-top);
+  width: 6px;
+  height: 6px;
+  transform: translate(-50%, 0);
+  border-radius: 999px;
+  background: var(--pulse-border-strong);
+  animation: msg-spine-dot-in 0.4s var(--pulse-ease, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+
+/* Detected moment — tone-colored marker (--spine-tone set inline by SpineNode). */
+.msg-spine-moment {
+  position: absolute;
+  left: 50%;
+  top: var(--spine-node-top);
+  width: 11px;
+  height: 11px;
+  transform: translate(-50%, -2px);
+  border-radius: 999px;
+  background: var(--spine-tone, var(--pulse-tone-neutral));
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--spine-tone, var(--pulse-tone-neutral)) 18%, transparent);
+  animation: msg-spine-moment-in 0.5s var(--pulse-ease, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+
+/* needs-reply draws the eye with an infinite ring pulse. */
+.msg-spine-moment--pulse {
+  animation: msg-spine-moment-in 0.5s var(--pulse-ease, cubic-bezier(0.16, 1, 0.3, 1)) both,
+             msg-spine-node-ring 2s ease-out 0.5s infinite;
+}
+
+@keyframes msg-spine-dot-in {
+  from { opacity: 0; transform: translate(-50%, 0) scale(0); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+@keyframes msg-spine-moment-in {
+  0%   { opacity: 0; transform: translate(-50%, -2px) scale(0); }
+  70%  { opacity: 1; transform: translate(-50%, -2px) scale(1.25); }
+  100% { opacity: 1; transform: translate(-50%, -2px) scale(1); }
+}
+@keyframes msg-spine-node-ring {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--spine-tone, var(--pulse-tone-neutral)) 45%, transparent); }
+  70%  { box-shadow: 0 0 0 7px color-mix(in oklab, var(--spine-tone, var(--pulse-tone-neutral)) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--spine-tone, var(--pulse-tone-neutral)) 0%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-spine-dot,
+  .msg-spine-moment,
+  .msg-spine-moment--pulse {
+    animation: none;
+  }
+}
