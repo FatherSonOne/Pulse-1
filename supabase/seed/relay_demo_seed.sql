@@ -98,8 +98,26 @@ values
   ('5eed0004-0000-4000-8000-000000000003','feedaa8d-1f48-4ad1-b757-11c7b79b7510','https://ucaeuszgoihoyrvhewxk.supabase.co/storage/v1/object/public/relay/vox_notes/feedaa8d-1f48-4ad1-b757-11c7b79b7510/1779643555232.webm',29,'Catering confirmed for the 12th, tasting moved to the 14th. Cc Frank on the invoice and double-check the headcount with Lauren.','Paesanos follow-ups','Catering 12th, tasting 14th; cc Frank on invoice, confirm headcount with Lauren.','{"paesanos","todo"}'::text[],'[]'::jsonb,false,'2026-05-23 18:25:00+00','2026-05-23 18:25:00+00','c54f5267-ee71-47d7-a3fc-d1e6b5c9fcc2'),
   ('5eed0004-0000-4000-8000-000000000004','feedaa8d-1f48-4ad1-b757-11c7b79b7510','https://ucaeuszgoihoyrvhewxk.supabase.co/storage/v1/object/public/relay/vox_notes/feedaa8d-1f48-4ad1-b757-11c7b79b7510/1778729804104.webm',31,'The flat studio cards read so much faster than the bubbles did. Coral-as-signal really tightened the whole surface. Worth writing up as a pattern.','Redesign retro thoughts','Flat cards beat bubbles; coral-as-signal tightened the surface — write it up.','{"design","relay"}'::text[],'[]'::jsonb,true ,'2026-05-21 13:05:00+00','2026-05-21 13:05:00+00','c54f5267-ee71-47d7-a3fc-d1e6b5c9fcc2');
 
+-- ── LIVE (voice_rooms + voice_room_participants) ─────────────────────────────
+-- Requires supabase/migrations/create_voice_rooms.sql first. getRooms() filters
+-- voice_rooms.user_id = me, so rooms are owned by Frankie. live = participants>0.
+insert into voice_rooms (id, user_id, name, icon, color, max_participants, is_private, category, description, settings, created_at)
+values
+  ('5eed0005-0000-4000-8000-000000000001','feedaa8d-1f48-4ad1-b757-11c7b79b7510','Design Sync','fa-users','bg-indigo-500',10,false,'general','Live walkthrough of the Voice Studio redesign','{}'::jsonb,'2026-05-25 09:50:00+00'),
+  ('5eed0005-0000-4000-8000-000000000002','feedaa8d-1f48-4ad1-b757-11c7b79b7510','Q2 War Room','fa-brain','bg-violet-500',10,false,'general','Board-call prep — margins + vendor renewal','{}'::jsonb,'2026-05-25 08:15:00+00'),
+  ('5eed0005-0000-4000-8000-000000000003','feedaa8d-1f48-4ad1-b757-11c7b79b7510','Coffee Chat','fa-coffee','bg-amber-500',8,false,'general','Open room — drop in anytime','{}'::jsonb,'2026-05-24 22:00:00+00');
+
+insert into voice_room_participants (room_id, user_id, user_name, avatar_color, joined_at, is_muted, is_speaking)
+values
+  ('5eed0005-0000-4000-8000-000000000001','0bea47c3-d86e-41d1-a173-5eb26229e642','Frank Messana','bg-sky-500','2026-05-25 09:51:00+00',false,true),
+  ('5eed0005-0000-4000-8000-000000000001','e6eb6cfb-054f-4a33-a080-94fdbf012e8b','Lauren Brickner (Office.Paesanos)','bg-teal-500','2026-05-25 09:52:00+00',false,false),
+  ('5eed0005-0000-4000-8000-000000000001','feedaa8d-1f48-4ad1-b757-11c7b79b7510','Frankie Messana','bg-fuchsia-500','2026-05-25 09:53:00+00',true,false),
+  ('5eed0005-0000-4000-8000-000000000002','4d9937f8-f756-4d62-a7c2-0fdc9ab8c1f2','Magan Luzzi Messana','bg-cyan-500','2026-05-25 08:16:00+00',false,true),
+  ('5eed0005-0000-4000-8000-000000000002','feedaa8d-1f48-4ad1-b757-11c7b79b7510','Frankie Messana','bg-fuchsia-500','2026-05-25 08:17:00+00',false,false);
+
 -- ── CLEANUP (run to remove all of the above; not executed by the seed) ───────
--- delete from voxer_recordings  where id::text like '5eed%';
--- delete from team_vox_messages where id::text like '5eed%';
--- delete from broadcasts        where id::text like '5eed%';
--- delete from vox_notes         where id::text like '5eed%';
+-- delete from voxer_recordings        where id::text like '5eed%';
+-- delete from team_vox_messages       where id::text like '5eed%';
+-- delete from broadcasts              where id::text like '5eed%';
+-- delete from vox_notes               where id::text like '5eed%';
+-- delete from voice_rooms             where id::text like '5eed%'; -- participants cascade
