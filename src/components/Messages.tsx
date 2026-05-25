@@ -5510,13 +5510,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       )}
 
       {/* Path D relationship rail — docked rightmost column, only when a
-          conversation is open (Tranche 3b). Collapsible; read-only for now. */}
+          conversation is open (Tranche 3b). Collapsible; read-only for now.
+          Hidden below xl: a 3rd ~280px column needs the width, and on
+          mobile/tablet the conversation takes priority (a rail-as-sheet is
+          the documented mobile follow-up). */}
       {(activePulseConv || activeThread) && (
         <RelationshipRail
           data={relationshipData}
           contactName={railContactName}
           collapsed={railCollapsed}
           onToggleCollapse={() => setRailCollapsed(c => !c)}
+          className="max-xl:hidden"
         />
       )}
 
