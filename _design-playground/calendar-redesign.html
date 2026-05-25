@@ -585,17 +585,205 @@ function PathA() {
    travel-buffer + conflict-detection features finally live (coral provenance).
    ════════════════════════════════════════════════════════════════════════
    ════════════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED DAY SURFACES — Agenda spine + Studio timeline + AI rail.
+   One source of truth, reused by Path B, Path C and the Path D hybrid.
+   Each accepts { selectedId, onSelect } so a click in any surface
+   cross-highlights the same event everywhere — that linkage is what makes
+   the hybrid's Split view cohere instead of feeling like two apps.
+   ════════════════════════════════════════════════════════════════════════ */
+const AGENDA_BUFFERS = {
+  't-jax':   { sev: 'late',        text: '18 min drive · ~8 min late' },
+  't-lunch': { sev: 'comfortable', text: '6 min drive' },
+};
+const isConflict = (id) => id === 't-maria' || id === 't-jax';
+
+function AgendaSpine({ selectedId, onSelect, dense }) {
+  return (
+    <div className="relative pl-[68px]">
+      <div className="absolute left-[58px] top-1 bottom-1 w-px" style={{ background: 'var(--pulse-border)' }}/>
+      {TODAY_EVENTS.map((e, i) => {
+        const cat = CAT[e.type] || CAT.event;
+        const buf = AGENDA_BUFFERS[e.id];
+        const conflict = isConflict(e.id);
+        const active = selectedId === e.id;
+        return (
+          <div key={e.id} className="relative mb-2 fade-up" style={{ animationDelay: `${i*30}ms` }}>
+            <div className="absolute -left-[68px] top-2 text-[11px] font-mono-pulse tnum pulse-ink-3-color w-[52px] text-right">{e.start.replace(':00','')}</div>
+            <div className="absolute -left-[14px] top-2.5 w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: cat.color, background: 'var(--pulse-canvas)' }}/>
+            <button onClick={() => onSelect && onSelect(active ? null : e.id)}
+              className="w-full text-left rounded-xl border p-2.5 transition"
+              style={{ borderColor: conflict ? 'var(--cat-deadline)' : (active ? 'var(--pulse-rose)' : 'var(--pulse-border)'),
+                       background: active ? 'var(--pulse-coral-bg-08)' : 'var(--pulse-surface)',
+                       boxShadow: active ? '0 0 0 1px var(--pulse-rose)' : 'none' }}>
+              <div className="flex items-center gap-2">
+                <span className="w-1 self-stretch rounded" style={{ background: cat.color, minHeight: 16 }}/>
+                <Icon name={cat.icon} className="w-3.5 h-3.5"/>
+                <span className="text-[13px] font-medium pulse-ink-color truncate">{e.title}</span>
+                {e.recurring && !dense && <span className="text-[9px] font-mono-pulse tracking-wide-mono pulse-ink-3-color border pulse-border-color rounded px-1">RECURS</span>}
+                <span className="ml-auto text-[11px] font-mono-pulse tnum pulse-ink-3-color shrink-0">{dense ? '' : `${e.start}–${e.end}`}</span>
+              </div>
+              {(e.loc || e.with.length > 0 || buf || conflict) && (
+                <div className="flex items-center gap-2.5 mt-1.5 pl-3 text-[11px] pulse-ink-3-color flex-wrap">
+                  {e.with.length > 0 && <span className="flex items-center gap-1"><Icon name="user" className="w-3 h-3"/>{e.with.join(', ')}</span>}
+                  {e.loc && !dense && <span className="flex items-center gap-1"><Icon name="pin" className="w-3 h-3"/>{e.loc}</span>}
+                  {buf && <span className={`sev sev-${buf.sev} flex items-center gap-1`}><Icon name="car" className="w-3 h-3"/>{dense ? buf.text.split(' · ')[0] : buf.text}</span>}
+                  {conflict && <span className="sev sev-late flex items-center gap-1"><Icon name="alert" className="w-3 h-3"/>conflict</span>}
+                </div>
+              )}
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function StudioTimeline({ selectedId, onSelect, dense }) {
+  const HOUR_H = dense ? 52 : 66, START_H = 8, END_H = 19;
+  const pxPerMin = HOUR_H / 60;
+  const hours = Array.from({ length: END_H - START_H + 1 }, (_, i) => START_H + i);
+  const railTop = (t) => (toMin(t) - START_H * 60) * pxPerMin;
+  const railH = (s, e) => (toMin(e) - toMin(s)) * pxPerMin;
+  const f = TODAY_EVENTS.find(e => e.id === 't-focus');
+  return (
+    <div className="h-full overflow-auto rounded-xl border pulse-border-color" style={{ background: 'var(--pulse-surface)' }}>
+      <div className="px-3 py-2 border-b pulse-border-color flex items-center gap-2 sticky top-0 z-10" style={{ background: 'var(--pulse-surface)' }}>
+        <span className="text-[13px] font-semibold pulse-ink-color">Monday, May 25</span>
+        <span className="sev sev-late flex items-center gap-1"><Icon name="alert" className="w-3 h-3"/>3:00–3:45 double-book</span>
+      </div>
+      <div className="relative" style={{ '--hour-h': HOUR_H+'px' }}>
+        <div className="lane-grid relative ml-[56px] mr-2" style={{ height: (END_H - START_H) * HOUR_H + 20 }}>
+          {hours.map((h, i) => (
+            <div key={h} className="absolute -left-[52px] text-[10px] font-mono-pulse tnum pulse-ink-3-color" style={{ top: i * HOUR_H - 6 }}>
+              {((h + 11) % 12) + 1}{h < 12 ? 'a' : 'p'}
+            </div>
+          ))}
+          {/* focus block as OPEN CANVAS (low-contrast, not a solid pill) */}
+          <div className="absolute left-0 right-2 rounded-lg flex flex-col justify-center px-3"
+            style={{ top: railTop(f.start), height: railH(f.start, f.end), border: `1.5px dashed ${CAT.focus.color}`, background: 'color-mix(in oklab, var(--cat-focus) 8%, transparent)' }}>
+            <div className="flex items-center gap-1.5"><Icon name="brain" className="w-3.5 h-3.5" style={{ color: CAT.focus.color }}/><span className="text-[12px] font-medium pulse-ink-color">{f.title}</span></div>
+            {!dense && <span className="text-[10px] pulse-ink-3-color">Open canvas · 4:00–6:00 PM · protected</span>}
+          </div>
+          {/* travel buffer hatched gap before pickup */}
+          <div className="buffer-gap" style={{ top: railTop('3:05 PM'), height: railH('3:05 PM','3:15 PM') }}>
+            <span className="sev sev-late flex items-center gap-1 -translate-y-px"><Icon name="car" className="w-3 h-3"/>{dense ? '18 min' : '18 min drive'}</span>
+          </div>
+          {/* AI ghost slot — suggested Maria reschedule (coral dashed) */}
+          <div className="ghost-block flex flex-col justify-center px-2.5" style={{ top: railTop('3:35 PM'), height: railH('3:35 PM','4:00 PM'), left: '50%' }}>
+            <div className="flex items-center gap-1.5"><Icon name="sparkles" className="w-3 h-3 pulse-rose-color"/><span className="text-[11px] font-medium pulse-coral-fg-color">Move 1:1 here</span></div>
+            {!dense && <span className="text-[10px] pulse-coral-fg-color opacity-80">AI · clears pickup</span>}
+          </div>
+          {/* real timed blocks (focus handled above) */}
+          {TODAY_EVENTS.filter(e => e.id !== 't-focus').map(e => {
+            const cat = CAT[e.type] || CAT.event;
+            const overlap = isConflict(e.id);
+            const col = e.id === 't-jax' ? 1 : 0;
+            const active = selectedId === e.id;
+            return (
+              <button key={e.id} onClick={() => onSelect && onSelect(active ? null : e.id)}
+                className="block fade-up text-left"
+                style={{ top: railTop(e.start), height: Math.max(railH(e.start, e.end), 20),
+                  left: overlap ? (col === 0 ? '0%' : '50%') : '0%',
+                  right: overlap && col === 0 ? '52%' : '8px',
+                  borderColor: active ? 'var(--pulse-rose)' : 'var(--pulse-border-strong)',
+                  boxShadow: active ? '0 0 0 1.5px var(--pulse-rose), var(--pulse-shadow-main)' : 'var(--pulse-shadow-main)' }}>
+                <span className="blk-tick" style={{ background: cat.color }}/>
+                <div className="flex items-center gap-1.5 pl-1.5">
+                  <span className="text-[12px] font-medium pulse-ink-color truncate">{e.title}</span>
+                  {overlap && <Icon name="alert" className="w-3 h-3 shrink-0" style={{ color: 'var(--cat-deadline)' }}/>}
+                </div>
+                {!dense && <div className="text-[10px] pulse-ink-3-color pl-1.5 font-mono-pulse tnum">{e.start}–{e.end}{e.loc ? ` · ${e.loc}` : ''}</div>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Constant intelligence rail — the only coral pane. Reused by B and the
+   hybrid; surfaces the selected event detail + AI conflict/buffer/fix. */
+function AiRail({ selectedId, width = 280, showDensity }) {
+  const sel = selectedId ? TODAY_EVENTS.find(e => e.id === selectedId) : null;
+  const selBuf = sel ? AGENDA_BUFFERS[sel.id] : null;
+  return (
+    <div className="shrink-0 overflow-auto space-y-3" style={{ width }}>
+      {sel && (
+        <div className="rounded-xl border p-3 fade-up" style={{ borderColor: 'var(--pulse-rose)', background: 'var(--pulse-surface)' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2 h-2 rounded-full" style={{ background: (CAT[sel.type]||CAT.event).color }}/>
+            <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">SELECTED</span>
+          </div>
+          <div className="text-[14px] font-semibold pulse-ink-color">{sel.title}</div>
+          <div className="text-[11px] font-mono-pulse tnum pulse-ink-3-color mt-0.5">{sel.start}–{sel.end}</div>
+          {(sel.with.length > 0 || sel.loc) && (
+            <div className="flex flex-col gap-1 mt-2">
+              {sel.with.length > 0 && <span className="text-[11px] pulse-ink-2-color flex items-center gap-1"><Icon name="user" className="w-3 h-3"/>{sel.with.join(', ')}</span>}
+              {sel.loc && <span className="text-[11px] pulse-ink-2-color flex items-center gap-1"><Icon name="pin" className="w-3 h-3"/>{sel.loc}</span>}
+            </div>
+          )}
+          {(selBuf || isConflict(sel.id)) && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {selBuf && <span className={`sev sev-${selBuf.sev} flex items-center gap-1`}><Icon name="car" className="w-3 h-3"/>{selBuf.text}</span>}
+              {isConflict(sel.id) && <span className="sev sev-late flex items-center gap-1"><Icon name="alert" className="w-3 h-3"/>double-booked</span>}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="ai-card p-3 fade-up">
+        <div className="flex items-center gap-2 mb-2"><Icon name="sparkles" className="w-4 h-4 pulse-rose-color"/><span className="text-[11px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · TODAY</span></div>
+        <div className="space-y-2">
+          {AI_TODAY.items.map((it, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <span className={`sev sev-${it.sev} mt-0.5 shrink-0`}>{it.kind}</span>
+              <div className="text-[12px] pulse-ink-color leading-snug">{it.text}<div className="text-[11px] pulse-ink-3-color">{it.detail}</div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="ai-card p-3">
+        <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color mb-2">SUGGESTED FIX</div>
+        <div className="text-[13px] font-medium pulse-ink-color">{AI_TODAY.suggestion.text}</div>
+        <div className="text-[11px] pulse-ink-3-color mt-1 leading-snug">{AI_TODAY.suggestion.why}</div>
+        <div className="flex items-center gap-2 mt-2.5">
+          <button className="flex-1 py-1.5 rounded-lg pulse-rose-bg-color text-white text-[12px] font-medium">Apply</button>
+          <button className="px-3 py-1.5 rounded-lg border pulse-border-color text-[12px] pulse-ink-2-color">Dismiss</button>
+          <span className="ml-auto font-mono-pulse text-[12px] tnum font-semibold pulse-coral-fg-color">{AI_TODAY.suggestion.score}%</span>
+        </div>
+      </div>
+      {showDensity && (
+        <div className="rounded-xl border pulse-border-color p-3" style={{ background: 'var(--pulse-surface)' }}>
+          <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">DAY DENSITY</div>
+          <div className="flex items-end gap-1 h-12">
+            {[1,1,2,1,0,4,1,2,0].map((v, i) => (
+              <div key={i} className="flex-1 rounded-t" style={{ height: `${10 + v*22}%`, background: v >= 3 ? 'var(--cat-deadline)' : 'var(--pulse-border-strong)' }}/>
+            ))}
+          </div>
+          <div className="text-[10px] pulse-ink-3-color mt-1.5">3 PM is your crunch — overbooked.</div>
+        </div>
+      )}
+      <div className="rounded-xl border pulse-border-color p-3" style={{ background: 'var(--pulse-surface)' }}>
+        <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">PEOPLE TODAY</div>
+        {['Devin Park','Evelyn Hart','Maria Schaefer'].map(n => (
+          <div key={n} className="flex items-center gap-2 py-1">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold text-white" style={{ background: colorForId(n) }}>{initials(n)}</div>
+            <span className="text-[12px] pulse-ink-color">{n}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PathB() {
   const [view, setView] = useState('agenda');
+  const [sel, setSel] = useState(null);
   const week = useMemo(() => {
     const start = new Date(TODAY); start.setDate(TODAY.getDate() - TODAY.getDay());
     return Array.from({ length: 7 }, (_, i) => { const d = new Date(start); d.setDate(start.getDate()+i); return d; });
   }, []);
-  // agenda buffer annotations (mock — grounded in useCalendarTravelBuffers shape)
-  const buffers = {
-    't-jax': { sev: 'late', text: '18 min drive · ~8 min late' },
-    't-lunch': { sev: 'comfortable', text: '6 min drive' },
-  };
   return (
     <div className="h-full flex flex-col">
       <CalToolbar views={[{id:'agenda',label:'Today',icon:'list'},{id:'week',label:'Week',icon:'columns'},{id:'month',label:'Month',icon:'grid'}]} view={view} setView={setView}
@@ -626,77 +814,13 @@ function PathB() {
         </div>
       </div>
 
-      {/* two-pane: agenda spine + context rail */}
+      {/* two-pane: agenda spine + constant AI rail */}
       <div className="flex-1 overflow-hidden flex gap-3 px-4 py-3">
-        {/* agenda spine */}
         <div className="flex-1 overflow-auto pr-1">
           <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2 px-1">MONDAY, MAY 25 · 7 EVENTS</div>
-          <div className="relative pl-[68px]">
-            <div className="absolute left-[58px] top-1 bottom-1 w-px" style={{ background: 'var(--pulse-border)' }}/>
-            {TODAY_EVENTS.map((e, i) => {
-              const cat = CAT[e.type] || CAT.event;
-              const buf = buffers[e.id];
-              const conflict = e.id === 't-maria' || e.id === 't-jax';
-              return (
-                <div key={e.id} className="relative mb-2.5 fade-up" style={{ animationDelay: `${i*30}ms` }}>
-                  <div className="absolute -left-[68px] top-2 text-[11px] font-mono-pulse tnum pulse-ink-3-color w-[52px] text-right">{e.start.replace(':00','')}</div>
-                  <div className="absolute -left-[14px] top-2.5 w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: cat.color, background: 'var(--pulse-canvas)' }}/>
-                  <div className="rounded-xl border p-2.5" style={{ borderColor: conflict ? 'var(--cat-deadline)' : 'var(--pulse-border)', background: 'var(--pulse-surface)' }}>
-                    <div className="flex items-center gap-2">
-                      <span className="w-1 self-stretch rounded" style={{ background: cat.color, minHeight: 16 }}/>
-                      <Icon name={cat.icon} className="w-3.5 h-3.5" />
-                      <span className="text-[13px] font-medium pulse-ink-color">{e.title}</span>
-                      {e.recurring && <span className="text-[9px] font-mono-pulse tracking-wide-mono pulse-ink-3-color border pulse-border-color rounded px-1">RECURS</span>}
-                      <span className="ml-auto text-[11px] font-mono-pulse tnum pulse-ink-3-color">{e.start}–{e.end}</span>
-                    </div>
-                    {(e.loc || e.with.length > 0 || buf) && (
-                      <div className="flex items-center gap-2.5 mt-1.5 pl-3 text-[11px] pulse-ink-3-color flex-wrap">
-                        {e.with.length > 0 && <span className="flex items-center gap-1"><Icon name="user" className="w-3 h-3"/>{e.with.join(', ')}</span>}
-                        {e.loc && <span className="flex items-center gap-1"><Icon name="pin" className="w-3 h-3"/>{e.loc}</span>}
-                        {buf && <span className={`sev sev-${buf.sev} flex items-center gap-1`}><Icon name="car" className="w-3 h-3"/>{buf.text}</span>}
-                        {conflict && <span className="sev sev-late flex items-center gap-1"><Icon name="alert" className="w-3 h-3"/>conflict</span>}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <AgendaSpine selectedId={sel} onSelect={setSel}/>
         </div>
-
-        {/* context rail — the only coral pane */}
-        <div className="w-[300px] shrink-0 overflow-auto space-y-3">
-          <div className="ai-card p-3 fade-up">
-            <div className="flex items-center gap-2 mb-2"><Icon name="sparkles" className="w-4 h-4 pulse-rose-color"/><span className="text-[11px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · TODAY</span></div>
-            <div className="space-y-2">
-              {AI_TODAY.items.map((it, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className={`sev sev-${it.sev} mt-0.5 shrink-0`}>{it.kind}</span>
-                  <div className="text-[12px] pulse-ink-color leading-snug">{it.text}<div className="text-[11px] pulse-ink-3-color">{it.detail}</div></div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="ai-card p-3">
-            <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color mb-2">SUGGESTED FIX</div>
-            <div className="text-[13px] font-medium pulse-ink-color">{AI_TODAY.suggestion.text}</div>
-            <div className="text-[11px] pulse-ink-3-color mt-1 leading-snug">{AI_TODAY.suggestion.why}</div>
-            <div className="flex items-center gap-2 mt-2.5">
-              <button className="flex-1 py-1.5 rounded-lg pulse-rose-bg-color text-white text-[12px] font-medium">Apply</button>
-              <button className="px-3 py-1.5 rounded-lg border pulse-border-color text-[12px] pulse-ink-2-color">Dismiss</button>
-              <span className="ml-auto font-mono-pulse text-[12px] tnum font-semibold pulse-coral-fg-color">{AI_TODAY.suggestion.score}%</span>
-            </div>
-          </div>
-          <div className="rounded-xl border pulse-border-color p-3" style={{ background: 'var(--pulse-surface)' }}>
-            <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">PEOPLE TODAY</div>
-            {['Devin Park','Evelyn Hart','Maria Schaefer'].map(n => (
-              <div key={n} className="flex items-center gap-2 py-1">
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold text-white" style={{ background: colorForId(n) }}>{initials(n)}</div>
-                <span className="text-[12px] pulse-ink-color">{n}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <AiRail selectedId={sel} width={300}/>
       </div>
     </div>
   );
@@ -713,13 +837,7 @@ function PathB() {
    ════════════════════════════════════════════════════════════════════════ */
 function PathC() {
   const [view, setView] = useState('studio');
-  const HOUR_H = 66, START_H = 8, END_H = 19;
-  const pxPerMin = HOUR_H / 60;
-  const hours = Array.from({ length: END_H - START_H + 1 }, (_, i) => START_H + i);
-  const railTop = (t) => (toMin(t) - START_H * 60) * pxPerMin;
-  const railH = (s, e) => (toMin(e) - toMin(s)) * pxPerMin;
-  // two columns to split the 3:00–3:45 overlap visually
-  const colOf = (e) => (e.id === 't-jax' ? 1 : 0);
+  const [sel, setSel] = useState(null);
   return (
     <div className="h-full flex flex-col">
       <CalToolbar views={[{id:'studio',label:'Studio',icon:'layout'},{id:'week',label:'Week',icon:'columns'},{id:'month',label:'Month',icon:'grid'}]} view={view} setView={setView}
@@ -731,69 +849,13 @@ function PathC() {
         vibe="The most opinionated. Time is spatial — you feel a packed afternoon and an empty drive window instead of reading pills." />
 
       <div className="flex-1 overflow-hidden flex gap-3 px-4 py-3">
-        {/* the timeline */}
-        <div className="flex-1 overflow-auto rounded-xl border pulse-border-color" style={{ background: 'var(--pulse-surface)' }}>
-          <div className="px-3 py-2 border-b pulse-border-color flex items-center gap-2 sticky top-0 z-10" style={{ background: 'var(--pulse-surface)' }}>
-            <span className="text-[13px] font-semibold pulse-ink-color">Monday, May 25</span>
-            <span className="sev sev-late flex items-center gap-1"><Icon name="alert" className="w-3 h-3"/>3:00–3:45 double-book</span>
-          </div>
-          <div className="relative" style={{ '--hour-h': HOUR_H+'px' }}>
-            <div className="lane-grid relative ml-[56px] mr-2" style={{ height: (END_H - START_H) * HOUR_H + 20 }}>
-              {/* hour labels */}
-              {hours.map((h, i) => (
-                <div key={h} className="absolute -left-[52px] text-[10px] font-mono-pulse tnum pulse-ink-3-color" style={{ top: i * HOUR_H - 6 }}>
-                  {((h + 11) % 12) + 1}{h < 12 ? 'a' : 'p'}
-                </div>
-              ))}
-
-              {/* focus block as OPEN CANVAS (low-contrast, not a solid pill) */}
-              {(() => {
-                const f = TODAY_EVENTS.find(e => e.id === 't-focus'); const cat = CAT.focus;
-                return (
-                  <div className="absolute left-0 right-2 rounded-lg flex flex-col justify-center px-3"
-                    style={{ top: railTop(f.start), height: railH(f.start, f.end), border: `1.5px dashed ${cat.color}`, background: 'color-mix(in oklab, var(--cat-focus) 8%, transparent)' }}>
-                    <div className="flex items-center gap-1.5"><Icon name="brain" className="w-3.5 h-3.5" style={{ color: cat.color }}/><span className="text-[12px] font-medium pulse-ink-color">{f.title}</span></div>
-                    <span className="text-[10px] pulse-ink-3-color">Open canvas · 4:00–6:00 PM · protected</span>
-                  </div>
-                );
-              })()}
-
-              {/* travel buffer hatched gap before pickup */}
-              <div className="buffer-gap" style={{ top: railTop('3:05 PM'), height: railH('3:05 PM','3:15 PM') }}>
-                <span className="sev sev-late flex items-center gap-1 -translate-y-px"><Icon name="car" className="w-3 h-3"/>18 min drive</span>
-              </div>
-
-              {/* AI ghost slot — suggested Maria reschedule (coral dashed) */}
-              <div className="ghost-block flex flex-col justify-center px-2.5" style={{ top: railTop('3:35 PM'), height: railH('3:35 PM','4:00 PM'), left: '50%' }}>
-                <div className="flex items-center gap-1.5"><Icon name="sparkles" className="w-3 h-3 pulse-rose-color"/><span className="text-[11px] font-medium pulse-coral-fg-color">Move 1:1 here</span></div>
-                <span className="text-[10px] pulse-coral-fg-color opacity-80">AI · clears pickup</span>
-              </div>
-
-              {/* real timed blocks (skip focus, handled above) */}
-              {TODAY_EVENTS.filter(e => e.id !== 't-focus').map(e => {
-                const cat = CAT[e.type] || CAT.event;
-                const col = colOf(e);
-                const overlap = e.id === 't-maria' || e.id === 't-jax';
-                return (
-                  <div key={e.id} className="block fade-up"
-                    style={{ top: railTop(e.start), height: Math.max(railH(e.start, e.end), 20),
-                      left: overlap ? (col === 0 ? '0%' : '50%') : '0%',
-                      right: overlap && col === 0 ? '52%' : '8px' }}>
-                    <span className="blk-tick" style={{ background: cat.color }}/>
-                    <div className="flex items-center gap-1.5 pl-1.5">
-                      <span className="text-[12px] font-medium pulse-ink-color truncate">{e.title}</span>
-                      {overlap && <Icon name="alert" className="w-3 h-3 shrink-0" style={{ color: 'var(--cat-deadline)' }}/>}
-                    </div>
-                    <div className="text-[10px] pulse-ink-3-color pl-1.5 font-mono-pulse tnum">{e.start}–{e.end}{e.loc ? ` · ${e.loc}` : ''}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+        {/* the timeline (shared component) */}
+        <div className="flex-1 min-w-0">
+          <StudioTimeline selectedId={sel} onSelect={setSel}/>
         </div>
 
         {/* density / legend rail */}
-        <div className="w-[230px] shrink-0 space-y-3">
+        <div className="w-[230px] shrink-0 space-y-3 overflow-auto">
           <div className="ai-card p-3">
             <div className="flex items-center gap-2 mb-1.5"><Icon name="sparkles" className="w-4 h-4 pulse-rose-color"/><span className="text-[11px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">AUTO-ARRANGE</span></div>
             <div className="text-[12px] pulse-ink-color leading-snug">One drag fixes the 3 PM stack — move the 1:1 to 3:35 and your afternoon resolves.</div>
@@ -823,11 +885,95 @@ function PathC() {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════
+   PATH D — HYBRID · TODAY UNIFIED   (B's shell + C's timeline, your pick)
+   B's two-pane shell with the constant AI rail, but the CENTER pane flips:
+   Agenda ⇄ Timeline (tabbed), or Split shows both at once (dual). Because
+   the rail is view-agnostic it never moves, and selecting an event in any
+   pane cross-highlights it everywhere + loads it into the rail.
+   ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════ */
+function PathD() {
+  const [view, setView] = useState('split');      // 'agenda' | 'timeline' | 'split'
+  const [sel, setSel] = useState('t-maria');       // pre-select the conflict
+  const week = useMemo(() => {
+    const start = new Date(TODAY); start.setDate(TODAY.getDate() - TODAY.getDay());
+    return Array.from({ length: 7 }, (_, i) => { const d = new Date(start); d.setDate(start.getDate()+i); return d; });
+  }, []);
+  const PaneLabel = ({ icon, children }) => (
+    <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2 px-1 flex items-center gap-1.5 shrink-0"><Icon name={icon} className="w-3 h-3"/>{children}</div>
+  );
+  return (
+    <div className="h-full flex flex-col">
+      <CalToolbar views={[{id:'agenda',label:'Agenda',icon:'list'},{id:'timeline',label:'Timeline',icon:'layout'},{id:'split',label:'Split',icon:'columns'}]} view={view} setView={setView}
+        right={<div className="flex items-center gap-1 ml-2"><button className="ai-chip"><Icon name="sparkles" className="w-3.5 h-3.5"/>Auto-arrange</button><button className="w-7 h-7 rounded-md pulse-rose-bg-color text-white flex items-center justify-center"><Icon name="plus" className="w-4 h-4"/></button></div>} />
+
+      <AboutPath tag="D" name="Hybrid · Today Unified  ★"
+        archetype="B's two-pane shell + C's timeline as a swappable center pane."
+        iaFix="One constant AI rail — conflict/buffer/fix intelligence is view-agnostic, so it never moves. The center flips Agenda ⇄ Timeline (tabbed), or Split shows both (dual). A click in any pane highlights the event everywhere + loads it in the rail."
+        vibe="Tabbed when you want focus, dual when you want the whole afternoon at a glance. Same data, same rail — your call per moment." />
+
+      {/* week strip */}
+      <div className="px-4 pt-3">
+        <div className="grid grid-cols-7 gap-1.5">
+          {week.map((d, i) => {
+            const isToday = sameDay(d, TODAY);
+            const count = eventsForDate(d).filter(e => !e.recurring).length;
+            return (
+              <button key={i} className="rounded-lg border px-2 py-1.5 text-center transition hover:pulse-surface-raised"
+                style={{ borderColor: isToday ? 'var(--pulse-rose)' : 'var(--pulse-border)', background: isToday ? 'var(--pulse-coral-bg-08)' : 'var(--pulse-surface)' }}>
+                <div className="text-[9px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">{DOW[d.getDay()]}</div>
+                <div className={`text-[15px] tnum mt-0.5 ${isToday ? 'pulse-rose-color font-semibold' : 'pulse-ink-color'}`}>{d.getDate()}</div>
+                <div className="flex items-center justify-center gap-0.5 mt-1 h-1.5">
+                  {Array.from({ length: Math.min(count, 4) }).map((_, k) => <span key={k} className="w-1 h-1 rounded-full" style={{ background: 'var(--pulse-ink-3)' }}/>)}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* body: center pane (agenda / timeline / split) + constant rail */}
+      <div className="flex-1 overflow-hidden flex gap-3 px-4 py-3">
+        {view === 'agenda' && (
+          <div className="flex-1 overflow-auto pr-1">
+            <PaneLabel icon="list">AGENDA · MON MAY 25</PaneLabel>
+            <AgendaSpine selectedId={sel} onSelect={setSel}/>
+          </div>
+        )}
+
+        {view === 'timeline' && (
+          <div className="flex-1 min-w-0 flex flex-col">
+            <PaneLabel icon="layout">TIMELINE · MON MAY 25</PaneLabel>
+            <div className="flex-1 min-h-0"><StudioTimeline selectedId={sel} onSelect={setSel}/></div>
+          </div>
+        )}
+
+        {view === 'split' && (
+          <>
+            <div className="w-[300px] shrink-0 flex flex-col">
+              <PaneLabel icon="list">AGENDA</PaneLabel>
+              <div className="flex-1 overflow-auto pr-1"><AgendaSpine selectedId={sel} onSelect={setSel} dense/></div>
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col">
+              <PaneLabel icon="layout">TIMELINE</PaneLabel>
+              <div className="flex-1 min-h-0"><StudioTimeline selectedId={sel} onSelect={setSel} dense/></div>
+            </div>
+          </>
+        )}
+
+        <AiRail selectedId={sel} width={268} showDensity/>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
    PLAYGROUND SHELL — top bar + path switcher + theme toggle
    ════════════════════════════════════════════════════════════════════════ */
 function App() {
   const [theme, setTheme] = useState('dark');
-  const [path, setPath] = useState('A');
+  const [path, setPath] = useState('D');
   useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
   return (
@@ -843,6 +989,7 @@ function App() {
             { id: 'A', label: 'A · Clear Month' },
             { id: 'B', label: 'B · Today + Rail' },
             { id: 'C', label: 'C · Timeline Studio' },
+            { id: 'D', label: 'D · Hybrid ★' },
           ].map(p => (
             <button key={p.id} data-active={path === p.id} onClick={() => setPath(p.id)}
               className="pg-pill px-3 py-1.5 rounded-md text-[12px] font-medium pulse-ink-2-color">{p.label}</button>
@@ -860,6 +1007,7 @@ function App() {
           {path === 'A' && <PathA/>}
           {path === 'B' && <PathB/>}
           {path === 'C' && <PathC/>}
+          {path === 'D' && <PathD/>}
         </main>
       </div>
     </div>
