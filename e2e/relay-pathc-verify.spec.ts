@@ -184,24 +184,22 @@ test('direct conversation day-grouping', async ({ page }) => {
   await relayNav.waitFor({ state: 'visible', timeout: 90_000 });
   await relayNav.click();
   await page.getByText('Direct', { exact: true }).first().click();
-  await page.waitForTimeout(2500);
 
-  const contacts = page.locator('.classic-contact');
-  const n = await contacts.count();
-  console.log(`[verify] classic-contact count: ${n}`);
-  if (n > 0) {
-    await contacts.first().click();
-    await page.waitForTimeout(2000);
-    await page.screenshot({ path: `${OUT}/direct-thread.png` });
-    console.log('[verify] captured direct-thread');
-  } else {
-    // Fallback: click the first row inside the contacts scroll area.
-    const row = page.locator('.classic-contacts button, .classic-contacts [role="button"]').first();
-    if (await row.count()) {
-      await row.click();
-      await page.waitForTimeout(2000);
-      await page.screenshot({ path: `${OUT}/direct-thread.png` });
-      console.log('[verify] captured direct-thread (fallback row)');
-    }
+  // People rows load async from Supabase (Pulse users + conversations) — poll
+  // up to ~20s for a row before clicking. The Path C people row is a plain
+  // <button> inside .classic-contacts (the old .classic-contact class is gone).
+  const rows = page.locator('.classic-contacts button');
+  let n = 0;
+  for (let i = 0; i < 20; i++) {
+    n = await rows.count();
+    if (n > 0) break;
+    await page.waitForTimeout(1000);
   }
+  console.log(`[verify] direct people rows: ${n}`);
+  if (n > 0) {
+    await rows.first().click();
+    await page.waitForTimeout(2500);
+  }
+  await page.screenshot({ path: `${OUT}/direct-thread.png` });
+  console.log(n > 0 ? '[verify] captured direct-thread' : '[verify] direct-thread: no rows loaded (headless data race)');
 });

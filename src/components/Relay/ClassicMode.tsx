@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   Search,
   Plus,
-  Mic,
   Send,
   Play,
   Pause,
@@ -35,14 +34,13 @@ import {
   Smile,
   MoreVertical,
   Sliders,
-  Phone,
   Radio,
   List,
+  AlignLeft,
+  FileText,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
-import VoxModeHeader from './VoxModeHeader';
-import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 
 import { blobToBase64 } from '../../services/audioService';
@@ -82,8 +80,14 @@ import {
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
-import { RelayVoiceMessage, type RelayVoiceMessageProps } from './RelayVoiceMessage';
-import { useRelayStudio, useRelayModeRecorder } from './studio';
+import {
+  useRelayStudio,
+  useRelayModeRecorder,
+  StudioMessageCard,
+  StudioMasthead,
+  avatarColorForId,
+  initials as avatarInitials,
+} from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
@@ -1174,28 +1178,25 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       {/* Audio playback is owned by the shared RelayStudioProvider (single
           <audio>), so there's no local element here anymore. */}
 
-      {/* Contact List Sidebar */}
+      {/* People List Sidebar — PathC people column (mono PEOPLE header +
+          search + flat people rows). The classic-sidebar wrapper + mobileView
+          gating are preserved so single-pane swap doesn't regress. */}
       <aside className={`classic-sidebar ${mobileView === 'list' ? 'visible' : 'hidden-mobile'}`}>
-        {/* Header */}
-        <VoxModeHeader
-          modeName="Direct"
-          modeTagline=""
-          eyebrow="DIRECT VOICE"
-          modeIcon={Radio}
-          onBack={onBack}
-          isDarkMode={isDarkMode}
-          actions={
-            <button
-              type="button"
-              onClick={() => setShowNewVoxModal(true)}
-              className="classic-new-btn"
-              title="New message"
-              aria-label="Start new voice conversation"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          }
-        />
+        {/* PEOPLE · {count} header + new-conversation button */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+            People · {filteredContacts.length}
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowNewVoxModal(true)}
+            className="p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+            title="New message"
+            aria-label="Start new voice conversation"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
         {/* Search */}
         <div className="classic-search">
@@ -1208,7 +1209,8 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
           />
         </div>
 
-        {/* Contact List */}
+        {/* People List — flat rows: avatar(colorForId) + online dot, name,
+            unread count, "{last} · {ago}". Active row = pulse-surface-raised. */}
         <div className="classic-contacts">
           {filteredContacts.length === 0 ? (
             <div className="classic-empty">
@@ -1221,7 +1223,13 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               const lastVox = getLastVox(user.id);
               const isActive = activeContactId === user.id;
               const displayName = user.displayName || user.fullName || user.handle || 'Unknown';
-              const initials = displayName.charAt(0).toUpperCase();
+              const online = user.onlineStatus === 'online';
+              const ago = lastVox
+                ? lastVox.timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                : '';
+              const lastLabel = lastVox
+                ? `${lastVox.sender === 'me' ? 'You: ' : ''}Voice message`
+                : 'Tap to start';
 
               return (
                 <button
@@ -1231,41 +1239,45 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                     setActiveContactId(user.id);
                     setMobileView('thread');
                   }}
-                  className={`classic-contact ${isActive ? 'active' : ''}`}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-left transition ${
+                    isActive
+                      ? 'bg-zinc-100 dark:bg-zinc-800'
+                      : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
                 >
-                  {user.avatarUrl ? (
-                    <img
-                      src={user.avatarUrl}
-                      alt={displayName}
-                      className="classic-avatar-img"
-                    />
-                  ) : (
-                    <div className="classic-avatar classic-avatar-placeholder">
-                      {initials}
-                    </div>
-                  )}
-                  <div className={`classic-status ${user.onlineStatus === 'online' ? 'online' : ''}`} />
-                  <div className="classic-contact-info">
-                    <div className="classic-contact-header">
-                      <h3>{displayName}</h3>
-                      {lastVox && (
-                        <span className="classic-time">
-                          {lastVox.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
-                    </div>
-                    <p className="classic-preview">
-                      {lastVox ? (
-                        <>
-                          <Mic className="w-3 h-3" />
-                          <span>{lastVox.sender === 'me' ? 'You: ' : ''}Voice message</span>
-                        </>
-                      ) : (
-                        <span>Tap to start voice message</span>
-                      )}
-                    </p>
+                  <div className="relative shrink-0">
+                    {user.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt={displayName}
+                        className="w-9 h-9 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-semibold text-white ${avatarColorForId(user.id)}`}>
+                        {avatarInitials(displayName)}
+                      </div>
+                    )}
+                    {online && (
+                      <span
+                        className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#0a0a0a]"
+                        style={{ background: '#22c55e' }}
+                        aria-hidden="true"
+                      />
+                    )}
                   </div>
-                  <ChevronRight className="w-4 h-4 classic-chevron" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                        {displayName}
+                      </span>
+                      {lastVox && lastVox.sender === 'other' && lastVox.status !== 'read' && (
+                        <span className="ml-auto font-mono text-[10px] text-rose-600 dark:text-rose-400">1</span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                      {ago ? `${lastLabel} · ${ago}` : lastLabel}
+                    </div>
+                  </div>
                 </button>
               );
             })
@@ -1277,34 +1289,153 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       <main className={`classic-main ${mobileView === 'thread' ? 'visible' : 'hidden-mobile'}`}>
         {activeContact ? (
           <>
-            {/* Thread Header */}
-            <VoxModeToolbar
-              onBack={() => setMobileView('list')}
-              modeIcon={<Phone className="w-5 h-5" />}
-              eyebrow="DIRECT VOICE"
-              modeTitle={activeContact.displayName || activeContact.fullName || 'Conversation'}
-              modeSubtitle={activeContact.handle ? `@${activeContact.handle}` : activeContact.role || ''}
-              accentColor="#f43f5e"
-              isDarkMode={isDarkMode}
-              showAI
-              onSummarize={handleSummarizeConversation}
-              onSmartReplies={handleGenerateSmartReplies}
-              onMeetingNotes={handleGenerateMeetingNotes}
-              isSummarizing={isSummarizing}
-              isGeneratingReplies={isGeneratingReplies}
-              isGeneratingNotes={isGeneratingNotes}
-              hasContent={activeThreadRecordings.length > 0}
-              isSelectionMode={isSelectionMode}
-              onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
-              onShowHelp={() => setShowShortcutsHelp(true)}
-              customActions={[
-                {
-                  icon: <Archive className="w-4 h-4" />,
-                  title: 'Archive conversation',
-                  onClick: () => archiveConversation(activeContactId),
-                },
-              ]}
-            />
+            {/* Conversation header — PathCDirect: avatar + online dot, DIRECT
+                VOICE eyebrow, name, "{N} voices in thread" subtitle, and a
+                right cluster carrying the AI actions + selection + archive +
+                search / bookmark / settings. */}
+            {(() => {
+              const headerName = activeContact.displayName || activeContact.fullName || activeContact.handle || 'Conversation';
+              const headerOnline = activeContact.onlineStatus === 'online';
+              const hasContent = activeThreadRecordings.length > 0;
+              return (
+                <header className="flex items-center gap-3 px-5 py-4 border-b border-[var(--pulse-border)]">
+                  {studio.singlePane && (
+                    <button
+                      type="button"
+                      onClick={() => setMobileView('list')}
+                      className="shrink-0 -ml-1 p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                      aria-label="Back to people list"
+                      title="Back to people"
+                    >
+                      <ArrowLeft className="w-5 h-5" />
+                    </button>
+                  )}
+                  <div className="relative shrink-0">
+                    {activeContact.avatarUrl ? (
+                      <img
+                        src={activeContact.avatarUrl}
+                        alt={headerName}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-semibold text-white ${avatarColorForId(activeContact.id)}`}>
+                        {avatarInitials(headerName)}
+                      </div>
+                    )}
+                    {headerOnline && (
+                      <span
+                        className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-[#0a0a0a]"
+                        style={{ background: '#22c55e' }}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                      Direct Voice
+                    </div>
+                    <div className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                      {headerName}
+                    </div>
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                      {headerOnline ? 'Active now' : (activeContact.handle ? `@${activeContact.handle}` : 'Direct')}
+                      {` · ${activeThreadRecordings.length} ${activeThreadRecordings.length === 1 ? 'voice' : 'voices'} in thread`}
+                    </div>
+                  </div>
+                  <div className="ml-auto flex items-center gap-1 shrink-0">
+                    {/* AI actions — server-side; mono pill triggers like Notes' masthead. */}
+                    {hasContent && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleSummarizeConversation}
+                          disabled={isSummarizing}
+                          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 transition"
+                          title="AI summarize conversation"
+                        >
+                          {isSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <AlignLeft className="w-3 h-3" />}
+                          <span className="hidden lg:inline">Summarize</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleGenerateSmartReplies}
+                          disabled={isGeneratingReplies}
+                          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 transition"
+                          title="Generate smart replies"
+                        >
+                          {isGeneratingReplies ? <Loader2 className="w-3 h-3 animate-spin" /> : <Reply className="w-3 h-3" />}
+                          <span className="hidden lg:inline">Reply</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleGenerateMeetingNotes}
+                          disabled={isGeneratingNotes}
+                          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 transition"
+                          title="Generate meeting notes"
+                        >
+                          {isGeneratingNotes ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
+                          <span className="hidden lg:inline">Notes</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => (isSelectionMode ? exitSelectionMode() : enterSelectionMode())}
+                          title={isSelectionMode ? 'Exit selection' : 'Select messages'}
+                          aria-label={isSelectionMode ? 'Exit selection' : 'Select messages'}
+                          className={`p-1.5 rounded-md transition ${
+                            isSelectionMode
+                              ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                              : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                          }`}
+                        >
+                          <CheckCheck className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => archiveConversation(activeContactId)}
+                          title="Archive conversation"
+                          aria-label="Archive conversation"
+                          className="p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                        >
+                          <Archive className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                    {/* Visual-parity icon cluster from the playground header.
+                        Search has no in-thread handler yet — kept for parity. */}
+                    <button
+                      type="button"
+                      title="Search this conversation"
+                      aria-label="Search this conversation"
+                      className="p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                    >
+                      <Search className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const playing = recordings.find(r => r.id === studio.nowPlaying?.id && r.contactId === activeContactId);
+                        if (playing) toggleBookmark(playing.id);
+                        else toast('Play a message to bookmark it');
+                      }}
+                      title="Bookmark"
+                      aria-label="Bookmark"
+                      className="p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                    >
+                      <Bookmark className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowShortcutsHelp(true)}
+                      title="Settings & shortcuts"
+                      aria-label="Settings & shortcuts"
+                      className="p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                  </div>
+                </header>
+              );
+            })()}
 
             {/* Messages */}
             <div className="classic-messages">
@@ -1320,16 +1451,12 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                   }}
                 />
               ) : (
-                // TODO(impeccable phase 3 task 6 — RelayVoiceMessage migration):
-                // Migrate this Direct bubble to <RelayVoiceMessage /> from
-                // `./RelayVoiceMessage`. Surface slots needed:
-                // replyToContext (already supported), plus pending API
-                // additions: onReply, onReact + reaction picker state,
-                // selectionCheckbox, statusIndicator (delivered/read),
-                // reactionsDisplay, chapterButton, per-message
-                // PlaybackSpeedControl. Do this after the surface-migration
-                // API gap noted at the top of RelayVoiceMessage.tsx is
-                // filled. Migrate Direct first per the original plan.
+                // PathCDirect rows: flat StudioMessageCard (NOT chat bubbles).
+                // me rows indent ml-12, them rows mr-12; me => rose "You"
+                // avatar. All behaviors (play, selection, reactions, reply,
+                // star/bookmark/menu, status, chapters, speed) ride the card's
+                // slots; the reaction-picker + VoxMessageMenu stay as sibling
+                // overlays inside the #vox-msg anchor wrapper (reply scroll).
                 groupedThreadRecordings.map(group => (
                   <React.Fragment key={group.label}>
                     {/* Day separator — Today / Yesterday / Last week (Path C). */}
@@ -1339,39 +1466,41 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       </span>
                       <span className="flex-1 h-px" style={{ background: 'var(--pulse-border)' }} aria-hidden="true" />
                     </div>
-                    {group.items.map(recording => (
+                    <div className="space-y-2.5">
+                    {group.items.map(recording => {
+                      const isMe = recording.sender === 'me';
+                      const active = isItemActive(recording.id);
+                      const contactName = activeContact?.displayName || activeContact?.handle || 'Contact';
+                      return (
                   <div
                     key={recording.id}
                     id={`vox-msg-${recording.id}`}
-                    className={`group relative flex mb-3 ${recording.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+                    className="relative group"
                   >
-                    <RelayVoiceMessage
-                      id={recording.id}
-                      audioUrl={recording.url}
-                      duration={recording.duration}
-                      timestamp={recording.timestamp}
-                      sender={recording.sender === 'me' ? 'me' : 'other'}
-                      senderName={recording.sender === 'me' ? 'You' : (activeContact?.displayName || activeContact?.handle || 'Contact')}
+                    <StudioMessageCard
+                      active={active}
                       isPlaying={isItemPlaying(recording.id)}
+                      progress={active ? studio.progress : 0}
+                      canPlay={!!recording.url}
                       onPlay={() => playRecording(recording)}
-                      onPause={pausePlayback}
-                      isActive={isItemActive(recording.id)}
-                      progress={studio.progress}
-                      transcript={recording.transcription || undefined}
-                      status={recording.status as RelayVoiceMessageProps['status']}
-                      starred={recording.starred}
-                      bookmarked={recording.bookmarked}
-                      waveformSeed={recording.id}
-                      isDarkMode={isDarkMode}
-                      onStar={() => toggleStar(recording.id)}
-                      onBookmark={() => toggleBookmark(recording.id)}
-                      onReply={() => setReplyContext(recording)}
-                      onReact={() => setShowReactionPicker(showReactionPicker === recording.id ? null : recording.id)}
-                      onMore={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        setMenuAnchorRect(rect);
-                        setShowMessageMenu(showMessageMenu === recording.id ? null : recording.id);
+                      indent={isMe ? 'me' : 'them'}
+                      padding="p-3.5"
+                      playSize="sm"
+                      waveCount={50}
+                      waveSeed={recording.id}
+                      bodyIndent={44}
+                      avatar={{
+                        label: isMe ? 'You' : avatarInitials(contactName),
+                        colorClass: avatarColorForId(recording.contactId || recording.id),
+                        rose: isMe,
                       }}
+                      title={isMe ? 'You' : contactName}
+                      meta={`${recording.timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · ${formatDuration(recording.duration)}`}
+                      headerExtras={isMe ? (
+                        <span className="classic-status-icon ml-1 text-zinc-400 dark:text-zinc-500">
+                          {recording.status === 'read' ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}
+                        </span>
+                      ) : undefined}
                       selectionCheckbox={isSelectionMode ? (
                         <button
                           type="button"
@@ -1401,13 +1530,78 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                           {isSelected(recording.id) && <Check className="w-4 h-4 text-white" />}
                         </button>
                       ) : undefined}
-                      replyToContext={recording.replyToId ? (() => {
+                      actions={!isSelectionMode ? (
+                        <div className="absolute right-3 top-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); toggleStar(recording.id); }}
+                            className={`inline-flex items-center justify-center w-6 h-6 rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                              recording.starred
+                                ? 'text-amber-500'
+                                : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800'
+                            }`}
+                            aria-label={recording.starred ? 'Unstar message' : 'Star message'}
+                            title="Star"
+                          >
+                            <Star className="w-3.5 h-3.5" fill={recording.starred ? 'currentColor' : 'none'} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); toggleBookmark(recording.id); }}
+                            className={`inline-flex items-center justify-center w-6 h-6 rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                              recording.bookmarked
+                                ? 'text-rose-600 dark:text-rose-400'
+                                : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800'
+                            }`}
+                            aria-label={recording.bookmarked ? 'Remove bookmark' : 'Bookmark message'}
+                            title="Bookmark"
+                          >
+                            {recording.bookmarked ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setReplyContext(recording); }}
+                            className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                            aria-label="Reply"
+                            title="Reply"
+                          >
+                            <Reply className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setShowReactionPicker(showReactionPicker === recording.id ? null : recording.id); }}
+                            className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                            aria-label="React"
+                            title="React"
+                          >
+                            <Smile className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setMenuAnchorRect(rect);
+                              setShowMessageMenu(showMessageMenu === recording.id ? null : recording.id);
+                            }}
+                            className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                            aria-label="More actions"
+                            title="More"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : undefined}
+                    >
+                      {/* Reply-to context — above the transcript */}
+                      {recording.replyToId && (() => {
                         const parent = activeThreadRecordings.find(r => r.id === recording.replyToId);
                         return (
                           <button
                             type="button"
-                            className="classic-reply-indicator"
-                            onClick={() => {
+                            className="classic-reply-indicator mb-1.5"
+                            onClick={(e) => {
+                              e.stopPropagation();
                               const el = document.getElementById(`vox-msg-${recording.replyToId}`);
                               el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }}
@@ -1419,43 +1613,47 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                             </span>
                           </button>
                         );
-                      })() : undefined}
-                      statusIndicator={recording.sender === 'me' ? (
-                        <span className="classic-status-icon">
-                          {recording.status === 'read' ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}
-                        </span>
-                      ) : undefined}
-                      reactionsDisplay={recording.reactions && recording.reactions.length > 0 ? (
-                        <div className="flex items-center gap-1">
+                      })()}
+
+                      {/* Transcript */}
+                      {recording.transcription && (
+                        <div className="text-[12.5px] text-zinc-900 dark:text-zinc-100 leading-relaxed">
+                          {recording.transcription}
+                        </div>
+                      )}
+
+                      {/* Reactions */}
+                      {recording.reactions && recording.reactions.length > 0 && (
+                        <div className="flex items-center gap-1 mt-1.5">
                           {recording.reactions.map((reaction, idx) => (
                             <span key={idx} className="classic-reaction-badge">{reaction.emoji}</span>
                           ))}
                         </div>
-                      ) : undefined}
-                      footerExtras={
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <PlaybackSpeedControl
-                            speed={studio.playbackRate}
-                            onSpeedChange={studio.setPlaybackRate}
-                            isDarkMode={isDarkMode}
-                            compact={true}
-                          />
-                          {recording.transcription && recording.duration >= 30 && (
-                            <button
-                              type="button"
-                              onClick={() => handleGenerateChapters(recording)}
-                              className="text-xs text-[#e11d48] dark:text-[#fb7185] hover:underline flex items-center gap-1"
-                              title="Generate AI chapter markers for this message"
-                            >
-                              <List className="w-3 h-3" />
-                              {chapterRecordingId === recording.id
-                                ? 'Chapters shown below ↓'
-                                : `Generate Chapters (${Math.round(recording.duration)}s)`}
-                            </button>
-                          )}
-                        </div>
-                      }
-                    />
+                      )}
+
+                      {/* Footer extras — playback speed + chapters */}
+                      <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                        <PlaybackSpeedControl
+                          speed={studio.playbackRate}
+                          onSpeedChange={studio.setPlaybackRate}
+                          isDarkMode={isDarkMode}
+                          compact={true}
+                        />
+                        {recording.transcription && recording.duration >= 30 && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleGenerateChapters(recording); }}
+                            className="text-xs text-[#e11d48] dark:text-[#fb7185] hover:underline flex items-center gap-1"
+                            title="Generate AI chapter markers for this message"
+                          >
+                            <List className="w-3 h-3" />
+                            {chapterRecordingId === recording.id
+                              ? 'Chapters shown below ↓'
+                              : `Generate Chapters (${Math.round(recording.duration)}s)`}
+                          </button>
+                        )}
+                      </div>
+                    </StudioMessageCard>
 
                     {/* Reaction picker — sibling overlay near the row */}
                     {showReactionPicker === recording.id && (
@@ -1489,7 +1687,9 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       />
                     )}
                   </div>
-                    ))}
+                      );
+                    })}
+                    </div>
                   </React.Fragment>
                 ))
               )}
