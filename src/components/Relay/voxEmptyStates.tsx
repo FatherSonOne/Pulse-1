@@ -1,14 +1,15 @@
-// voxEmptyStates - Configuration for empty states across all 8 Relay modes
-// Provides mode-specific icons, titles, and descriptions
+// voxEmptyStates — copy + icon config for the Relay empty states driven by
+// getEmptyStateConfig: Direct's in-thread empty, Notes, Broadcast, and the
+// Glimpse peer section. Sources that build their empty state inline (Inbox,
+// Channels, Live, Direct's no-selection pane) pass their own props.
+//
+// Voice (PRODUCT.md): terse, no exclamation, no marketing-speak, recommend the
+// next move. Each string is the user's literal first words from the section.
 
 import {
   Radio,
   Antenna,
-  MessageCircle,
-  Users,
   StickyNote,
-  Zap,
-  Package,
   Video,
   type LucideIcon,
 } from 'lucide-react';
@@ -21,64 +22,41 @@ export interface VoxEmptyStateConfig {
 }
 
 export const VOX_EMPTY_STATES: Record<string, VoxEmptyStateConfig> = {
+  // Also the fallback for any unknown key (see getEmptyStateConfig). Used by
+  // Direct's in-thread empty, where a conversation IS open and simply has no
+  // messages yet, so the title is "No messages", never "No conversations".
   classic: {
     mode: 'classic',
     icon: Radio,
-    title: 'No conversations yet',
-    description: 'Start talking! Send your first voice message to begin a conversation.',
+    title: 'No messages yet',
+    description: 'Hold space to send the first voice message.',
   },
 
   pulse_radio: {
     mode: 'pulse_radio',
     icon: Antenna,
     title: 'No broadcasts yet',
-    description: 'Go live! Start broadcasting your voice to your audience in real-time.',
-  },
-
-  voice_threads: {
-    mode: 'voice_threads',
-    icon: MessageCircle,
-    title: 'No threads yet',
-    description: 'Start a discussion! Create your first voice thread and reply to messages.',
-  },
-
-  team_vox: {
-    mode: 'team_vox',
-    icon: Users,
-    title: 'No team conversations',
-    description: 'Collaborate with your team! Start a group voice conversation to get things done.',
+    description: 'Record one to reach everyone at once.',
   },
 
   vox_notes: {
     mode: 'vox_notes',
     icon: StickyNote,
     title: 'No voice notes yet',
-    description: 'Capture your thoughts! Record quick voice notes for yourself anytime.',
-  },
-
-  quick_vox: {
-    mode: 'quick_vox',
-    icon: Zap,
-    title: 'No quick messages',
-    description: 'Send lightning-fast messages! Quick Vox is perfect for rapid-fire communication.',
-  },
-
-  vox_drop: {
-    mode: 'vox_drop',
-    icon: Package,
-    title: 'No drops yet',
-    description: 'Drop a voice note! Leave asynchronous voice messages for anyone to pick up.',
+    description: 'Capture a thought, just for you.',
   },
 
   glimpse: {
     mode: 'glimpse',
     icon: Video,
     title: 'No glimpses in this thread',
-    description: 'Send a glimpse when text isn\'t enough. Pulse transcribes and extracts action items so the recipient doesn\'t have to watch.',
+    description:
+      'Send a glimpse when text isn\'t enough. Pulse transcribes and extracts action items so the recipient doesn\'t have to watch.',
   },
 };
 
-// Helper to get empty state config for a mode
+// Unknown keys (including the retired quick_vox / vox_drop / team_vox /
+// voice_threads modes) fall back to the neutral 'classic' config.
 export function getEmptyStateConfig(mode: string): VoxEmptyStateConfig {
   return VOX_EMPTY_STATES[mode] || VOX_EMPTY_STATES.classic;
 }
