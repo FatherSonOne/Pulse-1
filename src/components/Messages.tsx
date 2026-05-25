@@ -2068,6 +2068,43 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     [activePulseConv, activeThreadId],
   );
 
+  // Path D step 5b (write-path) — create a task / propose a decision FROM a
+  // Pulse-DM message, persisting the message link (origin_message_id /
+  // message_id) so the relationship rail surfaces it. Title is the message
+  // snippet (no AI). Workspace + auth-user scoped; the decisions INSERT RLS
+  // requires created_by = auth.uid(), which currentUser.id (authUser.id) is.
+  const handleCreateTaskFromMessage = useCallback(
+    async (msg: PulseMessage) => {
+      if (!currentWorkspace || !currentUser?.id || !msg.content?.trim()) return;
+      const title = msg.content.trim().replace(/\s+/g, ' ').slice(0, 120);
+      const created = await taskService.createTask({
+        workspace_id: currentWorkspace.id,
+        origin_message_id: msg.id,
+        title,
+        created_by: currentUser.id,
+        priority: 'medium',
+        status: 'todo',
+      });
+      if (created) setDmTasks(prev => [created, ...prev]); // optimistic — rail updates
+    },
+    [currentWorkspace, currentUser?.id],
+  );
+
+  const handleProposeDecisionFromMessage = useCallback(
+    async (msg: PulseMessage) => {
+      if (!currentWorkspace || !currentUser?.id || !msg.content?.trim()) return;
+      const title = msg.content.trim().replace(/\s+/g, ' ').slice(0, 120);
+      const created = await decisionService.createDecision({
+        workspace_id: currentWorkspace.id,
+        message_id: msg.id,
+        title,
+        proposed_by: currentUser.id,
+      });
+      if (created) setDmDecisions(prev => [created, ...prev]); // optimistic — rail updates
+    },
+    [currentWorkspace, currentUser?.id],
+  );
+
   // Generate smart compose suggestions with debounce
   useEffect(() => {
     if (!showSmartCompose || !activeThread || inputText.length < 10) return;
@@ -4537,6 +4574,27 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   <Share className="text-[#f43f5e] w-4" />
                                   Share
                                 </button>
+                                {/* Path D step 5b — create artifacts FROM this message, linked via
+                                    origin_message_id / message_id so the relationship rail surfaces
+                                    them. Workspace-scoped; text messages only. */}
+                                {currentWorkspace && msg.content?.trim() && (
+                                  <>
+                                    <button
+                                      onClick={() => { void handleCreateTaskFromMessage(msg); closePulseContextMenu(); }}
+                                      className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
+                                    >
+                                      <ListChecks className="text-zinc-500 w-4" />
+                                      Create task
+                                    </button>
+                                    <button
+                                      onClick={() => { void handleProposeDecisionFromMessage(msg); closePulseContextMenu(); }}
+                                      className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
+                                    >
+                                      <Scale className="text-zinc-500 w-4" />
+                                      Propose decision
+                                    </button>
+                                  </>
+                                )}
                                 {/* Edit - only for own messages */}
                                 {isMe && msg.content_type === 'text' && (
                                   <button
