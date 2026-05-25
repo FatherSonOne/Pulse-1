@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Calendar Redesign — Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: { extend: { fontFamily: {
+      sans: ['Inter', 'system-ui', 'sans-serif'],
+      mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+    } } },
+  };
+</script>
+<style>
+  /* ─── Pulse design tokens (mirrors src/styles/pulse-tokens.css) ─── */
+  :root {
+    --pulse-rose: #f43f5e;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-bright: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+    --pulse-canvas: #f8f8f8;
+    --pulse-canvas-soft: #f2f2f2;
+    --pulse-surface: #ffffff;
+    --pulse-surface-raised: #f2f2f2;
+    --pulse-border: rgba(0, 0, 0, 0.08);
+    --pulse-border-strong: rgba(0, 0, 0, 0.16);
+    --pulse-ink: #0f0f0f;
+    --pulse-ink-2: #52525b;
+    --pulse-ink-3: #6b7280;
+    /* Coral = AI provenance ONLY. Same hex as rose, different semantic intent. */
+    --pulse-coral: var(--pulse-rose);
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 35%, black 65%);
+    --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-rose) 12%, transparent);
+    --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-rose) 8%, transparent);
+    --pulse-font: 'Inter', system-ui, sans-serif;
+    --pulse-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --pulse-sidebar-bg: #ffffff;
+    --pulse-shadow-main: 0 6px 24px rgba(0, 0, 0, 0.08);
+    /* Calendar category hues — mirror EVENT_TYPES in calendarTypes.ts.
+       In this redesign they are DEMOTED to a quiet accent (a dot / 3px tick),
+       never a full pill fill. The screenshot's saturated-pill rainbow is the
+       bug we fix — and the health orange collides with the coral-is-AI rule. */
+    --cat-meet:     #3b82f6;
+    --cat-call:     #10b981;
+    --cat-focus:    #8b5cf6;
+    --cat-personal: #f59e0b;
+    --cat-deadline: #ef4444;
+    --cat-travel:   #06b6d4;
+    --cat-social:   #ec4899;
+    --cat-health:   #f97316;
+    --cat-event:    #6b7280;
+    --cat-reminder: #a3a3a3;
+  }
+  html[data-theme='dark'] {
+    --pulse-canvas: #000000;
+    --pulse-canvas-soft: #080808;
+    --pulse-surface: rgba(255, 255, 255, 0.03);
+    --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+    --pulse-border: rgba(255, 255, 255, 0.06);
+    --pulse-border-strong: rgba(255, 255, 255, 0.10);
+    --pulse-ink: #fafafa;
+    --pulse-ink-2: #b4b4b8;
+    --pulse-ink-3: #a1a1aa;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 60%, white 40%);
+    --pulse-rose: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.14);
+    --pulse-sidebar-bg: #0a0a0b;
+    --pulse-shadow-main: 0 10px 40px rgba(0, 0, 0, 0.4);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--pulse-font);
+    background: var(--pulse-canvas);
+    color: var(--pulse-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .pulse-bg { background: var(--pulse-canvas); }
+  .pulse-bg-soft { background: var(--pulse-canvas-soft); }
+  .pulse-surface { background: var(--pulse-surface); }
+  .pulse-surface-raised { background: var(--pulse-surface-raised); }
+  .pulse-ink-color { color: var(--pulse-ink); }
+  .pulse-ink-2-color { color: var(--pulse-ink-2); }
+  .pulse-ink-3-color { color: var(--pulse-ink-3); }
+  .pulse-border-color { border-color: var(--pulse-border); }
+  .pulse-border-strong-color { border-color: var(--pulse-border-strong); }
+  .pulse-coral-fg-color { color: var(--pulse-coral-fg); }
+  .pulse-coral-bg-color { background: var(--pulse-coral-bg-12); }
+  .pulse-rose-color { color: var(--pulse-rose); }
+  .pulse-rose-bg-color { background: var(--pulse-rose); }
+  .pulse-rose-bg-soft-color { background: var(--pulse-rose-soft); }
+  .font-mono-pulse { font-family: var(--pulse-mono); font-feature-settings: 'tnum' 1; }
+  .tnum { font-variant-numeric: tabular-nums; }
+  .tracking-wide-mono { letter-spacing: 0.16em; }
+  .tracking-tight-mono { letter-spacing: 0.06em; }
+
+  /* ─── Scrollbars ─── */
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--pulse-border-strong); border-radius: 3px; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--pulse-ink-3); }
+
+  /* ─── Motion ─── */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 240ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes coralPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+  .coral-pulse { animation: coralPulse 1.8s ease-in-out infinite; }
+
+  /* ─── Event chip (the demoted, neutral chip used across all 3 paths) ─── */
+  .ev {
+    display: flex; align-items: center; gap: 6px;
+    padding: 2px 6px 2px 7px;
+    border-radius: 6px;
+    font-size: 11px; line-height: 1.3;
+    color: var(--pulse-ink);
+    background: var(--pulse-surface-raised);
+    border: 1px solid transparent;
+    position: relative;
+    cursor: default;
+    transition: background 140ms, border-color 140ms;
+  }
+  .ev:hover { background: var(--pulse-border); border-color: var(--pulse-border-strong); }
+  .ev .tick { width: 3px; align-self: stretch; border-radius: 2px; flex: 0 0 auto; }
+  .ev .dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
+  .ev .ev-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ev.routine { background: transparent; color: var(--pulse-ink-3); }
+  .ev.routine:hover { background: var(--pulse-surface-raised); }
+
+  /* ─── AI ribbon / chips — the ONLY coral surfaces ─── */
+  .ai-ribbon {
+    background: var(--pulse-coral-bg-08);
+    border: 1px solid var(--pulse-rose-soft);
+    border-radius: 12px;
+  }
+  .ai-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+    background: var(--pulse-coral-bg-12);
+    color: var(--pulse-coral-fg);
+    border: 1px solid var(--pulse-rose-soft);
+  }
+  .ai-card {
+    background: var(--pulse-coral-bg-08);
+    border: 1px solid var(--pulse-rose-soft);
+    border-radius: 12px;
+  }
+
+  /* ─── Severity chips for travel buffers / conflicts ─── */
+  .sev { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 999px; letter-spacing: 0.02em; }
+  .sev-comfortable { background: rgba(16,185,129,0.14); color: #059669; }
+  .sev-tight       { background: rgba(245,158,11,0.16); color: #b45309; }
+  .sev-late        { background: rgba(239,68,68,0.16);  color: #dc2626; }
+  html[data-theme='dark'] .sev-comfortable { color: #34d399; }
+  html[data-theme='dark'] .sev-tight { color: #fbbf24; }
+  html[data-theme='dark'] .sev-late { color: #f87171; }
+
+  /* ─── Studio timeline ─── */
+  .lane-grid { background-image: repeating-linear-gradient(to bottom, var(--pulse-border) 0, var(--pulse-border) 1px, transparent 1px, transparent var(--hour-h, 66px)); }
+  .block {
+    position: absolute; left: 0; right: 8px;
+    border-radius: 8px;
+    padding: 6px 9px;
+    overflow: hidden;
+    border: 1px solid var(--pulse-border-strong);
+    background: var(--pulse-surface);
+    box-shadow: var(--pulse-shadow-main);
+  }
+  .block .blk-tick { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
+  .ghost-block {
+    position: absolute; right: 8px;
+    border: 1.5px dashed var(--pulse-rose);
+    background: var(--pulse-coral-bg-08);
+    border-radius: 8px;
+  }
+  .buffer-gap {
+    position: absolute; left: 0; right: 8px;
+    background: repeating-linear-gradient(135deg, var(--pulse-border) 0 5px, transparent 5px 10px);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ─── Playground chrome ─── */
+  .pg-bar {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  html[data-theme='light'] .pg-bar { background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent); }
+  .pg-pill { transition: background 180ms, color 180ms; }
+  .pg-pill[data-active='true'] { background: var(--pulse-rose); color: white; }
+  .pg-pill:not([data-active='true']):hover { background: var(--pulse-surface-raised); }
+  .seg { transition: background 140ms, color 140ms; }
+  .seg[data-active='true'] { background: var(--pulse-surface); color: var(--pulse-ink); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+</style>
+</head>
+<body class="overflow-hidden">
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect } = React;
+
+/* ════════════════════════════════════════════════════════════════════════
+   CATEGORY MODEL — mirrors EVENT_TYPES in src/components/Calendar/calendarTypes.ts.
+   Color is intentionally rendered as a quiet accent, never a fill.
+   ════════════════════════════════════════════════════════════════════════ */
+const CAT = {
+  meet:     { color: 'var(--cat-meet)',     label: 'Meeting',  icon: 'video' },
+  call:     { color: 'var(--cat-call)',     label: 'Call',     icon: 'phone' },
+  focus:    { color: 'var(--cat-focus)',    label: 'Focus',    icon: 'brain' },
+  personal: { color: 'var(--cat-personal)', label: 'Personal', icon: 'user'  },
+  deadline: { color: 'var(--cat-deadline)', label: 'Deadline', icon: 'flag'  },
+  travel:   { color: 'var(--cat-travel)',   label: 'Travel',   icon: 'plane' },
+  social:   { color: 'var(--cat-social)',   label: 'Social',   icon: 'users' },
+  health:   { color: 'var(--cat-health)',   label: 'Health',   icon: 'heart' },
+  event:    { color: 'var(--cat-event)',    label: 'Event',    icon: 'calendar' },
+  reminder: { color: 'var(--cat-reminder)', label: 'Reminder', icon: 'bell'  },
+};
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED MOCK DATA — May 2026, "today" pinned to Mon 25 (matches screenshot).
+   Recurring events (AA Serenity Circle daily, Magan: Work from home weekdays)
+   reproduce the screenshot's low-signal flood — they're what we demote.
+   ════════════════════════════════════════════════════════════════════════ */
+const TODAY = new Date(2026, 4, 25); // May 25 2026 (Mon)
+const MONTH_LABEL = 'May 2026';
+
+// Curated, time-stamped events for "today" (drive the agenda, buffers, conflict).
+const TODAY_EVENTS = [
+  { id: 't-aa',    title: 'AA Serenity Circle', type: 'meet',     start: '8:00 AM',  end: '9:00 AM',  loc: 'Community Center', recurring: true,  with: [] },
+  { id: 't-work',  title: 'Magan: Work from home', type: 'event', start: '9:00 AM',  end: '12:00 PM', recurring: true, with: [] },
+  { id: 't-lunch', title: 'Lunch with Devin',   type: 'social',   start: '12:30 PM', end: '1:15 PM',  loc: "Mae's Diner, Downtown", with: ['Devin Park'] },
+  { id: 't-call',  title: 'Call Evelyn',        type: 'call',      start: '2:45 PM',  end: '3:05 PM',  with: ['Evelyn Hart'] },
+  { id: 't-maria', title: '1:1 with Maria',     type: 'meet',      start: '3:00 PM',  end: '3:30 PM',  loc: 'Zoom', with: ['Maria Schaefer'] },
+  { id: 't-jax',   title: 'Pick up Jax',        type: 'personal',  start: '3:15 PM',  end: '3:45 PM',  loc: 'Eastside Elementary', with: [] },
+  { id: 't-focus', title: 'Deep work — Q2 deck',type: 'focus',     start: '4:00 PM',  end: '6:00 PM',  with: [] },
+];
+
+// Specific named events keyed by day-of-May (recurring ones are generated).
+const MAY_EVENTS = {
+  1:  [{ title: 'Magan: OFF', type: 'event' }, { title: 'Open bank account', type: 'personal' }],
+  2:  [{ title: 'Magan Gym Time', type: 'health' }],
+  4:  [{ title: 'Magan Dr Appt', type: 'health' }, { title: 'Phone call with bank', type: 'call' }],
+  5:  [{ title: 'Meatballs for TL', type: 'personal' }, { title: 'Magan Hair Appt', type: 'personal' }],
+  6:  [{ title: 'The Oconee Well', type: 'event' }],
+  7:  [{ title: 'Call Evelyn', type: 'call' }],
+  8:  [{ title: 'Magan Teach on…', type: 'event' }],
+  9:  [{ title: 'Magan Gym Time', type: 'health' }],
+  10: [{ title: '{My ❤ Beautiful}', type: 'social' }, { title: 'Meet with Ruthie', type: 'meet' }],
+  11: [{ title: "Jax's Tutoring", type: 'personal' }],
+  12: [{ title: "Jax's Tutoring", type: 'personal' }, { title: 'Ripple of One Vox', type: 'event' }],
+  13: [{ title: 'Fundraiser (Mae)', type: 'social' }, { title: 'Ripple of One Vox', type: 'event' }],
+  14: [{ title: 'Jaxon Asher Mem.', type: 'social' }, { title: "Jax's 11th Birthday", type: 'social' }, { title: 'Magan Set Up Stand', type: 'event' }],
+  15: [{ title: 'Magan: OFF', type: 'event' }],
+  16: [{ title: 'Magan Gym Time', type: 'health' }],
+  18: [{ title: "Jax's Summer & …", type: 'personal' }],
+  19: [{ title: 'Magan Dr Appt', type: 'health' }],
+  20: [{ title: 'Dr Hendricks', type: 'health' }],
+  21: [{ title: 'Chiropractor Appt', type: 'health' }, { title: "Jax's Soccer Pract.", type: 'social' }],
+  23: [{ title: 'Magan Gym Time', type: 'health' }],
+  24: [{ title: 'Meet with Ruthie', type: 'meet' }, { title: 'House Church', type: 'social' }],
+  25: [{ title: 'Lunch with Devin', type: 'social' }, { title: 'Call Evelyn', type: 'call' }, { title: '1:1 with Maria', type: 'meet' }, { title: 'Pick up Jax', type: 'personal' }],
+  26: [{ title: 'Staff Meeting', type: 'meet' }],
+  27: [{ title: 'Ripple of One Vox', type: 'event' }],
+  28: [{ title: 'Dreama and Magan', type: 'event' }, { title: "Conner's High Sch.", type: 'social' }],
+  29: [{ title: 'Magan work 1-5pm', type: 'event' }, { title: 'Oconee/Anderson', type: 'travel' }],
+  30: [{ title: 'XBOX Gamepass', type: 'reminder' }, { title: "Conner's High Sch.", type: 'social' }],
+};
+
+/* Returns the full event list for a given Date — recurring + specific. */
+function eventsForDate(d) {
+  const out = [];
+  const dow = d.getDay();
+  const inMay = d.getMonth() === 4 && d.getFullYear() === 2026;
+  // daily recurring
+  out.push({ title: 'AA Serenity Circle', type: 'meet', recurring: true });
+  // weekday recurring
+  if (dow >= 1 && dow <= 5) out.push({ title: 'Magan: Work from…', type: 'event', recurring: true });
+  // specific
+  if (inMay && MAY_EVENTS[d.getDate()]) {
+    MAY_EVENTS[d.getDate()].forEach(e => out.push(e));
+  }
+  return out.map((e, i) => ({ ...e, id: `${d.toISOString().slice(0,10)}-${i}` }));
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   AI SURFACES — grounded in calendarAIService.ts (detectConflicts,
+   analyzeTravelBuffers, suggestFocusBlocks, generateRescheduleOptions).
+   These are the ONLY places coral is allowed to appear.
+   ════════════════════════════════════════════════════════════════════════ */
+const AI_TODAY = {
+  headline: '1 conflict · 1 late drive · focus protected',
+  items: [
+    { kind: 'conflict', sev: 'late',  text: '1:1 with Maria (3:00) overlaps Pick up Jax (3:15).', detail: 'Hard double-book — both need you.' },
+    { kind: 'travel',   sev: 'late',  text: '18 min drive to Eastside, only 10 min after your call.', detail: "You'll be ~8 min late for pickup." },
+    { kind: 'focus',    sev: 'comfortable', text: 'Deep work 4–6 PM is your only 2-hr block this week.', detail: 'Held — nothing competing.' },
+  ],
+  suggestion: { text: 'Move 1:1 with Maria to 3:35 PM', why: 'Clears the pickup window and keeps the focus block intact.', score: 92 },
+};
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED HELPERS
+   ════════════════════════════════════════════════════════════════════════ */
+const AVATAR_PALETTE = ['#6366f1','#8b5cf6','#d946ef','#ec4899','#0ea5e9','#06b6d4','#14b8a6','#64748b'];
+function colorForId(id = '') {
+  let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+}
+function initials(name = '') {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || '?';
+}
+function buildMonthGrid(year, month) {
+  const first = new Date(year, month, 1);
+  const start = new Date(year, month, 1 - first.getDay());
+  const cells = [];
+  for (let i = 0; i < 42; i++) { const d = new Date(start); d.setDate(start.getDate() + i); cells.push(d); }
+  return cells;
+}
+function toMin(t) {
+  const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i); if (!m) return 0;
+  let h = (+m[1]) % 12; if (/pm/i.test(m[3])) h += 12;
+  return h * 60 + (+m[2]);
+}
+const DOW = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const sameDay = (a, b) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+
+/* ════════════════════════════════════════════════════════════════════════
+   ICON SET (inline SVG only — never imagery)
+   ════════════════════════════════════════════════════════════════════════ */
+function Icon({ name, className = 'w-4 h-4' }) {
+  const c = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  switch (name) {
+    case 'calendar': return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>;
+    case 'chevL':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="15 18 9 12 15 6"/></svg>;
+    case 'chevR':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 18 15 12 9 6"/></svg>;
+    case 'chevD':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="6 9 12 15 18 9"/></svg>;
+    case 'plus':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 5v14M5 12h14"/></svg>;
+    case 'search':   return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>;
+    case 'settings': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06A2 2 0 1 1 4.14 16.93l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9.4a1.7 1.7 0 0 0-.34-1.87l-.06-.06A2 2 0 1 1 7.07 4.64l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1.03Z"/></svg>;
+    case 'more':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>;
+    case 'sparkles': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>;
+    case 'clock':    return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>;
+    case 'pin':      return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
+    case 'car':      return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13"/><path d="M5 13h14v4a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1H8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-4Z"/><circle cx="7.5" cy="16" r="0.6" fill="currentColor"/><circle cx="16.5" cy="16" r="0.6" fill="currentColor"/></svg>;
+    case 'alert':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M10.3 3.86 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>;
+    case 'video':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="m23 7-7 5 7 5V7Z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>;
+    case 'phone':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>;
+    case 'brain':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24A2.5 2.5 0 0 0 14.5 2Z"/></svg>;
+    case 'user':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>;
+    case 'users':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+    case 'heart':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg>;
+    case 'flag':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>;
+    case 'plane':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 1 0-3-3L13 8 4.8 6.2a.5.5 0 0 0-.5.8l3.9 3.9-1.6 3.2-2.4.5a.5.5 0 0 0-.3.8L7 22l2.4-2.3 3.2-1.6 3.9 3.9a.5.5 0 0 0 .8-.3Z"/></svg>;
+    case 'bell':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>;
+    case 'grid':     return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>;
+    case 'list':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>;
+    case 'layout':   return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M9 9h12"/></svg>;
+    case 'columns':  return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></svg>;
+    case 'inbox':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>;
+    case 'mail':     return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>;
+    case 'radio':    return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.24a6 6 0 0 1 0-8.48M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>;
+    case 'live':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></svg>;
+    case 'check':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>;
+    case 'bookmark': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"/></svg>;
+    case 'dot':      return <svg viewBox="0 0 24 24" className={className}><circle cx="12" cy="12" r="6" fill="currentColor"/></svg>;
+    case 'sun':      return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>;
+    case 'moon':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>;
+    case 'logo':     return <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h3l2-7 4 14 2-7h7"/></svg>;
+    default:         return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="9"/></svg>;
+  }
+}
+
+/* Quiet event chip — category color demoted to a 3px tick + optional dot. */
+function EventChip({ ev, showTime, variant = 'tick' }) {
+  const cat = CAT[ev.type] || CAT.event;
+  return (
+    <div className={`ev ${ev.recurring ? 'routine' : ''}`} title={`${ev.title} · ${cat.label}`}>
+      {variant === 'tick'
+        ? <span className="tick" style={{ background: ev.recurring ? 'var(--pulse-border-strong)' : cat.color }}/>
+        : <span className="dot" style={{ background: ev.recurring ? 'var(--pulse-border-strong)' : cat.color }}/>}
+      {showTime && ev.start && <span className="font-mono-pulse tnum pulse-ink-3-color" style={{ fontSize: 10 }}>{ev.start.replace(':00','')}</span>}
+      <span className="ev-title">{ev.title}</span>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PULSE SIDEBAR — shared app chrome, Calendar marked active
+   ════════════════════════════════════════════════════════════════════════ */
+function PulseSidebar({ theme, onToggleTheme }) {
+  const items = [
+    { group: 'Overview',      rows: [{ icon: 'inbox', label: 'Dashboard' }] },
+    { group: 'Communication', rows: [
+        { icon: 'inbox', label: 'Messages' }, { icon: 'mail', label: 'Email' },
+        { icon: 'radio', label: 'Relay' }, { icon: 'live', label: 'Glimpse' } ] },
+    { group: 'Work & People', rows: [
+        { icon: 'calendar', label: 'Calendar', active: true }, { icon: 'users', label: 'Meetings' },
+        { icon: 'user', label: 'Contacts' }, { icon: 'check', label: 'Decisions & Tasks' } ] },
+    { group: 'Intelligence',  rows: [
+        { icon: 'search', label: 'Search' }, { icon: 'sparkles', label: 'Analytics' },
+        { icon: 'bookmark', label: 'War Room' }, { icon: 'inbox', label: 'Archives' },
+        { icon: 'sparkles', label: 'User Guide' } ] },
+  ];
+  return (
+    <aside className="h-full w-[232px] shrink-0 flex flex-col border-r pulse-border-color" style={{ background: 'var(--pulse-sidebar-bg)' }}>
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center pulse-rose-bg-color text-white shrink-0"><Icon name="logo" className="w-5 h-5"/></div>
+        <div className="leading-tight">
+          <div className="text-lg font-semibold pulse-rose-color">Pulse</div>
+          <div className="text-[10px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">JCK</div>
+        </div>
+        <div className="ml-auto flex items-center gap-2 pulse-ink-3-color">
+          <button className="hover:pulse-ink-color"><Icon name="settings" className="w-4 h-4"/></button>
+        </div>
+      </div>
+      <div className="mx-3 mb-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--pulse-surface-raised)' }}>
+        <div className="flex items-center gap-2"><div className="w-5 h-5 rounded-md pulse-rose-bg-color"/><span className="text-sm font-medium pulse-ink-color">My Workspace</span></div>
+        <div className="flex items-center gap-1.5"><span className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse pulse-coral-bg-color pulse-coral-fg-color tracking-tight-mono">OWNER</span><Icon name="chevD" className="w-3 h-3 pulse-ink-3-color"/></div>
+      </div>
+      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        {items.map(grp => (
+          <div key={grp.group} className="mb-3">
+            <div className="flex items-center gap-2 px-2 py-1.5 text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color"><Icon name="dot" className="w-1.5 h-1.5"/><span>{grp.group.toUpperCase()}</span></div>
+            {grp.rows.map(r => (
+              <button key={r.label} className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition ${r.active ? 'pulse-rose-color pulse-rose-bg-soft-color' : 'pulse-ink-2-color hover:pulse-ink-color'}`}>
+                <Icon name={r.icon} className="w-4 h-4 opacity-90"/><span>{r.label}</span>
+              </button>
+            ))}
+          </div>
+        ))}
+        <div className="px-2 py-1.5 text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color flex items-center gap-2"><Icon name="dot" className="w-1.5 h-1.5"/><span>EXPERIMENTAL</span><Icon name="chevR" className="w-3 h-3 ml-auto pulse-ink-3-color"/></div>
+      </nav>
+      <div className="px-3 pb-2">
+        <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl pulse-rose-bg-soft-color">
+          <div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="sparkles" className="w-4 h-4"/></div><span className="text-sm font-medium pulse-rose-color">Pulse AI</span></div>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono-pulse pulse-ink-3-color border pulse-border-color">Ctrl·/</span>
+        </button>
+      </div>
+      <div className="border-t pulse-border-color px-3 py-2 space-y-1">
+        <button onClick={onToggleTheme} className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm pulse-ink-2-color hover:pulse-ink-color"><Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4"/><span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span></button>
+        <div className="mt-2 pt-2 border-t pulse-border-color flex items-center gap-2.5 px-2 py-1">
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: colorForId('Frankie Messana') }}>FM</div>
+          <div className="leading-tight"><div className="text-xs font-medium pulse-ink-color">Frankie Messana</div><div className="text-[10px] pulse-ink-3-color truncate max-w-[140px]">jehovahsneaky83@gmail.com</div></div>
+          <Icon name="chevD" className="w-3 h-3 ml-auto pulse-ink-3-color"/>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ABOUT-THIS-PATH BANNER (same component shape as Relay / Messages playgrounds)
+   ════════════════════════════════════════════════════════════════════════ */
+function AboutPath({ tag, name, archetype, iaFix, vibe }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="mx-4 mt-3 rounded-lg border pulse-border-color overflow-hidden text-xs" style={{ background: 'var(--pulse-surface)' }}>
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-2 px-3 py-2 pulse-ink-2-color">
+        <Icon name="sparkles" className="w-3.5 h-3.5 pulse-rose-color"/>
+        <span className="font-mono-pulse tracking-wide-mono pulse-rose-color">PATH {tag}</span>
+        <span className="pulse-ink-color font-medium">{name}</span>
+        <span className="ml-auto pulse-ink-3-color">{open ? 'hide' : 'show'} notes</span>
+        <Icon name={open ? 'chevD' : 'chevR'} className="w-3.5 h-3.5 pulse-ink-3-color"/>
+      </button>
+      {open && (
+        <div className="grid grid-cols-3 gap-3 px-3 pb-3 border-t pulse-border-color pt-3">
+          <div><div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-1">ARCHETYPE</div><div className="pulse-ink-color leading-snug">{archetype}</div></div>
+          <div><div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-1">IA / COLOR FIX</div><div className="pulse-ink-color leading-snug">{iaFix}</div></div>
+          <div><div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-1">VIBE</div><div className="pulse-ink-color leading-snug">{vibe}</div></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Shared toolbar (month nav + view segmented control). Each path passes its own
+   view options so the segmented control reflects the path's primary surface. */
+function CalToolbar({ views, view, setView, right }) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-2.5 border-b pulse-border-color">
+      <div className="text-lg font-semibold pulse-ink-color">{MONTH_LABEL}</div>
+      <div className="flex items-center gap-0.5 ml-1">
+        <button className="p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-2-color"><Icon name="chevL" className="w-4 h-4"/></button>
+        <button className="p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-2-color"><Icon name="chevR" className="w-4 h-4"/></button>
+      </div>
+      <button className="px-2.5 py-1 rounded-md text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color border pulse-border-color hover:pulse-surface-raised">TODAY</button>
+      <div className="ml-auto flex items-center gap-1 p-0.5 rounded-lg pulse-surface-raised">
+        {views.map(v => (
+          <button key={v.id} data-active={view === v.id} onClick={() => setView(v.id)}
+            className="seg flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium pulse-ink-2-color">
+            <Icon name={v.icon} className="w-3.5 h-3.5"/><span>{v.label}</span>
+          </button>
+        ))}
+      </div>
+      {right}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════
+   PATH A — CLEAR MONTH   (Conservative · Fantastical / Cron polish)
+   IA + COLOR FIX: keep the month grid (the familiar shape), but kill the
+   rainbow. Category color becomes a 3px tick, titles go neutral ink, the
+   two daily recurring events fold into one muted "routine" line per cell.
+   Coral returns to one place only: the AI day-ribbon above the grid.
+   ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════ */
+function PathA() {
+  const [view, setView] = useState('month');
+  const cells = useMemo(() => buildMonthGrid(2026, 4), []);
+  return (
+    <div className="h-full flex flex-col">
+      <CalToolbar views={[{id:'month',label:'Month',icon:'grid'},{id:'week',label:'Week',icon:'columns'},{id:'day',label:'Day',icon:'list'}]} view={view} setView={setView}
+        right={<div className="flex items-center gap-1 ml-2"><button className="p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="search" className="w-4 h-4"/></button><button className="w-7 h-7 rounded-md pulse-rose-bg-color text-white flex items-center justify-center"><Icon name="plus" className="w-4 h-4"/></button></div>} />
+
+      <AboutPath tag="A" name="Clear Month"
+        archetype="Fantastical / Cron — same month grid, executed at 95%."
+        iaFix="Category color demoted to a 3px tick; titles neutral. The 2 daily recurring events collapse to one muted ‘routine’ line. Coral reclaimed for the AI ribbon only — health-orange no longer fights it."
+        vibe="Calm, dense, legible. The grid stops shouting; the one coral thing is the part that's actually intelligent." />
+
+      {/* ONE coral surface — AI day ribbon */}
+      <div className="mx-4 mt-3 ai-ribbon px-3.5 py-2.5 flex items-center gap-3 fade-up">
+        <Icon name="sparkles" className="w-4 h-4 pulse-rose-color shrink-0"/>
+        <div className="text-[12px] pulse-ink-color">
+          <span className="font-semibold pulse-coral-fg-color">Today, May 25 · </span>
+          {AI_TODAY.headline}
+        </div>
+        <div className="ml-auto flex items-center gap-1.5">
+          <span className="sev sev-late">conflict 3:00–3:45</span>
+          <button className="ai-chip">Review <Icon name="chevR" className="w-3 h-3"/></button>
+        </div>
+      </div>
+
+      {/* Month grid */}
+      <div className="flex-1 overflow-auto px-4 pt-3 pb-4">
+        <div className="grid grid-cols-7 gap-px rounded-xl overflow-hidden border pulse-border-color" style={{ background: 'var(--pulse-border)' }}>
+          {DOW.map(d => (
+            <div key={d} className="px-2 py-2 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color text-center" style={{ background: 'var(--pulse-surface)' }}>{d}</div>
+          ))}
+          {cells.map((d, i) => {
+            const evs = eventsForDate(d);
+            const routine = evs.filter(e => e.recurring);
+            const real = evs.filter(e => !e.recurring);
+            const isToday = sameDay(d, TODAY);
+            const dim = d.getMonth() !== 4;
+            return (
+              <div key={i} className="min-h-[112px] p-1.5 flex flex-col gap-1"
+                style={{ background: isToday ? 'var(--pulse-coral-bg-08)' : 'var(--pulse-surface)', opacity: dim ? 0.42 : 1 }}>
+                <div className="flex items-center gap-1.5 px-0.5">
+                  <span className={`text-[11px] tnum ${isToday ? 'w-5 h-5 rounded-full pulse-rose-bg-color text-white flex items-center justify-center font-semibold' : 'pulse-ink-2-color'}`}>{d.getDate()}</span>
+                </div>
+                {real.slice(0, 3).map(e => <EventChip key={e.id} ev={e} variant="tick"/>)}
+                {routine.length > 0 && (
+                  <div className="ev routine" title={routine.map(r=>r.title).join(' · ')}>
+                    <span className="tick" style={{ background: 'var(--pulse-border-strong)' }}/>
+                    <span className="ev-title">{routine.length} routine</span>
+                  </div>
+                )}
+                {real.length > 3 && <div className="text-[10px] pulse-ink-3-color px-1.5">+{real.length - 3} more</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════
+   PATH B — TODAY + RAIL   (Bold · Things 3 / Notion Calendar two-pane)
+   IA + COLOR FIX: stop opening on the month. Open on an agenda spine for the
+   selected day (time-ordered, what's actually happening), with a week strip
+   on top and a context rail on the right. The rail is where the SHIPPED
+   travel-buffer + conflict-detection features finally live (coral provenance).
+   ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════ */
+function PathB() {
+  const [view, setView] = useState('agenda');
+  const week = useMemo(() => {
+    const start = new Date(TODAY); start.setDate(TODAY.getDate() - TODAY.getDay());
+    return Array.from({ length: 7 }, (_, i) => { const d = new Date(start); d.setDate(start.getDate()+i); return d; });
+  }, []);
+  // agenda buffer annotations (mock — grounded in useCalendarTravelBuffers shape)
+  const buffers = {
+    't-jax': { sev: 'late', text: '18 min drive · ~8 min late' },
+    't-lunch': { sev: 'comfortable', text: '6 min drive' },
+  };
+  return (
+    <div className="h-full flex flex-col">
+      <CalToolbar views={[{id:'agenda',label:'Today',icon:'list'},{id:'week',label:'Week',icon:'columns'},{id:'month',label:'Month',icon:'grid'}]} view={view} setView={setView}
+        right={<button className="ml-2 w-7 h-7 rounded-md pulse-rose-bg-color text-white flex items-center justify-center"><Icon name="plus" className="w-4 h-4"/></button>} />
+
+      <AboutPath tag="B" name="Today + Rail"
+        archetype="Things 3 / Notion Calendar — agenda-first, two-pane."
+        iaFix="Default view is the day's agenda, not the month. Category color is a left tick. The right rail surfaces the already-shipped travel-buffer & conflict engine — the calendar's intelligence finally has a home. Coral lives only in the rail + AI suggestion."
+        vibe="Answers ‘what do I actually do today’ in one glance. The month becomes a week strip you scrub, not the main event." />
+
+      {/* week strip */}
+      <div className="px-4 pt-3">
+        <div className="grid grid-cols-7 gap-1.5">
+          {week.map((d, i) => {
+            const isToday = sameDay(d, TODAY);
+            const count = eventsForDate(d).filter(e => !e.recurring).length;
+            return (
+              <button key={i} className="rounded-lg border px-2 py-2 text-center transition hover:pulse-surface-raised"
+                style={{ borderColor: isToday ? 'var(--pulse-rose)' : 'var(--pulse-border)', background: isToday ? 'var(--pulse-coral-bg-08)' : 'var(--pulse-surface)' }}>
+                <div className="text-[9px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">{DOW[d.getDay()]}</div>
+                <div className={`text-[15px] tnum mt-0.5 ${isToday ? 'pulse-rose-color font-semibold' : 'pulse-ink-color'}`}>{d.getDate()}</div>
+                <div className="flex items-center justify-center gap-0.5 mt-1 h-1.5">
+                  {Array.from({ length: Math.min(count, 4) }).map((_, k) => <span key={k} className="w-1 h-1 rounded-full" style={{ background: 'var(--pulse-ink-3)' }}/>)}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* two-pane: agenda spine + context rail */}
+      <div className="flex-1 overflow-hidden flex gap-3 px-4 py-3">
+        {/* agenda spine */}
+        <div className="flex-1 overflow-auto pr-1">
+          <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2 px-1">MONDAY, MAY 25 · 7 EVENTS</div>
+          <div className="relative pl-[68px]">
+            <div className="absolute left-[58px] top-1 bottom-1 w-px" style={{ background: 'var(--pulse-border)' }}/>
+            {TODAY_EVENTS.map((e, i) => {
+              const cat = CAT[e.type] || CAT.event;
+              const buf = buffers[e.id];
+              const conflict = e.id === 't-maria' || e.id === 't-jax';
+              return (
+                <div key={e.id} className="relative mb-2.5 fade-up" style={{ animationDelay: `${i*30}ms` }}>
+                  <div className="absolute -left-[68px] top-2 text-[11px] font-mono-pulse tnum pulse-ink-3-color w-[52px] text-right">{e.start.replace(':00','')}</div>
+                  <div className="absolute -left-[14px] top-2.5 w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: cat.color, background: 'var(--pulse-canvas)' }}/>
+                  <div className="rounded-xl border p-2.5" style={{ borderColor: conflict ? 'var(--cat-deadline)' : 'var(--pulse-border)', background: 'var(--pulse-surface)' }}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1 self-stretch rounded" style={{ background: cat.color, minHeight: 16 }}/>
+                      <Icon name={cat.icon} className="w-3.5 h-3.5" />
+                      <span className="text-[13px] font-medium pulse-ink-color">{e.title}</span>
+                      {e.recurring && <span className="text-[9px] font-mono-pulse tracking-wide-mono pulse-ink-3-color border pulse-border-color rounded px-1">RECURS</span>}
+                      <span className="ml-auto text-[11px] font-mono-pulse tnum pulse-ink-3-color">{e.start}–{e.end}</span>
+                    </div>
+                    {(e.loc || e.with.length > 0 || buf) && (
+                      <div className="flex items-center gap-2.5 mt-1.5 pl-3 text-[11px] pulse-ink-3-color flex-wrap">
+                        {e.with.length > 0 && <span className="flex items-center gap-1"><Icon name="user" className="w-3 h-3"/>{e.with.join(', ')}</span>}
+                        {e.loc && <span className="flex items-center gap-1"><Icon name="pin" className="w-3 h-3"/>{e.loc}</span>}
+                        {buf && <span className={`sev sev-${buf.sev} flex items-center gap-1`}><Icon name="car" className="w-3 h-3"/>{buf.text}</span>}
+                        {conflict && <span className="sev sev-late flex items-center gap-1"><Icon name="alert" className="w-3 h-3"/>conflict</span>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* context rail — the only coral pane */}
+        <div className="w-[300px] shrink-0 overflow-auto space-y-3">
+          <div className="ai-card p-3 fade-up">
+            <div className="flex items-center gap-2 mb-2"><Icon name="sparkles" className="w-4 h-4 pulse-rose-color"/><span className="text-[11px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · TODAY</span></div>
+            <div className="space-y-2">
+              {AI_TODAY.items.map((it, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className={`sev sev-${it.sev} mt-0.5 shrink-0`}>{it.kind}</span>
+                  <div className="text-[12px] pulse-ink-color leading-snug">{it.text}<div className="text-[11px] pulse-ink-3-color">{it.detail}</div></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="ai-card p-3">
+            <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color mb-2">SUGGESTED FIX</div>
+            <div className="text-[13px] font-medium pulse-ink-color">{AI_TODAY.suggestion.text}</div>
+            <div className="text-[11px] pulse-ink-3-color mt-1 leading-snug">{AI_TODAY.suggestion.why}</div>
+            <div className="flex items-center gap-2 mt-2.5">
+              <button className="flex-1 py-1.5 rounded-lg pulse-rose-bg-color text-white text-[12px] font-medium">Apply</button>
+              <button className="px-3 py-1.5 rounded-lg border pulse-border-color text-[12px] pulse-ink-2-color">Dismiss</button>
+              <span className="ml-auto font-mono-pulse text-[12px] tnum font-semibold pulse-coral-fg-color">{AI_TODAY.suggestion.score}%</span>
+            </div>
+          </div>
+          <div className="rounded-xl border pulse-border-color p-3" style={{ background: 'var(--pulse-surface)' }}>
+            <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">PEOPLE TODAY</div>
+            {['Devin Park','Evelyn Hart','Maria Schaefer'].map(n => (
+              <div key={n} className="flex items-center gap-2 py-1">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold text-white" style={{ background: colorForId(n) }}>{initials(n)}</div>
+                <span className="text-[12px] pulse-ink-color">{n}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════
+   PATH C — TIMELINE STUDIO   (Experimental · media-app timeline)
+   IA + COLOR FIX: render the day as a producer's timeline — events are
+   duration-proportional blocks on an hour rail, conflicts overlap visibly,
+   focus time is open canvas, travel buffers are hatched gaps with drive
+   chips, and AI reschedule appears as a coral DASHED ghost slot you drag into.
+   ════════════════════════════════════════════════════════════════════════
+   ════════════════════════════════════════════════════════════════════════ */
+function PathC() {
+  const [view, setView] = useState('studio');
+  const HOUR_H = 66, START_H = 8, END_H = 19;
+  const pxPerMin = HOUR_H / 60;
+  const hours = Array.from({ length: END_H - START_H + 1 }, (_, i) => START_H + i);
+  const railTop = (t) => (toMin(t) - START_H * 60) * pxPerMin;
+  const railH = (s, e) => (toMin(e) - toMin(s)) * pxPerMin;
+  // two columns to split the 3:00–3:45 overlap visually
+  const colOf = (e) => (e.id === 't-jax' ? 1 : 0);
+  return (
+    <div className="h-full flex flex-col">
+      <CalToolbar views={[{id:'studio',label:'Studio',icon:'layout'},{id:'week',label:'Week',icon:'columns'},{id:'month',label:'Month',icon:'grid'}]} view={view} setView={setView}
+        right={<div className="flex items-center gap-1 ml-2"><button className="ai-chip"><Icon name="sparkles" className="w-3.5 h-3.5"/>Auto-arrange</button></div>} />
+
+      <AboutPath tag="C" name="Timeline Studio"
+        archetype="Media-app timeline (Final Cut / Arc) — time-native, density-aware."
+        iaFix="Events become duration-proportional blocks on an hour rail; overlaps render side-by-side so a double-book is visually undeniable. Focus = open canvas, drives = hatched gaps. AI reschedule is a coral DASHED ghost slot. Category color = a thin block tick."
+        vibe="The most opinionated. Time is spatial — you feel a packed afternoon and an empty drive window instead of reading pills." />
+
+      <div className="flex-1 overflow-hidden flex gap-3 px-4 py-3">
+        {/* the timeline */}
+        <div className="flex-1 overflow-auto rounded-xl border pulse-border-color" style={{ background: 'var(--pulse-surface)' }}>
+          <div className="px-3 py-2 border-b pulse-border-color flex items-center gap-2 sticky top-0 z-10" style={{ background: 'var(--pulse-surface)' }}>
+            <span className="text-[13px] font-semibold pulse-ink-color">Monday, May 25</span>
+            <span className="sev sev-late flex items-center gap-1"><Icon name="alert" className="w-3 h-3"/>3:00–3:45 double-book</span>
+          </div>
+          <div className="relative" style={{ '--hour-h': HOUR_H+'px' }}>
+            <div className="lane-grid relative ml-[56px] mr-2" style={{ height: (END_H - START_H) * HOUR_H + 20 }}>
+              {/* hour labels */}
+              {hours.map((h, i) => (
+                <div key={h} className="absolute -left-[52px] text-[10px] font-mono-pulse tnum pulse-ink-3-color" style={{ top: i * HOUR_H - 6 }}>
+                  {((h + 11) % 12) + 1}{h < 12 ? 'a' : 'p'}
+                </div>
+              ))}
+
+              {/* focus block as OPEN CANVAS (low-contrast, not a solid pill) */}
+              {(() => {
+                const f = TODAY_EVENTS.find(e => e.id === 't-focus'); const cat = CAT.focus;
+                return (
+                  <div className="absolute left-0 right-2 rounded-lg flex flex-col justify-center px-3"
+                    style={{ top: railTop(f.start), height: railH(f.start, f.end), border: `1.5px dashed ${cat.color}`, background: 'color-mix(in oklab, var(--cat-focus) 8%, transparent)' }}>
+                    <div className="flex items-center gap-1.5"><Icon name="brain" className="w-3.5 h-3.5" style={{ color: cat.color }}/><span className="text-[12px] font-medium pulse-ink-color">{f.title}</span></div>
+                    <span className="text-[10px] pulse-ink-3-color">Open canvas · 4:00–6:00 PM · protected</span>
+                  </div>
+                );
+              })()}
+
+              {/* travel buffer hatched gap before pickup */}
+              <div className="buffer-gap" style={{ top: railTop('3:05 PM'), height: railH('3:05 PM','3:15 PM') }}>
+                <span className="sev sev-late flex items-center gap-1 -translate-y-px"><Icon name="car" className="w-3 h-3"/>18 min drive</span>
+              </div>
+
+              {/* AI ghost slot — suggested Maria reschedule (coral dashed) */}
+              <div className="ghost-block flex flex-col justify-center px-2.5" style={{ top: railTop('3:35 PM'), height: railH('3:35 PM','4:00 PM'), left: '50%' }}>
+                <div className="flex items-center gap-1.5"><Icon name="sparkles" className="w-3 h-3 pulse-rose-color"/><span className="text-[11px] font-medium pulse-coral-fg-color">Move 1:1 here</span></div>
+                <span className="text-[10px] pulse-coral-fg-color opacity-80">AI · clears pickup</span>
+              </div>
+
+              {/* real timed blocks (skip focus, handled above) */}
+              {TODAY_EVENTS.filter(e => e.id !== 't-focus').map(e => {
+                const cat = CAT[e.type] || CAT.event;
+                const col = colOf(e);
+                const overlap = e.id === 't-maria' || e.id === 't-jax';
+                return (
+                  <div key={e.id} className="block fade-up"
+                    style={{ top: railTop(e.start), height: Math.max(railH(e.start, e.end), 20),
+                      left: overlap ? (col === 0 ? '0%' : '50%') : '0%',
+                      right: overlap && col === 0 ? '52%' : '8px' }}>
+                    <span className="blk-tick" style={{ background: cat.color }}/>
+                    <div className="flex items-center gap-1.5 pl-1.5">
+                      <span className="text-[12px] font-medium pulse-ink-color truncate">{e.title}</span>
+                      {overlap && <Icon name="alert" className="w-3 h-3 shrink-0" style={{ color: 'var(--cat-deadline)' }}/>}
+                    </div>
+                    <div className="text-[10px] pulse-ink-3-color pl-1.5 font-mono-pulse tnum">{e.start}–{e.end}{e.loc ? ` · ${e.loc}` : ''}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* density / legend rail */}
+        <div className="w-[230px] shrink-0 space-y-3">
+          <div className="ai-card p-3">
+            <div className="flex items-center gap-2 mb-1.5"><Icon name="sparkles" className="w-4 h-4 pulse-rose-color"/><span className="text-[11px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">AUTO-ARRANGE</span></div>
+            <div className="text-[12px] pulse-ink-color leading-snug">One drag fixes the 3 PM stack — move the 1:1 to 3:35 and your afternoon resolves.</div>
+            <button className="mt-2.5 w-full py-1.5 rounded-lg pulse-rose-bg-color text-white text-[12px] font-medium">Preview arrangement</button>
+          </div>
+          <div className="rounded-xl border pulse-border-color p-3" style={{ background: 'var(--pulse-surface)' }}>
+            <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">DAY DENSITY</div>
+            <div className="flex items-end gap-1 h-14">
+              {[1,1,2,1,0,4,1,2,0].map((v, i) => (
+                <div key={i} className="flex-1 rounded-t" style={{ height: `${10 + v*22}%`, background: v >= 3 ? 'var(--cat-deadline)' : 'var(--pulse-border-strong)' }} title={`${v} events`}/>
+              ))}
+            </div>
+            <div className="text-[10px] pulse-ink-3-color mt-1.5">Afternoon is your crunch — 3 PM is overbooked.</div>
+          </div>
+          <div className="rounded-xl border pulse-border-color p-3" style={{ background: 'var(--pulse-surface)' }}>
+            <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">LEGEND</div>
+            <div className="grid grid-cols-2 gap-y-1.5 gap-x-2">
+              {['meet','call','social','personal','focus','health'].map(t => (
+                <div key={t} className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: CAT[t].color }}/><span className="text-[11px] pulse-ink-2-color">{CAT[t].label}</span></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PLAYGROUND SHELL — top bar + path switcher + theme toggle
+   ════════════════════════════════════════════════════════════════════════ */
+function App() {
+  const [theme, setTheme] = useState('dark');
+  const [path, setPath] = useState('A');
+  useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+  return (
+    <div className="h-screen w-screen flex flex-col overflow-hidden pulse-bg">
+      <div className="pg-bar flex items-center gap-3 px-4 py-2 border-b pulse-border-color shrink-0" style={{ height: 48 }}>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="calendar" className="w-3.5 h-3.5"/></div>
+          <span className="text-sm font-semibold pulse-ink-color">Calendar Redesign</span>
+          <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">· PLAYGROUND</span>
+        </div>
+        <div className="ml-6 flex items-center gap-1 p-0.5 rounded-lg pulse-surface-raised">
+          {[
+            { id: 'A', label: 'A · Clear Month' },
+            { id: 'B', label: 'B · Today + Rail' },
+            { id: 'C', label: 'C · Timeline Studio' },
+          ].map(p => (
+            <button key={p.id} data-active={path === p.id} onClick={() => setPath(p.id)}
+              className="pg-pill px-3 py-1.5 rounded-md text-[12px] font-medium pulse-ink-2-color">{p.label}</button>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-1">
+          <button onClick={toggleTheme} className="px-2.5 py-1.5 rounded-md text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color hover:pulse-surface-raised flex items-center gap-1.5">
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5"/>{theme === 'dark' ? 'LIGHT' : 'DARK'}
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 flex overflow-hidden">
+        <PulseSidebar theme={theme} onToggleTheme={toggleTheme}/>
+        <main className="flex-1 overflow-hidden m-3 rounded-2xl border pulse-border-color pulse-bg-soft relative" style={{ boxShadow: 'var(--pulse-shadow-main)' }}>
+          {path === 'A' && <PathA/>}
+          {path === 'B' && <PathB/>}
+          {path === 'C' && <PathC/>}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
