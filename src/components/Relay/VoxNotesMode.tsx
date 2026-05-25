@@ -58,6 +58,7 @@ import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { useRelayStudio, useRelayModeRecorder } from './studio';
+import { RelayVoiceMessage } from './RelayVoiceMessage';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
@@ -424,21 +425,34 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     }
   };
 
-  const handlePlayNote = () => {
-    if (!selectedNote) return;
-    if (studio.nowPlaying?.id === selectedNote.id) {
+  // Play any note via the shared studio transport (toggles if already loaded).
+  // Used by the timeline cards (inline play) and the detail player.
+  const playNote = (note: VoxNote) => {
+    if (studio.nowPlaying?.id === note.id) {
       studio.togglePlay();
       return;
     }
     studio.play({
-      id: selectedNote.id,
-      sender: selectedNote.title || 'Voice note',
-      dur: formatDuration(selectedNote.duration),
+      id: note.id,
+      sender: note.title || 'Voice note',
+      dur: formatDuration(note.duration),
       type: 'NOTE',
-      transcript: selectedNote.transcript ?? null,
+      transcript: note.transcript ?? null,
       source: 'notes',
-      audioUrl: selectedNote.audioUrl,
+      audioUrl: note.audioUrl,
     });
+  };
+
+  const handlePlayNote = () => {
+    if (!selectedNote) return;
+    playNote(selectedNote);
+  };
+
+  // Open a note in the detail editor (tags / linked-items / full transcript).
+  const openNoteDetail = (note: VoxNote) => {
+    setSelectedNote(note);
+    studio.stop();
+    setShowMobileSidebar(false);
   };
 
   const handleSeek = (position: number) => {
@@ -731,147 +745,106 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
             {dateNotes.map((note) => (
               <div
                 key={note.id}
-                onClick={() => {
-                  if (!isSelectionMode) {
-                    setSelectedNote(note);
-                    studio.stop();
-                    setShowMobileSidebar(false);
-                  }
-                }}
-                className={`w-full p-4 text-left border-b ${tc.border} transition-all relative cursor-pointer ${
-                  selectedNote?.id === note.id ? tc.activeBg : tc.hoverBg
+                className={`group relative border-b ${tc.border} px-3 py-2 transition-colors ${
+                  selectedNote?.id === note.id ? tc.activeBg : ''
                 }`}
-                style={studio.nowPlaying?.id === note.id && studio.isPlaying
-                  ? { background: 'var(--pulse-rose-softer)' }
-                  : undefined}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    if (!isSelectionMode) {
-                      setSelectedNote(note);
-                      studio.stop();
-                      setShowMobileSidebar(false);
-                    }
-                  }
-                }}
               >
-                {/* Phase 2: Selection Checkbox */}
-                {isSelectionMode && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const selectionItem: VoxSelectionItem = {
-                        id: note.id,
-                        type: 'audio' as const,
-                        url: note.audioUrl,
-                        duration: note.duration,
-                        timestamp: note.createdAt,
-                        sender: 'me' as const,
-                        transcript: note.transcript,
-                        mode: 'vox_notes' as const,
-                        contactId: 'personal',
-                        contactName: 'My Notes',
-                      };
-                      toggleSelection(selectionItem);
-                    }}
-                    className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
-                      isSelected(note.id)
-                        ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
-                        : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
-                    }`}
-                    style={{
-                      boxShadow: isSelected(note.id)
-                        ? '0 4px 12px rgba(236, 72, 153, 0.4)'
-                        : '0 2px 8px rgba(0, 0, 0, 0.2)',
-                    }}
-                  >
-                    {isSelected(note.id) && <Check className="w-5 h-5 text-white font-bold" />}
-                  </button>
-                )}
-
-                <div className="flex items-start gap-3">
-                  {/* Neutral avatar tile (was coral-gradient with a coral border
-                      and coral icon, repeated on every row — wallpaper-coral.
-                      Coral-As-Signal rule: the active-row tint already carries
-                      state; the row chrome stays out of the way.) */}
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${tc.cardBg} border ${tc.border}`}>
-                    <FileText className={`w-5 h-5 ${tc.textSecondary}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`font-medium truncate ${tc.text}`}>
-                        {note.title || 'Untitled Note'}
-                      </span>
-                      {studio.nowPlaying?.id === note.id && studio.isPlaying && (
-                        <span className="inline-flex items-center gap-1 shrink-0 text-[10px] font-mono uppercase tracking-[0.1em] text-rose-500">
-                          <span className="w-1 h-1 rounded-full bg-rose-500 pulse-dot-anim" />
-                          Playing
-                        </span>
-                      )}
-                      {note.isFavorite && (
-                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" />
-                      )}
-                    </div>
-                    <p className={`text-sm line-clamp-1 mt-0.5 ${tc.textSecondary}`}>
-                      {note.transcript || 'No transcript'}
-                    </p>
-                    <div className="flex items-center gap-3 mt-2 flex-wrap">
-                      <span className={`flex items-center gap-1 text-xs ${tc.textMuted}`}>
-                        <Clock className="w-3 h-3" />
-                        {formatDuration(note.duration)}
-                      </span>
+                <RelayVoiceMessage
+                  id={note.id}
+                  audioUrl={note.audioUrl}
+                  duration={note.duration}
+                  timestamp={note.createdAt}
+                  sender="other"
+                  senderName={note.title || 'Untitled Note'}
+                  isPlaying={studio.nowPlaying?.id === note.id && studio.isPlaying}
+                  onPlay={() => playNote(note)}
+                  onPause={() => playNote(note)}
+                  isActive={studio.nowPlaying?.id === note.id}
+                  progress={studio.nowPlaying?.id === note.id ? studio.progress : 0}
+                  transcript={note.transcript || undefined}
+                  onTranscriptClick={() => openNoteDetail(note)}
+                  starred={note.isFavorite}
+                  onStar={() => handleToggleFavorite(note)}
+                  waveformSeed={note.id}
+                  isDarkMode={isDarkMode}
+                  maxWidth="100%"
+                  onMore={!isSelectionMode ? (e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setMenuAnchorRect(rect);
+                    setShowMessageMenu(showMessageMenu === note.id ? null : note.id);
+                  } : undefined}
+                  selectionCheckbox={isSelectionMode ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const selectionItem: VoxSelectionItem = {
+                          id: note.id,
+                          type: 'audio' as const,
+                          url: note.audioUrl,
+                          duration: note.duration,
+                          timestamp: note.createdAt,
+                          sender: 'me' as const,
+                          transcript: note.transcript,
+                          mode: 'vox_notes' as const,
+                          contactId: 'personal',
+                          contactName: 'My Notes',
+                        };
+                        toggleSelection(selectionItem);
+                      }}
+                      className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-all ${
+                        isSelected(note.id)
+                          ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
+                          : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
+                      }`}
+                      aria-label={isSelected(note.id) ? 'Deselect note' : 'Select note'}
+                    >
+                      {isSelected(note.id) && <Check className="w-4 h-4 text-white" />}
+                    </button>
+                  ) : undefined}
+                  footerExtras={
+                    <div className="flex items-center gap-3 flex-wrap text-xs">
                       {note.tags.length > 0 && (
-                        <span className={`flex items-center gap-1 text-xs ${tc.textMuted}`}>
+                        <span className={`flex items-center gap-1 ${tc.textMuted}`}>
                           <Tag className="w-3 h-3" />
                           {note.tags[0]}
                           {note.tags.length > 1 && `+${note.tags.length - 1}`}
                         </span>
                       )}
                       {note.linkedItems.length > 0 && (
-                        <span className={`flex items-center gap-1 text-xs ${tc.textMuted}`}>
+                        <span className={`flex items-center gap-1 ${tc.textMuted}`}>
                           <Link2 className="w-3 h-3" />
                           {note.linkedItems.length}
                         </span>
                       )}
-                    </div>
-                  </div>
-
-                  {/* More Actions Menu */}
-                  {!isSelectionMode && (
-                    <>
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                          setMenuAnchorRect(rect);
-                          setShowMessageMenu(showMessageMenu === note.id ? null : note.id);
-                        }}
-                        className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity"
-                        title="More actions"
+                        onClick={() => openNoteDetail(note)}
+                        className={`flex items-center gap-1 ${tc.textMuted} hover:text-[#e11d48] dark:hover:text-[#fb7185] transition-colors`}
+                        title="Open note"
                       >
-                        <MoreVertical className="w-4 h-4" />
+                        <ExternalLink className="w-3 h-3" />
+                        Open
                       </button>
-                      {showMessageMenu === note.id && menuAnchorRect && (
-                        <VoxMessageMenu
-                          isDarkMode={isDarkMode}
-                          accentColor="#f43f5e"
-                          anchorRect={menuAnchorRect}
-                          onArchive={() => handleArchiveNote(note)}
-                          onDownload={() => handleDownloadNote(note)}
-                          onDelete={() => {
-                            setShowMessageMenu(null);
-                            handleDeleteNote(note);
-                          }}
-                          onClose={() => setShowMessageMenu(null)}
-                        />
-                      )}
-                    </>
-                  )}
-                </div>
+                    </div>
+                  }
+                />
+
+                {/* Note menu — sibling overlay anchored to the More button */}
+                {!isSelectionMode && showMessageMenu === note.id && menuAnchorRect && (
+                  <VoxMessageMenu
+                    isDarkMode={isDarkMode}
+                    accentColor="#f43f5e"
+                    anchorRect={menuAnchorRect}
+                    onArchive={() => handleArchiveNote(note)}
+                    onDownload={() => handleDownloadNote(note)}
+                    onDelete={() => {
+                      setShowMessageMenu(null);
+                      handleDeleteNote(note);
+                    }}
+                    onClose={() => setShowMessageMenu(null)}
+                  />
+                )}
               </div>
             ))}
           </div>
