@@ -181,6 +181,8 @@ import {
 import { MessagesTopModals } from './Messages/MessagesTopModals';
 import { MessagesEndModals } from './Messages/MessagesEndModals';
 import { ConversationSidebar } from './Messages/ConversationSidebar';
+import { RelationshipRail } from './Messages/RelationshipRail';
+import { deriveRelationship, type RailMessage } from './Messages/useRelationshipData';
 import { MessageInputSection } from './Messages/MessageInputSection';
 import { MESSAGE_TEMPLATES as MSG_TEMPLATES_CONST, REACTION_CATEGORIES as REACTION_CATS_CONST, generateSmartTemplateText as genSmartTemplate } from './Messages/messageConstants';
 import { usePulseMessagesStore } from '../store/pulseMessagesStore';
@@ -1932,6 +1934,41 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // Only show an active thread if explicitly selected via activeThreadId
   const activeThread = activeThreadId ? threads.find(t => t.id === activeThreadId) : null;
   const isBotChat = activeThread?.contactId === 'pulse-bot';
+
+  // ── Path D relationship rail (Tranche 3b) ──────────────────────────
+  // Normalize whichever conversation is active into RailMessage[] so the
+  // host-agnostic rail derives open items / last decision / pace. The
+  // legacy-thread path carries task + decision data; the Pulse-DM path
+  // (PulseMessage) carries neither, so it yields pace + the "all clear"
+  // empty state until the Decisions & Tasks surface is wired per-contact.
+  const [railCollapsed, setRailCollapsed] = useState(false);
+  const railMessages: RailMessage[] = useMemo(() => {
+    if (activeThread) {
+      return activeThread.messages.map(m => ({
+        id: m.id,
+        isOutbound: m.sender === 'me',
+        timestamp: new Date(m.timestamp).getTime(),
+        taskTitle: m.relatedTaskId || undefined,
+        decision: m.decisionData
+          ? { text: m.text, status: m.decisionData.status, type: m.decisionData.type }
+          : undefined,
+      }));
+    }
+    if (activePulseConv) {
+      return pulseMessages.map(m => ({
+        id: m.id,
+        isOutbound: m.sender_id === currentUser?.id,
+        timestamp: new Date(m.created_at).getTime(),
+      }));
+    }
+    return [];
+  }, [activeThread, activePulseConv, pulseMessages, currentUser?.id]);
+  const relationshipData = useMemo(() => deriveRelationship(railMessages), [railMessages]);
+  const railContactName =
+    activePulseConv?.other_user?.display_name ||
+    activePulseConv?.other_user?.full_name ||
+    activeThread?.name ||
+    undefined;
 
   // Generate smart compose suggestions with debounce
   useEffect(() => {
@@ -5470,6 +5507,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           )}
         </div>
       </div>
+      )}
+
+      {/* Path D relationship rail — docked rightmost column, only when a
+          conversation is open (Tranche 3b). Collapsible; read-only for now. */}
+      {(activePulseConv || activeThread) && (
+        <RelationshipRail
+          data={relationshipData}
+          contactName={railContactName}
+          collapsed={railCollapsed}
+          onToggleCollapse={() => setRailCollapsed(c => !c)}
+        />
       )}
 
       <MessagesEndModals
