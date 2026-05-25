@@ -183,6 +183,8 @@ import { MessagesEndModals } from './Messages/MessagesEndModals';
 import { ConversationSidebar } from './Messages/ConversationSidebar';
 import { RelationshipRail } from './Messages/RelationshipRail';
 import { deriveRelationship, type RailMessage } from './Messages/useRelationshipData';
+import { SpineNode } from './Messages/ConversationSpine';
+import { detectMoments } from './Messages/useConversationMoments';
 import { MessageInputSection } from './Messages/MessageInputSection';
 import { MESSAGE_TEMPLATES as MSG_TEMPLATES_CONST, REACTION_CATEGORIES as REACTION_CATS_CONST, generateSmartTemplateText as genSmartTemplate } from './Messages/messageConstants';
 import { usePulseMessagesStore } from '../store/pulseMessagesStore';
@@ -1948,6 +1950,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         id: m.id,
         isOutbound: m.sender === 'me',
         timestamp: new Date(m.timestamp).getTime(),
+        text: m.text,
         taskTitle: m.relatedTaskId || undefined,
         decision: m.decisionData
           ? { text: m.text, status: m.decisionData.status, type: m.decisionData.type }
@@ -1959,11 +1962,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         id: m.id,
         isOutbound: m.sender_id === currentUser?.id,
         timestamp: new Date(m.created_at).getTime(),
+        text: m.content,
       }));
     }
     return [];
   }, [activeThread, activePulseConv, pulseMessages, currentUser?.id]);
   const relationshipData = useMemo(() => deriveRelationship(railMessages), [railMessages]);
+  // Path D intelligence spine — moments anchored to message ids (1b).
+  const conversationMoments = useMemo(() => detectMoments(railMessages), [railMessages]);
   const railContactName =
     activePulseConv?.other_user?.display_name ||
     activePulseConv?.other_user?.full_name ||
@@ -4003,10 +4009,18 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         label={formatDateDivider(new Date(msg.created_at))} 
                       />
                     )}
+                    <div className="flex">
+                    {/* Path D intelligence spine — fixed-left timeline gutter (1b) */}
+                    <SpineNode
+                      moment={conversationMoments.get(msg.id)}
+                      index={idx}
+                      isFirst={idx === 0}
+                      isLast={idx === pulseMessages.length - 1}
+                    />
                     <div
                       data-grouped={isGrouped ? 'true' : 'false'}
                       data-pulse-msg-row="true"
-                      className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative ${isGrouped ? 'mb-0.5' : 'mb-3'}`}
+                      className={`flex-1 min-w-0 flex ${isMe ? 'justify-end' : 'justify-start'} group relative ${isGrouped ? 'mb-0.5' : 'mb-3'}`}
                     >
                       {!isMe && showAvatar && (
                         <div
@@ -4465,6 +4479,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           </div>
                         )}
                       </div>
+                    </div>
                     </div>
                   </React.Fragment>
                 );
