@@ -37,6 +37,9 @@ interface VoxEmptyStateProps {
     label: string;
     onClick: () => void;
   };
+  /** Optional tertiary hint below the CTA — typically a keyboard-shortcut
+   *  reminder (e.g. "Hold space to record · ? for shortcuts"). */
+  hint?: React.ReactNode;
 }
 
 export const VoxEmptyState: React.FC<VoxEmptyStateProps> = ({
@@ -45,6 +48,7 @@ export const VoxEmptyState: React.FC<VoxEmptyStateProps> = ({
   title,
   description,
   action,
+  hint,
 }) => {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center px-6 py-16 min-h-[360px]">
@@ -78,6 +82,15 @@ export const VoxEmptyState: React.FC<VoxEmptyStateProps> = ({
         <button onClick={action.onClick} type="button" className="vox-empty-cta">
           {action.label}
         </button>
+      )}
+
+      {hint && (
+        <p
+          className="font-mono text-[10px] uppercase tracking-[0.1em] mt-4"
+          style={{ color: 'var(--pulse-ink-3)' }}
+        >
+          {hint}
+        </p>
       )}
 
       <style>{`

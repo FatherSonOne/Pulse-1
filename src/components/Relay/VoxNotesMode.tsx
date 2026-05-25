@@ -866,6 +866,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
           <div className="py-12">
             <VoxEmptyState
               {...emptyConfig}
+              eyebrow="Notes"
               isDarkMode={isDarkMode}
               action={{ label: 'Start Recording', onClick: () => { if (recordingState === 'idle') startRecording(); } }}
             />

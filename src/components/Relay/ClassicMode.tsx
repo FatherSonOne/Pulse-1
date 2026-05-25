@@ -1445,6 +1445,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               {activeThreadRecordings.length === 0 ? (
                 <VoxEmptyState
                   {...emptyConfig}
+                  eyebrow="Direct"
                   isDarkMode={isDarkMode}
                   action={{
                     label: 'Start Recording',
@@ -1727,20 +1728,20 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                 recorder). The RecordingPreview above owns review → send. */}
           </>
         ) : (
-          /* Empty state — quieter pattern matching VoiceRooms / Notes. The
-              walkie-talkie SVG + concentric rings were category-reflex
-              decoration ("voice → walkie-talkie"); a single Radio glyph
-              carries the same meaning without the AI-slop tell. */
-          <div className="flex-1 flex items-center justify-center px-6">
-            <div className="text-center max-w-sm">
-              <div className="w-20 h-20 rounded-full bg-white/[0.03] border border-[rgba(255,255,255,0.06)] flex items-center justify-center mx-auto mb-5">
-                <Radio className="w-8 h-8 text-zinc-500" />
-              </div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-2">DIRECT</p>
-              <p className="text-sm text-zinc-400 leading-relaxed">
-                Pick a contact, or start a new conversation to record.
-              </p>
-            </div>
+          /* No-selection empty — routed through the shared VoxEmptyState so
+              Direct matches every other source. The CTA opens the new-message
+              picker (the clean states used to describe the action in prose
+              with nothing clickable). */
+          <div className="flex-1 min-h-0">
+            <VoxEmptyState
+              mode="classic"
+              icon={Radio}
+              eyebrow="Direct"
+              title="No conversation selected"
+              description="Pick a contact to hear their voice, or start a new conversation."
+              action={{ label: 'New message', onClick: () => setShowNewVoxModal(true) }}
+              hint="Hold space to record · ? for shortcuts"
+            />
           </div>
         )}
       </main>

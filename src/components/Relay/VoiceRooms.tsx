@@ -18,6 +18,7 @@ import { voiceRoomService } from '../../services/voiceRoomService';
 import { useRelayStudio, StudioCard, StudioMasthead } from './studio';
 
 import { Brain, ChevronLeft, Code2, Coffee, Gamepad2, Lock, Mic, MicOff, Monitor, Music, PhoneOff, Plus, Radio, Rocket, Settings, Square, UserPlus, Users, Volume2, VolumeX, X, type LucideIcon } from 'lucide-react';
+import { VoxEmptyState } from './VoxEmptyState';
 
 // Maps the legacy `fa-*` icon keys stored on voice_rooms rows to their Lucide
 // equivalents. Existing DB rows keep working without a data migration — only
@@ -806,18 +807,17 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
             </div>
           </div>
         ) : (
-          // No selection — landing. Recent activity lives here in Phase 2d;
-          // for Phase 1 the brief's empty copy is the placeholder.
-          <div className="flex-1 flex items-center justify-center px-6">
-            <div className="text-center max-w-sm">
-              <div className="w-20 h-20 rounded-full bg-[var(--pulse-surface)] border border-[var(--pulse-border)] flex items-center justify-center mx-auto mb-5">
-                <Radio className="w-8 h-8 text-zinc-600" />
-              </div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-2">LIVE</p>
-              <p className="text-sm text-[var(--pulse-ink-2)] leading-relaxed">
-                Pick a contact or team to go live, or start a solo recording.
-              </p>
-            </div>
+          // No selection — landing. Routed through the shared VoxEmptyState so
+          // Live matches every other source. Recent-activity content lands here
+          // in Phase 2d.
+          <div className="flex-1 min-h-0">
+            <VoxEmptyState
+              mode="live"
+              icon={Radio}
+              eyebrow="Live"
+              title="No room selected"
+              description="Pick a contact or team to go live, or start a solo recording."
+            />
           </div>
         )}
       </main>

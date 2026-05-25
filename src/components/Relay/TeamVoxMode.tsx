@@ -62,7 +62,6 @@ import {
   initials,
 } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
-import { getEmptyStateConfig } from './voxEmptyStates';
 
 // Relay brand accent (rose-500) — per-mode colors retired in 2.1d.1.
 const MODE_COLOR = '#f43f5e';
@@ -164,7 +163,6 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
-  const emptyConfig = getEmptyStateConfig('team_vox');
 
   // Use the recording hook for click-to-record with preview
   const {
@@ -1469,14 +1467,14 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               )}
             </>
           ) : (
-            <div className={`flex-1 flex items-center justify-center ${tc.textMuted}`}>
-              <div className="text-center p-6">
-                <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center border ${tc.border} ${isDarkMode ? 'bg-white/[0.03]' : 'bg-zinc-100'}`}>
-                  <Users className={`w-7 h-7 ${tc.textMuted}`} />
-                </div>
-                <p className={`text-lg ${tc.text}`}>Select a channel</p>
-                <p className={`text-sm mt-1 ${tc.textSecondary}`}>to start collaborating with your team</p>
-              </div>
+            <div className="flex-1 min-h-0">
+              <VoxEmptyState
+                mode="team_vox"
+                icon={Hash}
+                eyebrow="Channels"
+                title="No channel selected"
+                description="Pick a channel from the left to hear what your team is working on."
+              />
             </div>
           )}
         </div>

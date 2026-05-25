@@ -788,6 +788,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                 <div className="pulse-radio-broadcasts">
                   <VoxEmptyState
                     {...emptyConfig}
+                    eyebrow="Broadcast"
                     isDarkMode={isDarkMode}
                     action={{
                       label: 'Start Broadcasting',

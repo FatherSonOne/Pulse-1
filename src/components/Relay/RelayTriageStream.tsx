@@ -36,7 +36,13 @@ import {
   X,
   MoreHorizontal,
   Trash2,
+  Inbox,
+  MessageSquare,
+  Radio,
+  FileText,
+  type LucideIcon,
 } from 'lucide-react';
+import { VoxEmptyState } from './VoxEmptyState';
 import toast from 'react-hot-toast';
 import type { Contact, User } from '../../types';
 import { useRelayTriage, type TriageItem, type TriageItemKind } from '../../hooks/useRelayTriage';
@@ -67,11 +73,42 @@ const SOURCE_OPTIONS: { id: SourceFilter; label: string }[] = [
   { id: 'notes', label: 'Notes' },
 ];
 
-const EMPTY_COPY: Record<SourceFilter, string> = {
-  all: 'No voice activity yet.',
-  messages: 'No direct messages yet. Hold space to record one.',
-  broadcast: 'No broadcasts yet.',
-  notes: 'No voice notes yet. Capture an idea.',
+interface EmptyStateConfig {
+  icon: LucideIcon;
+  eyebrow: string;
+  title: string;
+  description: string;
+}
+
+// 'all' is the front door — the default landing view. It orients first: what
+// Inbox aggregates, then how to start. The source-filtered variants are
+// no-results states, so they stay lighter (title + one line, no CTA).
+const EMPTY_STATES: Record<SourceFilter, EmptyStateConfig> = {
+  all: {
+    icon: Inbox,
+    eyebrow: 'Relay · Inbox',
+    title: 'Your voice, in one place',
+    description:
+      'Inbox gathers every direct message, broadcast, and note across Relay, newest first. When voice needs you, it lands here.',
+  },
+  messages: {
+    icon: MessageSquare,
+    eyebrow: 'Direct',
+    title: 'No direct messages yet',
+    description: 'One-to-one voice lands here.',
+  },
+  broadcast: {
+    icon: Radio,
+    eyebrow: 'Broadcast',
+    title: 'No broadcasts yet',
+    description: 'One-to-many voice you send or receive shows up here.',
+  },
+  notes: {
+    icon: FileText,
+    eyebrow: 'Notes',
+    title: 'No voice notes yet',
+    description: 'Capture a thought for yourself.',
+  },
 };
 
 interface RelayTriageStreamProps {
@@ -415,13 +452,23 @@ const SkeletonList: React.FC = () => (
   </div>
 );
 
-const EmptyState: React.FC<{ source: SourceFilter }> = ({ source }) => (
-  <div className="h-full flex items-center justify-center px-6 py-16 text-center">
-    <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs">{EMPTY_COPY[source]}</p>
-  </div>
-);
+const EmptyState: React.FC<{ source: SourceFilter; onCompose: () => void }> = ({ source, onCompose }) => {
+  const cfg = EMPTY_STATES[source];
+  const isFrontDoor = source === 'all';
+  return (
+    <VoxEmptyState
+      mode={source}
+      icon={cfg.icon}
+      eyebrow={cfg.eyebrow}
+      title={cfg.title}
+      description={cfg.description}
+      action={isFrontDoor ? { label: 'Record a message', onClick: onCompose } : undefined}
+      hint={isFrontDoor ? 'Hold space to record · ? for shortcuts' : undefined}
+    />
+  );
+};
 
-export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOpenView, onReply, onReplyToThread }) => {
+export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOpenView, onCompose, onReply, onReplyToThread }) => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
@@ -678,7 +725,7 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
 
         {isLoading && <SkeletonList />}
 
-        {!isLoading && filtered.length === 0 && <EmptyState source={sourceFilter} />}
+        {!isLoading && filtered.length === 0 && <EmptyState source={sourceFilter} onCompose={onCompose} />}
 
         {!isLoading && filtered.length > 0 && (
           <div className="space-y-3">
