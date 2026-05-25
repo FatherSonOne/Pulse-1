@@ -20,18 +20,21 @@ import {
   ExternalLink,
   X,
   Check,
-  Menu,
   Download,
   Archive,
   MoreVertical,
   ChevronRight,
   ChevronLeft,
+  Pencil,
+  AlignLeft,
+  Reply,
+  CheckCheck,
+  HelpCircle,
+  Loader2,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
 import RecordButton from './RecordButton';
-import VoxModeHeader from './VoxModeHeader';
-import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
@@ -57,8 +60,7 @@ import type { ConversationSummary, SmartReply } from '../../services/relay/relay
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
-import { useRelayStudio, useRelayModeRecorder } from './studio';
-import { RelayVoiceMessage } from './RelayVoiceMessage';
+import { useRelayStudio, useRelayModeRecorder, StudioMasthead, StudioMessageCard } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
@@ -99,7 +101,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   const [editTitle, setEditTitle] = useState('');
   const [allTags, setAllTags] = useState<string[]>([]);
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
@@ -393,21 +394,13 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     }
   }, [searchQuery]);
 
-  // Auto-select first note when notes load (if none selected). If a triage
-  // deep-link handed us an initialNoteId, prefer that match — falls back to
-  // the first note if the id was stale.
+  // Auto-open a note ONLY when a triage deep-link hands us a matching
+  // initialNoteId. Otherwise land on the timeline — PathC makes the
+  // single-column timeline the surface, not a default-selected note.
   useEffect(() => {
-    // In single-pane (narrow) the detail replaces the list, so auto-selecting
-    // would hide the list behind a note on first load — land on the list there.
-    if (notes.length === 0 || selectedNote || studio.singlePane) return;
-    if (initialNoteId) {
-      const match = notes.find((n) => n.id === initialNoteId);
-      if (match) {
-        setSelectedNote(match);
-        return;
-      }
-    }
-    setSelectedNote(notes[0]);
+    if (notes.length === 0 || selectedNote || !initialNoteId) return;
+    const match = notes.find((n) => n.id === initialNoteId);
+    if (match) setSelectedNote(match);
   }, [notes, initialNoteId]);
 
   useEffect(() => {
@@ -452,7 +445,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   const openNoteDetail = (note: VoxNote) => {
     setSelectedNote(note);
     studio.stop();
-    setShowMobileSidebar(false);
   };
 
   const handleSeek = (position: number) => {
@@ -729,124 +721,144 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         </div>
       </div>
 
-      {/* Notes List */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Notes timeline — a single column of flat studio cards (PathCNotes):
+          edit-icon tile + title + when·dur + play + waveform + transcript +
+          #TAG chips. Replaces the bubble rows; the detail editor stays
+          reachable by clicking a card. */}
+      <div className="flex-1 overflow-y-auto px-7 pt-2 pb-6">
         {Object.entries(groupedNotes).map(([dateKey, dateNotes]) => (
-          <div key={dateKey}>
-            <div className={`px-4 py-2 sticky top-0 ${tc.panelBg}`}>
-              <span className={`text-xs font-medium ${tc.textMuted}`}>
-                {new Date(dateKey).toLocaleDateString(undefined, {
-                  weekday: 'long',
-                  month: 'short',
-                  day: 'numeric'
-                })}
+          <div key={dateKey} className="mb-6">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400">
+                {new Date(dateKey).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
               </span>
+              <div className="flex-1 h-px" style={{ background: 'var(--pulse-border)' }} />
             </div>
-            {dateNotes.map((note) => (
-              <div
-                key={note.id}
-                className={`group relative border-b ${tc.border} px-3 py-2 transition-colors ${
-                  selectedNote?.id === note.id ? tc.activeBg : ''
-                }`}
-              >
-                <RelayVoiceMessage
-                  id={note.id}
-                  audioUrl={note.audioUrl}
-                  duration={note.duration}
-                  timestamp={note.createdAt}
-                  sender="other"
-                  senderName={note.title || 'Untitled Note'}
-                  isPlaying={studio.nowPlaying?.id === note.id && studio.isPlaying}
-                  onPlay={() => playNote(note)}
-                  onPause={() => playNote(note)}
-                  isActive={studio.nowPlaying?.id === note.id}
-                  progress={studio.nowPlaying?.id === note.id ? studio.progress : 0}
-                  transcript={note.transcript || undefined}
-                  onTranscriptClick={() => openNoteDetail(note)}
-                  starred={note.isFavorite}
-                  onStar={() => handleToggleFavorite(note)}
-                  waveformSeed={note.id}
-                  isDarkMode={isDarkMode}
-                  maxWidth="100%"
-                  onMore={!isSelectionMode ? (e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setMenuAnchorRect(rect);
-                    setShowMessageMenu(showMessageMenu === note.id ? null : note.id);
-                  } : undefined}
-                  selectionCheckbox={isSelectionMode ? (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const selectionItem: VoxSelectionItem = {
-                          id: note.id,
-                          type: 'audio' as const,
-                          url: note.audioUrl,
-                          duration: note.duration,
-                          timestamp: note.createdAt,
-                          sender: 'me' as const,
-                          transcript: note.transcript,
-                          mode: 'vox_notes' as const,
-                          contactId: 'personal',
-                          contactName: 'My Notes',
-                        };
-                        toggleSelection(selectionItem);
-                      }}
-                      className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-all ${
-                        isSelected(note.id)
-                          ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
-                          : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
-                      }`}
-                      aria-label={isSelected(note.id) ? 'Deselect note' : 'Select note'}
+            <div className="space-y-3">
+              {dateNotes.map((note) => {
+                const active = studio.nowPlaying?.id === note.id;
+                return (
+                  <React.Fragment key={note.id}>
+                    <StudioMessageCard
+                      active={active}
+                      isPlaying={active && studio.isPlaying}
+                      progress={active ? studio.progress : 0}
+                      canPlay={!!note.audioUrl}
+                      onPlay={() => playNote(note)}
+                      onClick={() => openNoteDetail(note)}
+                      leadingNode={
+                        <div className="shrink-0 w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
+                          <Pencil className="w-4 h-4" />
+                        </div>
+                      }
+                      title={note.title || 'Untitled Note'}
+                      meta={`${new Date(note.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · ${formatDuration(note.duration)}`}
+                      waveSeed={note.id}
+                      waveCount={60}
+                      bodyIndent={48}
+                      selectionCheckbox={isSelectionMode ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const selectionItem: VoxSelectionItem = {
+                              id: note.id,
+                              type: 'audio' as const,
+                              url: note.audioUrl,
+                              duration: note.duration,
+                              timestamp: note.createdAt,
+                              sender: 'me' as const,
+                              transcript: note.transcript,
+                              mode: 'vox_notes' as const,
+                              contactId: 'personal',
+                              contactName: 'My Notes',
+                            };
+                            toggleSelection(selectionItem);
+                          }}
+                          className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-all ${
+                            isSelected(note.id)
+                              ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
+                              : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
+                          }`}
+                          aria-label={isSelected(note.id) ? 'Deselect note' : 'Select note'}
+                        >
+                          {isSelected(note.id) && <Check className="w-4 h-4 text-white" />}
+                        </button>
+                      ) : undefined}
+                      actions={!isSelectionMode ? (
+                        <div className="absolute right-3 top-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleToggleFavorite(note); }}
+                            className={`p-1.5 rounded-md transition ${
+                              note.isFavorite
+                                ? 'text-amber-500'
+                                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                            }`}
+                            aria-label={note.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                          >
+                            <Star className="w-3.5 h-3.5" fill={note.isFavorite ? 'currentColor' : 'none'} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setMenuAnchorRect(rect);
+                              setShowMessageMenu(showMessageMenu === note.id ? null : note.id);
+                            }}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                            aria-label="More actions"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : undefined}
                     >
-                      {isSelected(note.id) && <Check className="w-4 h-4 text-white" />}
-                    </button>
-                  ) : undefined}
-                  footerExtras={
-                    <div className="flex items-center gap-3 flex-wrap text-xs">
-                      {note.tags.length > 0 && (
-                        <span className={`flex items-center gap-1 ${tc.textMuted}`}>
-                          <Tag className="w-3 h-3" />
-                          {note.tags[0]}
-                          {note.tags.length > 1 && `+${note.tags.length - 1}`}
-                        </span>
+                      {note.transcript && (
+                        <div className="text-[13px] text-zinc-700 dark:text-zinc-300 leading-relaxed line-clamp-3">
+                          {note.transcript}
+                        </div>
                       )}
-                      {note.linkedItems.length > 0 && (
-                        <span className={`flex items-center gap-1 ${tc.textMuted}`}>
-                          <Link2 className="w-3 h-3" />
-                          {note.linkedItems.length}
-                        </span>
+                      {(note.tags.length > 0 || note.linkedItems.length > 0) && (
+                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                          {note.tags.map((t) => (
+                            <span
+                              key={t}
+                              className="px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-[0.1em] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
+                            >
+                              #{t}
+                            </span>
+                          ))}
+                          {note.linkedItems.length > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400">
+                              <Link2 className="w-3 h-3" />
+                              {note.linkedItems.length}
+                            </span>
+                          )}
+                        </div>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => openNoteDetail(note)}
-                        className={`flex items-center gap-1 ${tc.textMuted} hover:text-[#e11d48] dark:hover:text-[#fb7185] transition-colors`}
-                        title="Open note"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        Open
-                      </button>
-                    </div>
-                  }
-                />
+                    </StudioMessageCard>
 
-                {/* Note menu — sibling overlay anchored to the More button */}
-                {!isSelectionMode && showMessageMenu === note.id && menuAnchorRect && (
-                  <VoxMessageMenu
-                    isDarkMode={isDarkMode}
-                    accentColor="#f43f5e"
-                    anchorRect={menuAnchorRect}
-                    onArchive={() => handleArchiveNote(note)}
-                    onDownload={() => handleDownloadNote(note)}
-                    onDelete={() => {
-                      setShowMessageMenu(null);
-                      handleDeleteNote(note);
-                    }}
-                    onClose={() => setShowMessageMenu(null)}
-                  />
-                )}
-              </div>
-            ))}
+                    {/* Note menu — anchored overlay (fixed position via rect) */}
+                    {!isSelectionMode && showMessageMenu === note.id && menuAnchorRect && (
+                      <VoxMessageMenu
+                        isDarkMode={isDarkMode}
+                        accentColor="#f43f5e"
+                        anchorRect={menuAnchorRect}
+                        onArchive={() => handleArchiveNote(note)}
+                        onDownload={() => handleDownloadNote(note)}
+                        onDelete={() => {
+                          setShowMessageMenu(null);
+                          handleDeleteNote(note);
+                        }}
+                        onClose={() => setShowMessageMenu(null)}
+                      />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
           </div>
         ))}
 
@@ -865,89 +877,92 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
 
   return (
     <div className={`h-full flex flex-col ${tc.pageBg}`}>
-      {/* Header */}
-      <VoxModeToolbar
-        onBack={onBack}
-        modeIcon={<FileText className="w-5 h-5" />}
-        eyebrow="PERSONAL NOTES"
-        modeTitle="Voice notes"
-        accentColor="#f43f5e"
-        isDarkMode={isDarkMode}
-        showAI={notes.length > 0}
-        onSummarize={handleSummarizeNotes}
-        onSmartReplies={handleGenerateSmartReplies}
-        isSummarizing={isGeneratingAI}
-        isGeneratingReplies={isGeneratingAI}
-        hasContent={notes.length > 0}
-        isSelectionMode={isSelectionMode}
-        onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
-        onShowHelp={() => setShowShortcutsHelp(true)}
-        customActions={[
-          {
-            icon: <span className="md:hidden"><Menu className="w-5 h-5" /></span>,
-            title: 'Show notes list',
-            onClick: () => setShowMobileSidebar(true),
-          },
-        ]}
-      />
+      {/* Masthead — Path C "Voice notes". AI + selection actions ride the
+          right slot; hidden while a note's detail editor is open (it carries
+          its own header). */}
+      {!selectedNote && (
+        <div className="px-7 pt-6">
+          <StudioMasthead
+            eyebrow="Personal notes"
+            title="Voice notes"
+            subtitle="Personal · never shared · auto-transcribed"
+            right={
+              notes.length > 0 ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleSummarizeNotes}
+                    disabled={isGeneratingAI}
+                    className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition"
+                    title="AI summarize"
+                  >
+                    {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <AlignLeft className="w-3 h-3" />}
+                    <span className="hidden sm:inline">Summarize</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGenerateSmartReplies}
+                    disabled={isGeneratingAI}
+                    className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition"
+                    title="Generate smart replies"
+                  >
+                    <Reply className="w-3 h-3" />
+                    <span className="hidden sm:inline">Reply</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => (isSelectionMode ? exitSelectionMode() : enterSelectionMode())}
+                    title={isSelectionMode ? 'Exit selection' : 'Select notes'}
+                    aria-label={isSelectionMode ? 'Exit selection' : 'Select notes'}
+                    className={`p-2 rounded-md transition ${
+                      isSelectionMode
+                        ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                    }`}
+                  >
+                    <CheckCheck className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowShortcutsHelp(true)}
+                    title="Keyboard shortcuts"
+                    className="p-2 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition md:hidden"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                  </button>
+                </>
+              ) : undefined
+            }
+          />
+        </div>
+      )}
 
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Mobile Sidebar Overlay */}
-        {showMobileSidebar && (
-          <div className="md:hidden fixed inset-0 z-40">
-            <div
-              className={tc.modalOverlay}
-              onClick={() => setShowMobileSidebar(false)}
-            />
-            <div className={`absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] ${tc.panelBg} border-r ${tc.border} flex flex-col animate-slide-in`}>
-              <div className={`p-4 border-b ${tc.border} flex items-center justify-between`}>
-                <h2 className={`font-semibold ${tc.text}`}>Notes</h2>
-                <button
-                  onClick={() => setShowMobileSidebar(false)}
-                  className={`p-2 rounded-lg ${tc.btnGhost}`}
-                  type="button"
-                  aria-label="Close sidebar"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              {renderNotesList()}
-            </div>
-          </div>
-        )}
-
-        {/* Notes list (master). Side-by-side with the detail when the pane is
-            wide; full-width when single-pane, and hidden once a note opens
-            (the detail takes over, with a back affordance). */}
-        <div className={`flex flex-col border-r ${tc.border} ${tc.panelBg} ${
-          studio.singlePane
-            ? (selectedNote ? 'hidden' : 'flex-1 border-r-0')
-            : 'w-80 lg:w-96'
-        }`}>
+        {/* Notes timeline (master) — single column. Full-width by default;
+            hidden once a note opens (the detail editor takes over with a back
+            affordance). PathC: the timeline IS the surface, not a side list. */}
+        <div className={`flex flex-col flex-1 min-w-0 ${selectedNote ? 'hidden' : ''}`}>
           {renderNotesList()}
         </div>
 
-        {/* Note detail. Hidden when single-pane with nothing selected — the
-            list shows full-width instead. */}
+        {/* Note detail editor — full-width when a note is open, else hidden. */}
         <div className={`flex-1 flex flex-col overflow-hidden ${
-          studio.singlePane && !selectedNote ? 'hidden' : ''
+          !selectedNote ? 'hidden' : ''
         }`}>
           {selectedNote ? (
             <>
               {/* Note Header */}
               <div className={`px-4 md:px-6 py-4 border-b ${tc.border} ${tc.cardBg}`}>
                 <div className="flex items-start justify-between gap-4">
-                  {studio.singlePane && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedNote(null)}
-                      className={`shrink-0 -ml-1 mt-0.5 p-1.5 rounded-lg ${tc.btnGhost}`}
-                      aria-label="Back to notes list"
-                      title="Back to notes"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedNote(null)}
+                    className={`shrink-0 -ml-1 mt-0.5 p-1.5 rounded-lg ${tc.btnGhost}`}
+                    aria-label="Back to notes list"
+                    title="Back to notes"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
                   <div className="flex-1 min-w-0">
                     {isEditing ? (
                       <div className="flex items-center gap-2">
