@@ -5223,7 +5223,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   )}
 
                   {/* Message - Compact spacing for grouped messages */}
-                  <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative ${showAvatar ? 'mb-6' : 'mb-1'} animate-slide-up`}>
+                  <div className="flex">
+                  {/* Path D intelligence spine — fixed-left timeline gutter. Unlike
+                      the Pulse-DM path, this legacy-thread path carries decisionData,
+                      so DECISION (tone-positive) moments surface here alongside
+                      question / needs-reply. Moments are keyed by msg.id, so the
+                      search-filtered subset still resolves correctly. */}
+                  <SpineNode
+                    moment={conversationMoments.get(msg.id)}
+                    index={index}
+                    isFirst={index === 0}
+                    isLast={index === filteredMessages.length - 1}
+                  />
+                  <div className={`flex-1 min-w-0 flex ${isMe ? 'justify-end' : 'justify-start'} group relative ${showAvatar ? 'mb-6' : 'mb-1'} animate-slide-up`}>
                     {!isMe && showAvatar && (
                         <div className={`w-8 h-8 rounded-full ${activeThread.avatarColor} flex items-center justify-center text-xs text-white mr-2 mt-auto flex-shrink-0 shadow-sm`}>
                             {activeThread.contactName.charAt(0)}
@@ -5506,6 +5518,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         )}
                       </div>
                     </div>
+                  </div>
                   </React.Fragment>
              );
           })}
