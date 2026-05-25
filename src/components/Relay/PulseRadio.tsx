@@ -22,6 +22,7 @@ import {
   Lock,
   Headphones,
   Loader2,
+  AlignLeft,
   BellRing,
   Trash2,
   Edit3,
@@ -32,8 +33,6 @@ import {
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
-import VoxModeHeader from './VoxModeHeader';
-import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/relay/voxModeService';
@@ -67,8 +66,7 @@ import {
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
-import { RelayVoiceMessage } from './RelayVoiceMessage';
-import { useRelayStudio, useRelayModeRecorder } from './studio';
+import { useRelayStudio, useRelayModeRecorder, StudioCard, StudioMasthead, Waveform } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
@@ -116,7 +114,6 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const [selectedNotifyUsers, setSelectedNotifyUsers] = useState<string[]>([]);
   const [pulseUsers, setPulseUsers] = useState<any[]>([]);
   const [activeBroadcastRoom, setActiveBroadcastRoom] = useState<Broadcast | null>(null);
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [likedBroadcasts, setLikedBroadcasts] = useState<Set<string>>(new Set());
   const [editingChannel, setEditingChannel] = useState(false);
   const [editChannelName, setEditChannelName] = useState('');
@@ -593,87 +590,17 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const isBroadcastActive = (id: string) => studio.nowPlaying?.id === id;
   const isBroadcastPlaying = (id: string) => isBroadcastActive(id) && studio.isPlaying;
 
+  // Featured = the broadcast currently playing in this channel, else the
+  // latest; the rest fall into the related grid (PathCBroadcast hero + grid).
+  const featuredBroadcast = broadcasts.find((b) => isBroadcastActive(b.id)) ?? broadcasts[0];
+  const relatedBroadcasts = broadcasts.filter((b) => b.id !== featuredBroadcast?.id);
+
   return (
     <div className={`pulse-radio ${isDarkMode ? 'dark' : 'light'} ${studio.singlePane ? 'pulse-radio--single-pane' : ''}`}>
       {/* Audio playback is owned by the shared RelayStudioProvider (single
           <audio>) — no local element here. */}
 
-      {/* Header */}
-      <VoxModeToolbar
-        onBack={onBack}
-        modeIcon={<Radio className="w-5 h-5" />}
-        eyebrow="BROADCAST"
-        eyebrowTone="rose"
-        modeTitle="Broadcast"
-        accentColor="#f43f5e"
-        isDarkMode={isDarkMode}
-        showAI
-        onSummarize={handleSummarizeChannel}
-        onSmartReplies={handleGenerateSmartReplies}
-        isSummarizing={isSummarizing}
-        isGeneratingReplies={isGeneratingReplies}
-        hasContent={broadcasts.length > 0}
-        isSelectionMode={isSelectionMode}
-        onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
-        onShowHelp={() => setShowShortcutsHelp(true)}
-        customActions={[
-          {
-            icon: <Users className="w-5 h-5" />,
-            title: 'Toggle channels',
-            onClick: () => setShowMobileSidebar(!showMobileSidebar),
-          },
-          {
-            icon: <Plus className="w-4 h-4" />,
-            title: 'Create channel',
-            onClick: () => setShowNewChannel(true),
-          },
-        ]}
-      />
-
       <div className="pulse-radio-body">
-        {/* Mobile Sidebar Overlay */}
-        {showMobileSidebar && (
-          <div className="pulse-radio-mobile-sidebar-overlay">
-            <div className="pulse-radio-mobile-backdrop" onClick={() => setShowMobileSidebar(false)} />
-            <aside className="pulse-radio-mobile-sidebar">
-              <div className="pulse-radio-sidebar-header">
-                <h2>My Channels</h2>
-                <button type="button" onClick={() => setShowMobileSidebar(false)} title="Close">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="pulse-radio-channels">
-                {channels.map((channel) => (
-                  <button
-                    key={channel.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedChannel(channel);
-                      setMobileView('detail');
-                      setShowMobileSidebar(false);
-                    }}
-                    className={`pulse-radio-channel ${selectedChannel?.id === channel.id ? 'active' : ''}`}
-                  >
-                    <div className="pulse-radio-channel-icon">
-                      <Radio className="w-5 h-5" />
-                    </div>
-                    <div className="pulse-radio-channel-info">
-                      <div className="pulse-radio-channel-name">
-                        <span>{channel.name}</span>
-                        {channel.isPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                      </div>
-                      <div className="pulse-radio-channel-stats">
-                        <Users className="w-3 h-3" />
-                        {channel.subscriberCount}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </aside>
-          </div>
-        )}
-
         {/* Channels sidebar. Pane-driven single-pane (see .pulse-radio--single-pane
             CSS): full-width list when single-pane, hidden once a channel's feed
             is open (back chevron returns). Side-by-side when the pane is wide. */}
@@ -733,43 +660,78 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
             <>
               {/* Channel Header */}
               <div className="pulse-radio-channel-header">
-                <div className="pulse-radio-channel-hero">
-                  {studio.singlePane && (
-                    <button
-                      type="button"
-                      onClick={() => setMobileView('list')}
-                      className="shrink-0 -ml-1 mr-1 p-1.5 rounded-lg text-[var(--pulse-ink-2)] hover:bg-[var(--pulse-surface-raised)] transition self-start"
-                      aria-label="Back to channels"
-                      title="Back to channels"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                  )}
-                  {/* Hero glyph is chrome — coral is reserved for live state
-                      (recording, active broadcast). The concentric ring
-                      decoration was retired during /impeccable distill:
-                      category-reflex (radio → rings) collided with the
-                      Coral-As-Signal rule. */}
-                  <div className="pulse-radio-hero-icon">
-                    <Radio className="w-8 h-8" />
-                  </div>
-                  <div className="pulse-radio-hero-info">
-                    <h2>{selectedChannel.name}</h2>
-                    <p>{selectedChannel.description}</p>
-                    <div className="pulse-radio-hero-stats">
-                      <span><Users className="w-4 h-4" /> {selectedChannel.subscriberCount}</span>
-                      <span><Headphones className="w-4 h-4" /> {selectedChannel.totalListens}</span>
-                    </div>
-                  </div>
+                {studio.singlePane && (
                   <button
                     type="button"
-                    onClick={() => setShowChannelSettings(true)}
-                    className="pulse-radio-settings-btn"
-                    title="Channel settings"
+                    onClick={() => setMobileView('list')}
+                    className="mb-3 inline-flex items-center gap-1.5 text-sm text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition"
+                    aria-label="Back to channels"
+                    title="Back to channels"
                   >
-                    <Settings className="w-5 h-5" />
+                    <ChevronLeft className="w-4 h-4" /> Channels
                   </button>
-                </div>
+                )}
+                <StudioMasthead
+                  tone="rose"
+                  eyebrowIcon={<Radio className="w-3 h-3" />}
+                  eyebrow={featuredBroadcast
+                    ? `Broadcast · ${new Date(featuredBroadcast.publishedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+                    : `Broadcast · ${selectedChannel.name}`}
+                  title={featuredBroadcast?.title || selectedChannel.name}
+                  subtitle={featuredBroadcast
+                    ? `${selectedChannel.name} · ${featuredBroadcast.listenCount} listeners · ${formatDuration(featuredBroadcast.duration)}`
+                    : selectedChannel.description}
+                  right={
+                    <>
+                      {broadcasts.length > 0 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleSummarizeChannel}
+                            disabled={isSummarizing}
+                            className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition"
+                            title="AI summarize"
+                          >
+                            {isSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <AlignLeft className="w-3 h-3" />}
+                            <span className="hidden sm:inline">Summarize</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleGenerateSmartReplies}
+                            disabled={isGeneratingReplies}
+                            className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition"
+                            title="Generate smart replies"
+                          >
+                            {isGeneratingReplies ? <Loader2 className="w-3 h-3 animate-spin" /> : <Reply className="w-3 h-3" />}
+                            <span className="hidden sm:inline">Reply</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => (isSelectionMode ? exitSelectionMode() : enterSelectionMode())}
+                            title={isSelectionMode ? 'Exit selection' : 'Select broadcasts'}
+                            aria-label={isSelectionMode ? 'Exit selection' : 'Select broadcasts'}
+                            className={`p-2 rounded-md transition ${
+                              isSelectionMode
+                                ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                                : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                            }`}
+                          >
+                            <CheckCheck className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowChannelSettings(true)}
+                        title="Channel settings"
+                        aria-label="Channel settings"
+                        className="p-2 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </button>
+                    </>
+                  }
+                />
 
                 {/* Recording Section */}
                 <div className="pulse-radio-record-section">
@@ -817,158 +779,187 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                 </div>
               </div>
 
-              {/* Broadcasts List */}
-              <div className="pulse-radio-broadcasts">
-                <h3 className="pulse-radio-section-title">Recent Broadcasts</h3>
-
-                <div className="pulse-radio-broadcast-list">
-                  {/* TODO(impeccable phase 3 task 6 — RelayVoiceMessage migration):
-                      Migrate this Broadcast episode render to <RelayVoiceMessage />
-                      from `./RelayVoiceMessage`. Surface slots needed:
-                      episodeChip (already supported), leadingAudienceLabel
-                      for "PUBLIC"/"PRIVATE", plus pending API addition:
-                      listener-count chip and like/share buttons in
-                      footerExtras. Do this after the surface-migration API
-                      gap noted at the top of RelayVoiceMessage.tsx is filled. */}
-                  {broadcasts.map((broadcast) => {
-                    const isLiked = likedBroadcasts.has(broadcast.id);
-                    const isCurrentlyPlaying = isBroadcastPlaying(broadcast.id);
-
+              {/* Featured broadcast hero + related grid (PathCBroadcast). The
+                  featured player carries playback + the AI summary +
+                  like/discuss/share; the rest become a compact related grid
+                  (click to play, hover More for archive/download/delete, or
+                  toggle in selection mode). */}
+              {broadcasts.length === 0 ? (
+                <div className="pulse-radio-broadcasts">
+                  <VoxEmptyState
+                    {...emptyConfig}
+                    isDarkMode={isDarkMode}
+                    action={{
+                      label: 'Start Broadcasting',
+                      onClick: () => {
+                        if (recordingState === 'idle') startRecording();
+                      },
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto px-6 pt-1 pb-12">
+                  {featuredBroadcast && (() => {
+                    const fb = featuredBroadcast;
+                    const isLiked = likedBroadcasts.has(fb.id);
+                    const active = isBroadcastActive(fb.id);
+                    const playing = isBroadcastPlaying(fb.id);
+                    const curSec = active ? Math.floor(studio.progress * fb.duration) : 0;
+                    const cur = `${Math.floor(curSec / 60)}:${String(curSec % 60).padStart(2, '0')}`;
                     return (
-                      <div key={broadcast.id} className="group relative mb-2">
-                        <RelayVoiceMessage
-                          id={broadcast.id}
-                          audioUrl={broadcast.audioUrl || ''}
-                          duration={broadcast.duration}
-                          timestamp={broadcast.publishedAt}
-                          sender="other"
-                          senderName={broadcast.title}
-                          isPlaying={isCurrentlyPlaying}
-                          onPlay={() => handlePlayBroadcast(broadcast)}
-                          onPause={() => handlePlayBroadcast(broadcast)}
-                          isActive={isBroadcastActive(broadcast.id)}
-                          progress={studio.progress}
-                          transcript={broadcast.transcript || undefined}
-                          waveformSeed={broadcast.id}
-                          isDarkMode={isDarkMode}
-                          maxWidth="100%"
-                          episodeChip={broadcast.episodeNumber ? (
-                            <span className="pulse-radio-episode">EP {broadcast.episodeNumber}</span>
-                          ) : undefined}
-                          onMore={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            setMenuAnchorRect(rect);
-                            setShowMessageMenu(showMessageMenu === broadcast.id ? null : broadcast.id);
-                          }}
-                          selectionCheckbox={isSelectionMode ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const selectionItem: VoxSelectionItem = {
-                                  id: broadcast.id,
-                                  type: 'audio',
-                                  url: broadcast.audioUrl || '',
-                                  duration: broadcast.duration,
-                                  timestamp: broadcast.publishedAt,
-                                  sender: 'other',
-                                  transcript: broadcast.transcript,
-                                  mode: 'pulse_radio',
-                                  contactId: selectedChannel?.id,
-                                  contactName: selectedChannel?.name,
-                                };
-                                toggleSelection(selectionItem);
-                              }}
-                              className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-all ${
-                                isSelected(broadcast.id)
-                                  ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
-                                  : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
-                              }`}
-                              aria-label={isSelected(broadcast.id) ? 'Deselect broadcast' : 'Select broadcast'}
-                            >
-                              {isSelected(broadcast.id) && <Check className="w-4 h-4 text-white" />}
-                            </button>
-                          ) : undefined}
-                          footerExtras={
-                            <div className="flex items-center gap-3 flex-wrap">
-                              <PlaybackSpeedControl
-                                speed={studio.playbackRate}
-                                onSpeedChange={studio.setPlaybackRate}
-                                isDarkMode={isDarkMode}
-                                compact={true}
-                              />
-                              <span className="pulse-radio-listens">
-                                <Headphones className="w-3 h-3" />
-                                {broadcast.listenCount}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={(e) => handleLikeBroadcast(broadcast.id, e)}
-                                className={`pulse-radio-action-btn ${isLiked ? 'liked' : ''}`}
-                                title={isLiked ? 'Unlike' : 'Like'}
-                              >
-                                <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
-                                <span>Like</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setActiveBroadcastRoom(broadcast)}
-                                className="pulse-radio-action-btn"
-                                title="Discuss"
-                              >
-                                <MessageSquare className="w-3.5 h-3.5" />
-                                <span>Discuss</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(broadcast.audioUrl);
-                                  toast.success('Link copied!');
-                                }}
-                                className="pulse-radio-action-btn"
-                                title="Share"
-                              >
-                                <Share2 className="w-3.5 h-3.5" />
-                                <span>Share</span>
-                              </button>
+                      <StudioCard active className="p-5">
+                        <div className="flex items-center gap-4 mb-4">
+                          <button
+                            type="button"
+                            onClick={() => handlePlayBroadcast(fb)}
+                            className="w-14 h-14 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center shrink-0 transition"
+                            aria-label={playing ? 'Pause' : 'Play'}
+                          >
+                            {playing ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <span style={{ color: 'var(--pulse-rose)', display: 'block' }}>
+                              <Waveform seed={fb.id} count={120} height={48} tall progress={active ? studio.progress : 0} />
+                            </span>
+                            <div className="flex items-center justify-between mt-2 font-mono text-[11px] text-zinc-500 dark:text-zinc-400">
+                              <span>{cur}</span>
+                              <span>{formatDuration(fb.duration)}</span>
                             </div>
-                          }
-                        />
-
-                        {/* More menu — sibling overlay anchored to the More button */}
-                        {showMessageMenu === broadcast.id && (
-                          <VoxMessageMenu
-                            isDarkMode={isDarkMode}
-                            accentColor="#f43f5e"
-                            anchorRect={menuAnchorRect!}
-                            onArchive={() => handleArchiveBroadcast(broadcast)}
-                            onDownload={() => handleDownloadBroadcast(broadcast)}
-                            onDelete={() => {
-                              setBroadcasts(prev => prev.filter(b => b.id !== broadcast.id));
-                              setShowMessageMenu(null);
-                              toast.success('Broadcast deleted');
-                            }}
-                            onClose={() => setShowMessageMenu(null)}
-                          />
+                          </div>
+                        </div>
+                        {fb.transcript && (
+                          <div className="rounded-lg p-4" style={{ background: 'var(--pulse-coral-bg-12)' }}>
+                            <AIProvenanceChip vendor="WHISPER" type="TRANSCRIPT" />
+                            <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed mt-2">
+                              {fb.transcript}
+                            </p>
+                          </div>
                         )}
-                      </div>
+                        <div className="flex items-center gap-3 mt-4 flex-wrap">
+                          <PlaybackSpeedControl
+                            speed={studio.playbackRate}
+                            onSpeedChange={studio.setPlaybackRate}
+                            isDarkMode={isDarkMode}
+                            compact
+                          />
+                          <span className="inline-flex items-center gap-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                            <Headphones className="w-3.5 h-3.5" />
+                            {fb.listenCount}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => handleLikeBroadcast(fb.id, e)}
+                            className={`inline-flex items-center gap-1.5 text-[12px] transition ${
+                              isLiked ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                            }`}
+                          >
+                            <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
+                            Like
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActiveBroadcastRoom(fb)}
+                            className="inline-flex items-center gap-1.5 text-[12px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            Discuss
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { navigator.clipboard.writeText(fb.audioUrl); toast.success('Link copied!'); }}
+                            className="inline-flex items-center gap-1.5 text-[12px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition"
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                            Share
+                          </button>
+                        </div>
+                      </StudioCard>
                     );
-                  })}
+                  })()}
 
-                  {broadcasts.length === 0 && (
-                    <VoxEmptyState
-                      {...emptyConfig}
-                      isDarkMode={isDarkMode}
-                      action={{
-                        label: 'Start Broadcasting',
-                        onClick: () => {
-                          if (recordingState === 'idle') startRecording();
-                        },
-                      }}
-                    />
+                  {relatedBroadcasts.length > 0 && (
+                    <div className="mt-6">
+                      <div className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400 mb-3">
+                        Related broadcasts
+                      </div>
+                      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+                        {relatedBroadcasts.map((b) => {
+                          const sel = isSelected(b.id);
+                          return (
+                            <StudioCard
+                              key={b.id}
+                              active={sel}
+                              onClick={() => {
+                                if (isSelectionMode) {
+                                  toggleSelection({
+                                    id: b.id,
+                                    type: 'audio',
+                                    url: b.audioUrl || '',
+                                    duration: b.duration,
+                                    timestamp: b.publishedAt,
+                                    sender: 'other',
+                                    transcript: b.transcript,
+                                    mode: 'pulse_radio',
+                                    contactId: selectedChannel?.id,
+                                    contactName: selectedChannel?.name,
+                                  } as VoxSelectionItem);
+                                } else {
+                                  handlePlayBroadcast(b);
+                                }
+                              }}
+                              className="group relative p-3 cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2 mb-1 pr-6">
+                                <Radio className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                                <span className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">{b.title}</span>
+                                {b.episodeNumber ? (
+                                  <span className="text-[9px] font-mono uppercase tracking-[0.1em] text-zinc-400 shrink-0">EP {b.episodeNumber}</span>
+                                ) : null}
+                              </div>
+                              <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                                {selectedChannel.name} · {b.listenCount} · {formatDuration(b.duration)}
+                              </div>
+                              <div className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 mt-1">
+                                {new Date(b.publishedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                              </div>
+                              {!isSelectionMode && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    setMenuAnchorRect(rect);
+                                    setShowMessageMenu(showMessageMenu === b.id ? null : b.id);
+                                  }}
+                                  className="absolute right-2 top-2 w-6 h-6 rounded-md flex items-center justify-center text-zinc-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                                  aria-label="More actions"
+                                >
+                                  <MoreVertical className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {showMessageMenu === b.id && menuAnchorRect && (
+                                <VoxMessageMenu
+                                  isDarkMode={isDarkMode}
+                                  accentColor="#f43f5e"
+                                  anchorRect={menuAnchorRect}
+                                  onArchive={() => handleArchiveBroadcast(b)}
+                                  onDownload={() => handleDownloadBroadcast(b)}
+                                  onDelete={() => {
+                                    setBroadcasts((prev) => prev.filter((x) => x.id !== b.id));
+                                    setShowMessageMenu(null);
+                                    toast.success('Broadcast deleted');
+                                  }}
+                                  onClose={() => setShowMessageMenu(null)}
+                                />
+                              )}
+                            </StudioCard>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
+              )}
             </>
           ) : (
             <div className="pulse-radio-empty-state">
