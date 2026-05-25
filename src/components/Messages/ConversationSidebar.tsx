@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserPlus, Smartphone, Keyboard, SquarePen, Check, Archive, Search, X, Plus, MessagesSquare, AtSign, Command } from 'lucide-react';
+import { UserPlus, Smartphone, Keyboard, SquarePen, Check, Search, X, Plus, MessagesSquare, AtSign, Command } from 'lucide-react';
 import { OnlineIndicator } from '../UserContact/OnlineIndicator';
 import { UserBadge } from './UserBadge';
 import { ThreadBadges, ThreadActionsMenu } from '../MessageEnhancements/ThreadActions';
@@ -8,6 +8,7 @@ import { Thread } from '../../types';
 import { TagPills } from './TagPills';
 import type { TagDefinition } from '../../services/tagsService';
 import { RemindersInbox } from './RemindersInbox';
+import { FilterBar } from './FilterBar';
 
 interface VirtualConversationItem {
   item: PulseConversation;
@@ -106,14 +107,6 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
     }
   };
 
-  const filterChips: Array<{ key: string; label: string; token: string }> = [
-    { key: 'all', label: 'ALL', token: '' },
-    { key: 'unread', label: 'UNREAD', token: 'is:unread' },
-    { key: 'pinned', label: 'PINNED', token: 'is:pinned' },
-    { key: 'with-tasks', label: 'TASKS', token: 'is:tasks' },
-    { key: 'with-decisions', label: 'VOTES', token: 'is:votes' },
-  ];
-
   return (
     <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-[var(--pulse-border)] bg-[var(--pulse-canvas)] flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
       {/* Header — mono section label + actions */}
@@ -191,51 +184,17 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
             <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-400 pointer-events-none" aria-hidden="true">⌘K</span>
           )}
         </div>
-        {/* Filter chips — replace the dropdown. One row, mono labels. */}
-        <div className="mt-2 flex items-center gap-1 overflow-x-auto -mx-1 px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {filterChips.map(chip => {
-            const active = threadFilter === chip.key;
-            const chipTitles: Record<string, string> = {
-              all: 'All conversations (J/K to navigate)',
-              unread: 'Unread conversations only (J/K to navigate)',
-              pinned: 'Pinned conversations only',
-              'with-tasks': 'Conversations with tasks',
-              'with-decisions': 'Conversations with votes or decisions',
-            };
-            return (
-              <button
-                key={chip.key}
-                onClick={() => {
-                  setThreadFilter(chip.key);
-                  if (chip.token === '' && searchQuery.startsWith('is:')) setSearchQuery('');
-                }}
-                title={chipTitles[chip.key]}
-                aria-pressed={active}
-                className={`flex-shrink-0 h-6 px-2 rounded font-mono uppercase tracking-[0.1em] text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
-                  active
-                    ? 'bg-rose-500/10 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/[0.04]'
-                }`}
-              >
-                {chip.label}
-              </button>
-            );
-          })}
-          <div className="flex-shrink-0 w-px h-3 bg-zinc-200 dark:bg-white/[0.08] mx-1" aria-hidden="true" />
-          <button
-            onClick={() => setShowArchived(!showArchived)}
-            className={`flex-shrink-0 h-6 px-2 rounded font-mono uppercase tracking-[0.1em] text-[10px] font-medium inline-flex items-center gap-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
-              showArchived
-                ? 'bg-[rgba(244,63,94,0.10)] text-[var(--pulse-rose-text)]'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/[0.04]'
-            }`}
-            title={showArchived ? 'Hide archived conversations' : 'Show archived conversations'}
-            aria-pressed={showArchived}
-          >
-            <Archive className="w-3 h-3" />
-            ARCHIVED
-          </button>
-        </div>
+        {/* Filter chips — icon-led segmented control (FilterBar). Active chip
+            reveals its label; flex-wrap means it can never scroll horizontally
+            (Path D "no horizontal scroll" fix). */}
+        <FilterBar
+          threadFilter={threadFilter}
+          setThreadFilter={setThreadFilter}
+          showArchived={showArchived}
+          setShowArchived={setShowArchived}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
         {/* Search-scope filter (preserved) */}
         {isSearchOpen && searchQuery && (
           <div className="mt-2 flex gap-1">
