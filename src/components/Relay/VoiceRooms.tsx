@@ -15,7 +15,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Contact } from '../../types';
 import { voiceRoomService } from '../../services/voiceRoomService';
-import { useRelayStudio } from './studio';
+import { useRelayStudio, StudioCard, StudioMasthead } from './studio';
 
 import { Brain, ChevronLeft, Code2, Coffee, Gamepad2, Lock, Mic, MicOff, Monitor, Music, PhoneOff, Plus, Radio, Rocket, Settings, Square, UserPlus, Users, Volume2, VolumeX, X, type LucideIcon } from 'lucide-react';
 
@@ -113,13 +113,6 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [selectedChannelId, setSelectedChannelId] = useState<SelectedChannelId>(null);
   const studio = useRelayStudio();
-  // Single-pane (narrow): show the rooms rail OR the room view, one at a time.
-  // Decoupled from selection and inert when the pane is wide. Any selection
-  // (room / solo / contact / active call) flips to the detail view.
-  const [mobileView, setMobileView] = useState<'list' | 'detail'>('list');
-  useEffect(() => {
-    if (activeRoomId || selectedChannelId) setMobileView('detail');
-  }, [activeRoomId, selectedChannelId]);
   const [isMuted, setIsMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -445,37 +438,57 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
     : undefined;
   const selectedIsSolo = selectedChannelId === 'solo';
 
+  // Live = has at least one participant — drives the masthead "LIVE NOW · N"
+  // count + each card's LIVE/EMPTY dot. inDetail decides browse (masthead +
+  // room grid) vs detail (solo / channel-idle / in-call call view).
+  const liveRooms = rooms.filter(r => r.participants.length > 0);
+  const inDetail = !!activeRoom || selectedIsSolo || !!selectedRoom;
+
   return (
     <div className="h-full flex bg-[var(--pulse-canvas-soft)]">
-      {/* Left rail — channels organized into four mono-labeled sections.
-          Persistent across every right-pane state when wide; pane-driven
-          single-pane (rail OR room view) when narrow, never overlaying the
-          Relay top nav (in-flow render, no fixed inset-0). */}
-      <aside className={`${
-        studio.singlePane ? (mobileView === 'detail' ? 'hidden' : 'flex w-full') : 'flex w-72'
-      } shrink-0 border-r border-[var(--pulse-border)] bg-[var(--pulse-surface)] flex-col`}>
-        {/* Rail header — quiet chrome, no big Create button at top (Create is
-            scoped to the AD-HOC section, where it belongs). */}
-        <div className="px-4 py-3 border-b border-[var(--pulse-border)]">
-          <h2 className="text-sm font-semibold text-[var(--pulse-ink)] flex items-center gap-2">
-            {/* Header glyph is chrome, not brand — coral is reserved for live
-                state (active call, Go Live CTA, AI listening chip). */}
-            <Radio className="w-4 h-4 text-[var(--pulse-ink-2)]" />
-            Live
-          </h2>
-        </div>
+      {/* BROWSE — Path C "Voice rooms": a shared masthead + an auto-fitting
+          grid of room studio-cards. No inner rail — the grid IS the
+          navigation, and a card's Join opens the pre-join sheet → joinRoom →
+          the in-call view below. Solo + New ride the masthead's right slot so
+          the grid stays rooms-only, matching the playground. The auto-fill
+          grid reflows from 2-up to 1-up on a narrow Relay pane WITHOUT a
+          viewport media query, so the studio styling never vanishes. */}
+      {!inDetail ? (
+        <main className={`flex-1 overflow-y-auto ${studio.singlePane ? 'px-4' : 'px-7'} pt-6 pb-12`}>
+          <StudioMasthead
+            tone={liveRooms.length > 0 ? 'rose' : 'default'}
+            eyebrowIcon={liveRooms.length > 0 ? (
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 pulse-dot-anim" aria-hidden />
+            ) : undefined}
+            eyebrow={liveRooms.length > 0 ? `Live now · ${liveRooms.length} room${liveRooms.length === 1 ? '' : 's'}` : 'Voice rooms'}
+            title="Voice rooms"
+            subtitle="Drop in. Talk over voice. Walk away."
+            right={
+              <>
+                <button
+                  type="button"
+                  onClick={() => setSelectedChannelId('solo')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                >
+                  <Mic className="w-3.5 h-3.5" />
+                  Solo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateRoom(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  New room
+                </button>
+              </>
+            }
+          />
 
-        {/* Scrollable section list */}
-        <div className="flex-1 overflow-y-auto py-2">
-          {/* Loading state */}
-          {isLoadingRooms && (
-            <div className="px-4 py-6 text-zinc-500 text-xs">Loading channels…</div>
-          )}
-
-          {/* Error state — surfaces room-load failures; team/contact rows
-              still render below since they don't depend on voice_rooms. */}
-          {!isLoadingRooms && loadError && (
-            <div className="px-4 py-3 mb-2 mx-2 rounded-lg bg-red-500/10 border border-red-500/20">
+          {isLoadingRooms ? (
+            <div className="text-zinc-500 text-sm py-10 text-center">Loading rooms…</div>
+          ) : loadError ? (
+            <div className="px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 max-w-md">
               <p className="text-xs text-[var(--pulse-ink-2)] mb-2">{loadError}</p>
               <button
                 type="button"
@@ -492,135 +505,103 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                     })));
                   }).catch(() => setLoadError("Still can't reach rooms.")).finally(() => setIsLoadingRooms(false));
                 }}
-                className="text-xs text-[var(--pulse-rose)] hover:text-[var(--pulse-rose)] underline transition"
+                className="text-xs text-[var(--pulse-rose)] underline transition"
               >
                 Retry
               </button>
             </div>
-          )}
-
-          {/* LIVE · YOU — always-present solo recording row */}
-          <RailSection label="LIVE · YOU">
-            <RailRow
-              icon={<Mic className="w-4 h-4" />}
-              label="Solo recording"
-              meta="VOICE NOTE"
-              isActive={selectedIsSolo}
-              isLive={false}
-              onClick={() => setSelectedChannelId('solo')}
-            />
-          </RailSection>
-
-          {/* LIVE · TEAMS — workspace channels. Phase 2d (harden) wires real
-              data; Phase 1 shows the quiet caption from the brief so the
-              section exists in the structure. */}
-          <RailSection label="LIVE · TEAMS">
-            <p className="px-4 py-2 text-[11px] text-zinc-500 leading-relaxed">
-              Set up a workspace to show team channels.
-            </p>
-          </RailSection>
-
-          {/* LIVE · CONTACTS — frecency-sorted recent voice contacts. Phase 2d
-              wires the data; Phase 1 placeholder. */}
-          <RailSection label="LIVE · CONTACTS">
-            <p className="px-4 py-2 text-[11px] text-zinc-500 leading-relaxed">
-              Recent voice contacts land here.
-            </p>
-          </RailSection>
-
-          {/* LIVE · AD-HOC — temporary rooms (existing voice_rooms data).
-              Click a row → select (channel-idle state). Go Live triggers the
-              pre-join sheet. Joined-room click is a no-op (footgun fixed by
-              the select/join split). */}
-          <RailSection
-            label="LIVE · AD-HOC"
-            trailing={
+          ) : rooms.length === 0 ? (
+            <div className="flex flex-col items-center text-center py-16 text-zinc-500">
+              <div className="w-16 h-16 rounded-full bg-[var(--pulse-surface)] border border-[var(--pulse-border)] flex items-center justify-center mb-4">
+                <Radio className="w-7 h-7 text-zinc-500" aria-hidden />
+              </div>
+              <p className="text-sm text-[var(--pulse-ink-2)]">No rooms yet</p>
               <button
+                type="button"
                 onClick={() => setShowCreateRoom(true)}
-                className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 hover:text-[var(--pulse-ink)] transition flex items-center gap-1"
-                aria-label="Create ad-hoc room"
+                className="mt-4 px-4 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-sm font-medium transition inline-flex items-center gap-2"
               >
-                <Plus className="w-3 h-3" />
-                New
+                <Plus className="w-4 h-4" /> New room
               </button>
-            }
-          >
-            {!isLoadingRooms && !loadError && rooms.length === 0 && (
-              <p className="px-4 py-2 text-[11px] text-zinc-500 leading-relaxed">
-                No rooms yet. Tap New.
-              </p>
-            )}
-            {rooms.map(room => {
-              const isJoined = activeRoomId === room.id;
-              const isSelected = selectedChannelId === `room:${room.id}`;
-              return (
-                <div
-                  key={room.id}
-                  className={`group relative transition flex items-stretch ${
-                    isSelected || isJoined
-                      ? 'bg-rose-500/10'
-                      : 'hover:bg-[var(--pulse-surface-raised)]'
-                  }`}
-                >
-                  <button
-                    onClick={() => {
-                      // No-op on the room you're currently in (kills the
-                      // joined-room click footgun from the critique). Leaving
-                      // happens through the explicit PhoneOff control.
-                      if (isJoined) return;
-                      setSelectedChannelId(`room:${room.id}`);
-                      setMobileView('detail');
-                    }}
-                    className="flex-1 min-w-0 pl-4 pr-10 py-2 text-left flex items-center gap-3"
+            </div>
+          ) : (
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
+              {rooms.map(room => {
+                const present = room.participants.length;
+                const live = present > 0;
+                const host = room.participants[0]?.name;
+                return (
+                  <StudioCard
+                    key={room.id}
+                    onClick={() => setPreJoinRoomId(room.id)}
+                    className="group relative p-5 cursor-pointer"
                   >
-                    <div className={`w-8 h-8 rounded-lg ${room.color} flex items-center justify-center text-[var(--pulse-ink)] shrink-0`}>
-                      <RoomIcon name={room.icon} className="w-4 h-4" />
+                    <div className="flex items-center gap-2 mb-3">
+                      <span
+                        className={`w-2 h-2 rounded-full ${live ? 'pulse-dot-anim' : ''}`}
+                        style={{ background: live ? 'var(--pulse-rose)' : 'var(--pulse-ink-3)' }}
+                        aria-hidden
+                      />
+                      <span
+                        className="text-[10px] font-mono uppercase tracking-[0.1em]"
+                        style={{ color: live ? 'var(--pulse-rose)' : 'var(--pulse-ink-3)' }}
+                      >
+                        {live ? 'Live' : 'Empty'}
+                      </span>
+                      <span className="ml-auto text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500">
+                        {present} present
+                      </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-[var(--pulse-ink)] text-sm truncate">{room.name}</div>
-                      <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500">
-                        <span>{room.participants.length}/{room.maxParticipants}</span>
-                        {room.isPrivate && <Lock className="w-2.5 h-2.5" />}
-                        {isJoined && <span className="text-[var(--pulse-rose)]">· LIVE</span>}
+                    <div className="text-xl font-semibold text-[var(--pulse-ink)] flex items-center gap-2 min-w-0">
+                      {room.isPrivate && <Lock className="w-3.5 h-3.5 text-zinc-500 shrink-0" aria-hidden />}
+                      <span className="truncate">{room.name}</span>
+                    </div>
+                    <div className="text-[12px] text-zinc-500 mt-0.5">
+                      {live ? `Hosted by ${host}` : 'No one yet'}
+                    </div>
+                    {live && (
+                      <div className="mt-4 flex items-end gap-1" style={{ height: 28 }}>
+                        {[0.4, 0.7, 0.5, 0.9, 0.6, 0.85, 0.4, 0.7, 0.55].map((v, i) => (
+                          <i
+                            key={i}
+                            className="pulse-wf-live-bar"
+                            style={{ width: 3, height: v * 28, background: 'var(--pulse-rose)', borderRadius: 1.5, animationDelay: `${i * 0.08}s` }}
+                          />
+                        ))}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setPreJoinRoomId(room.id); }}
+                          className="ml-auto px-3 py-1.5 rounded-md bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-medium transition"
+                        >
+                          Join room
+                        </button>
                       </div>
-                    </div>
-                  </button>
-                  {/* Delete affordance — opacity-0 by default, revealed on
-                      group-hover or keyboard focus. Sits absolute over the
-                      row's trailing edge so the main button keeps full-row
-                      clickability minus the X's hit zone. */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteRoom(room.id);
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center text-[var(--pulse-ink-2)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-red-600 dark:hover:text-red-300 hover:bg-[var(--pulse-surface-raised)] transition"
-                    aria-label={`Delete ${room.name}`}
-                    title="Delete room"
-                  >
-                    <X className="w-3.5 h-3.5" aria-hidden />
-                  </button>
-                </div>
-              );
-            })}
-          </RailSection>
-        </div>
-      </aside>
-
-      {/* Right pane — state-driven. Order of precedence:
-          1. In a call → active room view (participant grid + controls)
-          2. Solo selected → solo recording surface (Phase 2d wires audio)
-          3. Ad-hoc room selected (not joined) → channel-idle card
-          4. Nothing selected → landing copy */}
-      <main className={`flex-1 flex flex-col min-w-0 ${
-        studio.singlePane && mobileView !== 'detail' ? 'hidden' : ''
-      }`}>
-        {studio.singlePane && mobileView === 'detail' && (
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); deleteRoom(room.id); }}
+                      className="absolute right-3 top-3 w-6 h-6 rounded-md flex items-center justify-center text-[var(--pulse-ink-2)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-red-600 dark:hover:text-red-300 hover:bg-[var(--pulse-surface-raised)] transition"
+                      aria-label={`Delete ${room.name}`}
+                      title="Delete room"
+                    >
+                      <X className="w-3.5 h-3.5" aria-hidden />
+                    </button>
+                  </StudioCard>
+                );
+              })}
+            </div>
+          )}
+        </main>
+      ) : (
+      /* DETAIL — state-driven: in-call (participant grid + controls), solo
+         recording, or channel-idle (Go Live). A back control returns to the
+         grid, except mid-call where Leave is the exit. */
+      <main className="flex-1 flex flex-col min-w-0">
+        {!activeRoom && (
           <div className="shrink-0 px-3 py-2 border-b border-[var(--pulse-border)]">
             <button
               type="button"
-              onClick={() => setMobileView('list')}
+              onClick={() => setSelectedChannelId(null)}
               className="inline-flex items-center gap-1.5 text-sm text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition"
               aria-label="Back to rooms"
             >
@@ -840,6 +821,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
           </div>
         )}
       </main>
+      )}
 
       {/* AI sidecar — opt-in panel that slides in from the right when toggled.
           Always mounted (Phase 2d streams the live transcript here); width
@@ -944,62 +926,6 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
     </div>
   );
 };
-
-// ============================================
-// RAIL SECTION + ROW (left-rail primitives)
-// ============================================
-// Section: mono-uppercase header + optional trailing slot (e.g. "+ New"
-// affordance scoped to the AD-HOC section), then children rows or a quiet
-// caption when the section has no data.
-
-interface RailSectionProps {
-  label: string;
-  trailing?: React.ReactNode;
-  children: React.ReactNode;
-}
-
-const RailSection: React.FC<RailSectionProps> = ({ label, trailing, children }) => (
-  <section className="mb-4">
-    <div className="px-4 py-2 flex items-center justify-between">
-      <span className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500">{label}</span>
-      {trailing}
-    </div>
-    <div>{children}</div>
-  </section>
-);
-
-interface RailRowProps {
-  icon: React.ReactNode;
-  label: string;
-  meta?: string;
-  isActive: boolean;
-  isLive: boolean;
-  onClick: () => void;
-}
-
-const RailRow: React.FC<RailRowProps> = ({ icon, label, meta, isActive, isLive, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`w-full px-4 py-2 text-left transition flex items-center gap-3 ${
-      isActive
-        ? 'bg-rose-500/10'
-        : 'hover:bg-[var(--pulse-surface-raised)]'
-    }`}
-  >
-    <span className="w-8 h-8 rounded-lg bg-[var(--pulse-surface-raised)] flex items-center justify-center text-[var(--pulse-ink)] shrink-0">
-      {icon}
-    </span>
-    <span className="flex-1 min-w-0">
-      <span className="block font-medium text-[var(--pulse-ink)] text-sm truncate">{label}</span>
-      {meta && (
-        <span className="block mt-0.5 text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500">
-          {meta}
-          {isLive && <span className="text-[var(--pulse-rose)]"> · LIVE</span>}
-        </span>
-      )}
-    </span>
-  </button>
-);
 
 // ============================================
 // PRE-JOIN SHEET
