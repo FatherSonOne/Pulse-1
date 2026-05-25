@@ -197,6 +197,29 @@ export const taskService = {
     return tasks || [];
   },
 
+  // Open (active, unarchived) tasks linked to any of the given origin message
+  // ids — powers the Messages relationship rail's per-conversation open items.
+  // Workspace-scoped (RLS is workspace-based). Returns [] for an empty id list.
+  async getOpenTasksByMessageIds(workspaceId: string, messageIds: string[]): Promise<Task[]> {
+    if (messageIds.length === 0) return [];
+
+    const { data: tasks, error } = await supabase
+      .from('extracted_tasks')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .in('origin_message_id', messageIds)
+      .in('status', ['pending', 'todo', 'in_progress', 'in_review', 'blocked'])
+      .is('archived_at', null)
+      .order('extracted_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching tasks by message ids:', error);
+      return [];
+    }
+
+    return tasks || [];
+  },
+
   // Update task status
   async updateTaskStatus(taskId: string, status: Task['status'], blockedReason?: string): Promise<boolean> {
     const updates: any = {

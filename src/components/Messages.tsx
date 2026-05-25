@@ -182,7 +182,11 @@ import { MessagesTopModals } from './Messages/MessagesTopModals';
 import { MessagesEndModals } from './Messages/MessagesEndModals';
 import { ConversationSidebar } from './Messages/ConversationSidebar';
 import { RelationshipRail } from './Messages/RelationshipRail';
-import { deriveRelationship, type RailMessage } from './Messages/useRelationshipData';
+import { deriveRelationship, type RailMessage, type RelationshipData } from './Messages/useRelationshipData';
+// `Task` is already taken by the legacy ../types Task; alias the service's
+// (extracted_tasks) shape to avoid the duplicate-identifier collision.
+import { taskService, type Task as ExtractedTask } from '../services/taskService';
+import { decisionService, type Decision } from '../services/decisionService';
 import { SpineNode } from './Messages/ConversationSpine';
 import { useConversationMoments } from './Messages/useConversationMoments';
 import { MessageInputSection } from './Messages/MessageInputSection';
@@ -1980,30 +1984,89 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const railContactName =
     activePulseConv?.other_user?.display_name ||
     activePulseConv?.other_user?.full_name ||
-    activeThread?.name ||
+    activeThread?.contactName ||
     undefined;
 
-  // Path D step 4 — open-items become interactive. The legacy inline-task flow
-  // is local-only (handleExtractTask never persists a Task row; it just stamps
-  // relatedTaskId onto the message), so "completing" an open item clears that
-  // message's task link, dropping it from the rail. Real per-contact task
-  // persistence + completion is the deferred schema follow-up. Pulse DMs carry
-  // no task data, so this only fires on the legacy-thread path.
-  const handleToggleOpenItem = useCallback((messageId: string) => {
-    if (!activeThreadId) return;
-    setThreads(prev =>
-      prev.map(t =>
-        t.id === activeThreadId
-          ? {
-              ...t,
-              messages: t.messages.map(m =>
-                m.id === messageId ? { ...m, relatedTaskId: undefined } : m,
-              ),
-            }
-          : t,
-      ),
-    );
-  }, [activeThreadId]);
+  // Path D step 5 — per-conversation open-items + last-decision for Pulse DMs.
+  // The rail's message-derived data (relationshipData) only covers legacy
+  // threads; for real DMs we query extracted_tasks / decisions linked to this
+  // conversation's message ids (origin_message_id / message_id), workspace-
+  // scoped. Empty until the write-path links rows to messages.
+  const [dmTasks, setDmTasks] = useState<ExtractedTask[]>([]);
+  const [dmDecisions, setDmDecisions] = useState<Decision[]>([]);
+
+  useEffect(() => {
+    if (!activePulseConv || !currentWorkspace || pulseMessages.length === 0) {
+      setDmTasks([]);
+      setDmDecisions([]);
+      return;
+    }
+    const ids = pulseMessages.map(m => m.id);
+    let cancelled = false;
+    void Promise.all([
+      taskService.getOpenTasksByMessageIds(currentWorkspace.id, ids),
+      decisionService.getDecisionsByMessageIds(currentWorkspace.id, ids),
+    ]).then(([tasks, decisions]) => {
+      if (cancelled) return;
+      setDmTasks(tasks);
+      setDmDecisions(decisions);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // pulseMessages.length is the cheap change signal; conv/workspace id refetch.
+  }, [activePulseConv?.id, currentWorkspace?.id, pulseMessages.length]);
+
+  // Rail data: DMs use the queried tasks/decisions (pace still derives from
+  // messages); legacy threads keep their message-derived data unchanged.
+  const railData: RelationshipData = useMemo(() => {
+    if (!activePulseConv) return relationshipData;
+    const latest = dmDecisions[0];
+    return {
+      ...relationshipData,
+      openItems: dmTasks.map(t => ({ id: t.id, title: t.title })),
+      lastDecision: latest
+        ? {
+            id: latest.id,
+            text: latest.title || (latest as { proposal_text?: string }).proposal_text || '',
+            status:
+              latest.status === 'decided'
+                ? 'approved'
+                : latest.status === 'cancelled'
+                ? 'rejected'
+                : 'open',
+          }
+        : null,
+    };
+  }, [activePulseConv, relationshipData, dmTasks, dmDecisions]);
+
+  // Open-item completion. DMs: the id is a real extracted_tasks id — mark it
+  // done and optimistically drop it. Legacy threads: the inline-task flow is
+  // local-only (handleExtractTask just stamps relatedTaskId), so clear that link.
+  const handleToggleOpenItem = useCallback(
+    (id: string) => {
+      if (activePulseConv) {
+        setDmTasks(prev => prev.filter(t => t.id !== id));
+        void taskService.updateTaskStatus(id, 'done');
+        return;
+      }
+      if (activeThreadId) {
+        setThreads(prev =>
+          prev.map(t =>
+            t.id === activeThreadId
+              ? {
+                  ...t,
+                  messages: t.messages.map(m =>
+                    m.id === id ? { ...m, relatedTaskId: undefined } : m,
+                  ),
+                }
+              : t,
+          ),
+        );
+      }
+    },
+    [activePulseConv, activeThreadId],
+  );
 
   // Generate smart compose suggestions with debounce
   useEffect(() => {
@@ -3630,11 +3693,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               <button
                 type="button"
                 onClick={() => setRailSheetOpen(true)}
-                className="xl:hidden w-12 h-12 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                className="xl:hidden relative w-12 h-12 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 title="Relationship"
                 aria-label="Show relationship panel"
               >
                 <PanelRightOpen className="text-zinc-600 dark:text-zinc-400 w-5 h-5" />
+                {railData.openItems.length > 0 && (
+                  <span
+                    className="absolute top-1.5 right-1.5 min-w-[15px] h-[15px] px-0.5 rounded-full inline-flex items-center justify-center text-[9px] font-mono font-semibold tabular-nums"
+                    style={{ color: 'var(--pulse-tone-warning)', background: 'var(--pulse-tone-warning-soft)' }}
+                  >
+                    {railData.openItems.length}
+                  </span>
+                )}
               </button>
               {/* Phase 7b: Tag picker — only when there's an active
                *  workspace (tag definitions are workspace-scoped). */}
@@ -5039,12 +5110,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               aria-label="Show relationship panel"
             >
               <PanelRightOpen className="w-4 h-4" />
-              {relationshipData.openItems.length > 0 && (
+              {railData.openItems.length > 0 && (
                 <span
                   className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-0.5 rounded-full inline-flex items-center justify-center text-[9px] font-mono font-semibold tabular-nums"
                   style={{ color: 'var(--pulse-tone-warning)', background: 'var(--pulse-tone-warning-soft)' }}
                 >
-                  {relationshipData.openItems.length}
+                  {railData.openItems.length}
                 </span>
               )}
             </button>
@@ -5603,11 +5674,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           conversation takes priority — the rail-as-sheet below covers mobile. */}
       {(activePulseConv || activeThread) && (
         <RelationshipRail
-          data={relationshipData}
+          data={railData}
           contactName={railContactName}
           collapsed={railCollapsed}
           onToggleCollapse={() => setRailCollapsed(c => !c)}
-          onToggleOpenItem={activeThread ? handleToggleOpenItem : undefined}
+          onToggleOpenItem={handleToggleOpenItem}
           className="max-xl:hidden"
         />
       )}
@@ -5629,11 +5700,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           />
           <div className="relative h-full animate-slide-in-right">
             <RelationshipRail
-              data={relationshipData}
+              data={railData}
               contactName={railContactName}
               collapsed={false}
               onToggleCollapse={() => setRailSheetOpen(false)}
-              onToggleOpenItem={activeThread ? handleToggleOpenItem : undefined}
+              onToggleOpenItem={handleToggleOpenItem}
               className="h-full shadow-2xl"
             />
           </div>

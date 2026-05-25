@@ -136,6 +136,33 @@ export const decisionService = {
     };
   },
 
+  // Decisions linked to any of the given message ids (most recent first) —
+  // powers the Messages relationship rail's per-conversation "last decision".
+  // Workspace-scoped. Aliases proposal_text/created_by onto title/proposed_by
+  // like getWorkspaceDecisions. Returns [] for an empty id list.
+  async getDecisionsByMessageIds(workspaceId: string, messageIds: string[]): Promise<Decision[]> {
+    if (messageIds.length === 0) return [];
+
+    const { data: decisions, error } = await supabase
+      .from('decisions')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .in('message_id', messageIds)
+      .is('archived_at', null)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching decisions by message ids:', error);
+      return [];
+    }
+
+    return (decisions || []).map((d: Record<string, unknown>) => ({
+      ...(d as unknown as Decision),
+      title: (d.title as string) ?? (d.proposal_text as string) ?? '',
+      proposed_by: (d.proposed_by as string) ?? (d.created_by as string) ?? '',
+    }));
+  },
+
   // Cast a vote on a decision
   async castVote(data: {
     decision_id: string;
