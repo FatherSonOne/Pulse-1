@@ -49,7 +49,9 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 const startOfDay = (d: Date): Date => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 const isSameDay = (a: Date, b: Date): boolean =>
   a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-const fmtTime = (d: Date): string => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+const fmtTime = (d: Date): string => d.getMinutes() === 0
+  ? d.toLocaleTimeString([], { hour: 'numeric' })              // "10 AM"
+  : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); // "12:30 PM"
 const minsOfDay = (d: Date): number => d.getHours() * 60 + d.getMinutes();
 /** "14:30" / "2:30 PM" → minutes from midnight. */
 const parseClock = (t: string): number => {
@@ -202,13 +204,19 @@ const DayTimeline: React.FC<{
   const timed = events.filter(e => !e.allDay).sort((a, b) => asDate(a.start).getTime() - asDate(b.start).getTime());
   const allDay = events.filter(e => e.allDay);
 
-  // Dynamic window: an hour of padding around the day's events, clamped & sane.
+  // Dynamic window: hug the day's actual events (1h padding) with a minimum
+  // readable span, so a light morning doesn't leave a huge empty afternoon.
+  // Falls back to a standard 8a–6p only when the day has nothing timed.
   const { startH, endH } = useMemo(() => {
-    if (timed.length === 0) return { startH: 8, endH: 18 };
+    if (timed.length === 0 && focusBlocks.length === 0) return { startH: 8, endH: 18 };
     let lo = 24, hi = 0;
     timed.forEach(e => { lo = Math.min(lo, asDate(e.start).getHours()); hi = Math.max(hi, asDate(e.end).getHours() + (asDate(e.end).getMinutes() > 0 ? 1 : 0)); });
     focusBlocks.forEach(b => { lo = Math.min(lo, Math.floor(parseClock(b.startTime) / 60)); hi = Math.max(hi, Math.ceil(parseClock(b.endTime) / 60)); });
-    return { startH: Math.max(0, Math.min(lo - 1, 8)), endH: Math.min(24, Math.max(hi + 1, 18)) };
+    let s = Math.max(0, lo - 1);
+    let e = Math.min(24, hi + 1);
+    const MIN_SPAN = 6;
+    if (e - s < MIN_SPAN) { e = Math.min(24, s + MIN_SPAN); s = Math.max(0, e - MIN_SPAN); }
+    return { startH: s, endH: e };
   }, [timed, focusBlocks]);
 
   const winTop = startH * 60;
@@ -248,7 +256,7 @@ const DayTimeline: React.FC<{
   const nowMins = minsOfDay(today);
 
   return (
-    <div className="h-full overflow-auto rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+    <div className="max-h-full overflow-auto rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
       <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-10 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm flex items-center gap-2">
         <span className="text-[13px] font-semibold text-zinc-900 dark:text-white">
           {WEEKDAYS[focusDate.getDay()]}, {MONTHS[focusDate.getMonth()]} {focusDate.getDate()}
