@@ -179,103 +179,18 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
 const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const WEEKDAYS_MINI = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-// sRGB → relative luminance (WCAG 2.x formula).
-const srgbLum = (r: number, g: number, b: number): number => {
-  const f = (c: number) => {
-    const cs = c / 255;
-    return cs <= 0.03928 ? cs / 12.92 : Math.pow((cs + 0.055) / 1.055, 2.4);
-  };
-  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
-};
-
-const hue2rgb = (pp: number, qq: number, t: number): number => {
-  if (t < 0) t += 1;
-  if (t > 1) t -= 1;
-  if (t < 1 / 6) return pp + (qq - pp) * 6 * t;
-  if (t < 1 / 2) return qq;
-  if (t < 2 / 3) return pp + (qq - pp) * (2 / 3 - t) * 6;
-  return pp;
-};
-
-// Per-hue iterative WCAG-correct darkening. The earlier fixed-floor approach
-// (L=0.32) failed AA for high-luminance hues (amber, emerald, cyan) whose
-// HSL lightness is a poor proxy for perceived brightness. This walks HSL
-// lightness downward until the resulting text clears 4.5:1 against the
-// composited rgba(hex, 0.15) over #f8f8f8 canvas, capped at L=0.10. Light
-// mode only — dark mode keeps the saturated hex (canvas inverts the failure).
-const darkenForLightMode = (hex: string): string => {
-  const orig_r = parseInt(hex.slice(1, 3), 16);
-  const orig_g = parseInt(hex.slice(3, 5), 16);
-  const orig_b = parseInt(hex.slice(5, 7), 16);
-  // Composited bg: 0.85 * canvas + 0.15 * fill, canvas = #f8f8f8 (248,248,248)
-  const bg_r = 248 * 0.85 + orig_r * 0.15;
-  const bg_g = 248 * 0.85 + orig_g * 0.15;
-  const bg_b = 248 * 0.85 + orig_b * 0.15;
-  const bg_lum = srgbLum(bg_r, bg_g, bg_b);
-
-  // RGB → HSL once
-  const r = orig_r / 255;
-  const g = orig_g / 255;
-  const b = orig_b / 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const origL = (max + min) / 2;
-  let h = 0;
-  let s = 0;
-  if (max !== min) {
-    const d = max - min;
-    s = origL > 0.5 ? d / (2 - max - min) : d / (max + min);
-    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-    else if (max === g) h = ((b - r) / d + 2) / 6;
-    else h = ((r - g) / d + 4) / 6;
-  }
-
-  const renderAt = (newL: number): { hex: string; ratio: number } => {
-    const q = newL < 0.5 ? newL * (1 + s) : newL + s - newL * s;
-    const p = 2 * newL - q;
-    const nr = hue2rgb(p, q, h + 1 / 3) * 255;
-    const ng = hue2rgb(p, q, h) * 255;
-    const nb = hue2rgb(p, q, h - 1 / 3) * 255;
-    const text_lum = srgbLum(nr, ng, nb);
-    const ratio = (Math.max(bg_lum, text_lum) + 0.05) / (Math.min(bg_lum, text_lum) + 0.05);
-    const toHex = (c: number) => Math.round(c).toString(16).padStart(2, '0');
-    return { hex: `#${toHex(nr)}${toHex(ng)}${toHex(nb)}`, ratio };
-  };
-
-  // Original passes? Return as-is.
-  const original = renderAt(origL);
-  if (original.ratio >= 4.5) return hex;
-
-  // Walk L downward in 0.025 steps until contrast clears.
-  let testL = Math.min(origL, 0.30);
-  let last = original;
-  while (testL >= 0.10) {
-    last = renderAt(testL);
-    if (last.ratio >= 4.5) return last.hex;
-    testL -= 0.025;
-  }
-  // Best effort at floor — caller may still see <4.5 for edge cases.
-  return last.hex;
-};
-
-const isDarkMode = (): boolean =>
-  typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
-
 // Single pill / block style used across Year, Month, Week, Day, and Agenda views.
-// Translucent fill (15%) + full-perimeter hairline (40%) + colored text. Coral stays
-// the only saturated solid in the calendar — the system's signal-vs-decoration rule.
-// Text color is darkened in light mode via per-hue iterative WCAG targeting so each
-// event hue clears 4.5:1 on the composited tint; dark mode keeps the saturated hex.
+// Color discipline (matches the Today view): the category hue lives ONLY in a
+// 3px left tick — never the fill, text, or icon. A neutral surface + neutral
+// ink keeps a packed Month grid calm, so coral stays the calendar's only
+// saturated signal and AI output reads as the exception, not one more pill.
+// (Icon + text inherit `color`, so neutral ink neutralizes them automatically.)
 const getEventTypeStyle = (type?: string, _fallbackColor?: string): React.CSSProperties => {
-  const meta = getEventTypeMeta(type);
-  const hex = meta.color;
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+  const hex = getEventTypeMeta(type).color;
   return {
-    backgroundColor: `rgba(${r}, ${g}, ${b}, 0.15)`,
-    boxShadow: `inset 0 0 0 1px rgba(${r}, ${g}, ${b}, 0.40)`,
-    color: isDarkMode() ? hex : darkenForLightMode(hex),
+    backgroundColor: 'rgba(127, 127, 127, 0.10)',
+    boxShadow: `inset 3px 0 0 0 ${hex}, inset 0 0 0 1px rgba(127, 127, 127, 0.18)`,
+    color: 'var(--cal-text)',
   };
 };
 
