@@ -45,6 +45,7 @@ import { voxModeService } from '../../services/relay/voxModeService';
 import { useRelayStudio } from './studio';
 import { Waveform } from './studio/Waveform';
 import { StudioCard } from './studio/StudioCard';
+import { StudioMasthead } from './studio/StudioMasthead';
 
 // Mirrors Relay.tsx's local RelayView (six peers).
 type RelayTriageView =
@@ -580,72 +581,72 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-[#080808]">
-      {/* Masthead */}
-      <div className="px-7 pt-6 pb-4">
-        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-          Relay · Inbox
-        </div>
-        <div className="flex items-end justify-between mt-1 gap-4">
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 leading-tight">Today's voice</h1>
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Status toggle */}
-            <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-900">
-              {([
-                { id: 'all', label: 'All' },
-                { id: 'needs_reply', label: 'Needs reply' },
-              ] as { id: StatusFilter; label: string }[]).map((s) => (
+      {/* Masthead — shared StudioMasthead; filters ride the `right` slot. */}
+      <div className="px-7 pt-6">
+        <StudioMasthead
+          eyebrow="Relay · Inbox"
+          title="Today's voice"
+          right={
+            <>
+              {/* Status toggle */}
+              <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-900">
+                {([
+                  { id: 'all', label: 'All' },
+                  { id: 'needs_reply', label: 'Needs reply' },
+                ] as { id: StatusFilter; label: string }[]).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setStatusFilter(s.id)}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                      statusFilter === s.id
+                        ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
+                        : 'text-zinc-500 dark:text-zinc-400'
+                    }`}
+                  >
+                    {s.label}
+                    {s.id === 'needs_reply' && needsReplyCount > 0 && (
+                      <span className="ml-1.5 font-mono text-[10px] text-rose-500">{needsReplyCount}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {/* Source dropdown */}
+              <div ref={sourceMenuRef} className="relative">
                 <button
-                  key={s.id}
                   type="button"
-                  onClick={() => setStatusFilter(s.id)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
-                    statusFilter === s.id
-                      ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-400'
-                  }`}
+                  onClick={() => setSourceMenuOpen((o) => !o)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                  aria-haspopup="menu"
+                  aria-expanded={sourceMenuOpen}
                 >
-                  {s.label}
-                  {s.id === 'needs_reply' && needsReplyCount > 0 && (
-                    <span className="ml-1.5 font-mono text-[10px] text-rose-500">{needsReplyCount}</span>
-                  )}
+                  <Filter className="w-3.5 h-3.5" />
+                  <span>{activeSourceLabel}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${sourceMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
-              ))}
-            </div>
-            {/* Source dropdown */}
-            <div ref={sourceMenuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setSourceMenuOpen((o) => !o)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
-                aria-haspopup="menu"
-                aria-expanded={sourceMenuOpen}
-              >
-                <Filter className="w-3.5 h-3.5" />
-                <span>{activeSourceLabel}</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${sourceMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {sourceMenuOpen && (
-                <div role="menu" className="absolute right-0 top-full mt-1.5 w-40 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-[#0a0a0a] py-1 z-20 shadow-md">
-                  {SOURCE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      role="menuitem"
-                      onClick={() => { setSourceFilter(opt.id); setSourceMenuOpen(false); }}
-                      className={`w-full text-left px-3 py-1.5 text-[12px] transition ${
-                        sourceFilter === opt.id
-                          ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
-                          : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+                {sourceMenuOpen && (
+                  <div role="menu" className="absolute right-0 top-full mt-1.5 w-40 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-[#0a0a0a] py-1 z-20 shadow-md">
+                    {SOURCE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => { setSourceFilter(opt.id); setSourceMenuOpen(false); }}
+                        className={`w-full text-left px-3 py-1.5 text-[12px] transition ${
+                          sourceFilter === opt.id
+                            ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
+                            : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          }
+        />
       </div>
 
       {/* Needs-reply banner */}

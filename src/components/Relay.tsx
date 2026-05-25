@@ -31,29 +31,10 @@ import { Contact } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { settingsService } from '../services/settingsService';
 
-// Deterministic avatar color from a user id. Matches the decorative palette
-// used inside VoiceRooms' room-color picker — status hues (emerald/orange/
-// red/yellow/blue-500) and the brand rose are deliberately excluded so the
-// avatar never collides with state-bearing signals.
-const RELAY_AVATAR_COLORS = [
-  'bg-indigo-500',
-  'bg-violet-500',
-  'bg-fuchsia-500',
-  'bg-pink-500',
-  'bg-sky-500',
-  'bg-cyan-500',
-  'bg-teal-500',
-  'bg-slate-500',
-] as const;
-
-function avatarColorForId(id: string): string {
-  if (!id) return RELAY_AVATAR_COLORS[0];
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-  }
-  return RELAY_AVATAR_COLORS[hash % RELAY_AVATAR_COLORS.length];
-}
+// Deterministic avatar color from a user id — shared with the Voice Studio
+// message card + every Relay section. Status hues and the brand rose are
+// excluded so a decorative avatar never collides with state-bearing signals.
+import { avatarColorForId } from './Relay/studio/avatarColor';
 
 // Keyboard shortcuts
 import { useRelayKeyboardShortcuts } from '../hooks/useRelayKeyboardShortcuts';

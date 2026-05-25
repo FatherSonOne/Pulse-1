@@ -15,6 +15,14 @@ export type { WaveformProps } from './Waveform';
 export { StudioCard } from './StudioCard';
 export type { StudioCardProps } from './StudioCard';
 
+export { StudioMasthead } from './StudioMasthead';
+export type { StudioMastheadProps } from './StudioMasthead';
+
+export { StudioMessageCard } from './StudioMessageCard';
+export type { StudioMessageCardProps, StudioCardAvatar } from './StudioMessageCard';
+
+export { avatarColorForId, initials } from './avatarColor';
+
 export { SourcesRail } from './SourcesRail';
 export type { SourcesRailProps } from './SourcesRail';
 
