@@ -218,3 +218,38 @@ flow. Land them as separate conventional commits.
   and `⌘K` (real keybinding).
 - **Real:** the Pulse design tokens (mirrored from `pulse-tokens.css`), the
   coral budget discipline, the reaction set, and the `threadFilter` vocabulary.
+
+---
+
+## Implementation Status — 2026-05-25
+
+Shipped against the **legacy** Messages entry (the live default surface;
+`Messages.tsx`). Each tranche is its own commit on `main`.
+
+| Tranche | Commit | What landed |
+|---|---|---|
+| 1 — FilterBar | `f175620` | Icon-led segmented control (`FilterBar.tsx`) replaces the horizontally-scrolling filter row in `ConversationSidebar`. Active chip reveals its label; flex-wrap guarantees no horizontal scroll. Behavior/keys preserved. Counts/dots deferred (visible list is `pulseConversations`, filtering runs over `threads`). |
+| 2a — Neutral bubbles | `0b19d79` | New `--pulse-msg-*` tokens; sent bubble rose→neutral ink-tint, coral "you heartbeat" hairline removed; received transparent→**filled surface-raised** (owner pick). Enforces DESIGN.md Coral-As-Signal. Applies to **both** entries (shared `messages.css`). |
+| 2b — index.css cleanup | `9cff64a` | Removed the dead/conflicting legacy `--msg-*` bubble system from `index.css` (PR5's cleanup had missed it). Zero `--msg-*` refs remain. |
+| 3a — Rail foundation | `9ed014f` | Host-agnostic `RelationshipRail.tsx` + `useRelationshipData.ts` (normalized `RailMessage` → `{ openItems, lastDecision, pace }`). Read-only; status tones, never coral; decision card uses a full tone border (not a banned side-stripe). |
+| 3b — Rail wired (legacy) | `40f4227` | Docked rightmost column in the legacy conversation pane, guarded to a live conversation. Legacy-thread path yields full open-items + last-decision + pace; Pulse-DM path yields pace + "all clear" (PulseMessage carries no task/decision data). |
+
+**Decisions locked this session:** Send/bubble color → **neutral** (Path D);
+received bubble → **filled surface-raised**; rail host → **both surfaces**,
+then V2 **deferred** (see below).
+
+**Deferred / not yet built:**
+
+- **3c — rail in v2 (`MessagesSplitView`):** deferred. v2 is paused
+  (`pulseMessagesV2` flag default-OFF, "do not flip"), its `renderRightDrawer`
+  slot is occupied, and the rail would be pace-only there. The component is
+  host-agnostic so v2 wiring is a clean drop-in later. Tracked in
+  `docs/deep-dives/messages_v2_parity_backlog.md` (local) + rail code comments.
+- **Open-items / last-decision for Pulse DMs:** needs the Decisions & Tasks
+  surface wired per-contact (today only legacy threads carry that data).
+- **Rail interactivity** (open-item checkboxes), **mobile/375px** rail-as-sheet,
+  and the later Path D tranches: **intelligence spine + AI moments**,
+  **composer smarts** (ghost-text / `/` palette / tone chip), **⌘K**.
+
+**Open questions resolved:** Send color → neutral. Rail default → open.
+Still open: mobile pass, AI-moment density.
