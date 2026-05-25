@@ -85,6 +85,17 @@
   --pulse-coral-fg: color-mix(in oklab, var(--pulse-coral) 35%, black 65%);
   --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-coral) 12%, transparent);
   --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-coral) 8%, transparent);
+
+  /* ─── Message bubbles — Path D neutral (Signal Composer) ───
+     Bubbles derive from ink / surface and are NEVER rose. Rose retreats to
+     signal only (Send CTA, unread, active) per DESIGN.md Coral-As-Signal.
+     Received = soft filled surface card; sent = ink-tinted neutral fill.
+     recv-bg / *-border reference theme-aware vars (auto-adapt); only the
+     sent fill opacity differs per theme — see the .dark override. */
+  --pulse-msg-recv-bg: var(--pulse-surface-raised);
+  --pulse-msg-recv-border: var(--pulse-border);
+  --pulse-msg-sent-bg: color-mix(in oklab, var(--pulse-ink) 9%, transparent);
+  --pulse-msg-sent-border: var(--pulse-border-strong);
 }
 
 .dark {
@@ -137,6 +148,11 @@
      mix and composite correctly over any surface in either theme.
      Dark: 8.47:1 contrast (PASS WCAG AA + AAA). */
   --pulse-coral-fg: color-mix(in oklab, var(--pulse-coral) 60%, white 40%);
+
+  /* Message bubbles — sent fill a touch stronger on dark so the ink-tint
+     reads over the true-black canvas. recv/border tokens inherit the
+     theme-aware surface/border vars above; no override needed. */
+  --pulse-msg-sent-bg: color-mix(in oklab, var(--pulse-ink) 12%, transparent);
 }
 
 /* ============================================================

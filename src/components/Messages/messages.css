@@ -433,51 +433,22 @@
               box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── Received message — plain text block. No bubble, no border, no
-      side-stripe pseudo-element. Sender identity comes from the mono
-      header + avatar. Reads like Linear / email thread. Removing the
-      coral hairline closes #94 task 4.2 and the DESIGN.md side-stripe ban. */
+/* ── Received message — soft filled surface card (Path D). Neutral, never
+      rose; sender identity comes from the mono header + avatar. Inherits the
+      base .message-bubble padding / radius / 1px border — we only paint the
+      fill and tint the border. */
 .message-bubble-received {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  padding: 0.125rem 0;
-  color: var(--pulse-ink);
+  background: var(--pulse-msg-recv-bg);
+  border-color: var(--pulse-msg-recv-border);
 }
 
-/* ── Sent message — coral-glass card. Symmetric 12px (no chat tail).
-      Right-edge coral hairline acts as the "you" heartbeat signal. */
+/* ── Sent message — ink-tinted neutral card (Path D). NO rose fill, NO coral
+      "you heartbeat" hairline: rose retreats to signal only (Send CTA /
+      unread / active) per the DESIGN.md Coral-As-Signal rule. Theme is
+      carried entirely by the --pulse-msg-sent-* tokens; no .dark override. */
 .message-bubble-sent {
-  background: var(--pulse-rose-softer);
-  border-color: rgba(244, 63, 94, 0.18);
-  position: relative;
-}
-
-.message-bubble-sent::after {
-  content: '';
-  position: absolute;
-  top: 12%;
-  bottom: 12%;
-  right: -1px;
-  width: 1px;
-  background: rgba(244, 63, 94, 0.55);
-  border-radius: 1px;
-  pointer-events: none;
-}
-
-.dark .message-bubble-sent {
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.16) 0%, rgba(236, 72, 153, 0.10) 100%);
-  border-color: rgba(244, 63, 94, 0.30);
-  box-shadow: 0 1px 3px rgba(244, 63, 94, 0.10);
-}
-
-.dark .message-bubble-sent::after {
-  background: rgba(244, 63, 94, 0.75);
-}
-
-.dark .message-bubble-sent:hover {
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.22) 0%, rgba(236, 72, 153, 0.14) 100%);
-  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.18);
+  background: var(--pulse-msg-sent-bg);
+  border-color: var(--pulse-msg-sent-border);
 }
 
 /* New-message arrival flourish — coral underglow that fades over 1.6s.
