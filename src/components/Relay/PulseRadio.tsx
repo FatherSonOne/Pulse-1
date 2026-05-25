@@ -807,18 +807,22 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                     const curSec = active ? Math.floor(studio.progress * fb.duration) : 0;
                     const cur = `${Math.floor(curSec / 60)}:${String(curSec % 60).padStart(2, '0')}`;
                     return (
-                      <StudioCard active className="p-5">
+                      <StudioCard active={active} className="p-5">
                         <div className="flex items-center gap-4 mb-4">
                           <button
                             type="button"
                             onClick={() => handlePlayBroadcast(fb)}
-                            className="w-14 h-14 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center shrink-0 transition"
+                            className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 transition ${
+                              active
+                                ? 'bg-rose-500 hover:bg-rose-600 text-white'
+                                : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-rose-500 hover:text-white'
+                            }`}
                             aria-label={playing ? 'Pause' : 'Play'}
                           >
                             {playing ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
                           </button>
                           <div className="flex-1 min-w-0">
-                            <span style={{ color: 'var(--pulse-rose)', display: 'block' }}>
+                            <span style={{ color: active ? 'var(--pulse-rose)' : 'var(--pulse-ink-2)', display: 'block' }}>
                               <Waveform seed={fb.id} count={120} height={48} tall progress={active ? studio.progress : 0} />
                             </span>
                             <div className="flex items-center justify-between mt-2 font-mono text-[11px] text-zinc-500 dark:text-zinc-400">
