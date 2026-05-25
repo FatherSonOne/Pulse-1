@@ -253,3 +253,68 @@ then V2 **deferred** (see below).
 
 **Open questions resolved:** Send color → neutral. Rail default → open.
 Still open: mobile pass, AI-moment density.
+
+---
+
+## Continuation Prompt (paste to resume)
+
+> Copy everything in the block below into a fresh Pulse session to continue the
+> Messages Path D implementation. It encodes the shipped state, the load-bearing
+> gotchas, and the remaining work in priority order.
+
+```
+Continue the Messages "Path D / Signal Composer" redesign. Read first:
+docs/MESSAGES_REDESIGN_HANDOFF_2026-05-24.md (esp. "Implementation Status") and
+the project memory project_pulse_messages_pathd.md.
+
+SHIPPED (on main): FilterBar (icon-led, no horiz scroll), neutral bubbles
+(sent ink-tint/no coral hairline, received filled surface-raised; --pulse-msg-*
+tokens), index.css --msg-* dead-code removal, RelationshipRail (+ useRelationshipData)
+docked in the legacy conversation pane, and the intelligence-spine Phase 1
+(useConversationMoments.detectMoments + ConversationSpine.SpineNode + .msg-spine-*
+CSS) wired into the Pulse-DM message loop.
+
+LOAD-BEARING FACTS (don't re-discover):
+- Two surfaces, flag-gated in MessagesWithProviders.tsx (pulseMessagesV2). Legacy
+  src/components/Messages.tsx is LIVE (flag default-OFF). V2 MessagesSplitView is
+  FROZEN ("DO NOT FLIP THE FLAG"). Build on legacy.
+- Host-agnostic components live in src/components/Messages/: RelationshipRail,
+  useRelationshipData (normalized RailMessage shape: id/isOutbound/timestamp/text?/
+  taskTitle?/decision?), ConversationSpine (SpineNode), useConversationMoments.
+  The rail adapter + detectMoments() are computed in Messages.tsx ~line 1935,
+  branching on activeThread (legacy Thread msgs: sender 'me'/'other', timestamp,
+  relatedTaskId, decisionData) vs activePulseConv (PulseMessage: sender_id,
+  created_at, content — NO task/decision data).
+- Coral budget: moments/data use status tones (--pulse-tone-positive/info/warning),
+  NEVER coral (coral = AI-output surfaces only). Bubbles are neutral; don't re-rose.
+- Gemini is SERVER-SIDE ONLY via the ai-router edge function (no client apiKey).
+- Verification of UI needs auth (Google OAuth) — visual checks require the human.
+
+DO, IN ORDER:
+1. Visual-verify the spine on an authed DM (npm run dev): left gutter line, per-
+   message dots, amber ring-pulse on the last unanswered inbound. Tune
+   .msg-spine-* alignment/continuity/gutter width in messages.css as needed.
+2. Wire SpineNode into the legacy-thread render path (Messages.tsx activeThread
+   branch, ~line 5159) the same way as the Pulse-DM path (wrap row in outer flex,
+   SpineNode first, row → flex-1). This path carries decisionData, so DECISION
+   (tone-positive) moments will appear there.
+3. Spine Phase 2 — replace/augment heuristics with AI moment detection: add an
+   ai-router-backed detector (server-side; new function or extend
+   conversationIntelligenceService) that returns [{messageId, type, confidence}]
+   for decision/question/needs-reply; threshold conservatively. Keep detectMoments
+   as the heuristic fallback.
+4. Rail polish: make open-items interactive (onToggleOpenItem is already a prop —
+   needs a task-completion mutation), and add a mobile rail-as-sheet (currently
+   hidden below xl via max-xl:hidden).
+5. (Bigger / optional) per-contact open-items+decisions for the rail: tasks
+   (taskService) and decisions (decisionService) are WORKSPACE-scoped with no
+   contact/conversation FK — needs a schema change + write-path + RLS + backfill.
+6. (When V2 cutover is worked) wire RelationshipRail + spine into MessagesSplitView.
+
+Already DONE, do NOT redo: ⌘K (global App.tsx palette via useRegisterCommands);
+composer smart-compose/slash/tone (exist + styled in MessageInputSection.tsx).
+
+Follow CLAUDE.md: work on main, commit each unit with conventional messages +
+explicit paths (a parallel session may be active — never bare `git commit`,
+never touch files you didn't author), type-check before commit, no --no-verify.
+```
