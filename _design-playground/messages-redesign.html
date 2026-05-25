@@ -150,6 +150,56 @@
   .composer-focus { box-shadow: 0 0 0 1px var(--pulse-border-strong), 0 8px 32px rgba(0,0,0,0.18); }
   html[data-theme='dark'] .composer-focus { box-shadow: 0 0 0 1px var(--pulse-border-strong), 0 8px 40px rgba(0,0,0,0.55); }
 
+  /* ─── Spine + message entrance (Path B / D) ─── */
+  @keyframes spineDraw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .spine-line { transform-origin: top center; animation: spineDraw 700ms cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes spineDot { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+  .spine-dot { animation: spineDot 380ms cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes momentPop { 0% { opacity: 0; transform: scale(0.5); } 55% { opacity: 1; transform: scale(1.12); } 100% { opacity: 1; transform: scale(1); } }
+  .moment-node { animation: momentPop 460ms cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes nodeRing { 0% { box-shadow: 0 0 0 0 var(--ring-c, var(--pulse-rose-glow)); } 100% { box-shadow: 0 0 0 9px transparent; } }
+  .node-ring { animation: nodeRing 1.8s ease-out infinite; }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .msg-in { animation: msgIn 440ms cubic-bezier(0.16,1,0.3,1) both; }
+
+  /* ─── Skeleton shimmer (loading states) ─── */
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skeleton {
+    border-radius: 5px;
+    background: linear-gradient(90deg, var(--pulse-border) 25%, var(--pulse-border-strong) 37%, var(--pulse-border) 63%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  /* ─── Compact filter bar — icon-led segmented control, never scrolls ─── */
+  .filter-seg { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; row-gap: 4px; }
+  .filter-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 28px; padding: 0 7px; border-radius: 8px;
+    color: var(--pulse-ink-3); font-size: 12px; font-weight: 500;
+    white-space: nowrap; position: relative; flex: 0 0 auto;
+    transition: background 160ms ease, color 160ms ease;
+  }
+  .filter-btn:hover { background: var(--pulse-surface-raised); }
+  .filter-btn[data-active='true'] { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
+  .filter-btn .lbl { overflow: hidden; max-width: 0; opacity: 0; transition: max-width 240ms cubic-bezier(0.16,1,0.3,1), opacity 160ms ease; }
+  .filter-btn[data-active='true'] .lbl { max-width: 96px; opacity: 1; }
+  .filter-badge {
+    min-width: 15px; height: 15px; padding: 0 4px; border-radius: 999px;
+    font-size: 9px; font-weight: 600; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--pulse-mono);
+  }
+  /* Inactive chips show a tiny presence dot instead of a number — keeps them
+     icon-narrow so the row fits even a 240px column. */
+  .filter-dot { position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 999px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spine-line, .spine-dot, .moment-node, .node-ring, .msg-in, .fade-up,
+    .skeleton, .pulse-dot-anim, .ghost-text { animation: none !important; }
+    .filter-btn .lbl { transition: none !important; }
+  }
+
   /* ─── Playground chrome ─── */
   .pg-bar { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
   .pg-pill { transition: background 180ms, color 180ms; }
@@ -450,11 +500,11 @@ function Avatar({ name, size = 36 }) {
 
 /* Shared: thread-list filter chips (mirrors real threadFilter: all/unread/pinned/with-tasks/with-decisions) */
 const FILTERS = [
-  { id: 'all',       label: 'All' },
-  { id: 'unread',    label: 'Unread' },
-  { id: 'pinned',    label: 'Pinned' },
-  { id: 'tasks',     label: 'Tasks' },
-  { id: 'decisions', label: 'Decisions' },
+  { id: 'all',       label: 'All',       icon: 'inbox' },
+  { id: 'unread',    label: 'Unread',    icon: 'dot',         urgent: true },
+  { id: 'pinned',    label: 'Pinned',    icon: 'pin' },
+  { id: 'tasks',     label: 'Tasks',     icon: 'checkSquare' },
+  { id: 'decisions', label: 'Decisions', icon: 'flag' },
 ];
 function filterThreads(id) {
   return THREADS.filter(t => {
@@ -464,6 +514,84 @@ function filterThreads(id) {
     if (id === 'decisions') return t.decisions > 0;
     return true;
   });
+}
+
+/* Compact, no-scroll filter bar: every chip is an icon; only the ACTIVE chip
+   reveals its text label (max-width transition). Counts ride as small badges
+   — rose for unread (urgent), neutral otherwise. Fits any narrow list column. */
+function FilterBar({ value, onChange }) {
+  return (
+    <div className="filter-seg px-2.5 pb-2">
+      {FILTERS.map(f => {
+        const active = value === f.id;
+        const count = f.id === 'all' ? 0 : filterThreads(f.id).length;
+        return (
+          <button key={f.id} data-active={active} onClick={() => onChange(f.id)}
+            className="filter-btn" title={f.label} aria-label={count ? `${f.label} (${count})` : f.label}>
+            <Icon name={f.icon} className="w-3.5 h-3.5 shrink-0"/>
+            <span className="lbl">{f.label}</span>
+            {active && count > 0 && (
+              <span className="filter-badge" style={f.urgent
+                ? { background: 'var(--pulse-rose)', color: '#fff' }
+                : { background: 'var(--pulse-surface)', color: 'var(--pulse-ink-3)' }}>{count}</span>
+            )}
+            {!active && count > 0 && (
+              <span className="filter-dot" style={{ background: f.urgent ? 'var(--pulse-rose)' : 'var(--pulse-ink-3)' }}/>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* Shared AI Thread Summary card with loading skeleton → content (the spec's
+   3-line shimmer + "Reading N messages…"). Coral provenance throughout. */
+function AISummaryCard({ onClose }) {
+  const [state, setState] = useState('loading');
+  useEffect(() => {
+    const t = setTimeout(() => setState('done'), 1100);
+    return () => clearTimeout(t);
+  }, []);
+  const regenerate = () => { setState('loading'); setTimeout(() => setState('done'), 1100); };
+  return (
+    <div className="mx-5 mt-3 rounded-xl pulse-coral-bg-color p-4 fade-up shrink-0" style={{ border: '1px solid var(--pulse-coral-fg)' }}>
+      <div className="flex items-center gap-2 mb-2">
+        <Icon name="sparkles" className="w-3.5 h-3.5 pulse-coral-fg-color"/>
+        <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · THREAD SUMMARY</span>
+        {onClose && <button onClick={onClose} className="ml-auto pulse-ink-3-color hover:pulse-ink-color"><Icon name="x" className="w-3.5 h-3.5"/></button>}
+      </div>
+      {state === 'loading' ? (
+        <div>
+          <div className="space-y-2">
+            <div className="skeleton" style={{ height: 9, width: '92%' }}/>
+            <div className="skeleton" style={{ height: 9, width: '76%' }}/>
+            <div className="skeleton" style={{ height: 9, width: '85%' }}/>
+            <div className="skeleton" style={{ height: 9, width: '38%' }}/>
+          </div>
+          <div className="text-[10px] font-mono-pulse pulse-ink-3-color mt-3 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full pulse-dot-anim" style={{ background: 'var(--pulse-coral-fg)' }}/>
+            Reading 48 messages…
+          </div>
+        </div>
+      ) : (
+        <div className="fade-up">
+          <ul className="space-y-1.5">
+            {AI_SUMMARY.map((s, i) => (
+              <li key={i} className="flex gap-2 text-[13px] pulse-ink-color leading-snug">
+                <span className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ background: 'var(--pulse-coral-fg)' }}/><span>{s}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="flex items-center gap-3 mt-2.5">
+            <span className="text-[10px] font-mono-pulse pulse-ink-3-color">Summarized from 48 messages · just now</span>
+            <button onClick={regenerate} className="ml-auto text-[10px] font-mono-pulse pulse-coral-fg-color hover:underline flex items-center gap-1"><Icon name="sparkles" className="w-3 h-3"/>Regenerate</button>
+            <button className="text-[10px] font-mono-pulse pulse-ink-3-color hover:pulse-ink-color">Copy</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -495,14 +623,7 @@ function PathA() {
             <button className="ml-auto p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="search" className="w-4 h-4"/></button>
             <button className="p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="edit" className="w-4 h-4"/></button>
           </div>
-          <div className="flex items-center gap-1 px-3 pb-2 overflow-x-auto">
-            {FILTERS.map(f => (
-              <button key={f.id} onClick={() => setFilter(f.id)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition ${filter === f.id ? 'pulse-ink-color pulse-surface-raised' : 'pulse-ink-3-color hover:pulse-surface-raised'}`}>
-                {f.label}
-              </button>
-            ))}
-          </div>
+          <FilterBar value={filter} onChange={setFilter}/>
           <div className="flex-1 overflow-y-auto px-2 pb-3">
             {threads.map(t => (
               <button key={t.id} data-active={t.active} className="thread-row w-full flex items-start gap-3 px-2.5 py-2.5 rounded-lg text-left">
@@ -547,24 +668,7 @@ function PathA() {
           </div>
 
           {/* AI summary card — the ONLY coral surface in the thread */}
-          {showSummary && (
-            <div className="mx-5 mt-3 rounded-xl pulse-coral-bg-color p-4 fade-up shrink-0" style={{ border: '1px solid var(--pulse-coral-fg)' }}>
-              <div className="flex items-center gap-2 mb-2">
-                <Icon name="sparkles" className="w-3.5 h-3.5 pulse-coral-fg-color"/>
-                <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · THREAD SUMMARY</span>
-                <button onClick={() => setShowSummary(false)} className="ml-auto pulse-ink-3-color hover:pulse-ink-color"><Icon name="x" className="w-3.5 h-3.5"/></button>
-              </div>
-              <ul className="space-y-1.5">
-                {AI_SUMMARY.map((s, i) => (
-                  <li key={i} className="flex gap-2 text-[13px] pulse-ink-color leading-snug">
-                    <span className="pulse-coral-fg-color mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ background: 'var(--pulse-coral-fg)' }}/>
-                    <span>{s}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="text-[10px] font-mono-pulse pulse-ink-3-color mt-2.5">Summarized from 48 messages · just now</div>
-            </div>
-          )}
+          {showSummary && <AISummaryCard onClose={() => setShowSummary(false)}/>}
 
           {/* messages */}
           <div className="flex-1 overflow-y-auto px-5 py-4">
@@ -660,12 +764,7 @@ function PathB() {
             <span className="text-sm font-semibold pulse-ink-color">Conversations</span>
             <button className="ml-auto p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="edit" className="w-4 h-4"/></button>
           </div>
-          <div className="flex items-center gap-1 px-2 pb-2 overflow-x-auto">
-            {FILTERS.slice(0,4).map(f => (
-              <button key={f.id} onClick={() => setFilter(f.id)}
-                className={`px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap transition ${filter === f.id ? 'pulse-ink-color pulse-surface-raised' : 'pulse-ink-3-color hover:pulse-surface-raised'}`}>{f.label}</button>
-            ))}
-          </div>
+          <FilterBar value={filter} onChange={setFilter}/>
           <div className="flex-1 overflow-y-auto px-1.5 pb-3">
             {threads.map(t => (
               <button key={t.id} data-active={t.active} className="thread-row w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left">
@@ -708,7 +807,7 @@ function PathB() {
                 <div className="relative flex items-center gap-3 my-4 pl-9">
                   <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">{group.day.toUpperCase()}</span>
                 </div>
-                {group.msgs.map(m => <PathBRow key={m.id} m={m}/>)}
+                {group.msgs.map((m, i) => <PathBRow key={m.id} m={m} idx={i}/>)}
               </div>
             ))}
           </div>
@@ -784,7 +883,7 @@ function PathB() {
   );
 }
 
-function PathBRow({ m }) {
+function PathBRow({ m, idx = 0 }) {
   const me = m.who === 'me';
   /* AI moment marker sits ON the spine before the message it was detected in */
   const moment = m.kind === 'decision'
@@ -794,11 +893,12 @@ function PathBRow({ m }) {
     : null;
 
   return (
-    <div className="relative pl-9 mb-3">
+    <div className="relative pl-9 mb-3 msg-in" style={{ animationDelay: `${idx * 70}ms` }}>
       {moment && (
-        <div className="relative flex items-center gap-2 mb-2 fade-up">
+        <div className="relative flex items-center gap-2 mb-2">
           <span className="absolute -left-9 w-[30px] flex justify-center">
-            <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--pulse-canvas-soft)', border: `1.5px solid ${TONE_VAR[moment.tone]}` }}>
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center moment-node ${m.needsReply ? 'node-ring' : ''}`}
+              style={{ background: 'var(--pulse-canvas-soft)', border: `1.5px solid ${TONE_VAR[moment.tone]}`, color: TONE_VAR[moment.tone], '--ring-c': `color-mix(in oklab, ${TONE_VAR[moment.tone]} 45%, transparent)`, animationDelay: `${idx * 70}ms` }}>
               <Icon name={moment.icon} className="w-2.5 h-2.5" />
             </span>
           </span>
@@ -809,7 +909,7 @@ function PathBRow({ m }) {
         </div>
       )}
       {/* dot on spine for ordinary messages */}
-      {!moment && <span className="absolute left-[11px] top-2 w-2 h-2 rounded-full" style={{ background: 'var(--pulse-border-strong)' }}/>}
+      {!moment && <span className="absolute left-[11px] top-2 w-2 h-2 rounded-full spine-dot" style={{ background: 'var(--pulse-border-strong)', animationDelay: `${idx * 70}ms` }}/>}
 
       <div className={`flex gap-2.5 ${me ? 'flex-row-reverse text-right' : ''}`}>
         {!me && <Avatar name="Frank Messana" size={26}/>}
@@ -1006,7 +1106,10 @@ function PathD() {
   const [showSummary, setShowSummary] = useState(false);
   const [showSlash, setShowSlash] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
+  const [showTone, setShowTone] = useState(true);
+  const [doneItems, setDoneItems] = useState([]);
   const threads = filterThreads(filter);
+  const remainingItems = OPEN_ITEMS.filter(o => !doneItems.includes(o.id));
 
   useEffect(() => {
     const onKey = (e) => {
@@ -1033,12 +1136,7 @@ function PathD() {
             <button className="ml-auto p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="search" className="w-4 h-4"/></button>
             <button className="p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="edit" className="w-4 h-4"/></button>
           </div>
-          <div className="flex items-center gap-1 px-3 pb-2 overflow-x-auto">
-            {FILTERS.map(f => (
-              <button key={f.id} onClick={() => setFilter(f.id)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition ${filter === f.id ? 'pulse-ink-color pulse-surface-raised' : 'pulse-ink-3-color hover:pulse-surface-raised'}`}>{f.label}</button>
-            ))}
-          </div>
+          <FilterBar value={filter} onChange={setFilter}/>
           <div className="flex-1 overflow-y-auto px-2 pb-3">
             {threads.map(t => (
               <button key={t.id} data-active={t.active} className="thread-row w-full flex items-start gap-3 px-2.5 py-2.5 rounded-lg text-left">
@@ -1086,23 +1184,7 @@ function PathD() {
             </div>
           </div>
 
-          {showSummary && (
-            <div className="mx-5 mt-3 rounded-xl pulse-coral-bg-color p-4 fade-up shrink-0" style={{ border: '1px solid var(--pulse-coral-fg)' }}>
-              <div className="flex items-center gap-2 mb-2">
-                <Icon name="sparkles" className="w-3.5 h-3.5 pulse-coral-fg-color"/>
-                <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">PULSE AI · THREAD SUMMARY</span>
-                <button onClick={() => setShowSummary(false)} className="ml-auto pulse-ink-3-color hover:pulse-ink-color"><Icon name="x" className="w-3.5 h-3.5"/></button>
-              </div>
-              <ul className="space-y-1.5">
-                {AI_SUMMARY.map((s, i) => (
-                  <li key={i} className="flex gap-2 text-[13px] pulse-ink-color leading-snug">
-                    <span className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ background: 'var(--pulse-coral-fg)' }}/><span>{s}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="text-[10px] font-mono-pulse pulse-ink-3-color mt-2.5">Summarized from 48 messages · just now</div>
-            </div>
-          )}
+          {showSummary && <AISummaryCard onClose={() => setShowSummary(false)}/>}
 
           {/* conversation — B's spine + AI moments (editorial reading) */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -1112,7 +1194,7 @@ function PathD() {
                 <div className="relative flex items-center gap-3 my-4 pl-9">
                   <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">{group.day.toUpperCase()}</span>
                 </div>
-                {group.msgs.map(m => <PathBRow key={m.id} m={m}/>)}
+                {group.msgs.map((m, i) => <PathBRow key={m.id} m={m} idx={i}/>)}
               </div>
             ))}
           </div>
@@ -1131,13 +1213,15 @@ function PathD() {
                 ))}
               </div>
             )}
-            {/* tone chip — neutral warning, NOT coral (per spec) */}
-            <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'var(--pulse-tone-warning-soft)', border: '1px solid color-mix(in oklab, var(--pulse-tone-warning) 35%, transparent)' }}>
-              <Icon name="bolt" className="w-3.5 h-3.5" style={{ color: 'var(--pulse-tone-warning)' }}/>
-              <span className="text-[12px] pulse-ink-2-color">Reads a little terse for Frank — soften?</span>
-              <button className="ml-auto text-[11px] font-medium px-2 py-0.5 rounded" style={{ background: 'var(--pulse-surface)', color: 'var(--pulse-ink)' }}>Apply</button>
-              <button className="pulse-ink-3-color"><Icon name="x" className="w-3.5 h-3.5"/></button>
-            </div>
+            {/* tone chip — neutral warning, NOT coral (per spec); dismissible */}
+            {showTone && (
+              <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-lg fade-up" style={{ background: 'var(--pulse-tone-warning-soft)', border: '1px solid color-mix(in oklab, var(--pulse-tone-warning) 35%, transparent)' }}>
+                <Icon name="bolt" className="w-3.5 h-3.5" style={{ color: 'var(--pulse-tone-warning)' }}/>
+                <span className="text-[12px] pulse-ink-2-color">Reads a little terse for Frank — soften?</span>
+                <button onClick={() => setShowTone(false)} className="ml-auto text-[11px] font-medium px-2 py-0.5 rounded" style={{ background: 'var(--pulse-surface)', color: 'var(--pulse-ink)' }}>Apply</button>
+                <button onClick={() => setShowTone(false)} className="pulse-ink-3-color hover:pulse-ink-color"><Icon name="x" className="w-3.5 h-3.5"/></button>
+              </div>
+            )}
             <div className="rounded-2xl pulse-surface composer-focus p-3">
               <div className="text-[15px] leading-relaxed pulse-ink-color">
                 Pulling the War Room geo view together now — I’ll have it ready before 3.{' '}
@@ -1175,21 +1259,32 @@ function PathD() {
             <div className="px-4 pt-3">
               <div className="flex items-center gap-2 mb-2">
                 <Icon name="checkSquare" className="w-3.5 h-3.5" style={{ color: TONE_VAR.warning }}/>
-                <span className="text-[11px] font-semibold pulse-ink-2-color tracking-tight-mono font-mono-pulse">OPEN ITEMS · {OPEN_ITEMS.length}</span>
+                <span className="text-[11px] font-semibold pulse-ink-2-color tracking-tight-mono font-mono-pulse">OPEN ITEMS · {remainingItems.length}</span>
               </div>
-              <div className="space-y-2">
-                {OPEN_ITEMS.map(o => (
-                  <div key={o.id} className="moment-card p-2.5">
-                    <div className="flex items-start gap-2">
-                      <span className="w-3.5 h-3.5 rounded border shrink-0 mt-0.5" style={{ borderColor: TONE_VAR.warning }}/>
-                      <div className="min-w-0">
-                        <div className="text-[12px] pulse-ink-color leading-snug">{o.text}</div>
-                        <div className="text-[10px] font-mono-pulse pulse-ink-3-color mt-1">{o.owner} · due {o.due}</div>
+              {remainingItems.length === 0 ? (
+                <div className="moment-card p-3 flex items-center gap-2 fade-up" style={{ borderColor: 'color-mix(in oklab, var(--pulse-tone-positive) 40%, var(--pulse-border))' }}>
+                  <Icon name="check" className="w-4 h-4 shrink-0" style={{ color: TONE_VAR.positive }}/>
+                  <span className="text-[12px] pulse-ink-2-color">All clear — nothing open with Frank.</span>
+                  {doneItems.length > 0 && <button onClick={() => setDoneItems([])} className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color hover:pulse-ink-color">undo</button>}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {remainingItems.map(o => (
+                    <div key={o.id} className="moment-card p-2.5 fade-up">
+                      <div className="flex items-start gap-2">
+                        <button onClick={() => setDoneItems(d => [...d, o.id])} title="Mark done"
+                          className="w-3.5 h-3.5 rounded border shrink-0 mt-0.5 flex items-center justify-center hover:opacity-100 opacity-70 transition" style={{ borderColor: TONE_VAR.warning }}>
+                          <Icon name="check" className="w-2.5 h-2.5" style={{ color: TONE_VAR.warning, opacity: 0 }}/>
+                        </button>
+                        <div className="min-w-0">
+                          <div className="text-[12px] pulse-ink-color leading-snug">{o.text}</div>
+                          <div className="text-[10px] font-mono-pulse pulse-ink-3-color mt-1">{o.owner} · due {o.due}</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="px-4 pt-4">
