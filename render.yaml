@@ -1,0 +1,65 @@
+# Render Blueprint — Pulse auxiliary Express backend (server.js) ONLY.
+#
+# The FRONTEND is deployed separately as a Vercel static SPA (see vercel.json
+# and the root Dockerfile). This Blueprint provisions just the long-running
+# Node API that the frontend talks to via VITE_BACKEND_URL.
+#
+# Deploy: Render Dashboard -> New -> Blueprint -> connect FatherSonOne/Pulse-1
+#         -> branch main. Render reads this file and creates the service.
+#
+# Every secret below is marked `sync: false`, so Render prompts for the VALUE
+# in the dashboard at deploy time. NEVER commit secret values to this file.
+#
+# `npm ci --omit=dev` installs only runtime deps (express, cors, googleapis,
+# @supabase/supabase-js, dotenv) and skips electron/playwright/vite, avoiding
+# their binary-download steps. Render injects $PORT; server.js binds it.
+services:
+  - type: web
+    name: pulse-api
+    runtime: node
+    plan: free                 # cold-starts after idle; bump to `starter` to keep warm
+    branch: main
+    buildCommand: npm ci --omit=dev
+    startCommand: npm run server
+    healthCheckPath: /api/health
+    envVars:
+      # Pin Node so Express 5 + googleapis (require Node >=18) build predictably
+      - key: NODE_VERSION
+        value: "20"
+
+      # --- Supabase (required) ---
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY   # sb_secret_* format; used by auth'd routes + auto-sync
+        sync: false
+
+      # --- Google OAuth (required for Gmail token refresh + Contacts import) ---
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI         # set to <BACKEND_URL>/... after first deploy
+        sync: false
+
+      # --- CORS: the deployed frontend origin ---
+      # https://pulse.logosvision.org is already hardcoded in server.js's allow-list.
+      # Set PRODUCTION_URL only if the frontend lives at a DIFFERENT origin.
+      - key: PRODUCTION_URL
+        sync: false
+
+      # --- Optional AI keys (only if those routes are exercised) ---
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: LOGOS_VISION_API_KEY
+        sync: false
+
+# NOTE: CRM OAuth (/api/crm/callback/:platform) is intentionally NOT wired here.
+# oauthHelper.ts/crmService.ts import the browser-only `supabase` client
+# (import.meta.env), so the callback cannot run server-side until that is
+# refactored onto a service-role client. The per-provider CRM secrets
+# (<PLATFORM>_CLIENT_ID / _CLIENT_SECRET / _REDIRECT_URI) are deliberately
+# omitted until then. Tracked against #99 / PULSE_PRELAUNCH_ROADMAP.md.
