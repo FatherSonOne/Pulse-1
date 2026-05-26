@@ -401,6 +401,14 @@ verify_jwt = false
 [functions.send-email]
 verify_jwt = false
 
+# send-push: server-to-server dispatcher (called by check-search-alerts and
+# other notification triggers, plus admin/cron). It does NOT receive a user
+# JWT — it self-guards with the PUSH_DISPATCH_SECRET header. Platform-level
+# verify_jwt MUST be off or the gateway 401s every internal call before the
+# function's own secret check can run.
+[functions.send-push]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
