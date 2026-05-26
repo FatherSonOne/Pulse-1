@@ -162,6 +162,19 @@ export const useNotificationStore = create<NotificationStore>()(
           preferences,
           isInitialized: true,
         });
+
+        // If permission was already granted in a prior session, ensure a Web
+        // Push subscription row exists in push_subscriptions (the "Enable
+        // Notifications" button is hidden once granted, so the grant-time
+        // subscribe in requestPermission wouldn't re-fire). Idempotent +
+        // best-effort.
+        if (permissionStatus === 'granted') {
+          try {
+            await pushNotificationService.subscribe();
+          } catch (err) {
+            console.warn('[notificationStore] push subscribe on init failed:', err);
+          }
+        }
       },
 
       // Request notification permission
