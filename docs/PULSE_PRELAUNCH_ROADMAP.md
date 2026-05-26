@@ -68,7 +68,7 @@ Full market evidence (with source URLs) and code evidence (file:line) are captur
 | Email campaigns | 🔴 (unsafe) | Naive per-recipient loop → spam-flag risk |
 | "Contact enrichment" | 🔴 (mislabeled) | Internal dedup, no external data source |
 
-**The latent blocker behind several rows:** a second backend (`server.js`, Express on `localhost:3003`) is hardcoded (no env override) in twilio/slack/gmail/contacts services and CRM OAuth — dead in any deployed build until hosted. → [#99](https://github.com/FatherSonOne/Pulse-1/issues/99).
+**The latent blocker behind several rows:** a second backend (`server.js`, Express on `localhost:3003`) handles twilio/slack/gmail/contacts proxying and CRM OAuth. **As of 2026-05-25 all frontend references are env-driven** (`VITE_BACKEND_URL`, single source at `src/config/backend.ts`) — so the code is deploy-ready, but the backend is still **not hosted**, leaving those surfaces dead until the human picks a host, sets `VITE_BACKEND_URL`, and registers the env-driven CRM redirect URIs with each provider. → [#99](https://github.com/FatherSonOne/Pulse-1/issues/99).
 
 ---
 
@@ -80,7 +80,7 @@ Statuses: `open` · `in-progress` · `blocked` · `done`. The agent edits the **
 
 | # | Title | Priority | Depends on | Status | Notes |
 |---|---|---|---|---|---|
-| [#99](https://github.com/FatherSonOne/Pulse-1/issues/99) | Deploy server.js backend + remove hardcoded localhost:3003 | critical | — | open | Unblocks Slack/Twilio/Gmail/CRM |
+| [#99](https://github.com/FatherSonOne/Pulse-1/issues/99) | Deploy server.js backend + remove hardcoded localhost:3003 | critical | — | blocked | Code half done (`7919edb`): all refs env-driven via `src/config/backend.ts`. Blocked on **human**: host server.js, set `VITE_BACKEND_URL`, register CRM redirect URIs, verify round-trips |
 | [#100](https://github.com/FatherSonOne/Pulse-1/issues/100) | Flag/hide the mocked in-app SMS surface for v1 | critical | — | open | Truth-in-product |
 | [#101](https://github.com/FatherSonOne/Pulse-1/issues/101) | Build push dispatch path (or flag push off) | critical | — | open | No sender exists today |
 | [#102](https://github.com/FatherSonOne/Pulse-1/issues/102) | Transactional email deliverability — verified domain | critical | — | open | Owner-only default sender |
@@ -137,14 +137,16 @@ Statuses: `open` · `in-progress` · `blocked` · `done`. The agent edits the **
 
 > **The agent updates this block after every run.** It is the first thing the next run reads.
 
-- **Last issue worked:** _(none yet — roadmap just created)_
-- **Last run (date):** 2026-05-25 — roadmap + issues #98–#119 created
-- **Next up:** [#99](https://github.com/FatherSonOne/Pulse-1/issues/99) — Deploy server.js backend + remove hardcoded localhost:3003
-- **Open blockers / decisions waiting on the human:** none yet
-- **Notes for next run:** Start by re-reading the Status Table; confirm #99 is still the highest-priority open + unblocked issue before starting.
+- **Last issue worked:** [#99](https://github.com/FatherSonOne/Pulse-1/issues/99) — code half shipped (`7919edb`); marked `blocked` on the human-owned deploy.
+- **Last run (date):** 2026-05-25 — #99 env-driven `BACKEND_URL` refactor (8 sites onto one helper); type-check clean, gitleaks clean.
+- **Next up:** [#100](https://github.com/FatherSonOne/Pulse-1/issues/100) — Flag/hide the mocked in-app SMS surface for v1 (P0 critical, unblocked, pure truth-in-product code). After that: #101 (push dispatch/flag-off), #102 (email deliverability), #103 (Android signing).
+- **Open blockers / decisions waiting on the human:**
+  - **#99 deploy decision** — pick a host for `server.js`, set `VITE_BACKEND_URL` in the deploy env, register the now-env-driven CRM redirect URIs (`<BACKEND_URL>/api/crm/callback/<platform>`) with HubSpot/Salesforce/Pipedrive/Zoho, then verify Slack/Twilio/Gmail-refresh round-trips. Code is ready; only the hosting + provider-registration remain.
+- **Notes for next run:** Re-read the Status Table first. #99 is `blocked` (human deploy), so skip it and take #100. Heads-up for whoever later does real CRM OAuth: `OAuthConfiguration.tsx:89` reads client IDs via `process.env[...]` which is always `undefined` under Vite (should be `import.meta.env`) — a separate latent bug noted during #99, out of scope there.
 
 ---
 
 ## Changelog
 
 - **2026-05-25** — Roadmap created; audit captured; labels `launch-roadmap` + `compliance` added; Epic #98 + issues #99–#119 opened; `/launch-prep` command added.
+- **2026-05-25** — #99 code half shipped (`7919edb`): all `localhost:3003` frontend references routed through a single env-driven `BACKEND_URL` helper (`src/config/backend.ts`); slack/twilio/CRM-OAuth de-hardcoded, gmail/contacts/email migrated onto the helper. #99 marked `blocked` on the human-owned deploy (host + `VITE_BACKEND_URL` + provider redirect-URI registration + round-trip verification).
