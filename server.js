@@ -9,7 +9,9 @@ import { google } from 'googleapis';
 dotenv.config({ path: '.env.local' });
 
 const app = express();
-const PORT = 3003;
+// Hosts like Render/Railway/Fly inject the port to bind via $PORT; fall back to
+// 3003 for local dev. Binding the wrong port makes platform health checks fail.
+const PORT = process.env.PORT || 3003;
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
