@@ -170,6 +170,7 @@ docs/*.md
 !docs/*-phase*.md
 !docs/*_HANDOFF_*.md
 !docs/*_AUDIT_*.md
+!docs/*_ROADMAP.md
 !docs/*_GUIDE.md
 !docs/USER_GUIDE.md
 !docs/contacts_maps*.md
