@@ -3,8 +3,17 @@
  * Handles offline caching, asset management, and background sync
  */
 
+// Pull in the Web Push notification handlers (push / notificationclick /
+// notificationclose) and their helpers from the notifications SW. This is the
+// ONLY service worker the app registers (main.tsx → /sw.js), so without this
+// import the `push` event has no handler and notifications dispatched by the
+// send-push edge function (#101) would never display. sw-notifications.js has
+// no `fetch` handler, so there's no double-respondWith; its SW_VERSION was
+// renamed to NOTIF_SW_VERSION to avoid a global-scope const collision here.
+importScripts('/sw-notifications.js');
+
 // Service Worker version
-const SW_VERSION = '2.0.0';
+const SW_VERSION = '2.1.0';
 const CACHE_PREFIX = 'pulse-cache';
 const STATIC_CACHE = `${CACHE_PREFIX}-static-${SW_VERSION}`;
 const DYNAMIC_CACHE = `${CACHE_PREFIX}-dynamic-${SW_VERSION}`;

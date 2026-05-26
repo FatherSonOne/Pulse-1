@@ -4,12 +4,12 @@
  */
 
 // Service Worker version for cache busting
-const SW_VERSION = '1.0.0';
-const CACHE_NAME = `pulse-notifications-${SW_VERSION}`;
+const NOTIF_SW_VERSION = '1.0.0';
+const CACHE_NAME = `pulse-notifications-${NOTIF_SW_VERSION}`;
 
 // Install event - cache essential assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing Pulse Notification Service Worker v' + SW_VERSION);
+  console.log('[SW] Installing Pulse Notification Service Worker v' + NOTIF_SW_VERSION);
   self.skipWaiting();
 });
 
@@ -325,4 +325,4 @@ async function syncPendingNotifications() {
   }
 }
 
-console.log('[SW] Pulse Notification Service Worker loaded v' + SW_VERSION);
+console.log('[SW] Pulse Notification Service Worker loaded v' + NOTIF_SW_VERSION);
