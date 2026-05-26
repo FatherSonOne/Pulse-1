@@ -351,6 +351,14 @@ export default defineConfig(({ mode }) => {
           },
           workbox: {
             globPatterns: ['**/*.{js,css,ico,png,svg,woff,woff2}'],
+            // Inject the Web Push handlers (push / notificationclick /
+            // notificationclose) into the GENERATED Workbox service worker.
+            // VitePWA (generateSW) produces the active sw.js in production, so a
+            // hand-written public/sw.js would be overwritten — the handlers have
+            // to be imported here. sw-notifications.js self-registers its
+            // listeners on import; without this, send-push (#101) delivers but
+            // nothing displays the notification.
+            importScripts: ['sw-notifications.js'],
             maximumFileSizeToCacheInBytes: 5000000, // 5MB - allow larger vendor chunks
             runtimeCaching: [
               {
