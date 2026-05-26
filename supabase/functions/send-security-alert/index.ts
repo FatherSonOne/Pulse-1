@@ -60,7 +60,8 @@ serve(async (req) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + RESEND_API_KEY },
       body: JSON.stringify({
-        from: 'Pulse <onboarding@resend.dev>',
+        from: 'Pulse <noreply@pulse.logosvision.org>',
+        reply_to: 'support@logosvision.org',
         to: [userEmail],
         subject: 'Pulse alert: ' + payload.alert_title,
         html

@@ -13,8 +13,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
-const APP_URL = Deno.env.get('APP_URL') ?? 'https://app.pulse.ai'
-const FROM_EMAIL = Deno.env.get('ALERT_FROM_EMAIL') ?? 'alerts@pulse.ai'
+const APP_URL = Deno.env.get('APP_URL') ?? 'https://pulse.logosvision.org'
+// pulse.logosvision.org is the Resend-verified sending domain (DKIM/SPF via
+// IONOS DNS). The env-var override is kept for flexibility, but the fallback
+// must be a verified address or Resend rejects the send.
+const FROM_EMAIL = Deno.env.get('ALERT_FROM_EMAIL') ?? 'Pulse <alerts@pulse.logosvision.org>'
 // Required to invoke. Without it the function would iterate every saved
 // search, blast Resend emails to every user (cost + reputation), and
 // update last_alert_at — i.e. anyone with the URL could DoS / abuse it.
@@ -86,6 +89,7 @@ async function sendAlertEmail(
     },
     body: JSON.stringify({
       from: FROM_EMAIL,
+      reply_to: 'support@logosvision.org',
       to: [userEmail],
       subject: `[Pulse] ${newResultCount} new result${newResultCount !== 1 ? 's' : ''} for "${savedSearchName}"`,
       html,

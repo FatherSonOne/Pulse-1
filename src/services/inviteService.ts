@@ -94,6 +94,9 @@ export const sendInvitationEmail = async (
   inviteToken: string,
   workspaceName: string = 'Pulse Team'
 ): Promise<InviteResult> => {
+  // TODO(#104): VITE_RESEND_API_KEY is bundled into the browser, exposing the
+  // Resend key client-side. Out of scope here — route invites through a
+  // server-side edge function as part of the feature-flag/secret audit (#104).
   const resendApiKey = import.meta.env.VITE_RESEND_API_KEY;
   // Invite emails go to external recipients — always use the public URL so
   // links don't 404 against the sender's localhost. Mirrors the hardcoded
@@ -120,7 +123,11 @@ export const sendInvitationEmail = async (
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'Pulse <invites@logosvision.org>',
+        // FROM must be on the Resend-verified subdomain (pulse.logosvision.org).
+        // The parent domain is not verified, so reply_to lives there via the
+        // IONOS forwarder while FROM stays on the verified subdomain.
+        from: 'Pulse <invites@pulse.logosvision.org>',
+        reply_to: 'support@logosvision.org',
         to: [recipientEmail],
         subject: `${inviterName} invited you to join ${workspaceName} on Pulse`,
         html: generateInviteEmailHtml(inviterName, workspaceName, inviteUrl),

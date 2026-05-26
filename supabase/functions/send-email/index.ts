@@ -10,9 +10,10 @@
 // Body: { to: string, subject: string, html: string, text?: string }
 // Returns 200 { ok: true, id } on success, 4xx/5xx { ok: false, error } on failure.
 //
-// Requires `RESEND_API_KEY` as a Supabase secret. Until the Pulse domain is
-// verified in Resend, FROM_ADDRESS is `onboarding@resend.dev` — Resend will
-// only deliver to the Resend account-owner's email in that mode.
+// Requires `RESEND_API_KEY` as a Supabase secret. `pulse.logosvision.org` is
+// the Resend-verified sending domain (DKIM/SPF via IONOS DNS), so FROM_ADDRESS
+// is `noreply@pulse.logosvision.org` and mail delivers to any external
+// recipient (not just the Resend account owner).
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
