@@ -14,6 +14,7 @@ import {
   CategoryPreferences,
 } from '../types/notifications';
 import { notificationService } from '../services/notificationService';
+import { pushNotificationService } from '../services/pushNotificationService';
 import { settingsService } from '../services/settingsService';
 
 const batchTimers = new Map<NotificationCategory, ReturnType<typeof setTimeout>>();
@@ -167,6 +168,22 @@ export const useNotificationStore = create<NotificationStore>()(
       requestPermission: async () => {
         const permission = await notificationService.requestPermission();
         set({ permissionStatus: permission });
+
+        // On grant, register a Web Push subscription so the server-side sender
+        // (supabase/functions/send-push) has a row in push_subscriptions to
+        // deliver to. notificationService.requestPermission() only flips the
+        // browser permission — it never subscribes — which is why the table was
+        // empty. pushNotificationService.subscribe() is idempotent (reuses an
+        // existing pushManager subscription) and upserts to push_subscriptions.
+        // Best-effort: a failure must not change the returned permission status.
+        if (permission === 'granted') {
+          try {
+            await pushNotificationService.subscribe();
+          } catch (err) {
+            console.warn('[notificationStore] push subscribe failed:', err);
+          }
+        }
+
         return permission;
       },
 
