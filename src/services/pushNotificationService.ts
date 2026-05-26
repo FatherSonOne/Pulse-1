@@ -204,9 +204,12 @@ class PushNotificationService {
     }
 
     try {
-      // Fetch VAPID public key from backend API
+      // Fallback: fetch VAPID public key from the pwa_settings table.
+      // (Primary source is VITE_VAPID_PUBLIC_KEY, loaded in init().)
+      // NOTE: table is `pwa_settings`, not `settings` — see migration
+      // 20260210000002_pwa_push_subscriptions.sql.
       const { data, error } = await supabase
-        .from('settings')
+        .from('pwa_settings')
         .select('value')
         .eq('key', 'vapid_public_key')
         .single();

@@ -19,6 +19,10 @@ const FROM_EMAIL = Deno.env.get('ALERT_FROM_EMAIL') ?? 'alerts@pulse.ai'
 // search, blast Resend emails to every user (cost + reputation), and
 // update last_alert_at — i.e. anyone with the URL could DoS / abuse it.
 const CRON_SECRET = Deno.env.get('CRON_SECRET')!
+// Shared secret used to authorize calls to the `send-push` function. Same
+// project-wide secret send-push reads. Optional here — if unset, push is
+// simply skipped and the email path is unaffected.
+const PUSH_DISPATCH_SECRET = Deno.env.get('PUSH_DISPATCH_SECRET')
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -91,6 +95,45 @@ async function sendAlertEmail(
   if (!res.ok) {
     const body = await res.text()
     throw new Error(`Resend API error ${res.status}: ${body}`)
+  }
+}
+
+// Best-effort Web Push alongside the email. Calls the `send-push` function,
+// which delivers to any active push_subscriptions for the user. This is purely
+// additive: the email has already been sent by the time this runs, so any push
+// failure (no subscriptions, secret unset, send-push down) is logged and
+// swallowed — it must NEVER abort the alert.
+async function sendAlertPush(
+  userId: string,
+  savedSearchName: string,
+  query: string,
+  newResultCount: number
+): Promise<void> {
+  if (!PUSH_DISPATCH_SECRET) return // push not configured — skip silently
+
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-push-secret': PUSH_DISPATCH_SECRET,
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        notification: {
+          title: `Search Alert: ${savedSearchName}`,
+          body: `${newResultCount} new result${newResultCount !== 1 ? 's' : ''} for "${query}"`,
+          actionUrl: `${APP_URL}?view=search&q=${encodeURIComponent(query)}`,
+          tag: 'search-alert',
+          priority: 'normal',
+        },
+      }),
+    })
+    if (!resp.ok) {
+      console.warn(`[check-search-alerts] push dispatch returned ${resp.status} for user ${userId}`)
+    }
+  } catch (err) {
+    console.warn(`[check-search-alerts] push dispatch failed for user ${userId}:`, err)
   }
 }
 
@@ -187,6 +230,10 @@ serve(async (req) => {
       }))
 
       await sendAlertEmail(userEmail, search.name, search.query, newResults.length, sampleResults)
+
+      // 4b. Best-effort push notification alongside the email. The email has
+      //     already been sent; a push failure must not abort the alert.
+      await sendAlertPush(search.user_id, search.name, search.query, newResults.length)
 
       // 5. Update last_alert_at
       await supabase
