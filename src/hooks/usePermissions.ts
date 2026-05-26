@@ -6,6 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Geolocation } from '@capacitor/geolocation';
+import { pushNotificationService } from '../services/pushNotificationService';
 
 export type PermissionName = 'microphone' | 'camera' | 'notifications' | 'sms' | 'contacts' | 'location';
 
@@ -103,6 +104,19 @@ export const requestNotificationPermission = async (): Promise<PermissionState> 
 
   try {
     const result = await Notification.requestPermission();
+    if (result === 'granted') {
+      // Register a Web Push subscription so the server-side sender
+      // (supabase/functions/send-push, #101) has a row in push_subscriptions to
+      // deliver to. Notification.requestPermission() only flips the browser
+      // permission — without this, the onboarding "Allow Notifications" grant
+      // never produced a subscription and the table stayed empty. Best-effort:
+      // a subscribe failure must not change the reported permission state.
+      try {
+        await pushNotificationService.subscribe();
+      } catch (subErr) {
+        console.warn('[Permissions] Web Push subscribe failed:', subErr);
+      }
+    }
     return {
       granted: result === 'granted',
       denied: result === 'denied',
