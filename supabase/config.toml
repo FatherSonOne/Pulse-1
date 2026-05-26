@@ -409,6 +409,18 @@ verify_jwt = false
 [functions.send-push]
 verify_jwt = false
 
+# send-security-alert + check-search-alerts: CRON_SECRET-gated server-to-server
+# senders (cron / curl), same pattern as send-push. They self-guard via the
+# x-cron-secret header (no user JWT), so platform verify_jwt MUST be off or the
+# gateway 401s before the function's own secret check runs. These were already
+# verify_jwt=false in production; declaring them here keeps a CLI redeploy from
+# silently flipping them back to the verify_jwt=true default.
+[functions.send-security-alert]
+verify_jwt = false
+
+[functions.check-search-alerts]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
