@@ -113,6 +113,22 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
     }
   };
 
+  // Unsubscribe this device: tears down the pushManager subscription and removes
+  // the push_subscriptions row so the dispatcher stops targeting it. (Does not
+  // revoke the browser permission itself — only the browser's site settings can,
+  // so a re-enable won't need another permission prompt.)
+  const handleDisablePush = async () => {
+    setPushBusy(true);
+    try {
+      await pushNotificationService.unsubscribe();
+    } catch (err) {
+      console.error('[NotificationSettings] disable push failed:', err);
+    } finally {
+      await refreshPushStatus();
+      setPushBusy(false);
+    }
+  };
+
   // Sync local state with store
   useEffect(() => {
     updatePreferences({
@@ -243,13 +259,23 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
                 )}
               </p>
             </div>
-            <button
-              onClick={handleEnablePush}
-              disabled={pushBusy || pushPermission === 'denied' || pushSubscribed}
-              className="shrink-0 px-4 py-2 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition"
-            >
-              {pushBusy ? 'Enabling…' : pushSubscribed ? 'Enabled' : 'Enable Push'}
-            </button>
+            {pushSubscribed ? (
+              <button
+                onClick={handleDisablePush}
+                disabled={pushBusy}
+                className="shrink-0 px-4 py-2 border border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-bold rounded-lg transition"
+              >
+                {pushBusy ? 'Disabling…' : 'Disable'}
+              </button>
+            ) : (
+              <button
+                onClick={handleEnablePush}
+                disabled={pushBusy || pushPermission === 'denied'}
+                className="shrink-0 px-4 py-2 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition"
+              >
+                {pushBusy ? 'Enabling…' : 'Enable Push'}
+              </button>
+            )}
           </div>
           {pushPermission === 'denied' && (
             <p className="text-xs text-red-500 mt-3">
