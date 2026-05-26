@@ -155,6 +155,21 @@ const featureFlagsConfig: FeatureFlagConfig = {
     targetUsers: ['internal'],
     description: 'PAUSED — v2 Messages entry scaffolding; not production-ready. See docs/deep-dives/messages_v2_parity_backlog.md',
     version: '2.0.0'
+  },
+
+  // In-app SMS is a demo shell — smsService.isMockMode() is hard-coded true
+  // and conversations live in in-memory arrays (src/services/smsService.ts).
+  // Showing users a fake messaging surface erodes trust, so the whole
+  // surface is hidden for v1 until it is wired to real Twilio behind A2P
+  // 10DLC + TCPA consent (compliance gate: issue #109; backend deploy: #99).
+  // Do NOT flip to enabled: true for production until real SMS ships.
+  // Local dev override: `?ff_inAppSms=on`.
+  inAppSms: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'HIDDEN for v1 — in-app SMS is a mock shell; unhide only when real Twilio + 10DLC ships (#99/#109)',
+    version: '0.1.0'
   }
 };
 

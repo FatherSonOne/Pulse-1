@@ -44,6 +44,7 @@ import { loginWithGoogle, loginWithEmail, signUpWithEmail, loginWithMicrosoft } 
 import { dataService } from './services/dataService';
 import { useNotificationStore } from './store/notificationStore';
 import { Contact, AppView } from './types';
+import { useFeatureFlag } from './lib/featureFlags';
 import { Analytics } from '@vercel/analytics/react';
 import LogoPreview, { LogoOption } from './components/LogoPreview';
 import GoogleAccountSelector from './components/GoogleAccountSelector';
@@ -177,6 +178,11 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
 }) => {
   const { open } = useCommandPalette();
 
+  // In-app SMS is a mock shell, hidden for v1 (issue #100). Despite the
+  // `use` prefix, useFeatureFlag is a plain synchronous read (env + URL/
+  // localStorage), so it is safe to call here and inside useMemo.
+  const smsEnabled = useFeatureFlag('inAppSms', undefined, false);
+
   // Bridge the global Cmd+K event into the provider scope.
   useEffect(() => {
     const handler = () => open();
@@ -205,7 +211,8 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
     ];
     return navDestinations
       // Hide the "Go to <current view>" row — it would no-op and just adds noise.
-      .filter(n => n.view !== view)
+      // Also hide SMS while the mock surface is flagged off for v1 (#100).
+      .filter(n => n.view !== view && (smsEnabled || n.view !== AppView.SMS))
       .map(n => ({
         id: n.id,
         label: n.label,
@@ -215,7 +222,7 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
         keywords: n.keywords,
         run: () => setView(n.view),
       }));
-  }, [setView, view]);
+  }, [setView, view, smsEnabled]);
 
   const helpCommands = useMemo<Command[]>(() => [
     {
@@ -322,6 +329,19 @@ const App: React.FC = () => {
 
   const [view, setView] = useState<AppView>(initialMeetingCode ? AppView.MEETINGS : AppView.DASHBOARD);
   useAndroidBackButton({ view, setView });
+
+  // In-app SMS is a mock shell, hidden for v1 (issue #100). useFeatureFlag
+  // is a synchronous read despite the `use` prefix, so it is safe to call
+  // here in the component body.
+  const smsEnabled = useFeatureFlag('inAppSms', user?.id, false);
+
+  // Belt-and-suspenders: if a stale `view` state or deep-link lands on the
+  // hidden SMS surface, bounce back to the Dashboard so the mock can't render.
+  useEffect(() => {
+    if (view === AppView.SMS && !smsEnabled) {
+      setView(AppView.DASHBOARD);
+    }
+  }, [view, smsEnabled]);
   const [showPulseAI, setShowPulseAI] = useState(false);
   const [hasPulseAISuggestion, setHasPulseAISuggestion] = useState(false);
   const [proactiveFindings, setProactiveFindings] = useState<string | undefined>(undefined);
@@ -860,6 +880,10 @@ const App: React.FC = () => {
             case AppView.MESSAGES:
               return <Messages contacts={contacts} initialContactId={selectedContactId} onAddContact={handleAddContact} fullPage={true} />;
             case AppView.SMS:
+              // Surface hidden for v1 (#100) — the redirect effect above
+              // bounces `view` to Dashboard; render nothing in the interim
+              // so the mock SMS shell is never reachable by a normal user.
+              if (!smsEnabled) return null;
               return <SMS contacts={contacts} />;
             case AppView.MEETINGS:
               return <Meetings contacts={contacts} initialContactId={selectedContactId} initialMeetingCode={initialMeetingCode || undefined} />;
