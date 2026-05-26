@@ -1,4 +1,5 @@
 import { UnifiedMessage } from '../types';
+import { BACKEND_URL } from '../config/backend';
 
 /**
  * Slack Integration Service (Browser-Compatible)
@@ -7,7 +8,7 @@ import { UnifiedMessage } from '../types';
 
 export class SlackService {
   private botToken: string;
-  private proxyURL = 'http://localhost:3003/api/slack/proxy';
+  private proxyURL = `${BACKEND_URL}/api/slack/proxy`;
 
   constructor(botToken: string) {
     this.botToken = botToken;

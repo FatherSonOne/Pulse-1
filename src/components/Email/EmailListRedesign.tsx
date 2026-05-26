@@ -2,6 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { CachedEmail, EmailFolder, EmailCategory } from '../../services/emailSyncService';
 import { supabase } from '../../services/supabase';
+import { BACKEND_URL } from '../../config/backend';
 import toast from 'react-hot-toast';
 
 import { Archive, Bookmark, Clock, Inbox, MailOpen, Paperclip, Trash2, Wand2 } from 'lucide-react';
@@ -88,7 +89,7 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
     setBulkLoading(true);
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3003';
+      const backendUrl = BACKEND_URL;
       const response = await fetch(`${backendUrl}/api/email/bulk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

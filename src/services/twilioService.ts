@@ -1,4 +1,5 @@
 import { UnifiedMessage } from '../types';
+import { BACKEND_URL } from '../config/backend';
 
 /**
  * Twilio SMS Service
@@ -19,7 +20,7 @@ export interface TwilioMessage {
 export class TwilioService {
   private accountSid: string;
   private authToken: string;
-  private proxyURL = 'http://localhost:3003/api/twilio/proxy';
+  private proxyURL = `${BACKEND_URL}/api/twilio/proxy`;
 
   constructor(accountSid: string, authToken: string) {
     this.accountSid = accountSid;

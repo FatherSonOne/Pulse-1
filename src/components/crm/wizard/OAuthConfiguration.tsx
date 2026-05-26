@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { CRMPlatform, CRMIntegration } from '../../../types/crmTypes';
 import { ExternalLink, Key, AlertCircle, ArrowLeft } from 'lucide-react';
+import { BACKEND_URL } from '../../../config/backend';
 
 interface OAuthConfigurationProps {
   platform: CRMPlatform;
@@ -21,7 +22,7 @@ const platformInfo = {
       'Create a new app or select existing',
       'Navigate to the Auth tab',
       'Copy your Client ID and Secret',
-      'Add redirect URL: http://localhost:3003/api/crm/callback/hubspot',
+      `Add redirect URL: ${BACKEND_URL}/api/crm/callback/hubspot`,
     ],
     requiredScopes: [
       'crm.objects.contacts.read',
@@ -40,7 +41,7 @@ const platformInfo = {
       'Go to Setup → Apps → App Manager',
       'Click "New Connected App"',
       'Enable OAuth Settings',
-      'Add callback URL: http://localhost:3003/api/crm/callback/salesforce',
+      `Add callback URL: ${BACKEND_URL}/api/crm/callback/salesforce`,
       'Copy Consumer Key and Secret',
     ],
     requiredScopes: ['full', 'refresh_token', 'offline_access', 'api'],
@@ -51,7 +52,7 @@ const platformInfo = {
     setupSteps: [
       'Go to Pipedrive Marketplace Manager',
       'Create a Private App',
-      'Add OAuth redirect URL: http://localhost:3003/api/crm/callback/pipedrive',
+      `Add OAuth redirect URL: ${BACKEND_URL}/api/crm/callback/pipedrive`,
       'Copy Client ID and Secret',
       'Alternatively, use your API Token for simpler setup',
     ],
@@ -64,7 +65,7 @@ const platformInfo = {
       'Go to Zoho API Console',
       'Click "Add Client" → Server-based Applications',
       'Enter your app name and homepage URL',
-      'Add redirect URI: http://localhost:3003/api/crm/callback/zoho',
+      `Add redirect URI: ${BACKEND_URL}/api/crm/callback/zoho`,
       'Copy Client ID and Secret',
     ],
     requiredScopes: ['ZohoCRM.modules.ALL', 'ZohoCRM.settings.ALL', 'ZohoCRM.users.READ'],
@@ -95,7 +96,7 @@ export const OAuthConfiguration: React.FC<OAuthConfigurationProps> = ({
       return;
     }
 
-    const redirectUri = `http://localhost:3003/api/crm/callback/${platform}`;
+    const redirectUri = `${BACKEND_URL}/api/crm/callback/${platform}`;
     const state = Math.random().toString(36).substring(7);
 
     let authUrl = '';

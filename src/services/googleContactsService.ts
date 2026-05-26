@@ -5,6 +5,7 @@
 
 import { supabase } from './supabase';
 import { Contact, ContactType } from '../types';
+import { BACKEND_URL } from '../config/backend';
 
 export class WorkspaceNotBootstrappedError extends Error {
   constructor(message: string) {
@@ -125,7 +126,7 @@ const refreshGoogleAccessToken = async (refreshToken: string): Promise<string | 
     }
 
     // ✅ Call backend endpoint with client secret (secure)
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3003';
+    const backendUrl = BACKEND_URL;
     const response = await fetch(`${backendUrl}/api/google/refresh-token`, {
       method: 'POST',
       headers: {

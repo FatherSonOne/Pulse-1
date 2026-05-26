@@ -1,5 +1,6 @@
 import { UnifiedMessage } from '../types';
 import { supabase } from './supabase';
+import { BACKEND_URL } from '../config/backend';
 
 /**
  * Gmail Service
@@ -84,7 +85,7 @@ export class GmailService {
       }
 
       // ✅ Call backend endpoint with client secret (secure)
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3003';
+      const backendUrl = BACKEND_URL;
       const response = await fetch(`${backendUrl}/api/google/refresh-token`, {
         method: 'POST',
         headers: {
