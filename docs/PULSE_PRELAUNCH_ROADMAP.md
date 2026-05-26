@@ -63,7 +63,7 @@ Full market evidence (with source URLs) and code evidence (file:line) are captur
 | CRM sync | 🟡 | Real API calls but no pagination + OAuth via localhost backend |
 | Post-meeting AI | 🟡 | Outsourced to Entomate |
 | Native Android / Electron | 🟡 | Builds exist; **Android unsigned** |
-| **In-app SMS** | 🔴 | **100% mocked** (`smsService.isMockMode → true`) |
+| **In-app SMS** | 🔴 → hidden | **100% mocked** (`smsService.isMockMode → true`); **gated OFF for v1** behind `inAppSms` flag (#100, `f1b9e49`). Real wiring tracked in #120 |
 | **Push notifications** | 🔴 | Subscriptions stored, **never dispatched** |
 | Email campaigns | 🔴 (unsafe) | Naive per-recipient loop → spam-flag risk |
 | "Contact enrichment" | 🔴 (mislabeled) | Internal dedup, no external data source |
@@ -81,7 +81,7 @@ Statuses: `open` · `in-progress` · `blocked` · `done`. The agent edits the **
 | # | Title | Priority | Depends on | Status | Notes |
 |---|---|---|---|---|---|
 | [#99](https://github.com/FatherSonOne/Pulse-1/issues/99) | Deploy server.js backend + remove hardcoded localhost:3003 | critical | — | blocked | Code half done (`7919edb`): all refs env-driven via `src/config/backend.ts`. Blocked on **human**: host server.js, set `VITE_BACKEND_URL`, register CRM redirect URIs, verify round-trips |
-| [#100](https://github.com/FatherSonOne/Pulse-1/issues/100) | Flag/hide the mocked in-app SMS surface for v1 | critical | — | open | Truth-in-product |
+| [#100](https://github.com/FatherSonOne/Pulse-1/issues/100) | Flag/hide the mocked in-app SMS surface for v1 | critical | — | done | `f1b9e49` — `inAppSms` flag OFF; nav hidden + route redirects to Dashboard. Follow-up #120 owns real wiring |
 | [#101](https://github.com/FatherSonOne/Pulse-1/issues/101) | Build push dispatch path (or flag push off) | critical | — | open | No sender exists today |
 | [#102](https://github.com/FatherSonOne/Pulse-1/issues/102) | Transactional email deliverability — verified domain | critical | — | open | Owner-only default sender |
 | [#103](https://github.com/FatherSonOne/Pulse-1/issues/103) | Android release signing (keystore) | high | — | open | Blocks Play upload |
@@ -137,16 +137,17 @@ Statuses: `open` · `in-progress` · `blocked` · `done`. The agent edits the **
 
 > **The agent updates this block after every run.** It is the first thing the next run reads.
 
-- **Last issue worked:** [#99](https://github.com/FatherSonOne/Pulse-1/issues/99) — code half shipped (`7919edb`); marked `blocked` on the human-owned deploy.
-- **Last run (date):** 2026-05-25 — #99 env-driven `BACKEND_URL` refactor (8 sites onto one helper); type-check clean, gitleaks clean.
-- **Next up:** [#100](https://github.com/FatherSonOne/Pulse-1/issues/100) — Flag/hide the mocked in-app SMS surface for v1 (P0 critical, unblocked, pure truth-in-product code). After that: #101 (push dispatch/flag-off), #102 (email deliverability), #103 (Android signing).
+- **Last issue worked:** [#100](https://github.com/FatherSonOne/Pulse-1/issues/100) — **done** (`f1b9e49`): in-app SMS gated OFF behind the `inAppSms` flag; spawned follow-up #120 for real wiring.
+- **Last run (date):** 2026-05-26 — #100 SMS gate (flag + nav hide + route redirect); type-check clean (no new errors), gitleaks clean.
+- **Next up:** [#101](https://github.com/FatherSonOne/Pulse-1/issues/101) — Build push-notification dispatch path (or flag push off + relabel as email) (P0 critical, unblocked). After that: #102 (email deliverability), #103 (Android signing).
 - **Open blockers / decisions waiting on the human:**
-  - **#99 deploy decision** — pick a host for `server.js`, set `VITE_BACKEND_URL` in the deploy env, register the now-env-driven CRM redirect URIs (`<BACKEND_URL>/api/crm/callback/<platform>`) with HubSpot/Salesforce/Pipedrive/Zoho, then verify Slack/Twilio/Gmail-refresh round-trips. Code is ready; only the hosting + provider-registration remain.
-- **Notes for next run:** Re-read the Status Table first. #99 is `blocked` (human deploy), so skip it and take #100. Heads-up for whoever later does real CRM OAuth: `OAuthConfiguration.tsx:89` reads client IDs via `process.env[...]` which is always `undefined` under Vite (should be `import.meta.env`) — a separate latent bug noted during #99, out of scope there.
+  - **#99 deploy decision** — pick a host for `server.js`, set `VITE_BACKEND_URL` in the deploy env, register the now-env-driven CRM redirect URIs (`<BACKEND_URL>/api/crm/callback/<platform>`) with HubSpot/Salesforce/Pipedrive/Zoho, then verify Slack/Twilio/Gmail-refresh round-trips. Code is ready; only the hosting + provider-registration remain. **Tool: run `/backend-setup` for the guided walk-through.**
+- **Notes for next run:** Re-read the Status Table first. #99 is `blocked` (human deploy) — skip it; #100 is done. Take #101: first determine whether a push *sender* exists anywhere (subscriptions are stored but the audit says never dispatched) — if no real dispatch path, the honest v1 move is to flag push off / relabel as email, mirroring the #100 pattern (`inAppSms`), rather than half-build a dispatcher. Heads-up still open for real CRM OAuth: `OAuthConfiguration.tsx:89` uses `process.env[...]` (always `undefined` under Vite) — latent bug noted during #99.
 
 ---
 
 ## Changelog
 
 - **2026-05-25** — Roadmap created; audit captured; labels `launch-roadmap` + `compliance` added; Epic #98 + issues #99–#119 opened; `/launch-prep` command added.
-- **2026-05-25** — #99 code half shipped (`7919edb`): all `localhost:3003` frontend references routed through a single env-driven `BACKEND_URL` helper (`src/config/backend.ts`); slack/twilio/CRM-OAuth de-hardcoded, gmail/contacts/email migrated onto the helper. #99 marked `blocked` on the human-owned deploy (host + `VITE_BACKEND_URL` + provider redirect-URI registration + round-trip verification).
+- **2026-05-25** — #99 code half shipped (`7919edb`): all `localhost:3003` frontend references routed through a single env-driven `BACKEND_URL` helper (`src/config/backend.ts`); slack/twilio/CRM-OAuth de-hardcoded, gmail/contacts/email migrated onto the helper. #99 marked `blocked` on the human-owned deploy (host + `VITE_BACKEND_URL` + provider redirect-URI registration + round-trip verification). Added `/backend-setup` slash command to guide the human through that deploy.
+- **2026-05-26** — #100 done (`f1b9e49`): in-app SMS surface gated OFF for v1 behind the new `inAppSms` feature flag (nav entry hidden, `AppView.SMS` route redirects to Dashboard, mock-mode badge unreachable). Real Twilio wiring + flag flip tracked in new follow-up #120 (depends on #99 backend + #109 10DLC).
