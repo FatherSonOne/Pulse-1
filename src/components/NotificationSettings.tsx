@@ -3,8 +3,9 @@
  * Comprehensive notification preferences UI
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNotificationStore } from '../store/notificationStore';
+import { pushNotificationService } from '../services/pushNotificationService';
 import { NotificationCategory, CategoryPreferences, NotificationPriority } from '../types/notifications';
 import { playNotificationSound, testAllSounds } from '../utils/soundGenerator';
 
@@ -71,6 +72,46 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
   const [showCategorySettings, setShowCategorySettings] = useState(false);
   const [testingSound, setTestingSound] = useState<NotificationCategory | null>(null);
   const [vipInput, setVipInput] = useState('');
+
+  // Background Web Push state (#101). Tracked separately from the in-app
+  // preference toggles above, which are just delivery preferences and don't
+  // reflect whether the browser has actually granted permission + subscribed.
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  const refreshPushStatus = useCallback(async () => {
+    const supported = pushNotificationService.isSupported();
+    setPushSupported(supported);
+    if (!supported) return;
+    setPushPermission(pushNotificationService.getPermissionStatus());
+    setPushSubscribed(await pushNotificationService.isSubscribed());
+  }, []);
+
+  useEffect(() => {
+    void refreshPushStatus();
+  }, [refreshPushStatus]);
+
+  // Reliable enable path: prompts for permission when needed, and always
+  // (re)subscribes so a row lands in push_subscriptions for the send-push
+  // dispatcher. Replaces the conditional permission banner that only appeared
+  // when status was exactly 'default'.
+  const handleEnablePush = async () => {
+    setPushBusy(true);
+    try {
+      if (pushNotificationService.getPermissionStatus() === 'granted') {
+        await pushNotificationService.subscribe();
+      } else {
+        await pushNotificationService.requestPermission();
+      }
+    } catch (err) {
+      console.error('[NotificationSettings] enable push failed:', err);
+    } finally {
+      await refreshPushStatus();
+      setPushBusy(false);
+    }
+  };
 
   // Sync local state with store
   useEffect(() => {
@@ -174,6 +215,49 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           onToggle={() => setNotifEmail(!notifEmail)}
         />
       </div>
+
+      {/* Background Push Notifications — explicit, always-visible enablement
+          (#101). The old permission banner only rendered when status was
+          'default', so a granted/denied/unknown state left no way to (re)trigger
+          a subscription. This card always shows status + a reliable Enable
+          button that prompts and subscribes. */}
+      {pushSupported && (
+        <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                <Bell className="text-rose-500" size={16} />
+                Background Push Notifications
+              </h4>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                Get alerts even when Pulse is closed. Requires granting browser permission on this device.
+              </p>
+              <p className="text-xs mt-2 font-medium">
+                <span className="text-zinc-500 dark:text-zinc-400">Status: </span>
+                {pushPermission === 'denied' ? (
+                  <span className="text-red-500">Blocked in browser settings</span>
+                ) : pushSubscribed ? (
+                  <span className="text-emerald-500">Enabled on this device</span>
+                ) : (
+                  <span className="text-amber-500">Not enabled</span>
+                )}
+              </p>
+            </div>
+            <button
+              onClick={handleEnablePush}
+              disabled={pushBusy || pushPermission === 'denied' || pushSubscribed}
+              className="shrink-0 px-4 py-2 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition"
+            >
+              {pushBusy ? 'Enabling…' : pushSubscribed ? 'Enabled' : 'Enable Push'}
+            </button>
+          </div>
+          {pushPermission === 'denied' && (
+            <p className="text-xs text-red-500 mt-3">
+              Notifications are blocked for this site. Re-enable them in your browser's site settings, then reload.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Sound Settings */}
       {notifSound && (

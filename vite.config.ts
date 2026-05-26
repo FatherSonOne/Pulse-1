@@ -29,6 +29,15 @@ export default defineConfig(({ mode }) => {
         port: Number(env.VITE_PORT) || 5173,
         host: '0.0.0.0',
       },
+      // `vite preview` (prod-mode local server) is pinned to 5173 so it reuses
+      // the same Google OAuth redirect URI as the dev server — strictPort makes
+      // it fail loudly instead of drifting to 4173 (which isn't a registered
+      // redirect). Stop the dev server first; only one can hold 5173.
+      preview: {
+        port: Number(env.VITE_PORT) || 5173,
+        strictPort: true,
+        host: '0.0.0.0',
+      },
       build: {
         sourcemap: !isProduction, // Disable sourcemaps in production for smaller bundle
         outDir: 'dist',
