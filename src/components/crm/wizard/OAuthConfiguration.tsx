@@ -86,8 +86,9 @@ export const OAuthConfiguration: React.FC<OAuthConfigurationProps> = ({
   const handleOAuthStart = () => {
     setIsAuthenticating(true);
 
-    // Build OAuth URL
-    const clientId = process.env[`VITE_${platform.toUpperCase()}_CLIENT_ID`];
+    // Build OAuth URL — Vite inlines client-side env via import.meta.env;
+    // process.env is always undefined in the browser bundle.
+    const clientId = import.meta.env[`VITE_${platform.toUpperCase()}_CLIENT_ID`];
     if (!clientId) {
       alert(
         `${platform.toUpperCase()}_CLIENT_ID not configured. Add it to your .env file.`
