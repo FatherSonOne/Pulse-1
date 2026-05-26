@@ -50,7 +50,7 @@ Full market evidence (with source URLs) and code evidence (file:line) are captur
 |---|---|---|
 | Decisions + voting, Tasks, Subtasks | ✅ | DB-backed + AI decision wizard |
 | Contacts + vCard contact-card sharing | ✅ | Differentiated; full edge-fn suite |
-| Calendar (Google/Outlook, RRULE, booking) | ✅ | Token refresh leans on the localhost backend |
+| Calendar (Google/Outlook, RRULE, booking) | ✅ | Token refresh via the deployed Render backend (#99) |
 | Billing (Stripe) | ✅ | Production-grade; 9 edge functions |
 | Auth / MFA / biometric | ✅ | Supabase OAuth + TOTP + WebAuthn |
 | Relay voice (Direct/Channel/Broadcast/Notes) | ✅ | Real storage + tables + multi-provider transcription |
@@ -58,9 +58,9 @@ Full market evidence (with source URLs) and code evidence (file:line) are captur
 | Unified Search | ✅ | Multi-source Supabase queries |
 | AI features (summaries, compose, autopilot, RAG) | ✅ | All via metered `ai-router`, no client keys |
 | Video meetings (Daily.co) | ✅ | `daily-rooms` edge fn |
-| Unified Inbox | 🟡 | Aggregation real; feeders (Slack/SMS) depend on the localhost backend; email/Pulse not auto-synced in |
-| Email (Gmail) | 🟡 | Send real; token refresh via localhost backend |
-| CRM sync | 🟡 | Real API calls but no pagination + OAuth via localhost backend |
+| Unified Inbox | 🟡 | Aggregation real; Slack feeder now routes to the deployed backend (#99, route+CORS verified, live smoke pending); SMS hidden for v1 (#100); email/Pulse not auto-synced in |
+| Email (Gmail) | 🟡 | Send real; token refresh via the deployed backend (#99, route verified, live refresh smoke pending) |
+| CRM sync | 🟡 | Real API calls but no pagination (#108); OAuth still **not functional server-side** — `oauthHelper`/`crmService` import the browser-only `supabase` client, needs a service-role refactor (#99 remainder). Frontend client-id bug fixed (`f6d9119`) |
 | Post-meeting AI | 🟡 | Outsourced to Entomate |
 | Native Android / Electron | 🟡 | Builds exist; **Android unsigned** |
 | **In-app SMS** | 🔴 → hidden | **100% mocked** (`smsService.isMockMode → true`); **gated OFF for v1** behind `inAppSms` flag (#100, `f1b9e49`). Real wiring tracked in #120 |
@@ -68,7 +68,7 @@ Full market evidence (with source URLs) and code evidence (file:line) are captur
 | Email campaigns | 🔴 (unsafe) | Naive per-recipient loop → spam-flag risk |
 | "Contact enrichment" | 🔴 (mislabeled) | Internal dedup, no external data source |
 
-**The latent blocker behind several rows:** a second backend (`server.js`, Express on `localhost:3003`) handles twilio/slack/gmail/contacts proxying and CRM OAuth. **As of 2026-05-25 all frontend references are env-driven** (`VITE_BACKEND_URL`, single source at `src/config/backend.ts`) — so the code is deploy-ready, but the backend is still **not hosted**, leaving those surfaces dead until the human picks a host, sets `VITE_BACKEND_URL`, and registers the env-driven CRM redirect URIs with each provider. → [#99](https://github.com/FatherSonOne/Pulse-1/issues/99).
+**The latent blocker behind several rows is mostly resolved (2026-05-26):** the second backend (`server.js`, Express) is now **deployed on Render** at `https://pulse-api-1epw.onrender.com` (`npm run server`, `$PORT`-aware, health check at `/api/health`), and the frontend is rebuilt with `VITE_BACKEND_URL` pointing at it (verified inlined in the deployed bundles). The Slack/Twilio/Gmail/health routes are **mounted, input-validating, and CORS-correct** for `pulse.logosvision.org`; **live-account round-trips (real Slack channels / Gmail refresh) are pending a UI smoke test**. **Two pieces remain deferred:** (1) **CRM OAuth** can't run server-side — `oauthHelper`/`crmService` import the browser-only `supabase` client (`import.meta.env`), so the `/api/crm/callback` path throws until refactored onto the service-role client; (2) the **Logos Vision contacts-import** Google flow hardcodes a `localhost:5176` redirect and is LV-secret-gated. → [#99](https://github.com/FatherSonOne/Pulse-1/issues/99).
 
 ---
 
@@ -80,7 +80,7 @@ Statuses: `open` · `in-progress` · `blocked` · `done`. The agent edits the **
 
 | # | Title | Priority | Depends on | Status | Notes |
 |---|---|---|---|---|---|
-| [#99](https://github.com/FatherSonOne/Pulse-1/issues/99) | Deploy server.js backend + remove hardcoded localhost:3003 | critical | — | blocked | Code half done (`7919edb`): all refs env-driven via `src/config/backend.ts`. Blocked on **human**: host server.js, set `VITE_BACKEND_URL`, register CRM redirect URIs, verify round-trips |
+| [#99](https://github.com/FatherSonOne/Pulse-1/issues/99) | Deploy server.js backend + remove hardcoded localhost:3003 | critical | — | in-progress | **Deployed** on Render (`pulse-api-1epw.onrender.com`) via `render.yaml` Blueprint (`90b922d` PORT, `c293bfe` Blueprint, `f6d9119` CRM client-id). `VITE_BACKEND_URL` set in Vercel + verified inlined. Slack/Twilio/Gmail/health routes + CORS verified. **Remaining:** live-account round-trip smoke (user-driven); CRM server-side refactor (browser-supabase coupling) + LV-bridge localhost redirect deferred to follow-ups |
 | [#100](https://github.com/FatherSonOne/Pulse-1/issues/100) | Flag/hide the mocked in-app SMS surface for v1 | critical | — | done | `f1b9e49` — `inAppSms` flag OFF; nav hidden + route redirects to Dashboard. Follow-up #120 owns real wiring |
 | [#101](https://github.com/FatherSonOne/Pulse-1/issues/101) | Build push dispatch path (or flag push off) | critical | — | blocked | Sender built (`713476f`): `send-push` edge fn + wired to alerts. Blocked on **human**: VAPID keys + secrets + deploy + live test (see `send-push/README.md`) |
 | [#102](https://github.com/FatherSonOne/Pulse-1/issues/102) | Transactional email deliverability — verified domain | critical | — | open | Owner-only default sender |
@@ -137,13 +137,13 @@ Statuses: `open` · `in-progress` · `blocked` · `done`. The agent edits the **
 
 > **The agent updates this block after every run.** It is the first thing the next run reads.
 
-- **Last issue worked:** [#101](https://github.com/FatherSonOne/Pulse-1/issues/101) — sender **built** (`713476f`); marked `blocked` on the human-owned VAPID-keys + deploy + live test.
-- **Last run (date):** 2026-05-26 — #101 `send-push` VAPID Web Push dispatcher + wired to search alerts + client public-key fix; client TS clean, gitleaks clean (edge fns not locally type-checkable — no Deno).
+- **Last issue worked:** [#99](https://github.com/FatherSonOne/Pulse-1/issues/99) — `server.js` backend **deployed** on Render via `/backend-setup` walk-through (`90b922d`/`c293bfe`/`f6d9119`); proxies reachable + frontend wired; CRM/LV server-side bits deferred.
+- **Last run (date):** 2026-05-26 — #99 backend deploy: `$PORT`-aware server, `render.yaml` Blueprint, CRM client-id fix; Render service `pulse-api-1epw.onrender.com` live (health/Slack/Twilio/Gmail routes + CORS verified); `VITE_BACKEND_URL` set in Vercel + verified inlined. Live-account round-trips pending user smoke.
 - **Next up:** [#102](https://github.com/FatherSonOne/Pulse-1/issues/102) — Transactional email deliverability — verified sending domain (P0 critical, unblocked; note it's labeled `documentation` — likely a config/DNS + copy task, possibly part-decision). After that: #103 (Android signing), then P1 (#104 feature-flag audit drives the rest).
 - **Open blockers / decisions waiting on the human:**
-  - **#99 deploy decision** — pick a host for `server.js`, set `VITE_BACKEND_URL`, register CRM redirect URIs, verify round-trips. Run `/backend-setup` for the guided walk-through.
+  - **#99 backend — DEPLOYED** on Render (`pulse-api-1epw.onrender.com`) + `VITE_BACKEND_URL` wired in Vercel. Remaining: (a) **user-driven live round-trip smoke** (connect Slack / load channels / Gmail refresh from `pulse.logosvision.org`); (b) **CRM OAuth server-side refactor** — `oauthHelper`/`crmService` import the browser-only `supabase` client, so `/api/crm/callback` can't run server-side (separate follow-up — unblocks #108); (c) LV contacts-import Google flow hardcodes `localhost:5176` redirect.
   - **#101 push deploy** — generate VAPID keypair, set `VAPID_*` + `PUSH_DISPATCH_SECRET` secrets, set `VITE_VAPID_PUBLIC_KEY` in Vercel, update `pwa_settings`, `supabase functions deploy send-push`, live browser test. Runbook: `supabase/functions/send-push/README.md`. ⚠️ Until done, push is inert — flag the PWA push UI off if launching first.
-- **Notes for next run:** Re-read the Status Table first. #99 + #101 are both `blocked` on human deploys — skip them; #100 done. Take #102 (email deliverability). It's tagged `documentation` so it may be a verified-domain/DNS + sender-config task with a decision component (which domain to send from — relates to the logosvision.org→qntmecos.com hosting question in memory `project_qntm_ecos_attribution`); if it's purely a human DNS/provider action, draft the runbook + decision and ask rather than guessing. Latent bug still open: `OAuthConfiguration.tsx:89` uses `process.env[...]` (undefined under Vite).
+- **Notes for next run:** Re-read the Status Table first. #99 backend is **deployed** (proxies reachable; live smoke + CRM refactor remain) — no longer skip-blocked. #101 still `blocked` on human deploy; #100 done. Take #102 (email deliverability). It's tagged `documentation` so it may be a verified-domain/DNS + sender-config task with a decision component (which domain to send from — relates to the logosvision.org→qntmecos.com hosting question in memory `project_qntm_ecos_attribution`); if it's purely a human DNS/provider action, draft the runbook + decision and ask rather than guessing. Note: the `OAuthConfiguration.tsx:89` `process.env[...]` bug is **fixed** (`f6d9119`, now `import.meta.env`).
 
 ---
 
@@ -153,3 +153,4 @@ Statuses: `open` · `in-progress` · `blocked` · `done`. The agent edits the **
 - **2026-05-25** — #99 code half shipped (`7919edb`): all `localhost:3003` frontend references routed through a single env-driven `BACKEND_URL` helper (`src/config/backend.ts`); slack/twilio/CRM-OAuth de-hardcoded, gmail/contacts/email migrated onto the helper. #99 marked `blocked` on the human-owned deploy (host + `VITE_BACKEND_URL` + provider redirect-URI registration + round-trip verification). Added `/backend-setup` slash command to guide the human through that deploy.
 - **2026-05-26** — #100 done (`f1b9e49`): in-app SMS surface gated OFF for v1 behind the new `inAppSms` feature flag (nav entry hidden, `AppView.SMS` route redirects to Dashboard, mock-mode badge unreachable). Real Twilio wiring + flag flip tracked in new follow-up #120 (depends on #99 backend + #109 10DLC).
 - **2026-05-26** — #101 sender built (`713476f`): new `send-push` edge function (VAPID Web Push from `push_subscriptions`, secret-guarded, auto-deactivates gone subs) + best-effort wiring into `check-search-alerts` + fixed client public-key fallback (`settings`→`pwa_settings`). Marked `blocked` on the human-owned deploy (VAPID keypair + secrets + Vercel env + `pwa_settings` update + `supabase functions deploy` + live browser test; runbook in `send-push/README.md`).
+- **2026-05-26** — #99 backend **DEPLOYED** via `/backend-setup` walk-through. `server.js` made `$PORT`-aware (`90b922d`), added `render.yaml` Blueprint (`c293bfe`, native Node, `npm ci --omit=dev`, health check `/api/health`), fixed CRM frontend client-id bug (`f6d9119`, `process.env`→`import.meta.env`). Hosted on Render at `https://pulse-api-1epw.onrender.com` (free plan; recreated as a Blueprint after the root frontend `Dockerfile` was auto-detected and built the wrong artifact). `VITE_BACKEND_URL` set in Vercel + redeploy verified (URL inlined in `svc-email`/`feature-messages` bundles). Verified: `/api/health` 200, Slack/Twilio/Gmail proxies mounted + input-validating, CORS allows `pulse.logosvision.org`. **Deferred (kept #99 open):** live-account round-trip smoke (user-driven); CRM OAuth server-side refactor (`oauthHelper`/`crmService` import the browser-only `supabase` client — blocks #108); LV contacts-import `localhost:5176` redirect.
