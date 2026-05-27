@@ -833,6 +833,7 @@
   flex-direction: column;
   gap: 20px;
   padding: 20px 24px 36px;
+  animation: gl-fade-up var(--gl-med) var(--gl-ease);
 }
 
 /* Tier-1 briefing — the inbox's one earned coral-bordered surface */
@@ -1184,6 +1185,7 @@
   max-width: 1000px;
   margin: 0 auto;
   padding: 16px 16px 32px;
+  animation: gl-fade-up var(--gl-med) var(--gl-ease);
 }
 .gl-thread-cards {
   grid-area: cards;
@@ -1592,6 +1594,14 @@
 @keyframes gl-skel {
   0%, 100% { opacity: 0.55; }
   50% { opacity: 1; }
+}
+
+/* Entrance reveal for the inbox / thread views (matches the playground's
+   .fade-up). Disabled under prefers-reduced-motion (see the reduced-motion
+   block). */
+@keyframes gl-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* Action items */
@@ -3209,6 +3219,8 @@
   .gl-tc-row,
   .gl-tc-empty-cta,
   /* Path-D inbox / thread / header surfaces */
+  .gl-inbox,
+  .gl-thread,
   .gl-reel-card,
   .gl-thread-reply,
   .gl-rail-toggle-chev,
