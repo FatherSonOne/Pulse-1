@@ -28,6 +28,7 @@ import { OfflineIndicatorCompact } from './OfflineIndicator';
 import { useEmailKeyboardShortcuts } from '../../hooks/useEmailKeyboardShortcuts';
 import { ReconnectGoogleModal } from '../Auth/ReconnectGoogleModal';
 import { GoogleAuthStatus } from './GoogleAuthStatus';
+import { useFeatureFlag } from '../../lib/featureFlags';
 
 import { AlertTriangle, ExternalLink, Keyboard, Loader2, MailCheck, MailOpen, Menu, Pen, RefreshCw, Search, Send, Settings, X } from 'lucide-react';
 
@@ -68,6 +69,24 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
     setCurrentView, setEditingCampaign, incrementCampaignRefreshKey,
     dismissFollowUp,
   } = useEmailUIStore();
+
+  // Email → Campaigns is a mock/unsafe bulk-send surface, hidden for v1 (#105).
+  // emailCampaignService.send() loops per-recipient with no rate-limit/unsubscribe,
+  // so we hide the surface to keep the send path unreachable. useFeatureFlag is a
+  // synchronous read despite the `use` prefix, so it is safe in the component body.
+  // No user id is available here (only userEmail/userName props), and the flag is
+  // globally OFF regardless of user, so pass undefined.
+  const campaignsEnabled = useFeatureFlag('emailCampaigns', undefined, false);
+
+  // Belt-and-suspenders: if stale UI-store state or a deep-link leaves currentView
+  // on 'campaigns' while the flag is OFF, reset to the default inbox so the
+  // campaigns UI can never render.
+  useEffect(() => {
+    if (currentView === 'campaigns' && !campaignsEnabled) {
+      setCurrentView('inbox');
+      setEditingCampaign(undefined);
+    }
+  }, [currentView, campaignsEnabled, setCurrentView, setEditingCampaign]);
 
   const briefingRef = useRef<HTMLDivElement>(null);
   const [syncPulseKey, setSyncPulseKey] = React.useState(0);
@@ -443,6 +462,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
         accentColor={accentColor}
         onCampaignsClick={() => { setCurrentView('campaigns'); setEditingCampaign(undefined); setSidebarOpen(false); }}
         isCampaignsActive={currentView === 'campaigns'}
+        showCampaigns={campaignsEnabled}
         cachedEmailCount={syncState?.total_emails_cached ?? 0}
       />
 
@@ -546,9 +566,12 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
           </div>
         )}
 
-        {/* Content: Campaigns or Email list/viewer */}
+        {/* Content: Campaigns or Email list/viewer. Campaigns flagged OFF for v1
+            (#105) — the && campaignsEnabled guard makes a stale 'campaigns' view
+            fall through to the normal email list/viewer instead of rendering the
+            unsafe campaigns UI. */}
         <div className="flex-1 overflow-hidden min-h-0">
-          {currentView === 'campaigns' ? (
+          {currentView === 'campaigns' && campaignsEnabled ? (
             editingCampaign !== undefined ? (
               <EmailCampaignBuilder campaign={editingCampaign} onSave={() => { incrementCampaignRefreshKey(); setEditingCampaign(undefined); }} onCancel={() => setEditingCampaign(undefined)} />
             ) : (

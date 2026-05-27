@@ -15,6 +15,8 @@ interface EmailSidebarRedesignProps {
   accentColor?: 'rose' | 'blue' | 'purple' | 'green';
   onCampaignsClick?: () => void;
   isCampaignsActive?: boolean;
+  /** v1: Campaigns is flagged OFF (#105). When false, the whole Tools section is hidden. */
+  showCampaigns?: boolean;
   cachedEmailCount?: number;
 }
 
@@ -40,6 +42,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
   onClose,
   onCampaignsClick,
   isCampaignsActive = false,
+  showCampaigns = false,
   cachedEmailCount = 0,
 }) => {
   const handleFolderClick = (folder: EmailFolder) => {
@@ -164,20 +167,27 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
             })}
           </div>
 
-          {/* Section break — generous separation between folder group and tools group */}
-          <div className="px-5 pt-6 pb-2">
-            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-stone-400 dark:text-zinc-600">
-              Tools
-            </span>
-          </div>
-          <div className="px-2">
-            {renderNavButton(
-              'Campaigns',
-              <Megaphone className="w-4 h-4" />,
-              isCampaignsActive,
-              () => onCampaignsClick?.(),
-            )}
-          </div>
+          {/* Tools section — currently Campaigns only. Flagged OFF for v1 (#105):
+              when showCampaigns is false, hide the ENTIRE block (header + button)
+              so no empty "Tools" header is left dangling. */}
+          {showCampaigns && (
+            <>
+              {/* Section break — generous separation between folder group and tools group */}
+              <div className="px-5 pt-6 pb-2">
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-stone-400 dark:text-zinc-600">
+                  Tools
+                </span>
+              </div>
+              <div className="px-2">
+                {renderNavButton(
+                  'Campaigns',
+                  <Megaphone className="w-4 h-4" />,
+                  isCampaignsActive,
+                  () => onCampaignsClick?.(),
+                )}
+              </div>
+            </>
+          )}
         </nav>
 
         {/* Cached count footer — mono, restrained */}

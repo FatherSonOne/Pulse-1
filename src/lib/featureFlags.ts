@@ -170,6 +170,26 @@ const featureFlagsConfig: FeatureFlagConfig = {
     targetUsers: ['internal'],
     description: 'HIDDEN for v1 — in-app SMS is a mock shell; unhide only when real Twilio + 10DLC ships (#99/#109)',
     version: '0.1.0'
+  },
+
+  // Email → Campaigns (the bulk-send surface inside the Email client) is
+  // HIDDEN for v1. What's gated: the "Campaigns" nav entry + the
+  // EmailCampaignsDashboard / EmailCampaignBuilder sub-views in
+  // PulseEmailClientRedesign. WHY: emailCampaignService.send() (~:166) loops
+  // gmailService.sendEmail() once per recipient with NO batching, NO
+  // rate-limiting, NO List-Unsubscribe header, no suppression list, and no
+  // bounce handling — firing a campaign would get the connected Gmail account
+  // spam-flagged. THE v1 DECISION: the feature is likely being cut, so we hide
+  // the surface to make that unsafe send path unreachable rather than harden
+  // it. UNHIDE CONDITION: only flip enabled: true once a compliant, batched,
+  // rate-limited sender with List-Unsubscribe + suppression + bounce handling
+  // actually ships. Owning issue: #105. Local dev override: `?ff_emailCampaigns=on`.
+  emailCampaigns: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'HIDDEN for v1 — email Campaigns send loop is unsafe (per-recipient, no rate-limit/unsubscribe); likely cut. Unhide only when a compliant batched sender ships (#105).',
+    version: '0.1.0'
   }
 };
 
