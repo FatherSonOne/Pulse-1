@@ -1,6 +1,11 @@
 // ============================================
-// CONTACT ENRICHMENT SERVICE
-// Email signature parsing, duplicate detection, auto-tagging
+// CONTACT PROFILE SERVICE
+// Derives contact fields from email signatures the user has already
+// received, detects/merges duplicate relationship_profiles, and
+// auto-tags from existing profile data.
+// NOTE: This is NOT third-party/external data enrichment — there is no
+// Clearbit/Apollo/etc. integration. Everything here comes from the
+// user's own internal Pulse data.
 // ============================================
 
 import { supabase } from './supabase';
@@ -584,10 +589,13 @@ export async function autoTagAllContacts(userId: string): Promise<number> {
   return updated;
 }
 
-// ==================== ENRICHMENT FROM EMAIL ====================
+// ==================== FILL PROFILE FROM EMAIL SIGNATURE ====================
 
 /**
- * Enrich a profile from email data
+ * Populate a relationship profile's empty fields from an email signature
+ * the user already received (regex parse with AI fallback). This fills in
+ * missing internal fields only — it does NOT pull in third-party/external
+ * contact data.
  */
 export async function enrichFromEmail(
   userId: string,

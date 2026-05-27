@@ -1136,7 +1136,13 @@ app.get('/api/logos-vision/contacts', verifyLogosVisionAuth, async (req, res) =>
   }
 });
 
-// Enrich a single contact with AI intelligence
+// Returns Pulse's INTERNAL relationship intelligence for a contact:
+// relationship score, communication frequency, interaction counts, and AI
+// talking-points all derived from the user's own interaction history (with
+// safe defaults like "Initiate first contact" for unknown contacts).
+// This is NOT third-party/external data enrichment. The route path and JSON
+// response shape are a cross-app contract consumed by the Logos Vision app —
+// do not rename them.
 app.post('/api/logos-vision/contacts/:email/enrich', verifyLogosVisionAuth, async (req, res) => {
   try {
     const { email } = req.params;
