@@ -406,6 +406,20 @@ const GlimpseBriefingCard: React.FC<{
          c.lastMessageProcessingStatus === 'transcribing'
   ).length;
 
+  // Honest "video waiting" stat: sum of the *latest* glimpse duration in each
+  // conversation that needs you. This is the only truthful time figure the
+  // inbox can derive — GlimpseConversation carries lastMessageDuration, not a
+  // total unwatched backlog — so it is deliberately NOT labelled "time saved".
+  const waitingSeconds = needs.reduce((sum, c) => sum + (c.lastMessageDuration ?? 0), 0);
+  const waitingLabel =
+    waitingSeconds >= 60 ? `${Math.round(waitingSeconds / 60)} min of video`
+    : waitingSeconds > 0 ? `${waitingSeconds}s of video`
+    : null;
+  const metaParts = [
+    totalUnread > 0 ? `${totalUnread} unread` : null,
+    waitingLabel,
+  ].filter(Boolean) as string[];
+
   const nameOf = (c: GlimpseConversation) => {
     const others = c.participants.filter(p => p.id !== currentUserId);
     return c.title || others.map(p => p.name).join(', ') || 'Video Chat';
@@ -437,8 +451,13 @@ const GlimpseBriefingCard: React.FC<{
             {total} {total === 1 ? 'SIGNAL' : 'SIGNALS'} · {needs.length} NEED YOU
           </span>
         </div>
-        {totalUnread > 0 && (
-          <span className="gl-briefing-meta">{totalUnread} unread</span>
+        {metaParts.length > 0 && (
+          <span
+            className="gl-briefing-meta"
+            title="Video waiting is the duration of the latest glimpse in each conversation that needs you — not the full unwatched backlog."
+          >
+            {metaParts.join(' · ')}
+          </span>
         )}
       </header>
 
