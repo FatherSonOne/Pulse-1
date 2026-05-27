@@ -37,6 +37,7 @@ import {
   HelpCircle,
   MonitorPlay,
   Edit3,
+  Sparkles,
 } from 'lucide-react';
 import VoxModeToolbar from '../Relay/VoxModeToolbar';
 import { useGlimpseRecording } from '../../hooks/useGlimpseRecording';
@@ -253,6 +254,325 @@ const ConversationItem: React.FC<{
           : 'NEW'}
       </div>
     </button>
+  );
+};
+
+// Reel poster card — the inbox grid unit that replaces the Triage Cockpit
+// table row (redesign 2026-05-27, Path D). Real thumbnail with a deterministic
+// gradient fallback, unread bead, sender, duration, 2-line AI summary, muted
+// provenance chip + coral action pill. One coral attention-hit per card.
+// NOTE: ConversationItem above + the .gl-tc-* table styles are retained until
+// the Reel grid is visually verified, per the redesign plan.
+const ReelCard: React.FC<{
+  conversation: GlimpseConversation;
+  currentUserId: string;
+  onClick: () => void;
+}> = ({ conversation, currentUserId, onClick }) => {
+  const otherParticipants = conversation.participants.filter(p => p.id !== currentUserId);
+  const displayName = conversation.title ||
+    otherParticipants.map(p => p.name).join(', ') ||
+    'Video Chat';
+
+  const isUnread = (conversation.unreadCount ?? 0) > 0;
+  const isGroup = otherParticipants.length > 1;
+  const processing =
+    conversation.lastMessageProcessingStatus === 'pending' ||
+    conversation.lastMessageProcessingStatus === 'transcribing';
+  const hasSummary = !!conversation.lastMessageSummary;
+  const actionCount = conversation.lastMessageActionCount ?? 0;
+
+  // Same fallback chain as the old triage row: AI summary → caption → duration.
+  const summary =
+    conversation.lastMessageSummary ||
+    conversation.lastMessageCaption ||
+    (conversation.lastMessageDuration
+      ? `${formatDuration(conversation.lastMessageDuration)} ${isGroup ? 'group ' : ''}glimpse`
+      : 'No glimpses yet');
+
+  const firstAvatar = otherParticipants[0];
+  const fallbackInitials = isGroup
+    ? `+${otherParticipants.length}`
+    : (firstAvatar?.name?.[0] || '?').toUpperCase();
+  const thumb = conversation.lastMessageThumbnail;
+
+  // Mirror the old row's aria-label so AT users keep the same at-a-glance read.
+  const ariaParts = [
+    isUnread && 'Unread',
+    actionCount > 0 && `${actionCount} action ${actionCount === 1 ? 'item' : 'items'}`,
+    processing && !hasSummary && 'AI transcribing',
+    displayName,
+    isGroup && 'group',
+    conversation.lastMessageDuration && formatDuration(conversation.lastMessageDuration),
+    conversation.lastMessageSummary && `Summary: ${conversation.lastMessageSummary}`,
+  ].filter(Boolean);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="gl-reel-card"
+      data-unread={isUnread || undefined}
+      aria-label={ariaParts.join(' · ')}
+    >
+      <div
+        className="gl-reel-poster"
+        style={thumb ? undefined : { backgroundImage: posterGradient(conversation.id) }}
+      >
+        {thumb && <img src={thumb} alt="" />}
+        <span className="gl-reel-poster-play" aria-hidden="true">
+          <Play className="w-4 h-4" />
+        </span>
+        {isGroup && (
+          <span className="gl-reel-poster-badge">
+            <Users className="w-3 h-3" />
+            Group
+          </span>
+        )}
+        {conversation.lastMessageDuration ? (
+          <span className="gl-reel-poster-dur">
+            {formatDuration(conversation.lastMessageDuration)}
+          </span>
+        ) : null}
+        {isUnread && <span className="gl-reel-bead" aria-hidden="true" />}
+      </div>
+
+      <div className="gl-reel-body">
+        <div className="gl-reel-from">
+          <span
+            className="gl-reel-avatar"
+            style={firstAvatar?.avatarColor ? { background: firstAvatar.avatarColor } : undefined}
+            aria-hidden="true"
+          >
+            {firstAvatar?.avatarUrl ? <img src={firstAvatar.avatarUrl} alt="" /> : fallbackInitials}
+          </span>
+          <span className="gl-reel-name">{displayName}</span>
+          <span className="gl-reel-when">
+            {conversation.lastMessageAt ? formatRelativeTime(conversation.lastMessageAt) : 'NEW'}
+          </span>
+        </div>
+
+        {processing && !hasSummary ? (
+          <span className="gl-ai-chip pending gl-tc-ai-chip">Transcribing</span>
+        ) : (
+          <p className="gl-reel-summary">{summary}</p>
+        )}
+
+        <div className="gl-reel-tags">
+          {hasSummary && <span className="gl-ai-chip muted gl-tc-ai-chip">Claude</span>}
+          {actionCount > 0 && (
+            <span className="gl-tc-action-pill">
+              {actionCount} {actionCount === 1 ? 'Action' : 'Actions'}
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+};
+
+// Tier-1 deterministic inbox briefing. Everything here is TEMPLATED from
+// counts already on GlimpseConversation — not an LLM synthesis, so there is no
+// fabricated prose. The coral border is earned: this is the inbox's AI-signal
+// surface. A flagged Tier-2 "Claude watched your inbox" synthesis (a Supabase
+// edge function, server-side only) is a separate follow-up; Tier 1 is the
+// always-on, honest fallback.
+const GlimpseBriefingCard: React.FC<{
+  conversations: GlimpseConversation[];
+  totalUnread: number;
+  currentUserId: string;
+  onOpen: (conversation: GlimpseConversation) => void;
+}> = ({ conversations, totalUnread, currentUserId, onOpen }) => {
+  const total = conversations.length;
+  const needs = conversations.filter(
+    c => (c.unreadCount ?? 0) > 0 || (c.lastMessageActionCount ?? 0) > 0
+  );
+  const actionTotal = conversations.reduce(
+    (sum, c) => sum + (c.lastMessageActionCount ?? 0), 0
+  );
+  const processingCount = conversations.filter(
+    c => c.lastMessageProcessingStatus === 'pending' ||
+         c.lastMessageProcessingStatus === 'transcribing'
+  ).length;
+
+  const nameOf = (c: GlimpseConversation) => {
+    const others = c.participants.filter(p => p.id !== currentUserId);
+    return c.title || others.map(p => p.name).join(', ') || 'Video Chat';
+  };
+
+  // Templated digest — strictly from data. If it can't be stated from the
+  // counts, it isn't printed.
+  let digest: string;
+  if (needs.length === 0) {
+    digest = `You're all caught up — ${total} ${total === 1 ? 'glimpse' : 'glimpses'}, nothing needs you right now.`;
+  } else {
+    let s = `${needs.length} of ${total} ${total === 1 ? 'glimpse needs' : 'glimpses need'} you`;
+    if (actionTotal > 0) {
+      s += `, with ${actionTotal} action ${actionTotal === 1 ? 'item' : 'items'} to clear`;
+    }
+    s += processingCount > 0 ? `. ${processingCount} still transcribing.` : '.';
+    digest = s;
+  }
+
+  return (
+    <section className="gl-briefing" aria-label="Glimpse briefing">
+      <header className="gl-briefing-head">
+        <span className="gl-briefing-icon" aria-hidden="true">
+          <Sparkles className="w-4 h-4" />
+        </span>
+        <div className="gl-briefing-titles">
+          <span className="gl-briefing-title">Your Glimpse briefing</span>
+          <span className="gl-briefing-sub">
+            {total} {total === 1 ? 'SIGNAL' : 'SIGNALS'} · {needs.length} NEED YOU
+          </span>
+        </div>
+        {totalUnread > 0 && (
+          <span className="gl-briefing-meta">{totalUnread} unread</span>
+        )}
+      </header>
+
+      <p className="gl-briefing-line">{digest}</p>
+
+      {needs.length > 0 && (
+        <div className="gl-briefing-needs">
+          <span className="gl-label">Needs you</span>
+          <div className="gl-briefing-need-list">
+            {needs.slice(0, 6).map(c => {
+              const ac = c.lastMessageActionCount ?? 0;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  className="gl-briefing-need"
+                  onClick={() => onOpen(c)}
+                >
+                  {(c.unreadCount ?? 0) > 0 && (
+                    <span className="gl-briefing-need-dot" aria-hidden="true" />
+                  )}
+                  <span className="gl-briefing-need-name">{nameOf(c)}</span>
+                  {ac > 0 && <span className="gl-briefing-need-pill">{ac}</span>}
+                </button>
+              );
+            })}
+            {needs.length > 6 && (
+              <span className="gl-briefing-need-more">+{needs.length - 6} more</span>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+};
+
+// Extracted-tasks rail — sits beside the stacked cockpit thread (Path D).
+// TASKS are a real, deduped roll-up of every message's actionItems, tappable
+// to convert into a Pulse task (with ✓ converted state via convertedActionItems).
+// DECISIONS are only real after the user runs Summarize (reads
+// ConversationSummary.keyDecisions); before that, a quiet CTA — never an empty
+// coral block. No LLM call fires on thread open.
+type RailTask = { text: string; message: GlimpseMessage };
+const GlimpseTaskRail: React.FC<{
+  tasks: RailTask[];
+  convertedActionItems: Map<string, Set<string>>;
+  onAddTask: (message: GlimpseMessage, text: string) => Promise<'created' | 'already-exists' | 'failed'>;
+  decisions?: string[];
+  hasSummary: boolean;
+  isSummarizing: boolean;
+  onRunSummary: () => void;
+  onReply: () => void;
+  open: boolean;
+}> = ({
+  tasks,
+  convertedActionItems,
+  onAddTask,
+  decisions,
+  hasSummary,
+  isSummarizing,
+  onRunSummary,
+  onReply,
+  open,
+}) => {
+  const handleAdd = async (t: RailTask) => {
+    const status = await onAddTask(t.message, t.text);
+    if (status === 'created') toast.success('Added to tasks');
+    else if (status === 'already-exists') toast('Already in tasks');
+    else toast.error('Could not add to tasks');
+  };
+
+  return (
+    <aside
+      id="gl-thread-rail"
+      className="gl-thread-rail"
+      data-open={open}
+      aria-label="Extracted tasks and decisions"
+    >
+      <span className="gl-label gl-rail-eyebrow">Extracted</span>
+
+      <div className="gl-rail-group">
+        <div className="gl-rail-heading">Tasks</div>
+        {tasks.length === 0 ? (
+          <p className="gl-rail-empty">No action items extracted yet.</p>
+        ) : (
+          <ul className="gl-rail-list">
+            {tasks.map((t, i) => {
+              const converted = !!convertedActionItems.get(t.message.id)?.has(t.text.trim());
+              return (
+                <li key={i}>
+                  <button
+                    type="button"
+                    className={`gl-rail-task ${converted ? 'converted' : ''}`}
+                    onClick={() => handleAdd(t)}
+                    aria-pressed={converted}
+                    title={converted ? 'Already in tasks' : 'Add to Pulse tasks'}
+                  >
+                    {converted ? (
+                      <Check className="gl-rail-task-icon" />
+                    ) : (
+                      <Square className="gl-rail-task-icon" />
+                    )}
+                    <span>{t.text}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      <div className="gl-rail-group">
+        <div className="gl-rail-heading">Decisions</div>
+        {!hasSummary ? (
+          <button
+            type="button"
+            className="gl-rail-cta"
+            onClick={onRunSummary}
+            disabled={isSummarizing}
+          >
+            {isSummarizing ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            {isSummarizing ? 'Summarizing…' : 'Run summary to extract decisions'}
+          </button>
+        ) : decisions && decisions.length > 0 ? (
+          <ul className="gl-rail-list">
+            {decisions.map((d, i) => (
+              <li key={i} className="gl-rail-decision">
+                <span className="gl-rail-decision-dot" aria-hidden="true" />
+                <span>{d}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="gl-rail-empty">No decisions found in this conversation.</p>
+        )}
+      </div>
+
+      <button type="button" className="gl-rail-reply" onClick={onReply}>
+        <Video className="w-3.5 h-3.5" />
+        Reply
+      </button>
+    </aside>
   );
 };
 
@@ -722,6 +1042,9 @@ const Glimpse: React.FC<GlimpseProps> = ({
   const [caption, setCaption] = useState('');
   const [replyingTo, setReplyingTo] = useState<GlimpseMessage | null>(null);
   const [expandedTranscripts, setExpandedTranscripts] = useState<Set<string>>(new Set());
+  // Thread task rail open/collapsed — only consulted below the 860px breakpoint
+  // (CSS keeps the rail always-visible on wide panes regardless of this state).
+  const [railOpen, setRailOpen] = useState(true);
   const [showRecipientSelector, setShowRecipientSelector] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [pulseContacts, setPulseContacts] = useState<Array<{ id: string; name: string; avatarColor?: string; handle?: string }>>(contacts);
@@ -808,6 +1131,37 @@ const Glimpse: React.FC<GlimpseProps> = ({
   // unconditionally — Rules of Hooks. Empty conversationId puts the hook in
   // no-op mode (no fetch, no subscription, empty messages).
   const chatHook = useGlimpseMessages({ conversationId: activeConversationId || '' });
+
+  // Inbox triage split (redesign 2026-05-27): "Needs you" = unread or has
+  // extracted action items; "FYI" = everything else. Drives the Reel grid's
+  // two sections and matches the briefing card's split exactly.
+  const { needsConversations, fyiConversations } = React.useMemo(() => {
+    const needs: GlimpseConversation[] = [];
+    const fyi: GlimpseConversation[] = [];
+    for (const c of conversations) {
+      if ((c.unreadCount ?? 0) > 0 || (c.lastMessageActionCount ?? 0) > 0) needs.push(c);
+      else fyi.push(c);
+    }
+    return { needsConversations: needs, fyiConversations: fyi };
+  }, [conversations]);
+
+  // Thread task rail — a deduped roll-up of every message's extracted
+  // actionItems (first occurrence keeps its owning message so convert + ✓
+  // state route to the right record). Real now; no new fetch.
+  const railTasks = React.useMemo(() => {
+    const seen = new Set<string>();
+    const out: RailTask[] = [];
+    for (const m of chatHook.messages) {
+      for (const item of m.actionItems || []) {
+        const text = item.trim();
+        const key = text.toLowerCase();
+        if (!text || seen.has(key)) continue;
+        seen.add(key);
+        out.push({ text, message: m });
+      }
+    }
+    return out;
+  }, [chatHook.messages]);
 
   // VoxMessageMenu handler functions
   const handleArchiveMessage = async (message: any) => {
@@ -1353,9 +1707,9 @@ const Glimpse: React.FC<GlimpseProps> = ({
 
       {/* Main Content */}
       <main className="vvb-content">
-        {/* CONVERSATIONS VIEW — Triage Cockpit */}
+        {/* CONVERSATIONS VIEW — Inbox: Briefing + Reel grid (Path D) */}
         {viewMode === 'conversations' && (
-          <div className="vvb-conversations gl-tc-list">
+          <div className="vvb-conversations">
             {conversationsLoading ? (
               <div className="vvb-loading">
                 <Loader2 className="w-8 h-8 animate-spin" />
@@ -1389,29 +1743,50 @@ const Glimpse: React.FC<GlimpseProps> = ({
                 )}
               </div>
             ) : (
-              <>
-                {/* Column header strip — sticky inside the list. No ARIA role:
-                    the rows below are <button>s, not table rows, so a stray
-                    role="row" here would orphan AT users in an incomplete table
-                    pattern. The strip is honest visual chrome. */}
-                <div className="gl-tc-colhead" aria-hidden="true">
-                  <span />
-                  <span className="gl-label">From · Last</span>
-                  <span className="gl-label">Actions</span>
-                  <span className="gl-label" style={{ textAlign: 'right' }}>Length</span>
-                  <span className="gl-label" style={{ textAlign: 'right' }}>When</span>
-                </div>
+              <div className="gl-inbox">
+                <GlimpseBriefingCard
+                  conversations={conversations}
+                  totalUnread={totalUnread}
+                  currentUserId={currentUserId}
+                  onOpen={handleSelectConversation}
+                />
 
-                {conversations.map(conv => (
-                  <ConversationItem
-                    key={conv.id}
-                    conversation={conv}
-                    currentUserId={currentUserId}
-                    onClick={() => handleSelectConversation(conv)}
-                    isDarkMode={isDarkMode}
-                  />
-                ))}
-              </>
+                {needsConversations.length > 0 && (
+                  <section className="gl-reel-section" aria-label="Needs you">
+                    <span className="gl-label gl-reel-section-label needs">
+                      Needs you · {needsConversations.length}
+                    </span>
+                    <div className="gl-reel-grid">
+                      {needsConversations.map(conv => (
+                        <ReelCard
+                          key={conv.id}
+                          conversation={conv}
+                          currentUserId={currentUserId}
+                          onClick={() => handleSelectConversation(conv)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {fyiConversations.length > 0 && (
+                  <section className="gl-reel-section" aria-label="FYI">
+                    <span className="gl-label gl-reel-section-label">
+                      FYI · {fyiConversations.length}
+                    </span>
+                    <div className="gl-reel-grid">
+                      {fyiConversations.map(conv => (
+                        <ReelCard
+                          key={conv.id}
+                          conversation={conv}
+                          currentUserId={currentUserId}
+                          onClick={() => handleSelectConversation(conv)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -1431,7 +1806,23 @@ const Glimpse: React.FC<GlimpseProps> = ({
                 action={{ label: 'Record Video', onClick: () => setViewMode('record') }}
               />
             ) : (
-              <div className="vvb-messages-list">
+              <div className="gl-thread">
+                <button
+                  type="button"
+                  className="gl-rail-toggle"
+                  onClick={() => setRailOpen(o => !o)}
+                  aria-expanded={railOpen}
+                  aria-controls="gl-thread-rail"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  Tasks &amp; decisions
+                  {railTasks.length > 0 && (
+                    <span className="gl-rail-toggle-count">{railTasks.length}</span>
+                  )}
+                  <ChevronDown className={`w-3.5 h-3.5 gl-rail-toggle-chev ${railOpen ? 'open' : ''}`} />
+                </button>
+
+                <div className="gl-thread-cards">
                 {chatHook.messages.map(message => (
                   <React.Fragment key={message.id}>
                     <MessageBubble
@@ -1494,6 +1885,27 @@ const Glimpse: React.FC<GlimpseProps> = ({
                     )}
                   </React.Fragment>
                 ))}
+                  <button
+                    type="button"
+                    className="gl-thread-reply"
+                    onClick={() => { setCaptureMode('cam'); setViewMode('record'); }}
+                  >
+                    <Video className="w-4 h-4" />
+                    Record reply
+                  </button>
+                </div>
+
+                <GlimpseTaskRail
+                  tasks={railTasks}
+                  convertedActionItems={chatHook.convertedActionItems}
+                  onAddTask={(m, t) => chatHook.addActionItemAsTask(m, t)}
+                  decisions={conversationSummary?.keyDecisions}
+                  hasSummary={!!conversationSummary}
+                  isSummarizing={isGeneratingAI}
+                  onRunSummary={handleSummarizeConversation}
+                  onReply={() => { setCaptureMode('cam'); setViewMode('record'); }}
+                  open={railOpen}
+                />
               </div>
             )}
           </div>
@@ -1948,6 +2360,19 @@ function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Deterministic poster gradient for glimpses without a real thumbnail — the
+// same conversation id always renders the same frame, so the Reel grid stays
+// stable across re-renders. Real lastMessageThumbnail wins when present.
+const POSTER_HUES = ['#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#0ea5e9', '#06b6d4', '#14b8a6', '#64748b'];
+function posterGradient(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const a = POSTER_HUES[h % POSTER_HUES.length];
+  const b = POSTER_HUES[(h >> 3) % POSTER_HUES.length];
+  // 8-digit hex (#rrggbbaa) — ~25%/20% tints over the black letterbox.
+  return `linear-gradient(150deg, ${a}40, transparent 62%), linear-gradient(330deg, ${b}33, transparent 58%)`;
 }
 
 function formatTime(date: Date): string {
