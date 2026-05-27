@@ -642,11 +642,13 @@ function formatHours(h: number): string {
 export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose }) => {
   const [data, setData] = useState<MeetingAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [entomateConnected, setEntomateConnected] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'topics' | 'people'>('overview');
 
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
+    isEntomateConnected().then(setEntomateConnected);
     fetchMeetingAnalytics().then(d => {
       setData(d);
       setLoading(false);
@@ -689,11 +691,17 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
               <Loader2 className="animate-spin" />
               <div>Loading analytics...</div>
             </div>
+          ) : !entomateConnected ? (
+            <div className="meetings-analytics-empty">
+              <BarChart />
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>Meeting analytics needs Entomate</div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>Connect Entomate to unlock meeting sentiment, topics, and decision analytics. Your Pulse meeting transcripts and summaries are always available in Recordings.</div>
+            </div>
           ) : !data || data.totalMeetings === 0 ? (
             <div className="meetings-analytics-empty">
               <BarChart />
-              <div style={{ fontWeight: 600, marginBottom: 6 }}>No data yet</div>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>Start a Pulse meeting with AI Scribe to populate analytics.</div>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>No meeting analytics yet</div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>Analytics populate from processed meeting data.</div>
             </div>
           ) : (
             <>

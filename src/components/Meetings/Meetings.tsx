@@ -6,7 +6,7 @@ import { Contact, CalendarEvent, ArchiveItem } from '../../types';
 import './Meetings.css';
 import PulseVideoRoom, { MeetingEndSummary } from './PulseVideoRoom';
 import { createPulseRoom, EdgeCallError } from '../../services/pulseVideoService';
-import { autoExportIfEnabled, getMeetingSettings, fetchMeetingAnalytics } from '../../services/meetingService';
+import { autoExportIfEnabled, getMeetingSettings, fetchMeetingAnalytics, isEntomateConnected } from '../../services/meetingService';
 import { notificationService } from '../../services/notificationService';
 import { pulseService } from '../../services/pulseService';
 import { googleCalendarService } from '../../services/googleCalendarService';
@@ -118,6 +118,9 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialConta
     avgDuration: 0,
     weeklyTrend: []
   });
+  // Meeting analytics are Entomate-powered; gate the analytics-derived rail
+  // stats on a live Entomate connection so we don't surface dead zeros.
+  const [entomateConnected, setEntomateConnected] = useState(false);
 
   // Active Meeting State
   const [activeMeetingTitle, setActiveMeetingTitle] = useState('Instant Meeting');
@@ -200,6 +203,10 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialConta
       avgDuration: analytics.avgDuration,
       weeklyTrend: analytics.weeklyTrend.map(w => w.count),
     });
+
+    // Meeting analytics are sourced from Entomate; only surface the
+    // analytics-derived rail stats when Entomate is actually connected.
+    setEntomateConnected(await isEntomateConnected());
   };
 
   const handleLinkJoin = (e: React.FormEvent) => {
@@ -621,11 +628,16 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialConta
         {/* Time-rail dashboard — sidebar collapsed; kicker line carries the signal */}
         <div className="mtg-dashboard">
           <main className="mtg-dashboard-main">
-            <MeetingsRailKicker
-              totalMeetings={insights.totalMeetings}
-              avgDurationMinutes={insights.avgDuration}
-              weeklyTrendDelta={trendDelta}
-            />
+            {/* Rail kicker stats derive from Entomate-powered meeting analytics;
+                hide them entirely when Entomate isn't connected so we don't
+                imply Pulse natively produces these numbers. */}
+            {entomateConnected && (
+              <MeetingsRailKicker
+                totalMeetings={insights.totalMeetings}
+                avgDurationMinutes={insights.avgDuration}
+                weeklyTrendDelta={trendDelta}
+              />
+            )}
             <TimeRail
               meetings={upcomingMeets}
               recentNotes={pastNotes}
