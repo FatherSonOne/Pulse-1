@@ -1710,6 +1710,32 @@ const Glimpse: React.FC<GlimpseProps> = ({
     onShowHelp: () => setShowShortcutsHelp(true),
   }, true);
 
+  // Item 7: J/K roving focus across reel cards in the inbox. Scoped to the
+  // conversations view so it doesn't shadow the shared Relay letter shortcuts
+  // elsewhere — j/k aren't in that hook's VIEW_MAP, so they fall through to
+  // here. Cards are <button>s, so Enter activates the focused one natively
+  // (opens the glimpse); no extra handling needed. Moves across both the
+  // "Needs you" and "FYI" sections in DOM order.
+  useEffect(() => {
+    if (viewMode !== 'conversations') return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'j' && e.key !== 'k') return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target as HTMLElement;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) return;
+      const cards = Array.from(document.querySelectorAll<HTMLButtonElement>('.gl-reel-card'));
+      if (cards.length === 0) return;
+      e.preventDefault();
+      const idx = cards.indexOf(document.activeElement as HTMLButtonElement);
+      const next = e.key === 'j'
+        ? (idx < 0 ? 0 : Math.min(idx + 1, cards.length - 1))
+        : (idx < 0 ? 0 : Math.max(idx - 1, 0));
+      cards[next]?.focus();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [viewMode]);
+
   // Phase 6: Apply playback speed to video elements
   useEffect(() => {
     const videoElements = document.querySelectorAll<HTMLVideoElement>('.vvb-message-video');
