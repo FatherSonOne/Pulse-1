@@ -1463,16 +1463,18 @@ function DThread({ variant }) {
 }
 
 function PathD({ subsection, setSubsection }) {
-  const [inboxBlend, setInboxBlend] = useState('brief');
-  const [threadBlend, setThreadBlend] = useState('plain');
+  // Locked selections (2026-05-27): Inbox = Briefing + Reel, Thread = Cockpit
+  // bubbles + task rail. Toggles remain so the alternates stay comparable.
+  const [inboxBlend, setInboxBlend] = useState('reel');
+  const [threadBlend, setThreadBlend] = useState('tasks');
   return (
     <div className="h-full flex flex-col">
       <SectionHeader subsection={subsection} setSubsection={setSubsection} signals={GLIMPSES.length}/>
       {subsection === 'inbox' && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <AboutPath tag="D" name="Hybrid · Briefing inbox"
-            archetype="Your blend — Daily Briefing digest + full-width glimpses."
-            iaFix="Digest card leads; glimpse rows span the full pane with a bigger 16:9 preview that expands inline. Toggle a Briefing + Reel grid."
+          <AboutPath tag="D" name="Hybrid · Briefing + Reel  ✓ selected"
+            archetype="Locked blend — Daily Briefing digest above a Reel poster grid."
+            iaFix="Coral-bordered digest card leads (decisions + tasks), then every glimpse as a poster card with duration, sender, and a 2-line AI caption. 'Briefing' toggle keeps the full-width row list for comparison."
             vibe="Coral stays AI-only: briefing border, decision/task accents, action pills, chips."/>
           <BlendToggle value={inboxBlend} onChange={setInboxBlend} options={[{ id: 'brief', label: 'Briefing' }, { id: 'reel', label: 'Briefing + Reel' }]}/>
           <div className="flex-1 overflow-hidden"><DInbox go={setSubsection} variant={inboxBlend}/></div>
@@ -1480,9 +1482,9 @@ function PathD({ subsection, setSubsection }) {
       )}
       {subsection === 'thread' && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <AboutPath tag="D" name="Hybrid · Cockpit chat"
-            archetype="Your blend — Triage-Cockpit cards as a left/right chat."
-            iaFix="Each glimpse keeps its cockpit card (summary chip, action items, transcript, watch/reply) but sits in a bubble — recipient left, you right. Toggle an extracted-tasks rail."
+          <AboutPath tag="D" name="Hybrid · Cockpit chat + tasks  ✓ selected"
+            archetype="Locked blend — Triage-Cockpit cards as a left/right chat, plus an extracted-tasks rail."
+            iaFix="Each glimpse keeps its cockpit card (summary chip, action items, transcript, watch/reply) but sits in a bubble — recipient left, you right. A sticky rail on the right surfaces the conversation's decisions + tasks. 'Cockpit bubbles' toggle drops the rail."
             vibe="Me vs them split by alignment + raised surface only — coral never marks 'mine'."/>
           <BlendToggle value={threadBlend} onChange={setThreadBlend} options={[{ id: 'plain', label: 'Cockpit bubbles' }, { id: 'tasks', label: 'Bubbles + task rail' }]}/>
           <div className="flex-1 overflow-hidden"><DThread variant={threadBlend}/></div>
@@ -1501,7 +1503,7 @@ function PathD({ subsection, setSubsection }) {
 
 function App() {
   const [theme, setTheme] = useState('dark');
-  const [path, setPath] = useState('A');
+  const [path, setPath] = useState('D');
   const [subsection, setSubsection] = useState('inbox');
 
   useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
