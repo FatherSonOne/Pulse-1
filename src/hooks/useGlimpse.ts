@@ -683,6 +683,14 @@ export function useGlimpseSend(): UseGlimpseSendReturn {
         }
       );
 
+      // The service returns null on failure (it logs internally and does not
+      // throw), so a bare `return message` would leave the UI with no error and
+      // a stuck progress bar. Surface it explicitly.
+      if (!message) {
+        setError("Couldn't send your Glimpse. Check your connection and try again.");
+        return null;
+      }
+
       setProgress(100);
       return message;
     } catch (err: any) {
