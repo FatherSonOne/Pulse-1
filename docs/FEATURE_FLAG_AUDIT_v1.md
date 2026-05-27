@@ -105,30 +105,30 @@ If a future change introduces a user-visible orphan stub, gate it with a new
 
 ---
 
-## Needs human decision
+## Needs human decision — RESOLVED 2026-05-26
 
-These are **left visible** (per the default), but flagged for a product call:
+All three were decided by the operator on 2026-05-26:
 
 1. **Email → Campaigns sub-surface** (`PulseEmailClientRedesign.tsx:551-555`).
-   The campaigns dashboard + builder are fully reachable from the Email surface,
-   but the `send()` per-recipient loop is the exact concern #105 owns
-   (`emailCampaignService.ts:148-204`). **Decision needed:** does #105 hide the
-   *entire* campaigns entry behind a flag for v1, or only harden the send path?
-   This run does not touch it (owned by #105), but if #105 lands after launch the
-   campaigns entry may need an interim flag. Recommend a `emailCampaigns` flag be
-   considered *within #105's scope*, not here.
+   **DECISION: HIDE for v1** ("likely going to be cut from Pulse anyway").
+   Shipped via **#105** (`0767141`) — new `emailCampaigns` flag (OFF), the email
+   sidebar's whole "Tools" section hidden, the `currentView === 'campaigns'`
+   render gated, and a reset effect bouncing stale state to `'inbox'`. The unsafe
+   per-recipient `send()` loop (`emailCampaignService.ts:148-204`) is now
+   unreachable. Dev preview: `?ff_emailCampaigns=on`.
 
-2. **`MAP` placement.** Already de-risked into the collapsible "Experimental"
-   section (`Sidebar.tsx:114-126`) with a comment noting the cluster/spiderfy
-   strangler refactor is mid-flight. The AI route strip and ETA-share are real, so
-   it is **not** gated. **Decision needed:** is "Experimental" labeling sufficient
-   for v1, or should Map be flag-hidden until the refactor lands? Recommend
-   leaving as-is (it's real and labeled honestly).
+2. **`MAP` placement.** **DECISION: leave as-is for now — "may not make the cut
+   either; don't abandon, circle back."** Map stays in the collapsible
+   "Experimental" section (`Sidebar.tsx:114-126`); it's real (AI route strip +
+   ETA-share) and honestly labeled, so **not** gated. Revisit its v1 inclusion
+   later (no code this run).
 
-3. **`MESSAGE_ANALYTICS`** is real but orphaned — it's in the render switch
-   (`App.tsx:926-927`) yet absent from both nav components. **Decision needed:**
-   wire it into nav, or remove the dead route? No user-facing risk today (you
-   can't reach it), so no action this run.
+3. **`MESSAGE_ANALYTICS`** (real-but-orphaned: render switch handled it at
+   `App.tsx:926-927`, no nav entry). **DECISION: WIRE.** Shipped (`3d51235`) — a
+   "Message Analytics" entry added to the Intelligence section
+   (`Sidebar.tsx`, MailOpen icon). Backed by real deployed schema
+   (`in_app_messages` + `get_message_metrics` / `get_retention_by_message_exposure`
+   RPCs), so it shows real data or honest empty states.
 
 ---
 
