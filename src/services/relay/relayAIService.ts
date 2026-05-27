@@ -23,6 +23,10 @@ export interface ConversationSummary {
   actionItems: string[];
   participants: string[];
   duration: string;
+  /** Explicit decisions reached/agreed in the conversation. Optional — older
+      callers and cached summaries may omit it. Surfaced by the Glimpse thread
+      task rail's DECISIONS section. */
+  keyDecisions?: string[];
   messageCount: number;
 }
 
@@ -82,6 +86,7 @@ interface RawConversationSummary {
   overview?: string;
   keyPoints?: string[];
   actionItems?: string[];
+  keyDecisions?: string[];
   topics?: string[];
 }
 
@@ -163,13 +168,15 @@ Please provide:
 1. A concise overview (2-3 sentences) of what was discussed
 2. 3-5 key points from the conversation
 3. Any action items or tasks mentioned
-4. The main topics covered
+4. Any explicit decisions that were reached or agreed (omit if none)
+5. The main topics covered
 
 Format your response as JSON with this structure:
 {
   "overview": "Brief summary of the conversation",
   "keyPoints": ["Point 1", "Point 2", "Point 3"],
   "actionItems": ["Action 1", "Action 2"],
+  "keyDecisions": ["Decision 1", "Decision 2"],
   "topics": ["Topic 1", "Topic 2"]
 }`;
 
@@ -183,6 +190,7 @@ Format your response as JSON with this structure:
     overview: parsed.overview || 'No summary available',
     keyPoints: parsed.keyPoints || [],
     actionItems: parsed.actionItems || [],
+    keyDecisions: parsed.keyDecisions || [],
     participants,
     duration: formatDuration(totalDuration),
     messageCount: messages.length,
