@@ -38,8 +38,8 @@ import {
   MonitorPlay,
   Edit3,
   Sparkles,
+  List,
 } from 'lucide-react';
-import VoxModeToolbar from '../Relay/VoxModeToolbar';
 import { useGlimpseRecording } from '../../hooks/useGlimpseRecording';
 import {
   useGlimpseConversations,
@@ -1018,6 +1018,223 @@ const RecipientSelector: React.FC<{
   );
 };
 
+// Persistent Glimpse section header (Path D). Brand + a tab sub-nav
+// (Inbox / Thread / Record / Search) + signals counter + help. Replaces the
+// generic VoxModeToolbar so Glimpse reads as its own sectioned surface. The
+// Thread tab is only enabled while a conversation is open.
+type GlimpseTabId = 'inbox' | 'thread' | 'record' | 'search';
+const GLIMPSE_TABS: { id: GlimpseTabId; label: string; icon: typeof List }[] = [
+  { id: 'inbox', label: 'Inbox', icon: List },
+  { id: 'thread', label: 'Thread', icon: Reply },
+  { id: 'record', label: 'Record', icon: Video },
+  { id: 'search', label: 'Search', icon: Search },
+];
+
+const GlimpseSectionHeader: React.FC<{
+  viewMode: ViewMode;
+  hasActiveThread: boolean;
+  signals: number;
+  totalUnread: number;
+  onTab: (tab: GlimpseTabId) => void;
+  onShowHelp: () => void;
+  onClose?: () => void;
+}> = ({ viewMode, hasActiveThread, signals, totalUnread, onTab, onShowHelp, onClose }) => {
+  const activeTab: GlimpseTabId =
+    viewMode === 'conversations' ? 'inbox' : viewMode === 'chat' ? 'thread' : viewMode;
+  return (
+    <header className="gl-section-header">
+      <div className="gl-section-brand">
+        <span className="gl-section-icon" aria-hidden="true"><Video className="w-4 h-4" /></span>
+        <span className="gl-section-title">Glimpse</span>
+      </div>
+
+      <nav className="gl-section-tabs" aria-label="Glimpse sections">
+        {GLIMPSE_TABS.map(t => {
+          const Icon = t.icon;
+          const disabled = t.id === 'thread' && !hasActiveThread;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              className="gl-section-tab"
+              data-active={activeTab === t.id || undefined}
+              aria-current={activeTab === t.id ? 'page' : undefined}
+              disabled={disabled}
+              title={disabled ? 'Open a glimpse to view its thread' : undefined}
+              onClick={() => onTab(t.id)}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {t.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="gl-section-right">
+        {signals > 0 && (
+          <span className="gl-section-counter">
+            <span className="gl-section-counter-n">
+              {signals} {signals === 1 ? 'SIGNAL' : 'SIGNALS'}
+            </span>
+            {totalUnread > 0 && (
+              <>
+                <span className="gl-section-counter-sep" aria-hidden="true">·</span>
+                <span className="gl-section-counter-unread">{totalUnread} UNREAD</span>
+              </>
+            )}
+          </span>
+        )}
+        <button
+          type="button"
+          className="gl-section-help"
+          onClick={onShowHelp}
+          aria-label="Keyboard shortcuts"
+          title="Keyboard shortcuts"
+        >
+          <HelpCircle className="w-4 h-4" />
+        </button>
+        {onClose && (
+          <button
+            type="button"
+            className="gl-section-help"
+            onClick={onClose}
+            aria-label="Close Glimpse"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+    </header>
+  );
+};
+
+// Contextual thread sub-header (Path D) — shown inside the chat view above the
+// stacked cockpit cards. Back + contact identity + Summarize, with the
+// secondary AI actions (Smart Replies, Draft) and selection mode tucked into a
+// ⋯ menu so nothing from the old toolbar is lost.
+const GlimpseThreadHeader: React.FC<{
+  title: string;
+  glimpseCount: number;
+  isSummarizing: boolean;
+  isGeneratingDraft: boolean;
+  canDraft: boolean;
+  isSelectionMode: boolean;
+  onBack: () => void;
+  onSummarize: () => void;
+  onSmartReplies: () => void;
+  onDraft: () => void;
+  onToggleSelection: () => void;
+}> = ({
+  title,
+  glimpseCount,
+  isSummarizing,
+  isGeneratingDraft,
+  canDraft,
+  isSelectionMode,
+  onBack,
+  onSummarize,
+  onSmartReplies,
+  onDraft,
+  onToggleSelection,
+}) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const initials = (title.trim()[0] || '?').toUpperCase();
+  return (
+    <div className="gl-thread-header">
+      <button
+        type="button"
+        className="gl-thread-back"
+        onClick={onBack}
+        aria-label="Back to inbox"
+        title="Back to inbox"
+      >
+        <ArrowLeft className="w-4 h-4" />
+      </button>
+      <span className="gl-thread-avatar" aria-hidden="true">{initials}</span>
+      <div className="gl-thread-id">
+        <span className="gl-thread-name">{title}</span>
+        <span className="gl-thread-sub">
+          {glimpseCount} {glimpseCount === 1 ? 'glimpse' : 'glimpses'}
+        </span>
+      </div>
+
+      <div className="gl-thread-header-actions">
+        <button
+          type="button"
+          className="gl-thread-summarize"
+          onClick={onSummarize}
+          disabled={isSummarizing}
+        >
+          {isSummarizing ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Sparkles className="w-3.5 h-3.5" />
+          )}
+          Summarize
+        </button>
+        <div className="gl-thread-more-wrap">
+          <button
+            type="button"
+            className="gl-thread-more"
+            onClick={() => setMenuOpen(o => !o)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            aria-label="More thread actions"
+            title="More actions"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+          {menuOpen && (
+            <>
+              <div
+                className="gl-thread-menu-backdrop"
+                onClick={() => setMenuOpen(false)}
+                aria-hidden="true"
+              />
+              <div className="gl-thread-menu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="gl-thread-menu-item"
+                  onClick={() => { setMenuOpen(false); onSmartReplies(); }}
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  Smart replies
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="gl-thread-menu-item"
+                  disabled={!canDraft || isGeneratingDraft}
+                  title={canDraft ? undefined : 'Nothing to reply to yet'}
+                  onClick={() => { setMenuOpen(false); onDraft(); }}
+                >
+                  {isGeneratingDraft ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Edit3 className="w-3.5 h-3.5" />
+                  )}
+                  Draft a reply
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="gl-thread-menu-item"
+                  onClick={() => { setMenuOpen(false); onToggleSelection(); }}
+                >
+                  <Square className="w-3.5 h-3.5" />
+                  {isSelectionMode ? 'Exit selection' : 'Select messages'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ============================================
 // MAIN COMPONENT
 // ============================================
@@ -1547,6 +1764,49 @@ const Glimpse: React.FC<GlimpseProps> = ({
     setViewMode('chat');
   };
 
+  // Leaving an in-progress recording discards it (matches the old toolbar back).
+  const leaveRecordIfNeeded = () => {
+    if (viewMode === 'record' && state.status !== 'idle') {
+      discardRecording();
+      stopPreview();
+    }
+  };
+
+  // Path D tab navigation. Record always opens a fresh glimpse (cam); the
+  // record view itself offers the Glimpse / Walkthrough toggle so both capture
+  // types stay reachable. activeConversationId is kept so the Thread tab can
+  // return to the open conversation.
+  const handleTabSelect = (tab: GlimpseTabId) => {
+    if (tab !== 'record') leaveRecordIfNeeded();
+    if (tab === 'inbox') {
+      setViewMode('conversations');
+      setReplyingTo(null);
+    } else if (tab === 'thread') {
+      if (activeConversationId) setViewMode('chat');
+    } else if (tab === 'record') {
+      enterRecorder('cam');
+    } else {
+      setViewMode('search');
+    }
+  };
+
+  // Back from a thread → inbox (keep activeConversationId so Thread tab stays
+  // available to return to it).
+  const handleThreadBack = () => {
+    setViewMode('conversations');
+    setReplyingTo(null);
+  };
+
+  const activeConversation = conversations.find(c => c.id === activeConversationId) || null;
+  const activeThreadTitle = activeConversation
+    ? (activeConversation.title ||
+        activeConversation.participants
+          .filter(p => p.id !== currentUserId)
+          .map(p => p.name)
+          .join(', ') ||
+        'Video Chat')
+    : 'Video Chat';
+
   const handleToggleRecipient = (id: string) => {
     setSelectedRecipients(prev =>
       prev.includes(id)
@@ -1601,109 +1861,16 @@ const Glimpse: React.FC<GlimpseProps> = ({
 
   return (
     <div className={`video-vox-mode ${themeClass}`}>
-      {/* Header */}
-      <VoxModeToolbar
-        onBack={() => {
-          if (viewMode === 'record' && state.status !== 'idle') {
-            discardRecording();
-            stopPreview();
-          }
-          if (viewMode === 'chat' || viewMode === 'record' || viewMode === 'search') {
-            setViewMode('conversations');
-            setActiveConversationId(null);
-            setReplyingTo(null);
-          } else {
-            onClose?.();
-          }
-        }}
-        // Hide back on the conversations home view — nothing meaningful to
-        // go back to (onClose is undefined in the workspace shell mount).
-        showBack={viewMode !== 'conversations'}
-        modeTitle="Glimpse"
-        modeSubtitle="Video · Transcribed · Triaged"
-        modeIcon={<Video className="w-5 h-5" />}
-        accentColor={MODE_COLOR}
-        isDarkMode={isDarkMode}
-        showAI={viewMode === 'chat'}
-        onSummarize={viewMode === 'chat' ? handleSummarizeConversation : undefined}
-        onSmartReplies={viewMode === 'chat' ? handleGenerateSmartReplies : undefined}
-        onMeetingNotes={
-          viewMode === 'chat' && chatHook && chatHook.messages.some(m => m.senderId !== currentUserId)
-            ? handleGenerateReplyDraft
-            : undefined
-        }
-        notesIcon={<Edit3 />}
-        notesLabel="Draft"
-        notesTitle="Draft a long-form reply"
-        isSummarizing={isGeneratingAI}
-        isGeneratingReplies={isGeneratingAI}
-        isGeneratingNotes={isGeneratingDraft}
-        hasContent={viewMode === 'chat' ? (chatHook ? chatHook.messages.length > 0 : false) : false}
-        isSelectionMode={isSelectionMode}
-        onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
+      {/* Header — Path D persistent tab sub-nav */}
+      <GlimpseSectionHeader
+        viewMode={viewMode}
+        hasActiveThread={!!activeConversationId}
+        signals={conversations.length}
+        totalUnread={totalUnread}
+        onTab={handleTabSelect}
         onShowHelp={() => setShowShortcutsHelp(true)}
-        selectionCount={selectionCount}
-        customActions={[
-          // Triage Cockpit (conversations mode): Search and Walkthrough render
-          // as quiet icon-only buttons so they don't fight the labelled Record
-          // CTA for visual weight, but both stay reachable from the populated
-          // list — Walkthrough is a real entry-point feature, not an empty-
-          // state-only affordance, and capture mode is locked at entry so we
-          // must surface both intents here.
-          ...(viewMode === 'conversations' ? [
-            {
-              icon: <Search className="w-4 h-4" />,
-              title: 'Search glimpses',
-              onClick: () => setViewMode('search'),
-            },
-            ...(canShareScreen ? [{
-              icon: <MonitorPlay className="w-4 h-4" />,
-              title: 'Record a walkthrough — screen + camera',
-              onClick: () => enterRecorder('cam-screen'),
-            }] : []),
-            {
-              icon: <Video className="w-4 h-4" />,
-              label: 'Record',
-              title: 'Record a glimpse — camera',
-              onClick: () => enterRecorder('cam'),
-            },
-          ] : []),
-          ...(viewMode === 'chat' ? [
-            {
-              icon: <Video className="w-4 h-4" />,
-              label: 'Reply',
-              title: 'Record reply',
-              onClick: () => {
-                setCaptureMode('cam');
-                setViewMode('record');
-              },
-            },
-          ] : []),
-        ]}
-      >
-        {/* Triage counter chip — uses gl-label mono caps to fit the system
-            signature instead of the old cyan rounded badge. */}
-        {viewMode === 'conversations' && conversations.length > 0 && (
-          <span className="gl-tc-counter">
-            <span className="gl-label dim">{conversations.length} signals</span>
-            {totalUnread > 0 && (
-              <>
-                <span className="gl-tc-counter-sep" aria-hidden="true">·</span>
-                <span className="gl-tc-counter-unread">{totalUnread} unread</span>
-              </>
-            )}
-          </span>
-        )}
-        {/* Phase 6: Keyboard Shortcuts Help */}
-        <button
-          type="button"
-          onClick={() => setShowShortcutsHelp(true)}
-          className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-white transition-all"
-          title="Keyboard Shortcuts"
-        >
-          <HelpCircle className="w-5 h-5" />
-        </button>
-      </VoxModeToolbar>
+        onClose={onClose}
+      />
 
       {/* Main Content */}
       <main className="vvb-content">
@@ -1794,6 +1961,19 @@ const Glimpse: React.FC<GlimpseProps> = ({
         {/* CHAT VIEW */}
         {viewMode === 'chat' && chatHook && (
           <div className="vvb-chat">
+            <GlimpseThreadHeader
+              title={activeThreadTitle}
+              glimpseCount={chatHook.messages.length}
+              isSummarizing={isGeneratingAI}
+              isGeneratingDraft={isGeneratingDraft}
+              canDraft={chatHook.messages.some(m => m.senderId !== currentUserId)}
+              isSelectionMode={isSelectionMode}
+              onBack={handleThreadBack}
+              onSummarize={handleSummarizeConversation}
+              onSmartReplies={handleGenerateSmartReplies}
+              onDraft={handleGenerateReplyDraft}
+              onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
+            />
             {chatHook.isLoading ? (
               <div className="vvb-loading">
                 <Loader2 className="w-8 h-8 animate-spin" />
@@ -1968,13 +2148,30 @@ const Glimpse: React.FC<GlimpseProps> = ({
                 recipient popover (which drops down from the bar) doesn't
                 cover the active capture mode. */}
             {state.status === 'idle' && (
-              <p className="gl-mode-confirm">
-                {captureMode === 'cam-screen' ? (
-                  <><MonitorPlay className="w-3 h-3" /> Walkthrough · screen + camera</>
-                ) : (
-                  <><Video className="w-3 h-3" /> Glimpse · camera</>
+              <div className="gl-mode-toggle" role="group" aria-label="Recording type">
+                <button
+                  type="button"
+                  className="gl-mode-toggle-btn"
+                  data-active={captureMode === 'cam' || undefined}
+                  onClick={() => setCaptureMode('cam')}
+                  aria-pressed={captureMode === 'cam'}
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  Glimpse · camera
+                </button>
+                {canShareScreen && (
+                  <button
+                    type="button"
+                    className="gl-mode-toggle-btn"
+                    data-active={captureMode === 'cam-screen' || undefined}
+                    onClick={() => setCaptureMode('cam-screen')}
+                    aria-pressed={captureMode === 'cam-screen'}
+                  >
+                    <MonitorPlay className="w-3.5 h-3.5" />
+                    Walkthrough · screen + camera
+                  </button>
                 )}
-              </p>
+              </div>
             )}
 
             {/* Recipient bar — anchor for the selector popover so it never

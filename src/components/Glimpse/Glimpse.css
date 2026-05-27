@@ -95,6 +95,314 @@
 }
 
 /* ============================================
+   PATH D HEADERS — persistent section tab-nav + contextual thread sub-header
+   (redesign 2026-05-27). Replaces the generic VoxModeToolbar for Glimpse.
+   ============================================ */
+.gl-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--gl-border);
+  background: var(--gl-canvas);
+  flex-shrink: 0;
+}
+.gl-section-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 8px;
+}
+.gl-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--gl-accent-soft-light);
+  color: var(--gl-rose-deep);
+}
+.video-vox-mode.dark .gl-section-icon {
+  background: var(--gl-accent-soft-dark);
+  color: var(--gl-rose-bright);
+}
+.gl-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gl-ink);
+}
+.gl-section-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.gl-section-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--gl-ink-fog);
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease),
+              color var(--gl-fast) var(--gl-ease);
+}
+.gl-section-tab:hover:not(:disabled) {
+  background: var(--gl-surface-soft);
+  color: var(--gl-ink-cloth);
+}
+.gl-section-tab[data-active] {
+  background: var(--gl-accent-soft-light);
+  color: var(--gl-rose-deep);
+}
+.video-vox-mode.dark .gl-section-tab[data-active] {
+  background: var(--gl-accent-soft-dark);
+  color: var(--gl-rose-bright);
+}
+.gl-section-tab:disabled { opacity: 0.4; cursor: not-allowed; }
+.gl-section-tab:focus-visible { outline: 2px solid var(--gl-rose); outline-offset: 1px; }
+.gl-section-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gl-section-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: var(--gl-surface-soft);
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.gl-section-counter-n { color: var(--gl-ink-fog); }
+.gl-section-counter-sep { color: var(--gl-ink-fog); }
+.gl-section-counter-unread { color: var(--gl-rose-deep); font-weight: 500; }
+.video-vox-mode.dark .gl-section-counter-unread { color: var(--gl-rose-bright); }
+.gl-section-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gl-ink-fog);
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease),
+              color var(--gl-fast) var(--gl-ease);
+}
+.gl-section-help:hover { background: var(--gl-surface-soft); color: var(--gl-ink); }
+.gl-section-help:focus-visible { outline: 2px solid var(--gl-rose); outline-offset: 1px; }
+
+/* Narrow panes: keep the tabs, drop the signals counter */
+@media (max-width: 720px) {
+  .gl-section-tab { padding: 6px 8px; }
+  .gl-section-counter { display: none; }
+}
+
+/* Contextual thread sub-header — sticky atop the chat scroll */
+.gl-thread-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--gl-border);
+  background: var(--gl-canvas);
+}
+.gl-thread-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gl-ink-fog);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--gl-fast) var(--gl-ease),
+              color var(--gl-fast) var(--gl-ease);
+}
+.gl-thread-back:hover { background: var(--gl-surface-soft); color: var(--gl-ink); }
+.gl-thread-back:focus-visible { outline: 2px solid var(--gl-rose); outline-offset: 1px; }
+.gl-thread-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--gl-surface-soft);
+  border: 1px solid var(--gl-border);
+  color: var(--gl-ink-cloth);
+  font-family: var(--gl-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+.gl-thread-id {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.gl-thread-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gl-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gl-thread-sub {
+  font-size: 11px;
+  color: var(--gl-ink-fog);
+}
+.gl-thread-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gl-thread-summarize {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--gl-accent-soft-light);
+  color: var(--gl-rose-deep);
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: filter var(--gl-fast) var(--gl-ease);
+}
+.video-vox-mode.dark .gl-thread-summarize {
+  background: var(--gl-accent-soft-dark);
+  color: var(--gl-rose-bright);
+}
+.gl-thread-summarize:hover:not(:disabled) { filter: brightness(1.06); }
+.gl-thread-summarize:disabled { opacity: 0.6; cursor: default; }
+.gl-thread-summarize:focus-visible { outline: 2px solid var(--gl-rose); outline-offset: 1px; }
+.gl-thread-more-wrap { position: relative; }
+.gl-thread-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gl-ink-fog);
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease),
+              color var(--gl-fast) var(--gl-ease);
+}
+.gl-thread-more:hover { background: var(--gl-surface-soft); color: var(--gl-ink); }
+.gl-thread-more:focus-visible { outline: 2px solid var(--gl-rose); outline-offset: 1px; }
+.gl-thread-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+.gl-thread-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 21;
+  min-width: 184px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--gl-border);
+  border-radius: 10px;
+  background: var(--gl-surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+.video-vox-mode.dark .gl-thread-menu {
+  background: #18181b;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+.gl-thread-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--gl-ink);
+  font-family: var(--gl-sans);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease);
+}
+.gl-thread-menu-item:hover:not(:disabled) { background: var(--gl-surface-soft); }
+.gl-thread-menu-item:disabled { opacity: 0.5; cursor: default; }
+.gl-thread-menu-item:focus-visible { outline: 2px solid var(--gl-rose); outline-offset: -1px; }
+
+/* Record view: Glimpse / Walkthrough capture-type toggle (both record types) */
+.gl-mode-toggle {
+  display: inline-flex;
+  align-self: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--gl-surface-soft);
+}
+.gl-mode-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--gl-ink-fog);
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease),
+              color var(--gl-fast) var(--gl-ease);
+}
+.gl-mode-toggle-btn[data-active] {
+  background: var(--gl-surface);
+  color: var(--gl-rose-deep);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.video-vox-mode.dark .gl-mode-toggle-btn[data-active] {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--gl-rose-bright);
+}
+.gl-mode-toggle-btn:focus-visible { outline: 2px solid var(--gl-rose); outline-offset: 1px; }
+
+/* ============================================
    MONO LABEL — system signature
    ============================================ */
 .gl-label {
