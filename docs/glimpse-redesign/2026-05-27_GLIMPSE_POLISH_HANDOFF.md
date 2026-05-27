@@ -4,6 +4,31 @@
 > tracks the **polish items deliberately deferred** during that ship, so a
 > fresh session can finish them. Read it top to bottom before touching code.
 >
+> **Polish progress (2026-05-27, follow-up session):** items **1, 2, 3, 4, 5,
+> 7 SHIPPED** to `main`; item **6 BLOCKED** (not buildable as polish). See the
+> per-item ✅/🚫 markers below. Verification each commit: `vitest run
+> src/services/glimpse` (9/9) + `tsc --noEmit` (no new `Glimpse.tsx` errors).
+> Commits: `a394202` (1), `cbfa36c` (3), `3cbb402` (4), `942b33d` (2),
+> `2c2bd5b` (7), `e23f4ca` (5).
+>
+> | Item | Status | Note |
+> |---|---|---|
+> | 1 reduced-motion | ✅ shipped | also neutralized translate-hovers + sibling `.gl-tc-empty-cta` |
+> | 2 rail jump-to-source | ✅ shipped | split affordance (checkbox=convert, label=jump) + `.gl-card--flash` |
+> | 3 processing skeleton | ✅ shipped | 2-line shimmer in summary slot; chip moved to tags row |
+> | 4 fade-up entrance | ✅ shipped | `gl-fade-up` on `.gl-inbox` / `.gl-thread` |
+> | 5 briefing time stat | ✅ shipped | honest "N min of video" from `lastMessageDuration` across `needs` |
+> | 6 walkthrough badge | 🚫 **blocked** | capture mode is **never persisted** at send time — see item 6 |
+> | 7 J/K inbox nav | ✅ shipped | local handler scoped to inbox; help overlay left unchanged (see note) |
+>
+> **Still open after this session:** item 6 (needs an upstream send-path +
+> schema change, below), the visual/reduced-motion eyeball pass (overlaps
+> #122), and the two **Open UX decisions** at the bottom (need the user's
+> call). The `J`/`K` shortcut works but is *not* advertised in the shared
+> `VoxKeyboardShortcutsHelp` (it renders `RELAY_SHORTCUTS`, shared across 10
+> Relay surfaces; adding `J`/`K` there would advertise a Glimpse-only shortcut
+> everywhere).
+>
 > **Companion docs:**
 > - Implementation plan (executed): `2026-05-27_GLIMPSE_REDESIGN_HANDOFF.md`
 > - Bigger deferred work (Tier-2 digest, visual pass, e2e spec, dead-code
@@ -163,6 +188,25 @@ then render a `WALK` poster badge in `ReelCard` mirroring the Group badge.
 Confirm RLS / query shape via MCP before adding a new column read
 (`[[project_pulse_relay_workspace_rls]]`). If the source column doesn't exist,
 this is blocked until it's recorded at send time.
+
+**🚫 CONFIRMED BLOCKED (2026-05-27).** Capture mode is **never persisted**.
+The send-path insert into `video_vox_messages`
+(`glimpseService.ts` ~L510) writes no capture-mode column; `captureMode`
+(`'cam' | 'cam-screen'`) exists only client-side in `useGlimpseRecording.ts`
+and is discarded on send. So this is not a polish/UI task — unblocking it is a
+4-step upstream change, in order:
+> 1. Migration: add a `capture_mode` (text) column to `video_vox_messages` on
+>    the live `pulse-chat` project (`[[reference_pulse_supabase]]`).
+> 2. Write it in the insert at `glimpseService.ts` ~L510 (`captureMode` is
+>    already threaded into the send call).
+> 3. Surface `lastMessageCaptureMode` on `GlimpseConversation` via the
+>    `mapDbToConversation` mapper (~L1494) + the `glimpseTypes.ts` type.
+> 4. Render the `WALK` poster badge in `ReelCard`, mirroring the Group badge.
+>
+> Backfill is impossible for existing rows (the data was never captured), so
+> old glimpses would show no badge regardless. Surface to the user before
+> doing this — it's a schema change on the live DB, out of scope for a polish
+> pass.
 
 **Acceptance:** Walkthrough glimpses show a `WALK` badge in the reel grid,
 sourced from real data (no heuristic guessing).
