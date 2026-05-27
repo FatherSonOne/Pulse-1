@@ -172,6 +172,7 @@ docs/*.md
 !docs/*_AUDIT_*.md
 !docs/*_ROADMAP.md
 !docs/*_GUIDE.md
+!docs/*_RUNBOOK.md
 !docs/USER_GUIDE.md
 !docs/contacts_maps*.md
 !docs/*-spec.md

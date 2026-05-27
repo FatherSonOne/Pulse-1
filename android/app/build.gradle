@@ -6,16 +6,26 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+// Signing credentials: keystore.properties (local) first, then env vars (CI).
+// Defaults preserve the historical alias/file so the existing keystore keeps working.
+def resolvedStoreFile     = keystoreProperties['KEYSTORE_FILE'] ?: System.getenv('PULSE_KEYSTORE_FILE') ?: 'pulse-release-key.jks'
+def resolvedStorePassword = keystoreProperties['KEYSTORE_PASSWORD'] ?: System.getenv('PULSE_KEYSTORE_PASSWORD')
+def resolvedKeyAlias      = keystoreProperties['KEY_ALIAS'] ?: System.getenv('PULSE_KEY_ALIAS') ?: 'pulse-key'
+def resolvedKeyPassword   = keystoreProperties['KEY_PASSWORD'] ?: System.getenv('PULSE_KEY_PASSWORD')
+def canSignRelease = resolvedStorePassword?.trim() && resolvedKeyPassword?.trim() && rootProject.file("app/${resolvedStoreFile}").exists()
+
 android {
     namespace = "io.qntmpulse.app"
     compileSdk = rootProject.ext.compileSdkVersion
 
     signingConfigs {
         release {
-            storeFile file('pulse-release-key.jks')
-            storePassword keystoreProperties['KEYSTORE_PASSWORD'] ?: ""
-            keyAlias "pulse-key"
-            keyPassword keystoreProperties['KEY_PASSWORD'] ?: ""
+            if (canSignRelease) {
+                storeFile file(resolvedStoreFile)
+                storePassword resolvedStorePassword
+                keyAlias resolvedKeyAlias
+                keyPassword resolvedKeyPassword
+            }
         }
     }
 
@@ -34,7 +44,11 @@ android {
     }
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            if (canSignRelease) {
+                signingConfig signingConfigs.release
+            } else {
+                logger.warn("Pulse: release keystore not found (app/keystore.properties or PULSE_KEYSTORE_* env vars). Release artifacts will be UNSIGNED — not uploadable to Play.")
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
