@@ -1239,6 +1239,14 @@ const GlimpseThreadHeader: React.FC<{
 // MAIN COMPONENT
 // ============================================
 
+// Stable reference for the default `contacts` prop. A fresh `[]` literal in the
+// destructure below would be a new reference every render, which made the
+// contact-loader effect (deps: [contacts]) re-fire on every re-render — during
+// recording/sending that meant a storm of identical getAllPulseUsers() requests
+// (dozens per second, visible in the API logs). A module-level constant keeps
+// the dependency stable so the effect runs once.
+const EMPTY_CONTACTS: NonNullable<GlimpseProps['contacts']> = [];
+
 const Glimpse: React.FC<GlimpseProps> = ({
   isDarkMode = true,
   onClose,
@@ -1246,7 +1254,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
   initialRecipientId,
   initialRecipientName,
   apiKey,
-  contacts = [],
+  contacts = EMPTY_CONTACTS,
 }) => {
   // View state
   const [viewMode, setViewMode] = useState<ViewMode>(
