@@ -3207,8 +3207,32 @@
   .gl-action-btn,
   .gl-card,
   .gl-tc-row,
-  .gl-tc-empty-cta {
+  .gl-tc-empty-cta,
+  /* Path-D inbox / thread / header surfaces */
+  .gl-reel-card,
+  .gl-thread-reply,
+  .gl-rail-toggle-chev,
+  .gl-section-tab,
+  .gl-thread-summarize,
+  .gl-thread-back,
+  .gl-thread-more,
+  .gl-section-help,
+  .gl-rail-task,
+  .gl-briefing-need,
+  .gl-mode-toggle-btn {
     animation: none !important;
     transition: none !important;
+  }
+  /* transition:none alone leaves the hover "lift" — it just snaps instead of
+     easing. Kill the translate too so nothing moves; the border/background/
+     shadow change on these :hover states is the non-motion cue. The rail
+     chevron keeps its static .open rotation (a state indicator, not motion);
+     only its transition is removed above. */
+  .gl-reel-card:hover,
+  .gl-thread-reply:hover,
+  .gl-thread-reply:active,
+  .gl-tc-empty-cta:hover,
+  .gl-tc-empty-cta:active {
+    transform: none !important;
   }
 }
