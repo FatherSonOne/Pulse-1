@@ -30,7 +30,7 @@ console.log('✓ D Inbox (Briefing + Reel) default dark');
 
 await setSub('Thread');
 await page.screenshot({ path: '_shots/glf-02-D-thread-tasks-default.png' });
-console.log('✓ D Thread (Bubbles + task rail) default dark');
+console.log('✓ D Thread (Stacked cockpit cards + task rail) default dark');
 
 await setSub('Inbox');
 await ensureTheme('light');
