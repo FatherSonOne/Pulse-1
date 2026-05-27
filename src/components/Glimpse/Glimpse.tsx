@@ -491,6 +491,8 @@ const GlimpseTaskRail: React.FC<{
   isSummarizing: boolean;
   onRunSummary: () => void;
   onReply: () => void;
+  /** Scroll the origin glimpse card into view and flash it. */
+  onJumpToMessage: (messageId: string) => void;
   open: boolean;
 }> = ({
   tasks,
@@ -501,6 +503,7 @@ const GlimpseTaskRail: React.FC<{
   isSummarizing,
   onRunSummary,
   onReply,
+  onJumpToMessage,
   open,
 }) => {
   const handleAdd = async (t: RailTask) => {
@@ -528,12 +531,16 @@ const GlimpseTaskRail: React.FC<{
             {tasks.map((t, i) => {
               const converted = !!convertedActionItems.get(t.message.id)?.has(t.text.trim());
               return (
-                <li key={i}>
+                // Split affordance: the checkbox converts (unchanged behavior);
+                // the label jumps to the origin glimpse. Keeping them separate
+                // means converting a task doesn't yank the thread scroll.
+                <li key={i} className="gl-rail-task-row">
                   <button
                     type="button"
-                    className={`gl-rail-task ${converted ? 'converted' : ''}`}
+                    className={`gl-rail-task-check ${converted ? 'converted' : ''}`}
                     onClick={() => handleAdd(t)}
                     aria-pressed={converted}
+                    aria-label={converted ? `Already in tasks: ${t.text}` : `Add to Pulse tasks: ${t.text}`}
                     title={converted ? 'Already in tasks' : 'Add to Pulse tasks'}
                   >
                     {converted ? (
@@ -541,7 +548,14 @@ const GlimpseTaskRail: React.FC<{
                     ) : (
                       <Square className="gl-rail-task-icon" />
                     )}
-                    <span>{t.text}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`gl-rail-task-text ${converted ? 'converted' : ''}`}
+                    onClick={() => onJumpToMessage(t.message.id)}
+                    title="Jump to the glimpse this came from"
+                  >
+                    {t.text}
                   </button>
                 </li>
               );
@@ -668,7 +682,7 @@ const MessageBubble: React.FC<{
   };
 
   return (
-    <article className="gl-card" data-own={isOwn} data-state={cardState}>
+    <article id={`gl-msg-${message.id}`} className="gl-card" data-own={isOwn} data-state={cardState}>
       {/* Selection checkbox */}
       {isSelectionMode && (
         <button
@@ -1625,6 +1639,22 @@ const Glimpse: React.FC<GlimpseProps> = ({
     selectAll(allItems);
   };
 
+  // Item 2: jump from a rail task to the glimpse card it was extracted from.
+  // Scrolls the origin card into view and flashes a transient ring. Under
+  // reduced motion the scroll is instant and .gl-card--flash renders a static
+  // ring instead of the pulse (handled in Glimpse.css).
+  const jumpToMessage = (messageId: string) => {
+    const el = document.getElementById(`gl-msg-${messageId}`);
+    if (!el) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+    // Restart the animation if the same card is targeted again.
+    el.classList.remove('gl-card--flash');
+    void el.offsetWidth; // force reflow
+    el.classList.add('gl-card--flash');
+    window.setTimeout(() => el.classList.remove('gl-card--flash'), 1300);
+  };
+
   // Phase 6: Keyboard Shortcuts (after handler functions are defined)
   useRelayKeyboardShortcuts({
     onToggleRecording: () => {
@@ -2104,6 +2134,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
                   isSummarizing={isGeneratingAI}
                   onRunSummary={handleSummarizeConversation}
                   onReply={() => { setCaptureMode('cam'); setViewMode('record'); }}
+                  onJumpToMessage={jumpToMessage}
                   open={railOpen}
                 />
               </div>

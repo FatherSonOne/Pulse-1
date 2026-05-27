@@ -1275,27 +1275,51 @@
   flex-direction: column;
   gap: 2px;
 }
-.gl-rail-task {
-  width: 100%;
+/* A rail task is a split affordance: a checkbox button that converts the item
+   to a Pulse task (unchanged behavior), and a text button that jumps to the
+   glimpse it was extracted from. Splitting them keeps a convert click from
+   yanking the thread scroll. */
+.gl-rail-task-row {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 6px;
+  gap: 2px;
+  border-radius: 6px;
+}
+.gl-rail-task-check,
+.gl-rail-task-text {
   border: none;
   background: transparent;
   color: var(--gl-ink);
   font-family: var(--gl-sans);
   font-size: 12.5px;
   line-height: 1.4;
-  text-align: left;
   cursor: pointer;
   border-radius: 6px;
   transition: background var(--gl-fast) var(--gl-ease),
               color var(--gl-fast) var(--gl-ease);
 }
-.gl-rail-task:hover { background: var(--gl-surface-soft); color: var(--gl-rose-deep); }
-.video-vox-mode.dark .gl-rail-task:hover { color: var(--gl-rose-bright); }
-.gl-rail-task:focus-visible { outline: 2px solid var(--gl-rose); outline-offset: 1px; }
+.gl-rail-task-check {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-shrink: 0;
+  /* WCAG 2.5.8 (Target Size, Minimum) — keep the tap target ≥ 24×24. */
+  min-width: 24px;
+  min-height: 24px;
+  padding: 5px 4px;
+}
+.gl-rail-task-text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 6px 6px 6px 2px;
+}
+.gl-rail-task-check:hover,
+.gl-rail-task-text:hover { background: var(--gl-surface-soft); color: var(--gl-rose-deep); }
+.video-vox-mode.dark .gl-rail-task-check:hover,
+.video-vox-mode.dark .gl-rail-task-text:hover { color: var(--gl-rose-bright); }
+.gl-rail-task-check:focus-visible,
+.gl-rail-task-text:focus-visible { outline: 2px solid var(--gl-rose); outline-offset: 1px; }
 .gl-rail-task-icon {
   width: 14px;
   height: 14px;
@@ -1303,9 +1327,23 @@
   margin-top: 1px;
   color: var(--gl-rose);
 }
-.gl-rail-task.converted { color: var(--gl-ink-fog); }
-.gl-rail-task.converted span { text-decoration: line-through; }
-.gl-rail-task.converted .gl-rail-task-icon { color: var(--gl-status-decided); }
+.gl-rail-task-check.converted .gl-rail-task-icon { color: var(--gl-status-decided); }
+.gl-rail-task-text.converted { color: var(--gl-ink-fog); text-decoration: line-through; }
+
+/* Transient highlight when a rail task jumps to its origin glimpse card. Coral
+   is earned here: the ring ties an AI-extracted task to its source message (AI
+   provenance), matching the rail's coral task icons. The pulse is killed under
+   reduced motion (see the reduced-motion block) and replaced by a static ring
+   for the ~1.3s the class stays applied. */
+.gl-card--flash {
+  --gl-flash-glow: var(--gl-accent-soft-light);
+  animation: gl-card-flash 1.2s var(--gl-ease);
+}
+.video-vox-mode.dark .gl-card--flash { --gl-flash-glow: var(--gl-accent-soft-dark); }
+@keyframes gl-card-flash {
+  0%, 55% { box-shadow: 0 0 0 2px var(--gl-rose), 0 0 0 7px var(--gl-flash-glow); }
+  100%    { box-shadow: 0 0 0 2px transparent, 0 0 0 7px transparent; }
+}
 .gl-rail-empty {
   margin: 0;
   font-size: 12px;
@@ -3251,9 +3289,11 @@
   .gl-thread-back,
   .gl-thread-more,
   .gl-section-help,
-  .gl-rail-task,
+  .gl-rail-task-check,
+  .gl-rail-task-text,
   .gl-briefing-need,
-  .gl-mode-toggle-btn {
+  .gl-mode-toggle-btn,
+  .gl-card--flash {
     animation: none !important;
     transition: none !important;
   }
@@ -3268,5 +3308,10 @@
   .gl-tc-empty-cta:hover,
   .gl-tc-empty-cta:active {
     transform: none !important;
+  }
+  /* The jump-to-source flash pulse is disabled above; show a static coral ring
+     instead so the cue is still visible for the ~1.3s the class is applied. */
+  .gl-card--flash {
+    box-shadow: 0 0 0 2px var(--gl-rose), 0 0 0 7px var(--gl-flash-glow) !important;
   }
 }
