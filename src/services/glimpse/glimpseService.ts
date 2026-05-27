@@ -64,22 +64,58 @@ class GlimpseService {
 
     try {
       // Use the stored function to get or create conversation
-      const { data, error } = await supabase.rpc('get_or_create_video_vox_conversation', {
+      const { data: conversationId, error } = await supabase.rpc('get_or_create_video_vox_conversation', {
         p_participant_ids: allParticipants,
         p_created_by: userId
       });
 
-      if (error) {
+      if (error || !conversationId) {
         console.error('Error getting/creating conversation:', error);
         return null;
       }
 
-      // Fetch the full conversation with participants
-      return await this.getConversation(data);
+      // Enrich with participants + last-message embed. This read is NOT critical
+      // to the caller's hot path — the send flow uses only `conversation.id`, and
+      // list views refresh() immediately after creating — so a transient failure
+      // here (e.g. a 503 under load) must not discard the conversation the RPC
+      // just created. Fall back to a minimal record so the send can proceed.
+      const enriched = await this.getConversation(conversationId);
+      if (enriched) return enriched;
+
+      console.warn(
+        '[glimpse] conversation enrichment read failed after create; returning minimal record so the send can proceed',
+      );
+      return this.buildMinimalConversation(conversationId, allParticipants, userId);
     } catch (error) {
       console.error('Error in getOrCreateConversation:', error);
       return null;
     }
+  }
+
+  /**
+   * Build a minimal GlimpseConversation from just the id + participant ids.
+   * Fallback for when the post-create enrichment read fails transiently: the
+   * send path only needs `id`, and conversation lists refresh right after, so
+   * the missing embed / participant detail is backfilled on the next read.
+   */
+  private buildMinimalConversation(
+    id: string,
+    participantIds: string[],
+    createdBy: string,
+  ): GlimpseConversation {
+    const now = new Date();
+    return {
+      id,
+      participantIds,
+      participants: participantIds.map((pid) => ({
+        id: pid,
+        name: '',
+        avatarColor: '#6B7280',
+      })),
+      createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
   }
 
   /**
@@ -297,7 +333,16 @@ class GlimpseService {
         resolve({ status: 0, error: new Error('Upload aborted') });
       };
 
+      // A request with no ceiling can hang indefinitely under server saturation
+      // (onload/onerror never fire), which freezes the send UI on a stuck
+      // progress bar forever. Cap each attempt and surface a retryable status so
+      // uploadWithProgress can back off and ultimately fail cleanly.
+      xhr.ontimeout = () => {
+        resolve({ status: 408, error: new Error('Upload timed out') });
+      };
+
       xhr.open('POST', url, true);
+      xhr.timeout = 60_000; // per-attempt ceiling (must be set after open())
       xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`);
       xhr.setRequestHeader('apikey', supabaseKey);
       xhr.setRequestHeader('Content-Type', contentType);
@@ -1345,22 +1390,33 @@ Return as JSON.`,
   ): Promise<void> {
     const userId = await this.ensureUserId();
 
-    for (const recipientId of recipientIds) {
-      if (recipientId === userId) continue;
+    const rows = recipientIds
+      .filter((recipientId) => recipientId !== userId)
+      .map((recipientId) => ({
+        user_id: recipientId,
+        type: 'new_vox',
+        title: `${senderName} sent you a video`,
+        body: 'Tap to watch',
+        related_vox_id: messageId,
+        sender_id: userId,
+        sender_name: senderName,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      }));
 
-      await supabase
-        .from('vox_notifications')
-        .insert([{
-          user_id: recipientId,
-          type: 'new_vox',
-          title: `${senderName} sent you a video`,
-          body: 'Tap to watch',
-          related_vox_id: messageId,
-          sender_id: userId,
-          sender_name: senderName,
-          is_read: false,
-          created_at: new Date().toISOString()
-        }]);
+    if (rows.length === 0) return;
+
+    // Best-effort: by the time we get here the message is already persisted, so
+    // a notification failure must NOT bubble up — otherwise a successful send
+    // gets reported as failed and the user re-sends, producing a duplicate.
+    // Batched into one insert (was N sequential round-trips) and fully swallowed.
+    try {
+      const { error } = await supabase.from('vox_notifications').insert(rows);
+      if (error) {
+        console.warn('[glimpse] notifyRecipients insert failed (non-fatal):', error.message);
+      }
+    } catch (err) {
+      console.warn('[glimpse] notifyRecipients threw (non-fatal):', err);
     }
   }
 
