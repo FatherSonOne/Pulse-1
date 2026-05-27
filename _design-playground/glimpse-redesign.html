@@ -1,0 +1,1324 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Glimpse Redesign — Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  /* ─── Pulse design tokens (mirrors src/styles/pulse-tokens.css + Glimpse.css) ─── */
+  :root {
+    --pulse-rose: #f43f5e;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-bright: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+    --pulse-tone-positive: #10b981;
+    --pulse-tone-warning: #f59e0b;
+    --pulse-tone-info: #3b82f6;
+    --pulse-tone-neutral: #6b7280;
+    --pulse-canvas: #f8f8f8;
+    --pulse-canvas-soft: #f2f2f2;
+    --pulse-surface: #ffffff;
+    --pulse-surface-raised: #f2f2f2;
+    --pulse-border: rgba(0, 0, 0, 0.08);
+    --pulse-border-strong: rgba(0, 0, 0, 0.16);
+    --pulse-ink: #0f0f0f;
+    --pulse-ink-2: #52525b;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral: var(--pulse-rose);
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 35%, black 65%);
+    --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-rose) 12%, transparent);
+    --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-rose) 8%, transparent);
+    --pulse-font: 'Inter', system-ui, sans-serif;
+    --pulse-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --pulse-sidebar-bg: #ffffff;
+    --pulse-shadow-main: 0 6px 24px rgba(0, 0, 0, 0.08);
+    --gl-letterbox: #0b0b0d;
+  }
+  html[data-theme='dark'] {
+    --pulse-canvas: #000000;
+    --pulse-canvas-soft: #080808;
+    --pulse-surface: rgba(255, 255, 255, 0.03);
+    --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+    --pulse-border: rgba(255, 255, 255, 0.06);
+    --pulse-border-strong: rgba(255, 255, 255, 0.10);
+    --pulse-ink: #fafafa;
+    --pulse-ink-2: #b4b4b8;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 60%, white 40%);
+    --pulse-rose: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.14);
+    --pulse-sidebar-bg: #0a0a0b;
+    --pulse-shadow-main: 0 10px 40px rgba(0, 0, 0, 0.4);
+    --gl-letterbox: #000000;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--pulse-font);
+    background: var(--pulse-canvas);
+    color: var(--pulse-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .pulse-bg { background: var(--pulse-canvas); }
+  .pulse-bg-soft { background: var(--pulse-canvas-soft); }
+  .pulse-surface { background: var(--pulse-surface); }
+  .pulse-surface-raised { background: var(--pulse-surface-raised); }
+  .pulse-ink-color { color: var(--pulse-ink); }
+  .pulse-ink-2-color { color: var(--pulse-ink-2); }
+  .pulse-ink-3-color { color: var(--pulse-ink-3); }
+  .pulse-border-color { border-color: var(--pulse-border); }
+  .pulse-border-strong-color { border-color: var(--pulse-border-strong); }
+  .pulse-coral-fg-color { color: var(--pulse-coral-fg); }
+  .pulse-coral-bg-color { background: var(--pulse-coral-bg-12); }
+  .pulse-rose-color { color: var(--pulse-rose); }
+  .pulse-rose-bg-color { background: var(--pulse-rose); }
+  .pulse-rose-bg-soft-color { background: var(--pulse-rose-soft); }
+  .pulse-rose-border { border-color: var(--pulse-rose); }
+  .font-mono-pulse { font-family: var(--pulse-mono); font-feature-settings: 'tnum' 1; }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  /* ─── Scrollbars ─── */
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--pulse-border-strong); border-radius: 3px; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--pulse-ink-3); }
+
+  /* ─── Letter-spacing helpers ─── */
+  .tracking-tight-mono { letter-spacing: 0.06em; }
+  .tracking-wide-mono { letter-spacing: 0.16em; }
+
+  /* ─── Motion ─── */
+  @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+  .pulse-dot-anim { animation: pulseDot 1.4s ease-in-out infinite; }
+  @keyframes recBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .rec-blink { animation: recBlink 1s ease-in-out infinite; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 240ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes skel { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+  .skel-bar { background: var(--pulse-surface-raised); border-radius: 3px; animation: skel 1.6s ease-in-out infinite; }
+  @keyframes stagePulse {
+    0%, 100% { box-shadow: 0 0 0 1px var(--pulse-rose), 0 4px 24px var(--pulse-rose-glow); }
+    50% { box-shadow: 0 0 0 1px var(--pulse-rose), 0 8px 38px var(--pulse-rose-glow); }
+  }
+  .stage-recording { box-shadow: 0 0 0 1px var(--pulse-rose), 0 4px 24px var(--pulse-rose-glow); animation: stagePulse 2.4s ease-in-out infinite; border-color: var(--pulse-rose) !important; }
+
+  /* ─── Poster (honest video-frame placeholder — no fake imagery) ─── */
+  .gl-poster { position: relative; background-color: var(--gl-letterbox); overflow: hidden; }
+  .gl-poster::after {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(120% 90% at 78% 8%, rgba(255,255,255,0.10), transparent 55%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 3px);
+    pointer-events: none;
+  }
+
+  /* ─── Selectable / interactive rows ─── */
+  .selectable-row { transition: background 160ms ease; }
+  .selectable-row:hover { background: var(--pulse-surface-raised); }
+  .selectable-row[data-active='true'] { background: var(--pulse-coral-bg-08); }
+  .reel-card { transition: transform 220ms cubic-bezier(0.16,1,0.3,1), box-shadow 220ms, border-color 220ms; }
+  .reel-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.22); border-color: var(--pulse-border-strong); }
+  html[data-theme='light'] .reel-card:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.10); }
+
+  /* ─── AI provenance chip ─── */
+  .ai-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px;
+    background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+    font-family: var(--pulse-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; line-height: 1;
+  }
+  .ai-chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+  .ai-chip.pending { background: rgba(245, 158, 11, 0.12); color: #b45309; }
+  html[data-theme='dark'] .ai-chip.pending { color: #fbbf24; }
+  .ai-chip.failed { background: var(--pulse-surface-raised); color: var(--pulse-ink-3); }
+  .ai-chip.muted { background: var(--pulse-surface-raised); color: var(--pulse-ink-2); }
+
+  /* ─── Playground chrome ─── */
+  .pg-bar { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); }
+  html[data-theme='light'] .pg-bar { background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent); }
+  .pg-pill { transition: background 180ms, color 180ms; }
+  .pg-pill[data-active='true'] { background: var(--pulse-rose); color: white; }
+  .pg-pill:not([data-active='true']):hover { background: var(--pulse-surface-raised); }
+</style>
+</head>
+<body class="overflow-hidden">
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect } = React;
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED MOCK DATA
+   Seeded from the Glimpse screenshot (Frank Richard Messana · 0:04 · 5d ·
+   "The speaker greets and then appears to hesitate…") + plausible content
+   for a real inbox. Fields mirror GlimpseMessage / GlimpseConversation.
+   ════════════════════════════════════════════════════════════════════════ */
+
+const GLIMPSES = [
+  { id: 'g1', sender: 'Frank Richard Messana', dur: '0:04', secs: 4, ago: '5d', unread: true, kind: 'glimpse',
+    summary: "The speaker greets and then appears to hesitate, repeating the word 'what' before concluding their thought.",
+    caption: null, actions: 0, topics: [], status: 'delivered', from: 'me' },
+  { id: 'g2', sender: 'Maria Schaefer', dur: '1:12', secs: 72, ago: '2h', unread: true, kind: 'glimpse',
+    summary: 'Walks through the Q2 baseline numbers and asks you to drop them into slide 4 before the Friday review.',
+    caption: 'numbers for slide 4 👇', actions: 2, topics: ['Q2 baseline', 'slide 4', 'Friday review'], status: 'viewed' },
+  { id: 'g3', sender: 'Jaylen Park', dur: '3:41', secs: 221, ago: '4h', unread: false, kind: 'walkthrough',
+    summary: 'Screen walkthrough of the new onboarding flow — flags two broken empty-states and proposes a single coral CTA instead of two grey buttons.',
+    caption: null, actions: 3, topics: ['onboarding', 'empty states', 'CTA'], status: 'viewed' },
+  { id: 'g4', sender: 'Theo Bridgewater', dur: '0:22', secs: 22, ago: '1d', unread: false, kind: 'glimpse',
+    summary: null, processing: true, caption: null, actions: 0, topics: [], status: 'viewed' },
+  { id: 'g5', sender: 'Sarah Chen', dur: '0:48', secs: 48, ago: '2d', unread: false, kind: 'glimpse',
+    summary: 'Confirms legal signed off on option B; one disclosure tweak on page 2, then it ships.',
+    caption: null, actions: 1, topics: ['legal', 'option B'], status: 'viewed' },
+  { id: 'g6', sender: 'Design pod', dur: '2:05', secs: 125, ago: '3d', unread: false, kind: 'group', members: 3,
+    summary: 'Three reactions to the new card spec; consensus to drop the left-border accent and keep coral for AI surfaces only.',
+    caption: null, actions: 1, topics: ['card spec', 'coral budget'], status: 'viewed' },
+];
+
+const THREAD = [
+  { id: 't1', who: 'them', sender: 'Frank Richard Messana', dur: '0:04', secs: 4, when: 'Mon · 9:14 AM',
+    summary: "The speaker greets and then appears to hesitate, repeating the word 'what' before concluding their thought.",
+    caption: null, transcript: "Hey — uh, what… what was I gonna say. Okay. Talk later.", actions: [], topics: [], reactions: { '😂': 1 }, status: 'viewed', replies: 0 },
+  { id: 't2', who: 'me', sender: 'You', dur: '0:11', secs: 11, when: 'Mon · 9:15 AM',
+    summary: null, caption: 'no worries — ping me when it comes back', transcript: "No worries, ping me when it comes back to you. I'll be around all afternoon.", actions: [], topics: [], reactions: {}, status: 'viewed', replies: 0 },
+  { id: 't3', who: 'them', sender: 'Frank Richard Messana', dur: '1:12', secs: 72, when: 'Tue · 11:02 AM',
+    summary: 'Recaps the pricing call: option B is approved, Maria owns the Friday follow-up, and asks you to add the Q2 baseline to slide 4.',
+    caption: null, transcript: "So quick recap from the call — three things landed. Pricing option B is approved. Maria's taking the Friday follow-up. And can you add the Q2 baseline to slide 4 before the review? Thanks.",
+    actions: ['Add Q2 baseline to slide 4', 'Confirm Friday follow-up owner'], topics: ['pricing', 'option B', 'slide 4', 'Friday review'], reactions: { '👍': 2, '🔥': 1 }, status: 'viewed', replies: 1 },
+  { id: 't4', who: 'me', sender: 'You', dur: '0:09', secs: 9, when: 'Tue · 11:14 AM',
+    summary: null, caption: 'on it — slide 4 by lunch', transcript: "On it. I'll pull the Q2 numbers and have slide 4 done before lunch.", actions: [], topics: [], reactions: {}, status: 'delivered', replies: 0 },
+];
+
+const CONTACTS = [
+  { id: 'c1', name: 'Frank Richard Messana', handle: 'frankie', online: true },
+  { id: 'c2', name: 'Maria Schaefer', handle: 'maria', online: true },
+  { id: 'c3', name: 'Jaylen Park', handle: 'jaylen', online: false },
+  { id: 'c4', name: 'Theo Bridgewater', handle: 'theo', online: false },
+  { id: 'c5', name: 'Sarah Chen', handle: 'sarah', online: false },
+  { id: 'c6', name: 'Devon Hill', handle: 'devon', online: false },
+];
+
+const SMART_REPLIES = [
+  'On it — slide 4 by lunch.',
+  'Who owns the Friday follow-up?',
+  'Can you send the raw Q2 numbers?',
+];
+
+const REPLY_DRAFT = "Thanks for the recap. I'll add the Q2 baseline to slide 4 this morning and confirm the numbers against the dashboard before the review. On the Friday follow-up — happy to take it if Maria's stretched, just let me know. Sending the updated deck by lunch.";
+
+const CONV_SUMMARY = {
+  headline: '4 glimpses · 1 decision · 2 open tasks',
+  bullets: [
+    'Pricing option B is approved — legal cleared it with one page-2 disclosure tweak.',
+    'You committed to slide 4 (Q2 baseline) before the Friday review.',
+    'Friday follow-up owner is unconfirmed — Maria tentatively, pending your reply.',
+  ],
+  decisions: ['Ship pricing option B'],
+  tasks: ['Add Q2 baseline to slide 4', 'Confirm Friday follow-up owner'],
+};
+
+const SHORTCUTS = [
+  { keys: ['Space'], label: 'Play / pause the focused glimpse' },
+  { keys: ['R'], label: 'Record a reply' },
+  { keys: ['S'], label: 'Summarize conversation' },
+  { keys: ['J', 'K'], label: 'Next / previous in inbox' },
+  { keys: ['B'], label: 'Bookmark glimpse' },
+  { keys: ['E'], label: 'Archive' },
+  { keys: ['?'], label: 'Show this help' },
+  { keys: ['Esc'], label: 'Back / close overlay' },
+];
+
+const REACTIONS = ['❤️', '👍', '😂', '😢', '🔥'];
+
+/* ════════════════════════════════════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════════════════════════════════════ */
+
+const AVATAR_PALETTE = ['#6366f1','#8b5cf6','#d946ef','#ec4899','#0ea5e9','#06b6d4','#14b8a6','#64748b'];
+function colorForId(id = '') {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+}
+function initials(name = '') {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || '?';
+}
+/** Deterministic poster gradient so the same id always renders the same frame. */
+function posterStyle(seed = '') {
+  const a = colorForId(seed);
+  const b = colorForId(seed + '~');
+  return { backgroundImage: `linear-gradient(150deg, ${a}40, transparent 62%), linear-gradient(330deg, ${b}33, transparent 58%)` };
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ICON SET (inline SVG — icons, never imagery)
+   ════════════════════════════════════════════════════════════════════════ */
+
+function Icon({ name, className = 'w-4 h-4' }) {
+  const c = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  switch (name) {
+    case 'play':     return <svg viewBox="0 0 24 24" className={className} {...c}><polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none"/></svg>;
+    case 'pause':    return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="6" y="5" width="4" height="14" fill="currentColor" stroke="none"/><rect x="14" y="5" width="4" height="14" fill="currentColor" stroke="none"/></svg>;
+    case 'video':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="m23 7-7 5 7 5V7Z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>;
+    case 'monitor':  return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>;
+    case 'mic':      return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>;
+    case 'settings': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06A2 2 0 1 1 4.14 16.93l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9.4a1.7 1.7 0 0 0-.34-1.87l-.06-.06A2 2 0 1 1 7.07 4.64l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1.03Z"/></svg>;
+    case 'check':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="20 6 9 17 4 12"/></svg>;
+    case 'checkCheck': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="m1 12 4 4 8-8"/><path d="m11 16 4 4L23 12"/></svg>;
+    case 'reply':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>;
+    case 'search':   return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+    case 'inbox':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>;
+    case 'user':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>;
+    case 'users':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+    case 'edit':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>;
+    case 'live':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="7"/></svg>;
+    case 'bookmark': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"/></svg>;
+    case 'chevR':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 6 15 12 9 18"/></svg>;
+    case 'chevD':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="6 9 12 15 18 9"/></svg>;
+    case 'arrowLeft':return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>;
+    case 'sparkles': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>;
+    case 'sun':      return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>;
+    case 'moon':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>;
+    case 'dot':      return <svg viewBox="0 0 24 24" className={className}><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>;
+    case 'plus':     return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+    case 'x':        return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+    case 'more':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/></svg>;
+    case 'trash':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+    case 'download': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+    case 'archive':  return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>;
+    case 'flip':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>;
+    case 'rotate':   return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>;
+    case 'eye':      return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>;
+    case 'send':     return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
+    case 'clock':    return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>;
+    case 'gauge':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="m13.4 10.6 3.6-3.6"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>;
+    case 'film':     return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M7 3v18M17 3v18M2 9h5M2 15h5M17 9h5M17 15h5"/></svg>;
+    case 'list':     return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3.5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="3.5" cy="18" r="1" fill="currentColor" stroke="none"/></svg>;
+    case 'grid':     return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>;
+    case 'logo':     return <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h3l2-7 4 14 2-7h7"/></svg>;
+    case 'square':   return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="4" y="4" width="16" height="16" rx="2"/></svg>;
+    case 'help':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4"/><line x1="12" y1="17" x2="12" y2="17"/></svg>;
+    case 'task':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>;
+    default:         return null;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED PRIMITIVES
+   ════════════════════════════════════════════════════════════════════════ */
+
+function Avatar({ name, size = 36, group }) {
+  return (
+    <div className="rounded-full flex items-center justify-center text-white font-semibold shrink-0"
+      style={{ width: size, height: size, fontSize: size * 0.34, background: colorForId(name) }}>
+      {group ? '+' + (group) : initials(name)}
+    </div>
+  );
+}
+
+function Label({ children, className = '' }) {
+  return <span className={`font-mono-pulse tracking-wide-mono uppercase ${className}`}>{children}</span>;
+}
+
+/** Honest video poster — gradient frame + play overlay + duration. No fake imagery. */
+function Poster({ seed, dur, ratio = '16/9', kind, className = '', big }) {
+  return (
+    <div className={`gl-poster rounded-lg ${className}`} style={{ ...posterStyle(seed), aspectRatio: ratio }}>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className={`rounded-full flex items-center justify-center text-white ${big ? 'w-14 h-14' : 'w-9 h-9'}`}
+          style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}>
+          <Icon name="play" className={big ? 'w-6 h-6' : 'w-4 h-4'}/>
+        </div>
+      </div>
+      {kind === 'walkthrough' && (
+        <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-tight-mono text-white" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
+          <Icon name="monitor" className="w-3 h-3"/>WALK
+        </span>
+      )}
+      {dur && (
+        <span className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-[10px] font-mono-pulse tnum text-white" style={{ background: 'rgba(0,0,0,0.65)' }}>{dur}</span>
+      )}
+    </div>
+  );
+}
+
+function AiChip({ variant = 'summary', children }) {
+  const cls = variant === 'pending' ? 'ai-chip pending' : variant === 'failed' ? 'ai-chip failed' : variant === 'muted' ? 'ai-chip muted' : 'ai-chip';
+  return <span className={cls}>{children}</span>;
+}
+
+function StatusIcon({ status }) {
+  if (status === 'viewed') return <span className="pulse-rose-color inline-flex"><Icon name="eye" className="w-3.5 h-3.5"/></span>;
+  if (status === 'delivered') return <span className="pulse-ink-3-color inline-flex"><Icon name="checkCheck" className="w-3.5 h-3.5"/></span>;
+  return <span className="pulse-ink-3-color inline-flex"><Icon name="check" className="w-3.5 h-3.5"/></span>;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PULSE SIDEBAR — the screenshot's left rail, Glimpse active
+   ════════════════════════════════════════════════════════════════════════ */
+
+function PulseSidebar({ theme, onToggleTheme }) {
+  const groups = [
+    { group: 'Overview',      rows: [{ icon: 'inbox', label: 'Dashboard' }] },
+    { group: 'Communication', rows: [
+        { icon: 'inbox',  label: 'Messages' },
+        { icon: 'inbox',  label: 'Email' },
+        { icon: 'live',   label: 'Relay' },
+        { icon: 'video',  label: 'Glimpse', active: true },
+      ] },
+    { group: 'Work & People', rows: [
+        { icon: 'inbox', label: 'Calendar' },
+        { icon: 'video', label: 'Meetings' },
+        { icon: 'user',  label: 'Contacts' },
+        { icon: 'check', label: 'Decisions & Tasks' },
+      ] },
+  ];
+  return (
+    <aside className="h-full w-[232px] shrink-0 flex flex-col border-r pulse-border-color" style={{ background: 'var(--pulse-sidebar-bg)' }}>
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center pulse-rose-bg-color text-white shrink-0"><Icon name="logo" className="w-5 h-5"/></div>
+        <div className="leading-tight">
+          <div className="text-lg font-semibold pulse-rose-color">Pulse</div>
+          <div className="text-[10px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">JCK</div>
+        </div>
+        <div className="ml-auto flex items-center gap-2 pulse-ink-3-color">
+          <button className="hover:pulse-ink-color"><Icon name="settings" className="w-4 h-4"/></button>
+        </div>
+      </div>
+      <div className="mx-3 mb-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--pulse-surface-raised)' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md pulse-rose-bg-color"/>
+          <span className="text-sm font-medium pulse-ink-color">My Workspace</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse pulse-coral-bg-color pulse-coral-fg-color tracking-tight-mono">OWNER</span>
+          <Icon name="chevD" className="w-3 h-3 pulse-ink-3-color"/>
+        </div>
+      </div>
+      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        {groups.map(grp => (
+          <div key={grp.group} className="mb-3">
+            <div className="flex items-center gap-2 px-2 py-1.5 text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color">
+              <Icon name="dot" className="w-1.5 h-1.5"/><span>{grp.group.toUpperCase()}</span>
+            </div>
+            {grp.rows.map(r => (
+              <button key={r.label} className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition ${r.active ? 'pulse-rose-color pulse-rose-bg-soft-color font-medium' : 'pulse-ink-2-color hover:pulse-ink-color'}`}>
+                <Icon name={r.icon} className="w-4 h-4 opacity-90"/><span>{r.label}</span>
+              </button>
+            ))}
+          </div>
+        ))}
+      </nav>
+      <div className="px-3 pb-2">
+        <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl pulse-rose-bg-soft-color">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="sparkles" className="w-4 h-4"/></div>
+            <span className="text-sm font-medium pulse-rose-color">Pulse AI</span>
+          </div>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono-pulse pulse-ink-3-color border pulse-border-color">Ctrl·/</span>
+        </button>
+      </div>
+      <div className="border-t pulse-border-color px-3 py-2 space-y-1">
+        <button onClick={onToggleTheme} className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm pulse-ink-2-color hover:pulse-ink-color">
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4"/><span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+        </button>
+        <div className="mt-2 pt-2 border-t pulse-border-color flex items-center gap-2.5 px-2 py-1">
+          <Avatar name="Frank Richard Messana" size={28}/>
+          <div className="leading-tight">
+            <div className="text-xs font-medium pulse-ink-color">Frank Messana</div>
+            <div className="text-[10px] pulse-ink-3-color truncate max-w-[140px]">jehovahsneaky83@gmail.com</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SECTION HEADER + SUB-NAV + ABOUT BANNER
+   ════════════════════════════════════════════════════════════════════════ */
+
+const SUBSECTIONS = [
+  { id: 'inbox',    label: 'Inbox',    icon: 'list' },
+  { id: 'thread',   label: 'Thread',   icon: 'reply' },
+  { id: 'record',   label: 'Record',   icon: 'video' },
+  { id: 'search',   label: 'Search',   icon: 'search' },
+  { id: 'elements', label: 'Elements', icon: 'grid' },
+];
+
+function SectionHeader({ subsection, setSubsection, signals }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-2.5 border-b pulse-border-color shrink-0">
+      <div className="flex items-center gap-2 pr-2">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center pulse-rose-bg-soft-color pulse-rose-color"><Icon name="video" className="w-4 h-4"/></div>
+        <span className="text-[15px] font-semibold pulse-ink-color">Glimpse</span>
+      </div>
+      <div className="flex items-center gap-1 ml-1">
+        {SUBSECTIONS.map(s => (
+          <button key={s.id} onClick={() => setSubsection(s.id)}
+            className={`px-2.5 py-1.5 rounded-md text-[11px] font-mono-pulse uppercase tracking-wide-mono transition flex items-center gap-1.5 ${subsection === s.id ? 'pulse-rose-bg-soft-color pulse-rose-color' : 'pulse-ink-3-color hover:pulse-surface-raised'}`}>
+            <Icon name={s.icon} className="w-3.5 h-3.5"/>{s.label}
+          </button>
+        ))}
+      </div>
+      <div className="ml-auto flex items-center gap-2">
+        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded font-mono-pulse text-[10px] tracking-wide-mono pulse-surface-raised">
+          <span className="pulse-ink-3-color">{signals} SIGNALS</span>
+          <span className="pulse-ink-3-color">·</span>
+          <span className="pulse-rose-color">2 UNREAD</span>
+        </span>
+        <button className="p-1.5 rounded-md pulse-ink-3-color hover:pulse-surface-raised"><Icon name="help" className="w-4 h-4"/></button>
+      </div>
+    </div>
+  );
+}
+
+function AboutPath({ tag, name, archetype, iaFix, vibe }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="mx-4 mt-3 rounded-lg border pulse-border-color overflow-hidden text-xs" style={{ background: 'var(--pulse-surface)' }}>
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-2 px-3 py-2 pulse-ink-2-color">
+        <Icon name="sparkles" className="w-3.5 h-3.5 pulse-rose-color"/>
+        <span className="font-mono-pulse tracking-wide-mono pulse-rose-color">PATH {tag}</span>
+        <span className="pulse-ink-color font-medium">{name}</span>
+        <span className="ml-auto pulse-ink-3-color">{open ? 'hide' : 'show'} notes</span>
+        <Icon name={open ? 'chevD' : 'chevR'} className="w-3.5 h-3.5 pulse-ink-3-color"/>
+      </button>
+      {open && (
+        <div className="grid grid-cols-3 gap-3 px-3 pb-3 border-t pulse-border-color pt-3">
+          <div><div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-1">ARCHETYPE</div><div className="pulse-ink-color leading-snug">{archetype}</div></div>
+          <div><div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-1">SIGNATURE</div><div className="pulse-ink-color leading-snug">{iaFix}</div></div>
+          <div><div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-1">CORAL BUDGET</div><div className="pulse-ink-color leading-snug">{vibe}</div></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH A — TRIAGE COCKPIT  (Refined · the screenshot at 95%)
+   Read-before-you-watch. Dense 5-column table, transcript peek, action
+   pill + Claude chip, mono length/when. Linear/Superhuman discipline.
+   ════════════════════════════════════════════════════════════════════════ */
+
+function AInbox({ go }) {
+  return (
+    <div className="h-full overflow-y-auto fade-up">
+      {/* column header */}
+      <div className="grid items-center gap-3 px-5 py-2.5 border-b pulse-border-color sticky top-0 z-10 pulse-bg-soft" style={{ gridTemplateColumns: '40px 1fr 120px 64px 56px' }}>
+        <span/>
+        <Label className="text-[10px] pulse-ink-3-color">From · Last</Label>
+        <Label className="text-[10px] pulse-ink-3-color">Actions</Label>
+        <Label className="text-[10px] pulse-ink-3-color text-right">Length</Label>
+        <Label className="text-[10px] pulse-ink-3-color text-right">When</Label>
+      </div>
+      {GLIMPSES.map(g => (
+        <button key={g.id} onClick={() => go('thread')} data-active={g.unread}
+          className="selectable-row w-full grid items-center gap-3 px-5 py-3.5 border-b pulse-border-color text-left"
+          style={{ gridTemplateColumns: '40px 1fr 120px 64px 56px' }}>
+          <Avatar name={g.sender} size={36} group={g.kind === 'group' ? g.members : null}/>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              {g.unread && <span className="w-1.5 h-1.5 rounded-full pulse-rose-bg-color shrink-0"/>}
+              <span className={`font-mono-pulse text-[11px] tracking-tight-mono uppercase truncate ${g.unread ? 'pulse-ink-color' : 'pulse-ink-2-color'}`}>{g.sender}</span>
+              {g.kind === 'walkthrough' && <span className="text-[9px] font-mono-pulse tracking-wide-mono pulse-ink-3-color shrink-0">· WALK</span>}
+              {g.kind === 'group' && <span className="text-[9px] font-mono-pulse tracking-wide-mono pulse-ink-3-color shrink-0">· GROUP</span>}
+            </div>
+            {g.processing ? (
+              <div className="flex flex-col gap-1.5 max-w-[80%]"><div className="skel-bar h-2 w-3/4"/><div className="skel-bar h-2 w-1/2"/></div>
+            ) : (
+              <p className={`text-[13px] leading-snug line-clamp-2 ${g.unread ? 'pulse-ink-color' : 'pulse-ink-2-color'}`} style={{ maxWidth: '58ch' }}>{g.summary}</p>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-1">
+            {g.actions > 0 && <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-tight-mono pulse-coral-bg-color pulse-coral-fg-color">{g.actions} {g.actions === 1 ? 'ACTION' : 'ACTIONS'}</span>}
+            {g.summary && !g.processing && <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-tight-mono pulse-surface-raised pulse-ink-2-color">Claude</span>}
+            {g.processing && <AiChip variant="pending">Transcribing</AiChip>}
+          </div>
+          <span className="text-right font-mono-pulse text-[12px] tnum pulse-ink-2-color">{g.dur}</span>
+          <span className="text-right font-mono-pulse text-[10px] tracking-tight-mono uppercase pulse-ink-3-color">{g.ago}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function GlimpseCard({ m }) {
+  const [open, setOpen] = useState(false);
+  const [watching, setWatching] = useState(false);
+  const isMe = m.who === 'me';
+  return (
+    <article className="rounded-xl border pulse-border-color p-4 flex flex-col gap-3" style={{ background: 'var(--pulse-surface)' }}>
+      {/* meta */}
+      <header className="flex items-center justify-between gap-2">
+        <span className={`font-mono-pulse text-[11px] tracking-tight-mono uppercase ${isMe ? 'pulse-ink-2-color' : 'pulse-ink-color'}`}>{isMe ? 'You' : m.sender} · GLIMPSE</span>
+        <div className="flex items-center gap-2">
+          <span className="font-mono-pulse text-[11px] tnum pulse-ink-3-color">{m.dur}</span>
+          {m.actions.length > 0 && <span className="font-mono-pulse text-[10px] tracking-tight-mono uppercase pulse-coral-fg-color">{m.actions.length} ACTION {m.actions.length === 1 ? 'ITEM' : 'ITEMS'}</span>}
+          <button className="p-1 rounded pulse-ink-3-color hover:pulse-surface-raised"><Icon name="more" className="w-4 h-4"/></button>
+        </div>
+      </header>
+      {/* summary / caption */}
+      {m.summary ? (
+        <div className="flex flex-col gap-2">
+          <AiChip>Claude · Summary</AiChip>
+          <p className="text-[15px] leading-relaxed pulse-ink-color" style={{ maxWidth: '62ch' }}>{m.summary}</p>
+          {m.caption && <p className="text-[13px] italic pulse-ink-2-color">“{m.caption}”</p>}
+        </div>
+      ) : m.caption ? (
+        <p className="text-[14px] pulse-ink-color">{m.caption}</p>
+      ) : null}
+      {/* action items */}
+      {m.actions.length > 0 && (
+        <ul className="flex flex-col gap-0.5">
+          {m.actions.map((a, i) => (
+            <li key={i}><button className="w-full flex items-start gap-2 px-2.5 py-2 rounded-lg text-[13px] text-left pulse-ink-color hover:pulse-rose-bg-soft-color hover:pulse-rose-color transition">
+              <span className="font-mono-pulse pulse-ink-3-color mt-px">▸</span>{a}</button></li>
+          ))}
+        </ul>
+      )}
+      {/* proof row */}
+      <div className="flex items-center gap-3">
+        <button onClick={() => setWatching(w => !w)} className="shrink-0">
+          <Poster seed={m.id} dur={m.dur} className="w-20" ratio="1/1"/>
+        </button>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button onClick={() => setWatching(w => !w)} className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition border ${watching ? 'pulse-rose-bg-soft-color pulse-rose-color pulse-rose-border' : 'pulse-border-color pulse-ink-2-color hover:pulse-surface-raised'}`}><Icon name={watching ? 'pause' : 'play'} className="w-3.5 h-3.5"/>{watching ? 'Hide' : 'Watch'}</button>
+          <button className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium border pulse-border-color pulse-ink-2-color hover:pulse-surface-raised transition"><Icon name="reply" className="w-3.5 h-3.5"/>Reply</button>
+          <button className="inline-flex items-center justify-center w-9 h-9 rounded-lg border pulse-border-color pulse-ink-2-color hover:pulse-surface-raised transition"><Icon name="bookmark" className="w-3.5 h-3.5"/></button>
+        </div>
+      </div>
+      {watching && (
+        <div className="rounded-xl overflow-hidden border pulse-border-color fade-up"><Poster seed={m.id} dur={m.dur} big className="w-full"/></div>
+      )}
+      {/* transcript disclosure */}
+      {m.transcript && (
+        <div className="border-t pulse-border-color pt-2.5">
+          <button onClick={() => setOpen(o => !o)} className="inline-flex items-center gap-1.5 font-mono-pulse text-[11px] tracking-wide-mono uppercase pulse-ink-2-color hover:pulse-rose-color transition">
+            <span className="text-base leading-none">{open ? '−' : '+'}</span> Full transcript
+            {m.topics.length > 0 && <span className="pulse-ink-3-color">· {m.topics.length} topics</span>}
+          </button>
+          {open && (
+            <div className="mt-2.5 fade-up">
+              {m.topics.length > 0 && <div className="flex flex-wrap gap-1.5 mb-2">{m.topics.map(t => <span key={t} className="px-1.5 py-0.5 rounded text-[10px] font-mono-pulse tracking-tight-mono uppercase pulse-surface-raised pulse-ink-2-color">{t}</span>)}</div>}
+              <p className="text-[13px] leading-relaxed pulse-ink-2-color" style={{ maxWidth: '62ch' }}>{m.transcript}</p>
+            </div>
+          )}
+        </div>
+      )}
+      {/* footer */}
+      <footer className="flex items-center justify-between pt-0.5">
+        <div className="flex items-center gap-2">
+          <span className="font-mono-pulse text-[10px] tnum pulse-ink-3-color">{m.when}</span>
+          {isMe && <StatusIcon status={m.status}/>}
+          {m.replies > 0 && <span className="font-mono-pulse text-[10px] tracking-tight-mono uppercase pulse-ink-3-color">{m.replies} reply</span>}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {Object.entries(m.reactions).map(([e, n]) => (
+            <span key={e} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[12px] border pulse-border-color pulse-surface-raised">{e}<span className="font-mono-pulse text-[10px] pulse-ink-2-color">{n}</span></span>
+          ))}
+          <button className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-dashed pulse-border-strong-color pulse-ink-3-color hover:pulse-rose-color transition"><Icon name="dot" className="w-2.5 h-2.5"/></button>
+        </div>
+      </footer>
+    </article>
+  );
+}
+
+function AThread() {
+  return (
+    <div className="h-full overflow-y-auto fade-up">
+      <div className="flex items-center gap-3 px-5 py-3 border-b pulse-border-color sticky top-0 z-10 pulse-bg-soft">
+        <button className="p-1.5 rounded-md pulse-ink-3-color hover:pulse-surface-raised"><Icon name="arrowLeft" className="w-4 h-4"/></button>
+        <Avatar name="Frank Richard Messana" size={32}/>
+        <div className="leading-tight">
+          <div className="text-sm font-medium pulse-ink-color">Frank Richard Messana</div>
+          <div className="text-[11px] pulse-ink-3-color">4 glimpses · transcript-first</div>
+        </div>
+        <div className="ml-auto flex items-center gap-1.5 pulse-ink-3-color">
+          <button className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-mono-pulse tracking-wide-mono pulse-rose-bg-soft-color pulse-rose-color"><Icon name="sparkles" className="w-3.5 h-3.5"/>SUMMARIZE</button>
+          <button className="p-1.5 rounded-md hover:pulse-surface-raised"><Icon name="more" className="w-4 h-4"/></button>
+        </div>
+      </div>
+      <div className="max-w-[720px] mx-auto px-4 py-5 flex flex-col gap-3">
+        {THREAD.map(m => <GlimpseCard key={m.id} m={m}/>)}
+        <button className="self-center mt-2 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl pulse-rose-bg-color text-white text-sm font-medium" style={{ boxShadow: '0 4px 12px var(--pulse-rose-glow)' }}><Icon name="video" className="w-4 h-4"/>Record reply</button>
+      </div>
+    </div>
+  );
+}
+
+function PathA({ subsection, setSubsection }) {
+  return (
+    <div className="h-full flex flex-col">
+      <SectionHeader subsection={subsection} setSubsection={setSubsection} signals={GLIMPSES.length}/>
+      {subsection === 'inbox' && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <AboutPath tag="A" name="Triage Cockpit"
+            archetype="Linear / Superhuman — read before you watch."
+            iaFix="5-column table: avatar · From + AI summary peek · Actions · Length · When. Sticky header, processing skeleton, status icons."
+            vibe="One coral hit per row: unread dot OR action pill. Claude provenance demoted to a neutral chip."/>
+          <div className="flex-1 overflow-hidden"><AInbox go={setSubsection}/></div>
+        </div>
+      )}
+      {subsection === 'thread' && <div className="flex-1 overflow-hidden"><AThread/></div>}
+      {subsection === 'record' && <div className="flex-1 overflow-hidden"><RecordView/></div>}
+      {subsection === 'search' && <div className="flex-1 overflow-hidden"><SearchView/></div>}
+      {subsection === 'elements' && <div className="flex-1 overflow-hidden"><ElementsGallery/></div>}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH B — REEL WALL  (Video-forward · poster grid)
+   Trades table density for immediacy. The frame is the headline; the AI
+   summary rides as an overlay caption you can expand.
+   ════════════════════════════════════════════════════════════════════════ */
+
+function BInbox({ go }) {
+  return (
+    <div className="h-full overflow-y-auto fade-up px-5 py-5">
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
+        {GLIMPSES.map(g => (
+          <button key={g.id} onClick={() => go('thread')} className="reel-card text-left rounded-2xl border pulse-border-color overflow-hidden" style={{ background: 'var(--pulse-surface)' }}>
+            <div className="relative">
+              <Poster seed={g.id} dur={g.dur} kind={g.kind} ratio="4/3" className="w-full !rounded-none"/>
+              {g.unread && <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full pulse-rose-bg-color" style={{ boxShadow: '0 0 0 3px rgba(0,0,0,0.35)' }}/>}
+            </div>
+            <div className="p-3 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Avatar name={g.sender} size={22} group={g.kind === 'group' ? g.members : null}/>
+                <span className={`text-[12px] font-medium truncate ${g.unread ? 'pulse-ink-color' : 'pulse-ink-2-color'}`}>{g.sender}</span>
+                <span className="ml-auto font-mono-pulse text-[10px] tracking-tight-mono uppercase pulse-ink-3-color">{g.ago}</span>
+              </div>
+              {g.processing ? (
+                <div className="flex items-center gap-2"><AiChip variant="pending">Transcribing</AiChip></div>
+              ) : (
+                <p className="text-[12.5px] leading-snug line-clamp-2 pulse-ink-2-color">{g.summary}</p>
+              )}
+              <div className="flex items-center gap-1.5 pt-0.5">
+                {g.summary && !g.processing && <AiChip variant="muted">Claude</AiChip>}
+                {g.actions > 0 && <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-tight-mono pulse-coral-bg-color pulse-coral-fg-color">{g.actions} {g.actions === 1 ? 'ACTION' : 'ACTIONS'}</span>}
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BThread() {
+  return (
+    <div className="h-full overflow-y-auto fade-up">
+      <div className="flex items-center gap-3 px-5 py-3 border-b pulse-border-color sticky top-0 z-10 pulse-bg-soft">
+        <button className="p-1.5 rounded-md pulse-ink-3-color hover:pulse-surface-raised"><Icon name="arrowLeft" className="w-4 h-4"/></button>
+        <Avatar name="Frank Richard Messana" size={32}/>
+        <div className="leading-tight"><div className="text-sm font-medium pulse-ink-color">Frank Richard Messana</div><div className="text-[11px] pulse-ink-3-color">video timeline</div></div>
+        <div className="ml-auto"><button className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-mono-pulse tracking-wide-mono pulse-rose-bg-soft-color pulse-rose-color"><Icon name="sparkles" className="w-3.5 h-3.5"/>SUMMARIZE</button></div>
+      </div>
+      <div className="max-w-[640px] mx-auto px-4 py-6 flex flex-col gap-5">
+        {THREAD.map(m => {
+          const isMe = m.who === 'me';
+          return (
+            <div key={m.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
+              <Avatar name={isMe ? 'You' : m.sender} size={28}/>
+              <div className={`max-w-[78%] flex flex-col gap-1.5 ${isMe ? 'items-end' : 'items-start'}`}>
+                <div className="relative rounded-2xl overflow-hidden border pulse-border-color" style={{ width: 260 }}>
+                  <Poster seed={m.id} dur={m.dur} ratio="16/9" className="w-full !rounded-none"/>
+                  {m.summary && (
+                    <div className="absolute inset-x-0 bottom-0 px-2.5 py-2" style={{ background: 'linear-gradient(0deg, rgba(0,0,0,0.78), transparent)' }}>
+                      <span className="ai-chip" style={{ background: 'rgba(244,63,94,0.22)', color: '#fecdd3' }}>Claude</span>
+                      <p className="text-[11.5px] leading-snug text-white/90 mt-1 line-clamp-2">{m.summary}</p>
+                    </div>
+                  )}
+                </div>
+                {m.caption && !m.summary && <p className={`text-[13px] px-3 py-1.5 rounded-2xl ${isMe ? 'pulse-rose-bg-soft-color pulse-rose-color' : 'pulse-surface-raised pulse-ink-color'}`}>{m.caption}</p>}
+                <div className="flex items-center gap-2 px-1">
+                  <span className="font-mono-pulse text-[10px] tnum pulse-ink-3-color">{m.when}</span>
+                  {isMe && <StatusIcon status={m.status}/>}
+                  {Object.entries(m.reactions).map(([e, n]) => <span key={e} className="text-[12px]">{e}<span className="font-mono-pulse text-[9px] pulse-ink-3-color">{n}</span></span>)}
+                </div>
+                {m.actions.length > 0 && (
+                  <div className="flex flex-col gap-1 w-full">
+                    {m.actions.map((a, i) => <button key={i} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12px] text-left pulse-rose-bg-soft-color pulse-coral-fg-color"><Icon name="task" className="w-3.5 h-3.5"/>{a}</button>)}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        <button className="self-center inline-flex items-center gap-2 px-4 py-2.5 rounded-xl pulse-rose-bg-color text-white text-sm font-medium" style={{ boxShadow: '0 4px 12px var(--pulse-rose-glow)' }}><Icon name="video" className="w-4 h-4"/>Record reply</button>
+      </div>
+    </div>
+  );
+}
+
+function PathB({ subsection, setSubsection }) {
+  return (
+    <div className="h-full flex flex-col">
+      <SectionHeader subsection={subsection} setSubsection={setSubsection} signals={GLIMPSES.length}/>
+      {subsection === 'inbox' && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <AboutPath tag="B" name="Reel Wall"
+            archetype="Visual inbox — the frame is the headline."
+            iaFix="Responsive poster grid. Hover-lift cards, poster + duration badge, sender row, 2-line AI caption. Thread becomes a video timeline."
+            vibe="Coral as the unread bead + the action pill + the in-poster Claude chip. Posters are honest gradient frames, not fake stills."/>
+          <div className="flex-1 overflow-hidden"><BInbox go={setSubsection}/></div>
+        </div>
+      )}
+      {subsection === 'thread' && <div className="flex-1 overflow-hidden"><BThread/></div>}
+      {subsection === 'record' && <div className="flex-1 overflow-hidden"><RecordView/></div>}
+      {subsection === 'search' && <div className="flex-1 overflow-hidden"><SearchView/></div>}
+      {subsection === 'elements' && <div className="flex-1 overflow-hidden"><ElementsGallery/></div>}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH C — DAILY BRIEFING  (AI-first · intelligence layer)
+   Claude has already watched everything. The home is a digest; video is
+   tap-to-verify proof. Coral earns its keep — this IS the AI surface.
+   ════════════════════════════════════════════════════════════════════════ */
+
+function CInbox({ go }) {
+  const needs = GLIMPSES.filter(g => g.unread || g.actions > 0);
+  const fyi = GLIMPSES.filter(g => !(g.unread || g.actions > 0));
+  return (
+    <div className="h-full overflow-y-auto fade-up px-5 py-5">
+      <div className="max-w-[760px] mx-auto flex flex-col gap-5">
+        {/* briefing card */}
+        <div className="rounded-2xl border p-5" style={{ background: 'var(--pulse-surface)', borderColor: 'var(--pulse-rose)', boxShadow: '0 0 0 1px var(--pulse-rose-soft), 0 8px 30px var(--pulse-rose-glow)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-lg pulse-rose-bg-color text-white flex items-center justify-center"><Icon name="sparkles" className="w-4 h-4"/></div>
+            <div className="leading-tight"><div className="text-[13px] font-semibold pulse-ink-color">Your Glimpse briefing</div><div className="font-mono-pulse text-[10px] tracking-wide-mono pulse-coral-fg-color">CLAUDE WATCHED 6 · 2 NEED YOU</div></div>
+            <span className="ml-auto font-mono-pulse text-[10px] tnum pulse-ink-3-color">8 min saved</span>
+          </div>
+          <p className="text-[15px] leading-relaxed pulse-ink-color mb-3" style={{ maxWidth: '64ch' }}>
+            Pricing <span className="pulse-coral-fg-color font-medium">option B is approved</span> — legal cleared it with one page-2 tweak. Maria needs the <span className="pulse-coral-fg-color font-medium">Q2 baseline on slide 4</span> before Friday's review. Jaylen's walkthrough flags two broken empty-states on onboarding.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border pulse-border-color p-3">
+              <div className="font-mono-pulse text-[10px] tracking-wide-mono pulse-ink-3-color mb-2">1 DECISION</div>
+              {CONV_SUMMARY.decisions.map(d => <div key={d} className="flex items-center gap-2 text-[13px] pulse-ink-color"><span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--pulse-tone-positive)' }}/>{d}</div>)}
+            </div>
+            <div className="rounded-xl border pulse-border-color p-3">
+              <div className="font-mono-pulse text-[10px] tracking-wide-mono pulse-ink-3-color mb-2">{CONV_SUMMARY.tasks.length} OPEN TASKS</div>
+              {CONV_SUMMARY.tasks.map(t => <button key={t} className="w-full flex items-center gap-2 text-[13px] text-left pulse-ink-color hover:pulse-coral-fg-color transition py-0.5"><Icon name="task" className="w-3.5 h-3.5 pulse-rose-color"/>{t}</button>)}
+            </div>
+          </div>
+        </div>
+        {/* needs you */}
+        <div>
+          <Label className="text-[10px] pulse-coral-fg-color px-1">Needs you · {needs.length}</Label>
+          <div className="mt-2 flex flex-col gap-2">
+            {needs.map(g => <BriefRow key={g.id} g={g} go={go} accent/>)}
+          </div>
+        </div>
+        {/* fyi */}
+        <div>
+          <Label className="text-[10px] pulse-ink-3-color px-1">FYI · {fyi.length}</Label>
+          <div className="mt-2 flex flex-col gap-2">
+            {fyi.map(g => <BriefRow key={g.id} g={g} go={go}/>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BriefRow({ g, go, accent }) {
+  return (
+    <button onClick={() => go('thread')} className="selectable-row w-full flex items-start gap-3 px-3 py-3 rounded-xl border pulse-border-color text-left" style={{ background: 'var(--pulse-surface)' }}>
+      <button onClick={(e) => e.stopPropagation()} className="shrink-0"><Poster seed={g.id} dur={g.dur} kind={g.kind} ratio="1/1" className="w-14"/></button>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 mb-0.5">
+          {g.unread && accent && <span className="w-1.5 h-1.5 rounded-full pulse-rose-bg-color shrink-0"/>}
+          <span className="text-[12px] font-medium pulse-ink-color truncate">{g.sender}</span>
+          <span className="font-mono-pulse text-[10px] tnum pulse-ink-3-color">{g.dur}</span>
+          <span className="ml-auto font-mono-pulse text-[10px] tracking-tight-mono uppercase pulse-ink-3-color">{g.ago}</span>
+        </div>
+        {g.processing ? <AiChip variant="pending">Transcribing</AiChip> : <p className="text-[13px] leading-snug line-clamp-2 pulse-ink-2-color">{g.summary}</p>}
+        {g.actions > 0 && <div className="mt-1.5"><span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-tight-mono pulse-coral-bg-color pulse-coral-fg-color"><Icon name="task" className="w-3 h-3"/>{g.actions} {g.actions === 1 ? 'ACTION' : 'ACTIONS'}</span></div>}
+      </div>
+    </button>
+  );
+}
+
+function CThread() {
+  const [expanded, setExpanded] = useState(null);
+  return (
+    <div className="h-full overflow-y-auto fade-up">
+      <div className="flex items-center gap-3 px-5 py-3 border-b pulse-border-color sticky top-0 z-10 pulse-bg-soft">
+        <button className="p-1.5 rounded-md pulse-ink-3-color hover:pulse-surface-raised"><Icon name="arrowLeft" className="w-4 h-4"/></button>
+        <Avatar name="Frank Richard Messana" size={32}/>
+        <div className="leading-tight"><div className="text-sm font-medium pulse-ink-color">Frank Richard Messana</div><div className="text-[11px] pulse-ink-3-color">conversation digest</div></div>
+      </div>
+      <div className="max-w-[720px] mx-auto px-4 py-5 grid gap-5" style={{ gridTemplateColumns: '1fr 220px' }}>
+        <div className="flex flex-col gap-4">
+          {/* thread digest */}
+          <div className="rounded-xl border p-4" style={{ background: 'var(--pulse-surface)', borderColor: 'var(--pulse-rose)', boxShadow: '0 0 0 1px var(--pulse-rose-soft)' }}>
+            <AiChip>Claude · Thread summary</AiChip>
+            <div className="text-[13px] font-medium pulse-ink-color mt-2 mb-1.5">{CONV_SUMMARY.headline}</div>
+            <ul className="flex flex-col gap-1.5">
+              {CONV_SUMMARY.bullets.map((b, i) => <li key={i} className="flex gap-2 text-[13px] leading-snug pulse-ink-2-color"><span className="pulse-rose-color">·</span>{b}</li>)}
+            </ul>
+          </div>
+          {/* collapsed messages */}
+          <div className="flex flex-col gap-1">
+            <Label className="text-[10px] pulse-ink-3-color px-1 mb-1">4 glimpses · tap to expand proof</Label>
+            {THREAD.map(m => {
+              const isMe = m.who === 'me';
+              const open = expanded === m.id;
+              return (
+                <div key={m.id} className="rounded-xl border pulse-border-color overflow-hidden" style={{ background: 'var(--pulse-surface)' }}>
+                  <button onClick={() => setExpanded(open ? null : m.id)} className="w-full flex items-center gap-3 px-3 py-2.5 text-left">
+                    <Avatar name={isMe ? 'You' : m.sender} size={26}/>
+                    <span className="font-mono-pulse text-[10px] tracking-tight-mono uppercase pulse-ink-3-color shrink-0">{isMe ? 'YOU' : 'FRANK'}</span>
+                    <span className="text-[13px] pulse-ink-color truncate flex-1">{m.summary || m.caption}</span>
+                    <span className="font-mono-pulse text-[10px] tnum pulse-ink-3-color shrink-0">{m.dur}</span>
+                    <Icon name={open ? 'chevD' : 'chevR'} className="w-3.5 h-3.5 pulse-ink-3-color shrink-0"/>
+                  </button>
+                  {open && (
+                    <div className="px-3 pb-3 fade-up flex gap-3">
+                      <Poster seed={m.id} dur={m.dur} ratio="16/9" className="w-40"/>
+                      <p className="text-[12.5px] leading-relaxed pulse-ink-2-color flex-1">{m.transcript}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {/* action sidebar */}
+        <div className="flex flex-col gap-3">
+          <div className="rounded-xl border pulse-border-color p-3 sticky top-3" style={{ background: 'var(--pulse-surface)' }}>
+            <Label className="text-[10px] pulse-coral-fg-color">Extracted</Label>
+            <div className="font-mono-pulse text-[10px] tracking-wide-mono pulse-ink-3-color mt-3 mb-1.5">TASKS</div>
+            {CONV_SUMMARY.tasks.map(t => <button key={t} className="w-full flex items-start gap-1.5 text-[12px] text-left pulse-ink-color hover:pulse-coral-fg-color py-1 transition"><Icon name="task" className="w-3.5 h-3.5 pulse-rose-color mt-px shrink-0"/>{t}</button>)}
+            <div className="font-mono-pulse text-[10px] tracking-wide-mono pulse-ink-3-color mt-3 mb-1.5">DECISIONS</div>
+            {CONV_SUMMARY.decisions.map(d => <div key={d} className="flex items-start gap-1.5 text-[12px] pulse-ink-color py-1"><span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: 'var(--pulse-tone-positive)' }}/>{d}</div>)}
+            <button className="w-full mt-3 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg pulse-rose-bg-color text-white text-[13px] font-medium"><Icon name="video" className="w-3.5 h-3.5"/>Reply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PathC({ subsection, setSubsection }) {
+  return (
+    <div className="h-full flex flex-col">
+      <SectionHeader subsection={subsection} setSubsection={setSubsection} signals={GLIMPSES.length}/>
+      {subsection === 'inbox' && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <AboutPath tag="C" name="Daily Briefing"
+            archetype="Intelligence layer — Claude already watched everything."
+            iaFix="A digest card (decisions + tasks) leads. Glimpses group into Needs you / FYI. Thread collapses to one-liners with an extracted-tasks sidebar; video is tap-to-verify proof."
+            vibe="Coral spends freely here — it IS the AI surface. The briefing border, decision/task accents, and chips all earn it."/>
+          <div className="flex-1 overflow-hidden"><CInbox go={setSubsection}/></div>
+        </div>
+      )}
+      {subsection === 'thread' && <div className="flex-1 overflow-hidden"><CThread/></div>}
+      {subsection === 'record' && <div className="flex-1 overflow-hidden"><RecordView/></div>}
+      {subsection === 'search' && <div className="flex-1 overflow-hidden"><SearchView/></div>}
+      {subsection === 'elements' && <div className="flex-1 overflow-hidden"><ElementsGallery/></div>}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED — RECORD VIEW (interactive idle → recording → ready)
+   Capture mode is an intent chosen at entry: Glimpse (cam) / Walkthrough.
+   ════════════════════════════════════════════════════════════════════════ */
+
+function RecordView() {
+  const [status, setStatus] = useState('idle');       // idle | recording | ready
+  const [mode, setMode] = useState('cam');             // cam | cam-screen
+  const [showPicker, setShowPicker] = useState(false);
+  const [recipients, setRecipients] = useState(['c1']);
+
+  const cycle = () => setStatus(s => s === 'idle' ? 'recording' : s === 'recording' ? 'ready' : 'recording');
+
+  return (
+    <div className="h-full overflow-y-auto fade-up">
+      <div className="max-w-[480px] mx-auto px-4 py-5 flex flex-col gap-4">
+        {/* mode confirm */}
+        {status === 'idle' && (
+          <div className="self-start inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded font-mono-pulse text-[11px] tracking-wide-mono uppercase pulse-rose-bg-soft-color pulse-coral-fg-color">
+            <Icon name={mode === 'cam-screen' ? 'monitor' : 'video'} className="w-3.5 h-3.5"/>{mode === 'cam-screen' ? 'Walkthrough · screen + camera' : 'Glimpse · camera'}
+          </div>
+        )}
+        {/* mode toggle */}
+        {status === 'idle' && (
+          <div className="self-start inline-flex p-0.5 rounded-lg border pulse-border-color" style={{ background: 'var(--pulse-surface)' }}>
+            {[{ id: 'cam', label: 'Camera', icon: 'video' }, { id: 'cam-screen', label: 'Walkthrough', icon: 'monitor' }].map(o => (
+              <button key={o.id} onClick={() => setMode(o.id)} aria-pressed={mode === o.id}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono-pulse text-[11px] tracking-wide-mono uppercase transition ${mode === o.id ? 'pulse-surface-raised pulse-ink-color' : 'pulse-ink-3-color'}`}>
+                <Icon name={o.icon} className="w-3.5 h-3.5"/>{o.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* recipient bar */}
+        <div className="relative">
+          <div className="flex items-stretch w-full rounded-xl border pulse-border-color overflow-hidden" style={{ background: 'var(--pulse-surface)' }}>
+            <button onClick={() => setShowPicker(p => !p)} className="flex items-center gap-2 flex-1 px-3 py-2.5 text-left">
+              <Icon name="users" className="w-4 h-4 pulse-ink-2-color"/>
+              <span className="flex-1 text-[13px] pulse-ink-color">{recipients.length === 0 ? 'Select recipients' : `${recipients.length} selected`}</span>
+              {recipients.length > 0 && <span className="font-mono-pulse text-[11px] tracking-wide-mono pulse-coral-fg-color">{recipients.length}</span>}
+              <Icon name="chevD" className={`w-4 h-4 pulse-ink-3-color transition ${showPicker ? 'rotate-180' : ''}`}/>
+            </button>
+            {recipients.length > 0 && <button onClick={() => setRecipients([])} className="w-9 flex items-center justify-center border-l pulse-border-color pulse-ink-3-color hover:pulse-rose-color"><Icon name="x" className="w-3.5 h-3.5"/></button>}
+          </div>
+          {showPicker && <RecipientSelector selected={recipients} onToggle={(id) => setRecipients(r => r.includes(id) ? r.filter(x => x !== id) : [...r, id])} onDone={() => setShowPicker(false)}/>}
+        </div>
+        {/* stage */}
+        <div className={`relative w-full rounded-2xl overflow-hidden border pulse-border-color gl-poster ${status === 'recording' ? 'stage-recording' : ''}`} style={{ aspectRatio: '16/9' }}>
+          {status === 'idle' && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+              <div className="w-14 h-14 rounded-full flex items-center justify-center pulse-rose-bg-soft-color pulse-rose-color border pulse-rose-border"><Icon name={mode === 'cam-screen' ? 'monitor' : 'video'} className="w-6 h-6"/></div>
+              <p className="text-[13px] pulse-ink-2-color">{mode === 'cam-screen' ? 'tap to start screen + camera' : 'tap to start camera'}</p>
+            </div>
+          )}
+          {(status === 'recording' || status === 'ready') && (
+            <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-white font-mono-pulse text-[11px] tracking-wide-mono pulse-rose-bg-color"><span className="w-1.5 h-1.5 rounded-full bg-white rec-blink"/>{status === 'recording' ? 'REC' : 'READY'}</span>
+              <span className="px-2 py-1 rounded font-mono-pulse text-[11px] tnum text-white" style={{ background: 'rgba(0,0,0,0.55)' }}>0:0{status === 'recording' ? '7' : '9'} / 1:00</span>
+            </div>
+          )}
+          {(status === 'recording') && (
+            <button className="absolute top-3 right-3 mt-9 w-8 h-8 rounded-lg flex items-center justify-center text-white border" style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(255,255,255,0.2)' }}><Icon name="flip" className="w-4 h-4"/></button>
+          )}
+        </div>
+        {/* controls */}
+        {status === 'ready' ? (
+          <div className="flex flex-col gap-3 fade-up">
+            <input placeholder="Add a caption (optional)" className="w-full px-4 py-3 rounded-xl border pulse-border-color text-[15px] pulse-ink-color outline-none" style={{ background: 'var(--pulse-surface)' }}/>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setStatus('idle')} className="w-10 h-10 rounded-lg border pulse-border-color pulse-ink-2-color flex items-center justify-center hover:pulse-rose-color"><Icon name="trash" className="w-4 h-4"/></button>
+              <button onClick={cycle} className="w-10 h-10 rounded-lg border pulse-border-color pulse-ink-2-color flex items-center justify-center hover:pulse-surface-raised"><Icon name="rotate" className="w-4 h-4"/></button>
+              <button onClick={() => setStatus('idle')} className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl pulse-rose-bg-color text-white text-[15px] font-medium" style={{ boxShadow: '0 4px 12px var(--pulse-rose-glow)' }}><Icon name="send" className="w-4 h-4"/>Send glimpse</button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-center justify-center gap-6">
+              <span className="w-12 h-12"/>
+              <button onClick={cycle} className="w-[72px] h-[72px] rounded-full pulse-rose-bg-color flex items-center justify-center" style={{ boxShadow: '0 4px 16px var(--pulse-rose-glow)' }}>
+                <span className="bg-white transition-all" style={{ width: status === 'recording' ? 18 : 24, height: status === 'recording' ? 18 : 24, borderRadius: status === 'recording' ? 4 : 999 }}/>
+              </button>
+              <span className="w-12 h-12 flex items-center justify-center">{status === 'recording' && <button className="w-12 h-12 rounded-full border pulse-border-color pulse-ink-2-color flex items-center justify-center"><Icon name="pause" className="w-5 h-5"/></button>}</span>
+            </div>
+            <p className="text-[13px] pulse-ink-3-color">{status === 'idle' ? (mode === 'cam-screen' ? 'tap to start screen + camera' : 'tap to start camera') : 'tap to stop · pause to step away'}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RecipientSelector({ selected = [], onToggle, onDone, embedded }) {
+  const [q, setQ] = useState('');
+  const list = CONTACTS.filter(c => c.name.toLowerCase().includes(q.toLowerCase()) || c.handle.includes(q.toLowerCase()));
+  return (
+    <div className={`${embedded ? '' : 'absolute z-20 mt-2 left-0 right-0 fade-up'} rounded-xl border pulse-border-strong-color overflow-hidden`} style={{ background: 'var(--pulse-surface)', boxShadow: 'var(--pulse-shadow-main)' }}>
+      <div className="flex items-center gap-2 p-2 border-b pulse-border-color">
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search contacts…" className="flex-1 px-2 py-1.5 rounded-md text-[13px] pulse-ink-color outline-none" style={{ background: 'var(--pulse-surface-raised)' }}/>
+        {onDone && <button onClick={onDone} disabled={selected.length === 0} className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[12px] font-medium ${selected.length ? 'pulse-rose-bg-color text-white' : 'pulse-surface-raised pulse-ink-3-color'}`}><Icon name="check" className="w-3.5 h-3.5"/>{selected.length ? `Done (${selected.length})` : 'Done'}</button>}
+      </div>
+      <div className="max-h-[220px] overflow-y-auto p-1">
+        {list.map(c => {
+          const on = selected.includes(c.id);
+          return (
+            <button key={c.id} onClick={() => onToggle && onToggle(c.id)} className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left transition ${on ? 'pulse-rose-bg-soft-color' : 'hover:pulse-surface-raised'}`}>
+              <div className="relative"><Avatar name={c.name} size={28}/>{c.online && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2" style={{ background: 'var(--pulse-tone-positive)', borderColor: 'var(--pulse-surface)' }}/>}</div>
+              <div className="leading-tight min-w-0 flex-1"><div className="text-[13px] font-medium pulse-ink-color truncate">{c.name}</div><div className="text-[11px] pulse-ink-3-color">@{c.handle}</div></div>
+              {on && <span className="pulse-rose-color"><Icon name="check" className="w-4 h-4"/></span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED — SEARCH VIEW
+   ════════════════════════════════════════════════════════════════════════ */
+
+function SearchView() {
+  const [q, setQ] = useState('slide 4');
+  const results = q ? GLIMPSES.filter(g => g.summary) : [];
+  return (
+    <div className="h-full overflow-y-auto fade-up">
+      <div className="max-w-[720px] mx-auto px-4 py-5 flex flex-col gap-3">
+        <div className="flex items-center gap-2 px-3.5 py-3 rounded-xl border pulse-border-color" style={{ background: 'var(--pulse-surface)' }}>
+          <Icon name="search" className="w-5 h-5 pulse-ink-2-color"/>
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search glimpses by what was said…" className="flex-1 text-[15px] pulse-ink-color outline-none bg-transparent"/>
+          <span className="font-mono-pulse text-[10px] tracking-wide-mono pulse-ink-3-color">{results.length} HITS</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {['Transcript', 'Caption', 'Topic', 'Action item'].map((f, i) => (
+            <span key={f} className={`px-2 py-1 rounded text-[11px] font-mono-pulse tracking-tight-mono uppercase ${i === 0 ? 'pulse-rose-bg-soft-color pulse-coral-fg-color' : 'pulse-surface-raised pulse-ink-3-color'}`}>{f}</span>
+          ))}
+        </div>
+        {results.map(g => (
+          <div key={g.id} className="flex items-center gap-3 p-3 rounded-xl border pulse-border-color" style={{ background: 'var(--pulse-surface)' }}>
+            <Poster seed={g.id} dur={g.dur} ratio="1/1" className="w-14 shrink-0"/>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2"><span className="text-[12px] font-medium pulse-ink-color">{g.sender}</span><span className="font-mono-pulse text-[10px] tracking-tight-mono uppercase pulse-ink-3-color">{g.ago}</span></div>
+              <p className="text-[13px] leading-snug pulse-ink-2-color line-clamp-1"><span className="font-mono-pulse text-[10px] tracking-tight-mono uppercase pulse-coral-fg-color mr-1.5">TRANSCRIPT</span>{g.summary}</p>
+            </div>
+            <button className="p-2 rounded-lg pulse-ink-3-color hover:pulse-surface-raised"><Icon name="play" className="w-4 h-4"/></button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED — ELEMENTS GALLERY  (every menu, modal, chip & state on one canvas)
+   ════════════════════════════════════════════════════════════════════════ */
+
+function GalleryCard({ title, note, children, span }) {
+  return (
+    <div className={`rounded-2xl border pulse-border-color p-4 flex flex-col ${span ? 'col-span-2' : ''}`} style={{ background: 'var(--pulse-surface)' }}>
+      <div className="flex items-baseline gap-2 mb-3">
+        <Label className="text-[10px] pulse-rose-color">{title}</Label>
+        {note && <span className="text-[11px] pulse-ink-3-color">{note}</span>}
+      </div>
+      <div className="flex-1 flex items-center justify-center" style={{ minHeight: 120 }}>{children}</div>
+    </div>
+  );
+}
+
+function MenuMock() {
+  const items = [
+    { icon: 'reply', label: 'Reply', k: '' }, { icon: 'bookmark', label: 'Bookmark', k: 'B' },
+    { icon: 'task', label: 'Add as task', k: '' }, { icon: 'download', label: 'Download', k: '' },
+    { icon: 'archive', label: 'Archive', k: 'E' }, { icon: 'trash', label: 'Delete', danger: true, k: '' },
+  ];
+  return (
+    <div className="w-48 rounded-xl border pulse-border-strong-color overflow-hidden py-1" style={{ background: 'var(--pulse-surface)', boxShadow: 'var(--pulse-shadow-main)' }}>
+      {items.map((it, i) => (
+        <React.Fragment key={it.label}>
+          {i === 5 && <div className="my-1 border-t pulse-border-color"/>}
+          <button className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-left transition hover:pulse-surface-raised ${it.danger ? 'pulse-rose-color' : 'pulse-ink-color'}`}>
+            <Icon name={it.icon} className="w-4 h-4 opacity-80"/><span className="flex-1">{it.label}</span>
+            {it.k && <span className="font-mono-pulse text-[10px] pulse-ink-3-color">{it.k}</span>}
+          </button>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+function ElementsGallery() {
+  return (
+    <div className="h-full overflow-y-auto fade-up px-5 py-5">
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+
+        {/* AI provenance chips */}
+        <GalleryCard title="AI provenance chips" note="coral = AI signal only">
+          <div className="flex flex-wrap gap-2.5 items-center justify-center">
+            <AiChip>Claude · Summary</AiChip>
+            <AiChip variant="pending">Transcribing</AiChip>
+            <AiChip variant="failed">Transcript unavailable</AiChip>
+            <AiChip variant="muted">Claude</AiChip>
+          </div>
+        </GalleryCard>
+
+        {/* context menu */}
+        <GalleryCard title="Message context menu" note="per-card ⋮"><MenuMock/></GalleryCard>
+
+        {/* reactions */}
+        <GalleryCard title="Reaction picker + pills">
+          <div className="flex flex-col items-center gap-3">
+            <div className="inline-flex items-center gap-1 p-1.5 rounded-full border pulse-border-strong-color" style={{ background: 'var(--pulse-surface)', boxShadow: 'var(--pulse-shadow-main)' }}>
+              {REACTIONS.map(e => <button key={e} className="w-8 h-8 rounded-full hover:pulse-surface-raised flex items-center justify-center text-[18px] transition">{e}</button>)}
+            </div>
+            <div className="flex gap-1.5">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[13px] border pulse-border-color pulse-surface-raised">👍<span className="font-mono-pulse text-[10px] pulse-ink-2-color">2</span></span>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[13px] border pulse-border-color pulse-surface-raised">🔥<span className="font-mono-pulse text-[10px] pulse-ink-2-color">1</span></span>
+            </div>
+          </div>
+        </GalleryCard>
+
+        {/* status + action item states */}
+        <GalleryCard title="Status & action-item states">
+          <div className="flex flex-col gap-3 w-full max-w-[240px]">
+            <div className="flex items-center justify-around">
+              <span className="flex items-center gap-1.5 text-[11px] pulse-ink-3-color"><StatusIcon status="sent"/>Sent</span>
+              <span className="flex items-center gap-1.5 text-[11px] pulse-ink-3-color"><StatusIcon status="delivered"/>Delivered</span>
+              <span className="flex items-center gap-1.5 text-[11px] pulse-rose-color"><StatusIcon status="viewed"/>Viewed</span>
+            </div>
+            <button className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13px] text-left pulse-ink-color hover:pulse-rose-bg-soft-color"><span className="font-mono-pulse pulse-ink-3-color">▸</span>Add Q2 baseline to slide 4</button>
+            <button className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13px] text-left pulse-ink-2-color line-through" style={{ textDecorationColor: 'var(--pulse-ink-3)' }}><span className="pulse-rose-color">✓</span>Confirm Friday follow-up owner</button>
+          </div>
+        </GalleryCard>
+
+        {/* recipient selector */}
+        <GalleryCard title="Recipient selector" note="Pulse users only">
+          <div className="w-full max-w-[300px]"><RecipientSelector embedded selected={['c1', 'c2']} onToggle={() => {}}/></div>
+        </GalleryCard>
+
+        {/* download modal */}
+        <GalleryCard title="Download modal">
+          <div className="w-full max-w-[280px] rounded-xl border pulse-border-strong-color p-4" style={{ background: 'var(--pulse-surface)', boxShadow: 'var(--pulse-shadow-main)' }}>
+            <div className="flex items-center justify-between mb-3"><span className="text-[13px] font-semibold pulse-ink-color">Download glimpse</span><Icon name="x" className="w-4 h-4 pulse-ink-3-color"/></div>
+            {[{ l: 'Video · MP4', s: '720p · 4.2 MB', on: true }, { l: 'Audio only · M4A', s: '0.6 MB' }, { l: 'Transcript · TXT', s: '1 KB' }].map(o => (
+              <label key={o.l} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg mb-1 cursor-pointer ${o.on ? 'pulse-rose-bg-soft-color' : 'hover:pulse-surface-raised'}`}>
+                <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${o.on ? 'pulse-rose-bg-color pulse-rose-border' : 'pulse-border-strong-color'}`}>{o.on && <span className="w-1.5 h-1.5 rounded-full bg-white"/>}</span>
+                <span className="flex-1"><span className="block text-[13px] pulse-ink-color">{o.l}</span><span className="block font-mono-pulse text-[10px] pulse-ink-3-color">{o.s}</span></span>
+              </label>
+            ))}
+            <button className="w-full mt-2 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg pulse-rose-bg-color text-white text-[13px] font-medium"><Icon name="download" className="w-4 h-4"/>Download</button>
+          </div>
+        </GalleryCard>
+
+        {/* smart replies */}
+        <GalleryCard title="Smart replies">
+          <div className="w-full max-w-[300px] rounded-xl border pulse-border-color p-3" style={{ background: 'var(--pulse-surface)' }}>
+            <div className="flex items-center gap-1.5 mb-2"><AiChip variant="muted">Claude</AiChip><span className="text-[11px] pulse-ink-3-color">tap to copy</span></div>
+            <div className="flex flex-col gap-1.5">{SMART_REPLIES.map(r => <button key={r} className="px-3 py-2 rounded-lg text-[13px] text-left border pulse-border-color pulse-ink-color hover:pulse-rose-bg-soft-color hover:pulse-coral-fg-color transition">{r}</button>)}</div>
+          </div>
+        </GalleryCard>
+
+        {/* reply draft */}
+        <GalleryCard title="Reply draft" note="long-form">
+          <div className="w-full max-w-[320px] rounded-xl border pulse-border-color p-3" style={{ background: 'var(--pulse-surface)' }}>
+            <div className="flex items-center justify-between mb-2"><AiChip>Claude · Draft</AiChip><Icon name="x" className="w-3.5 h-3.5 pulse-ink-3-color"/></div>
+            <p className="text-[12.5px] leading-relaxed pulse-ink-2-color mb-3 line-clamp-4">{REPLY_DRAFT}</p>
+            <div className="flex gap-2"><button className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg pulse-rose-bg-color text-white text-[12px] font-medium"><Icon name="video" className="w-3.5 h-3.5"/>Use as caption</button><button className="px-3 py-2 rounded-lg border pulse-border-color text-[12px] pulse-ink-2-color">Dismiss</button></div>
+          </div>
+        </GalleryCard>
+
+        {/* conversation summary */}
+        <GalleryCard title="Conversation summary panel">
+          <div className="w-full max-w-[320px] rounded-xl border pulse-border-color p-4" style={{ background: 'var(--pulse-surface)' }}>
+            <AiChip>Claude · Summary</AiChip>
+            <div className="text-[13px] font-medium pulse-ink-color mt-2 mb-1.5">{CONV_SUMMARY.headline}</div>
+            <ul className="flex flex-col gap-1">{CONV_SUMMARY.bullets.slice(0, 2).map((b, i) => <li key={i} className="flex gap-1.5 text-[12px] leading-snug pulse-ink-2-color"><span className="pulse-rose-color">·</span>{b}</li>)}</ul>
+          </div>
+        </GalleryCard>
+
+        {/* keyboard shortcuts */}
+        <GalleryCard title="Keyboard shortcuts help">
+          <div className="w-full max-w-[300px] rounded-xl border pulse-border-color p-3 grid grid-cols-1 gap-1" style={{ background: 'var(--pulse-surface)' }}>
+            {SHORTCUTS.slice(0, 6).map(s => (
+              <div key={s.label} className="flex items-center gap-2 text-[12px]">
+                <span className="flex gap-1">{s.keys.map(k => <kbd key={k} className="px-1.5 py-0.5 rounded border pulse-border-strong-color font-mono-pulse text-[10px] pulse-ink-color" style={{ background: 'var(--pulse-surface-raised)' }}>{k}</kbd>)}</span>
+                <span className="pulse-ink-2-color">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </GalleryCard>
+
+        {/* selection toolbar */}
+        <GalleryCard title="Selection toolbar" note="multi-select mode" span>
+          <div className="w-full max-w-[560px] flex items-center gap-3 px-4 py-3 rounded-xl border pulse-border-strong-color" style={{ background: 'var(--pulse-surface)', boxShadow: 'var(--pulse-shadow-main)' }}>
+            <span className="inline-flex items-center justify-center w-7 h-7 rounded-md pulse-rose-bg-color text-white font-mono-pulse text-[12px]">3</span>
+            <span className="text-[13px] pulse-ink-color">selected</span>
+            <span className="font-mono-pulse text-[11px] tnum pulse-ink-3-color">· 1:18 total</span>
+            <div className="ml-auto flex items-center gap-1.5">
+              <button className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] border pulse-border-color pulse-ink-2-color hover:pulse-surface-raised">Select all</button>
+              <button className="p-2 rounded-md pulse-ink-2-color hover:pulse-surface-raised"><Icon name="download" className="w-4 h-4"/></button>
+              <button className="p-2 rounded-md pulse-ink-2-color hover:pulse-surface-raised"><Icon name="archive" className="w-4 h-4"/></button>
+              <button className="p-2 rounded-md pulse-rose-color hover:pulse-rose-bg-soft-color"><Icon name="trash" className="w-4 h-4"/></button>
+              <button className="p-2 rounded-md pulse-ink-3-color hover:pulse-surface-raised"><Icon name="x" className="w-4 h-4"/></button>
+            </div>
+          </div>
+        </GalleryCard>
+
+        {/* recorder states */}
+        <GalleryCard title="Recorder states" note="idle / recording / ready" span>
+          <div className="w-full grid grid-cols-3 gap-3">
+            {[{ s: 'idle', label: 'IDLE' }, { s: 'recording', label: 'RECORDING' }, { s: 'ready', label: 'READY' }].map(st => (
+              <div key={st.s} className="flex flex-col items-center gap-2">
+                <div className={`relative w-full rounded-xl overflow-hidden border pulse-border-color gl-poster ${st.s === 'recording' ? 'stage-recording' : ''}`} style={{ aspectRatio: '16/9' }}>
+                  {st.s === 'idle' && <div className="absolute inset-0 flex items-center justify-center"><div className="w-9 h-9 rounded-full pulse-rose-bg-soft-color pulse-rose-color flex items-center justify-center border pulse-rose-border"><Icon name="video" className="w-4 h-4"/></div></div>}
+                  {st.s !== 'idle' && <div className="absolute top-2 left-2"><span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-white font-mono-pulse text-[9px] tracking-wide-mono pulse-rose-bg-color"><span className="w-1 h-1 rounded-full bg-white rec-blink"/>{st.s === 'recording' ? 'REC' : 'READY'}</span></div>}
+                  {st.s === 'ready' && <div className="absolute inset-0 flex items-center justify-center"><div className="w-9 h-9 rounded-full flex items-center justify-center text-white" style={{ background: 'rgba(0,0,0,0.45)' }}><Icon name="play" className="w-4 h-4"/></div></div>}
+                </div>
+                <span className="font-mono-pulse text-[9px] tracking-wide-mono pulse-ink-3-color">{st.label}</span>
+              </div>
+            ))}
+          </div>
+        </GalleryCard>
+
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   APP SHELL
+   ════════════════════════════════════════════════════════════════════════ */
+
+function App() {
+  const [theme, setTheme] = useState('dark');
+  const [path, setPath] = useState('A');
+  const [subsection, setSubsection] = useState('inbox');
+
+  useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
+  return (
+    <div className="h-screen w-screen flex flex-col overflow-hidden pulse-bg">
+      {/* playground top bar */}
+      <div className="pg-bar flex items-center gap-3 px-4 py-2 border-b pulse-border-color shrink-0" style={{ height: 48 }}>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="video" className="w-3.5 h-3.5"/></div>
+          <span className="text-sm font-semibold pulse-ink-color">Glimpse Redesign</span>
+          <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">· PLAYGROUND</span>
+        </div>
+        <div className="ml-6 flex items-center gap-1 p-0.5 rounded-lg pulse-surface-raised">
+          {[{ id: 'A', label: 'A · Triage Cockpit' }, { id: 'B', label: 'B · Reel Wall' }, { id: 'C', label: 'C · Daily Briefing' }].map(p => (
+            <button key={p.id} data-active={path === p.id} onClick={() => setPath(p.id)} className="pg-pill px-3 py-1.5 rounded-md text-[12px] font-medium pulse-ink-2-color">{p.label}</button>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-1">
+          <button onClick={toggleTheme} className="px-2.5 py-1.5 rounded-md text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color hover:pulse-surface-raised flex items-center gap-1.5">
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5"/>{theme === 'dark' ? 'LIGHT' : 'DARK'}
+          </button>
+        </div>
+      </div>
+      {/* app body */}
+      <div className="flex-1 flex overflow-hidden">
+        <PulseSidebar theme={theme} onToggleTheme={toggleTheme}/>
+        <main className="flex-1 overflow-hidden m-3 rounded-2xl border pulse-border-color pulse-bg-soft relative" style={{ boxShadow: 'var(--pulse-shadow-main)' }}>
+          {path === 'A' && <PathA subsection={subsection} setSubsection={setSubsection}/>}
+          {path === 'B' && <PathB subsection={subsection} setSubsection={setSubsection}/>}
+          {path === 'C' && <PathC subsection={subsection} setSubsection={setSubsection}/>}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
