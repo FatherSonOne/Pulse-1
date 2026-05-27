@@ -563,12 +563,14 @@ function AInbox({ go }) {
   );
 }
 
-function GlimpseCard({ m }) {
+function GlimpseCard({ m, tone }) {
   const [open, setOpen] = useState(false);
   const [watching, setWatching] = useState(false);
   const isMe = m.who === 'me';
+  // tone differentiates me/them by SURFACE only — never coral. Coral stays
+  // reserved for AI signal, so "mine" is a neutral raised surface, not a hue.
   return (
-    <article className="rounded-xl border pulse-border-color p-4 flex flex-col gap-3" style={{ background: 'var(--pulse-surface)' }}>
+    <article className="rounded-xl border pulse-border-color p-4 flex flex-col gap-3" style={{ background: tone === 'me' ? 'var(--pulse-surface-raised)' : 'var(--pulse-surface)' }}>
       {/* meta */}
       <header className="flex items-center justify-between gap-2">
         <span className={`font-mono-pulse text-[11px] tracking-tight-mono uppercase ${isMe ? 'pulse-ink-2-color' : 'pulse-ink-color'}`}>{isMe ? 'You' : m.sender} · GLIMPSE</span>
@@ -1273,6 +1275,227 @@ function ElementsGallery() {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
+   PATH D — HYBRID  (your blends, mix-and-match)
+   D1 · Briefing inbox with full-width glimpses + a bigger preview player.
+   D2 · Triage-Cockpit cards laid out as a left/right chat (you right,
+        recipient left). Plus toggle-able "other blends".
+   ════════════════════════════════════════════════════════════════════════ */
+
+function BlendToggle({ value, onChange, options }) {
+  return (
+    <div className="px-4 pt-3">
+      <div className="inline-flex items-center gap-1.5">
+        <span className="font-mono-pulse text-[9px] tracking-wide-mono pulse-ink-3-color mr-1">BLEND</span>
+        <div className="inline-flex p-0.5 rounded-lg border pulse-border-color" style={{ background: 'var(--pulse-surface)' }}>
+          {options.map(o => (
+            <button key={o.id} onClick={() => onChange(o.id)}
+              className={`px-3 py-1.5 rounded-md text-[11px] font-mono-pulse tracking-wide-mono uppercase transition ${value === o.id ? 'pulse-rose-bg-soft-color pulse-rose-color' : 'pulse-ink-3-color hover:pulse-surface-raised'}`}>{o.label}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* The coral-bordered AI digest card — shared by C and D inboxes. */
+function BriefingCard() {
+  return (
+    <div className="rounded-2xl border p-5" style={{ background: 'var(--pulse-surface)', borderColor: 'var(--pulse-rose)', boxShadow: '0 0 0 1px var(--pulse-rose-soft), 0 8px 30px var(--pulse-rose-glow)' }}>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-lg pulse-rose-bg-color text-white flex items-center justify-center"><Icon name="sparkles" className="w-4 h-4"/></div>
+        <div className="leading-tight"><div className="text-[13px] font-semibold pulse-ink-color">Your Glimpse briefing</div><div className="font-mono-pulse text-[10px] tracking-wide-mono pulse-coral-fg-color">CLAUDE WATCHED 6 · 2 NEED YOU</div></div>
+        <span className="ml-auto font-mono-pulse text-[10px] tnum pulse-ink-3-color">8 min saved</span>
+      </div>
+      <p className="text-[15px] leading-relaxed pulse-ink-color mb-3" style={{ maxWidth: '78ch' }}>
+        Pricing <span className="pulse-coral-fg-color font-medium">option B is approved</span> — legal cleared it with one page-2 tweak. Maria needs the <span className="pulse-coral-fg-color font-medium">Q2 baseline on slide 4</span> before Friday's review. Jaylen's walkthrough flags two broken empty-states on onboarding.
+      </p>
+      <div className="grid grid-cols-2 gap-3 max-w-[640px]">
+        <div className="rounded-xl border pulse-border-color p-3">
+          <div className="font-mono-pulse text-[10px] tracking-wide-mono pulse-ink-3-color mb-2">1 DECISION</div>
+          {CONV_SUMMARY.decisions.map(d => <div key={d} className="flex items-center gap-2 text-[13px] pulse-ink-color"><span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--pulse-tone-positive)' }}/>{d}</div>)}
+        </div>
+        <div className="rounded-xl border pulse-border-color p-3">
+          <div className="font-mono-pulse text-[10px] tracking-wide-mono pulse-ink-3-color mb-2">{CONV_SUMMARY.tasks.length} OPEN TASKS</div>
+          {CONV_SUMMARY.tasks.map(t => <button key={t} className="w-full flex items-center gap-2 text-[13px] text-left pulse-ink-color hover:pulse-coral-fg-color transition py-0.5"><Icon name="task" className="w-3.5 h-3.5 pulse-rose-color"/>{t}</button>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Full-width briefing row with a bigger 16:9 preview that expands inline. */
+function DBriefRow({ g, go }) {
+  const [watching, setWatching] = useState(false);
+  return (
+    <div className="w-full flex items-start gap-4 px-4 py-3.5 rounded-xl border pulse-border-color selectable-row" style={{ background: 'var(--pulse-surface)' }}>
+      <button onClick={() => setWatching(w => !w)} className="shrink-0"><Poster seed={g.id} dur={g.dur} kind={g.kind} ratio="16/9" className="w-[150px]"/></button>
+      <div className="min-w-0 flex-1 flex flex-col gap-1.5">
+        <div className="flex items-center gap-2">
+          {g.unread && <span className="w-1.5 h-1.5 rounded-full pulse-rose-bg-color shrink-0"/>}
+          <span className="text-[14px] font-medium pulse-ink-color truncate">{g.sender}</span>
+          {g.kind === 'walkthrough' && <span className="text-[9px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">· WALK</span>}
+          {g.kind === 'group' && <span className="text-[9px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">· GROUP</span>}
+          <span className="font-mono-pulse text-[10px] tnum pulse-ink-3-color">{g.dur}</span>
+          <span className="ml-auto font-mono-pulse text-[10px] tracking-tight-mono uppercase pulse-ink-3-color">{g.ago}</span>
+        </div>
+        {g.processing ? <AiChip variant="pending">Transcribing</AiChip> : <p className="text-[13.5px] leading-relaxed pulse-ink-2-color">{g.summary}</p>}
+        <div className="flex items-center gap-1.5 pt-1">
+          {g.summary && !g.processing && <AiChip variant="muted">Claude</AiChip>}
+          {g.actions > 0 && <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-tight-mono pulse-coral-bg-color pulse-coral-fg-color"><Icon name="task" className="w-3 h-3"/>{g.actions} {g.actions === 1 ? 'ACTION' : 'ACTIONS'}</span>}
+          <div className="ml-auto flex items-center gap-1.5">
+            <button onClick={() => setWatching(w => !w)} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium border transition ${watching ? 'pulse-rose-bg-soft-color pulse-rose-color pulse-rose-border' : 'pulse-border-color pulse-ink-2-color hover:pulse-surface-raised'}`}><Icon name={watching ? 'pause' : 'play'} className="w-3.5 h-3.5"/>{watching ? 'Hide' : 'Watch'}</button>
+            <button onClick={() => go && go('thread')} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium border pulse-border-color pulse-ink-2-color hover:pulse-surface-raised"><Icon name="reply" className="w-3.5 h-3.5"/>Open</button>
+          </div>
+        </div>
+        {watching && <div className="rounded-xl overflow-hidden border pulse-border-color fade-up mt-1.5" style={{ maxWidth: 560 }}><Poster seed={g.id} dur={g.dur} big className="w-full"/></div>}
+      </div>
+    </div>
+  );
+}
+
+/* Reel poster card — the "Briefing + Reel" blend. */
+function ReelCard({ g, go }) {
+  return (
+    <button onClick={() => go && go('thread')} className="reel-card text-left rounded-2xl border pulse-border-color overflow-hidden" style={{ background: 'var(--pulse-surface)' }}>
+      <div className="relative">
+        <Poster seed={g.id} dur={g.dur} kind={g.kind} ratio="4/3" className="w-full !rounded-none"/>
+        {g.unread && <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full pulse-rose-bg-color" style={{ boxShadow: '0 0 0 3px rgba(0,0,0,0.35)' }}/>}
+      </div>
+      <div className="p-3 flex flex-col gap-2">
+        <div className="flex items-center gap-2"><Avatar name={g.sender} size={22} group={g.kind === 'group' ? g.members : null}/><span className={`text-[12px] font-medium truncate ${g.unread ? 'pulse-ink-color' : 'pulse-ink-2-color'}`}>{g.sender}</span><span className="ml-auto font-mono-pulse text-[10px] tracking-tight-mono uppercase pulse-ink-3-color">{g.ago}</span></div>
+        {g.processing ? <AiChip variant="pending">Transcribing</AiChip> : <p className="text-[12.5px] leading-snug line-clamp-2 pulse-ink-2-color">{g.summary}</p>}
+        <div className="flex items-center gap-1.5 pt-0.5">{g.summary && !g.processing && <AiChip variant="muted">Claude</AiChip>}{g.actions > 0 && <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-tight-mono pulse-coral-bg-color pulse-coral-fg-color">{g.actions} {g.actions === 1 ? 'ACTION' : 'ACTIONS'}</span>}</div>
+      </div>
+    </button>
+  );
+}
+
+function DInbox({ go, variant }) {
+  const needs = GLIMPSES.filter(g => g.unread || g.actions > 0);
+  const fyi = GLIMPSES.filter(g => !(g.unread || g.actions > 0));
+  return (
+    <div className="h-full overflow-y-auto fade-up px-6 py-5">
+      <div className="flex flex-col gap-5">
+        <BriefingCard/>
+        {variant === 'reel' ? (
+          <div>
+            <Label className="text-[10px] pulse-ink-3-color px-1">All glimpses · {GLIMPSES.length}</Label>
+            <div className="mt-2 grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+              {GLIMPSES.map(g => <ReelCard key={g.id} g={g} go={go}/>)}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div>
+              <Label className="text-[10px] pulse-coral-fg-color px-1">Needs you · {needs.length}</Label>
+              <div className="mt-2 flex flex-col gap-2">{needs.map(g => <DBriefRow key={g.id} g={g} go={go}/>)}</div>
+            </div>
+            <div>
+              <Label className="text-[10px] pulse-ink-3-color px-1">FYI · {fyi.length}</Label>
+              <div className="mt-2 flex flex-col gap-2">{fyi.map(g => <DBriefRow key={g.id} g={g} go={go}/>)}</div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* Triage-Cockpit card as a chat bubble. Avatar outside, you on the right. */
+function CockpitBubble({ m }) {
+  const isMe = m.who === 'me';
+  return (
+    <div className={`flex gap-3 items-start ${isMe ? 'flex-row-reverse' : ''}`}>
+      <Avatar name={isMe ? 'You' : m.sender} size={30}/>
+      <div className="min-w-0" style={{ maxWidth: '78%', flex: '1 1 auto' }}>
+        <GlimpseCard m={m} tone={isMe ? 'me' : 'them'}/>
+      </div>
+    </div>
+  );
+}
+
+/* Extracted-tasks rail — the "Bubbles + task rail" blend. */
+function TaskRail() {
+  return (
+    <div className="rounded-xl border pulse-border-color p-3 sticky top-3 self-start" style={{ background: 'var(--pulse-surface)' }}>
+      <Label className="text-[10px] pulse-coral-fg-color">Extracted</Label>
+      <div className="font-mono-pulse text-[10px] tracking-wide-mono pulse-ink-3-color mt-3 mb-1.5">TASKS</div>
+      {CONV_SUMMARY.tasks.map(t => <button key={t} className="w-full flex items-start gap-1.5 text-[12px] text-left pulse-ink-color hover:pulse-coral-fg-color py-1 transition"><Icon name="task" className="w-3.5 h-3.5 pulse-rose-color mt-px shrink-0"/>{t}</button>)}
+      <div className="font-mono-pulse text-[10px] tracking-wide-mono pulse-ink-3-color mt-3 mb-1.5">DECISIONS</div>
+      {CONV_SUMMARY.decisions.map(d => <div key={d} className="flex items-start gap-1.5 text-[12px] pulse-ink-color py-1"><span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: 'var(--pulse-tone-positive)' }}/>{d}</div>)}
+      <button className="w-full mt-3 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg pulse-rose-bg-color text-white text-[13px] font-medium"><Icon name="video" className="w-3.5 h-3.5"/>Reply</button>
+    </div>
+  );
+}
+
+function DThreadHeader() {
+  return (
+    <div className="flex items-center gap-3 px-5 py-3 border-b pulse-border-color sticky top-0 z-10 pulse-bg-soft">
+      <button className="p-1.5 rounded-md pulse-ink-3-color hover:pulse-surface-raised"><Icon name="arrowLeft" className="w-4 h-4"/></button>
+      <Avatar name="Frank Richard Messana" size={32}/>
+      <div className="leading-tight"><div className="text-sm font-medium pulse-ink-color">Frank Richard Messana</div><div className="text-[11px] pulse-ink-3-color">cockpit cards · chat layout</div></div>
+      <div className="ml-auto flex items-center gap-1.5"><button className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-mono-pulse tracking-wide-mono pulse-rose-bg-soft-color pulse-rose-color"><Icon name="sparkles" className="w-3.5 h-3.5"/>SUMMARIZE</button><button className="p-1.5 rounded-md pulse-ink-3-color hover:pulse-surface-raised"><Icon name="more" className="w-4 h-4"/></button></div>
+    </div>
+  );
+}
+
+function DThread({ variant }) {
+  if (variant === 'tasks') {
+    return (
+      <div className="h-full overflow-y-auto fade-up">
+        <DThreadHeader/>
+        <div className="max-w-[900px] mx-auto px-4 py-5 grid gap-5" style={{ gridTemplateColumns: '1fr 220px' }}>
+          <div className="flex flex-col gap-4">{THREAD.map(m => <CockpitBubble key={m.id} m={m}/>)}</div>
+          <TaskRail/>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="h-full overflow-y-auto fade-up">
+      <DThreadHeader/>
+      <div className="max-w-[760px] mx-auto px-4 py-5 flex flex-col gap-4">
+        {THREAD.map(m => <CockpitBubble key={m.id} m={m}/>)}
+        <button className="self-center mt-1 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl pulse-rose-bg-color text-white text-sm font-medium" style={{ boxShadow: '0 4px 12px var(--pulse-rose-glow)' }}><Icon name="video" className="w-4 h-4"/>Record reply</button>
+      </div>
+    </div>
+  );
+}
+
+function PathD({ subsection, setSubsection }) {
+  const [inboxBlend, setInboxBlend] = useState('brief');
+  const [threadBlend, setThreadBlend] = useState('plain');
+  return (
+    <div className="h-full flex flex-col">
+      <SectionHeader subsection={subsection} setSubsection={setSubsection} signals={GLIMPSES.length}/>
+      {subsection === 'inbox' && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <AboutPath tag="D" name="Hybrid · Briefing inbox"
+            archetype="Your blend — Daily Briefing digest + full-width glimpses."
+            iaFix="Digest card leads; glimpse rows span the full pane with a bigger 16:9 preview that expands inline. Toggle a Briefing + Reel grid."
+            vibe="Coral stays AI-only: briefing border, decision/task accents, action pills, chips."/>
+          <BlendToggle value={inboxBlend} onChange={setInboxBlend} options={[{ id: 'brief', label: 'Briefing' }, { id: 'reel', label: 'Briefing + Reel' }]}/>
+          <div className="flex-1 overflow-hidden"><DInbox go={setSubsection} variant={inboxBlend}/></div>
+        </div>
+      )}
+      {subsection === 'thread' && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <AboutPath tag="D" name="Hybrid · Cockpit chat"
+            archetype="Your blend — Triage-Cockpit cards as a left/right chat."
+            iaFix="Each glimpse keeps its cockpit card (summary chip, action items, transcript, watch/reply) but sits in a bubble — recipient left, you right. Toggle an extracted-tasks rail."
+            vibe="Me vs them split by alignment + raised surface only — coral never marks 'mine'."/>
+          <BlendToggle value={threadBlend} onChange={setThreadBlend} options={[{ id: 'plain', label: 'Cockpit bubbles' }, { id: 'tasks', label: 'Bubbles + task rail' }]}/>
+          <div className="flex-1 overflow-hidden"><DThread variant={threadBlend}/></div>
+        </div>
+      )}
+      {subsection === 'record' && <div className="flex-1 overflow-hidden"><RecordView/></div>}
+      {subsection === 'search' && <div className="flex-1 overflow-hidden"><SearchView/></div>}
+      {subsection === 'elements' && <div className="flex-1 overflow-hidden"><ElementsGallery/></div>}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
    APP SHELL
    ════════════════════════════════════════════════════════════════════════ */
 
@@ -1294,7 +1517,7 @@ function App() {
           <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">· PLAYGROUND</span>
         </div>
         <div className="ml-6 flex items-center gap-1 p-0.5 rounded-lg pulse-surface-raised">
-          {[{ id: 'A', label: 'A · Triage Cockpit' }, { id: 'B', label: 'B · Reel Wall' }, { id: 'C', label: 'C · Daily Briefing' }].map(p => (
+          {[{ id: 'A', label: 'A · Triage Cockpit' }, { id: 'B', label: 'B · Reel Wall' }, { id: 'C', label: 'C · Daily Briefing' }, { id: 'D', label: 'D · Hybrid' }].map(p => (
             <button key={p.id} data-active={path === p.id} onClick={() => setPath(p.id)} className="pg-pill px-3 py-1.5 rounded-md text-[12px] font-medium pulse-ink-2-color">{p.label}</button>
           ))}
         </div>
@@ -1311,6 +1534,7 @@ function App() {
           {path === 'A' && <PathA subsection={subsection} setSubsection={setSubsection}/>}
           {path === 'B' && <PathB subsection={subsection} setSubsection={setSubsection}/>}
           {path === 'C' && <PathC subsection={subsection} setSubsection={setSubsection}/>}
+          {path === 'D' && <PathD subsection={subsection} setSubsection={setSubsection}/>}
         </main>
       </div>
     </div>
