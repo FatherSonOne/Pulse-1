@@ -352,12 +352,24 @@ const ReelCard: React.FC<{
         </div>
 
         {processing && !hasSummary ? (
-          <span className="gl-ai-chip pending gl-tc-ai-chip">Transcribing</span>
+          // Two-line shimmer in the summary slot (reserves the same 2.9em the
+          // resolved summary uses, so the card doesn't reflow when the
+          // transcript lands). The "Transcribing" chip moves to the tags row
+          // below to mirror the resolved layout's "Claude" chip. The button's
+          // aria-label already announces "AI transcribing", so the visual
+          // skeleton is hidden from AT.
+          <div className="gl-reel-summary-skel" aria-hidden="true">
+            <span />
+            <span />
+          </div>
         ) : (
           <p className="gl-reel-summary">{summary}</p>
         )}
 
         <div className="gl-reel-tags">
+          {processing && !hasSummary && (
+            <span className="gl-ai-chip pending gl-tc-ai-chip">Transcribing</span>
+          )}
           {hasSummary && <span className="gl-ai-chip muted gl-tc-ai-chip">Claude</span>}
           {actionCount > 0 && (
             <span className="gl-tc-action-pill">

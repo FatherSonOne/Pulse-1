@@ -1145,6 +1145,27 @@
   min-height: 2.9em;
 }
 .gl-reel-card[data-unread] .gl-reel-summary { color: var(--gl-ink); }
+
+/* Processing reel card: two-line shimmer occupying the summary slot. Reserves
+   the same 2.9em the resolved summary uses so the card doesn't reflow when the
+   transcript lands; mirrors the old triage row's skeleton. Respects reduced
+   motion (see the reduced-motion block). */
+.gl-reel-summary-skel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-height: 2.9em;
+}
+.gl-reel-summary-skel span {
+  height: 9px;
+  border-radius: 3px;
+  background: var(--gl-surface-soft);
+  animation: gl-skel 1.6s ease-in-out infinite;
+}
+.gl-reel-summary-skel span:nth-child(1) { width: 80%; }
+.gl-reel-summary-skel span:nth-child(2) { width: 56%; }
+
 .gl-reel-tags {
   display: flex;
   flex-wrap: wrap;
@@ -3212,6 +3233,7 @@
   .gl-rec-dot,
   .gl-summary-skeleton span,
   .gl-tc-summary-skeleton span,
+  .gl-reel-summary-skel span,
   .gl-reaction-picker,
   .gl-record-btn,
   .gl-action-btn,
