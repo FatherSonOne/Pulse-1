@@ -700,32 +700,39 @@ const MessageBubble: React.FC<{
     else toast.error('Could not add to tasks');
   };
 
+  const senderLabel = isOwn ? 'you' : message.senderName;
+
   return (
-    <article id={`gl-msg-${message.id}`} className="gl-card" data-own={isOwn} data-state={cardState}>
-      {/* Selection checkbox */}
+    <article
+      id={`gl-msg-${message.id}`}
+      className="gl-card"
+      data-own={isOwn}
+      data-state={cardState}
+      data-selecting={isSelectionMode || undefined}
+      data-selected={(isSelectionMode && isSelected) || undefined}
+    >
+      {/* Selection mode = whole-card toggle. A full-bleed overlay button takes
+          the click (so the per-message Watch/Reply/⋯ actions stay inert while
+          selecting), and a leading checkbox in the left gutter shows state.
+          The checkbox is aria-hidden — the overlay carries the accessible
+          name and pressed state. */}
       {isSelectionMode && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSelection?.();
-          }}
-          className="gl-secondary-btn"
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: 12,
-            zIndex: 5,
-            background: isSelected ? MODE_COLOR : undefined,
-            color: isSelected ? '#fafafa' : undefined,
-            borderColor: isSelected ? MODE_COLOR : undefined,
-          }}
-          aria-pressed={isSelected}
-          aria-label={isSelected ? 'Deselect message' : 'Select message'}
-          title={isSelected ? 'Deselect' : 'Select'}
-        >
-          {isSelected ? <Check className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-        </button>
+        <>
+          <button
+            type="button"
+            className="gl-card-select-overlay"
+            onClick={() => onToggleSelection?.()}
+            aria-pressed={isSelected}
+            aria-label={isSelected ? `Deselect glimpse from ${senderLabel}` : `Select glimpse from ${senderLabel}`}
+          />
+          <span
+            className="gl-card-check"
+            data-selected={isSelected || undefined}
+            aria-hidden="true"
+          >
+            {isSelected ? <Check className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+          </span>
+        </>
       )}
 
       {/* Meta row */}

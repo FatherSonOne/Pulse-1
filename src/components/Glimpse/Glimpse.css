@@ -1494,6 +1494,7 @@
    GLIMPSE CARD — transcript-first
    ============================================ */
 .gl-card {
+  position: relative; /* anchors the selection overlay + checkbox gutter */
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1514,6 +1515,55 @@
 
 .gl-card[data-state="processing"] {
   border-color: rgba(250, 204, 21, 0.18);
+}
+
+/* Selection mode: the whole card is a toggle, with a leading checkbox gutter.
+   padding-left opens room for the checkbox; the overlay covers the card so
+   inner actions are inert; coral border + filled checkbox is the selected
+   signal (coral = active selection, per the product's coral-as-signal rule). */
+.gl-card[data-selecting] {
+  padding-left: 44px;
+  cursor: pointer;
+}
+.gl-card[data-selected] {
+  border-color: var(--gl-rose);
+}
+.gl-card-select-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.gl-card-select-overlay:focus-visible {
+  outline: 2px solid var(--gl-rose);
+  outline-offset: 2px;
+}
+.gl-card-check {
+  position: absolute;
+  top: 16px;
+  left: 12px;
+  z-index: 5; /* above the overlay; clicks pass through (pointer-events:none) */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--gl-border-strong);
+  background: var(--gl-surface);
+  color: var(--gl-ink-fog);
+  pointer-events: none;
+  transition: background var(--gl-fast) var(--gl-ease),
+              border-color var(--gl-fast) var(--gl-ease),
+              color var(--gl-fast) var(--gl-ease);
+}
+.gl-card-check[data-selected] {
+  background: var(--gl-rose);
+  border-color: var(--gl-rose);
+  color: #fafafa;
 }
 
 /* Card meta row: sender + duration + actions count */
@@ -3302,6 +3352,7 @@
   .gl-summary-skeleton span,
   .gl-tc-summary-skeleton span,
   .gl-reel-summary-skel span,
+  .gl-card-check,
   .gl-reaction-picker,
   .gl-record-btn,
   .gl-action-btn,

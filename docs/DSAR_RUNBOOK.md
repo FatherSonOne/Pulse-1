@@ -26,6 +26,9 @@ This document covers data Pulse holds in its own systems. Personal data a user
 contributed to **other** workspaces/organizations is controlled by those orgs;
 see §7.
 
+For acceptable-use enforcement, abuse/spam handling, and content/DMCA takedowns,
+see the companion **[Abuse & Takedown Runbook](./ABUSE_TAKEDOWN_RUNBOOK.md)**.
+
 ---
 
 ## 2. Data residency
@@ -81,10 +84,11 @@ for any DPA/subprocessor disclosure.
 - **What runs:** Thread/conversation summaries, compose/drafting, autopilot,
   RAG/retrieval, and meeting summaries.
 - **Where it runs:** **Server-side only**, via Supabase edge functions —
-  `ai-router` and the `gemini-*` functions (`gemini-proxy`, `gemini-audio`,
-  `gemini-video`, `gemini-image`, `gemini-speech`, `gemini-embed`,
-  `gemini-live-token`) plus the OpenAI token/transcription functions
-  (`openai-realtime-token`, `whisper-proxy`).
+  `ai-router` (which routes text/reasoning tasks to **Google Gemini** and
+  **Anthropic Claude**), the `gemini-*` functions (`gemini-proxy`,
+  `gemini-audio`, `gemini-video`, `gemini-image`, `gemini-speech`,
+  `gemini-embed`, `gemini-live-token`), and the OpenAI token/transcription
+  functions (`openai-realtime-token`, `whisper-proxy`).
 - **What content is sent:** Message text, email bodies, meeting transcripts,
   and contact/CRM data are transmitted to the AI subprocessor for inference at
   request time.
@@ -93,11 +97,12 @@ for any DPA/subprocessor disclosure.
 - **Intended contractual posture:** Content is sent **transiently for
   inference** and is **not used to train** the providers' models. This reflects
   the intended posture — **operator must confirm** this against each provider's
-  current DPA / API data-use terms (Google Gemini API, OpenAI API) and update
-  this section if the terms differ.
+  current DPA / API data-use terms (Google Gemini API, Anthropic Claude API,
+  OpenAI API) and update this section if the terms differ.
 
-AI subprocessors evidenced in `supabase/functions/`: **Google (Gemini)** and
-**OpenAI**.
+AI subprocessors evidenced in `supabase/functions/`: **Google (Gemini)**,
+**Anthropic (Claude)** — wired in `ai-router/providers.ts` + `tasks.ts` as the
+primary provider for most chat/reasoning tasks — and **OpenAI**.
 
 ---
 
@@ -110,6 +115,7 @@ Mark "(verify)" items against live vendor contracts before publishing externally
 | --- | --- | --- | --- |
 | Supabase | Database, auth, storage, edge functions | AWS us-east-1 | `supabase/` project, all `*` functions |
 | Google — Gemini | Server-side AI inference (text/audio/video/image/speech/embeddings) | US (SCCs) | `ai-router`, `gemini-*` functions |
+| Anthropic — Claude | Server-side AI inference (chat, reasoning, RAG, summaries) | US (SCCs) | `ai-router/providers.ts` (`invokeClaude`), `tasks.ts` |
 | Google — Maps Platform | Geocoding, directions, distance | US (SCCs) | `maps-geocode`, `maps-directions`, `maps-distance` |
 | Google — Gmail / Calendar / Contacts (OAuth) | Email, calendar, contacts integration | US (SCCs) | OAuth scopes; `emails`, `calendar_events` |
 | OpenAI | Realtime token minting, Whisper transcription | US (SCCs) | `openai-realtime-token`, `whisper-proxy` |
@@ -137,10 +143,11 @@ Mark "(verify)" items against live vendor contracts before publishing externally
 **(b) Assisted, by email** — for access/rectification requests or any request a
 user can't complete self-serve, direct them to:
 
-> **legal@quantumecosystems.com**
+> **fm1@qntmecos.com**
 
-(This is the same address already wired into the DPA card in
-`ComplianceSettings.tsx`. Do **not** invent a new mailbox.)
+(This is the canonical legal/privacy/abuse contact, and the same address
+wired into the DPA card in `ComplianceSettings.tsx`. Do **not** invent a new
+mailbox.)
 
 ### Response SLA
 

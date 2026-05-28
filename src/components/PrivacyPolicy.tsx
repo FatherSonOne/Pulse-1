@@ -108,7 +108,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
               <ul className="list-disc pl-6 text-zinc-600 dark:text-zinc-400 mb-4 space-y-2">
                 <li><strong>Microphone:</strong> Required for voice recording features including Vox modes (voice messages), real-time voice agents, meeting transcription, and voice commands. Audio is processed in real-time and voice recordings are only stored when you explicitly save them.</li>
                 <li><strong>Camera:</strong> Required for Pulse Meetings video calls and Video Vox messages. Camera access is only activated when you explicitly join a video meeting or record a video message. Video streams are transmitted in real-time during calls and are not stored unless you explicitly enable recording. We do not access your camera in the background or when the app is not in use.</li>
-                <li><strong>SMS (Send, Read, Receive):</strong> Required for sending and receiving text messages to contacts who are not on Pulse. This enables you to communicate with anyone directly from the Pulse app. SMS messages are processed through your device's native messaging system. We only access SMS when you explicitly use the messaging feature, and message content is not stored on our servers.</li>
+                <li><strong>SMS (Send, Read, Receive):</strong> In-app SMS is <strong>not available in the current release</strong> &mdash; this feature is disabled in v1. Because SMS is turned off, Pulse does not send, receive, read, or store any SMS messages, and no SMS-related device permission is exercised. If SMS messaging is enabled in a future release, this policy and the in-app permission prompts will be updated to describe how SMS data is handled before any access occurs.</li>
                 <li><strong>Contacts:</strong> Required to display your device contacts for quick recipient selection when composing messages or SMS. Contact data is accessed locally on your device and is not uploaded to our servers unless you explicitly choose to sync contacts to your Pulse account.</li>
                 <li><strong>Vibration:</strong> Used for haptic feedback during interactions such as button presses and notifications.</li>
                 <li><strong>Network State:</strong> Used to detect connectivity status and optimize data synchronization.</li>
@@ -213,7 +213,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
               </p>
               <ul className="list-disc pl-6 text-zinc-600 dark:text-zinc-400 space-y-2">
                 <li><strong>Service Providers:</strong> With trusted third-party services that help us operate our platform (e.g., Supabase for database, Google for authentication)</li>
-                <li><strong>AI Processing:</strong> Anonymized or pseudonymized data may be processed by AI services (Google Gemini, OpenAI, Anthropic, AssemblyAI, ElevenLabs) to provide intelligent features including text generation, voice transcription, and text-to-speech</li>
+                <li><strong>AI Processing:</strong> To provide AI features, your content &mdash; including message text, email bodies, meeting transcripts, and contact data &mdash; is transmitted server-side to our AI subprocessors (Google Gemini, Anthropic Claude, and OpenAI) for inference at the time of your request, through Pulse's server-side AI router. No AI provider keys are held in the client application; all AI calls are brokered server-side. This content is sent transiently for inference and is not used to train the providers' models</li>
                 <li><strong>Legal Requirements:</strong> When required by law or to protect our rights and safety</li>
                 <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale of assets</li>
               </ul>
@@ -283,6 +283,8 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
                 <li>Revoke sharing access you have granted to others</li>
                 <li>Clear locally cached data through browser settings</li>
                 <li>Disconnect third-party integrations (Google Calendar, Gmail, etc.) through your account settings</li>
+                <li><strong>Export your data and erase your account in-app:</strong> go to <strong>Settings &rarr; Privacy</strong> and use "Export my data" (to download a copy of your data) or "Erase my account" (to delete your account and associated data)</li>
+                <li>Email <a href="mailto:fm1@qntmecos.com" className="text-rose-500 hover:text-rose-600 underline">fm1@qntmecos.com</a> for assisted data-subject requests &mdash; including access, rectification, or any request you cannot complete with the in-app tools</li>
                 <li>Revoke Pulse's access to your Google account entirely via your account menu or at{' '}
                   <a
                     href="https://myaccount.google.com/permissions"

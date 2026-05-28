@@ -18,7 +18,7 @@ import { SettingsCard } from './shared/SettingsCard';
 import { MonoLabel } from './shared/MonoLabel';
 
 const DPA_URL = '/legal/pulse-dpa.pdf';
-const DPA_REQUEST_EMAIL = 'legal@quantumecosystems.com';
+const DPA_REQUEST_EMAIL = 'fm1@qntmecos.com';
 
 // Region info comes from VITE_SUPABASE_REGION if set, otherwise we display a
 // generic line. Set this in .env to surface the actual region to customers.

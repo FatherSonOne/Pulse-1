@@ -100,6 +100,15 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
                 <li>Reverse engineer or attempt to extract source code</li>
                 <li>Use the Service to infringe on intellectual property rights</li>
               </ul>
+              <h3 className="text-lg font-medium text-zinc-800 dark:text-zinc-200 mt-6 mb-2">Reporting Abuse &amp; Takedowns</h3>
+              <p className="text-zinc-600 dark:text-zinc-400">
+                You can report violations of these terms, abuse, spam, or intellectual-property and
+                DMCA complaints by emailing{' '}
+                <a href="mailto:fm1@qntmecos.com" className="text-rose-500 hover:text-rose-600 underline">fm1@qntmecos.com</a>.
+                We may remove content and suspend or terminate accounts that violate these terms or our
+                Acceptable Use Policy. Reports are handled under our Acceptable Use &amp; Abuse process,
+                including review, evidence preservation, and enforcement where warranted.
+              </p>
             </section>
 
             <section className="mb-8">
@@ -117,9 +126,13 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">6. Third-Party Integrations</h2>
               <p className="text-zinc-600 dark:text-zinc-400">
-                The Service integrates with third-party services (e.g., Google Calendar, Google OAuth).
-                Your use of these integrations is subject to the respective third-party terms of service.
+                The Service integrates with third parties to deliver its features, including Google
+                (Calendar, Gmail, Contacts, and Drive), AI providers (which power our AI features),
+                video infrastructure (Daily.co), email delivery (Resend), and payments (Stripe). Your
+                use of these integrations is subject to the respective third party's terms of service.
                 We are not responsible for the availability or functionality of third-party services.
+                For the complete list of subprocessors and how your data is handled, please refer to our{' '}
+                <a href="/privacy" className="text-rose-500 hover:text-rose-600 underline">Privacy Policy</a>.
               </p>
             </section>
 
@@ -180,7 +193,10 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
               <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">13. Governing Law</h2>
               <p className="text-zinc-600 dark:text-zinc-400">
                 These terms shall be governed by and construed in accordance with the laws of the
-                United States, without regard to conflict of law principles.
+                State of South Carolina, United States, without regard to its conflict of law principles.
+                You agree that any dispute arising out of or relating to these terms or the Service shall
+                be resolved exclusively in the state or federal courts located in South Carolina, and you
+                consent to the personal jurisdiction of those courts.
               </p>
             </section>
 
