@@ -1,7 +1,10 @@
 // LaneSection — collapsible category lane.
-// Phase 2: takes its emails as a prop (from useCockpitData.laneBuckets).
+// Each row supports inline expansion via the shared expandedSignalRowId
+// store slot (so opening a lane row collapses any open Signal row, and
+// vice versa — only one card is ever open at a time across the Cockpit).
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useEmailUIStore } from '../../../../store/emailUIStore';
 import type { EmailRow } from '../data/emailRow';
 import type { MockLane } from '../data/mockEmails';
 import { LaneRow } from './LaneRow';
@@ -14,6 +17,8 @@ interface LaneSectionProps {
 
 export const LaneSection: React.FC<LaneSectionProps> = ({ lane, emails, defaultOpen }) => {
   const [open, setOpen] = useState<boolean>(defaultOpen ?? lane.id === 'work');
+  const expandedId = useEmailUIStore((s) => s.expandedSignalRowId);
+  const setExpandedId = useEmailUIStore((s) => s.setExpandedSignalRowId);
 
   return (
     <div className="border pulse-border-color rounded-xl overflow-hidden">
@@ -36,7 +41,13 @@ export const LaneSection: React.FC<LaneSectionProps> = ({ lane, emails, defaultO
       {open && emails.length > 0 && (
         <div className="border-t pulse-border-color">
           {emails.map((it, idx) => (
-            <LaneRow key={it.id} email={it} showTopBorder={idx > 0} />
+            <LaneRow
+              key={it.id}
+              email={it}
+              expanded={expandedId === it.id}
+              onToggle={() => setExpandedId(expandedId === it.id ? null : it.id)}
+              showTopBorder={idx > 0}
+            />
           ))}
         </div>
       )}

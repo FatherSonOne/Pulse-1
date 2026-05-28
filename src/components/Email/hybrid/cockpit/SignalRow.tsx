@@ -8,7 +8,6 @@ import {
   ChevronUp, ChevronDown, Layers,
   Send, CheckSquare, MoonStar, ArrowRight, Calendar,
 } from 'lucide-react';
-import { useEmailStore } from '../../../../store/emailStore';
 import type { EmailRow, AiActionKind } from '../data/emailRow';
 import { Avatar, ToneChip } from '../primitives';
 import { InlineReader } from './InlineReader';
@@ -40,24 +39,20 @@ const ActionIcon: React.FC<{ kind: AiActionKind }> = ({ kind }) => {
 export const SignalRow: React.FC<SignalRowProps> = ({
   email, expanded, focused, onToggle, onFocus, onTriage, queuePos, queueTotal, queueCleared,
 }) => {
-  const handleEmailSelect = useEmailStore((s) => s.handleEmailSelect);
-
   // Header interaction: only open; never close from a click on the body.
+  // We deliberately do NOT mark-as-read on expand — the Signal filter is
+  // `!is_read && priority >= 60`, so marking on click would remove the row
+  // from the filter and the card would vanish under the user's hands.
+  // Mark-as-read happens through explicit actions (Archive, Send, etc.).
   const handleHeaderOpen = () => {
     if (expanded) return;
     onToggle();
-    if (email._raw && !email._raw.is_read) {
-      void handleEmailSelect(email._raw);
-    }
   };
 
   // Chevron: explicit toggle. When expanded → close; when collapsed → open.
   const handleChevronClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onToggle();
-    if (!expanded && email._raw && !email._raw.is_read) {
-      void handleEmailSelect(email._raw);
-    }
   };
 
   return (
