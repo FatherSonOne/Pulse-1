@@ -143,7 +143,7 @@ export const VoiceTextButton: React.FC<VoiceTextButtonProps> = ({
           focus:outline-none focus:ring-2 focus:ring-red-500/50
           ${isListening
             ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30'
-            : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white'}
+            : 'bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700 text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${className}
         `}
@@ -166,7 +166,7 @@ export const VoiceTextButton: React.FC<VoiceTextButtonProps> = ({
 
       {/* Interim transcript preview (shows while speaking) */}
       {isListening && localInterim && (
-        <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 rounded-lg text-xs text-zinc-300 whitespace-nowrap max-w-[200px] truncate shadow-lg border border-zinc-700 z-10">
+        <div className="absolute left-full ml-2 px-2 py-1 bg-white dark:bg-zinc-800 rounded-lg text-xs text-stone-700 dark:text-zinc-300 whitespace-nowrap max-w-[200px] truncate shadow-lg border border-stone-200 dark:border-zinc-700 z-10">
           <Quote className="text-red-500 mr-1 text-[10px]" />
           {localInterim}
         </div>
@@ -174,7 +174,7 @@ export const VoiceTextButton: React.FC<VoiceTextButtonProps> = ({
 
       {/* Error indicator */}
       {error && !isListening && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full border-2 border-zinc-900" title={error} />
+        <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full border-2 border-white dark:border-zinc-900" title={error} />
       )}
     </div>
   );
