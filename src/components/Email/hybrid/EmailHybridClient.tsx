@@ -121,10 +121,12 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     }
     const t = setTimeout(() => {
       if (mode === 'triage') {
-        const target = document.querySelector<HTMLButtonElement>(
-          '.triage-stage button[type="button"]',
-        );
-        target?.focus();
+        // Focus the scrollable BODY (a div) rather than the Archive button.
+        // A focused div is inert under Space/Enter, so users reading the
+        // email can't accidentally archive by pressing keys after a click;
+        // Tab from here still moves naturally into the action bar.
+        const body = document.querySelector<HTMLDivElement>('.triage-stage .triage-body');
+        body?.focus();
       } else {
         const target = document.querySelector<HTMLButtonElement>(
           '.seg-toggle button[data-active="true"]',

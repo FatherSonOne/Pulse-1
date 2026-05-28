@@ -23,6 +23,8 @@ export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact
     <div
       className="triage-stage relative h-full flex flex-col overflow-hidden card-in"
       key={email.id}
+      role="region"
+      aria-label={`Triage card: email from ${email.from} — ${email.subject}`}
     >
       {/* Header */}
       <div className={`${compact ? 'px-5 pt-4 pb-3' : 'px-7 pt-6 pb-4'} border-b pulse-border-color`}>
@@ -78,8 +80,15 @@ export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact
         </div>
       )}
 
-      {/* Body */}
-      <div className={`flex-1 overflow-y-auto ${compact ? 'px-5 py-4' : 'px-7 py-5'}`}>
+      {/* Body — focusable scroll region. tabIndex=-1 keeps it out of the Tab
+          cycle but lets focus management land here on Triage entry, so
+          accidental Space/Enter scrolls instead of firing Archive. */}
+      <div
+        className={`triage-body flex-1 overflow-y-auto ${compact ? 'px-5 py-4' : 'px-7 py-5'}`}
+        tabIndex={-1}
+        role="article"
+        aria-label={`Email body from ${email.from}`}
+      >
         <div className="prose-mock max-w-[640px]">
           {paragraphs.map((p, i) => {
             const lines = p.split('\n');
