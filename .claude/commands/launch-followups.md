@@ -505,7 +505,7 @@ The agent updates this section every time an item changes state. Each row:
 | key | status | priority | last-touched | note |
 |---|---|---|---|---|
 | `vercel-region` | done | P0 | 2026-05-27 | Set in Vercel (Prod+Preview), redeployed, bundle verified — `US East (us-east-1)` baked into `vendor-BRPKT_wH.js` |
-| `vercel-posthog` | pending | P0 | — | Without this, #117 instrumentation is dormant in prod |
+| `vercel-posthog` | in-progress | P0 | 2026-05-28 | Without this, #117 instrumentation is dormant in prod |
 | `live-smoke-99` | pending | P0 | — | Slack + Gmail OAuth round-trip from production |
 | `delete-test-111` | pending | P0 | — | Throwaway account → erasure → Supabase verify |
 | `keystore-backup` | pending | P0 | — | Backup keystore + properties to 2 offsite locations |
