@@ -1,19 +1,35 @@
-// CanvasTopBar — Phase 6: segmented mode toggle + folders dropdown + (Phase 7 placeholders).
-// The toggle's Triage half hides when we're not in the inbox; the folders
-// dropdown is the way back.
+// CanvasTopBar — Phase 7: full right cluster wired to live state.
+//   Left:  SegmentedModeToggle (Cockpit | Triage · N) + ⌘E hint
+//          FoldersDropdown (Inbox ▾)
+//   Right: GoogleAuthStatus · OfflineIndicatorCompact · Sync (RefreshCw)
+//          · Settings (gear)
+// Search input lands in Phase 8.
 import React from 'react';
-import { Search, Settings } from 'lucide-react';
+import { RefreshCw, Settings, Loader2 } from 'lucide-react';
 import { useEmailStore } from '../../../../store/emailStore';
+import { useEmailUIStore } from '../../../../store/emailUIStore';
+import { GoogleAuthStatus } from '../../GoogleAuthStatus';
+import { OfflineIndicatorCompact } from '../../OfflineIndicator';
 import { SegmentedModeToggle } from './SegmentedModeToggle';
 import { FoldersDropdown } from './FoldersDropdown';
-import { Keycap } from '../primitives';
 
 interface CanvasTopBarProps {
   triageRemaining: number;
+  onSync: () => void;
 }
 
-export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({ triageRemaining }) => {
+export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
+  triageRemaining,
+  onSync,
+}) => {
   const currentFolder = useEmailStore((s) => s.currentFolder);
+  const syncing = useEmailStore((s) => s.syncing);
+  const isOffline = useEmailStore((s) => s.isOffline);
+  const pendingActionsCount = useEmailStore((s) => s.pendingActionsCount);
+
+  const setShowReauthModal = useEmailUIStore((s) => s.setShowReauthModal);
+  const setShowEmailSettings = useEmailUIStore((s) => s.setShowEmailSettings);
+
   const triageDisabled = currentFolder !== 'inbox';
 
   return (
@@ -28,22 +44,36 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({ triageRemaining }) =
 
       <FoldersDropdown />
 
-      <div className="ml-auto flex items-center gap-2 opacity-40 pointer-events-none">
+      <div className="ml-auto flex items-center gap-1">
+        <GoogleAuthStatus onReconnect={() => setShowReauthModal(true)} />
+
+        <OfflineIndicatorCompact
+          isOffline={isOffline}
+          pendingActionsCount={pendingActionsCount}
+        />
+
         <button
           type="button"
-          className="px-2.5 py-1.5 rounded-md text-[12px] pulse-ink-2-color flex items-center gap-1.5"
-          title="Search (Phase 7)"
+          onClick={onSync}
+          disabled={syncing}
+          className="w-9 h-9 rounded-lg pulse-ink-2-color hover:pulse-surface-raised flex items-center justify-center transition disabled:opacity-40"
+          title={syncing ? 'Syncing…' : 'Sync emails'}
+          aria-label={syncing ? 'Syncing emails' : 'Sync emails'}
+          aria-busy={syncing}
         >
-          <Search className="w-3.5 h-3.5" />
-          <span>Search</span>
-          <Keycap>/</Keycap>
+          {syncing
+            ? <Loader2 className="w-4 h-4 animate-spin" />
+            : <RefreshCw className="w-4 h-4" />}
         </button>
+
         <button
           type="button"
-          className="px-2.5 py-1.5 rounded-md text-[12px] pulse-ink-2-color"
-          title="Settings (Phase 7)"
+          onClick={() => setShowEmailSettings(true)}
+          className="w-9 h-9 rounded-lg pulse-ink-2-color hover:pulse-surface-raised flex items-center justify-center transition"
+          title="Email settings"
+          aria-label="Open email settings"
         >
-          <Settings className="w-3.5 h-3.5" />
+          <Settings className="w-4 h-4" />
         </button>
       </div>
     </div>

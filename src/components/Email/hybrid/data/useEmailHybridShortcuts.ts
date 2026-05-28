@@ -23,6 +23,8 @@ import { useEmailComposeStore } from '../../../../store/emailComposeStore';
 interface Options {
   onCompose: () => void;
   onHelp: () => void;
+  /** Optional sync callback for Shift+N. If omitted, the keypress shows a phase-stub toast. */
+  onSync?: () => void;
 }
 
 function isTextInputTarget(target: EventTarget | null): boolean {
@@ -33,7 +35,7 @@ function isTextInputTarget(target: EventTarget | null): boolean {
   return false;
 }
 
-export function useEmailHybridShortcuts({ onCompose, onHelp }: Options): void {
+export function useEmailHybridShortcuts({ onCompose, onHelp, onSync }: Options): void {
   const showKeyboardShortcuts = useEmailUIStore((s) => s.showKeyboardShortcuts);
   const showEmailSettings = useEmailUIStore((s) => s.showEmailSettings);
   const showReauthModal = useEmailUIStore((s) => s.showReauthModal);
@@ -69,7 +71,8 @@ export function useEmailHybridShortcuts({ onCompose, onHelp }: Options): void {
         case 'n':
           if (hasShift) {
             e.preventDefault();
-            toast('Manual sync lands in Phase 7.');
+            if (onSync) onSync();
+            else toast('Manual sync not available right now.');
           }
           break;
         case 'z':
@@ -83,7 +86,7 @@ export function useEmailHybridShortcuts({ onCompose, onHelp }: Options): void {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [
-    onCompose, onHelp,
+    onCompose, onHelp, onSync,
     showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal,
   ]);
 
