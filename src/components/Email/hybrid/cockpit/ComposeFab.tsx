@@ -13,6 +13,7 @@ export const ComposeFab: React.FC<ComposeFabProps> = ({ onClick }) => (
     type="button"
     className="fab-compose"
     title="Compose new email"
+    aria-label="Compose new email"
     onClick={onClick}
   >
     <PenLine className="w-4 h-4" />

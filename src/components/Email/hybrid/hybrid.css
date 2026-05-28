@@ -208,7 +208,7 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
 
 /* ─── Floating compose FAB ─── */
 .email-hybrid-shell .fab-compose {
-  position: absolute; bottom: 20px; right: 20px; z-index: 20;
+  position: absolute; bottom: 80px; right: 16px; z-index: 20;
   display: inline-flex; align-items: center; gap: 10px;
   padding: 12px 16px 12px 14px; border-radius: 999px;
   background: var(--pulse-rose); color: white; font-weight: 500; font-size: 13px;
@@ -219,10 +219,25 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 18px 44px var(--pulse-rose-glow), 0 6px 18px rgba(0, 0, 0, 0.20);
 }
+@media (min-width: 768px) {
+  .email-hybrid-shell .fab-compose { bottom: 20px; right: 20px; }
+}
 
 /* ─── Selectable / interactive rows (lane rows) ─── */
 .email-hybrid-shell .selectable-row { transition: background 160ms ease, border-color 160ms ease; }
 .email-hybrid-shell .selectable-row:hover { background: var(--pulse-surface-raised); }
+
+/* ─── Mobile (< 768px) ───
+   Triage mode is hidden — the segmented pill collapses to a single Cockpit
+   button via SegmentedModeToggle's data-mobile-hide attribute. The ⌘E hint
+   pill is suppressed too. Cockpit's right rail collapses; see CockpitView
+   for the responsive grid + aside hiding. */
+@media (max-width: 767px) {
+  .email-hybrid-shell .seg-toggle button[data-mobile-hide='true'] { display: none; }
+  .email-hybrid-shell .toggle-hint { display: none; }
+  /* Tighten the canvas top bar so all controls fit on narrow viewports. */
+  .email-hybrid-shell .seg-toggle button { padding: 6px 10px; }
+}
 
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {

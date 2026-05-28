@@ -235,6 +235,7 @@ export const FolderListView: React.FC = () => {
                       onClick={(e) => { e.stopPropagation(); void handleToggleStar(email); }}
                       className={`p-1 rounded hover:pulse-rose-bg-soft-color ${email.is_starred ? 'pulse-rose-color' : 'pulse-ink-3-color'}`}
                       title="Star / unstar"
+                      aria-label={email.is_starred ? `Unstar email from ${row.from}` : `Star email from ${row.from}`}
                     >
                       <Star className="w-3.5 h-3.5" fill={email.is_starred ? 'currentColor' : 'none'} />
                     </button>
@@ -243,6 +244,7 @@ export const FolderListView: React.FC = () => {
                       onClick={(e) => { e.stopPropagation(); void handleArchive(email); }}
                       className="p-1 rounded hover:pulse-rose-bg-soft-color pulse-ink-3-color"
                       title="Archive"
+                      aria-label={`Archive email from ${row.from}`}
                     >
                       <Archive className="w-3.5 h-3.5" />
                     </button>
@@ -251,6 +253,7 @@ export const FolderListView: React.FC = () => {
                       onClick={(e) => { e.stopPropagation(); setSnoozeTargetEmailId(email.id); }}
                       className="p-1 rounded hover:pulse-rose-bg-soft-color pulse-ink-3-color"
                       title="Snooze"
+                      aria-label={`Snooze email from ${row.from}`}
                     >
                       <MoonStar className="w-3.5 h-3.5" />
                     </button>
@@ -259,6 +262,7 @@ export const FolderListView: React.FC = () => {
                       onClick={(e) => { e.stopPropagation(); void handleTrash(email); }}
                       className="p-1 rounded hover:pulse-rose-bg-soft-color pulse-ink-3-color"
                       title="Move to trash"
+                      aria-label={`Move email from ${row.from} to trash`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

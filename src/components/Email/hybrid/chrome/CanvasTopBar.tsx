@@ -62,7 +62,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
 
       <FoldersDropdown />
 
-      <div className="flex-1 max-w-xl relative">
+      <div className="flex-1 max-w-xl relative min-w-0">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pulse-ink-3-color" />
         <input
           ref={inputRef}
@@ -101,12 +101,14 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        <GoogleAuthStatus onReconnect={() => setShowReauthModal(true)} />
+        <div className="hidden md:contents">
+          <GoogleAuthStatus onReconnect={() => setShowReauthModal(true)} />
 
-        <OfflineIndicatorCompact
-          isOffline={isOffline}
-          pendingActionsCount={pendingActionsCount}
-        />
+          <OfflineIndicatorCompact
+            isOffline={isOffline}
+            pendingActionsCount={pendingActionsCount}
+          />
+        </div>
 
         <button
           type="button"

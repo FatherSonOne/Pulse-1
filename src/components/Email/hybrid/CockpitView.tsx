@@ -73,7 +73,9 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
       )}
 
       {!loading && !isEmpty && (
-        <div className={`grid ${compact ? 'grid-cols-1 gap-6 px-6 py-6' : 'grid-cols-[1fr_320px] gap-8 px-10 py-7'}`}>
+        <div className={`grid gap-6 px-6 py-6 md:gap-8 md:px-10 md:py-7 ${
+          compact ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-[1fr_320px]'
+        }`}>
           <div>
             <SignalSection
               signals={signalEmails}
@@ -100,7 +102,7 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
           </div>
 
           {!compact && (
-            <aside className="space-y-5">
+            <aside className="space-y-5 hidden md:block">
               <DraftedForYouRail drafts={[]} />
               <AwaitingRepliesRail rows={awaitingReplies} />
               {awaitingReplies.length > 0 && <div className="editorial-rule" />}

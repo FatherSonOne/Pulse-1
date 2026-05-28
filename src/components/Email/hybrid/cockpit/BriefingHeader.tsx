@@ -35,7 +35,7 @@ export const BriefingHeader: React.FC<BriefingHeaderProps> = ({
   };
 
   return (
-    <div className={`${compact ? 'px-6 pt-6 pb-5' : 'px-10 pt-8 pb-6'} border-b pulse-border-color`}>
+    <div className={`px-6 pt-6 pb-5 md:px-10 md:pt-8 md:pb-6 ${compact ? '' : ''} border-b pulse-border-color`}>
       <div className="flex items-baseline justify-between mb-2">
         <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color">
           DAILY BRIEFING · {m.dateStr.toUpperCase()}
@@ -46,9 +46,9 @@ export const BriefingHeader: React.FC<BriefingHeaderProps> = ({
       </div>
 
       <h1
-        className={`cockpit-headline leading-[1.1] tracking-tight mb-3 ${compact ? 'text-[24px]' : 'text-[34px]'} ${
-          nudgeFocused ? 'pulse-rose-color' : 'pulse-ink-color'
-        }`}
+        className={`cockpit-headline leading-[1.1] tracking-tight mb-3 ${
+          compact ? 'text-[22px] md:text-[24px]' : 'text-[24px] md:text-[34px]'
+        } ${nudgeFocused ? 'pulse-rose-color' : 'pulse-ink-color'}`}
         style={nudgeFocused ? { transition: 'color 1.5s ease' } : undefined}
       >
         {m.headlineLead}

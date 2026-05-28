@@ -48,6 +48,7 @@ export const SegmentedModeToggle: React.FC<SegmentedModeToggleProps> = ({
           <button
             type="button"
             data-active={mode === 'triage'}
+            data-mobile-hide="true"
             aria-pressed={mode === 'triage'}
             aria-label={`Triage view${hasItems ? `, ${triageRemaining} to clear` : ', cleared'}`}
             role="tab"

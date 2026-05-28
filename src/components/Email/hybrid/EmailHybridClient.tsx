@@ -109,6 +109,32 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
   const triageData = useTriageQueue();
   const isInbox = currentFolder === 'inbox';
 
+  // Focus management on mode transitions (Phase 10 a11y):
+  // Entering Triage    → focus first action button on the focal card.
+  // Returning Cockpit  → focus the active seg-toggle pill.
+  // Skip the initial mount to avoid stealing page-load focus.
+  const hasMountedRef = useRef(false);
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+    const t = setTimeout(() => {
+      if (mode === 'triage') {
+        const target = document.querySelector<HTMLButtonElement>(
+          '.triage-stage button[type="button"]',
+        );
+        target?.focus();
+      } else {
+        const target = document.querySelector<HTMLButtonElement>(
+          '.seg-toggle button[data-active="true"]',
+        );
+        target?.focus();
+      }
+    }, 320); // matches the view-shell cross-fade duration
+    return () => clearTimeout(t);
+  }, [mode]);
+
   // ── Search execution state (separate from the controlled input value) ─
   const [searchActive, setSearchActive] = useState(false);
   const [executedQuery, setExecutedQuery] = useState('');
@@ -466,6 +492,9 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
       if (isTextInputTarget(e.target)) return;
       if (showComposer || showEmailSettings || showReauthModal) return;
       if (!isInbox) return;
+      // Mobile: Triage is hidden by Phase 9 layout rules; keep the keybind
+      // dormant so it can't trap the user in a hidden view.
+      if (typeof window !== 'undefined' && window.innerWidth < 768) return;
       e.preventDefault();
       setMode(mode === 'cockpit' ? 'triage' : 'cockpit');
     };
