@@ -504,7 +504,7 @@ The agent updates this section every time an item changes state. Each row:
 
 | key | status | priority | last-touched | note |
 |---|---|---|---|---|
-| `vercel-region` | pending | P0 | — | Settings → Compliance shows "Multi-region" until set |
+| `vercel-region` | done | P0 | 2026-05-27 | Set in Vercel (Prod+Preview), redeployed, bundle verified — `US East (us-east-1)` baked into `vendor-BRPKT_wH.js` |
 | `vercel-posthog` | pending | P0 | — | Without this, #117 instrumentation is dormant in prod |
 | `live-smoke-99` | pending | P0 | — | Slack + Gmail OAuth round-trip from production |
 | `delete-test-111` | pending | P0 | — | Throwaway account → erasure → Supabase verify |
@@ -518,10 +518,11 @@ The agent updates this section every time an item changes state. Each row:
 | `sms-10dlc` | parked | P3 | — | Only when SMS unhides for v1 |
 | `dsar-export-gap` | parked | P3 | — | Only when first DSAR arrives or capacity allows |
 
-**Resume Pointer:** next unblocked item is `vercel-region`. Run `/launch-followups` to start there, or `/launch-followups <key>` to jump.
+**Resume Pointer:** next unblocked item is `vercel-posthog`. Run `/launch-followups` to start there, or `/launch-followups <key>` to jump.
 
 ---
 
 ## Changelog
 
 - **2026-05-27** — Command created. Initial checklist captures 13 items (6 × P0, 4 × P1, 1 × P2, 2 parked). All P0 items are real launch gates — bias toward clearing those before P1 decisions.
+- **2026-05-27** — `vercel-region` done. `VITE_SUPABASE_REGION=US East (us-east-1)` set in Vercel `pulse1` (Production + Preview), redeployed, bundle-verified via curl of `/assets/vendor-BRPKT_wH.js`. Settings → Compliance now surfaces the real region instead of the "Multi-region" fallback. 5 × P0 remain.
