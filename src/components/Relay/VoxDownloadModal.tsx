@@ -1,5 +1,9 @@
 // VoxDownloadModal - Export format selection and download progress
-// Supports WebM (original), MP3, and WAV export formats
+// Audio mode (default): WebM / MP3 / WAV — original VOX recordings are audio.
+// Video mode (Glimpse): WebM video / Audio-only MP3 — original glimpses are
+//   video+audio; MP3 is an audio-track extract via AudioContext (which drops
+//   the video track on decode). No MP4 yet — that needs a real transcode
+//   pipeline (ffmpeg.wasm / mp4-muxer), out of scope here.
 
 import React, { useState, useCallback } from 'react';
 import {
@@ -26,6 +30,9 @@ interface VoxDownloadModalProps {
   isDarkMode?: boolean;
   accentColor?: string;
   onComplete?: () => void;
+  /** 'audio' (default — VOX) or 'video' (Glimpse). Drives format options,
+   *  title, mime types, and ZIP filename prefix. */
+  mode?: 'audio' | 'video';
 }
 
 type ExportFormat = 'webm' | 'mp3' | 'wav';
@@ -39,7 +46,7 @@ interface FormatOption {
   fileSize: string;
 }
 
-const FORMATS: FormatOption[] = [
+const FORMATS_AUDIO: FormatOption[] = [
   {
     id: 'webm',
     name: 'WebM',
@@ -66,6 +73,31 @@ const FORMATS: FormatOption[] = [
   },
 ];
 
+// Glimpses are video+audio. WebM is the original (plays in Chrome/Edge/
+// Firefox/VLC/QuickTime out of the box) — no conversion, no quality loss.
+// Audio-only MP3 strips the video track via AudioContext decode and re-
+// encodes the audio with lamejs; useful for transcription or pure-listen.
+// No WAV (uncompressed audio without the video defeats the point), no MP4
+// (would need ffmpeg.wasm — separate engineering task).
+const FORMATS_VIDEO: FormatOption[] = [
+  {
+    id: 'webm',
+    name: 'WebM',
+    description: 'Original video + audio, fastest download',
+    icon: <Zap className="w-5 h-5" />,
+    pros: ['Fastest', 'No conversion', 'Video + audio'],
+    fileSize: 'Small',
+  },
+  {
+    id: 'mp3',
+    name: 'Audio only (MP3)',
+    description: 'Strip the video, keep voice for listening or transcribing',
+    icon: <Music className="w-5 h-5" />,
+    pros: ['Audio only', 'Smaller', 'Good for transcription'],
+    fileSize: 'Medium',
+  },
+];
+
 const ACCENT_COLOR = '#f43f5e';
 
 export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
@@ -75,7 +107,13 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
   isDarkMode = false,
   accentColor = ACCENT_COLOR,
   onComplete,
+  mode = 'audio',
 }) => {
+  const isVideo = mode === 'video';
+  const FORMATS = isVideo ? FORMATS_VIDEO : FORMATS_AUDIO;
+  const noun = isVideo ? 'glimpse' : 'message';
+  const zipPrefix = isVideo ? 'glimpse' : 'vox';
+  const title = isVideo ? 'Download Glimpse' : 'Download Vox';
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('webm');
   const [isDownloading, setIsDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -125,9 +163,10 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
       const response = await fetch(url);
       const arrayBuffer = await response.arrayBuffer();
 
-      // For WebM, return original
+      // For WebM, return original — video mode preserves the video track
+      // (mime video/webm), audio mode strips to audio/webm framing.
       if (targetFormat === 'webm') {
-        return new Blob([arrayBuffer], { type: 'audio/webm' });
+        return new Blob([arrayBuffer], { type: isVideo ? 'video/webm' : 'audio/webm' });
       }
 
       // Decode audio using AudioContext
@@ -314,8 +353,8 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
       const lastDate = new Date(sortedItems[sortedItems.length - 1].timestamp);
       const dateStr = firstDate.toISOString().slice(0, 10);
       const zipFileName = sortedItems.length === 1
-        ? `vox_${dateStr}.zip`
-        : `vox_${dateStr}_${sortedItems.length}_messages.zip`;
+        ? `${zipPrefix}_${dateStr}.zip`
+        : `${zipPrefix}_${dateStr}_${sortedItems.length}_${isVideo ? 'glimpses' : 'messages'}.zip`;
 
       // Download ZIP
       setProgress(95);
@@ -450,9 +489,9 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
               <FolderDown className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className={`text-lg font-bold ${tc.text}`}>Download Vox</h2>
+              <h2 className={`text-lg font-bold ${tc.text}`}>{title}</h2>
               <p className={`text-xs ${tc.textMuted}`}>
-                {items.length} {items.length === 1 ? 'message' : 'messages'} · {formatDuration(totalDuration)}
+                {items.length} {items.length === 1 ? noun : `${noun}s`} · {formatDuration(totalDuration)}
               </p>
             </div>
           </div>

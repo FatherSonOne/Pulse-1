@@ -35,6 +35,9 @@ interface VoxSelectToolbarProps {
   isDarkMode?: boolean;
   accentColor?: string;
   contactName?: string; // Added for archive labeling
+  /** Passed through to VoxDownloadModal — 'audio' (default, VOX) or 'video'
+   *  (Glimpse) drives format options, title, mime, and ZIP filename. */
+  mode?: 'audio' | 'video';
 }
 
 const ACCENT_COLOR = '#f43f5e';
@@ -52,6 +55,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
   isDarkMode = false,
   accentColor = ACCENT_COLOR,
   contactName = 'Unknown Contact',
+  mode = 'audio',
 }) => {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
@@ -352,6 +356,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
         isDarkMode={isDarkMode}
         accentColor={accentColor}
         onComplete={onExitSelection}
+        mode={mode}
       />
 
       {/* Styles */}

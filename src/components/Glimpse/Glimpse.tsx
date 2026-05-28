@@ -2583,6 +2583,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
           isDarkMode={isDarkMode}
           accentColor={MODE_COLOR}
           allSelected={selectionCount === chatHook.messages.length && chatHook.messages.length > 0}
+          mode="video"
         />
       )}
 
