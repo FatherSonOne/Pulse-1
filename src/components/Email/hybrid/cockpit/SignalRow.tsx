@@ -1,8 +1,112 @@
-// SignalRow — Phase 1 stub. Click-to-expand row with queue position pip.
+// SignalRow — single expandable row in the Cockpit Signal section.
+// Header is always visible; click to toggle InlineReader expansion below.
 import React from 'react';
+import {
+  ChevronUp, ChevronDown, Layers,
+  Send, CheckSquare, MoonStar, ArrowRight, Calendar,
+} from 'lucide-react';
+import type { MockEmail } from '../data/mockEmails';
+import { Avatar, ToneChip } from '../primitives';
+import { InlineReader } from './InlineReader';
 
-export const SignalRow: React.FC = () => {
-  return <div data-stub="SignalRow" />;
+interface SignalRowProps {
+  email: MockEmail;
+  expanded: boolean;
+  onToggle: () => void;
+  onTriage?: () => void;
+  queuePos: number | null;
+  queueTotal: number;
+  queueCleared: boolean;
+}
+
+const ActionIcon: React.FC<{ kind: MockEmail['aiActions'][number]['kind'] }> = ({ kind }) => {
+  switch (kind) {
+    case 'reply':  return <Send className="w-3 h-3" />;
+    case 'task':   return <CheckSquare className="w-3 h-3" />;
+    case 'snooze': return <MoonStar className="w-3 h-3" />;
+    case 'meet':   return <Calendar className="w-3 h-3" />;
+    case 'link':
+    case 'rsvp':
+    default:       return <ArrowRight className="w-3 h-3" />;
+  }
+};
+
+export const SignalRow: React.FC<SignalRowProps> = ({
+  email, expanded, onToggle, onTriage, queuePos, queueTotal, queueCleared,
+}) => {
+  return (
+    <div className="signal-row border pulse-border-color overflow-hidden" data-expanded={expanded}>
+      <button
+        onClick={onToggle}
+        className="w-full text-left flex items-start gap-4 px-4 py-3.5"
+        type="button"
+        aria-expanded={expanded}
+      >
+        <Avatar name={email.from} size={36} />
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[13px] font-semibold pulse-ink-color">{email.from}</span>
+            {email.org && <>
+              <span className="text-[11px] pulse-ink-3-color">·</span>
+              <span className="text-[11px] pulse-ink-3-color">{email.org}</span>
+            </>}
+            <ToneChip tone={email.tone} />
+            {queueCleared ? (
+              <span className="queue-pip cleared" title="Cleared in this triage session">CLEARED</span>
+            ) : queuePos != null && (
+              <span className="queue-pip" title={`Position ${queuePos} of ${queueTotal} in triage queue`}>
+                <span className="tnum">#{queuePos}</span>
+                <span className="opacity-60">/ {queueTotal}</span>
+              </span>
+            )}
+            <span className="ml-auto text-[11px] font-mono-pulse pulse-ink-3-color tnum">{email.when}</span>
+          </div>
+
+          <div className="cockpit-headline text-[17px] pulse-ink-color leading-snug mb-1.5">
+            {email.subject}
+          </div>
+
+          {email.aiSummary && (
+            <div className="flex items-start gap-2">
+              <span className="mt-1 pulse-rose-color shrink-0">→</span>
+              <p className="text-[13px] pulse-ink-2-color leading-relaxed">{email.aiSummary}</p>
+            </div>
+          )}
+
+          <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+            {email.aiActions.slice(0, 2).map((a) => (
+              <button
+                key={a.id}
+                onClick={(e) => e.stopPropagation()}
+                type="button"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md pulse-surface-raised text-[12px] pulse-ink-color hover:pulse-rose-bg-soft-color"
+              >
+                <ActionIcon kind={a.kind} />
+                <span>{a.label}</span>
+              </button>
+            ))}
+
+            <div className="ml-auto row-actions flex items-center gap-1">
+              {onTriage && (
+                <span
+                  onClick={(e) => { e.stopPropagation(); onTriage(); }}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border pulse-border-color text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color hover:pulse-rose-color hover:pulse-rose-border cursor-pointer"
+                >
+                  <Layers className="w-3 h-3" />TRIAGE
+                </span>
+              )}
+              {expanded
+                ? <ChevronUp className="w-4 h-4 pulse-ink-3-color" />
+                : <ChevronDown className="w-4 h-4 pulse-ink-3-color" />}
+            </div>
+          </div>
+        </div>
+      </button>
+
+      {expanded && <InlineReader email={email} />}
+    </div>
+  );
 };
 
 export default SignalRow;

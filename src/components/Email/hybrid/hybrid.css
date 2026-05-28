@@ -1,0 +1,231 @@
+/* ─── Email Hybrid — Cockpit + Triage CSS ─────────────────────────────────
+   Scoped to .email-hybrid-shell. Consumes canonical pulse-tokens.css vars
+   ONLY — never redeclares colors. Adds three groups:
+
+     1. Bespoke utility classes the Path A playground uses
+        (pulse-ink-color, font-mono-pulse, font-serif-pulse, etc.).
+        These are kept here (not in pulse-tokens.css) so the migration is
+        local to the hybrid surface and doesn't ripple across the app.
+
+     2. Cockpit components (signal-row, cockpit-headline, editorial-rule,
+        lane-card, draft-card, fab-compose, triage-cta, reader-expand,
+        prose-mock, queue-pip).
+
+     3. Shared chips (ai-chip, tone-warm/cool/cold/hot, badge, keycap).
+
+   Dark mode is class-based via `html.dark`, matching the rest of Pulse.
+
+   Triage-specific CSS (action-toast, done-halo, triage-stage, view-shells,
+   seg-toggle) lands in Phase 3 — added below the PHASE 3 marker so
+   the diff is obvious.
+   ──────────────────────────────────────────────────────────────────────── */
+
+.email-hybrid-shell {
+  --pulse-font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-family: var(--pulse-font);
+  color: var(--pulse-ink);
+  background: var(--pulse-canvas);
+}
+
+/* ─── Utility classes (text + bg + border + font) ─── */
+.email-hybrid-shell .pulse-ink-color          { color: var(--pulse-ink); }
+.email-hybrid-shell .pulse-ink-2-color        { color: var(--pulse-ink-2); }
+.email-hybrid-shell .pulse-ink-3-color        { color: var(--pulse-ink-3); }
+.email-hybrid-shell .pulse-rose-color         { color: var(--pulse-rose); }
+.email-hybrid-shell .pulse-coral-fg-color     { color: var(--pulse-coral-fg); }
+.email-hybrid-shell .pulse-rose-bg-color      { background: var(--pulse-rose); }
+.email-hybrid-shell .pulse-rose-bg-soft-color { background: var(--pulse-rose-soft); }
+.email-hybrid-shell .pulse-coral-bg-color     { background: var(--pulse-coral-bg-12); }
+.email-hybrid-shell .pulse-coral-bg-08-color  { background: var(--pulse-coral-bg-08); }
+.email-hybrid-shell .pulse-surface            { background: var(--pulse-surface); }
+.email-hybrid-shell .pulse-surface-raised     { background: var(--pulse-surface-raised); }
+.email-hybrid-shell .pulse-border-color       { border-color: var(--pulse-border); }
+.email-hybrid-shell .pulse-border-strong-color{ border-color: var(--pulse-border-strong); }
+.email-hybrid-shell .pulse-rose-border        { border-color: var(--pulse-rose); }
+.email-hybrid-shell .font-mono-pulse {
+  font-family: var(--pulse-font-mono);
+  font-feature-settings: 'tnum' 1;
+}
+.email-hybrid-shell .font-serif-pulse { font-family: var(--pulse-font-serif); }
+.email-hybrid-shell .tnum             { font-variant-numeric: tabular-nums; }
+.email-hybrid-shell .tracking-tight-mono { letter-spacing: 0.06em; }
+.email-hybrid-shell .tracking-wide-mono  { letter-spacing: 0.16em; }
+
+/* ─── Motion ─── */
+@keyframes hybridFadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.email-hybrid-shell .fade-up { animation: hybridFadeUp 280ms cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes hybridPulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.85); } }
+
+/* ─── AI provenance chip (reserved for AI-output surfaces only) ─── */
+.email-hybrid-shell .ai-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px;
+  background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+  font-family: var(--pulse-font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; line-height: 1;
+}
+.email-hybrid-shell .ai-chip::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor; flex: none;
+}
+.email-hybrid-shell .ai-chip.muted    { background: var(--pulse-surface-raised); color: var(--pulse-ink-2); }
+.email-hybrid-shell .ai-chip.pending  { background: rgba(245, 158, 11, 0.12); color: #b45309; }
+html.dark .email-hybrid-shell .ai-chip.pending { color: #fbbf24; }
+.email-hybrid-shell .ai-chip.positive { background: rgba(16, 185, 129, 0.12); color: #047857; }
+html.dark .email-hybrid-shell .ai-chip.positive { color: #34d399; }
+
+/* ─── Tone chips ─── */
+.email-hybrid-shell .tone-warm { background: rgba(244, 63, 94, 0.10); color: var(--pulse-coral-fg); }
+.email-hybrid-shell .tone-cool { background: rgba(59, 130, 246, 0.10); color: #1d4ed8; }
+.email-hybrid-shell .tone-cold { background: rgba(107, 114, 128, 0.14); color: var(--pulse-ink-3); }
+.email-hybrid-shell .tone-hot  { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+html.dark .email-hybrid-shell .tone-cool { color: #93c5fd; }
+html.dark .email-hybrid-shell .tone-hot  { color: #fbbf24; }
+
+/* ─── Badges + keycaps ─── */
+.email-hybrid-shell .badge {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 4px;
+  font-family: var(--pulse-font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase; line-height: 1;
+  background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
+}
+.email-hybrid-shell .badge.coral { background: var(--pulse-coral-bg-12); color: var(--pulse-coral-fg); }
+.email-hybrid-shell .keycap {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 4px; border: 1px solid var(--pulse-border-strong);
+  background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
+  font-family: var(--pulse-font-mono); font-size: 10px; line-height: 1;
+}
+
+/* ─── Cockpit editorial ─── */
+.email-hybrid-shell .cockpit-headline {
+  font-family: var(--pulse-font-serif); font-weight: 500; letter-spacing: -0.01em;
+}
+.email-hybrid-shell .editorial-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--pulse-border-strong), transparent);
+}
+
+/* ─── Signal rows ─── */
+.email-hybrid-shell .signal-row {
+  position: relative;
+  border-radius: 14px;
+  transition: transform 200ms ease, background 200ms ease, border-color 200ms ease,
+              box-shadow 200ms ease;
+  box-shadow: 0 0 0 0 transparent;
+}
+.email-hybrid-shell .signal-row:hover {
+  background: var(--pulse-surface-raised);
+  border-color: var(--pulse-border-strong);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--pulse-border-strong);
+  transform: translateY(-1px);
+}
+html.dark .email-hybrid-shell .signal-row:hover {
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.email-hybrid-shell .signal-row .row-actions { opacity: 0; transition: opacity 200ms ease; }
+.email-hybrid-shell .signal-row:hover .row-actions { opacity: 1; }
+.email-hybrid-shell .signal-row[data-expanded='true'] {
+  background: var(--pulse-surface-raised);
+  border-color: var(--pulse-border-strong);
+}
+.email-hybrid-shell .signal-row[data-expanded='true'] .row-actions { opacity: 1; }
+
+/* ─── Reader expansion (inline body inside SignalRow) ─── */
+.email-hybrid-shell .reader-expand {
+  overflow: hidden;
+  animation: hybridFadeUp 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  border-top: 1px solid var(--pulse-border);
+  background: var(--pulse-canvas-soft);
+  border-radius: 0 0 14px 14px;
+}
+.email-hybrid-shell .prose-mock p {
+  font-size: 14px; line-height: 1.65; color: var(--pulse-ink-2); margin: 0 0 12px;
+}
+.email-hybrid-shell .prose-mock p strong { color: var(--pulse-ink); font-weight: 600; }
+.email-hybrid-shell .prose-mock p:last-child { margin-bottom: 0; }
+
+/* ─── Queue pip (Signal row positional badge) ─── */
+.email-hybrid-shell .queue-pip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 7px; border-radius: 999px;
+  background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+  font-family: var(--pulse-font-mono); font-size: 9px; font-weight: 600;
+  letter-spacing: 0.08em; line-height: 1;
+}
+.email-hybrid-shell .queue-pip::before {
+  content: ''; width: 4px; height: 4px; border-radius: 999px;
+  background: currentColor; animation: hybridPulseDot 1.8s ease-in-out infinite;
+}
+.email-hybrid-shell .queue-pip.cleared {
+  background: rgba(16, 185, 129, 0.10); color: #047857;
+}
+html.dark .email-hybrid-shell .queue-pip.cleared { color: #34d399; }
+.email-hybrid-shell .queue-pip.cleared::before { animation: none; opacity: 0.7; }
+
+/* ─── Lanes ─── */
+.email-hybrid-shell .lane-card { transition: background 160ms ease; }
+.email-hybrid-shell .lane-card:hover { background: var(--pulse-surface-raised); }
+.email-hybrid-shell .lane-row {
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.email-hybrid-shell .lane-row:hover { background: var(--pulse-surface-raised); }
+
+/* ─── Drafted-for-you rail cards ─── */
+.email-hybrid-shell .draft-card {
+  background: linear-gradient(160deg, var(--pulse-rose-soft), transparent 60%);
+  border: 1px solid var(--pulse-border);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.email-hybrid-shell .draft-card:hover { transform: translateY(-1px); }
+html:not(.dark) .email-hybrid-shell .draft-card:hover {
+  box-shadow: 0 8px 24px rgba(244, 63, 94, 0.10);
+}
+
+/* ─── Triage CTA (promoted button on Cockpit briefing top) ─── */
+.email-hybrid-shell .triage-cta {
+  position: relative; display: inline-flex; align-items: center; gap: 10px;
+  padding: 10px 14px 10px 12px; border-radius: 12px;
+  background: var(--pulse-rose); color: white;
+  font-weight: 500; font-size: 13px;
+  box-shadow: 0 8px 24px var(--pulse-rose-glow), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.email-hybrid-shell .triage-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px var(--pulse-rose-glow), inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+}
+.email-hybrid-shell .triage-cta .glow-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: white;
+  animation: hybridPulseDot 1.6s ease-in-out infinite;
+}
+
+/* ─── Floating compose FAB ─── */
+.email-hybrid-shell .fab-compose {
+  position: absolute; bottom: 20px; right: 20px; z-index: 20;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 16px 12px 14px; border-radius: 999px;
+  background: var(--pulse-rose); color: white; font-weight: 500; font-size: 13px;
+  box-shadow: 0 14px 36px var(--pulse-rose-glow), 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.email-hybrid-shell .fab-compose:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 44px var(--pulse-rose-glow), 0 6px 18px rgba(0, 0, 0, 0.20);
+}
+
+/* ─── Selectable / interactive rows (lane rows) ─── */
+.email-hybrid-shell .selectable-row { transition: background 160ms ease, border-color 160ms ease; }
+.email-hybrid-shell .selectable-row:hover { background: var(--pulse-surface-raised); }
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .email-hybrid-shell *,
+  .email-hybrid-shell *::before,
+  .email-hybrid-shell *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ─── PHASE 3 marker (mode toggle + triage shell) — additions land here ─── */
