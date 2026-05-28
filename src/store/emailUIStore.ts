@@ -7,6 +7,20 @@ import type { EmailCampaign } from '../services/emailCampaignService';
 type AccentColor = 'rose' | 'blue' | 'purple' | 'green';
 type Density = 'comfortable' | 'compact' | 'default';
 
+export type EmailHybridMode = 'cockpit' | 'triage';
+
+export interface TriageActedLast {
+  label: string;
+  sender: string;
+  idx: number;
+  emailId: string;
+}
+
+export interface TriageState {
+  idx: number;
+  actedLast: TriageActedLast | null;
+}
+
 interface EmailUIState {
   // Zoom & density
   zoomLevel: number;
@@ -30,6 +44,11 @@ interface EmailUIState {
   editingCampaign: EmailCampaign | null | undefined;
   campaignRefreshKey: number;
 
+  // Email Hybrid (Cockpit + Triage) — see docs/EMAIL_HYBRID_REDESIGN_HANDOFF_2026-05-27.md §5.2
+  emailHybridMode: EmailHybridMode;
+  triageState: TriageState;
+  expandedSignalRowId: string | null;
+
   // Actions
   setZoomLevel: (level: number) => void;
   zoomIn: () => void;
@@ -48,6 +67,10 @@ interface EmailUIState {
   setCurrentView: (view: 'inbox' | 'campaigns') => void;
   setEditingCampaign: (campaign: EmailCampaign | null | undefined) => void;
   incrementCampaignRefreshKey: () => void;
+  setEmailHybridMode: (mode: EmailHybridMode) => void;
+  setTriageState: (state: TriageState | ((s: TriageState) => TriageState)) => void;
+  resetTriageState: () => void;
+  setExpandedSignalRowId: (id: string | null) => void;
 }
 
 export const useEmailUIStore = create<EmailUIState>()((set) => ({
@@ -65,6 +88,9 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   currentView: 'inbox',
   editingCampaign: undefined,
   campaignRefreshKey: 0,
+  emailHybridMode: 'cockpit',
+  triageState: { idx: 0, actedLast: null },
+  expandedSignalRowId: null,
 
   setZoomLevel: (level) => set({ zoomLevel: Math.max(50, Math.min(100, level)) }),
   zoomIn: () => set((s) => ({ zoomLevel: Math.min(s.zoomLevel + 10, 100) })),
@@ -88,4 +114,10 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   setCurrentView: (view) => set({ currentView: view }),
   setEditingCampaign: (campaign) => set({ editingCampaign: campaign }),
   incrementCampaignRefreshKey: () => set((s) => ({ campaignRefreshKey: s.campaignRefreshKey + 1 })),
+  setEmailHybridMode: (mode) => set({ emailHybridMode: mode }),
+  setTriageState: (state) => set((s) => ({
+    triageState: typeof state === 'function' ? state(s.triageState) : state,
+  })),
+  resetTriageState: () => set({ triageState: { idx: 0, actedLast: null } }),
+  setExpandedSignalRowId: (id) => set({ expandedSignalRowId: id }),
 }));
