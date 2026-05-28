@@ -5,6 +5,7 @@ import { User } from '../../types';
 import { useFeatureFlag } from '../../lib/featureFlags';
 import { PulseEmailClientRedesign } from './PulseEmailClientRedesign';
 import { EmailHybridClient } from './hybrid/EmailHybridClient';
+import { EmailHybridFlagToggle } from './EmailHybridFlagToggle';
 
 interface EmailClientWrapperProps {
   user: User;
@@ -17,15 +18,18 @@ export const EmailClientWrapper: React.FC<EmailClientWrapperProps> = ({
 }) => {
   const useHybrid = useFeatureFlag('emailHybrid', user.id, false);
 
-  if (useHybrid) {
-    return <EmailHybridClient userEmail={user.email} userName={user.name} />;
-  }
-
   return (
-    <PulseEmailClientRedesign
-      userEmail={user.email}
-      userName={user.name}
-    />
+    <>
+      {useHybrid ? (
+        <EmailHybridClient userEmail={user.email} userName={user.name} />
+      ) : (
+        <PulseEmailClientRedesign
+          userEmail={user.email}
+          userName={user.name}
+        />
+      )}
+      <EmailHybridFlagToggle />
+    </>
   );
 };
 
