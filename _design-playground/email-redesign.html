@@ -1,0 +1,1511 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Email Redesign — Playground (Hybrid)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: { extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        serif: ['Fraunces', 'Georgia', 'serif'],
+      },
+    } },
+  };
+</script>
+<style>
+  /* ─── Pulse design tokens ─── */
+  :root {
+    --pulse-rose: #f43f5e;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-bright: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+    --pulse-canvas: #f8f8f8;
+    --pulse-canvas-soft: #f2f2f2;
+    --pulse-surface: #ffffff;
+    --pulse-surface-raised: #f2f2f2;
+    --pulse-border: rgba(0, 0, 0, 0.08);
+    --pulse-border-strong: rgba(0, 0, 0, 0.16);
+    --pulse-ink: #0f0f0f;
+    --pulse-ink-2: #52525b;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral: var(--pulse-rose);
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 35%, black 65%);
+    --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-rose) 12%, transparent);
+    --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-rose) 8%, transparent);
+    --pulse-font: 'Inter', system-ui, sans-serif;
+    --pulse-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --pulse-serif: 'Fraunces', Georgia, serif;
+    --pulse-sidebar-bg: #ffffff;
+    --pulse-shadow-main: 0 6px 24px rgba(0, 0, 0, 0.08);
+    --pulse-shadow-modal: 0 30px 100px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(0,0,0,0.10);
+  }
+  html[data-theme='dark'] {
+    --pulse-canvas: #000000;
+    --pulse-canvas-soft: #080808;
+    --pulse-surface: rgba(255, 255, 255, 0.03);
+    --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+    --pulse-border: rgba(255, 255, 255, 0.06);
+    --pulse-border-strong: rgba(255, 255, 255, 0.10);
+    --pulse-ink: #fafafa;
+    --pulse-ink-2: #b4b4b8;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 60%, white 40%);
+    --pulse-rose: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.14);
+    --pulse-sidebar-bg: #0a0a0b;
+    --pulse-shadow-main: 0 10px 40px rgba(0, 0, 0, 0.4);
+    --pulse-shadow-modal: 0 40px 120px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--pulse-font);
+    background: var(--pulse-canvas);
+    color: var(--pulse-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .pulse-bg { background: var(--pulse-canvas); }
+  .pulse-bg-soft { background: var(--pulse-canvas-soft); }
+  .pulse-surface { background: var(--pulse-surface); }
+  .pulse-surface-raised { background: var(--pulse-surface-raised); }
+  .pulse-ink-color { color: var(--pulse-ink); }
+  .pulse-ink-2-color { color: var(--pulse-ink-2); }
+  .pulse-ink-3-color { color: var(--pulse-ink-3); }
+  .pulse-border-color { border-color: var(--pulse-border); }
+  .pulse-border-strong-color { border-color: var(--pulse-border-strong); }
+  .pulse-coral-fg-color { color: var(--pulse-coral-fg); }
+  .pulse-coral-bg-color { background: var(--pulse-coral-bg-12); }
+  .pulse-coral-bg-08-color { background: var(--pulse-coral-bg-08); }
+  .pulse-rose-color { color: var(--pulse-rose); }
+  .pulse-rose-bg-color { background: var(--pulse-rose); }
+  .pulse-rose-bg-soft-color { background: var(--pulse-rose-soft); }
+  .pulse-rose-border { border-color: var(--pulse-rose); }
+  .font-mono-pulse { font-family: var(--pulse-mono); font-feature-settings: 'tnum' 1; }
+  .font-serif-pulse { font-family: var(--pulse-serif); }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--pulse-border-strong); border-radius: 3px; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--pulse-ink-3); }
+
+  .tracking-tight-mono { letter-spacing: 0.06em; }
+  .tracking-wide-mono { letter-spacing: 0.16em; }
+
+  /* ─── Motion ─── */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 280ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes slideInR { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+  .slide-in-r { animation: slideInR 320ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes slideInL { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+  .slide-in-l { animation: slideInL 320ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes scaleIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+  .scale-in { animation: scaleIn 220ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
+  .backdrop-in { animation: backdropIn 200ms ease; }
+  @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.85); } }
+  .pulse-dot-anim { animation: pulseDot 1.6s ease-in-out infinite; }
+  @keyframes hintFade { 0%, 70% { opacity: 0.6; } 100% { opacity: 0; } }
+  .hint-fade { animation: hintFade 4s ease-out forwards; }
+
+  /* ─── AI provenance chip ─── */
+  .ai-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px;
+    background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+    font-family: var(--pulse-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; line-height: 1;
+  }
+  .ai-chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+  .ai-chip.pending { background: rgba(245, 158, 11, 0.12); color: #b45309; }
+  html[data-theme='dark'] .ai-chip.pending { color: #fbbf24; }
+  .ai-chip.muted { background: var(--pulse-surface-raised); color: var(--pulse-ink-2); }
+  .ai-chip.positive { background: rgba(16, 185, 129, 0.12); color: #047857; }
+  html[data-theme='dark'] .ai-chip.positive { color: #34d399; }
+
+  /* ─── Tone chips ─── */
+  .tone-warm  { background: rgba(244, 63, 94, 0.10); color: var(--pulse-coral-fg); }
+  .tone-cool  { background: rgba(59, 130, 246, 0.10); color: #1d4ed8; }
+  .tone-cold  { background: rgba(107, 114, 128, 0.14); color: var(--pulse-ink-3); }
+  .tone-hot   { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+  html[data-theme='dark'] .tone-cool { color: #93c5fd; }
+  html[data-theme='dark'] .tone-hot  { color: #fbbf24; }
+
+  /* ─── Selectable / interactive rows ─── */
+  .selectable-row { transition: background 160ms ease, border-color 160ms ease; }
+  .selectable-row:hover { background: var(--pulse-surface-raised); }
+  .keycap {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 4px; border: 1px solid var(--pulse-border-strong);
+    background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
+    font-family: var(--pulse-mono); font-size: 10px; line-height: 1;
+  }
+
+  /* ─── Playground chrome ─── */
+  .pg-bar { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); }
+  html[data-theme='light'] .pg-bar { background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent); }
+  .pg-pill { transition: background 180ms, color 180ms; }
+  .pg-pill[data-active='true'] { background: var(--pulse-rose); color: white; }
+  .pg-pill:not([data-active='true']):hover { background: var(--pulse-surface-raised); }
+
+  /* ─── Segmented toggle (in-canvas) ─── */
+  .seg-toggle {
+    display: inline-flex; align-items: center; padding: 3px; border-radius: 10px;
+    background: var(--pulse-surface-raised); border: 1px solid var(--pulse-border);
+    transition: box-shadow 220ms ease;
+  }
+  .seg-toggle:hover { box-shadow: 0 0 0 3px var(--pulse-rose-soft); }
+  .seg-toggle button {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 7px;
+    font-size: 12px; font-weight: 500; color: var(--pulse-ink-2);
+    transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+  }
+  .seg-toggle button:hover:not([data-active='true']) { color: var(--pulse-ink); }
+  .seg-toggle button[data-active='true'] {
+    background: var(--pulse-surface); color: var(--pulse-ink);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 0 0 1px var(--pulse-border);
+  }
+  html[data-theme='dark'] .seg-toggle button[data-active='true'] {
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08);
+  }
+  .seg-toggle button[data-active='true'] svg { color: var(--pulse-rose); }
+  .seg-toggle .seg-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px; border-radius: 5px;
+    background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+    font-family: var(--pulse-mono); font-size: 10px; font-weight: 600;
+    transition: transform 200ms ease;
+  }
+  .seg-toggle .seg-count.has-items { animation: countPulse 2.4s ease-in-out infinite; }
+  @keyframes countPulse {
+    0%, 100% { box-shadow: 0 0 0 0 var(--pulse-rose-glow); }
+    50%      { box-shadow: 0 0 0 5px transparent; }
+  }
+  .toggle-hint {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-left: 10px; padding: 4px 8px;
+    border-radius: 6px; opacity: 0.55;
+    transition: opacity 220ms ease;
+    font-size: 10px; font-family: var(--pulse-mono); letter-spacing: 0.08em;
+    color: var(--pulse-ink-3);
+  }
+  .toggle-hint:hover { opacity: 1; }
+
+  /* ─── View shells (cross-fade, no remount) ─── */
+  .view-shell {
+    position: absolute; inset: 0;
+    transition: opacity 280ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+  }
+  .view-active   { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .view-inactive { opacity: 0; transform: translateY(6px); pointer-events: none; }
+
+  /* ─── Queue pip (Signal rows in Cockpit) ─── */
+  .queue-pip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 7px; border-radius: 999px;
+    background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+    font-family: var(--pulse-mono); font-size: 9px; font-weight: 600;
+    letter-spacing: 0.08em; line-height: 1;
+  }
+  .queue-pip::before {
+    content: ''; width: 4px; height: 4px; border-radius: 999px;
+    background: currentColor; animation: pulseDot 1.8s ease-in-out infinite;
+  }
+  .queue-pip.cleared {
+    background: rgba(16,185,129,0.10); color: #047857;
+  }
+  html[data-theme='dark'] .queue-pip.cleared { color: #34d399; }
+  .queue-pip.cleared::before { animation: none; opacity: 0.7; }
+
+  /* ─── Action toast (Triage feedback) ─── */
+  .action-toast {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    z-index: 30;
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 6px 8px 6px 12px; border-radius: 999px;
+    background: var(--pulse-surface); border: 1px solid var(--pulse-border-strong);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.08);
+    font-size: 12px; color: var(--pulse-ink);
+    animation: toastIn 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translate(-50%, -8px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+  }
+  .action-toast .check {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 999px;
+    background: var(--pulse-rose); color: white;
+  }
+  .action-toast .undo-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 9px; border-radius: 999px;
+    background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
+    font-family: var(--pulse-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    transition: background 160ms ease, color 160ms ease;
+  }
+  .action-toast .undo-btn:hover { background: var(--pulse-rose-soft); color: var(--pulse-coral-fg); }
+
+  /* ─── Done state — celebration rings ─── */
+  .done-halo { position: relative; }
+  .done-halo::before, .done-halo::after {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid var(--pulse-rose);
+    animation: ringPulse 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+  .done-halo::after { animation-delay: 0.8s; }
+  @keyframes ringPulse {
+    0%   { transform: scale(0.9); opacity: 0.6; }
+    100% { transform: scale(2.2); opacity: 0;   }
+  }
+
+  /* ─── Stage transition (Triage card swap) ─── */
+  @keyframes cardIn {
+    from { opacity: 0; transform: scale(0.97) translateY(6px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .card-in { animation: cardIn 320ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+  /* ─── Signal row lift ─── */
+  .signal-row { box-shadow: 0 0 0 0 transparent; }
+  .signal-row:hover {
+    box-shadow: 0 10px 26px rgba(0,0,0,0.06), 0 0 0 1px var(--pulse-border-strong);
+    transform: translateY(-1px);
+  }
+  html[data-theme='dark'] .signal-row:hover {
+    box-shadow: 0 10px 26px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.08);
+  }
+
+  /* ─── Triage stage ─── */
+  .triage-stage {
+    border-radius: 18px; border: 1px solid var(--pulse-border);
+    background: var(--pulse-surface);
+    box-shadow: 0 18px 60px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.04);
+  }
+  html[data-theme='dark'] .triage-stage {
+    box-shadow: 0 22px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .triage-stack-card {
+    position: absolute; left: 0; right: 0; border-radius: 18px;
+    border: 1px solid var(--pulse-border); background: var(--pulse-surface);
+  }
+  .progress-rail { height: 3px; border-radius: 999px; background: var(--pulse-surface-raised); overflow: hidden; }
+  .progress-rail > span { display: block; height: 100%; background: var(--pulse-rose); border-radius: 999px; transition: width 320ms cubic-bezier(0.16,1,0.3,1); }
+
+  /* ─── Modal / overlay ─── */
+  .modal-backdrop {
+    position: absolute; inset: 0; z-index: 40;
+    background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  html[data-theme='light'] .modal-backdrop { background: rgba(0, 0, 0, 0.30); }
+  .modal-shell {
+    position: absolute; z-index: 41;
+    inset: 24px;
+    border-radius: 22px;
+    background: var(--pulse-bg-soft, var(--pulse-canvas));
+    background: var(--pulse-canvas-soft);
+    border: 1px solid var(--pulse-border);
+    box-shadow: var(--pulse-shadow-modal);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  /* ─── Cockpit polish ─── */
+  .cockpit-headline { font-family: var(--pulse-serif); font-weight: 500; letter-spacing: -0.01em; }
+  .editorial-rule { height: 1px; background: linear-gradient(90deg, transparent, var(--pulse-border-strong), transparent); }
+  .signal-row {
+    position: relative; transition: transform 200ms ease, background 200ms ease, border-color 200ms ease;
+    border-radius: 14px;
+  }
+  .signal-row:hover { background: var(--pulse-surface-raised); border-color: var(--pulse-border-strong); }
+  .signal-row .row-actions { opacity: 0; transition: opacity 200ms ease; }
+  .signal-row:hover .row-actions { opacity: 1; }
+  .signal-row[data-expanded='true'] { background: var(--pulse-surface-raised); border-color: var(--pulse-border-strong); }
+  .signal-row[data-expanded='true'] .row-actions { opacity: 1; }
+
+  .lane-card { transition: background 160ms ease; }
+  .lane-card:hover { background: var(--pulse-surface-raised); }
+  .draft-card {
+    background: linear-gradient(160deg, var(--pulse-rose-soft), transparent 60%);
+    border: 1px solid var(--pulse-border);
+    transition: transform 200ms ease, box-shadow 200ms ease;
+  }
+  .draft-card:hover { transform: translateY(-1px); }
+  html[data-theme='light'] .draft-card:hover { box-shadow: 0 8px 24px rgba(244,63,94,0.10); }
+
+  /* ─── Triage CTA — promoted button ─── */
+  .triage-cta {
+    position: relative; display: inline-flex; align-items: center; gap: 10px;
+    padding: 10px 14px 10px 12px; border-radius: 12px;
+    background: var(--pulse-rose-bg-color, var(--pulse-rose));
+    background: var(--pulse-rose);
+    color: white; font-weight: 500; font-size: 13px;
+    box-shadow: 0 8px 24px var(--pulse-rose-glow), 0 0 0 1px rgba(255,255,255,0.06) inset;
+    transition: transform 200ms ease, box-shadow 200ms ease;
+  }
+  .triage-cta:hover { transform: translateY(-1px); box-shadow: 0 12px 28px var(--pulse-rose-glow), 0 0 0 1px rgba(255,255,255,0.10) inset; }
+  .triage-cta .glow-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: white;
+    box-shadow: 0 0 0 0 rgba(255,255,255,0.5);
+    animation: pulseDot 1.6s ease-in-out infinite;
+  }
+
+  /* ─── Right dock ─── */
+  .dock-panel {
+    border-left: 1px solid var(--pulse-border);
+    background: var(--pulse-canvas-soft);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .dock-grabber {
+    width: 4px; cursor: col-resize; background: transparent;
+    transition: background 200ms ease;
+  }
+  .dock-grabber:hover { background: var(--pulse-rose-soft); }
+
+  /* ─── Dismiss button (consistent across patterns) ─── */
+  .dismiss-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 10px 6px 10px; border-radius: 999px;
+    background: var(--pulse-surface); border: 1px solid var(--pulse-border-strong);
+    color: var(--pulse-ink-2); font-size: 12px; font-weight: 500;
+    transition: background 180ms, color 180ms, border-color 180ms;
+  }
+  .dismiss-pill:hover { background: var(--pulse-rose-soft); color: var(--pulse-coral-fg); border-color: var(--pulse-rose); }
+  .dismiss-pill .x {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 999px;
+    background: var(--pulse-surface-raised); color: currentColor;
+  }
+
+  /* ─── Compose floating button ─── */
+  .fab-compose {
+    position: absolute; bottom: 20px; right: 20px; z-index: 20;
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 12px 16px 12px 14px; border-radius: 999px;
+    background: var(--pulse-rose); color: white; font-weight: 500; font-size: 13px;
+    box-shadow: 0 14px 36px var(--pulse-rose-glow), 0 4px 12px rgba(0,0,0,0.15);
+    transition: transform 200ms ease, box-shadow 200ms ease;
+  }
+  .fab-compose:hover { transform: translateY(-2px); box-shadow: 0 18px 44px var(--pulse-rose-glow), 0 6px 18px rgba(0,0,0,0.20); }
+
+  /* ─── Body skeleton ─── */
+  .prose-mock p { font-size: 14px; line-height: 1.65; color: var(--pulse-ink-2); margin: 0 0 12px; }
+  .prose-mock p strong { color: var(--pulse-ink); font-weight: 600; }
+
+  /* ─── Reader expansion in signal row ─── */
+  .reader-expand {
+    overflow: hidden;
+    animation: fadeUp 320ms cubic-bezier(0.16, 1, 0.3, 1);
+    border-top: 1px solid var(--pulse-border);
+    background: var(--pulse-canvas-soft);
+    border-radius: 0 0 14px 14px;
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 4px;
+    font-family: var(--pulse-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase; line-height: 1;
+    background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
+  }
+  .badge.coral { background: var(--pulse-coral-bg-12); color: var(--pulse-coral-fg); }
+</style>
+</head>
+<body class="overflow-hidden">
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect, useRef, useCallback } = React;
+
+/* ════════════════════════════════════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════════════════════════════════════ */
+const AVATAR_PALETTE = ['#6366f1','#8b5cf6','#d946ef','#ec4899','#0ea5e9','#06b6d4','#14b8a6','#64748b'];
+function colorForId(id = '') {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+}
+function initials(name = '') {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || '?';
+}
+function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   MOCK DATA
+   ════════════════════════════════════════════════════════════════════════ */
+const EMAILS = [
+  {
+    id: 'e1', from: 'Maria Schaefer', email: 'maria@northwindstudio.com', org: 'Northwind Studio',
+    subject: 'Q2 baseline numbers — need them in slide 4 before Friday',
+    snippet: "Frank — pulling together the Friday review deck. Need the Q2 baseline figures we discussed on slide 4 before then. The board is going to ask about the YoY delta first, so let's make sure that's the…",
+    body: "Frank — pulling together the Friday review deck.\n\nNeed the Q2 baseline figures we discussed on slide 4 before then. The board is going to ask about the YoY delta first, so let's make sure that's the *headline* number, not the run-rate.\n\nIf the numbers slipped versus our March forecast, flag it in the speaker notes — Theo will dig there.\n\nTalk Friday.",
+    when: '2h', whenLong: 'Today · 11:42 AM', unread: true, starred: true, lane: 'work',
+    aiSummary: 'Maria needs Q2 baseline figures dropped into slide 4 of the Friday board deck; she wants YoY delta as the headline number, not run-rate. Flag any miss vs. March forecast in speaker notes.',
+    aiActions: [
+      { id: 'a1', label: 'Open the deck in Drive', kind: 'link' },
+      { id: 'a2', label: 'Send Maria the Q2 figures', kind: 'reply' },
+      { id: 'a3', label: 'Add "Update slide 4" to Tasks · due Thu', kind: 'task' },
+    ],
+    tone: 'warm', priority: 'high', threadCount: 3,
+    draft: 'Maria — got it. Will have the slide updated by EOD tomorrow with the YoY headline and a footnote on the March variance. Anything specific you want pulled out for Theo?',
+  },
+  {
+    id: 'e2', from: 'Sarah Chen', email: 'sarah.chen@legaltrust.co', org: 'LegalTrust',
+    subject: 'NDA option B — one tweak on page 2 and we ship',
+    snippet: 'Legal signed off on Option B. There is one small disclosure tweak on page 2 (section 4.3) — once you accept it the doc is ready for signature. No further redlines expected.',
+    body: "Hi Frank,\n\nLegal signed off on Option B. There is one small disclosure tweak on page 2 (section 4.3) — once you accept it the doc is ready for signature. No further redlines expected.\n\nPlease confirm by Wed so we can countersign and move to the close.\n\nBest,\nSarah",
+    when: '5h', whenLong: 'Today · 8:51 AM', unread: true, starred: false, lane: 'work',
+    aiSummary: 'NDA Option B is approved with one disclosure tweak on page 2 §4.3. Sarah needs your confirmation by Wednesday to move to countersign.',
+    aiActions: [
+      { id: 'a1', label: 'Accept change & confirm', kind: 'reply' },
+      { id: 'a2', label: 'Snooze until Wednesday', kind: 'snooze' },
+    ],
+    tone: 'cool', priority: 'high', threadCount: 7,
+    draft: 'Sarah — accepted. Page-2 §4.3 looks correct as drafted. Cleared to countersign on your end.',
+  },
+  {
+    id: 'e3', from: 'Jaylen Park', email: 'jaylen@pulse-design.com', org: 'Pulse · Design',
+    subject: 'Onboarding flow review — two broken empty-states',
+    snippet: 'Walked through the new onboarding flow this morning. Two empty-states are misfiring (first-run + post-import). I think the fix is one coral CTA instead of two grey buttons — see the screenshot.',
+    body: "Hey Frank,\n\nWalked through the new onboarding flow this morning. Two empty-states are misfiring (first-run + post-import). I think the fix is one coral CTA instead of two grey buttons — see the screenshot.\n\nI can spec it if you want, or you can ship the change yourself. Either way, it's a Tuesday-level thing, not a today thing.\n\n—J",
+    when: '1d', whenLong: 'Yesterday · 4:12 PM', unread: false, starred: false, lane: 'work',
+    aiSummary: 'Jaylen flagged two broken empty-states (first-run, post-import). Proposes one coral CTA instead of two grey buttons. Low urgency — Tuesday-level.',
+    aiActions: [
+      { id: 'a1', label: 'Reply: "I will spec it"', kind: 'reply' },
+      { id: 'a2', label: 'Push to Decisions & Tasks', kind: 'task' },
+    ],
+    tone: 'warm', priority: 'med', threadCount: 2,
+    draft: "J — I'll spec it tomorrow. Coral CTA is the right call. Want me to pair on the post-import state or just ship?",
+  },
+  {
+    id: 'e4', from: 'Theo Bridgewater', email: 'theo@bridgewater-cap.com', org: 'Bridgewater Capital',
+    subject: 'Re: Re: Re: Deck draft',
+    snippet: 'Following up again — when can I expect the v3 draft? Last note was 9 days ago.',
+    body: "Frank,\n\nFollowing up again — when can I expect the v3 draft? Last note was 9 days ago. Happy to jump on a 15-min call if it's faster.\n\nTheo",
+    when: '2d', whenLong: '2 days ago', unread: true, starred: false, lane: 'work',
+    aiSummary: "Theo's third follow-up on the v3 deck draft — last reply from you was 9 days ago. Relationship signal: cooling.",
+    aiActions: [
+      { id: 'a1', label: 'Send holding reply with date', kind: 'reply' },
+      { id: 'a2', label: 'Schedule a 15-min call', kind: 'meet' },
+    ],
+    tone: 'cold', priority: 'high', threadCount: 6,
+    draft: 'Theo — apologies for the lag. I have the v3 draft sitting at ~80%; sending it by EOD Thursday with the revenue model split out. Want to hold the call until you have read it?',
+  },
+  {
+    id: 'e5', from: 'Aria Vasquez', email: 'receipts@stripe.com', org: 'Stripe',
+    subject: 'Receipt from QntmEcos LLC — $148.00',
+    snippet: 'Your receipt for May charges is attached. View invoice history in dashboard.',
+    body: "Receipt for your records.\n\nQntmEcos LLC · May 2026 · $148.00",
+    when: '3d', whenLong: '3 days ago', unread: false, starred: false, lane: 'admin',
+    aiSummary: null, aiActions: [], tone: 'cold', priority: 'low', threadCount: 1, draft: null,
+  },
+  {
+    id: 'e6', from: 'Linear', email: 'notifications@linear.app', org: 'Linear',
+    subject: '[PUL-412] Assigned to you — "Glimpse: posters letterboxed on portrait"',
+    snippet: 'Mara assigned PUL-412 to you. Priority: High. Cycle: 24 (in progress).',
+    body: 'PUL-412 — Glimpse: posters letterboxed on portrait\nAssigned by Mara · Priority High · Cycle 24',
+    when: '4h', whenLong: 'Today · 9:18 AM', unread: false, starred: false, lane: 'tools',
+    aiSummary: null, aiActions: [{ id: 'a1', label: 'Open in Linear', kind: 'link' }],
+    tone: 'cold', priority: 'low', threadCount: 1, draft: null,
+  },
+  {
+    id: 'e7', from: 'GitHub', email: 'noreply@github.com', org: 'GitHub',
+    subject: 'PR review requested · pulse#1247 — "feat(email): triage queue prototype"',
+    snippet: 'Jaylen requested your review on pulse#1247. +1,842 −214 across 18 files.',
+    body: '@FatherSonOne, Jaylen requested your review on pulse#1247.',
+    when: '6h', whenLong: 'Today · 7:31 AM', unread: false, starred: false, lane: 'tools',
+    aiSummary: null, aiActions: [{ id: 'a1', label: 'Open PR in GitHub', kind: 'link' }],
+    tone: 'cold', priority: 'med', threadCount: 1, draft: null,
+  },
+  {
+    id: 'e8', from: 'WeWork', email: 'billing@wework.com', org: 'WeWork',
+    subject: 'Invoice June 2026 — $620.00 due Jun 1',
+    snippet: 'Your June 2026 invoice is ready. Payment auto-charges Jun 1 unless updated.',
+    body: 'Invoice June 2026 — $620.00 due Jun 1.',
+    when: '5d', whenLong: '5 days ago', unread: false, starred: false, lane: 'admin',
+    aiSummary: null, aiActions: [], tone: 'cold', priority: 'low', threadCount: 1, draft: null,
+  },
+  {
+    id: 'e9', from: 'Lenny Rachitsky', email: 'lenny@lennysnewsletter.com', org: "Lenny's Newsletter",
+    subject: 'The 8 unsexy things every founder must do',
+    snippet: 'A guest post from Brian Halligan (HubSpot) on the unglamorous mechanics of company-building.',
+    body: 'A guest post from Brian Halligan on the unglamorous mechanics of company-building.',
+    when: '8h', whenLong: 'Today · 5:00 AM', unread: false, starred: false, lane: 'news',
+    aiSummary: null, aiActions: [], tone: 'cold', priority: 'low', threadCount: 1, draft: null,
+  },
+  {
+    id: 'e10', from: 'Priya Devarajan', email: 'priya@matrixventures.io', org: 'Matrix Ventures',
+    subject: 'Quick intro — would love to meet',
+    snippet: 'Heard about Pulse from Theo. Are you doing any conversations with seed funds yet? Happy to keep it informal.',
+    body: 'Hi Frank,\n\nHeard about Pulse from Theo. Are you doing any conversations with seed funds yet? Happy to keep it informal — coffee or video, your call.\n\nPriya',
+    when: '6h', whenLong: 'Today · 7:55 AM', unread: true, starred: false, lane: 'work',
+    aiSummary: 'Inbound intro from Priya at Matrix Ventures via Theo. Offering informal seed-fund conversation, no pressure on format.',
+    aiActions: [
+      { id: 'a1', label: 'Reply: open to a 20-min call', kind: 'reply' },
+      { id: 'a2', label: 'Reply: not raising yet, stay in touch', kind: 'reply' },
+    ],
+    tone: 'warm', priority: 'med', threadCount: 1,
+    draft: "Hi Priya — thanks for the intro from Theo. Not actively raising yet, but happy to keep an informal line open. Mid-June work for a 20-min call?",
+  },
+  {
+    id: 'e11', from: 'Mom', email: 'mom@family.com', org: null,
+    subject: 'Sunday dinner?',
+    snippet: 'Are you coming Sunday? Your sister is making the lasagna.',
+    body: 'Are you coming Sunday? Your sister is making the lasagna. Bring something or just yourself, up to you.',
+    when: '1d', whenLong: 'Yesterday · 6:02 PM', unread: true, starred: false, lane: 'personal',
+    aiSummary: null, aiActions: [], tone: 'warm', priority: 'med', threadCount: 4, draft: null,
+  },
+  {
+    id: 'e12', from: 'Calendar', email: 'calendar-noreply@google.com', org: 'Google Calendar',
+    subject: 'Invitation: Q2 review — Fri May 29, 2:00 PM',
+    snippet: 'Maria Schaefer invited you to "Q2 review". 6 attendees · Northwind boardroom + Meet link.',
+    body: 'Invitation from Maria Schaefer — Q2 review · Fri May 29 · 2:00 PM',
+    when: '5h', whenLong: 'Today · 8:30 AM', unread: false, starred: false, lane: 'admin',
+    aiSummary: null, aiActions: [{ id: 'a1', label: 'Accept', kind: 'rsvp' }, { id: 'a2', label: 'Decline', kind: 'rsvp' }], tone: 'cool', priority: 'med', threadCount: 1, draft: null,
+  },
+];
+
+const TRIAGE_QUEUE_IDS = ['e1','e2','e4','e10','e3','e11'];
+
+/* ════════════════════════════════════════════════════════════════════════
+   ICONS
+   ════════════════════════════════════════════════════════════════════════ */
+function Icon({ name, className = 'w-4 h-4' }) {
+  const c = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  switch (name) {
+    case 'mail':     return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>;
+    case 'inbox':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>;
+    case 'star':     return <svg viewBox="0 0 24 24" className={className} {...c}><polygon points="12 2 15 9 22 9.3 17 14 18.5 21 12 17.3 5.5 21 7 14 2 9.3 9 9 12 2"/></svg>;
+    case 'archive':  return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>;
+    case 'snooze':   return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M19 12a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/><polyline points="9 9 14 9 9 15 14 15"/></svg>;
+    case 'trash':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+    case 'reply':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>;
+    case 'send':     return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
+    case 'pen':      return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>;
+    case 'search':   return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+    case 'settings': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06A2 2 0 1 1 4.14 16.93l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9.4a1.7 1.7 0 0 0-.34-1.87l-.06-.06A2 2 0 1 1 7.07 4.64l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1.03Z"/></svg>;
+    case 'chevR':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 6 15 12 9 18"/></svg>;
+    case 'chevL':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="15 6 9 12 15 18"/></svg>;
+    case 'chevD':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="6 9 12 15 18 9"/></svg>;
+    case 'chevU':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="18 15 12 9 6 15"/></svg>;
+    case 'sparkles': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>;
+    case 'task':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>;
+    case 'calendar': return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8"  y1="2" x2="8"  y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+    case 'clock':    return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>;
+    case 'flame':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 2c1.5 3 3 4 5 7s2 5-1 8c-2 2-5 2-7 0-2-2-2-5 0-7 1-1 2-1 2-3 0-1 0-3 1-5Z"/></svg>;
+    case 'user':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>;
+    case 'users':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+    case 'flag':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M4 22v-7"/><path d="M4 15V4h13l-2 4 2 4H4"/></svg>;
+    case 'dot':      return <svg viewBox="0 0 24 24" className={className}><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>;
+    case 'check':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="20 6 9 17 4 12"/></svg>;
+    case 'x':        return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+    case 'sun':      return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>;
+    case 'moon':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>;
+    case 'logo':     return <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h3l2-7 4 14 2-7h7"/></svg>;
+    case 'live':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="7"/></svg>;
+    case 'video':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="m23 7-7 5 7 5V7Z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>;
+    case 'plus':     return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+    case 'more':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/></svg>;
+    case 'arrowR':   return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
+    case 'arrowL':   return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>;
+    case 'briefing': return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="14" y2="13"/><line x1="7" y1="17" x2="11" y2="17"/></svg>;
+    case 'queue':    return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="4" width="18" height="5" rx="1"/><rect x="3" y="11" width="18" height="5" rx="1"/><rect x="3" y="18" width="18" height="2" rx="1"/></svg>;
+    case 'layers':   return <svg viewBox="0 0 24 24" className={className} {...c}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>;
+    case 'undo':     return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>;
+    case 'panel':    return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="14" y1="3" x2="14" y2="21"/></svg>;
+    case 'expand':   return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>;
+    case 'collapse': return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>;
+    default: return null;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PRIMITIVES
+   ════════════════════════════════════════════════════════════════════════ */
+function Avatar({ name, size = 36 }) {
+  return (
+    <div className="rounded-full flex items-center justify-center text-white font-semibold shrink-0"
+      style={{ width: size, height: size, fontSize: size * 0.34, background: colorForId(name) }}>
+      {initials(name)}
+    </div>
+  );
+}
+function AiChip({ variant = 'summary', children }) {
+  const cls = variant === 'pending' ? 'ai-chip pending'
+            : variant === 'muted'   ? 'ai-chip muted'
+            : variant === 'positive'? 'ai-chip positive'
+            : 'ai-chip';
+  return <span className={cls}>{children}</span>;
+}
+function ToneChip({ tone }) {
+  const map = {
+    warm: { cls: 'tone-warm', label: 'Warm' },
+    cool: { cls: 'tone-cool', label: 'Cool' },
+    cold: { cls: 'tone-cold', label: 'Slow' },
+    hot:  { cls: 'tone-hot',  label: 'Hot' },
+  };
+  const c = map[tone] || map.cool;
+  return <span className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px] font-mono-pulse tracking-tight-mono ${c.cls}`}>{c.label.toUpperCase()}</span>;
+}
+function Keycap({ children }) { return <kbd className="keycap">{children}</kbd>; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   PULSE SIDEBAR
+   ════════════════════════════════════════════════════════════════════════ */
+function PulseSidebar({ theme, onToggleTheme }) {
+  const groups = [
+    { group: 'Overview',      rows: [{ icon: 'inbox', label: 'Dashboard' }] },
+    { group: 'Communication', rows: [
+        { icon: 'inbox',  label: 'Messages' },
+        { icon: 'mail',   label: 'Email', active: true },
+        { icon: 'live',   label: 'Relay' },
+        { icon: 'video',  label: 'Glimpse' },
+      ] },
+    { group: 'Work & People', rows: [
+        { icon: 'calendar', label: 'Calendar' },
+        { icon: 'video',    label: 'Meetings' },
+        { icon: 'user',     label: 'Contacts' },
+        { icon: 'task',     label: 'Decisions & Tasks' },
+      ] },
+  ];
+  return (
+    <aside className="h-full w-[232px] shrink-0 flex flex-col border-r pulse-border-color" style={{ background: 'var(--pulse-sidebar-bg)' }}>
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center pulse-rose-bg-color text-white shrink-0"><Icon name="logo" className="w-5 h-5"/></div>
+        <div className="leading-tight">
+          <div className="text-lg font-semibold pulse-rose-color">Pulse</div>
+          <div className="text-[10px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">JCK</div>
+        </div>
+        <div className="ml-auto flex items-center gap-2 pulse-ink-3-color">
+          <button className="hover:pulse-ink-color"><Icon name="settings" className="w-4 h-4"/></button>
+        </div>
+      </div>
+      <div className="mx-3 mb-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--pulse-surface-raised)' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md pulse-rose-bg-color"/>
+          <span className="text-sm font-medium pulse-ink-color">My Workspace</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse pulse-coral-bg-color pulse-coral-fg-color tracking-tight-mono">OWNER</span>
+          <Icon name="chevD" className="w-3 h-3 pulse-ink-3-color"/>
+        </div>
+      </div>
+      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        {groups.map(grp => (
+          <div key={grp.group} className="mb-3">
+            <div className="flex items-center gap-2 px-2 py-1.5 text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color">
+              <Icon name="dot" className="w-1.5 h-1.5"/><span>{grp.group.toUpperCase()}</span>
+            </div>
+            {grp.rows.map(r => (
+              <button key={r.label} className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition ${r.active ? 'pulse-rose-color pulse-rose-bg-soft-color font-medium' : 'pulse-ink-2-color hover:pulse-ink-color'}`}>
+                <Icon name={r.icon} className="w-4 h-4 opacity-90"/><span>{r.label}</span>
+              </button>
+            ))}
+          </div>
+        ))}
+      </nav>
+      <div className="px-3 pb-2">
+        <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl pulse-rose-bg-soft-color">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="sparkles" className="w-4 h-4"/></div>
+            <span className="text-sm font-medium pulse-rose-color">Pulse AI</span>
+          </div>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono-pulse pulse-ink-3-color border pulse-border-color">Ctrl·/</span>
+        </button>
+      </div>
+      <div className="border-t pulse-border-color px-3 py-2 space-y-1">
+        <button onClick={onToggleTheme} className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm pulse-ink-2-color hover:pulse-ink-color">
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4"/><span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+        </button>
+        <div className="mt-2 pt-2 border-t pulse-border-color flex items-center gap-2.5 px-2 py-1">
+          <Avatar name="Frank Richard Messana" size={28}/>
+          <div className="leading-tight">
+            <div className="text-xs font-medium pulse-ink-color">Frank Messana</div>
+            <div className="text-[10px] pulse-ink-3-color truncate max-w-[140px]">jehovahsneaky83@gmail.com</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   COCKPIT VIEW (the hybrid main page — view + draft)
+   Reused across all three toggle patterns.
+   ════════════════════════════════════════════════════════════════════════ */
+function CockpitView({ density = 'normal', onOpenTriage, onTriageOne, triageBadge, showCompose = true, queueIds = TRIAGE_QUEUE_IDS, clearedIds = [] }) {
+  const signals = EMAILS.filter(e => e.priority === 'high');
+  const lanes = [
+    { id: 'work',     label: 'Work',         desc: 'Clients, colleagues, investors' },
+    { id: 'admin',    label: 'Admin',        desc: 'Receipts, invoices, calendar' },
+    { id: 'tools',    label: 'Tools',        desc: 'GitHub, Linear, Stripe webhooks' },
+    { id: 'news',     label: 'Newsletters',  desc: 'Skimmable later' },
+    { id: 'personal', label: 'Personal',     desc: 'Family & friends' },
+  ];
+  const [openId, setOpenId] = useState(null);
+  const compact = density === 'compact';
+
+  return (
+    <div className="h-full w-full overflow-y-auto relative">
+      {/* Editorial top */}
+      <div className={`${compact ? 'px-6 pt-6 pb-5' : 'px-10 pt-8 pb-6'} border-b pulse-border-color`}>
+        <div className="flex items-baseline justify-between mb-2">
+          <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color">DAILY BRIEFING · WED MAY 27</div>
+          <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">42 NEW SINCE 6 AM · 7 NEED YOU · 35 BATCHED</div>
+        </div>
+        <h1 className={`cockpit-headline pulse-ink-color ${compact ? 'text-[24px]' : 'text-[34px]'} leading-[1.1] tracking-tight mb-3`}>
+          Three things move today.<br/>
+          <span className="pulse-ink-3-color italic">Maria's deck, Sarah's NDA, Priya's reply.</span>
+        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-[13.5px] pulse-ink-2-color max-w-[520px] leading-relaxed flex-1 min-w-[280px]">
+            Claude scanned 42 emails this morning. Everything else can wait — or has been drafted, archived, or filed into a lane below.
+          </p>
+          {onOpenTriage && (
+            <button onClick={onOpenTriage} className="triage-cta shrink-0">
+              <span className="glow-dot"/>
+              <Icon name="layers" className="w-4 h-4"/>
+              <span>Start triage</span>
+              {triageBadge != null && <span className="px-1.5 py-0.5 rounded text-[10px] font-mono-pulse bg-white/20">{triageBadge} TO CLEAR</span>}
+            </button>
+          )}
+        </div>
+        <div className="editorial-rule mt-6"/>
+      </div>
+
+      {/* Body */}
+      <div className={`grid ${compact ? 'grid-cols-1 gap-6 px-6 py-6' : 'grid-cols-[1fr_320px] gap-8 px-10 py-7'}`}>
+        {/* Left: signal + lanes */}
+        <div>
+          {/* Signal Today */}
+          <section className="mb-9">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Icon name="flame" className="w-4 h-4 pulse-rose-color"/>
+                <h2 className="text-sm font-semibold pulse-ink-color uppercase font-mono-pulse tracking-wide-mono">Signal · today</h2>
+                <AiChip variant="muted">Claude curated</AiChip>
+              </div>
+              <span className="text-[11px] font-mono-pulse pulse-ink-3-color">{signals.length} ITEMS</span>
+            </div>
+            <div className="space-y-2">
+              {signals.map(s => {
+                const idxInQueue = queueIds.indexOf(s.id);
+                const cleared = clearedIds.includes(s.id);
+                return (
+                  <SignalRow key={s.id} email={s}
+                    expanded={openId === s.id}
+                    onToggle={() => setOpenId(o => o === s.id ? null : s.id)}
+                    onTriage={() => onTriageOne && onTriageOne(s.id)}
+                    queuePos={idxInQueue >= 0 && !cleared ? idxInQueue + 1 : null}
+                    queueTotal={queueIds.length}
+                    queueCleared={cleared}
+                  />
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Lanes */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold pulse-ink-color uppercase font-mono-pulse tracking-wide-mono">Lanes</h2>
+              <span className="text-[11px] font-mono-pulse pulse-ink-3-color">AUTO-SORTED</span>
+            </div>
+            <div className="space-y-3">
+              {lanes.map(lane => <LaneSection key={lane.id} lane={lane}/>)}
+            </div>
+          </section>
+        </div>
+
+        {/* Right rail */}
+        {!compact && (
+          <aside className="space-y-5">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-[11px] font-mono-pulse tracking-wide-mono pulse-rose-color">DRAFTED FOR YOU</h3>
+                <span className="text-[11px] font-mono-pulse pulse-ink-3-color tnum">3</span>
+              </div>
+              <div className="space-y-2.5">
+                {EMAILS.filter(e => e.draft).slice(0, 3).map(e => <DraftCard key={e.id} email={e}/>)}
+              </div>
+            </div>
+
+            <div className="editorial-rule"/>
+
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">AWAITING REPLIES</h3>
+                <span className="text-[11px] font-mono-pulse pulse-ink-3-color tnum">4</span>
+              </div>
+              <div className="space-y-2">
+                <AwaitingRow name="Mara Velasquez" subject="Cycle 24 — what stays in" days={3}/>
+                <AwaitingRow name="Devon Reyes"   subject="Reviewer feedback on §3" days={6}/>
+                <AwaitingRow name="Lina Park"     subject="Q3 roadmap PoV"          days={9} cold/>
+                <AwaitingRow name="Calvin Tate"   subject="Re: contract terms"      days={2}/>
+              </div>
+            </div>
+
+            <div className="editorial-rule"/>
+
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">CALENDAR · TODAY</h3>
+                <Icon name="calendar" className="w-3.5 h-3.5 pulse-ink-3-color"/>
+              </div>
+              <div className="space-y-1.5">
+                <CalendarRow time="2:00 PM" title="Q2 review · Maria Schaefer" linked/>
+                <CalendarRow time="4:30 PM" title="1:1 with Jaylen"/>
+                <CalendarRow time="6:00 PM" title="Block · deck v3"/>
+              </div>
+            </div>
+
+            <div className="editorial-rule"/>
+
+            <div className="p-3 rounded-xl pulse-coral-bg-08-color border pulse-border-color">
+              <div className="flex items-center gap-2 mb-2"><AiChip variant="muted">Inbox health</AiChip></div>
+              <div className="text-[13px] pulse-ink-color leading-snug mb-2">
+                You replied to <strong>92%</strong> of warm threads this week, down from <strong>96%</strong> last week.
+              </div>
+              <div className="text-[12px] pulse-ink-2-color leading-relaxed">
+                Theo and Lina are the two cooling threads — both &gt;7 days. Use Triage to clear in ~3 min.
+              </div>
+            </div>
+          </aside>
+        )}
+      </div>
+
+      {/* Floating compose */}
+      {showCompose && (
+        <button className="fab-compose" title="Compose new email">
+          <Icon name="pen" className="w-4 h-4"/><span>Compose</span><Keycap>C</Keycap>
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SignalRow({ email, expanded, onToggle, onTriage, queuePos, queueTotal, queueCleared }) {
+  return (
+    <div className="signal-row border pulse-border-color overflow-hidden" data-expanded={expanded}>
+      <button onClick={onToggle} className="w-full text-left flex items-start gap-4 px-4 py-3.5">
+        <Avatar name={email.from} size={36}/>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[13px] font-semibold pulse-ink-color">{email.from}</span>
+            <span className="text-[11px] pulse-ink-3-color">·</span>
+            <span className="text-[11px] pulse-ink-3-color">{email.org}</span>
+            <ToneChip tone={email.tone}/>
+            {queueCleared ? (
+              <span className="queue-pip cleared" title="Cleared in this triage session">CLEARED</span>
+            ) : queuePos != null && (
+              <span className="queue-pip" title={`Position ${queuePos} of ${queueTotal} in triage queue`}>
+                <span className="tnum">#{queuePos}</span><span className="opacity-60">/ {queueTotal}</span>
+              </span>
+            )}
+            <span className="ml-auto text-[11px] font-mono-pulse pulse-ink-3-color tnum">{email.when}</span>
+          </div>
+          <div className="cockpit-headline text-[17px] pulse-ink-color leading-snug mb-1.5">{email.subject}</div>
+          {email.aiSummary && (
+            <div className="flex items-start gap-2">
+              <span className="mt-1 pulse-rose-color shrink-0">→</span>
+              <p className="text-[13px] pulse-ink-2-color leading-relaxed">{email.aiSummary}</p>
+            </div>
+          )}
+          <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+            {email.aiActions && email.aiActions.slice(0, 2).map(a => (
+              <button key={a.id} onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md pulse-surface-raised text-[12px] pulse-ink-color hover:pulse-rose-bg-soft-color">
+                {a.kind === 'reply' && <Icon name="send" className="w-3 h-3"/>}
+                {a.kind === 'task' && <Icon name="task" className="w-3 h-3"/>}
+                {a.kind === 'snooze' && <Icon name="snooze" className="w-3 h-3"/>}
+                {a.kind === 'link' && <Icon name="arrowR" className="w-3 h-3"/>}
+                {a.kind === 'meet' && <Icon name="calendar" className="w-3 h-3"/>}
+                <span>{a.label}</span>
+              </button>
+            ))}
+            <div className="ml-auto row-actions flex items-center gap-1">
+              {onTriage && (
+                <span onClick={e => { e.stopPropagation(); onTriage(); }} className="inline-flex items-center gap-1 px-2 py-1 rounded-md border pulse-border-color text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color hover:pulse-rose-color hover:pulse-rose-border cursor-pointer">
+                  <Icon name="layers" className="w-3 h-3"/>TRIAGE
+                </span>
+              )}
+              <Icon name={expanded ? 'chevU' : 'chevD'} className="w-4 h-4 pulse-ink-3-color"/>
+            </div>
+          </div>
+        </div>
+      </button>
+
+      {/* Inline reader expansion */}
+      {expanded && (
+        <div className="reader-expand px-5 py-4">
+          <div className="flex items-center gap-2 mb-3 text-[11px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">
+            <Icon name="clock" className="w-3 h-3"/><span>{email.whenLong}</span>
+            {email.threadCount > 1 && <><span>·</span><span>{email.threadCount} IN THREAD</span></>}
+            <span>·</span><span className="lowercase tracking-normal">{email.email}</span>
+          </div>
+          <div className="prose-mock max-w-[640px]">
+            {email.body.split('\n\n').map((p, i) => (
+              <p key={i}>{p.split('\n').map((line, j) => <React.Fragment key={j}>{line}{j < p.split('\n').length-1 && <br/>}</React.Fragment>)}</p>
+            ))}
+          </div>
+          {email.draft && (
+            <div className="mt-3 p-3 rounded-lg pulse-rose-bg-soft-color border pulse-rose-border">
+              <div className="flex items-center gap-2 mb-1.5">
+                <AiChip variant="muted">Claude drafted reply</AiChip>
+                <span className="text-[11px] pulse-ink-3-color">edit before sending</span>
+              </div>
+              <p className="text-[13px] pulse-ink-2-color leading-relaxed italic mb-2">"{email.draft}"</p>
+              <div className="flex items-center gap-2">
+                <button className="px-3 py-1.5 rounded-md pulse-rose-bg-color text-white text-[12px] font-medium flex items-center gap-1.5">
+                  <Icon name="send" className="w-3 h-3"/>Send <Keycap>⌘↵</Keycap>
+                </button>
+                <button className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color">Edit</button>
+                <button className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-3-color">Dismiss draft</button>
+              </div>
+            </div>
+          )}
+          <div className="mt-3 flex items-center gap-2">
+            <button className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-color flex items-center gap-1.5"><Icon name="reply" className="w-3 h-3"/>Reply</button>
+            <button className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5"><Icon name="archive" className="w-3 h-3"/>Archive</button>
+            <button className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5"><Icon name="snooze" className="w-3 h-3"/>Snooze</button>
+            <button className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5"><Icon name="task" className="w-3 h-3"/>→ Task</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LaneSection({ lane }) {
+  const items = EMAILS.filter(e => e.lane === lane.id);
+  const [open, setOpen] = useState(lane.id === 'work');
+  return (
+    <div className="border pulse-border-color rounded-xl overflow-hidden">
+      <button onClick={() => setOpen(o => !o)} className="lane-card w-full flex items-center justify-between px-4 py-3 text-left">
+        <div className="flex items-center gap-3">
+          <div className="cockpit-headline text-[15px] pulse-ink-color">{lane.label}</div>
+          <span className="text-[11px] pulse-ink-3-color">{lane.desc}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] font-mono-pulse pulse-ink-3-color tnum">{items.length}</span>
+          <Icon name={open ? 'chevU' : 'chevD'} className="w-4 h-4 pulse-ink-3-color"/>
+        </div>
+      </button>
+      {open && (
+        <div className="border-t pulse-border-color">
+          {items.map((it, idx) => (
+            <div key={it.id} className={`selectable-row flex items-center gap-3 px-4 py-2.5 cursor-pointer ${idx > 0 ? 'border-t pulse-border-color' : ''}`}>
+              <Avatar name={it.from} size={26}/>
+              <span className="text-[12.5px] pulse-ink-color truncate min-w-[140px]">{it.from}</span>
+              <span className="text-[12.5px] pulse-ink-2-color truncate flex-1">{it.subject}</span>
+              <span className="text-[11px] font-mono-pulse pulse-ink-3-color tnum shrink-0">{it.when}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DraftCard({ email }) {
+  return (
+    <div className="draft-card rounded-xl px-3 py-3">
+      <div className="flex items-center gap-2 mb-1.5">
+        <Avatar name={email.from} size={22}/>
+        <span className="text-[12px] font-medium pulse-ink-color truncate">{email.from}</span>
+        <AiChip variant="muted">draft</AiChip>
+      </div>
+      <p className="text-[12px] pulse-ink-2-color italic leading-relaxed line-clamp-2 mb-2.5">"{email.draft}"</p>
+      <div className="flex items-center gap-1.5">
+        <button className="flex-1 px-2 py-1 rounded-md pulse-rose-bg-color text-white text-[11px] font-medium flex items-center justify-center gap-1"><Icon name="send" className="w-3 h-3"/>Send</button>
+        <button className="px-2 py-1 rounded-md border pulse-border-color text-[11px] pulse-ink-2-color">Edit</button>
+        <button className="px-2 py-1 rounded-md border pulse-border-color text-[11px] pulse-ink-3-color"><Icon name="x" className="w-3 h-3"/></button>
+      </div>
+    </div>
+  );
+}
+
+function AwaitingRow({ name, subject, days, cold }) {
+  return (
+    <div className="flex items-center gap-2 py-1.5">
+      <Avatar name={name} size={22}/>
+      <div className="flex-1 min-w-0">
+        <div className="text-[12px] pulse-ink-color truncate">{name}</div>
+        <div className="text-[11px] pulse-ink-3-color truncate">{subject}</div>
+      </div>
+      <span className={`text-[10px] font-mono-pulse tracking-tight-mono tnum shrink-0 ${cold ? 'pulse-coral-fg-color' : 'pulse-ink-3-color'}`}>{days}D</span>
+    </div>
+  );
+}
+
+function CalendarRow({ time, title, linked }) {
+  return (
+    <div className="flex items-center gap-2 py-1">
+      <span className="text-[11px] font-mono-pulse pulse-ink-3-color tnum shrink-0 w-14">{time}</span>
+      <span className="text-[12px] pulse-ink-color truncate flex-1">{title}</span>
+      {linked && <AiChip variant="muted">linked</AiChip>}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   TRIAGE VIEW — one at a time, with prominent Dismiss
+   Polished: persistent counter, undo, ESC to exit, mini-stack peek
+   ════════════════════════════════════════════════════════════════════════ */
+function TriageView({ onDismiss, compact = false, queueIds, headerTitle = 'One at a time.', state, setState }) {
+  const queue = useMemo(() => (queueIds || TRIAGE_QUEUE_IDS).map(id => EMAILS.find(e => e.id === id)).filter(Boolean), [queueIds]);
+  // Controlled-or-uncontrolled state: lifted via props when shared, internal otherwise.
+  const [localState, setLocalState] = useState({ idx: 0, actedLast: null });
+  const s = state ?? localState;
+  const setS = setState ?? setLocalState;
+  const idx = s.idx;
+  const actedLast = s.actedLast;
+  const cur = queue[idx];
+  const remaining = queue.length - idx;
+  const progress = (idx / Math.max(1, queue.length)) * 100;
+  const isDone = idx >= queue.length;
+
+  const advance = useCallback((label) => {
+    setS(prev => ({ idx: clamp(prev.idx + 1, 0, queue.length), actedLast: label ? { label, idx: prev.idx, sender: queue[prev.idx]?.from } : null }));
+  }, [queue, setS]);
+
+  const undo = () => setS(prev => ({ idx: clamp(prev.idx - 1, 0, queue.length), actedLast: null }));
+
+  // ESC to dismiss
+  useEffect(() => {
+    if (!onDismiss) return;
+    const h = (e) => { if (e.key === 'Escape') onDismiss(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onDismiss]);
+
+  return (
+    <div className={`h-full w-full overflow-hidden flex flex-col ${compact ? '' : 'pulse-bg-soft'} fade-up`}>
+      {/* Top bar — counter + dismiss */}
+      <div className={`flex items-center gap-3 ${compact ? 'px-5 pt-4 pb-3' : 'px-8 pt-6 pb-4'} border-b pulse-border-color shrink-0`}>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="w-7 h-7 rounded-lg pulse-rose-bg-color text-white flex items-center justify-center"><Icon name="layers" className="w-4 h-4"/></div>
+          <div className="leading-tight">
+            <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color">TRIAGE QUEUE</div>
+            <div className="text-[13px] font-semibold pulse-ink-color">{isDone ? 'All clear.' : headerTitle}</div>
+          </div>
+        </div>
+
+        {/* Counter + progress */}
+        <div className="flex-1 mx-4">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">{idx}/{queue.length} REVIEWED · ~{Math.max(0, remaining * 18)}s LEFT</span>
+            <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">{Math.round(progress)}%</span>
+          </div>
+          <div className="progress-rail"><span style={{ width: `${progress}%` }}/></div>
+        </div>
+
+        {/* Dismiss controls */}
+        <div className="flex items-center gap-2 shrink-0">
+          {onDismiss && (
+            <button onClick={onDismiss} className="dismiss-pill" title="Exit triage (ESC)">
+              <span>Dismiss</span>
+              <span className="x"><Icon name="x" className="w-3 h-3"/></span>
+              <Keycap>ESC</Keycap>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Stage */}
+      <div className={`flex-1 overflow-hidden ${compact ? 'px-5 py-5' : 'px-8 py-6'} flex items-center justify-center relative`}>
+        {/* Action toast — confirmation banner */}
+        {actedLast && !isDone && (
+          <div className="action-toast" key={actedLast.idx}>
+            <span className="check"><Icon name="check" className="w-3 h-3"/></span>
+            <span><strong className="font-semibold">{actedLast.label}</strong>{actedLast.sender && <span className="pulse-ink-3-color"> · {actedLast.sender}</span>}</span>
+            <button className="undo-btn" onClick={undo}>
+              <Icon name="undo" className="w-2.5 h-2.5"/><span>UNDO</span>
+            </button>
+          </div>
+        )}
+        {isDone ? <TriageDone onReset={() => { setIdx(0); setActedLast(null); }} onDismiss={onDismiss}/> : (
+          <div className="relative w-full max-w-[840px] h-full">
+            {queue[idx+1] && (
+              <div className="triage-stack-card" style={{ top: 14, height: '100%', transform: 'scale(0.97)', opacity: 0.55 }}/>
+            )}
+            {queue[idx+2] && (
+              <div className="triage-stack-card" style={{ top: 26, height: '100%', transform: 'scale(0.94)', opacity: 0.25 }}/>
+            )}
+            <TriageCard email={cur} onAction={advance} compact={compact}/>
+          </div>
+        )}
+      </div>
+
+      {/* Keyboard legend */}
+      {!compact && !isDone && (
+        <div className="border-t pulse-border-color px-8 py-3 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-4 flex-wrap">
+            <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">KEYBOARD</span>
+            <span className="text-[12px] pulse-ink-2-color flex items-center gap-1.5"><Keycap>E</Keycap> Archive</span>
+            <span className="text-[12px] pulse-ink-2-color flex items-center gap-1.5"><Keycap>R</Keycap> Reply</span>
+            <span className="text-[12px] pulse-ink-2-color flex items-center gap-1.5"><Keycap>H</Keycap> Snooze</span>
+            <span className="text-[12px] pulse-ink-2-color flex items-center gap-1.5"><Keycap>T</Keycap> → Task</span>
+            <span className="text-[12px] pulse-ink-2-color flex items-center gap-1.5"><Keycap>⌘</Keycap><Keycap>↵</Keycap> Accept AI</span>
+          </div>
+          <button onClick={onDismiss} className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color hover:pulse-rose-color flex items-center gap-1.5">
+            BACK TO COCKPIT<Icon name="arrowR" className="w-3 h-3"/>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TriageCard({ email, onAction, compact }) {
+  return (
+    <div className="triage-stage relative h-full flex flex-col overflow-hidden card-in" key={email.id}>
+      <div className={`${compact ? 'px-5 pt-4 pb-3' : 'px-7 pt-6 pb-4'} border-b pulse-border-color`}>
+        <div className="flex items-start gap-4">
+          <Avatar name={email.from} size={compact ? 40 : 48}/>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className={`${compact ? 'text-[14px]' : 'text-[15px]'} font-semibold pulse-ink-color`}>{email.from}</span>
+              {email.org && <span className="text-[12px] pulse-ink-3-color truncate">· {email.org}</span>}
+              <ToneChip tone={email.tone}/>
+              {email.priority === 'high' && <span className="badge coral">PRIORITY</span>}
+            </div>
+            <div className="flex items-center gap-2 text-[11px] font-mono-pulse pulse-ink-3-color tracking-wide-mono flex-wrap">
+              <Icon name="clock" className="w-3 h-3"/><span>{email.whenLong}</span>
+              {email.threadCount > 1 && <><span>·</span><span>{email.threadCount} IN THREAD</span></>}
+              <span>·</span><span className="lowercase tracking-normal">{email.email}</span>
+            </div>
+          </div>
+        </div>
+        <h3 className={`mt-4 ${compact ? 'text-xl' : 'text-2xl'} pulse-ink-color tracking-tight`} style={{ fontFamily: 'var(--pulse-serif)', fontWeight: 500 }}>
+          {email.subject}
+        </h3>
+      </div>
+
+      {email.aiSummary && (
+        <div className={`${compact ? 'px-5 py-3' : 'px-7 py-4'} pulse-coral-bg-08-color border-b pulse-border-color`}>
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5"><AiChip>Claude · briefing</AiChip></div>
+            <p className={`${compact ? 'text-[13px]' : 'text-[13.5px]'} leading-relaxed pulse-ink-2-color flex-1`}>{email.aiSummary}</p>
+          </div>
+        </div>
+      )}
+
+      <div className={`flex-1 overflow-y-auto ${compact ? 'px-5 py-4' : 'px-7 py-5'}`}>
+        <div className="prose-mock max-w-[640px]">
+          {email.body.split('\n\n').map((p, i) => <p key={i}>{p.split('\n').map((line, j) => <React.Fragment key={j}>{line}{j < p.split('\n').length-1 && <br/>}</React.Fragment>)}</p>)}
+        </div>
+      </div>
+
+      <div className={`border-t pulse-border-color ${compact ? 'px-5 py-3' : 'px-7 py-4'} flex items-center gap-2 shrink-0 flex-wrap`} style={{ background: 'var(--pulse-canvas-soft)' }}>
+        <button onClick={() => onAction('Archive')} className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface text-[13px] font-medium pulse-ink-color border pulse-border-color hover:pulse-surface-raised">
+          <Icon name="archive" className="w-4 h-4"/><span>Archive</span><Keycap>E</Keycap>
+        </button>
+        <button onClick={() => onAction('Snooze')} className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface text-[13px] font-medium pulse-ink-color border pulse-border-color hover:pulse-surface-raised">
+          <Icon name="snooze" className="w-4 h-4"/><span>Snooze</span><Keycap>H</Keycap>
+        </button>
+        {!compact && (
+          <button onClick={() => onAction('→ Task')} className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface text-[13px] font-medium pulse-ink-color border pulse-border-color hover:pulse-surface-raised">
+            <Icon name="task" className="w-4 h-4"/><span>→ Task</span><Keycap>T</Keycap>
+          </button>
+        )}
+
+        <div className="ml-auto flex items-center gap-2">
+          {email.draft ? (
+            <div className="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-lg pulse-rose-bg-soft-color border pulse-rose-border">
+              <AiChip>Draft ready</AiChip>
+              <button onClick={() => onAction('Send draft')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md pulse-rose-bg-color text-white text-[13px] font-medium">
+                <Icon name="send" className="w-3.5 h-3.5"/><span>Send</span><span className="opacity-75"><Keycap>⌘↵</Keycap></span>
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => onAction('Reply')} className="flex items-center gap-2 px-4 py-2 rounded-lg pulse-rose-bg-color text-white text-[13px] font-medium">
+              <Icon name="reply" className="w-4 h-4"/><span>Reply</span><Keycap>R</Keycap>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {email.draft && !compact && (
+        <div className="border-t pulse-border-color px-7 py-3 shrink-0" style={{ background: 'var(--pulse-surface)' }}>
+          <div className="flex items-center gap-2 mb-1.5">
+            <AiChip variant="muted">Claude drafted</AiChip>
+            <span className="text-[11px] pulse-ink-3-color">~12 sec · tap to edit before sending</span>
+          </div>
+          <p className="text-[13px] pulse-ink-2-color leading-relaxed italic">"{email.draft}"</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TriageDone({ onReset, onDismiss }) {
+  return (
+    <div className="text-center max-w-[480px] fade-up">
+      <div className="relative inline-flex items-center justify-center w-16 h-16 mb-5">
+        <div className="done-halo w-16 h-16"/>
+        <div className="relative w-16 h-16 inline-flex items-center justify-center rounded-full pulse-rose-bg-soft-color pulse-rose-color">
+          <Icon name="check" className="w-7 h-7"/>
+        </div>
+      </div>
+      <h2 className="text-3xl pulse-ink-color tracking-tight mb-2" style={{ fontFamily: 'var(--pulse-serif)', fontWeight: 500 }}>Queue cleared.</h2>
+      <p className="pulse-ink-2-color mb-5 leading-relaxed">3 archived, 2 sent, 1 pushed to tasks. Average ~14 sec per email — your fastest session this week.</p>
+      <div className="inline-flex items-center gap-4 mb-6 px-4 py-2.5 rounded-xl pulse-coral-bg-08-color border pulse-border-color">
+        <div className="text-left">
+          <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">STREAK</div>
+          <div className="text-[15px] pulse-ink-color tnum font-semibold">3 days</div>
+        </div>
+        <div className="w-px h-7 pulse-border-strong-color" style={{ background: 'var(--pulse-border-strong)' }}/>
+        <div className="text-left">
+          <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">AVG PER EMAIL</div>
+          <div className="text-[15px] pulse-ink-color tnum font-semibold">14s</div>
+        </div>
+        <div className="w-px h-7" style={{ background: 'var(--pulse-border-strong)' }}/>
+        <div className="text-left">
+          <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">VS LAST WEEK</div>
+          <div className="text-[15px] pulse-rose-color tnum font-semibold">−22%</div>
+        </div>
+      </div>
+      <div className="flex items-center justify-center gap-3">
+        {onDismiss && <button onClick={onDismiss} className="px-4 py-2 rounded-lg pulse-rose-bg-color text-white text-[13px] font-medium">Back to Cockpit</button>}
+        <button onClick={onReset} className="px-4 py-2 rounded-lg border pulse-border-color text-[13px] font-medium pulse-ink-color">Run again</button>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH A — INLINE TOGGLE
+   Segmented pill in canvas top bar; view swaps in place.
+   ════════════════════════════════════════════════════════════════════════ */
+function PathA() {
+  const [mode, setMode] = useState('cockpit');
+  // Lifted triage state so progress persists across mode flips.
+  const [triageState, setTriageState] = useState({ idx: 0, actedLast: null });
+  const triageRemaining = Math.max(0, TRIAGE_QUEUE_IDS.length - triageState.idx);
+  const clearedIds = TRIAGE_QUEUE_IDS.slice(0, triageState.idx);
+  const upcomingIds = TRIAGE_QUEUE_IDS.slice(triageState.idx);
+
+  // ⌘E / Ctrl+E toggles mode globally
+  useEffect(() => {
+    const h = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        setMode(m => m === 'cockpit' ? 'triage' : 'cockpit');
+      }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, []);
+
+  const goToTriage = () => setMode('triage');
+  const goToCockpit = () => setMode('cockpit');
+
+  return (
+    <div className="h-full w-full flex flex-col overflow-hidden">
+      {/* Canvas top bar with segmented toggle */}
+      <div className="flex items-center gap-3 px-5 py-2.5 border-b pulse-border-color shrink-0" style={{ background: 'var(--pulse-canvas)' }}>
+        <div className="seg-toggle">
+          <button data-active={mode === 'cockpit'} onClick={goToCockpit}>
+            <Icon name="briefing" className="w-3.5 h-3.5"/><span>Cockpit</span>
+          </button>
+          <button data-active={mode === 'triage'} onClick={goToTriage}>
+            <Icon name="layers" className="w-3.5 h-3.5"/><span>Triage</span>
+            {triageRemaining > 0
+              ? <span className="seg-count has-items">{triageRemaining}</span>
+              : <span className="seg-count" style={{ background: 'rgba(16,185,129,0.14)', color: '#10b981' }}>✓</span>
+            }
+          </button>
+        </div>
+        <span className="toggle-hint" title="Switch view"><Keycap>⌘E</Keycap><span>switch</span></span>
+
+        <div className="ml-auto flex items-center gap-2">
+          <button className="px-2.5 py-1.5 rounded-md text-[12px] pulse-ink-2-color hover:pulse-surface-raised flex items-center gap-1.5">
+            <Icon name="search" className="w-3.5 h-3.5"/><span>Search</span><Keycap>/</Keycap>
+          </button>
+          <button className="px-2.5 py-1.5 rounded-md text-[12px] pulse-ink-2-color hover:pulse-surface-raised">
+            <Icon name="settings" className="w-3.5 h-3.5"/>
+          </button>
+        </div>
+      </div>
+
+      {/* Body — both views mounted, cross-fade between them */}
+      <div className="flex-1 overflow-hidden relative">
+        <div className={`view-shell ${mode === 'cockpit' ? 'view-active' : 'view-inactive'}`}>
+          <CockpitView
+            onOpenTriage={triageRemaining > 0 ? goToTriage : null}
+            onTriageOne={goToTriage}
+            triageBadge={triageRemaining}
+            queueIds={upcomingIds}
+            clearedIds={clearedIds}
+          />
+        </div>
+        <div className={`view-shell ${mode === 'triage' ? 'view-active' : 'view-inactive'}`}>
+          <TriageView
+            onDismiss={goToCockpit}
+            state={triageState}
+            setState={setTriageState}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH B — MODAL SESSION
+   Cockpit is always the home. Triage launches as a focused overlay.
+   ════════════════════════════════════════════════════════════════════════ */
+function PathB() {
+  const [showTriage, setShowTriage] = useState(false);
+  const triageCount = TRIAGE_QUEUE_IDS.length;
+
+  return (
+    <div className="h-full w-full overflow-hidden relative">
+      {/* Cockpit always rendered */}
+      <CockpitView
+        onOpenTriage={() => setShowTriage(true)}
+        onTriageOne={() => setShowTriage(true)}
+        triageBadge={triageCount}
+      />
+
+      {/* Modal overlay */}
+      {showTriage && (
+        <>
+          <div className="modal-backdrop backdrop-in" onClick={() => setShowTriage(false)}/>
+          <div className="modal-shell scale-in">
+            <TriageView onDismiss={() => setShowTriage(false)}/>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH C — SIDE DOCK
+   Cockpit (narrowed) + Triage column docked on the right.
+   Dock can be collapsed/expanded; expand-to-full or dismiss to close.
+   ════════════════════════════════════════════════════════════════════════ */
+function PathC() {
+  const [dock, setDock] = useState('docked'); // 'closed' | 'docked' | 'full'
+  const triageCount = TRIAGE_QUEUE_IDS.length;
+  const open = dock !== 'closed';
+  const full = dock === 'full';
+
+  return (
+    <div className="h-full w-full flex overflow-hidden">
+      {/* Cockpit column */}
+      {!full && (
+        <div className="flex-1 overflow-hidden relative slide-in-l">
+          <CockpitView
+            density={open ? 'compact' : 'normal'}
+            onOpenTriage={() => setDock('docked')}
+            onTriageOne={() => setDock('docked')}
+            triageBadge={open ? null : triageCount}
+            showCompose={!open}
+          />
+          {!open && (
+            <button onClick={() => setDock('docked')} className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color hover:pulse-surface-raised bg-[var(--pulse-canvas)]">
+              <Icon name="panel" className="w-3.5 h-3.5"/><span>Show triage</span>
+              <span className="seg-count">{triageCount}</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Dock divider */}
+      {open && !full && <div className="dock-grabber shrink-0"/>}
+
+      {/* Triage dock */}
+      {open && (
+        <div className={`dock-panel slide-in-r ${full ? 'flex-1' : ''}`} style={full ? {} : { width: 560 }}>
+          {/* Dock chrome */}
+          <div className="flex items-center gap-2 px-4 py-2 border-b pulse-border-color shrink-0">
+            <Icon name="layers" className="w-3.5 h-3.5 pulse-rose-color"/>
+            <span className="text-[11px] font-mono-pulse tracking-wide-mono pulse-rose-color">TRIAGE DOCK</span>
+            <span className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">· {triageCount} IN QUEUE</span>
+            <div className="ml-auto flex items-center gap-1">
+              <button onClick={() => setDock(full ? 'docked' : 'full')} className="p-1.5 rounded-md pulse-ink-3-color hover:pulse-surface-raised" title={full ? 'Return to dock' : 'Expand to full'}>
+                <Icon name={full ? 'collapse' : 'expand'} className="w-3.5 h-3.5"/>
+              </button>
+              <button onClick={() => setDock('closed')} className="p-1.5 rounded-md pulse-ink-3-color hover:pulse-surface-raised" title="Dismiss (ESC)">
+                <Icon name="x" className="w-3.5 h-3.5"/>
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <TriageView compact={!full} onDismiss={() => setDock('closed')}/>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   APP SHELL
+   ════════════════════════════════════════════════════════════════════════ */
+function App() {
+  const [theme, setTheme] = useState('dark');
+  const [path, setPath] = useState('A');
+
+  useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
+  return (
+    <div className="h-screen w-screen flex flex-col overflow-hidden pulse-bg">
+      <div className="pg-bar flex items-center gap-3 px-4 py-2 border-b pulse-border-color shrink-0" style={{ height: 48 }}>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="mail" className="w-3.5 h-3.5"/></div>
+          <span className="text-sm font-semibold pulse-ink-color">Email Redesign</span>
+          <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">· HYBRID · 3 TOGGLE EXPLORATIONS</span>
+        </div>
+        <div className="ml-6 flex items-center gap-1 p-0.5 rounded-lg pulse-surface-raised">
+          {[
+            { id: 'A', label: 'A · Inline Toggle',  icon: 'panel'   },
+            { id: 'B', label: 'B · Modal Session',  icon: 'layers'  },
+            { id: 'C', label: 'C · Side Dock',      icon: 'briefing'},
+          ].map(p => (
+            <button key={p.id} data-active={path === p.id} onClick={() => setPath(p.id)}
+              className="pg-pill px-3 py-1.5 rounded-md text-[12px] font-medium pulse-ink-2-color flex items-center gap-1.5">
+              <Icon name={p.icon} className="w-3.5 h-3.5"/><span>{p.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-1">
+          <button onClick={toggleTheme} className="px-2.5 py-1.5 rounded-md text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color hover:pulse-surface-raised flex items-center gap-1.5">
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5"/>{theme === 'dark' ? 'LIGHT' : 'DARK'}
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 flex overflow-hidden">
+        <PulseSidebar theme={theme} onToggleTheme={toggleTheme}/>
+        <main className="flex-1 overflow-hidden m-3 rounded-2xl border pulse-border-color pulse-bg-soft relative" style={{ boxShadow: 'var(--pulse-shadow-main)' }}>
+          {path === 'A' && <PathA/>}
+          {path === 'B' && <PathB/>}
+          {path === 'C' && <PathC/>}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
