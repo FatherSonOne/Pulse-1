@@ -43,7 +43,9 @@ export function initializeAnalytics(): void {
     // Autocapture
     autocapture: {
       dom_event_allowlist: ['click', 'submit', 'change'],
-      url_allowlist: [/pulsemessages\.com/],
+      // Production lives at pulse.logosvision.org; localhost included so the
+      // operator's own dev-mode QA still records sessions when PostHog is on.
+      url_allowlist: [/pulse\.logosvision\.org/, /localhost/],
       element_allowlist: ['button', 'a', 'input', 'select', 'textarea'],
     },
 

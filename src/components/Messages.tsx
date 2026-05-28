@@ -168,6 +168,7 @@ import { SnoozeMenu } from './Messages/SnoozeMenu';
 import { TagPicker, TagPills } from './Messages/TagPills';
 import { tagsService, type TagDefinition } from '../services/tagsService';
 import { useWorkspace } from '../contexts/WorkspaceContext';
+import { trackOnboarding, OnboardingEvent } from '../lib/monitoring/onboardingEvents';
 
 import { Archive, ArrowLeft, ArrowRight, ArrowUp, AtSign, BarChart, Bold, Bot, Check, CheckCheck, CheckCircle, CheckCircle2, Clock, Copy, Crosshair, Download, Ellipsis, Eye, File, FileOutput, FileText, Flag, Gavel, GitFork, GraduationCap, Handshake, Hash, HeartPulse, History, Image, Keyboard, Languages, Layers, LayoutGrid, Lightbulb, Link, ListChecks, Loader2, Lock, LogOut, Mail, Menu, MessageCircle, MessageSquare, MessagesSquare, PanelRightOpen, Pen, PenTool, Play, Plus, Reply, Rocket, Scale, Search, Send, Share, SlidersHorizontal, Smartphone, Smile, Sparkles, Square, SquarePen, Star, Target, Terminal, ThumbsDown, ThumbsUp, Timer, Trash2, TrendingUp, Trophy, UserPlus, UserX, Users, Video, Wand2, Wrench, X, Zap } from 'lucide-react';
 
@@ -2454,6 +2455,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           thread_id: activeThreadId,
         },
         timestamp: new Date(),
+      });
+      // Separately: emit the typed analytics activation event so PostHog can
+      // chart the post-Stripe `surface_shown -> first_message_sent` funnel.
+      // `triggerMessage` above is the in-app rule engine (different system);
+      // this one is the product-analytics funnel. Both must fire — keep them
+      // side by side. PostHog dedupes by workspace_id per onboardingEvents.ts.
+      trackOnboarding(OnboardingEvent.FirstMessageSent, {
+        workspace_id: currentWorkspace?.id,
       });
     }
 

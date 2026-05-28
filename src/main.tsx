@@ -7,6 +7,7 @@ import './i18n';
 import App from './App.tsx'
 import { AuthProvider } from './contexts/AuthContext'
 import { LoadingProvider } from './contexts/LoadingContext'
+import { initializeMonitoring } from './lib/monitoring'
 import './index.css'
 import './components/shared/PulseTypography.css'
 
@@ -18,6 +19,20 @@ import './components/shared/PulseTypography.css'
 const E2E_MAP_HARNESS =
   import.meta.env.DEV &&
   new URLSearchParams(window.location.search).get('e2eHarness') === 'map';
+
+// Bootstrap monitoring (Sentry + PostHog + perf metrics + global error
+// handlers) before React mounts. Both SDKs internally gate on env vars
+// (VITE_POSTHOG_API_KEY, VITE_SENTRY_DSN) AND on VITE_APP_MODE !== 'development',
+// so local dev stays dormant. Wrapped in try/catch — startup must never throw.
+// Skipped under the E2E map harness so the test rig keeps its dependency-light
+// boot path.
+if (!E2E_MAP_HARNESS) {
+  try {
+    initializeMonitoring();
+  } catch (error) {
+    console.error('[monitoring] Failed to initialize:', error);
+  }
+}
 
 // DEVELOPMENT: Force clear service worker cache on version mismatch
 const APP_VERSION = '28.2.0';

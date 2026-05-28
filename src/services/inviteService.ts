@@ -3,6 +3,7 @@
 
 import { supabase } from './supabase';
 import { GmailService } from './gmailService';
+import { trackOnboarding, OnboardingEvent } from '../lib/monitoring/onboardingEvents';
 
 export interface TeamInvite {
   id: string;
@@ -142,6 +143,15 @@ export const sendInvitationEmail = async (
 
     const data = await response.json();
 
+    // Network activation event for the onboarding funnel. PostHog dedupes by
+    // workspace_id per onboardingEvents.ts, so re-sending invites won't
+    // pollute the "first teammate invited" cohort metric.
+    try {
+      trackOnboarding(OnboardingEvent.TeammateInvited, { channel: 'resend' });
+    } catch {
+      /* analytics is best-effort */
+    }
+
     return {
       success: true,
       message: 'Invitation email sent successfully',
@@ -189,6 +199,14 @@ export const sendInvitationViaGmail = async (
       body: generateInviteEmailHtml(inviterName, workspaceName, inviteUrl),
       isHtml: true
     });
+
+    // Network activation event — fires whether the user routed through
+    // Resend or Gmail. `channel` differentiates the two paths.
+    try {
+      trackOnboarding(OnboardingEvent.TeammateInvited, { channel: 'gmail' });
+    } catch {
+      /* analytics is best-effort */
+    }
 
     return {
       success: true,

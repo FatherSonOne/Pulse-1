@@ -15,6 +15,7 @@ import {
   forceRefreshSession,
   isSessionValid,
 } from '../services/authService';
+import { identifyUser, resetAnalytics } from '../lib/monitoring/analytics';
 
 /**
  * Authentication Context Interface
@@ -93,6 +94,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('[AuthProvider] Auth state changed:', newUser?.email || 'logged out');
       setUser(newUser);
       setIsLoading(false);
+
+      // Tie PostHog distinct_id to the Supabase user id so D1/D7/D30 cohort
+      // retention is per-user, not per-anonymous-device. On logout, reset so
+      // the next anonymous session doesn't inherit the previous identity.
+      // Both helpers are no-ops when PostHog isn't initialised (see
+      // analytics.ts — gated on VITE_POSTHOG_API_KEY + non-dev env).
+      try {
+        if (newUser) {
+          identifyUser(newUser.id, {
+            email: newUser.email,
+            google_connected: newUser.googleConnected,
+            microsoft_connected: !!newUser.microsoftConnected,
+          });
+        } else {
+          resetAnalytics();
+        }
+      } catch (err) {
+        console.error('[AuthProvider] Analytics identify/reset failed:', err);
+      }
     });
 
     return () => {

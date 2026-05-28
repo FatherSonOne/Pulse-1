@@ -1,5 +1,6 @@
 // Pulse Service - User profiles and in-app messaging
 import { supabase } from './supabase';
+import { trackMessageSent } from '../lib/monitoring/analytics';
 
 export interface UserProfile {
   id: string;
@@ -375,6 +376,20 @@ class PulseService {
     if (error) {
       console.error('Error sending message:', error);
       throw error;
+    }
+
+    // DAU/WAU/MAU + stickiness trunk event. Single chokepoint — all six Relay
+    // modes / Pulse-DM surfaces funnel through this RPC, so we never spray
+    // the call site. Fired only on success (after the RPC throws-or-returns).
+    // Maps `voice|file|image|text` to the analytics enum verbatim.
+    try {
+      const messageType =
+        contentType === 'voice' ? 'voice'
+        : contentType === 'file' || contentType === 'image' ? 'file'
+        : 'text';
+      trackMessageSent(messageType, { content_type: contentType });
+    } catch {
+      // Analytics failures must never break the send path.
     }
 
     return data; // Returns message ID
