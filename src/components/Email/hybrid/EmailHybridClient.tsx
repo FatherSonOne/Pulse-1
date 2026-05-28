@@ -1,18 +1,15 @@
 // EmailHybridClient — entry point when emailHybrid flag is on.
-// Phase 3 adds:
-//   - CanvasTopBar with the segmented mode toggle
-//   - Cross-faded view shells hosting Cockpit and Triage simultaneously
-//   - ⌘E / Ctrl+E global keydown to toggle the mode (skips text inputs)
-//   - Mode-aware Esc: dismiss Triage; in Cockpit, collapse the expanded row
-//   - Triage queue source still mock (Phase 4 wires live data + per-card keys)
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+// Phase 4 owns the triage queue freeze (lives here so only one component
+// triggers the side effect even though both Cockpit + Triage consume the
+// useTriageQueue selector).
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useEmailStore } from '../../../store/emailStore';
 import { useEmailUIStore } from '../../../store/emailUIStore';
 import { useEmailComposeStore } from '../../../store/emailComposeStore';
 import { CockpitView } from './CockpitView';
 import { TriageView } from './TriageView';
 import { CanvasTopBar } from './chrome/CanvasTopBar';
-import { TRIAGE_QUEUE_IDS } from './data/mockEmails';
+import { computeFreshTriageQueue, useTriageQueue } from './data/useTriageQueue';
 import './hybrid.css';
 
 interface EmailHybridClientProps {
@@ -37,38 +34,40 @@ function isTextInputTarget(target: EventTarget | null): boolean {
 export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
   const shellRef = useRef<HTMLDivElement>(null);
 
+  const emails = useEmailStore((s) => s.emails);
   const loadEmails = useEmailStore((s) => s.loadEmails);
   const currentFolder = useEmailStore((s) => s.currentFolder);
   const activeCategory = useEmailStore((s) => s.activeCategory);
 
   const mode = useEmailUIStore((s) => s.emailHybridMode);
   const setMode = useEmailUIStore((s) => s.setEmailHybridMode);
-  const triageState = useEmailUIStore((s) => s.triageState);
   const setNudgeFocused = useEmailUIStore((s) => s.setNudgeFocused);
   const expandedSignalRowId = useEmailUIStore((s) => s.expandedSignalRowId);
   const setExpandedSignalRowId = useEmailUIStore((s) => s.setExpandedSignalRowId);
+  const triageQueueIds = useEmailUIStore((s) => s.triageQueueIds);
+  const setTriageQueueIds = useEmailUIStore((s) => s.setTriageQueueIds);
 
   const openCompose = useEmailComposeStore((s) => s.openCompose);
   const restoreComposer = useEmailComposeStore((s) => s.restoreComposer);
 
-  // Triage queue source for Phase 3 is the mock queue; Phase 4 derives it
-  // from the live emailStore. Computing here lets the Cockpit's pips and
-  // briefing CTA stay coherent with TriageView's progress.
-  const queueIds = TRIAGE_QUEUE_IDS;
-  const clearedIds = useMemo(
-    () => queueIds.slice(0, triageState.idx),
-    [queueIds, triageState.idx],
-  );
-  const upcomingIds = useMemo(
-    () => queueIds.slice(triageState.idx),
-    [queueIds, triageState.idx],
-  );
-  const triageRemaining = Math.max(0, queueIds.length - triageState.idx);
+  // Triage queue data — both views consume this selector independently.
+  const triageData = useTriageQueue();
 
   // ── Initial load + reload on folder/category change ───────────────────
   useEffect(() => {
     void loadEmails();
   }, [loadEmails, currentFolder, activeCategory]);
+
+  // ── Freeze the Triage queue on session start ──────────────────────────
+  // Guard ensures we only freeze when we have NO existing queue AND we
+  // have inbox emails to source from. resetTriageState() wipes both
+  // triageState and triageQueueIds, so Run again on TriageDone re-triggers.
+  useEffect(() => {
+    if (triageQueueIds.length === 0 && emails.length > 0) {
+      const fresh = computeFreshTriageQueue(emails);
+      if (fresh.length > 0) setTriageQueueIds(fresh);
+    }
+  }, [emails, triageQueueIds.length, setTriageQueueIds]);
 
   // ── pulse_focus_nudge deep-link from Daily Overview ───────────────────
   useEffect(() => {
@@ -113,7 +112,7 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
     return () => window.removeEventListener('keydown', handler);
   }, [mode, setMode]);
 
-  // ── Esc — mode-aware: Triage → dismiss; Cockpit-with-expanded-row → collapse
+  // ── Esc — mode-aware ──────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
@@ -137,9 +136,8 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
 
   const handleTriageOne = useCallback(
     (_emailId: string) => {
-      // Phase 3: queue stays mock-driven; clicking the per-row TRIAGE chip
-      // simply switches into Triage mode at the current queue position.
-      // Phase 4 will jump the queue to the requested email.
+      // Phase 4 leaves jumping-to-a-specific-email for v1.1; for now the
+      // per-row TRIAGE chip simply enters Triage mode at the current idx.
       setMode('triage');
     },
     [setMode],
@@ -147,18 +145,18 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
 
   return (
     <div ref={shellRef} className="email-hybrid-shell h-full w-full flex flex-col overflow-hidden">
-      <CanvasTopBar triageRemaining={triageRemaining} />
+      <CanvasTopBar triageRemaining={triageData.remaining} />
 
       <div className="flex-1 overflow-hidden relative">
         <div className={`view-shell ${mode === 'cockpit' ? 'view-active' : 'view-inactive'}`}>
           <CockpitView
             density="normal"
             onCompose={openCompose}
-            onOpenTriage={triageRemaining > 0 ? goToTriage : undefined}
+            onOpenTriage={triageData.remaining > 0 ? goToTriage : undefined}
             onTriageOne={handleTriageOne}
-            triageRemaining={triageRemaining}
-            upcomingQueueIds={upcomingIds}
-            clearedIds={clearedIds}
+            triageRemaining={triageData.remaining}
+            upcomingQueueIds={triageData.upcomingIds}
+            clearedIds={triageData.clearedIds}
           />
         </div>
 

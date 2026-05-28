@@ -47,6 +47,12 @@ interface EmailUIState {
   // Email Hybrid (Cockpit + Triage) — see docs/EMAIL_HYBRID_REDESIGN_HANDOFF_2026-05-27.md §5.2
   emailHybridMode: EmailHybridMode;
   triageState: TriageState;
+  /**
+   * Frozen-at-session-start list of email IDs to process during this triage
+   * session. Reset to [] via resetTriageState() so the next session re-freezes
+   * from current inbox state. Empty means "no session yet".
+   */
+  triageQueueIds: string[];
   expandedSignalRowId: string | null;
 
   // Actions
@@ -69,6 +75,7 @@ interface EmailUIState {
   incrementCampaignRefreshKey: () => void;
   setEmailHybridMode: (mode: EmailHybridMode) => void;
   setTriageState: (state: TriageState | ((s: TriageState) => TriageState)) => void;
+  setTriageQueueIds: (ids: string[]) => void;
   resetTriageState: () => void;
   setExpandedSignalRowId: (id: string | null) => void;
 }
@@ -90,6 +97,7 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   campaignRefreshKey: 0,
   emailHybridMode: 'cockpit',
   triageState: { idx: 0, actedLast: null },
+  triageQueueIds: [],
   expandedSignalRowId: null,
 
   setZoomLevel: (level) => set({ zoomLevel: Math.max(50, Math.min(100, level)) }),
@@ -118,6 +126,11 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   setTriageState: (state) => set((s) => ({
     triageState: typeof state === 'function' ? state(s.triageState) : state,
   })),
-  resetTriageState: () => set({ triageState: { idx: 0, actedLast: null } }),
+  setTriageQueueIds: (ids) => set({ triageQueueIds: ids }),
+  // Wiping queueIds here too so the next session re-freezes from current inbox.
+  resetTriageState: () => set({
+    triageState: { idx: 0, actedLast: null },
+    triageQueueIds: [],
+  }),
   setExpandedSignalRowId: (id) => set({ expandedSignalRowId: id }),
 }));
