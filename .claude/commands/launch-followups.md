@@ -512,7 +512,7 @@ The agent updates this section every time an item changes state. Each row:
 | `play-signing` | pending | P0 | — | Enroll Play App Signing on first AAB upload |
 | `calea` | pending | P1 | — | Lawyer consult + memo + runbook |
 | `e2ee` | pending | P1 | — | Pick Option A/B/C, write positioning guide |
-| `posthog-dashboards` | pending | P1 | — | Build the 4 PostHog insights (after `vercel-posthog`) |
+| `posthog-dashboards` | in-progress | P1 | 2026-05-28 | Build the 4 PostHog insights (after `vercel-posthog`) |
 | `qa-flags-115` | pending | P1 | — | Feature-flag QA click-through against production |
 | `v1-lane` | pending | P2 | — | Pick A/B/C, write positioning guide |
 | `sms-10dlc` | parked | P3 | — | Only when SMS unhides for v1 |
