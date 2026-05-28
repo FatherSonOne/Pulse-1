@@ -505,7 +505,7 @@ The agent updates this section every time an item changes state. Each row:
 | key | status | priority | last-touched | note |
 |---|---|---|---|---|
 | `vercel-region` | done | P0 | 2026-05-27 | Set in Vercel (Prod+Preview), redeployed, bundle verified — `US East (us-east-1)` baked into `vendor-BRPKT_wH.js` |
-| `vercel-posthog` | in-progress | P0 | 2026-05-28 | Without this, #117 instrumentation is dormant in prod |
+| `vercel-posthog` | done | P0 | 2026-05-28 | Set `VITE_POSTHOG_API_KEY` + `VITE_POSTHOG_HOST` + `VITE_APP_MODE=production` in Vercel; redeployed; smoke verified ($identify + Message Sent arrived in Live events). Side benefit: Sentry init also unblocked by `VITE_APP_MODE` flip |
 | `live-smoke-99` | pending | P0 | — | Slack + Gmail OAuth round-trip from production |
 | `delete-test-111` | pending | P0 | — | Throwaway account → erasure → Supabase verify |
 | `keystore-backup` | pending | P0 | — | Backup keystore + properties to 2 offsite locations |
@@ -518,7 +518,7 @@ The agent updates this section every time an item changes state. Each row:
 | `sms-10dlc` | parked | P3 | — | Only when SMS unhides for v1 |
 | `dsar-export-gap` | parked | P3 | — | Only when first DSAR arrives or capacity allows |
 
-**Resume Pointer:** next unblocked item is `vercel-posthog`. Run `/launch-followups` to start there, or `/launch-followups <key>` to jump.
+**Resume Pointer:** next unblocked item is `live-smoke-99`. Run `/launch-followups` to start there, or `/launch-followups <key>` to jump. (Sibling: `posthog-dashboards` is now unblocked since `vercel-posthog` is done — pick that if you'd rather build the four insights while events are fresh in Live.)
 
 ---
 
@@ -526,3 +526,4 @@ The agent updates this section every time an item changes state. Each row:
 
 - **2026-05-27** — Command created. Initial checklist captures 13 items (6 × P0, 4 × P1, 1 × P2, 2 parked). All P0 items are real launch gates — bias toward clearing those before P1 decisions.
 - **2026-05-27** — `vercel-region` done. `VITE_SUPABASE_REGION=US East (us-east-1)` set in Vercel `pulse1` (Production + Preview), redeployed, bundle-verified via curl of `/assets/vendor-BRPKT_wH.js`. Settings → Compliance now surfaces the real region instead of the "Multi-region" fallback. 5 × P0 remain.
+- **2026-05-28** — `vercel-posthog` done. Set `VITE_POSTHOG_API_KEY`, `VITE_POSTHOG_HOST`, AND `VITE_APP_MODE=production` (the latter was unset, which had been silently short-circuiting BOTH PostHog and Sentry init in prod via the `ENVIRONMENT === 'development'` gate). Smoke passed: `$identify` + `Message Sent` arrived in PostHog Live events. Bundle-deploy confirmed (most chunks have new content-hashes). 4 × P0 remain; `posthog-dashboards` (P1) now unblocked. Side-finding: pre-existing temp-id rail bug surfaced during smoke (Messages → `getDecisionsByMessageIds`/`getTasksByMessageIds` ship optimistic `temp-*` IDs into UUID filters → 22P02); fixed in a separate same-session commit.

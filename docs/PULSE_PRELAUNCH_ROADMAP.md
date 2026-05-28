@@ -114,13 +114,13 @@ Statuses: `open` · `in-progress` · `blocked` · `done`. The agent edits the **
 |---|---|---|---|---|---|
 | [#114](https://github.com/FatherSonOne/Pulse-1/issues/114) | TS error burndown + CI no-new-errors gate | medium | — | open | ~1,234 baseline |
 | [#115](https://github.com/FatherSonOne/Pulse-1/issues/115) | Integration test coverage (billing/video/calendar/CRM/push/SMS) | medium | — | open | |
-| [#116](https://github.com/FatherSonOne/Pulse-1/issues/116) | Observability + SLOs | medium | — | open | Sentry already in deps |
+| [#116](https://github.com/FatherSonOne/Pulse-1/issues/116) | Observability + SLOs | medium | — | open | Sentry already in deps. **2026-05-28 side-finding:** Sentry's `initializeSentry()` was silently dormant in prod because `VITE_APP_MODE` was unset → `ENVIRONMENT === 'development'` → early-return at `sentry.ts:23`. `VITE_APP_MODE=production` now set in Vercel (alongside the PostHog vars from `vercel-posthog`), so Sentry should now be capturing prod errors. Operator: eyeball Sentry project for errors flowing in |
 
 ### P2 — Growth / activation / positioning
 
 | # | Title | Priority | Depends on | Status | Notes |
 |---|---|---|---|---|---|
-| [#117](https://github.com/FatherSonOne/Pulse-1/issues/117) | Retention instrumentation + define NSM | high | — | done | `a3d3cf7` — `initializeMonitoring()` was dead code (never called); identify never wired; `FirstMessageSent` defined but unemit­ted. Fixed: bootstrap in `main.tsx`, identify/reset in `AuthContext` `onAuthStateChange`, trunk `trackMessageSent` in `pulseService.sendMessage`, `FirstMessageSent` + `TeammateInvited` (Resend+Gmail) emits, stale `pulsemessages.com` autocapture URL replaced. NSM = **Weekly Active Collaborative Workspaces** (≥2 members × ≥50 weekly messages). Doc: `docs/PULSE_NSM_AND_RETENTION_GUIDE.md`. Follow-up: NSM aggregation needs Supabase cron OR PostHog Group Analytics (paid) — captured in GUIDE §5 |
+| [#117](https://github.com/FatherSonOne/Pulse-1/issues/117) | Retention instrumentation + define NSM | high | — | done | `a3d3cf7` — `initializeMonitoring()` was dead code (never called); identify never wired; `FirstMessageSent` defined but unemit­ted. Fixed: bootstrap in `main.tsx`, identify/reset in `AuthContext` `onAuthStateChange`, trunk `trackMessageSent` in `pulseService.sendMessage`, `FirstMessageSent` + `TeammateInvited` (Resend+Gmail) emits, stale `pulsemessages.com` autocapture URL replaced. NSM = **Weekly Active Collaborative Workspaces** (≥2 members × ≥50 weekly messages). Doc: `docs/PULSE_NSM_AND_RETENTION_GUIDE.md`. **Live-prod-verified 2026-05-28** — `$identify` + `Message Sent` arrived in PostHog Live events after operator set `VITE_POSTHOG_API_KEY`/`VITE_POSTHOG_HOST`/`VITE_APP_MODE=production` in Vercel. Follow-up: NSM aggregation needs Supabase cron OR PostHog Group Analytics (paid) — captured in GUIDE §5 |
 | [#118](https://github.com/FatherSonOne/Pulse-1/issues/118) | Team/multiplayer activation onboarding | high | — | open | First-30-days |
 | [#119](https://github.com/FatherSonOne/Pulse-1/issues/119) | Sharpen positioning — cross-surface AI; pick v1 lane | medium | — | open | |
 
