@@ -67,7 +67,9 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
   };
 
   const handleTaskClick = () => {
-    // Decisions & Tasks integration lands in Phase 4/5; for Phase 2 surface intent.
+    // TODO(post-hybrid-soak): wire to decisionTaskHub after the Email
+    // Hybrid Phase 11 flag flip + legacy cleanup. Same stub used in
+    // TriageView. See memory: project_pulse_decisions_tasks_revisit.md
     toast('Push to Decisions & Tasks coming soon.');
   };
 
