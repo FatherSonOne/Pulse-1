@@ -1,8 +1,7 @@
 // LaneRow — compact row inside a LaneSection.
-// Click opens an inline reader beneath the row (shares expandedSignalRowId
-// with the Signal section so only one row is open at a time across the
-// whole Cockpit). The mark-as-read side effect is deliberately omitted so
-// the row doesn't disappear from any underlying filters mid-click.
+// Same click-anywhere-to-toggle behavior as SignalRow: tap the row to open,
+// tap anywhere not-a-button to collapse. Shares expandedSignalRowId with
+// the Signal section so only one row is open at a time.
 import React from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { EmailRow } from '../data/emailRow';
@@ -16,9 +15,14 @@ interface LaneRowProps {
   showTopBorder?: boolean;
 }
 
+function isInsideInteractive(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest('button, a, input, textarea, select, label'));
+}
+
 export const LaneRow: React.FC<LaneRowProps> = ({ email, expanded, onToggle, showTopBorder }) => {
-  const handleOpen = () => {
-    if (expanded) return;
+  const handleRowClick = (e: React.MouseEvent) => {
+    if (isInsideInteractive(e.target)) return;
     onToggle();
   };
 
@@ -28,21 +32,23 @@ export const LaneRow: React.FC<LaneRowProps> = ({ email, expanded, onToggle, sho
   };
 
   return (
-    <div className={showTopBorder ? 'border-t pulse-border-color' : undefined}>
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={handleOpen}
-        onKeyDown={(e) => {
-          if ((e.key === 'Enter' || e.key === ' ') && !expanded) {
-            e.preventDefault();
-            handleOpen();
-          }
-        }}
-        className={`selectable-row flex items-center gap-3 px-4 py-2.5 ${expanded ? '' : 'cursor-pointer'}`}
-        aria-expanded={expanded}
-        aria-label={expanded ? `Email from ${email.from}, expanded` : `Open email from ${email.from}: ${email.subject}`}
-      >
+    <div
+      className={`cursor-pointer ${showTopBorder ? 'border-t pulse-border-color' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={handleRowClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
+      aria-expanded={expanded}
+      aria-label={expanded
+        ? `Email from ${email.from}, expanded. Click to collapse.`
+        : `Open email from ${email.from}: ${email.subject}`}
+    >
+      <div className="selectable-row flex items-center gap-3 px-4 py-2.5">
         <Avatar name={email.from} size={26} />
         <span className="text-[12.5px] pulse-ink-color truncate min-w-[140px]">{email.from}</span>
         <span className="text-[12.5px] pulse-ink-2-color truncate flex-1">{email.subject}</span>

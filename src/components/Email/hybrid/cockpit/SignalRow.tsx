@@ -1,8 +1,9 @@
 // SignalRow — single expandable row in the Cockpit Signal section.
-// Header click ONLY opens the row (never closes it) — closing is reserved
-// for explicit user actions: the chevron button on the right, the Esc key
-// (orchestrator-owned), or any of the InlineReader's archive/reply/etc.
-// actions which navigate away from the row.
+// Click ANYWHERE on the card (except a button/link/input) toggles expansion.
+// Closing is therefore a natural gesture: open the card, read it, click
+// anywhere on the body to collapse. Buttons (Reply/Archive/TRIAGE/AI
+// actions/chevron) handle their own clicks because the row-level handler
+// bails when the click target is inside an interactive element.
 import React from 'react';
 import {
   ChevronUp, ChevronDown, Layers,
@@ -36,20 +37,22 @@ const ActionIcon: React.FC<{ kind: AiActionKind }> = ({ kind }) => {
   }
 };
 
+function isInsideInteractive(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest('button, a, input, textarea, select, label'));
+}
+
 export const SignalRow: React.FC<SignalRowProps> = ({
   email, expanded, focused, onToggle, onFocus, onTriage, queuePos, queueTotal, queueCleared,
 }) => {
-  // Header interaction: only open; never close from a click on the body.
-  // We deliberately do NOT mark-as-read on expand — the Signal filter is
-  // `!is_read && priority >= 60`, so marking on click would remove the row
-  // from the filter and the card would vanish under the user's hands.
-  // Mark-as-read happens through explicit actions (Archive, Send, etc.).
-  const handleHeaderOpen = () => {
-    if (expanded) return;
+  // Row-level click: toggle unless the click hit a real interactive child.
+  const handleRowClick = (e: React.MouseEvent) => {
+    if (isInsideInteractive(e.target)) return;
     onToggle();
   };
 
-  // Chevron: explicit toggle. When expanded → close; when collapsed → open.
+  // Chevron button: explicit toggle. Click bubbles up to the row but the
+  // row's handler skips it because the chevron is itself a <button>.
   const handleChevronClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onToggle();
@@ -57,25 +60,25 @@ export const SignalRow: React.FC<SignalRowProps> = ({
 
   return (
     <div
-      className="signal-row border pulse-border-color overflow-hidden"
+      className="signal-row border pulse-border-color overflow-hidden cursor-pointer"
       data-expanded={expanded}
       data-focused={focused}
+      role="button"
+      tabIndex={0}
+      onClick={handleRowClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
+      onMouseEnter={onFocus}
+      aria-expanded={expanded}
+      aria-label={expanded
+        ? `Email from ${email.from}, expanded. Click to collapse.`
+        : `Open email from ${email.from}: ${email.subject}`}
     >
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={handleHeaderOpen}
-        onKeyDown={(e) => {
-          if ((e.key === 'Enter' || e.key === ' ') && !expanded) {
-            e.preventDefault();
-            handleHeaderOpen();
-          }
-        }}
-        onMouseEnter={onFocus}
-        className={`w-full text-left flex items-start gap-4 px-4 py-3.5 ${expanded ? '' : 'cursor-pointer'}`}
-        aria-expanded={expanded}
-        aria-label={expanded ? `Email from ${email.from}, expanded` : `Open email from ${email.from}: ${email.subject}`}
-      >
+      <div className="w-full text-left flex items-start gap-4 px-4 py-3.5">
         <Avatar name={email.from} size={36} />
 
         <div className="flex-1 min-w-0">
