@@ -707,26 +707,26 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
   if (isMinimized) {
     return (
       <div
-        className="fixed bottom-4 right-4 bg-zinc-900/95 backdrop-blur-xl border border-zinc-700 rounded-lg shadow-2xl w-72 z-50 transition-all duration-300 ease-out"
+        className="fixed bottom-4 right-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-stone-200 dark:border-zinc-700 rounded-lg shadow-2xl w-72 z-50 transition-all duration-300 ease-out"
         style={{
           transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
           opacity: isVisible ? 1 : 0
         }}
       >
         <div className="flex items-center justify-between px-4 py-3">
-          <span className="text-sm font-medium text-white truncate flex-1">
+          <span className="text-sm font-medium text-stone-900 dark:text-white truncate flex-1">
             {subject || 'New Message'}
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setIsMinimized(false)}
-              className="w-6 h-6 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
+              className="w-6 h-6 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition"
             >
               <Square className="text-xs" />
             </button>
             <button
               onClick={handleClose}
-              className="w-6 h-6 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-red-400 transition"
+              className="w-6 h-6 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-red-400 transition"
             >
               <X className="text-xs" />
             </button>
@@ -759,7 +759,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
 
       {/* Composer Panel */}
       <div
-        className={`fixed z-50 bg-zinc-900/95 backdrop-blur-xl border border-zinc-700/80 shadow-2xl flex flex-col transition-all duration-300 ease-out ${getPanelClasses()}`}
+        className={`fixed z-50 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-stone-200/80 dark:border-zinc-700/80 shadow-2xl flex flex-col transition-all duration-300 ease-out ${getPanelClasses()}`}
         style={{
           transform: isVisible
             ? 'translateX(0) scale(1)'
@@ -768,28 +768,28 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/80 rounded-t-xl bg-zinc-900/80">
-          <span className="text-sm font-semibold text-white">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200/80 dark:border-zinc-800/80 rounded-t-xl bg-white/80 dark:bg-zinc-900/80">
+          <span className="text-sm font-semibold text-stone-900 dark:text-white">
             {replyTo ? 'Reply' : 'New Message'}
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setIsMinimized(true)}
-              className="w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition-all duration-200"
+              className="w-7 h-7 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition-all duration-200"
               title="Minimize"
             >
               <Minus className="text-xs" />
             </button>
             <button
               onClick={() => setIsMaximized(!isMaximized)}
-              className="w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition-all duration-200"
+              className="w-7 h-7 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition-all duration-200"
               title={isMaximized ? 'Restore' : 'Expand'}
             >
               <i className={`fa-solid ${isMaximized ? 'fa-compress' : 'fa-expand'} text-xs`}></i>
             </button>
             <button
               onClick={handleClose}
-              className="w-7 h-7 rounded hover:bg-red-500/20 flex items-center justify-center text-zinc-400 hover:text-red-400 transition-all duration-200"
+              className="w-7 h-7 rounded hover:bg-red-500/20 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-red-400 transition-all duration-200"
               title="Close"
             >
               <X className="text-sm" />
@@ -816,7 +816,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               </button>
               <button
                 onClick={dismissRestoredDraft}
-                className="h-7 px-2.5 rounded-md text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                className="h-7 px-2.5 rounded-md text-xs font-medium text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white hover:bg-white/[0.06] transition-colors"
               >
                 Discard
               </button>
@@ -824,21 +824,21 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
           )}
 
           {/* Recipients */}
-          <div className="px-4 py-2 border-b border-zinc-800/50">
+          <div className="px-4 py-2 border-b border-stone-200/50 dark:border-zinc-800/50">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-zinc-500 w-12">To:</span>
+              <span className="text-sm text-stone-400 dark:text-zinc-500 w-12">To:</span>
               <input
                 type="text"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
                 placeholder="Recipients"
-                className="flex-1 bg-transparent text-white text-sm focus:outline-none placeholder-zinc-600"
+                className="flex-1 bg-transparent text-stone-900 dark:text-white text-sm focus:outline-none placeholder-stone-400 dark:placeholder-zinc-600"
               />
               <div className="flex items-center gap-2 text-xs">
                 {!showCc && (
                   <button
                     onClick={() => setShowCc(true)}
-                    className="text-zinc-500 hover:text-white transition"
+                    className="text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
                   >
                     Cc
                   </button>
@@ -846,7 +846,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 {!showBcc && (
                   <button
                     onClick={() => setShowBcc(true)}
-                    className="text-zinc-500 hover:text-white transition"
+                    className="text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
                   >
                     Bcc
                   </button>
@@ -856,45 +856,45 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
           </div>
 
           {showCc && (
-            <div className="px-4 py-2 border-b border-zinc-800/50">
+            <div className="px-4 py-2 border-b border-stone-200/50 dark:border-zinc-800/50">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-zinc-500 w-12">Cc:</span>
+                <span className="text-sm text-stone-400 dark:text-zinc-500 w-12">Cc:</span>
                 <input
                   type="text"
                   value={cc}
                   onChange={(e) => setCc(e.target.value)}
                   placeholder="Carbon copy"
-                  className="flex-1 bg-transparent text-white text-sm focus:outline-none placeholder-zinc-600"
+                  className="flex-1 bg-transparent text-stone-900 dark:text-white text-sm focus:outline-none placeholder-stone-400 dark:placeholder-zinc-600"
                 />
               </div>
             </div>
           )}
 
           {showBcc && (
-            <div className="px-4 py-2 border-b border-zinc-800/50">
+            <div className="px-4 py-2 border-b border-stone-200/50 dark:border-zinc-800/50">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-zinc-500 w-12">Bcc:</span>
+                <span className="text-sm text-stone-400 dark:text-zinc-500 w-12">Bcc:</span>
                 <input
                   type="text"
                   value={bcc}
                   onChange={(e) => setBcc(e.target.value)}
                   placeholder="Blind carbon copy"
-                  className="flex-1 bg-transparent text-white text-sm focus:outline-none placeholder-zinc-600"
+                  className="flex-1 bg-transparent text-stone-900 dark:text-white text-sm focus:outline-none placeholder-stone-400 dark:placeholder-zinc-600"
                 />
               </div>
             </div>
           )}
 
           {/* Subject */}
-          <div className="px-4 py-2 border-b border-zinc-800/50">
+          <div className="px-4 py-2 border-b border-stone-200/50 dark:border-zinc-800/50">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-zinc-500 w-12">Subject:</span>
+              <span className="text-sm text-stone-400 dark:text-zinc-500 w-12">Subject:</span>
               <input
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Subject"
-                className="flex-1 bg-transparent text-white text-sm focus:outline-none placeholder-zinc-600"
+                className="flex-1 bg-transparent text-stone-900 dark:text-white text-sm focus:outline-none placeholder-stone-400 dark:placeholder-zinc-600"
               />
             </div>
           </div>
@@ -907,7 +907,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 <span>AI Draft Assistant</span>
                 <button
                   onClick={() => setShowAiPanel(false)}
-                  className="ml-auto text-zinc-500 hover:text-white"
+                  className="ml-auto text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white"
                 >
                   <X />
                 </button>
@@ -918,11 +918,11 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder='Describe what you want to say, e.g., "confirm meeting attendance", "decline politely"'
-                className="w-full bg-zinc-900/50 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500"
+                className="w-full bg-stone-50 dark:bg-zinc-900/50 border border-stone-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-zinc-500 focus:outline-none focus:border-purple-500"
               />
 
               <div className="flex items-center gap-3 mt-3">
-                <span className="text-xs text-zinc-500">Tone:</span>
+                <span className="text-xs text-stone-400 dark:text-zinc-500">Tone:</span>
                 <div className="flex items-center gap-2">
                   {(['professional', 'friendly', 'formal', 'concise'] as ToneType[]).map((tone) => (
                     <button
@@ -931,7 +931,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                       className={`text-xs px-3 py-1 rounded-full transition ${
                         selectedTone === tone
                           ? 'bg-purple-500 text-white'
-                          : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                          : 'bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'
                       }`}
                     >
                       {tone.charAt(0).toUpperCase() + tone.slice(1)}
@@ -943,7 +943,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               <button
                 onClick={handleGenerateAiDraft}
                 disabled={aiGenerating || !aiPrompt.trim()}
-                className="mt-3 flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-zinc-700 text-white rounded-lg text-sm font-medium transition"
+                className="mt-3 flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-stone-200 dark:disabled:bg-zinc-700 text-white rounded-lg text-sm font-medium transition"
               >
                 {aiGenerating ? (
                   <>
@@ -962,20 +962,20 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
 
           {/* Tone Check Results */}
           {showToneCheck && (
-            <div className="mx-4 mt-3 p-4 rounded-xl bg-zinc-800/50 border border-zinc-700">
+            <div className="mx-4 mt-3 p-4 rounded-xl bg-stone-100/50 dark:bg-zinc-800/50 border border-stone-200 dark:border-zinc-700">
               {toneCheckResult ? (
                 <>
                   <div className="flex items-center gap-2 mb-2">
                     <i className={`fa-solid ${toneCheckResult.appropriate ? 'fa-circle-check text-green-500' : 'fa-exclamation-triangle text-yellow-500'}`}></i>
-                    <span className="text-sm font-medium text-white">
+                    <span className="text-sm font-medium text-stone-900 dark:text-white">
                       {toneCheckResult.appropriate ? 'Tone looks good!' : 'Consider reviewing'}
                     </span>
-                    <span className="text-xs text-zinc-500 ml-2">
+                    <span className="text-xs text-stone-400 dark:text-zinc-500 ml-2">
                       Current tone: {toneCheckResult.currentTone}
                     </span>
                     <button
                       onClick={() => setShowToneCheck(false)}
-                      className="ml-auto text-zinc-500 hover:text-white"
+                      className="ml-auto text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white"
                     >
                       <X />
                     </button>
@@ -989,14 +989,14 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                   )}
 
                   {toneCheckResult.suggestions.length > 0 && (
-                    <div className="text-xs text-zinc-400 mt-2">
-                      <span className="text-zinc-500">Suggestions: </span>
+                    <div className="text-xs text-stone-500 dark:text-zinc-400 mt-2">
+                      <span className="text-stone-400 dark:text-zinc-500">Suggestions: </span>
                       {toneCheckResult.suggestions.join('. ')}
                     </div>
                   )}
                 </>
               ) : (
-                <div className="flex items-center gap-2 text-zinc-400">
+                <div className="flex items-center gap-2 text-stone-500 dark:text-zinc-400">
                   <Loader2 className="animate-spin" />
                   <span className="text-sm">Analyzing tone...</span>
                 </div>
@@ -1011,34 +1011,34 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Compose your email..."
-              className="w-full h-full p-4 pr-14 bg-transparent text-white text-sm focus:outline-none resize-none placeholder-zinc-600"
+              className="w-full h-full p-4 pr-14 bg-transparent text-stone-900 dark:text-white text-sm focus:outline-none resize-none placeholder-stone-400 dark:placeholder-zinc-600"
             />
             <div className="absolute right-4 top-4">
               <VoiceTextButton
                 onTranscript={(text) => setBody(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
                 size="sm"
-                className="bg-zinc-800 hover:bg-zinc-700"
+                className="bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700"
               />
             </div>
           </div>
 
           {/* Attachments display */}
           {attachments.length > 0 && (
-            <div className="px-4 py-2 border-t border-zinc-800/50">
+            <div className="px-4 py-2 border-t border-stone-200/50 dark:border-zinc-800/50">
               <div className="flex flex-wrap gap-2">
                 {attachments.map((file, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-2 bg-zinc-800 rounded-lg px-3 py-1.5 text-sm"
+                    className="flex items-center gap-2 bg-stone-100 dark:bg-zinc-800 rounded-lg px-3 py-1.5 text-sm"
                   >
-                    <Paperclip className="text-zinc-500" />
-                    <span className="text-zinc-300 max-w-[150px] truncate">{file.name}</span>
-                    <span className="text-zinc-500 text-xs">
+                    <Paperclip className="text-stone-400 dark:text-zinc-500" />
+                    <span className="text-stone-700 dark:text-zinc-300 max-w-[150px] truncate">{file.name}</span>
+                    <span className="text-stone-400 dark:text-zinc-500 text-xs">
                       ({(file.size / 1024).toFixed(0)}KB)
                     </span>
                     <button
                       onClick={() => removeAttachment(index)}
-                      className="text-zinc-500 hover:text-red-500 transition ml-1"
+                      className="text-stone-400 dark:text-zinc-500 hover:text-red-500 transition ml-1"
                     >
                       <X className="text-xs" />
                     </button>
@@ -1049,20 +1049,20 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
           )}
 
           {confidentialEnabled && (
-            <div className="px-4 py-3 border-t border-zinc-800/50 bg-zinc-950/40">
-              <div className="text-xs text-zinc-400 uppercase tracking-wide mb-2">Confidential Mode</div>
+            <div className="px-4 py-3 border-t border-stone-200/50 dark:border-zinc-800/50 bg-stone-50/60 dark:bg-zinc-950/40">
+              <div className="text-xs text-stone-500 dark:text-zinc-400 uppercase tracking-wide mb-2">Confidential Mode</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-zinc-500 mb-1 block">Expiration</label>
+                  <label className="text-xs text-stone-400 dark:text-zinc-500 mb-1 block">Expiration</label>
                   <input
                     type="datetime-local"
                     value={confidentialExpiresAt}
                     onChange={(e) => setConfidentialExpiresAt(e.target.value)}
-                    className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-sm text-zinc-200"
+                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm text-stone-800 dark:text-zinc-200"
                   />
                 </div>
                 <div>
-                  <label className="flex items-center gap-2 text-sm text-zinc-400 mt-6">
+                  <label className="flex items-center gap-2 text-sm text-stone-500 dark:text-zinc-400 mt-6">
                     <input
                       type="checkbox"
                       checked={confidentialRequirePasscode}
@@ -1076,11 +1076,11 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                       value={confidentialPasscode}
                       onChange={(e) => setConfidentialPasscode(e.target.value)}
                       placeholder="Enter passcode"
-                      className="mt-2 w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-sm text-zinc-200"
+                      className="mt-2 w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm text-stone-800 dark:text-zinc-200"
                     />
                   )}
                 </div>
-                <div className="md:col-span-2 flex flex-wrap gap-4 text-xs text-zinc-400">
+                <div className="md:col-span-2 flex flex-wrap gap-4 text-xs text-stone-500 dark:text-zinc-400">
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -1146,13 +1146,13 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
           )}
 
           {/* Toolbar */}
-          <div className="px-4 py-3 border-t border-zinc-800 flex items-center justify-between">
+          <div className="px-4 py-3 border-t border-stone-200 dark:border-zinc-800 flex items-center justify-between">
             <div className="flex items-center gap-1">
               {/* Send button */}
               <button
                 onClick={handleSend}
                 disabled={sending}
-                className="bg-red-500 hover:bg-red-600 disabled:bg-zinc-700 text-white px-6 py-2 rounded-lg font-bold text-sm uppercase tracking-wider transition-all flex items-center gap-2"
+                className="bg-red-500 hover:bg-red-600 disabled:bg-stone-200 dark:disabled:bg-zinc-700 text-white px-6 py-2 rounded-lg font-bold text-sm uppercase tracking-wider transition-all flex items-center gap-2"
               >
                 {sending ? (
                   <>
@@ -1172,7 +1172,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 <button
                   onClick={() => setShowScheduleModal(!showScheduleModal)}
                   disabled={scheduling}
-                  className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-blue-400 transition"
+                  className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-blue-400 transition"
                   title="Schedule send"
                 >
                   {scheduling ? (
@@ -1192,7 +1192,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               <button
                 onClick={() => setConfidentialEnabled(!confidentialEnabled)}
                 className={`w-8 h-8 rounded flex items-center justify-center transition ${
-                  confidentialEnabled ? 'bg-red-500/20 text-red-400' : 'hover:bg-zinc-800 text-zinc-500 hover:text-red-400'
+                  confidentialEnabled ? 'bg-red-500/20 text-red-400' : 'hover:bg-stone-100 dark:hover:bg-zinc-800 text-stone-400 dark:text-zinc-500 hover:text-red-400'
                 }`}
                 title="Confidential mode"
               >
@@ -1200,11 +1200,11 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               </button>
 
               {/* Formatting toolbar */}
-              <div className="flex items-center gap-1 ml-2 border-l border-zinc-800 pl-2">
+              <div className="flex items-center gap-1 ml-2 border-l border-stone-200 dark:border-zinc-800 pl-2">
                 <button
                   onClick={handleInsertMeetLink}
                   disabled={meetCreating}
-                  className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-emerald-400 transition disabled:opacity-50"
+                  className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-emerald-400 transition disabled:opacity-50"
                   title="Insert Google Meet link"
                 >
                   {meetCreating ? (
@@ -1215,28 +1215,28 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 </button>
                 <button
                   onClick={handleBold}
-                  className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition"
+                  className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
                   title="Bold (**text**)"
                 >
                   <Bold className="text-xs" />
                 </button>
                 <button
                   onClick={handleItalic}
-                  className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition"
+                  className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
                   title="Italic (*text*)"
                 >
                   <Italic className="text-xs" />
                 </button>
                 <button
                   onClick={handleUnderline}
-                  className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition"
+                  className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
                   title="Underline"
                 >
                   <Underline className="text-xs" />
                 </button>
                 <button
                   onClick={handleLink}
-                  className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition"
+                  className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
                   title="Insert link"
                 >
                   <Link className="text-xs" />
@@ -1244,7 +1244,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 {driveQuickAttach && (
                   <button
                     onClick={handleOpenDrive}
-                    className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-emerald-400 transition"
+                    className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-emerald-400 transition"
                     title="Attach from Drive"
                   >
                     <HardDrive className="text-xs" />
@@ -1253,11 +1253,11 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               </div>
 
               {/* AI features */}
-              <div className="flex items-center gap-1 ml-2 border-l border-zinc-800 pl-2">
+              <div className="flex items-center gap-1 ml-2 border-l border-stone-200 dark:border-zinc-800 pl-2">
                 <button
                   onClick={handleSmartCompose}
                   disabled={smartComposeLoading || !smartComposeEnabled}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 text-zinc-400 hover:text-white transition disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-50"
                   title={smartComposeEnabled ? 'Smart Compose suggestion' : 'Enable Smart Compose in Settings'}
                 >
                   {smartComposeLoading ? (
@@ -1284,7 +1284,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 <div className="relative group">
                   <button
                     disabled={enhancing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 text-zinc-400 hover:text-white transition disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-50"
                     title="Enhance email with AI"
                   >
                     {enhancing ? (
@@ -1296,39 +1296,39 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                     <ChevronDown className="text-[10px] ml-0.5" />
                   </button>
                   <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block z-20">
-                    <div className="bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 py-1 text-xs min-w-[140px]">
+                    <div className="bg-stone-100 dark:bg-zinc-800 rounded-lg shadow-xl border border-stone-200 dark:border-zinc-700 py-1 text-xs min-w-[140px]">
                       <button
                         onClick={() => handleEnhanceEmail('shorten')}
-                        className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-700 hover:text-white flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-stone-700 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 hover:text-stone-900 dark:hover:text-white flex items-center gap-2"
                       >
                         <Minimize2 className="w-4" />
                         Shorten
                       </button>
                       <button
                         onClick={() => handleEnhanceEmail('elaborate')}
-                        className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-700 hover:text-white flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-stone-700 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 hover:text-stone-900 dark:hover:text-white flex items-center gap-2"
                       >
                         <Maximize2 className="w-4" />
                         Elaborate
                       </button>
                       <button
                         onClick={() => handleEnhanceEmail('formalize')}
-                        className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-700 hover:text-white flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-stone-700 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 hover:text-stone-900 dark:hover:text-white flex items-center gap-2"
                       >
                         <UserCog className="w-4" />
                         Make Formal
                       </button>
                       <button
                         onClick={() => handleEnhanceEmail('casualize')}
-                        className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-700 hover:text-white flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-stone-700 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 hover:text-stone-900 dark:hover:text-white flex items-center gap-2"
                       >
                         <Smile className="w-4" />
                         Make Casual
                       </button>
-                      <div className="border-t border-zinc-700 my-1"></div>
+                      <div className="border-t border-stone-200 dark:border-zinc-700 my-1"></div>
                       <button
                         onClick={() => handleEnhanceEmail('fix_grammar')}
-                        className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-700 hover:text-white flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-stone-700 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 hover:text-stone-900 dark:hover:text-white flex items-center gap-2"
                       >
                         <SpellCheck className="w-4" />
                         Fix Grammar
@@ -1339,7 +1339,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
 
                 <button
                   onClick={handleToneCheck}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 text-zinc-400 hover:text-white transition"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition"
                   title="Check tone before sending"
                 >
                   <Gauge />
@@ -1368,7 +1368,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition relative"
+                className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition relative"
                 title="Attach file (max 25MB total)"
               >
                 <Paperclip />
@@ -1381,7 +1381,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               <button
                 onClick={handleSaveDraft}
                 disabled={savingDraft}
-                className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition disabled:opacity-50"
+                className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-50"
                 title="Save draft"
               >
                 {savingDraft ? (
@@ -1392,7 +1392,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               </button>
               <button
                 onClick={handleClose}
-                className="w-8 h-8 rounded hover:bg-red-500/20 flex items-center justify-center text-zinc-500 hover:text-red-500 transition"
+                className="w-8 h-8 rounded hover:bg-red-500/20 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-red-500 transition"
                 title="Discard"
               >
                 <Trash2 />
