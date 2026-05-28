@@ -1,5 +1,5 @@
 // SignalRow — single expandable row in the Cockpit Signal section.
-// Header is always visible; click to toggle InlineReader expansion below.
+// Phase 5: adds the `focused` prop driven by j/k keyboard navigation.
 import React from 'react';
 import {
   ChevronUp, ChevronDown, Layers,
@@ -13,7 +13,9 @@ import { InlineReader } from './InlineReader';
 interface SignalRowProps {
   email: EmailRow;
   expanded: boolean;
+  focused: boolean;
   onToggle: () => void;
+  onFocus: () => void;
   onTriage?: () => void;
   queuePos: number | null;
   queueTotal: number;
@@ -33,22 +35,26 @@ const ActionIcon: React.FC<{ kind: AiActionKind }> = ({ kind }) => {
 };
 
 export const SignalRow: React.FC<SignalRowProps> = ({
-  email, expanded, onToggle, onTriage, queuePos, queueTotal, queueCleared,
+  email, expanded, focused, onToggle, onFocus, onTriage, queuePos, queueTotal, queueCleared,
 }) => {
   const handleEmailSelect = useEmailStore((s) => s.handleEmailSelect);
 
   const handleToggle = () => {
     onToggle();
-    // When expanding, mark as read in the store (mirrors the legacy viewer).
     if (!expanded && email._raw && !email._raw.is_read) {
       void handleEmailSelect(email._raw);
     }
   };
 
   return (
-    <div className="signal-row border pulse-border-color overflow-hidden" data-expanded={expanded}>
+    <div
+      className="signal-row border pulse-border-color overflow-hidden"
+      data-expanded={expanded}
+      data-focused={focused}
+    >
       <button
         onClick={handleToggle}
+        onMouseEnter={onFocus}
         className="w-full text-left flex items-start gap-4 px-4 py-3.5"
         type="button"
         aria-expanded={expanded}

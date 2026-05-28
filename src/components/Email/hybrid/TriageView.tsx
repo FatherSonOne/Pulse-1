@@ -1,7 +1,7 @@
 // TriageView — focal-card queue mode.
 // Phase 4 wires actions to live emailStore + emailSyncService and reads the
 // queue via useTriageQueue (frozen at session start by EmailHybridClient).
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Layers, Clock, X } from 'lucide-react';
 import { useEmailStore } from '../../../store/emailStore';
@@ -13,6 +13,14 @@ import { TriageCard, type TriageAction } from './TriageCard';
 import { TriageActionToast } from './TriageActionToast';
 import { TriageDone } from './TriageDone';
 import { useTriageQueue } from './data/useTriageQueue';
+
+function isTextInputTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+  if (target.isContentEditable) return true;
+  return false;
+}
 
 interface TriageViewProps {
   onDismiss?: () => void;
@@ -35,6 +43,7 @@ export const TriageView: React.FC<TriageViewProps> = ({
   headerTitle = 'One at a time.',
 }) => {
   const data = useTriageQueue();
+  const mode = useEmailUIStore((s) => s.emailHybridMode);
   const triageState = useEmailUIStore((s) => s.triageState);
   const setTriageState = useEmailUIStore((s) => s.setTriageState);
   const resetTriageState = useEmailUIStore((s) => s.resetTriageState);
@@ -42,6 +51,10 @@ export const TriageView: React.FC<TriageViewProps> = ({
   const handleArchive = useEmailStore((s) => s.handleArchive);
   const removeEmailFromList = useEmailStore((s) => s.removeEmailFromList);
   const openReply = useEmailComposeStore((s) => s.openReply);
+  const showComposer = useEmailComposeStore((s) => s.showComposer);
+  const showKeyboardShortcuts = useEmailUIStore((s) => s.showKeyboardShortcuts);
+  const showEmailSettings = useEmailUIStore((s) => s.showEmailSettings);
+  const showReauthModal = useEmailUIStore((s) => s.showReauthModal);
 
   const performSideEffect = useCallback(
     (label: TriageAction, row: NonNullable<typeof data.currentRow>) => {
@@ -108,6 +121,41 @@ export const TriageView: React.FC<TriageViewProps> = ({
   }, [data.queueIds.length, setTriageState, triageState.idx]);
 
   const handleReset = useCallback(() => resetTriageState(), [resetTriageState]);
+
+  // Triage keyboard shortcuts — only fire when in Triage mode + no overlay open.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = (e: KeyboardEvent) => {
+      if (mode !== 'triage') return;
+      if (isTextInputTarget(e.target)) return;
+      if (showComposer || showKeyboardShortcuts || showEmailSettings || showReauthModal) return;
+      if (!data.currentRow || data.isDone) return;
+
+      const hasCtrl = e.ctrlKey || e.metaKey;
+      const key = e.key;
+      const lower = key.toLowerCase();
+
+      // ⌘↵ — accept AI draft (only when one is available)
+      if (hasCtrl && key === 'Enter') {
+        if (data.currentRow.draft) {
+          e.preventDefault();
+          advance('Send draft');
+        }
+        return;
+      }
+
+      if (hasCtrl) return;
+
+      switch (lower) {
+        case 'e': e.preventDefault(); advance('Archive');  return;
+        case 'r': e.preventDefault(); advance('Reply');    return;
+        case 'h': e.preventDefault(); advance('Snooze');   return;
+        case 't': e.preventDefault(); advance('→ Task');   return;
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [mode, data, advance, showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal]);
 
   const { idx, currentRow, remaining, progress, isDone, queueIds } = data;
   const total = queueIds.length;

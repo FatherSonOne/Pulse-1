@@ -54,6 +54,8 @@ interface EmailUIState {
    */
   triageQueueIds: string[];
   expandedSignalRowId: string | null;
+  /** Keyboard-driven focus cursor in the Cockpit Signal section. */
+  focusedSignalRowId: string | null;
 
   // Actions
   setZoomLevel: (level: number) => void;
@@ -78,6 +80,7 @@ interface EmailUIState {
   setTriageQueueIds: (ids: string[]) => void;
   resetTriageState: () => void;
   setExpandedSignalRowId: (id: string | null) => void;
+  setFocusedSignalRowId: (id: string | null) => void;
 }
 
 export const useEmailUIStore = create<EmailUIState>()((set) => ({
@@ -99,6 +102,7 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   triageState: { idx: 0, actedLast: null },
   triageQueueIds: [],
   expandedSignalRowId: null,
+  focusedSignalRowId: null,
 
   setZoomLevel: (level) => set({ zoomLevel: Math.max(50, Math.min(100, level)) }),
   zoomIn: () => set((s) => ({ zoomLevel: Math.min(s.zoomLevel + 10, 100) })),
@@ -133,4 +137,5 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
     triageQueueIds: [],
   }),
   setExpandedSignalRowId: (id) => set({ expandedSignalRowId: id }),
+  setFocusedSignalRowId: (id) => set({ focusedSignalRowId: id }),
 }));

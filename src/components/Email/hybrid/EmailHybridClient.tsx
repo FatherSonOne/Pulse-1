@@ -1,7 +1,8 @@
 // EmailHybridClient — entry point when emailHybrid flag is on.
-// Phase 4 owns the triage queue freeze (lives here so only one component
-// triggers the side effect even though both Cockpit + Triage consume the
-// useTriageQueue selector).
+// Phase 5 adds the global keyboard hook (c / ? / Shift+N / Ctrl+Z / g+...),
+// mounts the HybridKeyboardShortcutsModal, and refines the Esc priority
+// order to defer to overlays (composer / settings / shortcuts / reauth)
+// before doing mode-aware dismissal.
 import React, { useCallback, useEffect, useRef } from 'react';
 import { useEmailStore } from '../../../store/emailStore';
 import { useEmailUIStore } from '../../../store/emailUIStore';
@@ -9,7 +10,9 @@ import { useEmailComposeStore } from '../../../store/emailComposeStore';
 import { CockpitView } from './CockpitView';
 import { TriageView } from './TriageView';
 import { CanvasTopBar } from './chrome/CanvasTopBar';
+import { HybridKeyboardShortcutsModal } from './HybridKeyboardShortcutsModal';
 import { computeFreshTriageQueue, useTriageQueue } from './data/useTriageQueue';
+import { useEmailHybridShortcuts } from './data/useEmailHybridShortcuts';
 import './hybrid.css';
 
 interface EmailHybridClientProps {
@@ -47,10 +50,15 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
   const triageQueueIds = useEmailUIStore((s) => s.triageQueueIds);
   const setTriageQueueIds = useEmailUIStore((s) => s.setTriageQueueIds);
 
+  const showKeyboardShortcuts = useEmailUIStore((s) => s.showKeyboardShortcuts);
+  const setShowKeyboardShortcuts = useEmailUIStore((s) => s.setShowKeyboardShortcuts);
+  const showEmailSettings = useEmailUIStore((s) => s.showEmailSettings);
+  const showReauthModal = useEmailUIStore((s) => s.showReauthModal);
+
   const openCompose = useEmailComposeStore((s) => s.openCompose);
   const restoreComposer = useEmailComposeStore((s) => s.restoreComposer);
+  const showComposer = useEmailComposeStore((s) => s.showComposer);
 
-  // Triage queue data — both views consume this selector independently.
   const triageData = useTriageQueue();
 
   // ── Initial load + reload on folder/category change ───────────────────
@@ -59,9 +67,6 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
   }, [loadEmails, currentFolder, activeCategory]);
 
   // ── Freeze the Triage queue on session start ──────────────────────────
-  // Guard ensures we only freeze when we have NO existing queue AND we
-  // have inbox emails to source from. resetTriageState() wipes both
-  // triageState and triageQueueIds, so Run again on TriageDone re-triggers.
   useEffect(() => {
     if (triageQueueIds.length === 0 && emails.length > 0) {
       const fresh = computeFreshTriageQueue(emails);
@@ -105,18 +110,23 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
       if (!(e.metaKey || e.ctrlKey)) return;
       if (e.key?.toLowerCase() !== 'e') return;
       if (isTextInputTarget(e.target)) return;
+      // Don't fight overlay-owned Esc handling.
+      if (showComposer || showEmailSettings || showReauthModal) return;
       e.preventDefault();
       setMode(mode === 'cockpit' ? 'triage' : 'cockpit');
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [mode, setMode]);
+  }, [mode, setMode, showComposer, showEmailSettings, showReauthModal]);
 
-  // ── Esc — mode-aware ──────────────────────────────────────────────────
+  // ── Esc — priority: overlays own theirs; otherwise mode-aware ─────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (isTextInputTarget(e.target)) return;
+      // Composer / modals own their own Esc — yield silently.
+      if (showComposer || showKeyboardShortcuts || showEmailSettings || showReauthModal) return;
+
       if (mode === 'triage') {
         e.preventDefault();
         setMode('cockpit');
@@ -129,15 +139,22 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [mode, expandedSignalRowId, setMode, setExpandedSignalRowId]);
+  }, [
+    mode, expandedSignalRowId, setMode, setExpandedSignalRowId,
+    showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal,
+  ]);
+
+  // ── Hybrid keyboard hook (c / ? / / / Shift+N / Ctrl+Z / g+...) ──────
+  useEmailHybridShortcuts({
+    onCompose: openCompose,
+    onHelp: () => setShowKeyboardShortcuts(true),
+  });
 
   const goToTriage = useCallback(() => setMode('triage'), [setMode]);
   const goToCockpit = useCallback(() => setMode('cockpit'), [setMode]);
 
   const handleTriageOne = useCallback(
     (_emailId: string) => {
-      // Phase 4 leaves jumping-to-a-specific-email for v1.1; for now the
-      // per-row TRIAGE chip simply enters Triage mode at the current idx.
       setMode('triage');
     },
     [setMode],
@@ -164,6 +181,10 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
           <TriageView onDismiss={goToCockpit} />
         </div>
       </div>
+
+      {showKeyboardShortcuts && (
+        <HybridKeyboardShortcutsModal onClose={() => setShowKeyboardShortcuts(false)} />
+      )}
     </div>
   );
 };

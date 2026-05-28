@@ -131,6 +131,12 @@ html.dark .email-hybrid-shell .signal-row:hover {
 }
 .email-hybrid-shell .signal-row[data-expanded='true'] .row-actions { opacity: 1; }
 
+/* Keyboard-focused (j/k cursor); subtle so it doesn't fight the expanded state. */
+.email-hybrid-shell .signal-row[data-focused='true']:not([data-expanded='true']) {
+  box-shadow: 0 0 0 1px var(--pulse-rose-soft), 0 4px 10px rgba(244, 63, 94, 0.05);
+}
+.email-hybrid-shell .signal-row[data-focused='true'] .row-actions { opacity: 1; }
+
 /* ─── Reader expansion (inline body inside SignalRow) ─── */
 .email-hybrid-shell .reader-expand {
   overflow: hidden;
