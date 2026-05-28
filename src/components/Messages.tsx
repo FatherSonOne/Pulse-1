@@ -2002,7 +2002,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       setDmDecisions([]);
       return;
     }
-    const ids = pulseMessages.map(m => m.id);
+    // Skip optimistic placeholders — `temp-…` ids would 22P02 the UUID `.in()` filter.
+    const ids = pulseMessages.map(m => m.id).filter(id => !id.startsWith('temp-'));
     let cancelled = false;
     void Promise.all([
       taskService.getOpenTasksByMessageIds(currentWorkspace.id, ids),
