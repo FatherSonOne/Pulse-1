@@ -26,6 +26,7 @@ import { FolderListView } from './FolderListView';
 import { TriageView } from './TriageView';
 import { SearchResultsView } from './SearchResultsView';
 import { CanvasTopBar } from './chrome/CanvasTopBar';
+import { ComposeFab } from './cockpit/ComposeFab';
 import { HybridFirstRunScreen } from './chrome/HybridFirstRunScreen';
 import { HybridAuthErrorBanner } from './chrome/HybridAuthErrorBanner';
 import { HybridKeyboardShortcutsModal } from './HybridKeyboardShortcutsModal';
@@ -586,7 +587,6 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
           ) : isInbox ? (
             <CockpitView
               density="normal"
-              onCompose={openCompose}
               onOpenTriage={triageData.remaining > 0 ? goToTriage : undefined}
               onTriageOne={handleTriageOne}
               triageRemaining={triageData.remaining}
@@ -601,6 +601,12 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
         <div className={`view-shell ${mode === 'triage' ? 'view-active' : 'view-inactive'}`}>
           <TriageView onDismiss={goToCockpit} />
         </div>
+
+        {/* Compose FAB lives at the view-shell container level (not inside
+            CockpitView's scrollable region) so it stays anchored to the
+            visible viewport bottom-right instead of scrolling with content.
+            Hidden in Triage mode — no compose semantics there. */}
+        {mode === 'cockpit' && <ComposeFab onClick={openCompose} />}
       </div>
 
       {showKeyboardShortcuts && (

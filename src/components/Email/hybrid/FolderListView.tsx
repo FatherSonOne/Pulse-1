@@ -7,11 +7,9 @@ import toast from 'react-hot-toast';
 import { Loader2, Archive, Trash2, MailOpen, Star, MoonStar, X } from 'lucide-react';
 import { useEmailStore } from '../../../store/emailStore';
 import { useEmailUIStore } from '../../../store/emailUIStore';
-import { useEmailComposeStore } from '../../../store/emailComposeStore';
 import { supabase } from '../../../services/supabase';
 import { BACKEND_URL } from '../../../config/backend';
 import { Avatar } from './primitives';
-import { ComposeFab } from './cockpit/ComposeFab';
 import { FOLDER_META } from './data/folderMeta';
 import { cachedEmailToRow } from './data/emailRow';
 import type { CachedEmail } from '../../../services/emailSyncService';
@@ -28,7 +26,6 @@ export const FolderListView: React.FC = () => {
   const handleToggleStar = useEmailStore((s) => s.handleToggleStar);
   const setSelectedEmail = useEmailStore((s) => s.setSelectedEmail);
 
-  const openCompose = useEmailComposeStore((s) => s.openCompose);
   const setSnoozeTargetEmailId = useEmailUIStore((s) => s.setSnoozeTargetEmailId);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -275,7 +272,6 @@ export const FolderListView: React.FC = () => {
         </div>
       )}
 
-      <ComposeFab onClick={openCompose} />
     </div>
   );
 };

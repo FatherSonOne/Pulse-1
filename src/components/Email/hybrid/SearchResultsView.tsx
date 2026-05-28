@@ -5,9 +5,7 @@ import React from 'react';
 import { Loader2, Archive, Trash2, Star, MoonStar, X } from 'lucide-react';
 import { useEmailStore } from '../../../store/emailStore';
 import { useEmailUIStore } from '../../../store/emailUIStore';
-import { useEmailComposeStore } from '../../../store/emailComposeStore';
 import { Avatar } from './primitives';
-import { ComposeFab } from './cockpit/ComposeFab';
 import { cachedEmailToRow } from './data/emailRow';
 
 interface SearchResultsViewProps {
@@ -23,7 +21,6 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query, onC
   const handleToggleStar = useEmailStore((s) => s.handleToggleStar);
   const setSelectedEmail = useEmailStore((s) => s.setSelectedEmail);
   const setSnoozeTargetEmailId = useEmailUIStore((s) => s.setSnoozeTargetEmailId);
-  const openCompose = useEmailComposeStore((s) => s.openCompose);
 
   return (
     <div className="h-full w-full overflow-y-auto relative">
@@ -130,7 +127,6 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query, onC
         </div>
       )}
 
-      <ComposeFab onClick={openCompose} />
     </div>
   );
 };
