@@ -1,5 +1,8 @@
 // SignalRow — single expandable row in the Cockpit Signal section.
-// Phase 5: adds the `focused` prop driven by j/k keyboard navigation.
+// Header click ONLY opens the row (never closes it) — closing is reserved
+// for explicit user actions: the chevron button on the right, the Esc key
+// (orchestrator-owned), or any of the InlineReader's archive/reply/etc.
+// actions which navigate away from the row.
 import React from 'react';
 import {
   ChevronUp, ChevronDown, Layers,
@@ -39,7 +42,18 @@ export const SignalRow: React.FC<SignalRowProps> = ({
 }) => {
   const handleEmailSelect = useEmailStore((s) => s.handleEmailSelect);
 
-  const handleToggle = () => {
+  // Header interaction: only open; never close from a click on the body.
+  const handleHeaderOpen = () => {
+    if (expanded) return;
+    onToggle();
+    if (email._raw && !email._raw.is_read) {
+      void handleEmailSelect(email._raw);
+    }
+  };
+
+  // Chevron: explicit toggle. When expanded → close; when collapsed → open.
+  const handleChevronClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onToggle();
     if (!expanded && email._raw && !email._raw.is_read) {
       void handleEmailSelect(email._raw);
@@ -52,12 +66,20 @@ export const SignalRow: React.FC<SignalRowProps> = ({
       data-expanded={expanded}
       data-focused={focused}
     >
-      <button
-        onClick={handleToggle}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleHeaderOpen}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && !expanded) {
+            e.preventDefault();
+            handleHeaderOpen();
+          }
+        }}
         onMouseEnter={onFocus}
-        className="w-full text-left flex items-start gap-4 px-4 py-3.5"
-        type="button"
+        className={`w-full text-left flex items-start gap-4 px-4 py-3.5 ${expanded ? '' : 'cursor-pointer'}`}
         aria-expanded={expanded}
+        aria-label={expanded ? `Email from ${email.from}, expanded` : `Open email from ${email.from}: ${email.subject}`}
       >
         <Avatar name={email.from} size={36} />
 
@@ -106,20 +128,30 @@ export const SignalRow: React.FC<SignalRowProps> = ({
 
             <div className="ml-auto row-actions flex items-center gap-1">
               {onTriage && (
-                <span
+                <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); onTriage(); }}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border pulse-border-color text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color hover:pulse-rose-color hover:pulse-rose-border cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border pulse-border-color text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color hover:pulse-rose-color hover:pulse-rose-border"
+                  aria-label={`Triage email from ${email.from}`}
                 >
                   <Layers className="w-3 h-3" />TRIAGE
-                </span>
+                </button>
               )}
-              {expanded
-                ? <ChevronUp className="w-4 h-4 pulse-ink-3-color" />
-                : <ChevronDown className="w-4 h-4 pulse-ink-3-color" />}
+              <button
+                type="button"
+                onClick={handleChevronClick}
+                className="p-1 rounded hover:pulse-surface-raised pulse-ink-3-color"
+                aria-label={expanded ? `Collapse email from ${email.from}` : `Expand email from ${email.from}`}
+                title={expanded ? 'Collapse (Esc)' : 'Expand'}
+              >
+                {expanded
+                  ? <ChevronUp className="w-4 h-4" />
+                  : <ChevronDown className="w-4 h-4" />}
+              </button>
             </div>
           </div>
         </div>
-      </button>
+      </div>
 
       {expanded && <InlineReader email={email} />}
     </div>
