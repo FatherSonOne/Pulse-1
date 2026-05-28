@@ -1,13 +1,16 @@
 // EmailHybridClient — entry point when emailHybrid flag is on.
-// Phase 5 adds the global keyboard hook (c / ? / Shift+N / Ctrl+Z / g+...),
-// mounts the HybridKeyboardShortcutsModal, and refines the Esc priority
-// order to defer to overlays (composer / settings / shortcuts / reauth)
-// before doing mode-aware dismissal.
+// Phase 6: the Cockpit view-shell now branches on currentFolder:
+//   inbox    → CockpitView (briefing + signal + lanes + rail)
+//   other    → FolderListView (full-width list + bulk-select)
+// ⌘E only flips mode when currently in inbox; otherwise it's a no-op and the
+// segmented toggle collapses to a single Cockpit label (handled inside
+// SegmentedModeToggle).
 import React, { useCallback, useEffect, useRef } from 'react';
 import { useEmailStore } from '../../../store/emailStore';
 import { useEmailUIStore } from '../../../store/emailUIStore';
 import { useEmailComposeStore } from '../../../store/emailComposeStore';
 import { CockpitView } from './CockpitView';
+import { FolderListView } from './FolderListView';
 import { TriageView } from './TriageView';
 import { CanvasTopBar } from './chrome/CanvasTopBar';
 import { HybridKeyboardShortcutsModal } from './HybridKeyboardShortcutsModal';
@@ -60,21 +63,28 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
   const showComposer = useEmailComposeStore((s) => s.showComposer);
 
   const triageData = useTriageQueue();
+  const isInbox = currentFolder === 'inbox';
 
-  // ── Initial load + reload on folder/category change ───────────────────
+  // If user navigates to a non-inbox folder while in Triage mode, snap back
+  // to Cockpit — Triage operates on the inbox queue.
+  useEffect(() => {
+    if (!isInbox && mode === 'triage') setMode('cockpit');
+  }, [isInbox, mode, setMode]);
+
   useEffect(() => {
     void loadEmails();
   }, [loadEmails, currentFolder, activeCategory]);
 
-  // ── Freeze the Triage queue on session start ──────────────────────────
+  // Freeze the Triage queue on session start — only when viewing inbox.
   useEffect(() => {
+    if (!isInbox) return;
     if (triageQueueIds.length === 0 && emails.length > 0) {
       const fresh = computeFreshTriageQueue(emails);
       if (fresh.length > 0) setTriageQueueIds(fresh);
     }
-  }, [emails, triageQueueIds.length, setTriageQueueIds]);
+  }, [emails, isInbox, triageQueueIds.length, setTriageQueueIds]);
 
-  // ── pulse_focus_nudge deep-link from Daily Overview ───────────────────
+  // pulse_focus_nudge deep-link from Daily Overview
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const flag = sessionStorage.getItem('pulse_focus_nudge');
@@ -89,7 +99,7 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
     }, 150);
   }, [setMode, setNudgeFocused]);
 
-  // ── pulse:compose-email from the Pulse Assistant ──────────────────────
+  // pulse:compose-email from the Pulse Assistant
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const handler = (evt: Event) => {
@@ -104,27 +114,26 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
     return () => window.removeEventListener('pulse:compose-email', handler);
   }, [restoreComposer]);
 
-  // ── ⌘E / Ctrl+E — global mode toggle ──────────────────────────────────
+  // ⌘E / Ctrl+E — global mode toggle (no-op when not in inbox)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
       if (e.key?.toLowerCase() !== 'e') return;
       if (isTextInputTarget(e.target)) return;
-      // Don't fight overlay-owned Esc handling.
       if (showComposer || showEmailSettings || showReauthModal) return;
+      if (!isInbox) return; // Triage is inbox-only
       e.preventDefault();
       setMode(mode === 'cockpit' ? 'triage' : 'cockpit');
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [mode, setMode, showComposer, showEmailSettings, showReauthModal]);
+  }, [mode, setMode, isInbox, showComposer, showEmailSettings, showReauthModal]);
 
-  // ── Esc — priority: overlays own theirs; otherwise mode-aware ─────────
+  // Esc — overlays first, then mode-aware
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (isTextInputTarget(e.target)) return;
-      // Composer / modals own their own Esc — yield silently.
       if (showComposer || showKeyboardShortcuts || showEmailSettings || showReauthModal) return;
 
       if (mode === 'triage') {
@@ -144,7 +153,6 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
     showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal,
   ]);
 
-  // ── Hybrid keyboard hook (c / ? / / / Shift+N / Ctrl+Z / g+...) ──────
   useEmailHybridShortcuts({
     onCompose: openCompose,
     onHelp: () => setShowKeyboardShortcuts(true),
@@ -166,15 +174,19 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = () => {
 
       <div className="flex-1 overflow-hidden relative">
         <div className={`view-shell ${mode === 'cockpit' ? 'view-active' : 'view-inactive'}`}>
-          <CockpitView
-            density="normal"
-            onCompose={openCompose}
-            onOpenTriage={triageData.remaining > 0 ? goToTriage : undefined}
-            onTriageOne={handleTriageOne}
-            triageRemaining={triageData.remaining}
-            upcomingQueueIds={triageData.upcomingIds}
-            clearedIds={triageData.clearedIds}
-          />
+          {isInbox ? (
+            <CockpitView
+              density="normal"
+              onCompose={openCompose}
+              onOpenTriage={triageData.remaining > 0 ? goToTriage : undefined}
+              onTriageOne={handleTriageOne}
+              triageRemaining={triageData.remaining}
+              upcomingQueueIds={triageData.upcomingIds}
+              clearedIds={triageData.clearedIds}
+            />
+          ) : (
+            <FolderListView />
+          )}
         </div>
 
         <div className={`view-shell ${mode === 'triage' ? 'view-active' : 'view-inactive'}`}>
