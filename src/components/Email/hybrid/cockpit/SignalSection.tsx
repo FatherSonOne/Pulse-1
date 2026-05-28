@@ -1,8 +1,9 @@
 // SignalSection — SIGNAL · TODAY curated rows.
-// Phase 2: takes signalEmails from useCockpitData. Hides when empty (no
-// "all clear" celebration here; that belongs in the briefing copy).
-import React, { useState } from 'react';
+// Phase 3: openId is lifted to emailUIStore.expandedSignalRowId so that the
+// orchestrator's mode-aware Esc handler can collapse the active row.
+import React from 'react';
 import { Flame } from 'lucide-react';
+import { useEmailUIStore } from '../../../../store/emailUIStore';
 import { AiChip } from '../primitives';
 import { TRIAGE_QUEUE_IDS } from '../data/mockEmails';
 import type { EmailRow } from '../data/emailRow';
@@ -21,7 +22,9 @@ export const SignalSection: React.FC<SignalSectionProps> = ({
   clearedIds = [],
   onTriageOne,
 }) => {
-  const [openId, setOpenId] = useState<string | null>(null);
+  const expandedId = useEmailUIStore((s) => s.expandedSignalRowId);
+  const setExpandedId = useEmailUIStore((s) => s.setExpandedSignalRowId);
+
   if (signals.length === 0) return null;
 
   return (
@@ -45,8 +48,8 @@ export const SignalSection: React.FC<SignalSectionProps> = ({
             <SignalRow
               key={s.id}
               email={s}
-              expanded={openId === s.id}
-              onToggle={() => setOpenId((o) => (o === s.id ? null : s.id))}
+              expanded={expandedId === s.id}
+              onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
               onTriage={onTriageOne ? () => onTriageOne(s.id) : undefined}
               queuePos={idxInQueue >= 0 && !cleared ? idxInQueue + 1 : null}
               queueTotal={queueIds.length}

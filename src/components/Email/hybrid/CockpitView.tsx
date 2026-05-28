@@ -1,6 +1,8 @@
 // CockpitView — assembles the Cockpit (editorial briefing + signal + lanes + right rail + FAB).
-// Phase 2: consumes live data via useCockpitData(). Empty + loading states
-// added; mock data only used as briefing fallback when meta hasn't loaded.
+// Phase 2: consumes live data via useCockpitData().
+// Phase 3: receives triage orchestration props (onOpenTriage, onTriageOne,
+// clearedIds, triageRemaining) so the briefing CTA and signal-row queue
+// pips reflect the lifted triage state.
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { useEmailUIStore } from '../../../store/emailUIStore';
@@ -11,16 +13,22 @@ import { DraftedForYouRail } from './cockpit/DraftedForYouRail';
 import { AwaitingRepliesRail } from './cockpit/AwaitingRepliesRail';
 import { CalendarPeekRail } from './cockpit/CalendarPeekRail';
 import { ComposeFab } from './cockpit/ComposeFab';
-import { MOCK_LANES } from './data/mockEmails';
+import { MOCK_LANES, TRIAGE_QUEUE_IDS } from './data/mockEmails';
 import { useCockpitData } from './data/useCockpitData';
 
 interface CockpitViewProps {
   density?: 'normal' | 'compact';
+  /** Called by the briefing CTA or a per-row TRIAGE chip. */
   onOpenTriage?: () => void;
   onTriageOne?: (emailId: string) => void;
   onCompose?: () => void;
   showCompose?: boolean;
+  /** IDs already dispatched in the current triage session (CLEARED pip). */
   clearedIds?: string[];
+  /** Items left in the triage queue — shown next to the "Start triage" CTA. */
+  triageRemaining?: number;
+  /** Subset of queueIds yet to be triaged (for the signal-row queue pip). */
+  upcomingQueueIds?: string[];
 }
 
 export const CockpitView: React.FC<CockpitViewProps> = ({
@@ -30,6 +38,8 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
   onCompose,
   showCompose = true,
   clearedIds = [],
+  triageRemaining,
+  upcomingQueueIds = TRIAGE_QUEUE_IDS,
 }) => {
   const compact = density === 'compact';
   const nudgeFocused = useEmailUIStore((s) => s.nudgeFocused);
@@ -40,7 +50,7 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
       <BriefingHeader
         compact={compact}
         meta={briefingMeta}
-        triageQueueSize={signalEmails.length}
+        triageQueueSize={triageRemaining ?? signalEmails.length}
         onStartTriage={onOpenTriage}
         nudgeFocused={nudgeFocused}
       />
@@ -67,6 +77,7 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
           <div>
             <SignalSection
               signals={signalEmails}
+              queueIds={upcomingQueueIds}
               clearedIds={clearedIds}
               onTriageOne={onTriageOne}
             />
@@ -90,7 +101,6 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
 
           {!compact && (
             <aside className="space-y-5">
-              {/* Drafted-for-you wires to AI in v1.1; renders nothing today. */}
               <DraftedForYouRail drafts={[]} />
               <AwaitingRepliesRail rows={awaitingReplies} />
               {awaitingReplies.length > 0 && <div className="editorial-rule" />}

@@ -229,3 +229,153 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
 }
 
 /* ─── PHASE 3 marker (mode toggle + triage shell) — additions land here ─── */
+
+/* ─── View shells (cross-fade, no remount) ─── */
+.email-hybrid-shell .view-shell {
+  position: absolute; inset: 0;
+  transition: opacity 280ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.email-hybrid-shell .view-active   { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.email-hybrid-shell .view-inactive { opacity: 0; transform: translateY(6px); pointer-events: none; }
+
+/* ─── Segmented mode toggle (canvas top bar) ─── */
+.email-hybrid-shell .seg-toggle {
+  display: inline-flex; align-items: center; padding: 3px; border-radius: 10px;
+  background: var(--pulse-surface-raised); border: 1px solid var(--pulse-border);
+  transition: box-shadow 220ms ease;
+}
+.email-hybrid-shell .seg-toggle:hover { box-shadow: 0 0 0 3px var(--pulse-rose-soft); }
+.email-hybrid-shell .seg-toggle button {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 7px;
+  font-size: 12px; font-weight: 500; color: var(--pulse-ink-2);
+  transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+.email-hybrid-shell .seg-toggle button:hover:not([data-active='true']) { color: var(--pulse-ink); }
+.email-hybrid-shell .seg-toggle button[data-active='true'] {
+  background: var(--pulse-surface); color: var(--pulse-ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--pulse-border);
+}
+html.dark .email-hybrid-shell .seg-toggle button[data-active='true'] {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.email-hybrid-shell .seg-toggle button[data-active='true'] svg { color: var(--pulse-rose); }
+.email-hybrid-shell .seg-toggle .seg-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 5px;
+  background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+  font-family: var(--pulse-font-mono); font-size: 10px; font-weight: 600;
+  transition: transform 200ms ease;
+}
+@keyframes hybridCountPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--pulse-rose-glow); }
+  50%      { box-shadow: 0 0 0 5px transparent; }
+}
+.email-hybrid-shell .seg-toggle .seg-count.has-items {
+  animation: hybridCountPulse 2.4s ease-in-out infinite;
+}
+.email-hybrid-shell .seg-toggle .seg-count.cleared {
+  background: rgba(16, 185, 129, 0.14); color: #10b981;
+}
+
+.email-hybrid-shell .toggle-hint {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-left: 10px; padding: 4px 8px;
+  border-radius: 6px; opacity: 0.55;
+  transition: opacity 220ms ease;
+  font-size: 10px; font-family: var(--pulse-font-mono); letter-spacing: 0.08em;
+  color: var(--pulse-ink-3);
+}
+.email-hybrid-shell .toggle-hint:hover { opacity: 1; }
+
+/* ─── Triage stage ─── */
+.email-hybrid-shell .triage-stage {
+  border-radius: 18px; border: 1px solid var(--pulse-border);
+  background: var(--pulse-surface);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+html.dark .email-hybrid-shell .triage-stage {
+  box-shadow: 0 22px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.email-hybrid-shell .triage-stack-card {
+  position: absolute; left: 0; right: 0; border-radius: 18px;
+  border: 1px solid var(--pulse-border); background: var(--pulse-surface);
+}
+.email-hybrid-shell .progress-rail {
+  height: 3px; border-radius: 999px; background: var(--pulse-surface-raised); overflow: hidden;
+}
+.email-hybrid-shell .progress-rail > span {
+  display: block; height: 100%; background: var(--pulse-rose); border-radius: 999px;
+  transition: width 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─── Stage transition (Triage card swap) ─── */
+@keyframes hybridCardIn {
+  from { opacity: 0; transform: scale(0.97) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.email-hybrid-shell .card-in { animation: hybridCardIn 320ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* ─── Dismiss pill ─── */
+.email-hybrid-shell .dismiss-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 999px;
+  background: var(--pulse-surface); border: 1px solid var(--pulse-border-strong);
+  color: var(--pulse-ink-2); font-size: 12px; font-weight: 500;
+  transition: background 180ms, color 180ms, border-color 180ms;
+}
+.email-hybrid-shell .dismiss-pill:hover {
+  background: var(--pulse-rose-soft); color: var(--pulse-coral-fg); border-color: var(--pulse-rose);
+}
+.email-hybrid-shell .dismiss-pill .x {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 999px;
+  background: var(--pulse-surface-raised); color: currentColor;
+}
+
+/* ─── Action toast (Triage feedback banner) ─── */
+@keyframes hybridToastIn {
+  from { opacity: 0; transform: translate(-50%, -8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.email-hybrid-shell .action-toast {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  z-index: 30;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 6px 8px 6px 12px; border-radius: 999px;
+  background: var(--pulse-surface); border: 1px solid var(--pulse-border-strong);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+  font-size: 12px; color: var(--pulse-ink);
+  animation: hybridToastIn 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.email-hybrid-shell .action-toast .check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 999px;
+  background: var(--pulse-rose); color: white;
+}
+.email-hybrid-shell .action-toast .undo-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border-radius: 999px;
+  background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
+  font-family: var(--pulse-font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+  transition: background 160ms ease, color 160ms ease;
+}
+.email-hybrid-shell .action-toast .undo-btn:hover {
+  background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+}
+
+/* ─── Done state — celebration rings ─── */
+@keyframes hybridRingPulse {
+  0%   { transform: scale(0.9); opacity: 0.6; }
+  100% { transform: scale(2.2); opacity: 0;   }
+}
+.email-hybrid-shell .done-halo { position: relative; }
+.email-hybrid-shell .done-halo::before,
+.email-hybrid-shell .done-halo::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--pulse-rose);
+  animation: hybridRingPulse 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+.email-hybrid-shell .done-halo::after { animation-delay: 0.8s; }
+
