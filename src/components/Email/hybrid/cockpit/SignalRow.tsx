@@ -5,12 +5,13 @@ import {
   ChevronUp, ChevronDown, Layers,
   Send, CheckSquare, MoonStar, ArrowRight, Calendar,
 } from 'lucide-react';
-import type { MockEmail } from '../data/mockEmails';
+import { useEmailStore } from '../../../../store/emailStore';
+import type { EmailRow, AiActionKind } from '../data/emailRow';
 import { Avatar, ToneChip } from '../primitives';
 import { InlineReader } from './InlineReader';
 
 interface SignalRowProps {
-  email: MockEmail;
+  email: EmailRow;
   expanded: boolean;
   onToggle: () => void;
   onTriage?: () => void;
@@ -19,7 +20,7 @@ interface SignalRowProps {
   queueCleared: boolean;
 }
 
-const ActionIcon: React.FC<{ kind: MockEmail['aiActions'][number]['kind'] }> = ({ kind }) => {
+const ActionIcon: React.FC<{ kind: AiActionKind }> = ({ kind }) => {
   switch (kind) {
     case 'reply':  return <Send className="w-3 h-3" />;
     case 'task':   return <CheckSquare className="w-3 h-3" />;
@@ -34,10 +35,20 @@ const ActionIcon: React.FC<{ kind: MockEmail['aiActions'][number]['kind'] }> = (
 export const SignalRow: React.FC<SignalRowProps> = ({
   email, expanded, onToggle, onTriage, queuePos, queueTotal, queueCleared,
 }) => {
+  const handleEmailSelect = useEmailStore((s) => s.handleEmailSelect);
+
+  const handleToggle = () => {
+    onToggle();
+    // When expanding, mark as read in the store (mirrors the legacy viewer).
+    if (!expanded && email._raw && !email._raw.is_read) {
+      void handleEmailSelect(email._raw);
+    }
+  };
+
   return (
     <div className="signal-row border pulse-border-color overflow-hidden" data-expanded={expanded}>
       <button
-        onClick={onToggle}
+        onClick={handleToggle}
         className="w-full text-left flex items-start gap-4 px-4 py-3.5"
         type="button"
         aria-expanded={expanded}

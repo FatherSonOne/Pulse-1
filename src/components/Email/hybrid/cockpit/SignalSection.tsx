@@ -1,25 +1,28 @@
 // SignalSection — SIGNAL · TODAY curated rows.
-// Renders the top-priority emails as expandable rows. The expanded reader
-// lives in InlineReader, consumed by SignalRow.
+// Phase 2: takes signalEmails from useCockpitData. Hides when empty (no
+// "all clear" celebration here; that belongs in the briefing copy).
 import React, { useState } from 'react';
 import { Flame } from 'lucide-react';
 import { AiChip } from '../primitives';
-import { MOCK_EMAILS, TRIAGE_QUEUE_IDS } from '../data/mockEmails';
+import { TRIAGE_QUEUE_IDS } from '../data/mockEmails';
+import type { EmailRow } from '../data/emailRow';
 import { SignalRow } from './SignalRow';
 
 interface SignalSectionProps {
+  signals: EmailRow[];
   queueIds?: string[];
   clearedIds?: string[];
   onTriageOne?: (emailId: string) => void;
 }
 
 export const SignalSection: React.FC<SignalSectionProps> = ({
+  signals,
   queueIds = TRIAGE_QUEUE_IDS,
   clearedIds = [],
   onTriageOne,
 }) => {
-  const signals = MOCK_EMAILS.filter((e) => e.priority === 'high');
   const [openId, setOpenId] = useState<string | null>(null);
+  if (signals.length === 0) return null;
 
   return (
     <section className="mb-9">

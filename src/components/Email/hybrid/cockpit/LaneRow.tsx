@@ -1,10 +1,10 @@
 // LaneRow — compact row inside a LaneSection.
 import React from 'react';
-import type { MockEmail } from '../data/mockEmails';
+import type { EmailRow } from '../data/emailRow';
 import { Avatar } from '../primitives';
 
 interface LaneRowProps {
-  email: MockEmail;
+  email: EmailRow;
   showTopBorder?: boolean;
 }
 

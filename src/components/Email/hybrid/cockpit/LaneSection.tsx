@@ -1,17 +1,18 @@
-// LaneSection — collapsible category lane (Work / Admin / Tools / News / Personal).
+// LaneSection — collapsible category lane.
+// Phase 2: takes its emails as a prop (from useCockpitData.laneBuckets).
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import type { EmailRow } from '../data/emailRow';
 import type { MockLane } from '../data/mockEmails';
-import { MOCK_EMAILS } from '../data/mockEmails';
 import { LaneRow } from './LaneRow';
 
 interface LaneSectionProps {
   lane: MockLane;
+  emails: EmailRow[];
   defaultOpen?: boolean;
 }
 
-export const LaneSection: React.FC<LaneSectionProps> = ({ lane, defaultOpen }) => {
-  const items = MOCK_EMAILS.filter((e) => e.lane === lane.id);
+export const LaneSection: React.FC<LaneSectionProps> = ({ lane, emails, defaultOpen }) => {
   const [open, setOpen] = useState<boolean>(defaultOpen ?? lane.id === 'work');
 
   return (
@@ -27,16 +28,22 @@ export const LaneSection: React.FC<LaneSectionProps> = ({ lane, defaultOpen }) =
           <span className="text-[11px] pulse-ink-3-color">{lane.desc}</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] font-mono-pulse pulse-ink-3-color tnum">{items.length}</span>
+          <span className="text-[11px] font-mono-pulse pulse-ink-3-color tnum">{emails.length}</span>
           {open ? <ChevronUp className="w-4 h-4 pulse-ink-3-color" /> : <ChevronDown className="w-4 h-4 pulse-ink-3-color" />}
         </div>
       </button>
 
-      {open && (
+      {open && emails.length > 0 && (
         <div className="border-t pulse-border-color">
-          {items.map((it, idx) => (
+          {emails.map((it, idx) => (
             <LaneRow key={it.id} email={it} showTopBorder={idx > 0} />
           ))}
+        </div>
+      )}
+
+      {open && emails.length === 0 && (
+        <div className="border-t pulse-border-color px-4 py-6 text-center text-[12px] pulse-ink-3-color italic">
+          Nothing in this lane right now.
         </div>
       )}
     </div>

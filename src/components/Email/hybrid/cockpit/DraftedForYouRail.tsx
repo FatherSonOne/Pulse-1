@@ -1,12 +1,17 @@
 // DraftedForYouRail — right-rail "Drafted for you" cards.
-// In Phase 1 this consumes mock drafts; in v1.1 wires to emailAIService.generateReply().
+// Phase 2 disposition (handoff §4.5): NEW FEATURE — wire to AI in v1.1.
+// For v1 we render NOTHING if no draft data is supplied; the component
+// stays in the tree so v1.1 only has to change one prop.
 import React from 'react';
 import { Send, X } from 'lucide-react';
 import { Avatar, AiChip } from '../primitives';
-import { MOCK_EMAILS } from '../data/mockEmails';
+import type { EmailRow } from '../data/emailRow';
 
-export const DraftedForYouRail: React.FC = () => {
-  const drafts = MOCK_EMAILS.filter((e) => e.draft).slice(0, 3);
+interface DraftedForYouRailProps {
+  drafts?: EmailRow[];
+}
+
+export const DraftedForYouRail: React.FC<DraftedForYouRailProps> = ({ drafts = [] }) => {
   if (drafts.length === 0) return null;
 
   return (

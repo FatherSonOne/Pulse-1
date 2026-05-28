@@ -1,31 +1,85 @@
 // InlineReader — expanded reader inside a SignalRow.
-// Header (timestamp + thread count + email) → prose body → optional
-// "Claude drafted reply" panel → action bar (Reply / Archive / Snooze / Task).
-import React from 'react';
+// Phase 2: wires Reply / Archive / Snooze / Task → emailStore + emailComposeStore.
+// Lazy-loads the full thread (if threadCount > 1) on mount so the user sees
+// the full conversation without leaving the Cockpit.
+import React, { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Clock, Send, Reply, Archive, MoonStar, CheckSquare } from 'lucide-react';
-import type { MockEmail } from '../data/mockEmails';
+import { emailSyncService } from '../../../../services/emailSyncService';
+import { useEmailStore } from '../../../../store/emailStore';
+import { useEmailComposeStore } from '../../../../store/emailComposeStore';
+import type { EmailRow } from '../data/emailRow';
 import { AiChip, Keycap } from '../primitives';
 
 interface InlineReaderProps {
-  email: MockEmail;
+  email: EmailRow;
 }
 
 export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
+  const handleArchive = useEmailStore((s) => s.handleArchive);
+  const openReply = useEmailComposeStore((s) => s.openReply);
+
+  const [threadCount, setThreadCount] = useState<number>(email.threadCount);
+
+  // Lazy-fetch the full thread when the reader expands, if this looks like
+  // a multi-message thread. Updates the displayed count once known.
+  useEffect(() => {
+    if (!email.threadId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const thread = await emailSyncService.getThread(email.threadId!);
+        if (cancelled || !thread) return;
+        const count = thread.message_count || thread.messages?.length || 1;
+        setThreadCount(count);
+      } catch (err) {
+        console.warn('[InlineReader] thread fetch failed:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [email.threadId]);
+
   const paragraphs = email.body.split('\n\n');
+
+  const handleArchiveClick = async () => {
+    if (!email._raw) {
+      toast('Mock row — archive is a no-op here.');
+      return;
+    }
+    await handleArchive(email._raw);
+  };
+
+  const handleReplyClick = () => {
+    if (!email._raw) {
+      toast('Mock row — reply is a no-op here.');
+      return;
+    }
+    openReply(email._raw);
+  };
+
+  const handleSnoozeClick = () => {
+    // SnoozeModal wiring lands in Phase 8; for Phase 2 surface intent.
+    toast('Snooze coming in Phase 8.');
+  };
+
+  const handleTaskClick = () => {
+    // Decisions & Tasks integration lands in Phase 4/5; for Phase 2 surface intent.
+    toast('Push to Decisions & Tasks coming soon.');
+  };
 
   return (
     <div className="reader-expand px-5 py-4">
       <div className="flex items-center gap-2 mb-3 text-[11px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">
         <Clock className="w-3 h-3" />
         <span>{email.whenLong}</span>
-        {email.threadCount > 1 && (
+        {threadCount > 1 && (
           <>
             <span>·</span>
-            <span>{email.threadCount} IN THREAD</span>
+            <span>{threadCount} IN THREAD</span>
           </>
         )}
         <span>·</span>
-        <span className="lowercase tracking-normal">{email.email}</span>
+        <span className="lowercase tracking-normal">{email.fromEmail}</span>
       </div>
 
       <div className="prose-mock max-w-[640px]">
@@ -66,16 +120,16 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
       )}
 
       <div className="mt-3 flex items-center gap-2">
-        <button type="button" className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-color flex items-center gap-1.5">
+        <button type="button" onClick={handleReplyClick} className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-color flex items-center gap-1.5">
           <Reply className="w-3 h-3" />Reply
         </button>
-        <button type="button" className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5">
+        <button type="button" onClick={handleArchiveClick} className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5">
           <Archive className="w-3 h-3" />Archive
         </button>
-        <button type="button" className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5">
+        <button type="button" onClick={handleSnoozeClick} className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5">
           <MoonStar className="w-3 h-3" />Snooze
         </button>
-        <button type="button" className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5">
+        <button type="button" onClick={handleTaskClick} className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5">
           <CheckSquare className="w-3 h-3" />→ Task
         </button>
       </div>
