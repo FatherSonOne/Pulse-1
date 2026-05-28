@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Loader2, Archive, Trash2, MailOpen, Star, MoonStar, X } from 'lucide-react';
 import { useEmailStore } from '../../../store/emailStore';
+import { useEmailUIStore } from '../../../store/emailUIStore';
 import { useEmailComposeStore } from '../../../store/emailComposeStore';
 import { supabase } from '../../../services/supabase';
 import { BACKEND_URL } from '../../../config/backend';
@@ -28,6 +29,7 @@ export const FolderListView: React.FC = () => {
   const setSelectedEmail = useEmailStore((s) => s.setSelectedEmail);
 
   const openCompose = useEmailComposeStore((s) => s.openCompose);
+  const setSnoozeTargetEmailId = useEmailUIStore((s) => s.setSnoozeTargetEmailId);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -246,7 +248,7 @@ export const FolderListView: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); toast('Snooze lands in Phase 8.'); }}
+                      onClick={(e) => { e.stopPropagation(); setSnoozeTargetEmailId(email.id); }}
                       className="p-1 rounded hover:pulse-rose-bg-soft-color pulse-ink-3-color"
                       title="Snooze"
                     >

@@ -25,6 +25,8 @@ interface Options {
   onHelp: () => void;
   /** Optional sync callback for Shift+N. If omitted, the keypress shows a phase-stub toast. */
   onSync?: () => void;
+  /** Optional snooze trigger for B. If omitted, the keypress shows a phase-stub toast. */
+  onSnoozeFocused?: () => void;
 }
 
 function isTextInputTarget(target: EventTarget | null): boolean {
@@ -35,7 +37,7 @@ function isTextInputTarget(target: EventTarget | null): boolean {
   return false;
 }
 
-export function useEmailHybridShortcuts({ onCompose, onHelp, onSync }: Options): void {
+export function useEmailHybridShortcuts({ onCompose, onHelp, onSync, onSnoozeFocused }: Options): void {
   const showKeyboardShortcuts = useEmailUIStore((s) => s.showKeyboardShortcuts);
   const showEmailSettings = useEmailUIStore((s) => s.showEmailSettings);
   const showReauthModal = useEmailUIStore((s) => s.showReauthModal);
@@ -65,7 +67,19 @@ export function useEmailHybridShortcuts({ onCompose, onHelp, onSync }: Options):
         case '/':
           if (!hasCtrl) {
             e.preventDefault();
-            toast('Search lands in Phase 8.');
+            const node =
+              (window as unknown as { __hybridSearchInput?: HTMLInputElement }).__hybridSearchInput;
+            if (node) {
+              node.focus();
+              node.select();
+            }
+          }
+          break;
+        case 'b':
+          if (!hasCtrl && !hasShift) {
+            e.preventDefault();
+            if (onSnoozeFocused) onSnoozeFocused();
+            else toast('Open an email first to snooze it.');
           }
           break;
         case 'n':
@@ -86,7 +100,7 @@ export function useEmailHybridShortcuts({ onCompose, onHelp, onSync }: Options):
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [
-    onCompose, onHelp, onSync,
+    onCompose, onHelp, onSync, onSnoozeFocused,
     showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal,
   ]);
 

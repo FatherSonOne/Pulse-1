@@ -1,13 +1,14 @@
 // EmailHybridClient — entry point when emailHybrid flag is on.
-// Phase 7 adds:
-//   - gmailConnectionState detection + first-run "Connect Google" screen
-//   - Auth error banner above the canvas top bar
-//   - handleSync (with success + error custom toasts, ports legacy verbatim)
-//   - handleSendEmail (30-sec undo flow, ports legacy verbatim)
-//   - handleReAuthenticate (Google OAuth re-flow)
-//   - EmailComposerModal mount + onSend wiring
-//   - ReconnectGoogleModal mount
-//   - EmailSettingsModal mount (Phase 8 expands the inner surface; trigger lives here)
+// Phase 8 adds:
+//   - Search input wired through emailStore.searchQuery + handleSearch (port
+//     of legacy semantic search → service fallback chain).
+//   - SearchResultsView renders when a search has been executed; Clear or
+//     Esc on the input restores the normal Cockpit/FolderListView.
+//   - SnoozeModal mounted globally and triggered by:
+//       * B keybind  → snoozes the "focused" email (Triage current row,
+//         else expanded SignalRow, else nothing).
+//       * Per-row Snooze buttons in FolderListView / SearchResultsView /
+//         InlineReader.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Send, MailCheck, AlertTriangle } from 'lucide-react';
@@ -23,6 +24,7 @@ import { useEmailComposeStore } from '../../../store/emailComposeStore';
 import { CockpitView } from './CockpitView';
 import { FolderListView } from './FolderListView';
 import { TriageView } from './TriageView';
+import { SearchResultsView } from './SearchResultsView';
 import { CanvasTopBar } from './chrome/CanvasTopBar';
 import { HybridFirstRunScreen } from './chrome/HybridFirstRunScreen';
 import { HybridAuthErrorBanner } from './chrome/HybridAuthErrorBanner';
@@ -31,6 +33,7 @@ import { computeFreshTriageQueue, useTriageQueue } from './data/useTriageQueue';
 import { useEmailHybridShortcuts } from './data/useEmailHybridShortcuts';
 import EmailComposerModal from '../EmailComposerModal';
 import EmailSettingsModal from '../EmailSettingsModal';
+import { SnoozeModal } from '../SnoozeModal';
 import { ReconnectGoogleModal } from '../../Auth/ReconnectGoogleModal';
 import './hybrid.css';
 
@@ -60,7 +63,7 @@ function isTextInputTarget(target: EventTarget | null): boolean {
 export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail, userName }) => {
   const shellRef = useRef<HTMLDivElement>(null);
 
-  // ── Store selectors ────────────────────────────────────────────────────
+  // ── Store selectors ───────────────────────────────────────────────────
   const emails = useEmailStore((s) => s.emails);
   const loadEmails = useEmailStore((s) => s.loadEmails);
   const currentFolder = useEmailStore((s) => s.currentFolder);
@@ -72,12 +75,16 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
   const setAuthError = useEmailStore((s) => s.setAuthError);
   const reAuthenticating = useEmailStore((s) => s.reAuthenticating);
   const setReAuthenticating = useEmailStore((s) => s.setReAuthenticating);
+  const searchQuery = useEmailStore((s) => s.searchQuery);
+  const setSearchQuery = useEmailStore((s) => s.setSearchQuery);
+  const removeEmailFromList = useEmailStore((s) => s.removeEmailFromList);
 
   const mode = useEmailUIStore((s) => s.emailHybridMode);
   const setMode = useEmailUIStore((s) => s.setEmailHybridMode);
   const setNudgeFocused = useEmailUIStore((s) => s.setNudgeFocused);
   const expandedSignalRowId = useEmailUIStore((s) => s.expandedSignalRowId);
   const setExpandedSignalRowId = useEmailUIStore((s) => s.setExpandedSignalRowId);
+  const focusedSignalRowId = useEmailUIStore((s) => s.focusedSignalRowId);
   const triageQueueIds = useEmailUIStore((s) => s.triageQueueIds);
   const setTriageQueueIds = useEmailUIStore((s) => s.setTriageQueueIds);
   const showKeyboardShortcuts = useEmailUIStore((s) => s.showKeyboardShortcuts);
@@ -86,6 +93,8 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
   const setShowEmailSettings = useEmailUIStore((s) => s.setShowEmailSettings);
   const showReauthModal = useEmailUIStore((s) => s.showReauthModal);
   const setShowReauthModal = useEmailUIStore((s) => s.setShowReauthModal);
+  const snoozeTargetEmailId = useEmailUIStore((s) => s.snoozeTargetEmailId);
+  const setSnoozeTargetEmailId = useEmailUIStore((s) => s.setSnoozeTargetEmailId);
 
   const showComposer = useEmailComposeStore((s) => s.showComposer);
   const openCompose = useEmailComposeStore((s) => s.openCompose);
@@ -100,8 +109,11 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
   const triageData = useTriageQueue();
   const isInbox = currentFolder === 'inbox';
 
-  // ── Gmail connection state: first-run vs. connected ───────────────────
-  // Same heuristic as legacy: provider_token present OR any cached emails.
+  // ── Search execution state (separate from the controlled input value) ─
+  const [searchActive, setSearchActive] = useState(false);
+  const [executedQuery, setExecutedQuery] = useState('');
+
+  // ── Gmail connection state ────────────────────────────────────────────
   const [gmailConnectionState, setGmailConnectionState] =
     useState<GmailConnectionState>('checking');
   const [connectingGmail, setConnectingGmail] = useState(false);
@@ -116,13 +128,13 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
         const hasCached = (syncState?.total_emails_cached ?? 0) > 0 || emails.length > 0;
         setGmailConnectionState(hasProviderToken || hasCached ? 'connected' : 'never');
       } catch {
-        if (!cancelled) setGmailConnectionState('connected'); // fail open
+        if (!cancelled) setGmailConnectionState('connected');
       }
     })();
     return () => { cancelled = true; };
   }, [syncState?.total_emails_cached, emails.length]);
 
-  // ── Auto-sync on mount if last sync > 5 min ──────────────────────────
+  // Auto-sync on mount
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -141,25 +153,27 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── If on a non-inbox folder while in Triage mode, snap back ─────────
+  // Snap back to cockpit when leaving inbox
   useEffect(() => {
     if (!isInbox && mode === 'triage') setMode('cockpit');
   }, [isInbox, mode, setMode]);
 
   useEffect(() => {
+    if (searchActive) return; // search results replace folder data — skip the reload
     void loadEmails();
-  }, [loadEmails, currentFolder, activeCategory]);
+  }, [loadEmails, currentFolder, activeCategory, searchActive]);
 
-  // ── Freeze Triage queue on inbox session start ───────────────────────
+  // Triage queue freeze
   useEffect(() => {
     if (!isInbox) return;
+    if (searchActive) return; // don't freeze a search-result queue
     if (triageQueueIds.length === 0 && emails.length > 0) {
       const fresh = computeFreshTriageQueue(emails);
       if (fresh.length > 0) setTriageQueueIds(fresh);
     }
-  }, [emails, isInbox, triageQueueIds.length, setTriageQueueIds]);
+  }, [emails, isInbox, searchActive, triageQueueIds.length, setTriageQueueIds]);
 
-  // ── pulse_focus_nudge deep-link from Daily Overview ──────────────────
+  // pulse_focus_nudge deep-link
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const flag = sessionStorage.getItem('pulse_focus_nudge');
@@ -174,7 +188,7 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     }, 150);
   }, [setMode, setNudgeFocused]);
 
-  // ── pulse:compose-email from Pulse Assistant ─────────────────────────
+  // pulse:compose-email
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const handler = (evt: Event) => {
@@ -189,7 +203,42 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     return () => window.removeEventListener('pulse:compose-email', handler);
   }, [restoreComposer]);
 
-  // ── handleSync: ports legacy custom-toast pattern ────────────────────
+  // ── handleSearch: ports legacy semantic+fallback chain ────────────────
+  const handleSearch = useCallback(async () => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setSearchActive(false);
+      setExecutedQuery('');
+      await loadEmails();
+      return;
+    }
+    setSearchActive(true);
+    setExecutedQuery(q);
+    useEmailStore.setState({ loading: true, hasMore: false });
+    try {
+      const { emailSearchService } = await import('../../../services/emailSearchService');
+      const results = await emailSearchService.search(q, { limit: 50 });
+      useEmailStore.setState({ emails: results.map((r) => r.email) });
+    } catch {
+      try {
+        const results = await emailSyncService.searchEmails(q);
+        useEmailStore.setState({ emails: results });
+      } catch {
+        toast.error('Search failed');
+      }
+    } finally {
+      useEmailStore.setState({ loading: false });
+    }
+  }, [searchQuery, loadEmails]);
+
+  const clearSearch = useCallback(async () => {
+    setSearchQuery('');
+    setSearchActive(false);
+    setExecutedQuery('');
+    await loadEmails();
+  }, [setSearchQuery, loadEmails]);
+
+  // ── handleSync: ports legacy custom-toast pattern ─────────────────────
   const handleSync = useCallback(async () => {
     setSyncing(true);
     try {
@@ -262,7 +311,7 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     }
   }, [loadEmails, setSyncing]);
 
-  // ── handleReAuthenticate: ports legacy Google OAuth re-flow ──────────
+  // ── handleReAuthenticate ──────────────────────────────────────────────
   const handleReAuthenticate = useCallback(async () => {
     setReAuthenticating(true);
     try {
@@ -284,7 +333,7 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     }
   }, [setReAuthenticating]);
 
-  // ── handleSendEmail: ports legacy 30-sec undo flow verbatim ──────────
+  // ── handleSendEmail: 30-sec undo flow ─────────────────────────────────
   const handleSendEmail = useCallback(async (params: SendEmailParams) => {
     const sendId = `send_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
     closeComposer();
@@ -313,7 +362,6 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
       } catch (error) {
         console.error('[EmailHybridClient] Send error:', error);
         removePendingSend(sendId);
-        // Restore the composer so the user doesn't lose their draft.
         restoreComposer(params);
         const msg = error instanceof Error ? error.message : 'Failed to send email';
         if (msg.includes('session') || msg.includes('sign') || msg.includes('expired')) {
@@ -372,7 +420,45 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     addPendingSend, removePendingSend, restoreComposer, closeComposer, setAuthError,
   ]);
 
-  // ── ⌘E / Ctrl+E — global mode toggle (inbox-only) ─────────────────────
+  // ── Snooze (custom time via SnoozeModal) ──────────────────────────────
+  const snoozeTargetEmail = snoozeTargetEmailId
+    ? emails.find((e) => e.id === snoozeTargetEmailId) ?? null
+    : null;
+  const triageCurrentRow = triageData.currentRow;
+
+  const handleSnoozeChosen = useCallback(
+    (snoozeUntil: Date) => {
+      const id = snoozeTargetEmailId;
+      setSnoozeTargetEmailId(null);
+      if (!id) return;
+      emailSyncService
+        .snoozeEmail(id, snoozeUntil)
+        .then(() => {
+          removeEmailFromList(id);
+          toast.success(`Snoozed until ${snoozeUntil.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}`);
+        })
+        .catch(() => toast.error('Snooze failed — try again from the email.'));
+    },
+    [snoozeTargetEmailId, setSnoozeTargetEmailId, removeEmailFromList],
+  );
+
+  const handleSnoozeFocused = useCallback(() => {
+    // B keybind: snooze the most contextually-focused email.
+    //   1. Triage mode → current triage card
+    //   2. Cockpit mode + expanded signal row → that row
+    //   3. Cockpit mode + keyboard-focused signal row → that row
+    if (mode === 'triage' && triageCurrentRow) {
+      setSnoozeTargetEmailId(triageCurrentRow.id);
+      return;
+    }
+    if (mode === 'cockpit') {
+      const id = expandedSignalRowId ?? focusedSignalRowId;
+      if (id) setSnoozeTargetEmailId(id);
+      else toast('Focus an email first (j/k) to snooze it.');
+    }
+  }, [mode, triageCurrentRow, expandedSignalRowId, focusedSignalRowId, setSnoozeTargetEmailId]);
+
+  // ── ⌘E / Ctrl+E ───────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
@@ -387,13 +473,17 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     return () => window.removeEventListener('keydown', handler);
   }, [mode, setMode, isInbox, showComposer, showEmailSettings, showReauthModal]);
 
-  // ── Esc — mode-aware (overlays first) ─────────────────────────────────
+  // ── Esc ───────────────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (isTextInputTarget(e.target)) return;
       if (showComposer || showKeyboardShortcuts || showEmailSettings || showReauthModal) return;
-
+      if (snoozeTargetEmailId) {
+        e.preventDefault();
+        setSnoozeTargetEmailId(null);
+        return;
+      }
       if (mode === 'triage') {
         e.preventDefault();
         setMode('cockpit');
@@ -408,6 +498,7 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     return () => window.removeEventListener('keydown', handler);
   }, [
     mode, expandedSignalRowId, setMode, setExpandedSignalRowId,
+    snoozeTargetEmailId, setSnoozeTargetEmailId,
     showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal,
   ]);
 
@@ -415,6 +506,7 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     onCompose: openCompose,
     onHelp: () => setShowKeyboardShortcuts(true),
     onSync: handleSync,
+    onSnoozeFocused: handleSnoozeFocused,
   });
 
   const goToTriage = useCallback(() => setMode('triage'), [setMode]);
@@ -424,7 +516,6 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     [setMode],
   );
 
-  // ── Render: first-run takes the whole surface ─────────────────────────
   if (gmailConnectionState === 'never') {
     return (
       <HybridFirstRunScreen
@@ -453,11 +544,15 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
       <CanvasTopBar
         triageRemaining={triageData.remaining}
         onSync={handleSync}
+        onSearchSubmit={handleSearch}
+        onSearchClear={clearSearch}
       />
 
       <div className="flex-1 overflow-hidden relative">
         <div className={`view-shell ${mode === 'cockpit' ? 'view-active' : 'view-inactive'}`}>
-          {isInbox ? (
+          {searchActive ? (
+            <SearchResultsView query={executedQuery} onClear={clearSearch} />
+          ) : isInbox ? (
             <CockpitView
               density="normal"
               onCompose={openCompose}
@@ -477,7 +572,6 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
         </div>
       </div>
 
-      {/* Modals + overlays */}
       {showKeyboardShortcuts && (
         <HybridKeyboardShortcutsModal onClose={() => setShowKeyboardShortcuts(false)} />
       )}
@@ -502,6 +596,13 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
           initialBcc={restoredComposer?.bcc}
           onClose={closeComposer}
           onSend={handleSendEmail}
+        />
+      )}
+
+      {snoozeTargetEmail && (
+        <SnoozeModal
+          onSnooze={handleSnoozeChosen}
+          onClose={() => setSnoozeTargetEmailId(null)}
         />
       )}
 

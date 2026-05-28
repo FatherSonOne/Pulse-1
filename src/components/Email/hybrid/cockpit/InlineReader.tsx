@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { Clock, Send, Reply, Archive, MoonStar, CheckSquare } from 'lucide-react';
 import { emailSyncService } from '../../../../services/emailSyncService';
 import { useEmailStore } from '../../../../store/emailStore';
+import { useEmailUIStore } from '../../../../store/emailUIStore';
 import { useEmailComposeStore } from '../../../../store/emailComposeStore';
 import type { EmailRow } from '../data/emailRow';
 import { AiChip, Keycap } from '../primitives';
@@ -58,8 +59,11 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
   };
 
   const handleSnoozeClick = () => {
-    // SnoozeModal wiring lands in Phase 8; for Phase 2 surface intent.
-    toast('Snooze coming in Phase 8.');
+    if (!email._raw) {
+      toast('Mock row — snooze is a no-op here.');
+      return;
+    }
+    useEmailUIStore.getState().setSnoozeTargetEmailId(email._raw.id);
   };
 
   const handleTaskClick = () => {

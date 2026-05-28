@@ -56,6 +56,8 @@ interface EmailUIState {
   expandedSignalRowId: string | null;
   /** Keyboard-driven focus cursor in the Cockpit Signal section. */
   focusedSignalRowId: string | null;
+  /** When non-null, the hybrid surface renders SnoozeModal targeting this email. */
+  snoozeTargetEmailId: string | null;
 
   // Actions
   setZoomLevel: (level: number) => void;
@@ -81,6 +83,7 @@ interface EmailUIState {
   resetTriageState: () => void;
   setExpandedSignalRowId: (id: string | null) => void;
   setFocusedSignalRowId: (id: string | null) => void;
+  setSnoozeTargetEmailId: (id: string | null) => void;
 }
 
 export const useEmailUIStore = create<EmailUIState>()((set) => ({
@@ -103,6 +106,7 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   triageQueueIds: [],
   expandedSignalRowId: null,
   focusedSignalRowId: null,
+  snoozeTargetEmailId: null,
 
   setZoomLevel: (level) => set({ zoomLevel: Math.max(50, Math.min(100, level)) }),
   zoomIn: () => set((s) => ({ zoomLevel: Math.min(s.zoomLevel + 10, 100) })),
@@ -138,4 +142,5 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   }),
   setExpandedSignalRowId: (id) => set({ expandedSignalRowId: id }),
   setFocusedSignalRowId: (id) => set({ focusedSignalRowId: id }),
+  setSnoozeTargetEmailId: (id) => set({ snoozeTargetEmailId: id }),
 }));
