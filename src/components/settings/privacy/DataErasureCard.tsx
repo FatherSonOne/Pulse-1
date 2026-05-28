@@ -41,12 +41,10 @@ export const DataErasureCard: React.FC = () => {
     setIsDeleting(true);
     const toastId = toast.loading('Erasing account...');
     try {
-      const { data: { user }, error: userErr } = await supabase.auth.getUser();
-      if (userErr || !user) throw new Error('Not authenticated');
-
-      const { error } = await supabase.rpc('delete_user_account', {
-        target_user_id: user.id,
-      });
+      // Self-serve erasure via the delete-account edge function: it deletes
+      // the caller's data (delete_user_account RPC) AND the auth identity,
+      // which makes the GDPR Art. 17 claim below actually true.
+      const { error } = await supabase.functions.invoke('delete-account');
       if (error) throw error;
 
       toast.success('Account erased. Signing out...', { id: toastId });

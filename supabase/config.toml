@@ -421,6 +421,13 @@ verify_jwt = false
 [functions.check-search-alerts]
 verify_jwt = false
 
+# delete-account: self-serve GDPR Art. 17 / CCPA account deletion. Platform
+# verify_jwt is ON — the function requires a valid user JWT, authenticates the
+# caller via supabase.auth.getUser(token), runs delete_user_account() as that
+# user, then removes the auth identity with the service role.
+[functions.delete-account]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327

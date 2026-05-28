@@ -9,6 +9,7 @@ import { activityService, type ActivityLog } from '../../services/activityServic
 import { securityAlertsService, type SecurityAlert } from '../../services/securityAlertsService';
 import { dataRetentionService, RETENTION_OPTIONS, type DataRetentionPolicy, type CleanupStats } from '../../services/dataRetentionService';
 import { oauthAppsService, type OAuthConnectedApp } from '../../services/oauthAppsService';
+import { dataExportService } from '../../services/dataExportService';
 import { PrivacyTab } from './PrivacyDashboardPrivacyTab';
 import { disconnectGoogleAccount } from '../../services/authService';
 import toast from 'react-hot-toast';
@@ -34,6 +35,20 @@ interface ConnectedService {
 // Remove local interface - using imported UserSession type
 
 // Removed - using OAuthConnectedApp from service
+
+// Map a DataExport.export_type to a human-readable label for the
+// Download History list.
+function humanizeExportType(exportType: string): string {
+  const labels: Record<string, string> = {
+    full_export: 'Full Data Export',
+    emails_only: 'Email Archive',
+    contacts_only: 'Contacts Export',
+    calendar_only: 'Calendar Export',
+    settings_only: 'Settings Export',
+    messages_only: 'Messages Export',
+  };
+  return labels[exportType] || 'Data Export';
+}
 
 export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
   isOpen,
@@ -213,23 +228,29 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
         setThirdPartyApps([]);
       }
 
-      // Load download history (mock data)
-      setDownloadHistory([
-        {
-          id: '1',
-          type: 'Data Export',
-          size: '2.4 GB',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
-          status: 'completed',
-        },
-        {
-          id: '2',
-          type: 'Email Archive',
-          size: '850 MB',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 60),
-          status: 'completed',
-        },
-      ]);
+      // Load REAL data-export history (no fabricated entries — the JSX
+      // renders an honest "No data exports yet" empty state when this is []).
+      try {
+        const userId = session?.user?.id;
+        if (userId) {
+          const exports = await dataExportService.getExportHistory(userId);
+          setDownloadHistory(
+            exports.map((e) => ({
+              id: e.id,
+              type: humanizeExportType(e.export_type),
+              size: dataExportService.formatFileSize(e.file_size_bytes ?? 0),
+              timestamp: new Date(e.created_at),
+              status: e.status,
+              file_url: e.file_url,
+            }))
+          );
+        } else {
+          setDownloadHistory([]);
+        }
+      } catch (error) {
+        console.error('Error loading export history:', error);
+        setDownloadHistory([]);
+      }
     } catch (error) {
       console.error('Error loading services:', error);
       toast.error('Failed to load privacy information');
@@ -328,9 +349,11 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
     setIsDeletingAccount(true);
     const toastId = toast.loading('Deleting account data...');
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      await supabase.rpc('delete_user_account', { target_user_id: user.id });
+      // Self-serve deletion via the delete-account edge function: it deletes
+      // the caller's data AND the auth identity (not just an RPC that left
+      // auth.users behind).
+      const { error } = await supabase.functions.invoke('delete-account');
+      if (error) throw error;
       await supabase.auth.signOut();
       toast.success('Account deleted', { id: toastId });
       onClose();
