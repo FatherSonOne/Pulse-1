@@ -3,8 +3,14 @@
 // Production error monitoring and reporting
 // ============================================
 
+import React from 'react';
+import {
+  useLocation,
+  useNavigationType,
+  createRoutesFromChildren,
+  matchRoutes
+} from 'react-router-dom';
 import * as Sentry from '@sentry/react';
-import { BrowserTracing } from '@sentry/tracing';
 
 // Sentry configuration
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
@@ -24,23 +30,24 @@ export function initializeSentry(): void {
     environment: ENVIRONMENT,
     release: `pulse-messages@${APP_VERSION}`,
 
-    // Performance monitoring
+    // tracePropagationTargets moved to top-level in Sentry SDK v8+
+    tracePropagationTargets: [
+      'localhost',
+      /^https:\/\/.*\.pulsemessages\.com/,
+      /^https:\/\/.*\.supabase\.co/
+    ],
+
+    // Performance monitoring (router-aware browser tracing replaces the old
+    // BrowserTracing class + reactRouterV6Instrumentation pair)
     integrations: [
-      new BrowserTracing({
-        tracePropagationTargets: [
-          'localhost',
-          /^https:\/\/.*\.pulsemessages\.com/,
-          /^https:\/\/.*\.supabase\.co/
-        ],
-        routingInstrumentation: Sentry.reactRouterV6Instrumentation(
-          React.useEffect,
-          useLocation,
-          useNavigationType,
-          createRoutesFromChildren,
-          matchRoutes
-        )
+      Sentry.reactRouterV6BrowserTracingIntegration({
+        useEffect: React.useEffect,
+        useLocation,
+        useNavigationType,
+        createRoutesFromChildren,
+        matchRoutes
       }),
-      new Sentry.Replay({
+      Sentry.replayIntegration({
         maskAllText: true,
         blockAllMedia: true
       })
@@ -213,15 +220,12 @@ export function addBreadcrumb(
   });
 }
 
-// Start performance transaction
-export function startTransaction(
-  name: string,
-  op: string
-): Sentry.Transaction {
-  return Sentry.startTransaction({
-    name,
-    op
-  });
+// Start an inactive span. `Sentry.startTransaction` was removed in SDK v8+;
+// callers that want a parent span should use `Sentry.startSpan` / `Sentry.startSpanManual`
+// directly with a callback. We expose `startInactiveSpan` here for any caller
+// that needs an explicit, manually-finished span.
+export function startTransaction(name: string, op: string) {
+  return Sentry.startInactiveSpan({ name, op });
 }
 
 // Wrap component with error boundary
@@ -232,12 +236,3 @@ export const withProfiler = Sentry.withProfiler;
 
 // Export Sentry instance for advanced usage
 export { Sentry };
-
-// Import React Router dependencies for instrumentation
-import React, { useEffect } from 'react';
-import {
-  useLocation,
-  useNavigationType,
-  createRoutesFromChildren,
-  matchRoutes
-} from 'react-router-dom';
