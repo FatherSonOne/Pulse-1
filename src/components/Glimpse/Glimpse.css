@@ -305,6 +305,36 @@
 .gl-thread-summarize:hover:not(:disabled) { filter: brightness(1.06); }
 .gl-thread-summarize:disabled { opacity: 0.6; cursor: default; }
 .gl-thread-summarize:focus-visible { outline: 2px solid var(--gl-rose); outline-offset: 1px; }
+
+/* Select-messages control — a neutral sibling to the coral Summarize button.
+   Matches its mono/uppercase rhythm and box height (5px+1px border = 6px to
+   mirror Summarize's borderless 6px) but stays chrome-neutral: coral is
+   reserved for AI-signal surfaces, and selection is a plain utility action. */
+.gl-thread-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid var(--gl-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gl-ink-cloth);
+  font-family: var(--gl-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease),
+              border-color var(--gl-fast) var(--gl-ease),
+              color var(--gl-fast) var(--gl-ease);
+}
+.gl-thread-select:hover,
+.gl-thread-select[data-active] {
+  background: var(--gl-surface-soft);
+  border-color: var(--gl-border-strong);
+  color: var(--gl-ink);
+}
+.gl-thread-select:focus-visible { outline: 2px solid var(--gl-rose); outline-offset: 1px; }
 .gl-thread-more-wrap { position: relative; }
 .gl-thread-more {
   display: inline-flex;
@@ -3286,6 +3316,7 @@
   .gl-rail-toggle-chev,
   .gl-section-tab,
   .gl-thread-summarize,
+  .gl-thread-select,
   .gl-thread-back,
   .gl-thread-more,
   .gl-section-help,

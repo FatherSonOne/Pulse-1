@@ -1218,6 +1218,22 @@ const GlimpseThreadHeader: React.FC<{
           )}
           Summarize
         </button>
+        <button
+          type="button"
+          className="gl-thread-select"
+          onClick={onToggleSelection}
+          data-active={isSelectionMode || undefined}
+          aria-pressed={isSelectionMode}
+          title={isSelectionMode ? 'Exit selection' : 'Select messages'}
+          aria-label={isSelectionMode ? 'Exit selection' : 'Select messages'}
+        >
+          {isSelectionMode ? (
+            <X className="w-3.5 h-3.5" />
+          ) : (
+            <Square className="w-3.5 h-3.5" />
+          )}
+          {isSelectionMode ? 'Exit' : 'Select'}
+        </button>
         <div className="gl-thread-more-wrap">
           <button
             type="button"
@@ -1261,15 +1277,6 @@ const GlimpseThreadHeader: React.FC<{
                     <Edit3 className="w-3.5 h-3.5" />
                   )}
                   Draft a reply
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="gl-thread-menu-item"
-                  onClick={() => { setMenuOpen(false); onToggleSelection(); }}
-                >
-                  <Square className="w-3.5 h-3.5" />
-                  {isSelectionMode ? 'Exit selection' : 'Select messages'}
                 </button>
               </div>
             </>
