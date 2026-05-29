@@ -5,8 +5,9 @@
 //   - MeetingExtractor — opens Google Calendar in a new tab on confirm
 //   - ActionItemExtractor — toast stub for now; wires to DecisionTaskHub
 //     in the same v1.1 sweep as the → Task button.
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import DOMPurify from 'isomorphic-dompurify';
 import { Clock, Send, Reply, Archive, MoonStar, CheckSquare, Sparkles, Maximize2 } from 'lucide-react';
 import { emailSyncService } from '../../../../services/emailSyncService';
 import { useEmailStore } from '../../../../store/emailStore';
@@ -81,7 +82,24 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
     return () => { cancelled = true; };
   }, [email.threadId]);
 
-  const paragraphs = email.body.split('\n\n');
+  // Phase 12.11 — body rendering:
+  //   Prefer the email's HTML version when present (most senders ship one);
+  //   it has proper paragraph structure, lists, links, tables. We sanitize
+  //   with DOMPurify (same set the legacy EmailViewerNew uses) so embedded
+  //   <script>/<style>/inline event handlers can't execute. If only plain
+  //   body_text exists, render with white-space: pre-wrap so newlines and
+  //   indentation survive — that's better than reflowing every line into
+  //   its own paragraph the way the old `split('\n\n')` approach did when
+  //   the source had hard wraps every 76 chars.
+  const bodyHtml = email._raw?.body_html?.trim();
+  const sanitizedHtml = useMemo(() => {
+    if (!bodyHtml) return '';
+    return DOMPurify.sanitize(bodyHtml, {
+      FORBID_TAGS: ['script', 'style', 'form', 'iframe', 'object', 'embed'],
+      FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover', 'onfocus'],
+    });
+  }, [bodyHtml]);
+  const fallbackText = email.body || email._raw?.snippet || '';
 
   const handleArchiveClick = async () => {
     if (!email._raw) {

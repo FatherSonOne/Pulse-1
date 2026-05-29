@@ -151,6 +151,75 @@ html.dark .email-hybrid-shell .signal-row:hover {
 .email-hybrid-shell .prose-mock p strong { color: var(--pulse-ink); font-weight: 600; }
 .email-hybrid-shell .prose-mock p:last-child { margin-bottom: 0; }
 
+/* ─── Reader body HTML rendering (Phase 12.11) ───
+   Email body_html sanitized with DOMPurify gets rendered as-is, but we
+   apply typography defaults so all the various senders' inline styles
+   don't collide with the Cockpit aesthetic. */
+.email-hybrid-shell .email-body-html {
+  font-size: 14px; line-height: 1.65; color: var(--pulse-ink-2);
+}
+.email-hybrid-shell .email-body-html p { margin: 0 0 12px; }
+.email-hybrid-shell .email-body-html p:last-child { margin-bottom: 0; }
+.email-hybrid-shell .email-body-html h1,
+.email-hybrid-shell .email-body-html h2,
+.email-hybrid-shell .email-body-html h3,
+.email-hybrid-shell .email-body-html h4 {
+  font-family: var(--pulse-font-serif);
+  color: var(--pulse-ink); font-weight: 500;
+  margin: 18px 0 8px; line-height: 1.25;
+}
+.email-hybrid-shell .email-body-html h1 { font-size: 22px; }
+.email-hybrid-shell .email-body-html h2 { font-size: 18px; }
+.email-hybrid-shell .email-body-html h3 { font-size: 16px; }
+.email-hybrid-shell .email-body-html ul,
+.email-hybrid-shell .email-body-html ol {
+  margin: 0 0 12px; padding-left: 22px;
+}
+.email-hybrid-shell .email-body-html li { margin-bottom: 4px; }
+.email-hybrid-shell .email-body-html a {
+  color: var(--pulse-rose); text-decoration: underline; text-underline-offset: 2px;
+}
+.email-hybrid-shell .email-body-html a:hover { color: var(--pulse-coral-fg); }
+.email-hybrid-shell .email-body-html img { max-width: 100%; height: auto; border-radius: 6px; margin: 8px 0; }
+.email-hybrid-shell .email-body-html blockquote {
+  border-left: 3px solid var(--pulse-border-strong);
+  margin: 8px 0; padding: 4px 0 4px 12px;
+  color: var(--pulse-ink-3); font-style: italic;
+}
+.email-hybrid-shell .email-body-html pre,
+.email-hybrid-shell .email-body-html code {
+  font-family: var(--pulse-font-mono); font-size: 12.5px;
+  background: var(--pulse-surface-raised); color: var(--pulse-ink);
+  padding: 1px 5px; border-radius: 4px;
+}
+.email-hybrid-shell .email-body-html pre {
+  padding: 10px 12px; overflow-x: auto; margin: 8px 0;
+}
+.email-hybrid-shell .email-body-html table {
+  border-collapse: collapse; margin: 8px 0; max-width: 100%;
+}
+.email-hybrid-shell .email-body-html th,
+.email-hybrid-shell .email-body-html td {
+  border: 1px solid var(--pulse-border); padding: 6px 10px; font-size: 13px;
+}
+.email-hybrid-shell .email-body-html hr {
+  border: none; border-top: 1px solid var(--pulse-border); margin: 16px 0;
+}
+
+/* ─── Reader body plain-text rendering (Phase 12.11) ───
+   When no body_html exists, render body_text with preserved whitespace +
+   newlines. Strip leading single line-breaks within paragraphs so the
+   "hard wrap every 76 chars" curse from old mail clients doesn't make
+   every line look like its own paragraph. */
+.email-hybrid-shell .email-body-text {
+  font-size: 14px; line-height: 1.65; color: var(--pulse-ink-2);
+  white-space: pre-wrap; word-wrap: break-word;
+  font-family: var(--pulse-font);
+}
+.email-hybrid-shell .email-body-text a {
+  color: var(--pulse-rose); text-decoration: underline; text-underline-offset: 2px;
+}
+
 /* ─── Queue pip (Signal row positional badge) ─── */
 .email-hybrid-shell .queue-pip {
   display: inline-flex; align-items: center; gap: 5px;
@@ -240,13 +309,21 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
 }
 .email-hybrid-shell .reader-panel {
   position: absolute; top: 0; right: 0; bottom: 0; z-index: 40;
-  width: 540px; max-width: 100%;
+  width: 720px; max-width: 92%;
   background: var(--pulse-surface);
   border-left: 1px solid var(--pulse-border);
   box-shadow: -18px 0 60px rgba(0, 0, 0, 0.10);
   display: flex; flex-direction: column;
   overflow: hidden;
   animation: readerPanelIn 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* On narrower windows the panel was eating too much of the underlying view;
+   give the canvas a minimum of 360px to stay visible behind the backdrop. */
+@media (max-width: 1100px) {
+  .email-hybrid-shell .reader-panel { width: 620px; }
+}
+@media (max-width: 900px) {
+  .email-hybrid-shell .reader-panel { width: 540px; }
 }
 html.dark .email-hybrid-shell .reader-panel {
   box-shadow: -22px 0 80px rgba(0, 0, 0, 0.55);
