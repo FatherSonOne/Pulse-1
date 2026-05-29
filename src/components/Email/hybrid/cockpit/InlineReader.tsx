@@ -241,6 +241,21 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
         </div>
       )}
 
+      {/* Email body — Phase 12.11 + 12.13: HTML-aware with DOMPurify
+          sanitization; plain-text fallback; empty-state placeholder. */}
+      {sanitizedHtml ? (
+        <div
+          className="email-body-html max-w-[760px]"
+          dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+        />
+      ) : fallbackText.trim() ? (
+        <div className="email-body-text max-w-[760px]">{fallbackText}</div>
+      ) : (
+        <div className="text-[12.5px] pulse-ink-3-color italic py-3">
+          This email has no body content beyond the subject and AI summary above.
+        </div>
+      )}
+
       {email.draft && (
         <div className="mt-3 p-3 rounded-lg pulse-rose-bg-soft-color border pulse-rose-border">
           <div className="flex items-center gap-2 mb-1.5">
