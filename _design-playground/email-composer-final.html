@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Email Composer FINAL — Locked Spec</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: { extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        serif: ['Fraunces', 'Georgia', 'serif'],
+      },
+    } },
+  };
+</script>
+<style>
+  /* ════════════════════════════════════════════════════════════════════════
+     LOCKED-SPEC PLAYGROUND
+     Two composer modes wired together:
+       • Sidecar (C)      — default REPLY view, slides in from right
+       • Focal Canvas (A) — NEW MESSAGE / FORWARD, fullscreen takeover
+     This file is the visual reference the builder will match exactly.
+     ════════════════════════════════════════════════════════════════════════ */
+
+  /* ─── Pulse design tokens ─── */
+  :root {
+    --pulse-rose: #f43f5e;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-bright: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+    --pulse-canvas: #f8f8f8;
+    --pulse-canvas-soft: #f2f2f2;
+    --pulse-surface: #ffffff;
+    --pulse-surface-raised: #f2f2f2;
+    --pulse-border: rgba(0, 0, 0, 0.08);
+    --pulse-border-strong: rgba(0, 0, 0, 0.16);
+    --pulse-ink: #0f0f0f;
+    --pulse-ink-2: #52525b;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral: var(--pulse-rose);
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 35%, black 65%);
+    --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-rose) 12%, transparent);
+    --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-rose) 8%, transparent);
+    --pulse-font: 'Inter', system-ui, sans-serif;
+    --pulse-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --pulse-serif: 'Fraunces', Georgia, serif;
+    --pulse-sidebar-bg: #ffffff;
+    --pulse-shadow-main: 0 6px 24px rgba(0, 0, 0, 0.08);
+    --pulse-shadow-modal: 0 30px 100px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(0,0,0,0.10);
+  }
+  html[data-theme='dark'] {
+    --pulse-canvas: #000000;
+    --pulse-canvas-soft: #080808;
+    --pulse-surface: rgba(255, 255, 255, 0.03);
+    --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+    --pulse-border: rgba(255, 255, 255, 0.06);
+    --pulse-border-strong: rgba(255, 255, 255, 0.10);
+    --pulse-ink: #fafafa;
+    --pulse-ink-2: #b4b4b8;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 60%, white 40%);
+    --pulse-rose: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.14);
+    --pulse-sidebar-bg: #0a0a0b;
+    --pulse-shadow-main: 0 10px 40px rgba(0, 0, 0, 0.4);
+    --pulse-shadow-modal: 0 40px 120px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--pulse-font);
+    background: var(--pulse-canvas);
+    color: var(--pulse-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .pulse-bg { background: var(--pulse-canvas); }
+  .pulse-bg-soft { background: var(--pulse-canvas-soft); }
+  .pulse-surface { background: var(--pulse-surface); }
+  .pulse-surface-raised { background: var(--pulse-surface-raised); }
+  .pulse-ink-color { color: var(--pulse-ink); }
+  .pulse-ink-2-color { color: var(--pulse-ink-2); }
+  .pulse-ink-3-color { color: var(--pulse-ink-3); }
+  .pulse-border-color { border-color: var(--pulse-border); }
+  .pulse-border-strong-color { border-color: var(--pulse-border-strong); }
+  .pulse-coral-fg-color { color: var(--pulse-coral-fg); }
+  .pulse-coral-bg-color { background: var(--pulse-coral-bg-12); }
+  .pulse-coral-bg-08-color { background: var(--pulse-coral-bg-08); }
+  .pulse-rose-color { color: var(--pulse-rose); }
+  .pulse-rose-bg-color { background: var(--pulse-rose); }
+  .pulse-rose-bg-soft-color { background: var(--pulse-rose-soft); }
+  .pulse-rose-border { border-color: var(--pulse-rose); }
+  .font-mono-pulse { font-family: var(--pulse-mono); font-feature-settings: 'tnum' 1; }
+  .font-serif-pulse { font-family: var(--pulse-serif); }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--pulse-border-strong); border-radius: 3px; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--pulse-ink-3); }
+
+  .tracking-tight-mono { letter-spacing: 0.06em; }
+  .tracking-wide-mono  { letter-spacing: 0.16em; }
+
+  /* ─── Motion tokens ─── */
+  --motion-easing: cubic-bezier(0.16, 1, 0.3, 1);
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 280ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes scaleIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+  .scale-in { animation: scaleIn 220ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.85); } }
+  .pulse-dot-anim { animation: pulseDot 1.6s ease-in-out infinite; }
+  @keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
+  .backdrop-in { animation: backdropIn 200ms ease; }
+
+  /* ─── Sidecar slide-in/out — the SPEC animation ─── */
+  /* Sidecar mount/unmount must use the .sidecar-anchor + .sidecar-open class
+     toggle pattern. Implementation: keep the sidecar element mounted between
+     reply targets, toggle .sidecar-open to drive the transform/opacity.
+     This is the exact transition the builder must replicate. */
+  .sidecar-anchor {
+    position: absolute; top: 0; right: 0; bottom: 0;
+    width: 540px;
+    transform: translateX(100%);
+    opacity: 0;
+    transition:
+      transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity  240ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
+    pointer-events: none;
+    z-index: 25;
+  }
+  .sidecar-anchor.sidecar-open {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* The viewer-area shrinks its right padding while sidecar is open so content
+     doesn't get hidden behind the rail. */
+  .viewer-area { transition: padding-right 320ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+  /* Focal Canvas fade-in (fullscreen takeover) */
+  .focal-anchor {
+    position: absolute; inset: 0;
+    opacity: 0;
+    transform: scale(0.985);
+    transition:
+      transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity  240ms cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    z-index: 30;
+  }
+  .focal-anchor.focal-open {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sidecar-anchor, .focal-anchor { transition: opacity 160ms ease, transform 0ms !important; }
+  }
+
+  /* ─── AI provenance chip ─── */
+  .ai-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px;
+    background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+    font-family: var(--pulse-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; line-height: 1;
+  }
+  .ai-chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+  .ai-chip.muted    { background: var(--pulse-surface-raised); color: var(--pulse-ink-2); }
+  .ai-chip.positive { background: rgba(16, 185, 129, 0.12); color: #047857; }
+  html[data-theme='dark'] .ai-chip.positive { color: #34d399; }
+
+  /* ─── Keycap ─── */
+  .keycap {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 4px; border: 1px solid var(--pulse-border-strong);
+    background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
+    font-family: var(--pulse-mono); font-size: 10px; line-height: 1;
+  }
+
+  /* ─── Playground chrome ─── */
+  .pg-bar  { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); }
+  html[data-theme='light'] .pg-bar { background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent); }
+  .pg-pill { transition: background 180ms, color 180ms; }
+  .pg-pill[data-active='true'] { background: var(--pulse-rose); color: white; }
+  .pg-pill:not([data-active='true']):hover { background: var(--pulse-surface-raised); }
+
+  /* ─── Shared composer atoms ─── */
+  .field-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--pulse-border);
+  }
+  .field-label {
+    font-family: var(--pulse-mono); font-size: 10px; letter-spacing: 0.16em;
+    color: var(--pulse-ink-3); text-transform: uppercase;
+    min-width: 32px;
+  }
+  .field-input {
+    flex: 1; background: transparent; outline: none;
+    color: var(--pulse-ink); font-size: 14px;
+    font-family: var(--pulse-font);
+  }
+  .field-input::placeholder { color: var(--pulse-ink-3); }
+
+  .person-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 4px 10px 4px 4px; border-radius: 999px;
+    background: var(--pulse-surface-raised); color: var(--pulse-ink);
+    font-size: 12.5px; font-weight: 500;
+  }
+  .person-chip .x {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 999px;
+    color: var(--pulse-ink-3);
+  }
+  .person-chip .x:hover { color: var(--pulse-rose); }
+
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 8px;
+    color: var(--pulse-ink-3); transition: background 160ms, color 160ms;
+  }
+  .icon-btn:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
+  .icon-btn.active { background: var(--pulse-rose-soft); color: var(--pulse-coral-fg); }
+
+  .send-pill {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 9px 16px 9px 14px; border-radius: 10px;
+    background: var(--pulse-rose); color: white; font-size: 13px; font-weight: 600;
+    box-shadow: 0 6px 18px var(--pulse-rose-glow), 0 0 0 1px rgba(255,255,255,0.06) inset;
+    transition: transform 180ms, box-shadow 180ms;
+  }
+  .send-pill:hover { transform: translateY(-1px); box-shadow: 0 10px 24px var(--pulse-rose-glow), 0 0 0 1px rgba(255,255,255,0.10) inset; }
+  .send-pill .kbd-hint {
+    display: inline-flex; align-items: center; gap: 2px;
+    padding: 2px 6px; border-radius: 4px;
+    background: rgba(255,255,255,0.18); color: rgba(255,255,255,0.95);
+    font-family: var(--pulse-mono); font-size: 9.5px; letter-spacing: 0.08em;
+  }
+
+  .quiet-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 11px; border-radius: 8px;
+    color: var(--pulse-ink-2); font-size: 12.5px; font-weight: 500;
+    transition: background 160ms, color 160ms;
+  }
+  .quiet-btn:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
+
+  /* ─── Focal Canvas (NEW MESSAGE) styles ─── */
+  .editorial-subject {
+    font-family: var(--pulse-serif); font-weight: 500;
+    font-size: 28px; line-height: 1.15; letter-spacing: -0.01em;
+    color: var(--pulse-ink);
+    background: transparent; outline: none; border: 0;
+    width: 100%;
+  }
+  .editorial-subject::placeholder { color: var(--pulse-ink-3); font-style: italic; }
+
+  .compose-body {
+    width: 100%; background: transparent; outline: none; border: 0; resize: none;
+    color: var(--pulse-ink); font-size: 15px; line-height: 1.7;
+    font-family: var(--pulse-font);
+  }
+  .compose-body::placeholder { color: var(--pulse-ink-3); }
+  .smart-ghost { color: var(--pulse-ink-3); font-style: italic; }
+  .smart-ghost::before { content: '↳ '; opacity: 0.6; }
+
+  .mono-label {
+    font-family: var(--pulse-mono); font-size: 10px; letter-spacing: 0.16em;
+    color: var(--pulse-ink-3); text-transform: uppercase;
+  }
+
+  .ai-rail-card {
+    border: 1px solid var(--pulse-border);
+    border-radius: 14px; padding: 14px;
+    background: var(--pulse-surface);
+    transition: border-color 200ms, transform 200ms, box-shadow 200ms;
+  }
+  .ai-rail-card:hover { border-color: var(--pulse-border-strong); transform: translateY(-1px); }
+  .ai-rail-card.coral {
+    background: linear-gradient(160deg, var(--pulse-rose-soft), transparent 65%);
+    border-color: color-mix(in oklab, var(--pulse-rose) 30%, transparent);
+  }
+  .ai-rail-action {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-radius: 8px;
+    color: var(--pulse-ink-2); font-size: 13px;
+    transition: background 160ms;
+  }
+  .ai-rail-action:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
+  .ai-rail-action .meta {
+    font-family: var(--pulse-mono); font-size: 10px;
+    color: var(--pulse-ink-3); letter-spacing: 0.08em;
+  }
+
+  /* ─── Sidecar (REPLY) styles ─── */
+  .sidecar {
+    height: 100%; display: flex; flex-direction: column;
+    border-left: 1px solid var(--pulse-border);
+    background: var(--pulse-canvas-soft);
+    box-shadow: -24px 0 60px rgba(0,0,0,0.10);
+  }
+  html[data-theme='dark'] .sidecar {
+    box-shadow: -24px 0 60px rgba(0,0,0,0.50), -1px 0 0 0 rgba(255,255,255,0.04);
+  }
+  .sidecar-chrome {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid var(--pulse-border);
+    background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent);
+    flex: none;
+  }
+  html[data-theme='dark'] .sidecar-chrome { background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); }
+
+  .suggested-card {
+    margin: 12px 14px;
+    border-radius: 14px; padding: 12px 14px;
+    background: linear-gradient(160deg, var(--pulse-rose-soft), transparent 65%);
+    border: 1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border));
+  }
+
+  .toggle-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 999px;
+    border: 1px solid var(--pulse-border);
+    color: var(--pulse-ink-3); font-size: 11.5px;
+  }
+  .toggle-pill.on {
+    background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+    border-color: color-mix(in oklab, var(--pulse-rose) 30%, transparent);
+  }
+
+  /* ─── Inbox list + Viewer (default state — chrome around composer) ─── */
+  .inbox-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border-bottom: 1px solid var(--pulse-border);
+    cursor: pointer; transition: background 160ms;
+  }
+  .inbox-row:hover { background: var(--pulse-surface-raised); }
+  .inbox-row.active { background: var(--pulse-rose-bg-soft-color); }
+
+  /* ─── Demo HUD ─── */
+  .demo-hud {
+    position: absolute; bottom: 14px; left: 14px; z-index: 50;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 10px; border-radius: 999px;
+    background: var(--pulse-surface); border: 1px solid var(--pulse-border-strong);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.08);
+    font-size: 11px; color: var(--pulse-ink-2);
+    font-family: var(--pulse-mono); letter-spacing: 0.08em;
+  }
+  .demo-hud .dot {
+    width: 6px; height: 6px; border-radius: 999px;
+    background: var(--pulse-rose); animation: pulseDot 1.6s ease-in-out infinite;
+  }
+</style>
+</head>
+<body class="overflow-hidden">
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+/* ════════════════════════════════════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════════════════════════════════════ */
+const AVATAR_PALETTE = ['#6366f1','#8b5cf6','#d946ef','#ec4899','#0ea5e9','#06b6d4','#14b8a6','#64748b'];
+function colorForId(id = '') {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+}
+function initials(name = '') {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || '?';
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   MOCK DATA
+   ════════════════════════════════════════════════════════════════════════ */
+const REPLY_TO = {
+  from_name:  'Maria Schaefer',
+  from_email: 'maria@gradient.studio',
+  subject:    'Q4 deck — final pass',
+  received_at: 'Wed, May 27 · 9:14 AM',
+  snippet:    "Hey Frank — almost there on the deck. One last revision request from Theo: he wants the YoY headline on slide 4 to lead, not the methodology. Can you push a v3 with that swap by EOD tomorrow? Happy to hop on a quick call if it's faster.",
+};
+const AI_DRAFT_TEXT = "Maria — got it. I'll push v3 by EOD tomorrow with the YoY headline leading slide 4 and the methodology moved to the footnote. Quick call only needed if you want to walk through the March variance footnote; otherwise I'll just ship.\n\nFrank";
+const SMART_COMPOSE_TAIL = "Anything specific you want me to pull out for Theo?";
+
+const INBOX = [
+  { id: 'e1', name: 'Maria Schaefer',     subj: 'Q4 deck — final pass',          snip: 'One last revision request from Theo…',         time: '9:14 AM' },
+  { id: 'e2', name: 'Sarah Chen',         subj: 'NDA countersigned',              snip: 'All good on our side. Page 2 §4.3 looks…',     time: '8:02 AM' },
+  { id: 'e3', name: 'Jaylen Park',        subj: 'Empty-state coral CTA',          snip: 'Spec\'d it as discussed — review?',             time: 'Yesterday' },
+  { id: 'e4', name: 'Theo Bridgewater',   subj: 'Re: Re: Re: Deck draft',         snip: 'Following up again — when can I expect…',      time: 'Yesterday' },
+  { id: 'e5', name: 'Priya Devarajan',    subj: 'intro: Maya @ Lacoste',          snip: 'Frank, Maya is exploring early stage…',         time: 'Mon' },
+  { id: 'e6', name: 'Mom',                subj: 'Sunday dinner?',                  snip: 'You free? Bring Sarah if she wants…',           time: 'Sat' },
+];
+
+/* ════════════════════════════════════════════════════════════════════════
+   ICONS
+   ════════════════════════════════════════════════════════════════════════ */
+function Icon({ name, className = 'w-4 h-4' }) {
+  const c = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  switch (name) {
+    case 'mail':     return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>;
+    case 'inbox':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>;
+    case 'send':     return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
+    case 'pen':      return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>;
+    case 'reply':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>;
+    case 'sparkles': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>;
+    case 'clock':    return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>;
+    case 'paperclip':return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>;
+    case 'lock':     return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
+    case 'mic':      return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg>;
+    case 'wand':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="m3 21 18-18"/><path d="M14 4l3 3M5 13l3 3M9 9l1.5 1.5M19 8l1.5 1.5"/></svg>;
+    case 'gauge':    return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="9"/><path d="M12 12l4-3"/></svg>;
+    case 'file':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>;
+    case 'video':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="m23 7-7 5 7 5V7Z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>;
+    case 'bold':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6Z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6Z"/></svg>;
+    case 'italic':   return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>;
+    case 'underline':return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M6 4v8a6 6 0 0 0 12 0V4"/><line x1="4" y1="20" x2="20" y2="20"/></svg>;
+    case 'link':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>;
+    case 'trash':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+    case 'save':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
+    case 'x':        return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+    case 'check':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="20 6 9 17 4 12"/></svg>;
+    case 'chevD':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="6 9 12 15 18 9"/></svg>;
+    case 'chevR':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 6 15 12 9 18"/></svg>;
+    case 'chevL':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="15 6 9 12 15 18"/></svg>;
+    case 'expand':   return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>;
+    case 'collapse': return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/></svg>;
+    case 'sun':      return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>;
+    case 'moon':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>;
+    case 'logo':     return <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h3l2-7 4 14 2-7h7"/></svg>;
+    case 'dot':      return <svg viewBox="0 0 24 24" className={className}><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>;
+    case 'settings': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06A2 2 0 1 1 4.14 16.93l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9.4a1.7 1.7 0 0 0-.34-1.87l-.06-.06A2 2 0 1 1 7.07 4.64l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1.03Z"/></svg>;
+    case 'panel':    return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="14" y1="3" x2="14" y2="21"/></svg>;
+    case 'live':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="7"/></svg>;
+    case 'calendar': return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8"  y1="2" x2="8"  y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+    case 'user':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>;
+    case 'task':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>;
+    case 'shorten':  return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/></svg>;
+    case 'elaborate':return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/></svg>;
+    case 'formal':   return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="8" r="3"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>;
+    case 'spell':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="m6 16 6-12 6 12"/><line x1="8" y1="12" x2="16" y2="12"/></svg>;
+    case 'edit':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"/><polygon points="18 2 22 6 12 16 8 16 8 12 18 2"/></svg>;
+    default: return null;
+  }
+}
+
+function Avatar({ name, size = 36 }) {
+  return (
+    <div className="rounded-full flex items-center justify-center text-white font-semibold shrink-0"
+      style={{ width: size, height: size, fontSize: size * 0.34, background: colorForId(name) }}>
+      {initials(name)}
+    </div>
+  );
+}
+function AiChip({ variant = 'summary', children }) {
+  const cls = variant === 'muted' ? 'ai-chip muted'
+            : variant === 'positive' ? 'ai-chip positive'
+            : 'ai-chip';
+  return <span className={cls}>{children}</span>;
+}
+function Keycap({ children }) { return <kbd className="keycap">{children}</kbd>; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   PULSE SIDEBAR
+   ════════════════════════════════════════════════════════════════════════ */
+function PulseSidebar({ theme, onToggleTheme }) {
+  const groups = [
+    { group: 'Overview',      rows: [{ icon: 'inbox', label: 'Dashboard' }] },
+    { group: 'Communication', rows: [
+        { icon: 'inbox', label: 'Messages' },
+        { icon: 'mail',  label: 'Email', active: true },
+        { icon: 'live',  label: 'Relay' },
+        { icon: 'video', label: 'Glimpse' },
+      ] },
+    { group: 'Work & People', rows: [
+        { icon: 'calendar', label: 'Calendar' },
+        { icon: 'video',    label: 'Meetings' },
+        { icon: 'user',     label: 'Contacts' },
+        { icon: 'task',     label: 'Decisions & Tasks' },
+      ] },
+  ];
+  return (
+    <aside className="h-full w-[232px] shrink-0 flex flex-col border-r pulse-border-color" style={{ background: 'var(--pulse-sidebar-bg)' }}>
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center pulse-rose-bg-color text-white shrink-0"><Icon name="logo" className="w-5 h-5"/></div>
+        <div className="leading-tight">
+          <div className="text-lg font-semibold pulse-rose-color">Pulse</div>
+          <div className="text-[10px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">JCK</div>
+        </div>
+        <div className="ml-auto flex items-center gap-2 pulse-ink-3-color">
+          <button><Icon name="settings" className="w-4 h-4"/></button>
+        </div>
+      </div>
+      <div className="mx-3 mb-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--pulse-surface-raised)' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md pulse-rose-bg-color"/>
+          <span className="text-sm font-medium pulse-ink-color">My Workspace</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse pulse-coral-bg-color pulse-coral-fg-color tracking-tight-mono">OWNER</span>
+          <Icon name="chevD" className="w-3 h-3 pulse-ink-3-color"/>
+        </div>
+      </div>
+      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        {groups.map(grp => (
+          <div key={grp.group} className="mb-3">
+            <div className="flex items-center gap-2 px-2 py-1.5 text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color">
+              <Icon name="dot" className="w-1.5 h-1.5"/><span>{grp.group.toUpperCase()}</span>
+            </div>
+            {grp.rows.map(r => (
+              <button key={r.label} className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition ${r.active ? 'pulse-rose-color pulse-rose-bg-soft-color font-medium' : 'pulse-ink-2-color hover:pulse-ink-color'}`}>
+                <Icon name={r.icon} className="w-4 h-4 opacity-90"/><span>{r.label}</span>
+              </button>
+            ))}
+          </div>
+        ))}
+      </nav>
+      <div className="px-3 pb-2">
+        <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl pulse-rose-bg-soft-color">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="sparkles" className="w-4 h-4"/></div>
+            <span className="text-sm font-medium pulse-rose-color">Pulse AI</span>
+          </div>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono-pulse pulse-ink-3-color border pulse-border-color">Ctrl·/</span>
+        </button>
+      </div>
+      <div className="border-t pulse-border-color px-3 py-2 space-y-1">
+        <button onClick={onToggleTheme} className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm pulse-ink-2-color hover:pulse-ink-color">
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4"/><span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+        </button>
+        <div className="mt-2 pt-2 border-t pulse-border-color flex items-center gap-2.5 px-2 py-1">
+          <Avatar name="Frank Richard Messana" size={28}/>
+          <div className="leading-tight">
+            <div className="text-xs font-medium pulse-ink-color">Frank Messana</div>
+            <div className="text-[10px] pulse-ink-3-color truncate max-w-[140px]">jehovahsneaky83@gmail.com</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   INBOX LIST (default chrome)
+   ════════════════════════════════════════════════════════════════════════ */
+function InboxList({ activeId, onSelect }) {
+  return (
+    <div className="h-full overflow-y-auto pulse-bg-soft">
+      <div className="px-4 py-3 flex items-center justify-between border-b pulse-border-color sticky top-0 pulse-bg-soft z-10">
+        <span className="mono-label">INBOX · 42</span>
+        <button className="icon-btn"><Icon name="settings" className="w-3.5 h-3.5"/></button>
+      </div>
+      {INBOX.map(e => (
+        <div key={e.id} onClick={() => onSelect(e.id)} className={`inbox-row ${e.id === activeId ? 'active' : ''}`}>
+          <Avatar name={e.name} size={28}/>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className={`text-[12.5px] truncate ${e.id === activeId ? 'font-semibold pulse-ink-color' : 'pulse-ink-color'}`}>{e.name}</span>
+              <span className="text-[10px] font-mono-pulse pulse-ink-3-color shrink-0">{e.time}</span>
+            </div>
+            <div className="text-[12px] pulse-ink-color truncate">{e.subj}</div>
+            <div className="text-[11.5px] pulse-ink-3-color truncate">{e.snip}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   VIEWER PANE (default chrome — shows the email; Reply triggers sidecar)
+   ════════════════════════════════════════════════════════════════════════ */
+function ViewerPane({ onReply, sidecarOpen }) {
+  return (
+    <div className="h-full overflow-y-auto pulse-bg viewer-area" style={{ paddingRight: sidecarOpen ? 0 : 0 }}>
+      <div className="px-10 pt-8 pb-10 max-w-[760px]">
+        <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color mb-3">VIEWING · WED MAY 27 · 9:14 AM</div>
+        <div className="flex items-center gap-3 mb-5">
+          <Avatar name={REPLY_TO.from_name} size={40}/>
+          <div className="leading-tight">
+            <div className="text-[15px] font-semibold pulse-ink-color">{REPLY_TO.from_name}</div>
+            <div className="text-[12px] pulse-ink-3-color">to me · {REPLY_TO.from_email}</div>
+          </div>
+          {!sidecarOpen && (
+            <button
+              onClick={onReply}
+              className="ml-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-lg pulse-rose-bg-color text-white text-[13px] font-medium"
+              title="Reply (R)"
+            >
+              <Icon name="reply" className="w-3.5 h-3.5"/>Reply<Keycap>R</Keycap>
+            </button>
+          )}
+        </div>
+        <h1 className="font-serif-pulse text-[26px] leading-tight font-medium pulse-ink-color mb-4">{REPLY_TO.subject}</h1>
+        <div className="text-[14.5px] pulse-ink-color leading-[1.75]">
+          <p className="mb-4">Hey Frank — almost there on the deck.</p>
+          <p className="mb-4">One last revision request from Theo: he wants the YoY headline on slide 4 to lead, not the methodology. Can you push a v3 with that swap by EOD tomorrow?</p>
+          <p className="mb-4">Happy to hop on a quick call if it's faster.</p>
+          <p className="pulse-ink-2-color">— Maria</p>
+        </div>
+        <div className="mt-8 flex items-center gap-2 text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">
+          <AiChip variant="muted">SIGNAL</AiChip>
+          <span>HIGH · DEADLINE TOMORROW</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SIDECAR — REPLY composer (Path C)
+   Mounted permanently; toggled visible via .sidecar-open class.
+   ════════════════════════════════════════════════════════════════════════ */
+function Sidecar({ open, onClose, onPromoteFull }) {
+  const [bodyText, setBodyText] = useState(AI_DRAFT_TEXT);
+  const [aiAccepted, setAiAccepted] = useState(false);
+  const [confidential, setConfidential] = useState(false);
+
+  // Reset body when sidecar closes
+  useEffect(() => { if (!open) { /* spec: builder should NOT clear text on close; it's a stub here */ } }, [open]);
+
+  return (
+    <div className={`sidecar-anchor ${open ? 'sidecar-open' : ''}`} aria-hidden={!open}>
+      <div className="sidecar">
+        {/* Chrome */}
+        <div className="sidecar-chrome">
+          <span className="mono-label pulse-rose-color">REPLYING · IN CONTEXT</span>
+          <span className="text-[11px] pulse-ink-3-color">·</span>
+          <span className="text-[11px] pulse-ink-3-color">to {REPLY_TO.from_name}</span>
+          <div className="ml-auto flex items-center gap-1">
+            <button onClick={onPromoteFull} className="icon-btn" title="Expand to fullscreen (⌘⇧↵)"><Icon name="expand" className="w-3.5 h-3.5"/></button>
+            <button onClick={onClose} className="icon-btn" title="Close (Esc)"><Icon name="x" className="w-3.5 h-3.5"/></button>
+          </div>
+        </div>
+
+        {/* AI suggested-reply card (hidden after Accept) */}
+        {!aiAccepted && (
+          <div className="suggested-card">
+            <div className="flex items-center gap-2 mb-2">
+              <AiChip>Suggested reply</AiChip>
+              <span className="text-[11px] pulse-ink-3-color">based on Maria's note</span>
+            </div>
+            <div className="text-[13px] pulse-ink-color leading-relaxed italic whitespace-pre-wrap">"{AI_DRAFT_TEXT}"</div>
+            <div className="mt-3 flex items-center gap-2">
+              <button onClick={() => setAiAccepted(true)} className="text-[12px] px-3 py-1.5 rounded-md pulse-rose-bg-color text-white font-medium flex items-center gap-1.5">
+                <Icon name="check" className="w-3.5 h-3.5"/>Accept
+              </button>
+              <button className="text-[12px] px-3 py-1.5 rounded-md pulse-surface-raised pulse-ink-2-color">Edit first</button>
+              <button className="text-[12px] px-3 py-1.5 rounded-md pulse-ink-3-color hover:pulse-ink-color">Regenerate</button>
+              <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color">⌘J</span>
+            </div>
+          </div>
+        )}
+
+        {/* Recipient + Subject */}
+        <div className="px-5 pt-3">
+          <div className="field-row">
+            <span className="field-label">To</span>
+            <span className="person-chip">
+              <Avatar name={REPLY_TO.from_name} size={20}/>
+              {REPLY_TO.from_name}
+              <span className="x"><Icon name="x" className="w-3 h-3"/></span>
+            </span>
+            <button className="quiet-btn ml-auto">Cc</button>
+            <button className="quiet-btn">Bcc</button>
+          </div>
+          <div className="field-row">
+            <span className="field-label">Re</span>
+            <input className="field-input" defaultValue={REPLY_TO.subject}/>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 pt-3 pb-3">
+          {aiAccepted && (
+            <div className="mb-3 flex items-center gap-2">
+              <AiChip variant="positive">Accepted draft</AiChip>
+              <span className="text-[11px] pulse-ink-3-color">edit freely below</span>
+              <button onClick={() => setAiAccepted(false)} className="ml-auto text-[11px] pulse-rose-color hover:underline">Reopen suggestion</button>
+            </div>
+          )}
+          <textarea
+            className="compose-body min-h-[200px]"
+            rows={10}
+            value={bodyText}
+            onChange={e => setBodyText(e.target.value)}
+            placeholder="Reply to Maria…"
+          />
+          <div className="smart-ghost text-[14px] leading-7 mt-1">{SMART_COMPOSE_TAIL} <span className="ml-2"><Keycap>Tab</Keycap></span></div>
+        </div>
+
+        {/* Action bar */}
+        <div className="border-t pulse-border-color px-4 py-3 flex items-center gap-2 pulse-bg flex-none">
+          <button onClick={onClose} className="send-pill">
+            <Icon name="send" className="w-3.5 h-3.5"/>
+            <span>Send</span>
+            <span className="kbd-hint">⌘↵</span>
+          </button>
+          <button className="quiet-btn"><Icon name="clock" className="w-3.5 h-3.5"/><span>Schedule</span></button>
+
+          <div className="ml-2 border-l pulse-border-color pl-2 flex items-center gap-0.5">
+            <button className="icon-btn" title="Enhance"><Icon name="wand" className="w-3.5 h-3.5"/></button>
+            <button className="icon-btn" title="Tone check"><Icon name="gauge" className="w-3.5 h-3.5"/></button>
+            <button className="icon-btn" title="Templates"><Icon name="file" className="w-3.5 h-3.5"/></button>
+          </div>
+
+          <div className="ml-2 border-l pulse-border-color pl-2 flex items-center gap-0.5">
+            <button className="icon-btn" title="Attach"><Icon name="paperclip" className="w-3.5 h-3.5"/></button>
+            <button className="icon-btn" title="Insert Meet"><Icon name="video" className="w-3.5 h-3.5"/></button>
+            <button className="icon-btn" title="Mic"><Icon name="mic" className="w-3.5 h-3.5"/></button>
+            <button
+              onClick={() => setConfidential(c => !c)}
+              className={`icon-btn ${confidential ? 'active' : ''}`}
+              title="Confidential"
+            ><Icon name="lock" className="w-3.5 h-3.5"/></button>
+          </div>
+
+          <div className="ml-auto flex items-center gap-2 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">
+            <span>SAVED 07:46 PM</span>
+            <button className="icon-btn" title="Discard"><Icon name="trash" className="w-3.5 h-3.5"/></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   FOCAL CANVAS — NEW MESSAGE / FORWARD / Sidecar-promoted-to-fullscreen
+   Fullscreen takeover. Returns to inbox on Discard or Esc.
+   ════════════════════════════════════════════════════════════════════════ */
+function FocalCanvas({ open, onClose, mode = 'new', seed }) {
+  const isReplyPromoted = mode === 'reply-full';
+  const [bodyText, setBodyText] = useState(isReplyPromoted ? (seed?.body ?? AI_DRAFT_TEXT) : '');
+  const [subject, setSubject] = useState(isReplyPromoted ? `Re: ${seed?.subject ?? ''}` : '');
+  const [toValue, setToValue] = useState(isReplyPromoted ? seed?.toName : '');
+  const [confidential, setConfidential] = useState(false);
+
+  return (
+    <div className={`focal-anchor ${open ? 'focal-open' : ''}`} aria-hidden={!open}>
+      <div className="absolute inset-0 backdrop-in" style={{ background: 'rgba(0,0,0,0.40)', backdropFilter: 'blur(8px)' }} onClick={onClose}/>
+      <div className="absolute inset-3 rounded-2xl border pulse-border-color pulse-bg overflow-hidden flex flex-col" style={{ boxShadow: 'var(--pulse-shadow-modal)' }}>
+
+        {/* Header (compact — most surface goes to writing) */}
+        <div className="flex items-center gap-3 px-5 py-3 border-b pulse-border-color flex-none">
+          <Icon name="pen" className="w-4 h-4 pulse-rose-color"/>
+          <span className="mono-label pulse-rose-color">{isReplyPromoted ? 'REPLY · FULLSCREEN' : 'NEW MESSAGE'}</span>
+          <span className="text-[11px] pulse-ink-3-color ml-2">DRAFT · SAVED 07:46 PM</span>
+          <div className="ml-auto flex items-center gap-1">
+            {isReplyPromoted && (
+              <button onClick={onClose} className="icon-btn" title="Return to sidecar"><Icon name="collapse" className="w-3.5 h-3.5"/></button>
+            )}
+            <button onClick={onClose} className="icon-btn" title="Close (Esc)"><Icon name="x" className="w-3.5 h-3.5"/></button>
+          </div>
+        </div>
+
+        {/* Two-column: canvas + AI rail */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Editorial column */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-[760px] w-full mx-auto px-10 pt-10 pb-32">
+              {/* To */}
+              <div className="field-row">
+                <span className="field-label">To</span>
+                {isReplyPromoted ? (
+                  <span className="person-chip">
+                    <Avatar name={seed?.toName ?? ''} size={22}/>
+                    {seed?.toName}
+                    <span className="x"><Icon name="x" className="w-3 h-3"/></span>
+                  </span>
+                ) : (
+                  <input
+                    className="field-input"
+                    placeholder="Recipients"
+                    value={toValue}
+                    onChange={e => setToValue(e.target.value)}
+                  />
+                )}
+                <button className="quiet-btn ml-auto">Cc</button>
+                <button className="quiet-btn">Bcc</button>
+              </div>
+
+              {/* Subject as editorial serif */}
+              <div className="mt-6 mb-3">
+                <div className="mono-label mb-2">SUBJECT</div>
+                <input
+                  className="editorial-subject"
+                  placeholder="What's this about?"
+                  value={subject}
+                  onChange={e => setSubject(e.target.value)}
+                />
+              </div>
+
+              {isReplyPromoted && (
+                <div className="flex items-center gap-2 mb-4">
+                  <AiChip>Drafted by Claude</AiChip>
+                  <span className="text-[11px] pulse-ink-3-color">·  based on Maria's note  ·</span>
+                  <button className="text-[11px] pulse-rose-color hover:underline">regenerate</button>
+                  <span className="text-[11px] pulse-ink-3-color">·</span>
+                  <button className="text-[11px] pulse-ink-3-color hover:pulse-ink-color">discard draft</button>
+                </div>
+              )}
+
+              {/* Body */}
+              <textarea
+                className="compose-body min-h-[280px]"
+                rows={14}
+                value={bodyText}
+                onChange={e => setBodyText(e.target.value)}
+                placeholder={isReplyPromoted ? 'Reply to Maria…' : 'Compose your email…'}
+              />
+              {isReplyPromoted && (
+                <div className="smart-ghost text-[14.5px] leading-7 mt-1">{SMART_COMPOSE_TAIL} <span className="ml-2"><Keycap>Tab</Keycap></span></div>
+              )}
+
+              {/* Quoted reply (collapsed) — only if replying */}
+              {isReplyPromoted && (
+                <details className="mt-8 group">
+                  <summary className="cursor-pointer flex items-center gap-2 mono-label hover:pulse-ink-2-color">
+                    <Icon name="chevR" className="w-3 h-3 group-open:hidden"/>
+                    <Icon name="chevD" className="w-3 h-3 hidden group-open:inline"/>
+                    <span>SHOW QUOTED REPLY</span>
+                  </summary>
+                  <div className="mt-3 text-[13px] pulse-ink-2-color italic" style={{ borderLeft: '2px solid var(--pulse-border-strong)', padding: '8px 12px', background: 'var(--pulse-canvas-soft)', borderRadius: '0 8px 8px 0' }}>
+                    On {REPLY_TO.received_at}, {REPLY_TO.from_name} wrote:<br/><br/>
+                    {REPLY_TO.snippet}
+                  </div>
+                </details>
+              )}
+            </div>
+          </div>
+
+          {/* Right rail — AI cluster */}
+          <aside className="w-[340px] shrink-0 border-l pulse-border-color overflow-y-auto px-5 py-6 space-y-4 pulse-bg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Icon name="sparkles" className="w-4 h-4 pulse-rose-color"/>
+                <span className="mono-label pulse-rose-color">PULSE AI · ASSIST</span>
+              </div>
+              <button className="icon-btn"><Icon name="chevR" className="w-3.5 h-3.5"/></button>
+            </div>
+
+            <div className="ai-rail-card coral">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-semibold pulse-ink-color">Draft for me</span>
+                <Keycap>⌘J</Keycap>
+              </div>
+              <div className="text-[12.5px] pulse-ink-2-color leading-relaxed mb-3">
+                Describe what you want to say — Claude drafts it in your voice using {isReplyPromoted ? "Maria's note" : 'thread + calendar context'}.
+              </div>
+              <input
+                className="w-full px-2.5 py-2 rounded-md text-[12.5px] pulse-bg border pulse-border-color outline-none"
+                placeholder="e.g. accept, push back on timeline, ask for a call…"
+              />
+              <div className="mt-3 flex items-center gap-1.5">
+                {['Warm','Direct','Formal','Concise'].map((t,i) => (
+                  <button key={t} className={`text-[11px] px-2 py-1 rounded-md ${i===0 ? 'pulse-rose-bg-color text-white' : 'pulse-surface-raised pulse-ink-2-color'}`}>{t}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="ai-rail-card">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-semibold pulse-ink-color">Enhance current draft</span>
+              </div>
+              <div className="space-y-0.5">
+                <button className="ai-rail-action w-full"><span className="flex items-center gap-2"><Icon name="shorten"   className="w-3.5 h-3.5"/>Shorten</span><span className="meta">⌘1</span></button>
+                <button className="ai-rail-action w-full"><span className="flex items-center gap-2"><Icon name="elaborate" className="w-3.5 h-3.5"/>Elaborate</span><span className="meta">⌘2</span></button>
+                <button className="ai-rail-action w-full"><span className="flex items-center gap-2"><Icon name="formal"    className="w-3.5 h-3.5"/>Make formal</span><span className="meta">⌘3</span></button>
+                <button className="ai-rail-action w-full"><span className="flex items-center gap-2"><Icon name="spell"     className="w-3.5 h-3.5"/>Fix grammar</span><span className="meta">⌘G</span></button>
+              </div>
+            </div>
+
+            <div className="ai-rail-card">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-semibold pulse-ink-color">Tone check</span>
+                <AiChip variant="positive">Warm</AiChip>
+              </div>
+              <div className="text-[12px] pulse-ink-2-color leading-relaxed">
+                Reads natural and direct. {isReplyPromoted && "One nudge — \"I'll just ship\" may sound presumptive given Theo's sign-off involvement."}
+              </div>
+              <button className="mt-3 text-[11px] pulse-rose-color hover:underline">Re-check</button>
+            </div>
+
+            <div className="ai-rail-card">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-semibold pulse-ink-color">Context Claude saw</span>
+              </div>
+              <div className="space-y-1.5 text-[12px] pulse-ink-2-color">
+                <div className="flex items-center gap-2"><Icon name="mail"     className="w-3.5 h-3.5 pulse-ink-3-color"/><span>{isReplyPromoted ? "Maria's last 6 emails (3 threads)" : 'Recipient inbox history'}</span></div>
+                <div className="flex items-center gap-2"><Icon name="calendar" className="w-3.5 h-3.5 pulse-ink-3-color"/><span>Tomorrow's calendar — clear after 3pm</span></div>
+                <div className="flex items-center gap-2"><Icon name="task"     className="w-3.5 h-3.5 pulse-ink-3-color"/><span>"Q4 deck v3" task — due Thu</span></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        {/* Bottom action bar */}
+        <div className="px-6 py-3.5 border-t pulse-border-color pulse-bg flex items-center gap-3 flex-none">
+          <button onClick={onClose} className="send-pill">
+            <Icon name="send" className="w-4 h-4"/><span>Send</span><span className="kbd-hint">⌘↵</span>
+          </button>
+          <button className="quiet-btn"><Icon name="clock" className="w-4 h-4"/><span>Schedule</span></button>
+          <button className="quiet-btn"><Icon name="save"  className="w-4 h-4"/><span>Save draft</span></button>
+
+          <div className="ml-6 flex items-center gap-1 border-l pulse-border-color pl-4">
+            <button className="icon-btn" title="Bold"><Icon name="bold" className="w-3.5 h-3.5"/></button>
+            <button className="icon-btn" title="Italic"><Icon name="italic" className="w-3.5 h-3.5"/></button>
+            <button className="icon-btn" title="Underline"><Icon name="underline" className="w-3.5 h-3.5"/></button>
+            <button className="icon-btn" title="Link"><Icon name="link" className="w-3.5 h-3.5"/></button>
+            <button className="icon-btn" title="Insert Meet"><Icon name="video" className="w-3.5 h-3.5"/></button>
+          </div>
+
+          <div className="ml-2 flex items-center gap-1 border-l pulse-border-color pl-3">
+            <button className="icon-btn" title="Attach file"><Icon name="paperclip" className="w-3.5 h-3.5"/></button>
+            <button className="icon-btn" title="Voice to text"><Icon name="mic" className="w-3.5 h-3.5"/></button>
+            <button
+              onClick={() => setConfidential(c => !c)}
+              className={`icon-btn ${confidential ? 'active' : ''}`}
+              title="Confidential mode"
+            ><Icon name="lock" className="w-3.5 h-3.5"/></button>
+            <button className="icon-btn" title="Templates"><Icon name="file" className="w-3.5 h-3.5"/></button>
+          </div>
+
+          <div className="ml-auto flex items-center gap-3">
+            <button onClick={onClose} className="icon-btn" title="Discard"><Icon name="trash" className="w-3.5 h-3.5"/></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   APP — orchestrates inbox + viewer + sidecar + focal canvas
+   ════════════════════════════════════════════════════════════════════════ */
+function App() {
+  const [theme, setTheme] = useState('dark');
+  const [activeId, setActiveId] = useState('e1');
+  const [sidecarOpen, setSidecarOpen] = useState(true);  // demo: pre-open so reviewers see the spec
+  const [focalOpen, setFocalOpen]     = useState(false);
+  const [focalMode, setFocalMode]     = useState('new'); // 'new' | 'reply-full'
+
+  useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
+  // Keyboard shortcuts (spec)
+  useEffect(() => {
+    function onKey(e) {
+      const isCmd = e.metaKey || e.ctrlKey;
+      // ⌘N — open Focal Canvas (new)
+      if (isCmd && e.key.toLowerCase() === 'n' && !focalOpen) {
+        e.preventDefault();
+        setFocalMode('new');
+        setFocalOpen(true);
+        return;
+      }
+      // R — open sidecar reply (only when no other input focused & nothing open)
+      if (!isCmd && e.key.toLowerCase() === 'r' && document.activeElement?.tagName === 'BODY' && !focalOpen) {
+        e.preventDefault();
+        setSidecarOpen(true);
+        return;
+      }
+      // Esc — close whichever is on top
+      if (e.key === 'Escape') {
+        if (focalOpen) { setFocalOpen(false); return; }
+        if (sidecarOpen) { setSidecarOpen(false); return; }
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [focalOpen, sidecarOpen]);
+
+  function openSidecar() { setSidecarOpen(true); }
+  function closeSidecar() { setSidecarOpen(false); }
+  function promoteSidecarToFull() {
+    // Sidecar slides closed, Focal opens in reply-full mode with seeded state
+    setSidecarOpen(false);
+    setTimeout(() => { setFocalMode('reply-full'); setFocalOpen(true); }, 180);
+  }
+  function openNewMessage() {
+    setFocalMode('new');
+    setFocalOpen(true);
+  }
+  function closeFocal() {
+    setFocalOpen(false);
+    // If we came from a sidecar promotion, re-open the sidecar
+    if (focalMode === 'reply-full') setTimeout(() => setSidecarOpen(true), 200);
+  }
+
+  return (
+    <div className="h-screen w-screen flex flex-col overflow-hidden pulse-bg">
+      {/* Playground bar */}
+      <div className="pg-bar flex items-center gap-3 px-4 py-2 border-b pulse-border-color shrink-0" style={{ height: 48 }}>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="pen" className="w-3.5 h-3.5"/></div>
+          <span className="text-sm font-semibold pulse-ink-color">Email Composer · FINAL</span>
+          <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">· LOCKED SPEC · BUILDER REFERENCE</span>
+        </div>
+        <div className="ml-6 flex items-center gap-1 p-0.5 rounded-lg pulse-surface-raised">
+          <button
+            onClick={openSidecar}
+            data-active={sidecarOpen && !focalOpen}
+            className="pg-pill px-3 py-1.5 rounded-md text-[12px] font-medium pulse-ink-2-color flex items-center gap-1.5"
+            title="Demo: open Reply sidecar (R)"
+          ><Icon name="panel" className="w-3.5 h-3.5"/><span>REPLY · Sidecar</span></button>
+          <button
+            onClick={openNewMessage}
+            data-active={focalOpen && focalMode === 'new'}
+            className="pg-pill px-3 py-1.5 rounded-md text-[12px] font-medium pulse-ink-2-color flex items-center gap-1.5"
+            title="Demo: open New Message (⌘N)"
+          ><Icon name="pen" className="w-3.5 h-3.5"/><span>NEW · Focal Canvas</span></button>
+        </div>
+        <div className="ml-auto flex items-center gap-2 text-[10px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">
+          <span>R = REPLY</span>
+          <span>·</span>
+          <span>⌘N = NEW</span>
+          <span>·</span>
+          <span>ESC = CLOSE</span>
+          <span>·</span>
+          <button onClick={toggleTheme} className="px-2.5 py-1.5 rounded-md flex items-center gap-1.5 hover:pulse-surface-raised">
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5"/>{theme === 'dark' ? 'LIGHT' : 'DARK'}
+          </button>
+        </div>
+      </div>
+
+      {/* Main shell */}
+      <div className="flex-1 flex overflow-hidden">
+        <PulseSidebar theme={theme} onToggleTheme={toggleTheme}/>
+        <main className="flex-1 overflow-hidden m-3 rounded-2xl border pulse-border-color pulse-bg-soft relative" style={{ boxShadow: 'var(--pulse-shadow-main)' }}>
+          {/* Default chrome: inbox list + viewer */}
+          <div className="absolute inset-0 grid grid-cols-[300px_1fr]">
+            <div className="border-r pulse-border-color overflow-hidden">
+              <InboxList activeId={activeId} onSelect={setActiveId}/>
+            </div>
+            <ViewerPane onReply={openSidecar} sidecarOpen={sidecarOpen}/>
+          </div>
+
+          {/* Sidecar — slides in from right */}
+          <Sidecar
+            open={sidecarOpen}
+            onClose={closeSidecar}
+            onPromoteFull={promoteSidecarToFull}
+          />
+
+          {/* Focal Canvas — fullscreen takeover */}
+          <FocalCanvas
+            open={focalOpen}
+            mode={focalMode}
+            seed={focalMode === 'reply-full' ? { toName: REPLY_TO.from_name, subject: REPLY_TO.subject, body: AI_DRAFT_TEXT } : null}
+            onClose={closeFocal}
+          />
+
+          {/* Demo HUD — small caption explaining what's on screen.
+              Hidden when Focal is open (Focal labels itself in its header). */}
+          {!focalOpen && (
+            <div className="demo-hud">
+              <span className="dot"/>
+              {sidecarOpen
+                ? <span>SIDECAR · REPLYING TO MARIA · ESC to close · ↗ to fullscreen</span>
+                : <span>DEFAULT · INBOX + VIEWER · press R to reply, ⌘N for new</span>}
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
