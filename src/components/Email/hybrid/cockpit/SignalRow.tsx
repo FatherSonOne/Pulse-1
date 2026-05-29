@@ -105,10 +105,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
           </div>
 
           {email.aiSummary && (
-            <div className="flex items-start gap-2">
-              <span className="mt-1 pulse-rose-color shrink-0">→</span>
-              <p className="text-[13px] pulse-ink-2-color leading-relaxed">{email.aiSummary}</p>
-            </div>
+            <p className="text-[13px] pulse-ink-2-color leading-relaxed">{email.aiSummary}</p>
           )}
 
           <div className="mt-2.5 flex items-center gap-2 flex-wrap">

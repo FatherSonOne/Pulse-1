@@ -249,7 +249,7 @@ html.dark .email-hybrid-shell .queue-pip.cleared { color: #34d399; }
 
 /* ─── Drafted-for-you rail cards ─── */
 .email-hybrid-shell .draft-card {
-  background: linear-gradient(160deg, var(--pulse-rose-soft), transparent 60%);
+  background: var(--pulse-rose-soft);
   border: 1px solid var(--pulse-border);
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
