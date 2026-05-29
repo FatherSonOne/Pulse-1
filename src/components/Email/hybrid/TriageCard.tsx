@@ -138,8 +138,12 @@ export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact
             className="email-body-html max-w-[760px]"
             dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
           />
-        ) : (
+        ) : rawText.trim() ? (
           <div className="email-body-text max-w-[760px]">{rawText}</div>
+        ) : (
+          <div className="text-[12.5px] pulse-ink-3-color italic py-3">
+            This email has no body content beyond the subject and AI summary.
+          </div>
         )}
       </div>
 
