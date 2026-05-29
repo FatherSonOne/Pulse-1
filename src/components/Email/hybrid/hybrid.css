@@ -207,6 +207,61 @@ html.dark .email-hybrid-shell .signal-row:hover {
   border: none; border-top: 1px solid var(--pulse-border); margin: 16px 0;
 }
 
+/* ─── Dark-mode "paper surface" for email bodies ─────────────────────
+   Email HTML was designed for white backgrounds. Rendering it on the
+   dark canvas produces two regressions, both visible in the May 2026
+   side-panel screenshots:
+     1. Senders that ship light cards (Google Calendar invites, marketing
+        templates, Render build emails) drop stark white islands into
+        the dark panel — no visual boundary between Pulse chrome and
+        sender content, eye-jarring contrast.
+     2. Senders that ship inline color: #333 / #555 (most transactional
+        templates) render as dark-on-dark — body text barely readable.
+   Gmail and Superhuman solve this by giving the email body its own
+   light surface in dark mode. We do the same: white paper with a soft
+   hairline border, padded internally so the content breathes, with
+   light-mode ink colors hardcoded inside so the rendered HTML reads
+   exactly as the sender designed it. */
+html.dark .email-hybrid-shell .email-body-html,
+html.dark .email-hybrid-shell .email-body-text {
+  background: #ffffff;
+  color: #0f0f0f;
+  padding: 20px 24px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  margin: 4px 0 12px;
+}
+html.dark .email-hybrid-shell .email-body-html h1,
+html.dark .email-hybrid-shell .email-body-html h2,
+html.dark .email-hybrid-shell .email-body-html h3,
+html.dark .email-hybrid-shell .email-body-html h4 {
+  color: #0f0f0f;
+}
+html.dark .email-hybrid-shell .email-body-html a,
+html.dark .email-hybrid-shell .email-body-text a {
+  color: #e11d48;
+}
+html.dark .email-hybrid-shell .email-body-html a:hover,
+html.dark .email-hybrid-shell .email-body-text a:hover {
+  color: #be123c;
+}
+html.dark .email-hybrid-shell .email-body-html blockquote {
+  background: #f5f5f5;
+  color: #52525b;
+}
+html.dark .email-hybrid-shell .email-body-html pre,
+html.dark .email-hybrid-shell .email-body-html code {
+  background: #f5f5f5;
+  color: #0f0f0f;
+}
+html.dark .email-hybrid-shell .email-body-html th,
+html.dark .email-hybrid-shell .email-body-html td {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+html.dark .email-hybrid-shell .email-body-html hr {
+  border-top-color: rgba(0, 0, 0, 0.08);
+}
+
 /* ─── Reader body plain-text rendering (Phase 12.11) ───
    When no body_html exists, render body_text with preserved whitespace +
    newlines. Strip leading single line-breaks within paragraphs so the
