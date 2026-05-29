@@ -458,86 +458,86 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Phase 12.9 — header + tab bar rewritten to match the Cockpit aesthetic.
+  // Form rows inside each tab still use the legacy styling because rewriting
+  // 800+ lines of inputs risks breaking form logic for zero functional gain.
+  const tabs: { id: typeof activeTab; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: 'general',    label: 'General',        Icon: SlidersHorizontal },
+    { id: 'gmail',      label: 'Gmail Settings', Icon: ExternalLink },
+    { id: 'sync',       label: 'Sync',           Icon: RefreshCw },
+    { id: 'accounts',   label: 'Accounts',       Icon: UserCircle },
+    { id: 'automation', label: 'Automation',     Icon: Zap },
+  ];
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
       <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[85vh] rounded-2xl shadow-2xl flex flex-col animate-scaleIn border border-stone-200 dark:border-zinc-800 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 dark:border-zinc-800 bg-gradient-to-r from-rose-500/10 to-orange-500/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center">
-              <Settings className="text-white" />
+        {/* Header — Cockpit-style editorial: meta strip eyebrow + serif headline
+            + small user-email caption. No gradient, no logo tile. */}
+        <div
+          className="flex items-start justify-between px-7 pt-6 pb-5 border-b border-stone-200 dark:border-zinc-800"
+          style={{ background: 'var(--pulse-canvas-soft, #f2f2f2)' }}
+        >
+          <div className="min-w-0">
+            <div
+              className="text-[10px] uppercase mb-1.5"
+              style={{
+                fontFamily: 'var(--pulse-font-mono)',
+                letterSpacing: '0.16em',
+                color: 'var(--pulse-rose, #f43f5e)',
+              }}
+            >
+              PULSE EMAIL · SETTINGS
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-stone-900 dark:text-white">Email Settings</h2>
-              <p className="text-sm text-stone-500 dark:text-zinc-400">{userEmail}</p>
-            </div>
+            <h2
+              className="text-[26px] text-stone-900 dark:text-white leading-[1.1] tracking-tight mb-1"
+              style={{ fontFamily: 'var(--pulse-font-serif, Georgia, serif)', fontWeight: 500 }}
+            >
+              Email Settings
+            </h2>
+            <p className="text-[12.5px] text-stone-500 dark:text-zinc-400 truncate">{userEmail}</p>
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-white transition"
+            className="w-9 h-9 rounded-full hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-white transition shrink-0"
             title="Close"
+            aria-label="Close email settings"
           >
-            <X />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-1 px-6 py-3 border-b border-stone-200 dark:border-zinc-800 bg-stone-50 dark:bg-zinc-950">
-          <button
-            onClick={() => setActiveTab('general')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              activeTab === 'general'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
-                : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'
-            }`}
-          >
-            <SlidersHorizontal className="mr-2" />
-            General
-          </button>
-          <button
-            onClick={() => setActiveTab('gmail')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              activeTab === 'gmail'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
-                : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'
-            }`}
-          >
-            <ExternalLink className="mr-2" />
-            Gmail Settings
-          </button>
-          <button
-            onClick={() => setActiveTab('sync')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              activeTab === 'sync'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
-                : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'
-            }`}
-          >
-            <RefreshCw className="mr-2" />
-            Sync
-          </button>
-          <button
-            onClick={() => setActiveTab('accounts')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              activeTab === 'accounts'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
-                : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'
-            }`}
-          >
-            <UserCircle className="mr-2" />
-            Accounts
-          </button>
-          <button
-            onClick={() => setActiveTab('automation')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              activeTab === 'automation'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
-                : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'
-            }`}
-          >
-            <Zap className="mr-2" />
-            Automation
-          </button>
+        {/* Tabs — seg-toggle-style pill row. Active pill = surface bg + ink
+            text + subtle ring; inactive = transparent + ink-2 text. */}
+        <div
+          className="flex items-center gap-1 px-7 py-2.5 border-b border-stone-200 dark:border-zinc-800 overflow-x-auto"
+          style={{ background: 'var(--pulse-canvas, #f8f8f8)' }}
+          role="tablist"
+          aria-label="Settings sections"
+        >
+          {tabs.map(({ id, label, Icon }) => {
+            const active = activeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveTab(id)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12.5px] font-medium transition shrink-0"
+                style={{
+                  background: active ? 'var(--pulse-surface, #fff)' : 'transparent',
+                  color: active ? 'var(--pulse-ink, #0f0f0f)' : 'var(--pulse-ink-2, #52525b)',
+                  boxShadow: active
+                    ? '0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--pulse-border, rgba(0, 0, 0, 0.08))'
+                    : undefined,
+                }}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Content */}
