@@ -825,10 +825,13 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
     );
   }
 
-  // Recipient summary line for the header (compressed format mirrors TriageCard).
+  // Recipient summary line for the header (compressed format mirrors
+  // TriageCard). Falls back to null on a blank new compose — the spec's
+  // inline DRAFT · SAVED HH:MM autosave readout above already conveys
+  // the drafting state, so a "Drafting…" placeholder would be redundant.
   const recipientList = parseEmails(to);
-  const recipientSummary = recipientList.length === 0
-    ? (replyTo ? `to ${replyTo.from_name || replyTo.from_email}` : 'Drafting…')
+  const recipientSummary: string | null = recipientList.length === 0
+    ? (replyTo ? `to ${replyTo.from_name || replyTo.from_email}` : null)
     : recipientList.length === 1
       ? `to ${recipientList[0]}`
       : `to ${recipientList[0]} +${recipientList.length - 1} other${recipientList.length > 2 ? 's' : ''}`;
@@ -879,10 +882,14 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               DRAFT · SAVED {new Date(lastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
-          <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }} aria-hidden>·</span>
-          <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-            {recipientSummary}
-          </span>
+          {recipientSummary && (
+            <>
+              <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }} aria-hidden>·</span>
+              <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                {recipientSummary}
+              </span>
+            </>
+          )}
 
           <div style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
             <button
