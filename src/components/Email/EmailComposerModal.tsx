@@ -404,7 +404,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
         setPendingAiDraft(draft);
         setAiDraftAccepted(false);
         setShowAiPanel(false);
-        toast.success('Draft ready — review below');
+        toast.success('Draft ready. Review below.');
       }
     } catch (error) {
       console.error('Draft generation error:', error);
@@ -1017,7 +1017,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                       <ChevronDown className="w-3 h-3" />
                       <span>SHOW QUOTED REPLY</span>
                     </summary>
-                    <div style={{ marginTop: 12, padding: '10px 14px', borderLeft: '2px solid var(--pulse-border-strong)', background: 'var(--pulse-canvas-soft)', borderRadius: '0 8px 8px 0', fontSize: 13, fontStyle: 'italic', color: 'var(--pulse-ink-2)', whiteSpace: 'pre-wrap' }}>
+                    <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--pulse-canvas-soft)', borderRadius: 8, fontSize: 13, fontStyle: 'italic', color: 'var(--pulse-ink-2)', whiteSpace: 'pre-wrap' }}>
                       On {new Date(replyTo.received_at).toLocaleString()}, {replyTo.from_name || replyTo.from_email} wrote:
                       {'\n\n'}
                       {(replyTo.body_text || '').slice(0, 1500)}{(replyTo.body_text || '').length > 1500 ? '…' : ''}
