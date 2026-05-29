@@ -231,7 +231,7 @@ html.dark .email-hybrid-shell .signal-row:hover {
 }
 .email-hybrid-shell .queue-pip::before {
   content: ''; width: 4px; height: 4px; border-radius: 999px;
-  background: currentColor; animation: hybridPulseDot 1.8s ease-in-out infinite;
+  background: currentColor; animation: hybridPulseDot 2s ease-in-out infinite;
 }
 .email-hybrid-shell .queue-pip.cleared {
   background: rgba(16, 185, 129, 0.10); color: #047857;
@@ -273,7 +273,7 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
 }
 .email-hybrid-shell .triage-cta .glow-dot {
   width: 8px; height: 8px; border-radius: 50%; background: white;
-  animation: hybridPulseDot 1.6s ease-in-out infinite;
+  animation: hybridPulseDot 2s ease-in-out infinite;
 }
 
 /* ─── Floating compose FAB ─── */
@@ -460,13 +460,6 @@ html.dark .email-hybrid-shell .seg-toggle button[data-active='true'] {
   background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
   font-family: var(--pulse-font-mono); font-size: 10px; font-weight: 600;
   transition: transform 200ms ease;
-}
-@keyframes hybridCountPulse {
-  0%, 100% { box-shadow: 0 0 0 0 var(--pulse-rose-glow); }
-  50%      { box-shadow: 0 0 0 5px transparent; }
-}
-.email-hybrid-shell .seg-toggle .seg-count.has-items {
-  animation: hybridCountPulse 2.4s ease-in-out infinite;
 }
 .email-hybrid-shell .seg-toggle .seg-count.cleared {
   background: rgba(16, 185, 129, 0.14); color: #10b981;
