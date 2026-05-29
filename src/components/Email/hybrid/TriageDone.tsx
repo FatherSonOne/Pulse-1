@@ -14,7 +14,7 @@ interface TriageDoneProps {
 export const TriageDone: React.FC<TriageDoneProps> = ({
   onReset,
   onDismiss,
-  summary = 'Your fastest session this week. ~14s per email, 22% quicker than last.',
+  summary = 'Your fastest session this week. ~14s per email. 22% quicker than last week.',
 }) => (
   <div className="text-center max-w-[480px] fade-up">
     <div className="relative inline-flex items-center justify-center w-16 h-16 mb-5">
@@ -30,7 +30,7 @@ export const TriageDone: React.FC<TriageDoneProps> = ({
     >
       Queue cleared.
     </h2>
-    <p className="pulse-ink-2-color mb-7 leading-relaxed max-w-[400px] mx-auto">{summary}</p>
+    <p className="pulse-ink-2-color mb-6 leading-relaxed max-w-[400px] mx-auto">{summary}</p>
 
     <div className="flex items-center justify-center gap-3">
       {onDismiss && (
