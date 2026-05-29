@@ -1036,14 +1036,18 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 <span className="composer-mono-label" style={{ color: 'var(--pulse-rose)' }}>PULSE AI · ASSIST</span>
               </div>
 
-              {/* Draft for me — coral card */}
+              {/* Card 1 — Draft (helps you write: from scratch via prompt OR
+                  inline completion via Smart Compose). Card had a decorative
+                  coral gradient background pre-round-5; gradient dropped to
+                  honor coral-as-signal; the rose-tinted border still earns
+                  the .coral class by signaling "this is the AI surface." */}
               <div className="composer-rail-card coral">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span className="composer-rail-card-title">Draft for me</span>
+                  <span className="composer-rail-card-title">Draft</span>
                   <span className="composer-keycap">⌘J</span>
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--pulse-ink-2)', lineHeight: 1.5, marginBottom: 12 }}>
-                  Describe what to say — Claude drafts in your voice using {replyTo ? 'this thread' : 'recipient + calendar context'}.
+                  Describe what to say. Claude drafts in your voice using {replyTo ? 'this thread' : 'recipient and calendar context'}.
                 </div>
                 <input
                   type="text"
@@ -1072,12 +1076,30 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 >
                   {aiGenerating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Generating…</> : <><Wand2 className="w-3.5 h-3.5" />Generate draft</>}
                 </button>
+
+                {/* Smart Compose — was its own card in the 4-card layout
+                    (round 1-4). Merged here in round 5 because it's the
+                    "continuing what you've started" sibling of "drafting
+                    from scratch": same job (AI helps you write), different
+                    starting point. Demoted to a quiet secondary action so
+                    Generate draft stays the card's primary surface. */}
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--pulse-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <button onClick={handleSmartCompose} disabled={smartComposeLoading || !smartComposeEnabled} className="composer-quiet-btn" style={{ padding: '4px 8px', fontSize: 11.5 }}>
+                    {smartComposeLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                    Suggest inline
+                  </button>
+                  <span className="composer-mono-label" style={{ fontSize: 10 }}>{smartComposeEnabled ? 'ON' : 'OFF'}</span>
+                </div>
               </div>
 
-              {/* Enhance current draft */}
+              {/* Card 2 — Refine (looks at what you wrote: transform via
+                  Enhance actions, evaluate via Tone check). Was two cards
+                  in the 4-card layout; merged in round 5 because both jobs
+                  start from "you have a draft" and end with "Claude
+                  responds to it." */}
               <div className="composer-rail-card">
                 <div style={{ marginBottom: 8 }}>
-                  <span className="composer-rail-card-title">Enhance current draft</span>
+                  <span className="composer-rail-card-title">Refine</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <button onClick={() => handleEnhanceEmail('shorten')}     disabled={enhancing} className="composer-rail-action">
@@ -1106,55 +1128,42 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* Tone check */}
-              <div className="composer-rail-card">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span className="composer-rail-card-title">Tone check</span>
-                  {toneCheckResult && (
-                    <span className={`composer-ai-chip ${toneCheckResult.appropriate ? 'positive' : 'muted'}`}>
-                      {toneCheckResult.currentTone}
-                    </span>
+                {/* Tone check — was its own card; folded in here as a
+                    "second movement" of Refine: same input (existing
+                    draft), different output (analysis vs transformation). */}
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--pulse-border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, color: 'var(--pulse-ink)', fontWeight: 500 }}>Tone check</span>
+                    {toneCheckResult && (
+                      <span className={`composer-ai-chip ${toneCheckResult.appropriate ? 'positive' : 'muted'}`}>
+                        {toneCheckResult.currentTone}
+                      </span>
+                    )}
+                  </div>
+                  {showToneCheck && !toneCheckResult ? (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--pulse-ink-2)', fontSize: 12.5, marginBottom: 8 }}>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Analyzing tone…
+                    </div>
+                  ) : toneCheckResult ? (
+                    <div style={{ fontSize: 12.5, color: 'var(--pulse-ink-2)', lineHeight: 1.55, marginBottom: 8 }}>
+                      {toneCheckResult.appropriate ? 'Reads naturally for the recipient context.' : 'Consider reviewing.'}
+                      {toneCheckResult.issues.length > 0 && (
+                        <div style={{ marginTop: 6, color: 'var(--pulse-tone-warning)' }}>{toneCheckResult.issues.join('. ')}</div>
+                      )}
+                      {toneCheckResult.suggestions.length > 0 && (
+                        <div style={{ marginTop: 6, color: 'var(--pulse-ink-3)' }}>{toneCheckResult.suggestions.join('. ')}</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: 'var(--pulse-ink-3)', lineHeight: 1.5, marginBottom: 8 }}>
+                      Claude flags presumptive or curt phrasing before you send.
+                    </div>
                   )}
+                  <button onClick={handleToneCheck} className="composer-quiet-btn" style={{ padding: '6px 10px', fontSize: 12 }}>
+                    <Gauge className="w-3.5 h-3.5" />{toneCheckResult ? 'Re-check' : 'Run tone check'}
+                  </button>
                 </div>
-                {showToneCheck && !toneCheckResult ? (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--pulse-ink-2)', fontSize: 12.5 }}>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Analyzing tone…
-                  </div>
-                ) : toneCheckResult ? (
-                  <div style={{ fontSize: 12.5, color: 'var(--pulse-ink-2)', lineHeight: 1.55 }}>
-                    {toneCheckResult.appropriate ? 'Reads naturally for the recipient context.' : 'Consider reviewing.'}
-                    {toneCheckResult.issues.length > 0 && (
-                      <div style={{ marginTop: 6, color: 'var(--pulse-tone-warning)' }}>{toneCheckResult.issues.join('. ')}</div>
-                    )}
-                    {toneCheckResult.suggestions.length > 0 && (
-                      <div style={{ marginTop: 6, color: 'var(--pulse-ink-3)' }}>{toneCheckResult.suggestions.join('. ')}</div>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 12.5, color: 'var(--pulse-ink-3)', lineHeight: 1.55 }}>
-                    Check the tone before sending — Claude flags presumptive or curt phrasing.
-                  </div>
-                )}
-                <button onClick={handleToneCheck} className="composer-quiet-btn" style={{ marginTop: 10, padding: '6px 10px', fontSize: 12 }}>
-                  <Gauge className="w-3.5 h-3.5" />{toneCheckResult ? 'Re-check' : 'Run tone check'}
-                </button>
-              </div>
-
-              {/* Smart Compose */}
-              <div className="composer-rail-card">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span className="composer-rail-card-title">Smart Compose</span>
-                  <span className="composer-mono-label">{smartComposeEnabled ? 'ON' : 'OFF'}</span>
-                </div>
-                <div style={{ fontSize: 12.5, color: 'var(--pulse-ink-3)', lineHeight: 1.55, marginBottom: 8 }}>
-                  Suggests an inline completion based on the partial draft.
-                </div>
-                <button onClick={handleSmartCompose} disabled={smartComposeLoading || !smartComposeEnabled} className="composer-quiet-btn" style={{ padding: '6px 10px', fontSize: 12 }}>
-                  {smartComposeLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                  Suggest now
-                </button>
               </div>
             </aside>
           </div>

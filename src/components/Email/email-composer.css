@@ -202,7 +202,6 @@
 }
 .composer-rail-card:hover { border-color: var(--pulse-border-strong); }
 .composer-rail-card.coral {
-  background: linear-gradient(160deg, var(--pulse-rose-soft), transparent 65%);
   border-color: color-mix(in oklab, var(--pulse-rose) 30%, transparent);
 }
 .composer-rail-card-title {
