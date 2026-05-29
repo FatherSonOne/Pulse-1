@@ -1498,7 +1498,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               <HardDrive className="w-3.5 h-3.5" />
             </button>
           )}
-          <button onClick={handleInsertMeetLink} disabled={meetCreating} className="composer-icon-btn" title="Insert Google Meet link" aria-label="Insert Meet link">
+          <button onClick={handleInsertMeetLink} disabled={meetCreating} className="composer-icon-btn" title="Insert Pulse Meeting Link" aria-label="Insert Pulse Meeting Link">
             {meetCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
           </button>
           <button
