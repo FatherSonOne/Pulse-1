@@ -39,6 +39,8 @@ export const HYBRID_SHORTCUTS: ShortcutSection[] = [
       { keys: ['H'], description: 'Snooze until tomorrow 9 AM + advance' },
       { keys: ['T'], description: 'Push to Decisions & Tasks (v1.1)' },
       { keys: [mod, '↵'], description: 'Send AI-drafted reply (v1.1)' },
+      { keys: ['←'], description: 'Previous email (no action)' },
+      { keys: ['→'], description: 'Next email (no action)' },
     ],
   },
   {

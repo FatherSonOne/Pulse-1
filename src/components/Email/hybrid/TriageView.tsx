@@ -12,6 +12,8 @@ import { clamp, Keycap } from './primitives';
 import { TriageCard, type TriageAction } from './TriageCard';
 import { TriageActionToast } from './TriageActionToast';
 import { TriageDone } from './TriageDone';
+import { TriageQueueStrip } from './TriageQueueStrip';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTriageQueue } from './data/useTriageQueue';
 
 function isTextInputTarget(target: EventTarget | null): boolean {
@@ -126,6 +128,27 @@ export const TriageView: React.FC<TriageViewProps> = ({
     toast('Rewound queue position. The Gmail-side action remains.', { icon: '↶' });
   }, [data.queueIds.length, setTriageState, triageState.idx]);
 
+  // Phase 12.6 — pure navigation: jump / prev / next don't fire any side
+  // effect, they only move the queue position. No toast. Clears actedLast
+  // so the previous action banner doesn't linger on a new card.
+  const jumpTo = useCallback(
+    (targetIdx: number) => {
+      setTriageState({
+        idx: clamp(targetIdx, 0, data.queueIds.length),
+        actedLast: null,
+      });
+    },
+    [data.queueIds.length, setTriageState],
+  );
+  const navigatePrev = useCallback(() => {
+    if (triageState.idx <= 0) return;
+    jumpTo(triageState.idx - 1);
+  }, [triageState.idx, jumpTo]);
+  const navigateNext = useCallback(() => {
+    if (triageState.idx >= data.queueIds.length - 1) return;
+    jumpTo(triageState.idx + 1);
+  }, [triageState.idx, data.queueIds.length, jumpTo]);
+
   const handleReset = useCallback(() => resetTriageState(), [resetTriageState]);
 
   // Triage keyboard shortcuts — only fire when in Triage mode + no overlay open.
@@ -150,6 +173,18 @@ export const TriageView: React.FC<TriageViewProps> = ({
         return;
       }
 
+      // Phase 12.6 navigation — pure idx moves, no action firing.
+      if (key === 'ArrowLeft') {
+        e.preventDefault();
+        navigatePrev();
+        return;
+      }
+      if (key === 'ArrowRight') {
+        e.preventDefault();
+        navigateNext();
+        return;
+      }
+
       if (hasCtrl) return;
 
       switch (lower) {
@@ -161,7 +196,10 @@ export const TriageView: React.FC<TriageViewProps> = ({
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [mode, data, advance, showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal]);
+  }, [
+    mode, data, advance, navigatePrev, navigateNext,
+    showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal,
+  ]);
 
   const { idx, currentRow, remaining, progress, isDone, queueIds } = data;
   const total = queueIds.length;
@@ -222,10 +260,46 @@ export const TriageView: React.FC<TriageViewProps> = ({
         </div>
       </div>
 
+      {/* Queue strip — Phase 12.6. Click any chip to jump; current chip
+          has a rose ring; cleared chips fade; missing-from-store chips
+          render disabled. Skipped when no queue exists yet. */}
+      {hasQueue && !isDone && (
+        <div className={`${compact ? 'px-5' : 'px-8'} shrink-0 border-b pulse-border-color`}>
+          <TriageQueueStrip queueIds={queueIds} currentIdx={idx} onJump={jumpTo} />
+        </div>
+      )}
+
       {/* Stage */}
       <div
         className={`flex-1 overflow-hidden ${compact ? 'px-5 py-5' : 'px-8 py-6'} flex items-center justify-center relative`}
       >
+        {/* Phase 12.6 — prev/next buttons stick to the stage edges so the
+            user can browse without touching the keyboard. Disabled at the
+            ends of the queue. */}
+        {hasQueue && !isDone && (
+          <>
+            <button
+              type="button"
+              onClick={navigatePrev}
+              disabled={idx === 0}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full pulse-surface border pulse-border-color flex items-center justify-center pulse-ink-2-color hover:pulse-rose-color hover:pulse-rose-border disabled:opacity-30 disabled:hover:pulse-ink-2-color disabled:cursor-not-allowed transition"
+              aria-label="Previous email"
+              title="Previous (←)"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={navigateNext}
+              disabled={idx >= queueIds.length - 1}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full pulse-surface border pulse-border-color flex items-center justify-center pulse-ink-2-color hover:pulse-rose-color hover:pulse-rose-border disabled:opacity-30 disabled:hover:pulse-ink-2-color disabled:cursor-not-allowed transition"
+              aria-label="Next email"
+              title="Next (→)"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </>
+        )}
         {actedLast && !isDone && <TriageActionToast acted={actedLast} onUndo={undo} />}
 
         {isDone ? (
@@ -308,6 +382,10 @@ export const TriageView: React.FC<TriageViewProps> = ({
             <span className="text-[12px] pulse-ink-2-color flex items-center gap-1.5">
               <Keycap>⌘</Keycap>
               <Keycap>↵</Keycap> Accept AI
+            </span>
+            <span className="text-[12px] pulse-ink-2-color flex items-center gap-1.5">
+              <Keycap>←</Keycap>
+              <Keycap>→</Keycap> Navigate
             </span>
           </div>
           <button
