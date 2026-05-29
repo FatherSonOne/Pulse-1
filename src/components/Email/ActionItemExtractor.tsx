@@ -198,26 +198,19 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
     }
   };
 
-  const getPriorityStyles = (priority: 'high' | 'medium' | 'low') => {
+  // Priority → Pulse status tokens. High = overdue (red, urgent), Medium
+  // = warning (amber, attention), Low = neutral (gray, defer). Per
+  // DESIGN.md "Status-Stays-Status" rule, semantic status colors stay
+  // in their own vocabulary — they sit inside this coral-bordered AI
+  // surface as content, not chrome.
+  const getPriorityTone = (priority: 'high' | 'medium' | 'low') => {
     switch (priority) {
       case 'high':
-        return {
-          bg: 'bg-red-500/20',
-          text: 'text-red-600 dark:text-red-400',
-          label: 'High',
-        };
+        return { color: 'var(--pulse-tone-overdue)', bg: 'var(--pulse-tone-overdue-soft)', label: 'High' };
       case 'medium':
-        return {
-          bg: 'bg-amber-500/20',
-          text: 'text-amber-600 dark:text-amber-400',
-          label: 'Medium',
-        };
+        return { color: 'var(--pulse-tone-warning)', bg: 'var(--pulse-tone-warning-soft)', label: 'Medium' };
       default:
-        return {
-          bg: 'bg-green-500/20',
-          text: 'text-green-600 dark:text-green-400',
-          label: 'Low',
-        };
+        return { color: 'var(--pulse-tone-neutral)', bg: 'var(--pulse-tone-neutral-soft)', label: 'Low' };
     }
   };
 
@@ -238,10 +231,10 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-purple-500/10 dark:bg-purple-500/5 border border-purple-500/20 rounded-xl p-4">
-        <div className="flex items-center gap-3">
-          <Loader2 className="text-purple-500 animate-spin" />
-          <span className="text-stone-600 dark:text-zinc-400 text-sm">Scanning for action items...</span>
+      <div style={{ background: 'var(--pulse-rose-soft)', border: '1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border))', borderRadius: 12, padding: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--pulse-rose)' }} aria-hidden />
+          <span style={{ fontSize: 13, color: 'var(--pulse-ink-2)' }}>Scanning the thread for action items…</span>
         </div>
       </div>
     );
@@ -254,66 +247,109 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
   const selectedCount = actionItems.filter(i => i.selected).length;
 
   return (
-    <div className="bg-purple-500/10 dark:bg-purple-500/5 border border-purple-500/20 rounded-xl overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-purple-500/20">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-            <ListChecks className="text-white text-sm" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-stone-900 dark:text-white text-sm">Action Items Detected</h3>
-            <span className="text-xs text-stone-500 dark:text-zinc-500">
-              {actionItems.length} item{actionItems.length > 1 ? 's' : ''} found
-            </span>
-          </div>
+    <div style={{
+      background: 'var(--pulse-rose-soft)',
+      border: '1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border))',
+      borderRadius: 12,
+      overflow: 'hidden',
+    }}>
+      {/* Header — AiChip-style provenance + count chip */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 16px',
+        borderBottom: '1px solid color-mix(in oklab, var(--pulse-rose) 15%, transparent)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '4px 8px', borderRadius: 4,
+            background: 'var(--pulse-surface-raised)',
+            color: 'var(--pulse-rose-text)',
+            fontFamily: 'var(--pulse-font-mono)',
+            fontSize: 10, fontWeight: 500,
+            letterSpacing: '0.1em', textTransform: 'uppercase', lineHeight: 1,
+          }}>
+            <ListChecks className="w-3 h-3" aria-hidden />
+            Claude · Tasks
+          </span>
+          <span style={{
+            padding: '3px 7px', borderRadius: 4,
+            background: 'var(--pulse-surface-raised)',
+            color: 'var(--pulse-ink-3)',
+            fontFamily: 'var(--pulse-font-mono)',
+            fontSize: 10, fontWeight: 500,
+            letterSpacing: '0.1em', textTransform: 'uppercase', lineHeight: 1,
+          }}>
+            {actionItems.length} found
+          </span>
         </div>
         <button
           onClick={onDismiss}
-          className="w-6 h-6 rounded hover:bg-purple-500/20 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-600 dark:hover:text-white transition"
+          aria-label="Dismiss action item suggestions"
+          style={{
+            width: 24, height: 24, borderRadius: 6, border: 'none',
+            background: 'transparent', color: 'var(--pulse-ink-3)', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 140ms ease, color 140ms ease',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--pulse-surface-raised)'; e.currentTarget.style.color = 'var(--pulse-ink-2)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--pulse-ink-3)'; }}
         >
-          <X className="text-xs" />
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* Action items list */}
-      <div className="p-4 space-y-2">
+      <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 6, background: 'var(--pulse-surface)' }}>
         {actionItems.map((item) => {
-          const priorityStyles = getPriorityStyles(item.priority);
-
+          const tone = getPriorityTone(item.priority);
           return (
             <div
               key={item.id}
               onClick={() => toggleItem(item.id)}
-              className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition ${
-                item.selected
-                  ? 'bg-purple-500/20 border border-purple-500/30'
-                  : 'bg-white dark:bg-zinc-800/50 border border-transparent hover:border-purple-500/20'
-              }`}
+              style={{
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                padding: 10, borderRadius: 8, cursor: 'pointer',
+                background: item.selected ? 'var(--pulse-rose-soft)' : 'var(--pulse-surface-raised)',
+                border: item.selected
+                  ? '1px solid color-mix(in oklab, var(--pulse-rose) 35%, transparent)'
+                  : '1px solid transparent',
+                transition: 'background 140ms ease, border-color 140ms ease',
+              }}
             >
               {/* Checkbox */}
-              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition ${
-                item.selected
-                  ? 'bg-purple-500 border-purple-500'
-                  : 'border-stone-300 dark:border-zinc-600'
-              }`}>
-                {item.selected && (
-                  <Check className="text-white text-xs" />
-                )}
+              <div style={{
+                width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+                marginTop: 1,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                background: item.selected ? 'var(--pulse-rose)' : 'transparent',
+                border: item.selected
+                  ? '1.5px solid var(--pulse-rose)'
+                  : '1.5px solid var(--pulse-border-strong)',
+                color: 'white',
+                transition: 'background 140ms ease, border-color 140ms ease',
+              }}>
+                {item.selected && <Check className="w-3 h-3" strokeWidth={3} />}
               </div>
 
               {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-stone-900 dark:text-white mb-1">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, color: 'var(--pulse-ink)', marginBottom: 6, lineHeight: 1.4 }}>
                   {item.text}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded ${priorityStyles.bg} ${priorityStyles.text}`}>
-                    {priorityStyles.label}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{
+                    padding: '2px 6px', borderRadius: 4,
+                    background: tone.bg, color: tone.color,
+                    fontFamily: 'var(--pulse-font-mono)',
+                    fontSize: 10, fontWeight: 500,
+                    letterSpacing: '0.1em', textTransform: 'uppercase', lineHeight: 1,
+                  }}>
+                    {tone.label}
                   </span>
                   {item.dueDate && (
-                    <span className="text-xs text-stone-500 dark:text-zinc-500 flex items-center gap-1">
-                      <Calendar />
+                    <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Calendar className="w-3 h-3" aria-hidden />
                       {formatDueDate(item.dueDate)}
                     </span>
                   )}
@@ -325,31 +361,53 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 px-4 pb-4">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px 16px' }}>
         <button
           onClick={handleCreateTasks}
           disabled={selectedCount === 0 || creating}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 font-medium rounded-lg transition ${
-            selectedCount === 0
-              ? 'bg-stone-200 dark:bg-zinc-800 text-stone-400 dark:text-zinc-600 cursor-not-allowed'
-              : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
-          }`}
+          style={{
+            flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '8px 14px', borderRadius: 8, border: 'none',
+            cursor: selectedCount === 0 || creating ? 'not-allowed' : 'pointer',
+            background: selectedCount === 0 ? 'var(--pulse-surface-raised)' : 'var(--pulse-rose)',
+            color: selectedCount === 0 ? 'var(--pulse-ink-3)' : 'white',
+            fontSize: 13, fontWeight: 500,
+            boxShadow: selectedCount === 0 ? 'none' : '0 4px 12px var(--pulse-rose-glow)',
+            transition: 'background 160ms ease, transform 160ms ease',
+          }}
+          onMouseEnter={(e) => {
+            if (selectedCount === 0 || creating) return;
+            e.currentTarget.style.background = 'var(--pulse-rose-deep)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            if (selectedCount === 0 || creating) return;
+            e.currentTarget.style.background = 'var(--pulse-rose)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
         >
           {creating ? (
             <>
-              <Loader2 className="animate-spin" />
-              Creating...
+              <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
+              Creating…
             </>
           ) : (
             <>
-              <Plus />
-              Create {selectedCount} Task{selectedCount !== 1 ? 's' : ''}
+              <Plus className="w-3.5 h-3.5" aria-hidden />
+              Create {selectedCount} task{selectedCount !== 1 ? 's' : ''}
             </>
           )}
         </button>
         <button
           onClick={onDismiss}
-          className="px-4 py-2 text-stone-600 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-white font-medium rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 transition"
+          style={{
+            padding: '8px 14px', borderRadius: 8, border: '1px solid var(--pulse-border)', cursor: 'pointer',
+            background: 'transparent', color: 'var(--pulse-ink-2)',
+            fontSize: 13, fontWeight: 500,
+            transition: 'background 160ms ease',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--pulse-surface-raised)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
         >
           Skip
         </button>

@@ -222,35 +222,28 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
     });
   };
 
-  const getConfidenceStyles = (confidence: 'high' | 'medium' | 'low') => {
+  // Confidence → Pulse status tokens. High = positive (green), Medium =
+  // warning (amber), Low = neutral (gray). Per DESIGN.md "Status-Stays-
+  // Status" rule, semantic status colors stay in their own vocabulary —
+  // here they sit inside a coral-bordered AI surface as content, not
+  // chrome, so the coral budget isn't burned by the status pill itself.
+  const getConfidenceTone = (confidence: 'high' | 'medium' | 'low') => {
     switch (confidence) {
       case 'high':
-        return {
-          bg: 'bg-green-500/20',
-          text: 'text-green-600 dark:text-green-400',
-          label: 'High confidence',
-        };
+        return { color: 'var(--pulse-tone-positive)', bg: 'var(--pulse-tone-positive-soft)', label: 'High confidence' };
       case 'medium':
-        return {
-          bg: 'bg-amber-500/20',
-          text: 'text-amber-600 dark:text-amber-400',
-          label: 'Medium confidence',
-        };
+        return { color: 'var(--pulse-tone-warning)',  bg: 'var(--pulse-tone-warning-soft)',  label: 'Medium confidence' };
       default:
-        return {
-          bg: 'bg-stone-500/20',
-          text: 'text-stone-600 dark:text-stone-400',
-          label: 'Low confidence',
-        };
+        return { color: 'var(--pulse-tone-neutral)',  bg: 'var(--pulse-tone-neutral-soft)',  label: 'Low confidence' };
     }
   };
 
   if (loading) {
     return (
-      <div className="bg-blue-500/10 dark:bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
-        <div className="flex items-center gap-3">
-          <Loader2 className="text-blue-500 animate-spin" />
-          <span className="text-stone-600 dark:text-zinc-400 text-sm">Analyzing for meeting details...</span>
+      <div style={{ background: 'var(--pulse-rose-soft)', border: '1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border))', borderRadius: 12, padding: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--pulse-rose)' }} aria-hidden />
+          <span style={{ fontSize: 13, color: 'var(--pulse-ink-2)' }}>Scanning the thread for meeting details…</span>
         </div>
       </div>
     );
@@ -260,72 +253,99 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
     return null;
   }
 
-  const confidenceStyles = getConfidenceStyles(meeting.confidence);
+  const tone = getConfidenceTone(meeting.confidence);
 
   return (
-    <div className="bg-blue-500/10 dark:bg-blue-500/5 border border-blue-500/20 rounded-xl overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-blue-500/20">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
-            <CalendarPlus className="text-white text-sm" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-stone-900 dark:text-white text-sm">Meeting Detected</h3>
-            <span className={`text-xs ${confidenceStyles.text}`}>{confidenceStyles.label}</span>
-          </div>
+    <div style={{
+      background: 'var(--pulse-rose-soft)',
+      border: '1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border))',
+      borderRadius: 12,
+      overflow: 'hidden',
+    }}>
+      {/* Header — AiChip-style provenance label + confidence chip */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 16px',
+        borderBottom: '1px solid color-mix(in oklab, var(--pulse-rose) 15%, transparent)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '4px 8px', borderRadius: 4,
+            background: 'var(--pulse-surface-raised)',
+            color: 'var(--pulse-rose-text)',
+            fontFamily: 'var(--pulse-font-mono)',
+            fontSize: 10, fontWeight: 500,
+            letterSpacing: '0.1em', textTransform: 'uppercase', lineHeight: 1,
+          }}>
+            <CalendarPlus className="w-3 h-3" aria-hidden />
+            Claude · Meeting
+          </span>
+          <span style={{
+            padding: '3px 7px', borderRadius: 4,
+            background: tone.bg, color: tone.color,
+            fontFamily: 'var(--pulse-font-mono)',
+            fontSize: 10, fontWeight: 500,
+            letterSpacing: '0.1em', textTransform: 'uppercase', lineHeight: 1,
+          }}>
+            {tone.label}
+          </span>
         </div>
         <button
           onClick={onDismiss}
-          className="w-6 h-6 rounded hover:bg-blue-500/20 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-600 dark:hover:text-white transition"
+          aria-label="Dismiss meeting suggestion"
+          style={{
+            width: 24, height: 24, borderRadius: 6, border: 'none',
+            background: 'transparent', color: 'var(--pulse-ink-3)', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 140ms ease, color 140ms ease',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--pulse-surface-raised)'; e.currentTarget.style.color = 'var(--pulse-ink-2)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--pulse-ink-3)'; }}
         >
-          <X className="text-xs" />
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* Meeting details */}
-      <div className="p-4 space-y-3">
-        {/* Title */}
+      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, background: 'var(--pulse-surface)' }}>
         <div>
-          <div className="text-xs text-stone-500 dark:text-zinc-500 mb-1">Title</div>
-          <div className="font-medium text-stone-900 dark:text-white">{meeting.title}</div>
+          <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Title</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--pulse-ink)' }}>{meeting.title}</div>
         </div>
 
-        {/* Date & Time */}
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <div className="text-xs text-stone-500 dark:text-zinc-500 mb-1">Date</div>
-            <div className="flex items-center gap-2 text-sm text-stone-700 dark:text-zinc-300">
-              <Calendar className="text-blue-500" />
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 140 }}>
+            <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Date</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--pulse-ink-2)' }}>
+              <Calendar className="w-3.5 h-3.5" style={{ color: 'var(--pulse-rose)' }} aria-hidden />
               {formatDate(meeting.date)}
             </div>
           </div>
           {meeting.time && (
             <div>
-              <div className="text-xs text-stone-500 dark:text-zinc-500 mb-1">Time</div>
-              <div className="flex items-center gap-2 text-sm text-stone-700 dark:text-zinc-300">
-                <Clock className="text-blue-500" />
+              <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Time</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--pulse-ink-2)' }}>
+                <Clock className="w-3.5 h-3.5" style={{ color: 'var(--pulse-rose)' }} aria-hidden />
                 {meeting.time}
               </div>
             </div>
           )}
         </div>
 
-        {/* Duration */}
         {meeting.duration && (
           <div>
-            <div className="text-xs text-stone-500 dark:text-zinc-500 mb-1">Duration</div>
-            <div className="text-sm text-stone-700 dark:text-zinc-300">{meeting.duration}</div>
+            <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Duration</div>
+            <div style={{ fontSize: 13, color: 'var(--pulse-ink-2)' }}>{meeting.duration}</div>
           </div>
         )}
 
-        {/* Location */}
         {meeting.location && (
           <div>
-            <div className="text-xs text-stone-500 dark:text-zinc-500 mb-1">Location / Link</div>
-            <div className="text-sm text-blue-600 dark:text-blue-400 truncate">
+            <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Location / Link</div>
+            <div style={{ fontSize: 13, color: 'var(--pulse-rose-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {meeting.location.startsWith('http') ? (
-                <a href={meeting.location} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                <a href={meeting.location} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}>
                   {meeting.location}
                 </a>
               ) : (
@@ -335,21 +355,21 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
           </div>
         )}
 
-        {/* Attendees */}
         {meeting.attendees.length > 0 && (
           <div>
-            <div className="text-xs text-stone-500 dark:text-zinc-500 mb-1">Attendees</div>
-            <div className="flex flex-wrap gap-1.5">
+            <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Attendees</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {meeting.attendees.slice(0, 4).map((attendee, i) => (
-                <span
-                  key={i}
-                  className="text-xs px-2 py-1 bg-stone-200 dark:bg-zinc-800 text-stone-600 dark:text-zinc-400 rounded-full"
-                >
+                <span key={i} style={{
+                  fontSize: 11, padding: '3px 8px', borderRadius: 999,
+                  background: 'var(--pulse-surface-raised)',
+                  color: 'var(--pulse-ink-2)',
+                }}>
                   {attendee}
                 </span>
               ))}
               {meeting.attendees.length > 4 && (
-                <span className="text-xs px-2 py-1 text-stone-500 dark:text-zinc-500">
+                <span style={{ fontSize: 11, padding: '3px 6px', color: 'var(--pulse-ink-3)' }}>
                   +{meeting.attendees.length - 4} more
                 </span>
               )}
@@ -358,17 +378,33 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-2 pt-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 4 }}>
           <button
             onClick={() => onAddToCalendar(meeting)}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium rounded-lg transition"
+            style={{
+              flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+              background: 'var(--pulse-rose)', color: 'white',
+              fontSize: 13, fontWeight: 500,
+              boxShadow: '0 4px 12px var(--pulse-rose-glow)',
+              transition: 'background 160ms ease, transform 160ms ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--pulse-rose-deep)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--pulse-rose)'; e.currentTarget.style.transform = 'translateY(0)'; }}
           >
-            <CalendarPlus />
+            <CalendarPlus className="w-3.5 h-3.5" aria-hidden />
             Add to Calendar
           </button>
           <button
             onClick={onDismiss}
-            className="px-4 py-2 text-stone-600 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-white font-medium rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 transition"
+            style={{
+              padding: '8px 14px', borderRadius: 8, border: '1px solid var(--pulse-border)', cursor: 'pointer',
+              background: 'transparent', color: 'var(--pulse-ink-2)',
+              fontSize: 13, fontWeight: 500,
+              transition: 'background 160ms ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--pulse-surface-raised)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
           >
             Skip
           </button>
