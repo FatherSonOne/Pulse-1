@@ -46,10 +46,13 @@ export const EmailHybridFlagToggle: React.FC = () => {
       title={isOn ? 'Switch back to the legacy email surface' : 'Try the new Cockpit + Triage UI'}
       aria-label={isOn ? 'Switch to legacy email' : 'Switch to new hybrid email'}
       style={{
+        // Phase 12.15 — was top-center; that overlapped the Folders /
+        // Filters / search controls in the canvas top bar. Moved to the
+        // bottom-left so it doesn't fight any other chrome (Compose FAB
+        // is bottom-right, sync banner is top).
         position: 'fixed',
-        top: 8,
-        left: '50%',
-        transform: 'translateX(-50%)',
+        bottom: 16,
+        left: 16,
         zIndex: 55,
         display: 'inline-flex',
         alignItems: 'center',
@@ -68,12 +71,15 @@ export const EmailHybridFlagToggle: React.FC = () => {
           : '0 2px 8px rgba(0, 0, 0, 0.08)',
         transition: 'background 180ms ease, transform 180ms ease, box-shadow 180ms ease',
         backdropFilter: 'blur(6px)',
+        opacity: 0.85,
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.transform = 'translateX(-50%) translateY(1px)';
+        (e.currentTarget as HTMLButtonElement).style.opacity = '1';
+        (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.transform = 'translateX(-50%)';
+        (e.currentTarget as HTMLButtonElement).style.opacity = '0.85';
+        (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
       }}
     >
       {isOn ? (

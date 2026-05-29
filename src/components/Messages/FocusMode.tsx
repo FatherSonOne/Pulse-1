@@ -314,8 +314,8 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Shift+F to exit focus mode
-      if (e.shiftKey && e.key === 'F') {
+      // Ctrl+Shift+F to exit focus mode (avoids Ctrl+F = browser Find collision)
+      if (e.ctrlKey && e.shiftKey && (e.key === 'F' || e.key === 'f')) {
         e.preventDefault();
         handleClose();
       }
@@ -360,7 +360,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     <AnimatePresence>
       {isActive && (
         <motion.div
-          className="fixed inset-0 z-50 bg-[var(--pulse-bg-deep)] flex flex-col items-center justify-center"
+          className="fixed inset-0 z-50 bg-[var(--pulse-canvas)] dark:bg-[var(--pulse-bg-deep)] flex flex-col items-center justify-center"
           {...motionPreset.fade}
           role="dialog"
           aria-modal="true"
@@ -368,10 +368,10 @@ export const FocusMode: React.FC<FocusModeProps> = ({
         >
           {/* Background Pattern */}
           <div
-            className="absolute inset-0 opacity-5"
+            className="absolute inset-0 opacity-[0.06] text-zinc-900 dark:text-white dark:opacity-5"
             style={{
               backgroundImage:
-                'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+                'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)',
               backgroundSize: '40px 40px',
             }}
             aria-hidden="true"
@@ -380,7 +380,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
           {/* Close Button */}
           <button
             onClick={handleClose}
-            className="absolute top-6 right-6 p-3 text-[#b4b4b8] hover:text-white bg-[rgba(255,255,255,0.055)] hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors focus:outline-none focus:ring-4 focus:ring-[rgba(255,255,255,0.20)]"
+            className="absolute top-6 right-6 p-3 text-zinc-600 dark:text-[#b4b4b8] hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] hover:bg-zinc-200 dark:hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors focus:outline-none focus:ring-4 focus:ring-zinc-300 dark:focus:ring-[rgba(255,255,255,0.20)]"
             aria-label="Exit focus mode"
           >
             <svg
@@ -409,11 +409,11 @@ export const FocusMode: React.FC<FocusModeProps> = ({
             >
               <h1
                 id="focus-mode-title"
-                className="text-3xl font-bold text-white mb-2"
+                className="text-3xl font-bold text-zinc-900 dark:text-white mb-2"
               >
                 Focus Mode
               </h1>
-              <p className="text-[#b4b4b8] text-lg">{threadName}</p>
+              <p className="text-zinc-600 dark:text-[#b4b4b8] text-lg">{threadName}</p>
             </motion.div>
 
             {/* Timer */}
@@ -456,7 +456,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
             {/* Tips */}
             {!isTimerActive && (
               <motion.div
-                className="text-center text-sm text-[#a1a1aa] max-w-md"
+                className="text-center text-sm text-zinc-500 dark:text-[#a1a1aa] max-w-md"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
@@ -475,27 +475,27 @@ export const FocusMode: React.FC<FocusModeProps> = ({
           <AnimatePresence>
             {showSettings && (
               <motion.div
-                className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20"
+                className="absolute inset-0 flex items-center justify-center bg-black/40 dark:bg-black/50 z-20"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setShowSettings(false)}
               >
                 <motion.div
-                  className="bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.10)] rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
+                  className="bg-white dark:bg-[rgba(20,20,22,0.96)] border border-zinc-200 dark:border-[rgba(255,255,255,0.10)] rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <h2 className="text-xl font-bold text-white mb-4">
+                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">
                     Focus Settings
                   </h2>
 
                   <div className="space-y-4">
                     {/* Work Duration */}
                     <div>
-                      <label className="block text-sm font-medium text-[#fafafa] mb-2">
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-[#fafafa] mb-2">
                         Work Duration (minutes)
                       </label>
                       <input
@@ -511,13 +511,13 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                           setPreferences(newPrefs);
                           focusModeService.savePreferences(newPrefs);
                         }}
-                        className="w-full px-3 py-2 bg-[rgba(255,255,255,0.055)] border border-[rgba(255,255,255,0.10)] text-white rounded focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
+                        className="w-full px-3 py-2 bg-white dark:bg-[rgba(255,255,255,0.055)] border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] text-zinc-900 dark:text-white rounded focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
                       />
                     </div>
 
                     {/* Break Duration */}
                     <div>
-                      <label className="block text-sm font-medium text-[#fafafa] mb-2">
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-[#fafafa] mb-2">
                         Break Duration (minutes)
                       </label>
                       <input
@@ -533,13 +533,13 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                           setPreferences(newPrefs);
                           focusModeService.savePreferences(newPrefs);
                         }}
-                        className="w-full px-3 py-2 bg-[rgba(255,255,255,0.055)] border border-[rgba(255,255,255,0.10)] text-white rounded focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
+                        className="w-full px-3 py-2 bg-white dark:bg-[rgba(255,255,255,0.055)] border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] text-zinc-900 dark:text-white rounded focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
                       />
                     </div>
 
                     {/* Sound Enabled */}
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-[#fafafa]">
+                      <label className="text-sm font-medium text-zinc-700 dark:text-[#fafafa]">
                         Sound Notifications
                       </label>
                       <button
@@ -554,7 +554,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                           preferences.soundEnabled
                             ? 'bg-[#f43f5e]'
-                            : 'bg-[rgba(255,255,255,0.15)]'
+                            : 'bg-zinc-300 dark:bg-[rgba(255,255,255,0.15)]'
                         }`}
                       >
                         <span
@@ -569,7 +569,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
 
                     {/* Auto-start */}
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-[#fafafa]">
+                      <label className="text-sm font-medium text-zinc-700 dark:text-[#fafafa]">
                         Auto-start Breaks
                       </label>
                       <button
@@ -584,7 +584,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                           preferences.autoStartBreaks
                             ? 'bg-[#f43f5e]'
-                            : 'bg-[rgba(255,255,255,0.15)]'
+                            : 'bg-zinc-300 dark:bg-[rgba(255,255,255,0.15)]'
                         }`}
                       >
                         <span

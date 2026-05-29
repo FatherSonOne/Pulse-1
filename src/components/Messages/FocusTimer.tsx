@@ -83,7 +83,7 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="rgba(255, 255, 255, 0.1)"
+            stroke="var(--pulse-border-strong)"
             strokeWidth={strokeWidth}
           />
           {/* Progress Circle */}
@@ -148,7 +148,7 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
           </div>
 
           {/* Progress Percentage */}
-          <div className="mt-2 text-sm text-[#b4b4b8]">
+          <div className="mt-2 text-sm text-zinc-600 dark:text-[#b4b4b8]">
             {Math.round(progress * 100)}% complete
           </div>
 
@@ -203,7 +203,7 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
           className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all ${
             mode === 'work'
               ? 'bg-[#881337] text-[#fecdd3] shadow-lg'
-              : 'bg-[rgba(255,255,255,0.055)] text-[#b4b4b8]'
+              : 'bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] text-zinc-600 dark:text-[#b4b4b8]'
           }`}
         >
           <svg
@@ -225,7 +225,7 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
           className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all ${
             mode === 'break'
               ? 'bg-green-900 text-green-100 shadow-lg'
-              : 'bg-[rgba(255,255,255,0.055)] text-[#b4b4b8]'
+              : 'bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] text-zinc-600 dark:text-[#b4b4b8]'
           }`}
         >
           <svg

@@ -310,7 +310,11 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
 .email-hybrid-shell .reader-panel {
   position: absolute; top: 0; right: 0; bottom: 0; z-index: 40;
   width: 720px; max-width: 92%;
-  background: var(--pulse-surface);
+  /* --pulse-surface is rgba(255,255,255,0.03) in dark mode — using it on
+     the slide-out left the panel almost transparent and the Cockpit
+     bled through, making the email unreadable. --pulse-canvas is the
+     fully opaque canvas color in both themes. */
+  background: var(--pulse-canvas);
   border-left: 1px solid var(--pulse-border);
   box-shadow: -18px 0 60px rgba(0, 0, 0, 0.10);
   display: flex; flex-direction: column;
