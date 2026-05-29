@@ -12,6 +12,7 @@ import { LaneSection } from './cockpit/LaneSection';
 import { DraftedForYouRail } from './cockpit/DraftedForYouRail';
 import { AwaitingRepliesRail } from './cockpit/AwaitingRepliesRail';
 import { CalendarPeekRail } from './cockpit/CalendarPeekRail';
+import { LanesHelpTip } from './cockpit/LanesHelpTip';
 import { MOCK_LANES, TRIAGE_QUEUE_IDS } from './data/mockEmails';
 import { useCockpitData } from './data/useCockpitData';
 
@@ -82,7 +83,10 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold pulse-ink-color uppercase font-mono-pulse tracking-wide-mono">Lanes</h2>
-                <span className="text-[11px] font-mono-pulse pulse-ink-3-color">AUTO-SORTED</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono-pulse pulse-ink-3-color">AUTO-SORTED</span>
+                  <LanesHelpTip />
+                </div>
               </div>
               <div className="space-y-3">
                 {MOCK_LANES.map((lane) => (
