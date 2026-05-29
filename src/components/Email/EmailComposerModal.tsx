@@ -27,7 +27,7 @@ import { useAIErrorHandler } from '../../hooks/useAIErrorHandler';
 import toast from 'react-hot-toast';
 import './email-composer.css';
 
-import { Bold, Check, ChevronDown, Clock, FileText, Gauge, HardDrive, Italic, Link, Loader2, Lock, Maximize2, Minimize2, Minus, Paperclip, RotateCcw, Save, Send, Smile, SpellCheck, Trash2, Underline, UserCog, Video, Wand2, X } from 'lucide-react';
+import { Bold, Check, ChevronDown, Clock, FileText, Gauge, HardDrive, Italic, Link, Loader2, Lock, Maximize2, Minimize2, Minus, Paperclip, Plus, RotateCcw, Save, Send, Smile, SpellCheck, Trash2, Type, Underline, UserCog, Video, Wand2, X } from 'lucide-react';
 
 interface EmailComposerModalProps {
   userEmail: string;
@@ -209,6 +209,31 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
 
   // Templates state
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+
+  // Action bar popovers (round 5 — Format ▾ and Insert ▾ collapse the
+  // round-1 13-button toolbar to ~8 controls). Click-outside closes both;
+  // mousedown-preventDefault on the inner items keeps the body textarea's
+  // selection alive so insertFormatting() can still target the cursor
+  // position when Format actions run.
+  const [showFormatPopover, setShowFormatPopover] = useState(false);
+  const [showInsertPopover, setShowInsertPopover] = useState(false);
+  const formatPopoverRef = useRef<HTMLDivElement>(null);
+  const insertPopoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showFormatPopover && !showInsertPopover) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (showFormatPopover && formatPopoverRef.current && !formatPopoverRef.current.contains(target)) {
+        setShowFormatPopover(false);
+      }
+      if (showInsertPopover && insertPopoverRef.current && !insertPopoverRef.current.contains(target)) {
+        setShowInsertPopover(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showFormatPopover, showInsertPopover]);
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1474,7 +1499,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
             </button>
           )}
 
-          {/* AI cluster — only in Sidecar (Focal has the right rail) */}
+          {/* AI cluster — Sidecar only (Focal has the right rail) */}
           {!isMaximized && (
             <>
               <span className="composer-toolbar-sep" />
@@ -1494,28 +1519,116 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               >
                 <Gauge className="w-3.5 h-3.5" />
               </button>
-              <button
-                onClick={() => setShowTemplatesModal(true)}
-                className="composer-icon-btn"
-                title="Templates"
-                aria-label="Templates"
-              >
-                <FileText className="w-3.5 h-3.5" />
-              </button>
             </>
           )}
 
-          {/* Formatting cluster — Focal only (Sidecar is space-constrained) */}
+          {/* Format ▾ — Focal only. Round 5 consolidation: was 5 individual
+              icon buttons (B/I/U/Link/Templates) in a flat strip; now one
+              popover anchored on the toolbar. mousedown-preventDefault on
+              every popover button keeps the textarea selection alive so
+              insertFormatting() can still wrap the cursor's range. */}
           {isMaximized && (
             <>
               <span className="composer-toolbar-sep" />
-              <button onClick={handleBold}      className="composer-icon-btn" title="Bold (**text**)" aria-label="Bold"><Bold className="w-3.5 h-3.5" /></button>
-              <button onClick={handleItalic}    className="composer-icon-btn" title="Italic (*text*)" aria-label="Italic"><Italic className="w-3.5 h-3.5" /></button>
-              <button onClick={handleUnderline} className="composer-icon-btn" title="Underline"        aria-label="Underline"><Underline className="w-3.5 h-3.5" /></button>
-              <button onClick={handleLink}      className="composer-icon-btn" title="Insert link"      aria-label="Insert link"><Link className="w-3.5 h-3.5" /></button>
-              <button onClick={() => setShowTemplatesModal(true)} className="composer-icon-btn" title="Templates" aria-label="Templates"><FileText className="w-3.5 h-3.5" /></button>
+              <div ref={formatPopoverRef} style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { setShowFormatPopover(p => !p); setShowInsertPopover(false); }}
+                  className={`composer-icon-btn ${showFormatPopover ? 'is-active' : ''}`}
+                  title="Format"
+                  aria-label="Format"
+                  aria-haspopup="menu"
+                  aria-expanded={showFormatPopover}
+                >
+                  <Type className="w-3.5 h-3.5" />
+                  <span>Format</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                {showFormatPopover && (
+                  <div
+                    role="menu"
+                    style={{
+                      position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, zIndex: 10,
+                      display: 'flex', gap: 2, padding: 4,
+                      background: 'var(--pulse-surface)',
+                      border: '1px solid var(--pulse-border)',
+                      borderRadius: 8,
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                    }}
+                  >
+                    <button role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => { handleBold();      setShowFormatPopover(false); }} className="composer-icon-btn" title="Bold (**text**)"   aria-label="Bold"><Bold className="w-3.5 h-3.5" /></button>
+                    <button role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => { handleItalic();    setShowFormatPopover(false); }} className="composer-icon-btn" title="Italic (*text*)"  aria-label="Italic"><Italic className="w-3.5 h-3.5" /></button>
+                    <button role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => { handleUnderline(); setShowFormatPopover(false); }} className="composer-icon-btn" title="Underline"         aria-label="Underline"><Underline className="w-3.5 h-3.5" /></button>
+                    <button role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => { handleLink();      setShowFormatPopover(false); }} className="composer-icon-btn" title="Insert link"       aria-label="Insert link"><Link className="w-3.5 h-3.5" /></button>
+                  </div>
+                )}
+              </div>
             </>
           )}
+
+          {/* Insert ▾ — both modes. Collapses Templates + Pulse Meeting +
+              Drive (when enabled) into a single menu. Drive's conditional
+              visibility is preserved inside the menu item list. */}
+          <div ref={insertPopoverRef} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => { setShowInsertPopover(p => !p); setShowFormatPopover(false); }}
+              className={`composer-icon-btn ${showInsertPopover ? 'is-active' : ''}`}
+              title="Insert"
+              aria-label="Insert"
+              aria-haspopup="menu"
+              aria-expanded={showInsertPopover}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {isMaximized && <span>Insert</span>}
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {showInsertPopover && (
+              <div
+                role="menu"
+                style={{
+                  position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, zIndex: 10,
+                  display: 'flex', flexDirection: 'column', gap: 2, padding: 4, minWidth: 180,
+                  background: 'var(--pulse-surface)',
+                  border: '1px solid var(--pulse-border)',
+                  borderRadius: 8,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                }}
+              >
+                <button
+                  role="menuitem"
+                  onClick={() => { setShowTemplatesModal(true); setShowInsertPopover(false); }}
+                  className="composer-rail-action"
+                  style={{ justifyContent: 'flex-start', gap: 8 }}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Template</span>
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => { handleInsertMeetLink(); setShowInsertPopover(false); }}
+                  disabled={meetCreating}
+                  className="composer-rail-action"
+                  style={{ justifyContent: 'flex-start', gap: 8 }}
+                >
+                  {meetCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
+                  <span>Pulse Meeting link</span>
+                </button>
+                {driveQuickAttach && (
+                  <button
+                    role="menuitem"
+                    onClick={() => { handleOpenDrive(); setShowInsertPopover(false); }}
+                    className="composer-rail-action"
+                    style={{ justifyContent: 'flex-start', gap: 8 }}
+                  >
+                    <HardDrive className="w-3.5 h-3.5" />
+                    <span>Drive file</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Utility cluster — both views */}
           <span className="composer-toolbar-sep" />
@@ -1539,14 +1652,6 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 {attachments.length}
               </span>
             )}
-          </button>
-          {driveQuickAttach && (
-            <button onClick={handleOpenDrive} className="composer-icon-btn" title="Attach from Drive" aria-label="Attach from Drive">
-              <HardDrive className="w-3.5 h-3.5" />
-            </button>
-          )}
-          <button onClick={handleInsertMeetLink} disabled={meetCreating} className="composer-icon-btn" title="Insert Pulse Meeting Link" aria-label="Insert Pulse Meeting Link">
-            {meetCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
           </button>
           <button
             onClick={() => setConfidentialEnabled(!confidentialEnabled)}
