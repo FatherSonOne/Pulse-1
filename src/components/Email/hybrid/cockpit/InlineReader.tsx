@@ -241,22 +241,6 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
         </div>
       )}
 
-      <div className="prose-mock max-w-[640px]">
-        {paragraphs.map((p, i) => {
-          const lines = p.split('\n');
-          return (
-            <p key={i}>
-              {lines.map((line, j) => (
-                <React.Fragment key={j}>
-                  {line}
-                  {j < lines.length - 1 && <br />}
-                </React.Fragment>
-              ))}
-            </p>
-          );
-        })}
-      </div>
-
       {email.draft && (
         <div className="mt-3 p-3 rounded-lg pulse-rose-bg-soft-color border pulse-rose-border">
           <div className="flex items-center gap-2 mb-1.5">
