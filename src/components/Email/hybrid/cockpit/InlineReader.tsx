@@ -8,7 +8,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import DOMPurify from 'isomorphic-dompurify';
-import { Clock, Send, Reply, Archive, MoonStar, CheckSquare, Sparkles, Maximize2 } from 'lucide-react';
+import { Clock, Send, Reply, Archive, MoonStar, CheckSquare, Maximize2 } from 'lucide-react';
+import { GeminiSummaryCard } from './GeminiSummaryCard';
 import { emailSyncService } from '../../../../services/emailSyncService';
 import { useEmailStore } from '../../../../store/emailStore';
 import { useEmailUIStore } from '../../../../store/emailUIStore';
@@ -82,24 +83,34 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
     return () => { cancelled = true; };
   }, [email.threadId]);
 
-  // Phase 12.11 — body rendering:
-  //   Prefer the email's HTML version when present (most senders ship one);
-  //   it has proper paragraph structure, lists, links, tables. We sanitize
-  //   with DOMPurify (same set the legacy EmailViewerNew uses) so embedded
-  //   <script>/<style>/inline event handlers can't execute. If only plain
-  //   body_text exists, render with white-space: pre-wrap so newlines and
-  //   indentation survive — that's better than reflowing every line into
-  //   its own paragraph the way the old `split('\n\n')` approach did when
-  //   the source had hard wraps every 76 chars.
-  const bodyHtml = email._raw?.body_html?.trim();
+  // Phase 12.11 + 12.13 — body rendering:
+  //   1. Prefer email._raw.body_html when populated (most senders ship one
+  //      alongside body_text). Sanitized with DOMPurify so embedded scripts
+  //      / styles / inline event handlers can't execute.
+  //   2. Some HTML-only senders (booking confirmations, marketing platforms)
+  //      ship body_text that's literally raw HTML source — Gmail's text
+  //      fallback just dumps the markup. Detect by sniffing for a leading
+  //      `<` and a closing tag, then route through DOMPurify too. Without
+  //      this guard the user sees raw `<center style="...">` source instead
+  //      of the rendered email.
+  //   3. Plain-text fallback for true plain-text emails — preserved
+  //      whitespace + newlines via `white-space: pre-wrap`.
+  const rawHtml = email._raw?.body_html?.trim();
+  const rawText = email.body || email._raw?.snippet || '';
+  const looksLikeHtml = (s: string) => {
+    const trimmed = s.trim();
+    if (!trimmed.startsWith('<')) return false;
+    return /<[a-z][^>]*>/i.test(trimmed) && /<\/[a-z]+>|\/>/i.test(trimmed);
+  };
+  const htmlSource = rawHtml || (looksLikeHtml(rawText) ? rawText : '');
   const sanitizedHtml = useMemo(() => {
-    if (!bodyHtml) return '';
-    return DOMPurify.sanitize(bodyHtml, {
+    if (!htmlSource) return '';
+    return DOMPurify.sanitize(htmlSource, {
       FORBID_TAGS: ['script', 'style', 'form', 'iframe', 'object', 'embed'],
       FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover', 'onfocus'],
     });
-  }, [bodyHtml]);
-  const fallbackText = email.body || email._raw?.snippet || '';
+  }, [htmlSource]);
+  const fallbackText = rawText;
 
   const handleArchiveClick = async () => {
     if (!email._raw) {
@@ -200,29 +211,16 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
         </button>
       </div>
 
-      {/* Quick reply chips (Phase 12.7) — Claude-suggested one-tap replies */}
-      {quickReplies.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap mb-3">
-          <span className="inline-flex items-center gap-1 text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">
-            <Sparkles className="w-3 h-3" />
-            QUICK REPLIES
-          </span>
-          {quickReplies.map((label, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => handleQuickReply(label)}
-              className="px-2.5 py-1 rounded-full text-[11.5px] pulse-coral-bg-08-color pulse-coral-fg-color hover:pulse-rose-bg-soft-color border pulse-border-color transition"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Phase 12.12 — Gemini Summary card unifies summary + status chips
+          + action items list + quick replies in one block at the top of
+          the reader. Replaces the loose Quick Replies row + duplicates the
+          summary line that used to live in SignalRow's header. */}
+      <GeminiSummaryCard email={email} />
 
-      {/* Meeting + action items — only render when the email has a _raw
-          CachedEmail (mock rows don't, and the extractors call AI services
-          internally that expect a real email). */}
+      {/* Meeting + action items extractors — interactive widgets, distinct
+          from the read-only Gemini Summary card above. Only render when
+          the email has a _raw CachedEmail (mock rows don't, and the
+          extractors call AI services internally that expect a real email). */}
       {showMeeting && email._raw && (
         <div className="mb-3">
           <MeetingExtractor
