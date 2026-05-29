@@ -2,9 +2,10 @@
 // Per handoff §6 step 5: subject + AI briefing strip + body + action bar
 // (Archive E / Snooze H / → Task T / Reply R or Send draft ⌘↵).
 // Phase 3 takes its email as an EmailRow (works with mock + live data alike).
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Clock, Archive, MoonStar, CheckSquare, Reply, Send, Maximize2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import DOMPurify from 'isomorphic-dompurify';
 import type { EmailRow } from './data/emailRow';
 import { useEmailUIStore } from '../../../store/emailUIStore';
 import { Avatar, AiChip, ToneChip, Keycap } from './primitives';
@@ -18,9 +19,28 @@ interface TriageCardProps {
 }
 
 export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact = false }) => {
-  const paragraphs = email.body.split('\n\n');
   const hasDraft = Boolean(email.draft);
   const openReaderPanel = useEmailUIStore((s) => s.openReaderPanel);
+
+  // Same body-rendering logic as InlineReader (Phase 12.11 + 12.13):
+  //   prefer body_html → fall through to HTML-shaped body_text → fall
+  //   through to plain text with pre-wrap. Keeps Triage focal cards from
+  //   showing raw HTML markup for senders like Pines Cottages.
+  const rawHtml = email._raw?.body_html?.trim();
+  const rawText = email.body || email._raw?.snippet || '';
+  const looksLikeHtml = (s: string) => {
+    const trimmed = s.trim();
+    if (!trimmed.startsWith('<')) return false;
+    return /<[a-z][^>]*>/i.test(trimmed) && /<\/[a-z]+>|\/>/i.test(trimmed);
+  };
+  const htmlSource = rawHtml || (looksLikeHtml(rawText) ? rawText : '');
+  const sanitizedHtml = useMemo(() => {
+    if (!htmlSource) return '';
+    return DOMPurify.sanitize(htmlSource, {
+      FORBID_TAGS: ['script', 'style', 'form', 'iframe', 'object', 'embed'],
+      FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover', 'onfocus'],
+    });
+  }, [htmlSource]);
 
   // Phase 12.10 — escape hatch from the bounded Triage stage into the
   // full-page reader. Triage idx stays put so the user comes back to the
@@ -113,21 +133,14 @@ export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact
         role="article"
         aria-label={`Email body from ${email.from}`}
       >
-        <div className="prose-mock max-w-[640px]">
-          {paragraphs.map((p, i) => {
-            const lines = p.split('\n');
-            return (
-              <p key={i}>
-                {lines.map((line, j) => (
-                  <React.Fragment key={j}>
-                    {line}
-                    {j < lines.length - 1 && <br />}
-                  </React.Fragment>
-                ))}
-              </p>
-            );
-          })}
-        </div>
+        {sanitizedHtml ? (
+          <div
+            className="email-body-html max-w-[760px]"
+            dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+          />
+        ) : (
+          <div className="email-body-text max-w-[760px]">{rawText}</div>
+        )}
       </div>
 
       {/* Action bar */}
