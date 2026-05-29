@@ -512,13 +512,13 @@ The agent updates this section every time an item changes state. Each row:
 | `play-signing` | pending | P0 | — | Enroll Play App Signing on first AAB upload |
 | `calea` | pending | P1 | — | Lawyer consult + memo + runbook |
 | `e2ee` | pending | P1 | — | Pick Option A/B/C, write positioning guide |
-| `posthog-dashboards` | in-progress | P1 | 2026-05-28 | Build the 4 PostHog insights (after `vercel-posthog`) |
+| `posthog-dashboards` | done | P1 | 2026-05-28 | Built A (Stickiness Trend), B1 (Weekly Retention), B2 (Daily Retention D1/D7/D30), C (Activation Funnel, 4-step, 7d window) in PostHog. Bundled into "Pulse — North Star" dashboard. Insight D (NSM) deferred — needs `workspace_id` on trunk `Message Sent` event (filed as #123) |
 | `qa-flags-115` | pending | P1 | — | Feature-flag QA click-through against production |
 | `v1-lane` | pending | P2 | — | Pick A/B/C, write positioning guide |
 | `sms-10dlc` | parked | P3 | — | Only when SMS unhides for v1 |
 | `dsar-export-gap` | parked | P3 | — | Only when first DSAR arrives or capacity allows |
 
-**Resume Pointer:** next unblocked item is `live-smoke-99`. Run `/launch-followups` to start there, or `/launch-followups <key>` to jump. (Sibling: `posthog-dashboards` is now unblocked since `vercel-posthog` is done — pick that if you'd rather build the four insights while events are fresh in Live.)
+**Resume Pointer:** next unblocked item is `live-smoke-99`. Run `/launch-followups` to start there, or `/launch-followups <key>` to jump.
 
 ---
 
@@ -527,3 +527,4 @@ The agent updates this section every time an item changes state. Each row:
 - **2026-05-27** — Command created. Initial checklist captures 13 items (6 × P0, 4 × P1, 1 × P2, 2 parked). All P0 items are real launch gates — bias toward clearing those before P1 decisions.
 - **2026-05-27** — `vercel-region` done. `VITE_SUPABASE_REGION=US East (us-east-1)` set in Vercel `pulse1` (Production + Preview), redeployed, bundle-verified via curl of `/assets/vendor-BRPKT_wH.js`. Settings → Compliance now surfaces the real region instead of the "Multi-region" fallback. 5 × P0 remain.
 - **2026-05-28** — `vercel-posthog` done. Set `VITE_POSTHOG_API_KEY`, `VITE_POSTHOG_HOST`, AND `VITE_APP_MODE=production` (the latter was unset, which had been silently short-circuiting BOTH PostHog and Sentry init in prod via the `ENVIRONMENT === 'development'` gate). Smoke passed: `$identify` + `Message Sent` arrived in PostHog Live events. Bundle-deploy confirmed (most chunks have new content-hashes). 4 × P0 remain; `posthog-dashboards` (P1) now unblocked. Side-finding: pre-existing temp-id rail bug surfaced during smoke (Messages → `getDecisionsByMessageIds`/`getTasksByMessageIds` ship optimistic `temp-*` IDs into UUID filters → 22P02); fixed in a separate same-session commit.
+- **2026-05-28** — `posthog-dashboards` done. Built A (Stickiness Trend with `Message Sent` Unique users ÷ Monthly active users), B1 (Weekly Retention 12wk), B2 (Daily Retention D1/D7/D30 30d), C (Activation Funnel: `$identify` → `onboarding.surface_shown` → `onboarding.first_message_sent` → `onboarding.teammate_invited`, 7-day window). All 4 bundled into a "Pulse — North Star" dashboard. Onboarding events first had to be triggered in prod (Path B) before PostHog's picker would autocomplete them — autocomplete only learns events that have actually fired. Insight D (NSM) deferred to #123: trunk `Message Sent` event carries only `message_type` + `content_type` (no `workspace_id`), so the GROUP BY needed for Weekly Active Collaborative Workspaces isn't possible from PostHog alone today. GUIDE §5.6 covers this gap; GUIDE §5.1 covers the recommended Supabase-cron NSM aggregation as a separate follow-up.
