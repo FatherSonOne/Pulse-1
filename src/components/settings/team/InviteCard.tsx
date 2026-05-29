@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useRef } from 'react';
-import { Send, Loader2, AlertCircle, Check, Mail, FileText, Upload, X } from 'lucide-react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { Send, Loader2, AlertCircle, Check, Mail, FileText, Upload, X, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { workspaceService } from '../../../services/workspaceService';
 import { useWorkspaceMutationLock } from '../../../contexts/WorkspaceContext';
@@ -65,6 +65,89 @@ interface InviteCardProps {
 }
 
 type InviteMode = 'single' | 'bulk';
+
+const ROLE_META: Record<InviteRole, { label: string; tone: string; hint: string }> = {
+  admin:  { label: 'Admin',  tone: 'text-amber-600 dark:text-amber-400', hint: 'Manage members, billing, and settings' },
+  member: { label: 'Member', tone: 'text-zinc-700 dark:text-zinc-300',   hint: 'Default workspace access' },
+  viewer: { label: 'Viewer', tone: 'text-zinc-500 dark:text-zinc-400',   hint: 'Read-only access' },
+};
+
+interface RoleSelectorProps {
+  value: InviteRole;
+  onChange: (next: InviteRole) => void;
+  disabled?: boolean;
+}
+
+/** Custom role dropdown matching the member-row role chip pattern in
+ *  TeamSettings.tsx. Replaces the underdeveloped native <select> so the
+ *  invite row looks at home next to the rest of the team UI. */
+const RoleSelector: React.FC<RoleSelectorProps> = ({ value, onChange, disabled }) => {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const current = ROLE_META[value];
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Invite role: ${current.label}`}
+        className="h-full inline-flex items-center gap-2 px-3 py-2.5 text-sm font-medium bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:border-zinc-300 dark:hover:border-zinc-600 transition disabled:opacity-50"
+      >
+        <span className={current.tone}>{current.label}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          aria-label="Invite role"
+          className="absolute right-0 top-full mt-1.5 z-50 w-56 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg py-1 overflow-hidden"
+        >
+          {(['admin', 'member', 'viewer'] as const).map((key) => {
+            const meta = ROLE_META[key];
+            const selected = key === value;
+            return (
+              <li key={key} role="option" aria-selected={selected}>
+                <button
+                  type="button"
+                  onClick={() => { onChange(key); setOpen(false); }}
+                  className={`w-full text-left px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition flex items-start gap-2 ${
+                    selected ? 'bg-rose-50/60 dark:bg-rose-500/10' : ''
+                  }`}
+                >
+                  <Check className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${selected ? 'text-rose-500' : 'text-transparent'}`} />
+                  <div className="min-w-0">
+                    <p className={`text-sm font-medium ${meta.tone}`}>{meta.label}</p>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight">{meta.hint}</p>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+};
 
 /**
  * Unified invite card. Replaces the previous setup of inline single-invite
@@ -295,38 +378,42 @@ export const InviteCard: React.FC<InviteCardProps> = ({
           </div>
         </div>
 
-        {/* Single mode */}
+        {/* Single mode — email gets a dedicated full-width row; role + help +
+            send sit on the second row so nothing competes with the input for
+            click/focus area. */}
         {mode === 'single' && (
-          <div className="flex gap-2 flex-wrap">
-            <input
-              ref={emailInputRef}
-              type="email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="colleague@company.com"
-              className="flex-1 min-w-[240px] bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500"
-              onKeyDown={(e) => e.key === 'Enter' && handleSingleInvite()}
-            />
-            <select
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value as InviteRole)}
-              aria-label="Invite role"
-              className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 dark:text-white text-zinc-900 text-sm focus:outline-none focus:border-rose-500"
-            >
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-              <option value="viewer">Viewer</option>
-            </select>
-            <RoleHelpPopover />
-            <button
-              type="button"
-              onClick={handleSingleInvite}
-              disabled={!inviteEmail || isInviting}
-              className="px-6 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"
-            >
-              {isInviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Send
-            </button>
+          <div className="space-y-2.5">
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+              <input
+                ref={emailInputRef}
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="colleague@company.com"
+                autoComplete="email"
+                spellCheck={false}
+                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg pl-9 pr-3 py-2.5 text-sm dark:text-white text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 transition"
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSingleInvite(); }}
+              />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <RoleSelector
+                value={inviteRole}
+                onChange={setInviteRole}
+                disabled={isInviting}
+              />
+              <RoleHelpPopover />
+              <button
+                type="button"
+                onClick={handleSingleInvite}
+                disabled={!inviteEmail || isInviting}
+                className="ml-auto inline-flex items-center gap-2 px-5 py-2.5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-semibold rounded-lg shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isInviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Send invite
+              </button>
+            </div>
           </div>
         )}
 
