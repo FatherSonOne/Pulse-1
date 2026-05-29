@@ -27,7 +27,7 @@ import { useAIErrorHandler } from '../../hooks/useAIErrorHandler';
 import toast from 'react-hot-toast';
 import './email-composer.css';
 
-import { Bold, ChevronDown, Clock, FileText, Gauge, HardDrive, Italic, Link, Loader2, Lock, Maximize2, Minimize2, Minus, Paperclip, Save, Send, Smile, SpellCheck, Trash2, Underline, UserCog, Video, Wand2, X } from 'lucide-react';
+import { Bold, Check, ChevronDown, Clock, FileText, Gauge, HardDrive, Italic, Link, Loader2, Lock, Maximize2, Minimize2, Minus, Paperclip, RotateCcw, Save, Send, Smile, SpellCheck, Trash2, Underline, UserCog, Video, Wand2, X } from 'lucide-react';
 
 interface EmailComposerModalProps {
   userEmail: string;
@@ -104,6 +104,15 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
   const [smartComposeLoading, setSmartComposeLoading] = useState(false);
   const [meetCreating, setMeetCreating] = useState(false);
   const [driveQuickAttach, setDriveQuickAttach] = useState(true);
+
+  // Sidecar-only "Suggested reply" card flow. When a draft is generated
+  // from the Sidecar (replyTo present), the result lands here for review
+  // instead of being inserted directly into body — Accept commits it,
+  // Edit-first commits then dismisses, Regenerate re-runs the prompt.
+  // Focal Canvas continues to insert directly into body (the AI rail
+  // there owns the same role visually).
+  const [pendingAiDraft, setPendingAiDraft] = useState<string | null>(null);
+  const [aiDraftAccepted, setAiDraftAccepted] = useState(false);
 
   // Confidential mode
   const [confidentialEnabled, setConfidentialEnabled] = useState(false);
@@ -359,15 +368,25 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
         replyTo: replyTo || undefined,
       });
 
-      // If replying, keep the quoted reply at the bottom
-      const quotedReply = replyTo
-        ? `\n\n---\nOn ${new Date(replyTo.received_at).toLocaleString()}, ${replyTo.from_name || replyTo.from_email} wrote:\n\n${replyTo.body_text}`
-        : '';
-
-      setBody(draft + quotedReply);
-      setShowAiPanel(false);
-      setAiPrompt('');
-      toast.success('Draft generated!');
+      if (isMaximized) {
+        // Focal Canvas — direct insert into body. The AI rail's coral
+        // "Draft for me" card IS the provenance UI here.
+        const quotedReply = replyTo
+          ? `\n\n---\nOn ${new Date(replyTo.received_at).toLocaleString()}, ${replyTo.from_name || replyTo.from_email} wrote:\n\n${replyTo.body_text}`
+          : '';
+        setBody(draft + quotedReply);
+        setShowAiPanel(false);
+        setAiPrompt('');
+        toast.success('Draft generated!');
+      } else {
+        // Sidecar — hold in pending state so the user can review the
+        // suggested-reply card before it touches the body. aiPrompt is
+        // preserved so Regenerate can re-run the same intent.
+        setPendingAiDraft(draft);
+        setAiDraftAccepted(false);
+        setShowAiPanel(false);
+        toast.success('Draft ready — review below');
+      }
     } catch (error) {
       console.error('Draft generation error:', error);
       if (!handleAIError(error)) {
@@ -376,6 +395,39 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
     } finally {
       setAiGenerating(false);
     }
+  };
+
+  // Suggested-reply card action handlers (Sidecar only). Accept commits the
+  // pending draft into body and shows the "Accepted draft" pill; Edit-first
+  // commits and immediately dismisses the card to let the user edit freely;
+  // Reopen brings the pre-accept card back; Discard clears everything.
+  const acceptPendingAiDraft = () => {
+    if (!pendingAiDraft) return;
+    const quotedReply = replyTo
+      ? `\n\n---\nOn ${new Date(replyTo.received_at).toLocaleString()}, ${replyTo.from_name || replyTo.from_email} wrote:\n\n${replyTo.body_text}`
+      : '';
+    setBody(pendingAiDraft + quotedReply);
+    setAiDraftAccepted(true);
+  };
+
+  const editPendingAiDraft = () => {
+    if (!pendingAiDraft) return;
+    const quotedReply = replyTo
+      ? `\n\n---\nOn ${new Date(replyTo.received_at).toLocaleString()}, ${replyTo.from_name || replyTo.from_email} wrote:\n\n${replyTo.body_text}`
+      : '';
+    setBody(pendingAiDraft + quotedReply);
+    setPendingAiDraft(null);
+    setAiDraftAccepted(false);
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  };
+
+  const reopenPendingAiDraft = () => {
+    setAiDraftAccepted(false);
+  };
+
+  const discardPendingAiDraft = () => {
+    setPendingAiDraft(null);
+    setAiDraftAccepted(false);
   };
 
   // Check tone before sending
@@ -1070,8 +1122,48 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
           </div>
         ) : (
           /* Sidecar: stacked fields + body. AI/Tone panels appear inline above
-              the action bar when toggled from the toolbar. */
+              the action bar when toggled from the toolbar. Suggested-reply
+              card sits between the chrome and fields when a draft is pending
+              (Sidecar-only — Focal's rail "Draft for me" card is the
+              equivalent provenance UI there). */
           <>
+            {pendingAiDraft && !aiDraftAccepted && (
+              <div className="composer-ai-panel" role="region" aria-label="Suggested reply">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span className="composer-ai-chip">SUGGESTED REPLY</span>
+                  <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }}>
+                    {replyTo ? `based on ${replyTo.from_name || replyTo.from_email}'s note` : 'based on your prompt'}
+                  </span>
+                  <button onClick={discardPendingAiDraft} className="composer-icon-btn" style={{ marginLeft: 'auto', width: 24, height: 24 }} aria-label="Discard suggestion">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                <div style={{ fontSize: 13.5, color: 'var(--pulse-ink)', lineHeight: 1.55, fontStyle: 'italic', whiteSpace: 'pre-wrap', marginBottom: 12 }}>
+                  {pendingAiDraft}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <button onClick={acceptPendingAiDraft} className="composer-send-pill" style={{ padding: '6px 12px', fontSize: 12 }}>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Accept</span>
+                  </button>
+                  <button onClick={editPendingAiDraft} className="composer-quiet-btn" style={{ padding: '6px 10px', fontSize: 12 }}>
+                    Edit first
+                  </button>
+                  <button
+                    onClick={handleGenerateAiDraft}
+                    disabled={aiGenerating || !aiPrompt.trim()}
+                    className="composer-quiet-btn"
+                    style={{ padding: '6px 10px', fontSize: 12 }}
+                    title={aiPrompt.trim() ? 'Regenerate with the same prompt' : 'Open AI panel to enter a new prompt'}
+                  >
+                    {aiGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+                    <span>Regenerate</span>
+                  </button>
+                  <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.08em' }}>⌘J</span>
+                </div>
+              </div>
+            )}
+
             <div className="composer-sidecar-fields">
               <div className="composer-field-row">
                 <span className="composer-field-label">To</span>
@@ -1114,6 +1206,15 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
             </div>
 
             <div className="composer-sidecar-body">
+              {pendingAiDraft && aiDraftAccepted && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <span className="composer-ai-chip positive">ACCEPTED DRAFT</span>
+                  <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }}>edit freely below</span>
+                  <button onClick={reopenPendingAiDraft} className="composer-quiet-btn" style={{ marginLeft: 'auto', padding: '4px 10px', fontSize: 11 }}>
+                    Reopen suggestion
+                  </button>
+                </div>
+              )}
               <textarea
                 ref={textareaRef}
                 value={body}
