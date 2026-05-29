@@ -1,19 +1,51 @@
-// InlineReader — expanded reader inside a SignalRow.
-// Phase 2: wires Reply / Archive / Snooze / Task → emailStore + emailComposeStore.
-// Lazy-loads the full thread (if threadCount > 1) on mount so the user sees
-// the full conversation without leaving the Cockpit.
+// InlineReader — expanded reader inside a SignalRow (or hosted inside the
+// EmailReaderPanel for Lane/Folder/Search rows). Renders the full email
+// content plus AI-extracted blocks (Phase 12.7):
+//   - Quick-reply chips from ai_suggested_replies
+//   - MeetingExtractor — opens Google Calendar in a new tab on confirm
+//   - ActionItemExtractor — toast stub for now; wires to DecisionTaskHub
+//     in the same v1.1 sweep as the → Task button.
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Clock, Send, Reply, Archive, MoonStar, CheckSquare } from 'lucide-react';
+import { Clock, Send, Reply, Archive, MoonStar, CheckSquare, Sparkles } from 'lucide-react';
 import { emailSyncService } from '../../../../services/emailSyncService';
 import { useEmailStore } from '../../../../store/emailStore';
 import { useEmailUIStore } from '../../../../store/emailUIStore';
 import { useEmailComposeStore } from '../../../../store/emailComposeStore';
 import type { EmailRow } from '../data/emailRow';
 import { AiChip, Keycap } from '../primitives';
+import MeetingExtractor from '../../MeetingExtractor';
+import ActionItemExtractor from '../../ActionItemExtractor';
 
 interface InlineReaderProps {
   email: EmailRow;
+}
+
+interface ExtractedMeetingShape {
+  title?: string;
+  date?: Date;
+  location?: string;
+  attendees?: string[];
+}
+
+function openGoogleCalendar(meeting: ExtractedMeetingShape, subjectFallback: string) {
+  const startDate = meeting.date ? new Date(meeting.date) : new Date();
+  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // +1 hour default
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+  const url = new URL('https://calendar.google.com/calendar/render');
+  url.searchParams.set('action', 'TEMPLATE');
+  url.searchParams.set('text', meeting.title || subjectFallback);
+  url.searchParams.set('dates', `${fmt(startDate)}/${fmt(endDate)}`);
+  if (meeting.location) url.searchParams.set('location', meeting.location);
+  const attendees = (meeting.attendees || []).filter(Boolean);
+  if (attendees.length) {
+    url.searchParams.set('add', attendees.join(','));
+    url.searchParams.set('details', `From email: ${subjectFallback}\n\nAttendees: ${attendees.join(', ')}`);
+  } else {
+    url.searchParams.set('details', `From email: ${subjectFallback}`);
+  }
+  window.open(url.toString(), '_blank');
 }
 
 export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
@@ -21,6 +53,15 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
   const openReply = useEmailComposeStore((s) => s.openReply);
 
   const [threadCount, setThreadCount] = useState<number>(email.threadCount);
+  // Extractor visibility — reset per email so dismissing for one doesn't
+  // suppress the cards on the next one rendered through the same component.
+  const [showMeeting, setShowMeeting] = useState<boolean>(true);
+  const [showActions, setShowActions] = useState<boolean>(true);
+
+  useEffect(() => {
+    setShowMeeting(true);
+    setShowActions(true);
+  }, [email.id]);
 
   // Lazy-fetch the full thread when the reader expands, if this looks like
   // a multi-message thread. Updates the displayed count once known.
@@ -73,6 +114,36 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
     toast('Push to Decisions & Tasks coming soon.');
   };
 
+  // Phase 12.7 — quick replies from ai_suggested_replies. Clicking one opens
+  // the composer prefilled with that text so the user can review + send.
+  const quickReplies = email.aiActions
+    .filter((a) => a.kind === 'reply')
+    .map((a) => a.label)
+    .filter((label) => label && label.length > 0)
+    .slice(0, 3);
+
+  const handleQuickReply = (text: string) => {
+    if (!email._raw) {
+      toast('Mock row — quick reply is a no-op here.');
+      return;
+    }
+    openReply(email._raw, text);
+  };
+
+  // Calendar + Tasks extractor callbacks (Phase 12.7).
+  const handleAddToCalendar = (meeting: ExtractedMeetingShape) => {
+    openGoogleCalendar(meeting, email.subject);
+    toast.success('Opening Google Calendar…');
+    setShowMeeting(false);
+  };
+
+  const handleCreateTasks = (items: unknown[]) => {
+    // TODO(post-hybrid-soak): wire to decisionTaskHub. Same v1.1 sweep as
+    // the → Task button. See memory: project_pulse_decisions_tasks_revisit.md
+    toast.success(`Created ${items.length} task${items.length === 1 ? '' : 's'} (stub).`);
+    setShowActions(false);
+  };
+
   return (
     <div className="reader-expand px-5 py-4">
       <div className="flex items-center gap-2 mb-3 text-[11px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">
@@ -87,6 +158,49 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
         <span>·</span>
         <span className="lowercase tracking-normal">{email.fromEmail}</span>
       </div>
+
+      {/* Quick reply chips (Phase 12.7) — Claude-suggested one-tap replies */}
+      {quickReplies.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap mb-3">
+          <span className="inline-flex items-center gap-1 text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">
+            <Sparkles className="w-3 h-3" />
+            QUICK REPLIES
+          </span>
+          {quickReplies.map((label, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handleQuickReply(label)}
+              className="px-2.5 py-1 rounded-full text-[11.5px] pulse-coral-bg-08-color pulse-coral-fg-color hover:pulse-rose-bg-soft-color border pulse-border-color transition"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Meeting + action items — only render when the email has a _raw
+          CachedEmail (mock rows don't, and the extractors call AI services
+          internally that expect a real email). */}
+      {showMeeting && email._raw && (
+        <div className="mb-3">
+          <MeetingExtractor
+            email={email._raw}
+            onAddToCalendar={handleAddToCalendar}
+            onDismiss={() => setShowMeeting(false)}
+          />
+        </div>
+      )}
+
+      {showActions && email._raw && (
+        <div className="mb-3">
+          <ActionItemExtractor
+            email={email._raw}
+            onCreateTasks={handleCreateTasks}
+            onDismiss={() => setShowActions(false)}
+          />
+        </div>
+      )}
 
       <div className="prose-mock max-w-[640px]">
         {paragraphs.map((p, i) => {
