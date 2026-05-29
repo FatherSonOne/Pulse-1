@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useEmailStore } from '../../../../store/emailStore';
 import { emailSyncService, type CachedEmail } from '../../../../services/emailSyncService';
+import { useFilteredEmails } from './emailFilters';
 import {
   cachedEmailToRow,
   categorize,
@@ -51,7 +52,12 @@ const FOLLOW_UP_WINDOW_DAYS = 14;
 const COLD_THREAD_THRESHOLD_DAYS = 7;
 
 export function useCockpitData(): CockpitData {
-  const emails = useEmailStore((s) => s.emails);
+  // Filtered emails drive everything (signal / lanes / briefing counts).
+  // The raw emailStore.emails still backs awaiting-replies + the briefing
+  // body's "scanned N emails" copy because those describe the inbox at
+  // large, not the filtered view.
+  const emails = useFilteredEmails();
+  const rawEmails = useEmailStore((s) => s.emails);
   const loading = useEmailStore((s) => s.loading);
 
   // Awaiting-replies state is derived from sent emails (not on emailStore.emails);
@@ -61,11 +67,11 @@ export function useCockpitData(): CockpitData {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const rows = await computeAwaitingReplies(emails);
+      const rows = await computeAwaitingReplies(rawEmails);
       if (!cancelled) setAwaitingReplies(rows);
     })();
     return () => { cancelled = true; };
-  }, [emails]);
+  }, [rawEmails]);
 
   return useMemo<CockpitData>(() => {
     const now = new Date();

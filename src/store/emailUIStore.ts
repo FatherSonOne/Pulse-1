@@ -9,6 +9,39 @@ type Density = 'comfortable' | 'compact' | 'default';
 
 export type EmailHybridMode = 'cockpit' | 'triage';
 
+// ─── Filter state (Phase 12.5) ────────────────────────────────────────────
+export type ReadStatusFilter = 'all' | 'unread' | 'read';
+export type StarredFilter = 'all' | 'starred';
+export type AttachmentFilter = 'all' | 'with-attachment';
+export type LaneFilter = 'all' | 'work' | 'admin' | 'tools' | 'news' | 'personal';
+export type DateRangeFilter = 'all' | 'today' | 'this-week' | 'this-month';
+
+export interface EmailFilters {
+  readStatus: ReadStatusFilter;
+  starred: StarredFilter;
+  attachment: AttachmentFilter;
+  lane: LaneFilter;
+  dateRange: DateRangeFilter;
+}
+
+export const DEFAULT_EMAIL_FILTERS: EmailFilters = {
+  readStatus: 'all',
+  starred: 'all',
+  attachment: 'all',
+  lane: 'all',
+  dateRange: 'all',
+};
+
+export function countActiveFilters(filters: EmailFilters): number {
+  let n = 0;
+  if (filters.readStatus !== 'all') n++;
+  if (filters.starred !== 'all') n++;
+  if (filters.attachment !== 'all') n++;
+  if (filters.lane !== 'all') n++;
+  if (filters.dateRange !== 'all') n++;
+  return n;
+}
+
 export interface TriageActedLast {
   label: string;
   sender: string;
@@ -60,6 +93,8 @@ interface EmailUIState {
   snoozeTargetEmailId: string | null;
   /** When non-null, the hybrid surface renders the slide-out EmailReaderPanel for this email. */
   readerPanelEmailId: string | null;
+  /** Active filter state — applies to Cockpit + FolderListView; resets on folder change. */
+  emailFilters: EmailFilters;
 
   // Actions
   setZoomLevel: (level: number) => void;
@@ -87,6 +122,8 @@ interface EmailUIState {
   setFocusedSignalRowId: (id: string | null) => void;
   setSnoozeTargetEmailId: (id: string | null) => void;
   setReaderPanelEmailId: (id: string | null) => void;
+  setEmailFilter: <K extends keyof EmailFilters>(key: K, value: EmailFilters[K]) => void;
+  resetEmailFilters: () => void;
 }
 
 export const useEmailUIStore = create<EmailUIState>()((set) => ({
@@ -111,6 +148,7 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   focusedSignalRowId: null,
   snoozeTargetEmailId: null,
   readerPanelEmailId: null,
+  emailFilters: DEFAULT_EMAIL_FILTERS,
 
   setZoomLevel: (level) => set({ zoomLevel: Math.max(50, Math.min(100, level)) }),
   zoomIn: () => set((s) => ({ zoomLevel: Math.min(s.zoomLevel + 10, 100) })),
@@ -148,4 +186,8 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   setFocusedSignalRowId: (id) => set({ focusedSignalRowId: id }),
   setSnoozeTargetEmailId: (id) => set({ snoozeTargetEmailId: id }),
   setReaderPanelEmailId: (id) => set({ readerPanelEmailId: id }),
+  setEmailFilter: (key, value) => set((s) => ({
+    emailFilters: { ...s.emailFilters, [key]: value },
+  })),
+  resetEmailFilters: () => set({ emailFilters: DEFAULT_EMAIL_FILTERS }),
 }));

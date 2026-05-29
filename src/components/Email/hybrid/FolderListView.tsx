@@ -7,6 +7,8 @@ import toast from 'react-hot-toast';
 import { Loader2, Archive, Trash2, MailOpen, Star, MoonStar, X } from 'lucide-react';
 import { useEmailStore } from '../../../store/emailStore';
 import { useEmailUIStore } from '../../../store/emailUIStore';
+import { useFilteredEmails } from './data/emailFilters';
+import { ActiveFiltersStrip } from './chrome/ActiveFiltersStrip';
 import { supabase } from '../../../services/supabase';
 import { BACKEND_URL } from '../../../config/backend';
 import { Avatar } from './primitives';
@@ -18,7 +20,7 @@ type BulkAction = 'archive' | 'delete' | 'markAsRead';
 
 export const FolderListView: React.FC = () => {
   const currentFolder = useEmailStore((s) => s.currentFolder);
-  const emails = useEmailStore((s) => s.emails);
+  const emails = useFilteredEmails();
   const loading = useEmailStore((s) => s.loading);
 
   const handleArchive = useEmailStore((s) => s.handleArchive);
@@ -117,6 +119,8 @@ export const FolderListView: React.FC = () => {
           {meta.label}
         </h1>
       </div>
+
+      <ActiveFiltersStrip />
 
       {/* Bulk action strip — only when items selected */}
       {selectedCount > 0 && (

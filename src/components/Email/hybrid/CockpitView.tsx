@@ -13,6 +13,7 @@ import { DraftedForYouRail } from './cockpit/DraftedForYouRail';
 import { AwaitingRepliesRail } from './cockpit/AwaitingRepliesRail';
 import { CalendarPeekRail } from './cockpit/CalendarPeekRail';
 import { LanesHelpTip } from './cockpit/LanesHelpTip';
+import { ActiveFiltersStrip } from './chrome/ActiveFiltersStrip';
 import { MOCK_LANES, TRIAGE_QUEUE_IDS } from './data/mockEmails';
 import { useCockpitData } from './data/useCockpitData';
 
@@ -50,6 +51,8 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
         onStartTriage={onOpenTriage}
         nudgeFocused={nudgeFocused}
       />
+
+      <ActiveFiltersStrip />
 
       {loading && (
         <div className="px-10 py-20 flex flex-col items-center gap-3 pulse-ink-3-color">

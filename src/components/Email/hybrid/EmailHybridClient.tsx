@@ -190,6 +190,13 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     if (!isInbox && mode === 'triage') setMode('cockpit');
   }, [isInbox, mode, setMode]);
 
+  // Reset filters when the folder changes — filters are scoped to the
+  // current folder, not persisted across navigation (per Phase 12.5).
+  const resetEmailFilters = useEmailUIStore((s) => s.resetEmailFilters);
+  useEffect(() => {
+    resetEmailFilters();
+  }, [currentFolder, resetEmailFilters]);
+
   useEffect(() => {
     if (searchActive) return; // search results replace folder data — skip the reload
     void loadEmails();

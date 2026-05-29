@@ -9,6 +9,7 @@ import { GoogleAuthStatus } from '../../GoogleAuthStatus';
 import { OfflineIndicatorCompact } from '../../OfflineIndicator';
 import { SegmentedModeToggle } from './SegmentedModeToggle';
 import { FoldersDropdown } from './FoldersDropdown';
+import { FiltersDropdown } from './FiltersDropdown';
 
 interface CanvasTopBarProps {
   triageRemaining: number;
@@ -61,6 +62,8 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
       />
 
       <FoldersDropdown />
+
+      <FiltersDropdown />
 
       <div className="flex-1 max-w-xl relative min-w-0">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pulse-ink-3-color" />
