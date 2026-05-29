@@ -74,7 +74,7 @@ export const GeminiSummaryCard: React.FC<GeminiSummaryCardProps> = ({ email }) =
       <div className="flex items-start justify-between gap-3 mb-2.5">
         <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color flex items-center gap-1.5">
           <span aria-hidden="true" className="inline-block w-1.5 h-1.5 rounded-full pulse-rose-bg-color" />
-          GEMINI · SUMMARY
+          SUMMARY
         </div>
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
           {priority && <StatusChip>{priority}</StatusChip>}

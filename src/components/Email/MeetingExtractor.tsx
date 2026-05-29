@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { CachedEmail } from '../../services/emailSyncService';
 
 import { Calendar, CalendarPlus, Clock, Loader2, X } from 'lucide-react';
+import { AiChip } from './hybrid/primitives';
 
 interface ExtractedMeeting {
   title: string;
@@ -269,24 +270,10 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
         borderBottom: '1px solid color-mix(in oklab, var(--pulse-rose) 15%, transparent)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '4px 8px', borderRadius: 4,
-            background: 'var(--pulse-surface-raised)',
-            color: 'var(--pulse-rose-text)',
-            fontFamily: 'var(--pulse-font-mono)',
-            fontSize: 10, fontWeight: 500,
-            letterSpacing: '0.1em', textTransform: 'uppercase', lineHeight: 1,
-          }}>
-            <CalendarPlus className="w-3 h-3" aria-hidden />
-            Claude · Meeting
-          </span>
-          <span style={{
+          <AiChip icon={<CalendarPlus className="w-3 h-3" aria-hidden />}>Meeting</AiChip>
+          <span className="email-mono-label" style={{
             padding: '3px 7px', borderRadius: 4,
             background: tone.bg, color: tone.color,
-            fontFamily: 'var(--pulse-font-mono)',
-            fontSize: 10, fontWeight: 500,
-            letterSpacing: '0.1em', textTransform: 'uppercase', lineHeight: 1,
           }}>
             {tone.label}
           </span>

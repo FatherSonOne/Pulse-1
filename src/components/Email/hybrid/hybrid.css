@@ -72,6 +72,19 @@
    carries the per-chip context (CalendarPlus for Meeting, ListChecks
    for Tasks, etc.). */
 .email-hybrid-shell .ai-chip.has-icon::before { display: none; }
+
+/* Mono-label primitive — used by AI extractor cards (Meeting, Tasks)
+   and other secondary count / confidence / status chips that want the
+   AI-section mono register without claiming AI-provenance status (no
+   leading dot, no rose color). Pair with inline `background` and
+   `color` for the specific tint. Global (no shell scope) so MeetingExtractor
+   and ActionItemExtractor can consume it whether they mount inside or
+   outside the hybrid shell. */
+.email-mono-label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--pulse-font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; line-height: 1;
+}
 .email-hybrid-shell .ai-chip.muted    { background: var(--pulse-surface-raised); color: var(--pulse-ink-2); }
 .email-hybrid-shell .ai-chip.pending  { background: rgba(245, 158, 11, 0.12); color: #b45309; }
 html.dark .email-hybrid-shell .ai-chip.pending { color: #fbbf24; }

@@ -4,6 +4,7 @@ import { CachedEmail } from '../../services/emailSyncService';
 import { supabase } from '../../services/supabase';
 
 import { Calendar, Check, ListChecks, Loader2, Plus, X } from 'lucide-react';
+import { AiChip } from './hybrid/primitives';
 
 interface ActionItem {
   id: string;
@@ -260,25 +261,11 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
         borderBottom: '1px solid color-mix(in oklab, var(--pulse-rose) 15%, transparent)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '4px 8px', borderRadius: 4,
-            background: 'var(--pulse-surface-raised)',
-            color: 'var(--pulse-rose-text)',
-            fontFamily: 'var(--pulse-font-mono)',
-            fontSize: 10, fontWeight: 500,
-            letterSpacing: '0.1em', textTransform: 'uppercase', lineHeight: 1,
-          }}>
-            <ListChecks className="w-3 h-3" aria-hidden />
-            Claude · Tasks
-          </span>
-          <span style={{
+          <AiChip icon={<ListChecks className="w-3 h-3" aria-hidden />}>Tasks</AiChip>
+          <span className="email-mono-label" style={{
             padding: '3px 7px', borderRadius: 4,
             background: 'var(--pulse-surface-raised)',
             color: 'var(--pulse-ink-3)',
-            fontFamily: 'var(--pulse-font-mono)',
-            fontSize: 10, fontWeight: 500,
-            letterSpacing: '0.1em', textTransform: 'uppercase', lineHeight: 1,
           }}>
             {actionItems.length} found
           </span>
