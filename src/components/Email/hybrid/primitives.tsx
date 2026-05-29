@@ -51,16 +51,30 @@ export const Avatar: React.FC<AvatarProps> = ({ name, size = 36 }) => (
 type AiChipVariant = 'summary' | 'pending' | 'muted' | 'positive';
 interface AiChipProps {
   variant?: AiChipVariant;
+  /**
+   * Optional leading icon. When provided, the chip's signature ::before
+   * dot is suppressed (see hybrid.css `.ai-chip.has-icon::before`) and
+   * the icon takes its place. Use for context-specific chips like
+   * "Meeting" (CalendarPlus) or "Tasks" (ListChecks) where the icon
+   * communicates more than the generic dot would.
+   */
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }
 
-export const AiChip: React.FC<AiChipProps> = ({ variant = 'summary', children }) => {
-  const cls =
+export const AiChip: React.FC<AiChipProps> = ({ variant = 'summary', icon, children }) => {
+  const baseCls =
     variant === 'pending' ? 'ai-chip pending'
     : variant === 'muted' ? 'ai-chip muted'
     : variant === 'positive' ? 'ai-chip positive'
     : 'ai-chip';
-  return <span className={cls}>{children}</span>;
+  const cls = icon ? `${baseCls} has-icon` : baseCls;
+  return (
+    <span className={cls}>
+      {icon}
+      {children}
+    </span>
+  );
 };
 
 type Tone = 'warm' | 'cool' | 'cold' | 'hot';

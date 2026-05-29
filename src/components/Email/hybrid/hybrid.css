@@ -67,6 +67,11 @@
   content: ''; width: 6px; height: 6px; border-radius: 50%;
   background: currentColor; flex: none;
 }
+/* When an icon is supplied via the AiChip primitive's icon prop, the
+   generic ::before dot is suppressed — the icon takes its place and
+   carries the per-chip context (CalendarPlus for Meeting, ListChecks
+   for Tasks, etc.). */
+.email-hybrid-shell .ai-chip.has-icon::before { display: none; }
 .email-hybrid-shell .ai-chip.muted    { background: var(--pulse-surface-raised); color: var(--pulse-ink-2); }
 .email-hybrid-shell .ai-chip.pending  { background: rgba(245, 158, 11, 0.12); color: #b45309; }
 html.dark .email-hybrid-shell .ai-chip.pending { color: #fbbf24; }
