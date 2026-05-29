@@ -657,6 +657,31 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
     }
   };
 
+  // Body textarea keyboard shortcuts. Round 5's action-bar collapse
+  // (commit 2932036) moved Bold / Italic / Underline / Link behind the
+  // Format ▾ popover, which removed every keyboard pathway to those
+  // actions. Power users coming from Gmail / Superhuman / Outlook reach
+  // for ⌘B and expect bold; without this handler they got nothing.
+  // Wired here so each textarea (Focal + Sidecar) shares one intercept.
+  const handleBodyKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!(e.metaKey || e.ctrlKey)) return;
+    if (e.shiftKey || e.altKey) return;
+    const key = e.key.toLowerCase();
+    if (key === 'b') {
+      e.preventDefault();
+      insertFormatting('**');
+    } else if (key === 'i') {
+      e.preventDefault();
+      insertFormatting('*');
+    } else if (key === 'u') {
+      e.preventDefault();
+      insertFormatting('<u>', '</u>');
+    } else if (key === 'k') {
+      e.preventDefault();
+      handleLink();
+    }
+  }, [insertFormatting]);
+
   // Handle file attachment
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -1023,6 +1048,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                     ref={textareaRef}
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
+                    onKeyDown={handleBodyKeyDown}
                     placeholder={replyTo ? `Reply to ${replyTo.from_name || replyTo.from_email}…` : 'Compose your email…'}
                     className="composer-body"
                     rows={14}
@@ -1291,6 +1317,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 ref={textareaRef}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
+                onKeyDown={handleBodyKeyDown}
                 placeholder={replyTo ? `Reply to ${replyTo.from_name || replyTo.from_email}…` : 'Compose your email…'}
                 className="composer-body"
                 rows={10}
@@ -1550,17 +1577,29 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                     role="menu"
                     style={{
                       position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, zIndex: 10,
-                      display: 'flex', gap: 2, padding: 4,
+                      display: 'flex', flexDirection: 'column', gap: 2, padding: 4, minWidth: 180,
                       background: 'var(--pulse-surface)',
                       border: '1px solid var(--pulse-border)',
                       borderRadius: 8,
                       boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
                     }}
                   >
-                    <button role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => { handleBold();      setShowFormatPopover(false); }} className="composer-icon-btn" title="Bold (**text**)"   aria-label="Bold"><Bold className="w-3.5 h-3.5" /></button>
-                    <button role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => { handleItalic();    setShowFormatPopover(false); }} className="composer-icon-btn" title="Italic (*text*)"  aria-label="Italic"><Italic className="w-3.5 h-3.5" /></button>
-                    <button role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => { handleUnderline(); setShowFormatPopover(false); }} className="composer-icon-btn" title="Underline"         aria-label="Underline"><Underline className="w-3.5 h-3.5" /></button>
-                    <button role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => { handleLink();      setShowFormatPopover(false); }} className="composer-icon-btn" title="Insert link"       aria-label="Insert link"><Link className="w-3.5 h-3.5" /></button>
+                    <button role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => { handleBold();      setShowFormatPopover(false); }} className="composer-rail-action" aria-label="Bold">
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Bold className="w-3.5 h-3.5" />Bold</span>
+                      <span className="meta">⌘B</span>
+                    </button>
+                    <button role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => { handleItalic();    setShowFormatPopover(false); }} className="composer-rail-action" aria-label="Italic">
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Italic className="w-3.5 h-3.5" />Italic</span>
+                      <span className="meta">⌘I</span>
+                    </button>
+                    <button role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => { handleUnderline(); setShowFormatPopover(false); }} className="composer-rail-action" aria-label="Underline">
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Underline className="w-3.5 h-3.5" />Underline</span>
+                      <span className="meta">⌘U</span>
+                    </button>
+                    <button role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => { handleLink();      setShowFormatPopover(false); }} className="composer-rail-action" aria-label="Insert link">
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Link className="w-3.5 h-3.5" />Link</span>
+                      <span className="meta">⌘K</span>
+                    </button>
                   </div>
                 )}
               </div>
