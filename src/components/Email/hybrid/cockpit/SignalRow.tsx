@@ -10,7 +10,7 @@ import {
   Send, CheckSquare, MoonStar, ArrowRight, Calendar,
 } from 'lucide-react';
 import type { EmailRow, AiActionKind } from '../data/emailRow';
-import { Avatar, ToneChip } from '../primitives';
+import { AiChip, Avatar, ToneChip } from '../primitives';
 import { InlineReader } from './InlineReader';
 
 interface SignalRowProps {
@@ -105,7 +105,10 @@ export const SignalRow: React.FC<SignalRowProps> = ({
           </div>
 
           {email.aiSummary && (
-            <p className="text-[13px] pulse-ink-2-color leading-relaxed">{email.aiSummary}</p>
+            <div className="flex items-start gap-2">
+              <AiChip variant="muted">Claude</AiChip>
+              <p className="text-[13px] pulse-ink-2-color leading-relaxed flex-1">{email.aiSummary}</p>
+            </div>
           )}
 
           <div className="mt-2.5 flex items-center gap-2 flex-wrap">
