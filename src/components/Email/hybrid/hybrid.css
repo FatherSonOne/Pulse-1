@@ -182,8 +182,9 @@ html.dark .email-hybrid-shell .signal-row:hover {
 .email-hybrid-shell .email-body-html a:hover { color: var(--pulse-coral-fg); }
 .email-hybrid-shell .email-body-html img { max-width: 100%; height: auto; border-radius: 6px; margin: 8px 0; }
 .email-hybrid-shell .email-body-html blockquote {
-  border-left: 3px solid var(--pulse-border-strong);
-  margin: 8px 0; padding: 4px 0 4px 12px;
+  background: var(--pulse-surface-raised);
+  border-radius: 6px;
+  margin: 8px 0; padding: 8px 12px;
   color: var(--pulse-ink-3); font-style: italic;
 }
 .email-hybrid-shell .email-body-html pre,
