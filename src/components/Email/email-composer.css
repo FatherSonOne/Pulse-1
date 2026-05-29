@@ -232,10 +232,20 @@
 .composer-tone-pill {
   font-size: 11px; padding: 4px 9px; border-radius: 6px;
   background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
-  border: 0; transition: background 140ms ease, color 140ms ease;
+  border: 0;
+  transition: background 220ms cubic-bezier(0.16, 1, 0.3, 1), color 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
+/* Active selection state. Was solid var(--pulse-rose) + white ink
+   pre-round-7 — that read as a primary CTA (same weight as the Send
+   pill) for what is really a user-preference toggle. Detune to a
+   rose-soft surface + rose-text ink + inset rose outline, matching
+   the AiChip vocabulary and leaving the Send pill as the only
+   saturated-coral CTA in the card. inset box-shadow avoids a 1px
+   layout shift versus adding a real border. */
 .composer-tone-pill.is-active {
-  background: var(--pulse-rose); color: white;
+  background: var(--pulse-rose-soft);
+  color: var(--pulse-rose-text);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pulse-rose) 35%, transparent);
 }
 
 /* ─── Sidecar (slide-out) ─── */
