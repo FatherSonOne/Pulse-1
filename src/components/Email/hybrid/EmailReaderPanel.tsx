@@ -1,14 +1,14 @@
-// EmailReaderPanel — slide-out right-rail reader for non-Signal rows.
-// Phase 12.4. Lane rows, Folder rows, and Search-result rows are too compact
-// for inline expansion; they open the email in this panel instead. Signal
-// rows keep their inline InlineReader because they're already roomy cards
-// and inline reading there is what users expect.
+// EmailReaderPanel — slide-out (or full-page when maximized) reader.
+// Phase 12.4. Lane / Folder / Search row clicks open this in slide-out mode.
+// Phase 12.10. Signal cards + Triage cards have an "Open full page" button
+// that opens this panel pre-maximized; the panel itself has a maximize /
+// minimize toggle so the user can flip between the two modes at will.
 //
 // Mounted at EmailHybridClient's view-shell container level so it overlays
-// the active view. Reads readerPanelEmailId from emailUIStore; on Esc /
-// backdrop click / X button → clears the slot and the panel unmounts.
+// the active view. Reads readerPanelEmailId + readerPanelMaximized from
+// emailUIStore; Esc / backdrop click / X button → clears the slot.
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, Maximize2, Minimize2 } from 'lucide-react';
 import { useEmailStore } from '../../../store/emailStore';
 import { useEmailUIStore } from '../../../store/emailUIStore';
 import { Avatar } from './primitives';
@@ -19,6 +19,8 @@ export const EmailReaderPanel: React.FC = () => {
   const emails = useEmailStore((s) => s.emails);
   const readerPanelEmailId = useEmailUIStore((s) => s.readerPanelEmailId);
   const setReaderPanelEmailId = useEmailUIStore((s) => s.setReaderPanelEmailId);
+  const maximized = useEmailUIStore((s) => s.readerPanelMaximized);
+  const setMaximized = useEmailUIStore((s) => s.setReaderPanelMaximized);
 
   if (!readerPanelEmailId) return null;
 
@@ -31,6 +33,7 @@ export const EmailReaderPanel: React.FC = () => {
 
   const row = cachedEmailToRow(email);
   const onClose = () => setReaderPanelEmailId(null);
+  const toggleMaximize = () => setMaximized(!maximized);
 
   return (
     <>
@@ -40,23 +43,36 @@ export const EmailReaderPanel: React.FC = () => {
         aria-hidden="true"
       />
       <aside
-        className="reader-panel"
+        className={`reader-panel ${maximized ? 'is-maximized' : ''}`}
         role="dialog"
         aria-label={`Email from ${row.from}: ${row.subject}`}
       >
-        <button
-          type="button"
-          className="reader-panel-close"
-          onClick={onClose}
-          title="Close (Esc)"
-          aria-label="Close reader panel"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div className="absolute top-3 right-3 z-[2] flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={toggleMaximize}
+            className="reader-panel-close"
+            title={maximized ? 'Restore to side panel' : 'Open full page'}
+            aria-label={maximized ? 'Restore to side panel' : 'Open full page'}
+            style={{ position: 'static' }}
+          >
+            {maximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="reader-panel-close"
+            title="Close (Esc)"
+            aria-label="Close reader panel"
+            style={{ position: 'static' }}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
         <div className="reader-panel-header">
           <Avatar name={row.from} size={36} />
-          <div className="flex-1 min-w-0 pr-9">
+          <div className="flex-1 min-w-0 pr-24">
             <div className="flex items-center gap-2 mb-0.5 flex-wrap">
               <span className="text-[13px] font-semibold pulse-ink-color">{row.from}</span>
               {row.org && (

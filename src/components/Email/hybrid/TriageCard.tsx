@@ -3,8 +3,10 @@
 // (Archive E / Snooze H / → Task T / Reply R or Send draft ⌘↵).
 // Phase 3 takes its email as an EmailRow (works with mock + live data alike).
 import React from 'react';
-import { Clock, Archive, MoonStar, CheckSquare, Reply, Send } from 'lucide-react';
+import { Clock, Archive, MoonStar, CheckSquare, Reply, Send, Maximize2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import type { EmailRow } from './data/emailRow';
+import { useEmailUIStore } from '../../../store/emailUIStore';
 import { Avatar, AiChip, ToneChip, Keycap } from './primitives';
 
 export type TriageAction = 'Archive' | 'Snooze' | '→ Task' | 'Reply' | 'Send draft';
@@ -18,6 +20,18 @@ interface TriageCardProps {
 export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact = false }) => {
   const paragraphs = email.body.split('\n\n');
   const hasDraft = Boolean(email.draft);
+  const openReaderPanel = useEmailUIStore((s) => s.openReaderPanel);
+
+  // Phase 12.10 — escape hatch from the bounded Triage stage into the
+  // full-page reader. Triage idx stays put so the user comes back to the
+  // same card when they close the reader panel.
+  const handleOpenFullPage = () => {
+    if (!email._raw) {
+      toast('Mock card — full-page reader is a no-op here.');
+      return;
+    }
+    openReaderPanel(email._raw.id, { maximized: true });
+  };
 
   return (
     <div
@@ -53,6 +67,16 @@ export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact
               <span className="lowercase tracking-normal">{email.fromEmail}</span>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={handleOpenFullPage}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] uppercase tracking-wide-mono pulse-ink-3-color hover:pulse-rose-color hover:pulse-rose-bg-soft-color border pulse-border-color transition shrink-0"
+            title="Open full page"
+            aria-label="Open this email in the full-page reader"
+          >
+            <Maximize2 className="w-3 h-3" />
+            FULL PAGE
+          </button>
         </div>
         <h3
           className={`mt-4 ${compact ? 'text-xl' : 'text-2xl'} pulse-ink-color tracking-tight`}

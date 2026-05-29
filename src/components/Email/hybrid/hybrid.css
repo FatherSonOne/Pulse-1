@@ -258,6 +258,13 @@ html.dark .email-hybrid-shell .reader-panel {
 @media (max-width: 767px) {
   .email-hybrid-shell .reader-panel { width: 100%; }
 }
+/* Maximized mode (Phase 12.10) — takes over the entire view-shell. */
+.email-hybrid-shell .reader-panel.is-maximized {
+  width: 100%;
+  border-left: none;
+  box-shadow: none;
+  animation: hybridFadeUp 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
 .email-hybrid-shell .reader-panel-header {
   display: flex; align-items: flex-start; gap: 12px;
   padding: 18px 18px 12px 20px;
@@ -285,6 +292,9 @@ html.dark .email-hybrid-shell .reader-panel {
   overflow-y: auto;
   animation: none;
 }
+/* The "Open full page" button is only meaningful in the inline context;
+   inside the panel it'd open the panel again (no-op visually). Hide it. */
+.email-hybrid-shell .reader-panel .open-full-page-btn { display: none; }
 
 /* ─── Mobile (< 768px) ───
    Triage mode is hidden — the segmented pill collapses to a single Cockpit

@@ -93,6 +93,8 @@ interface EmailUIState {
   snoozeTargetEmailId: string | null;
   /** When non-null, the hybrid surface renders the slide-out EmailReaderPanel for this email. */
   readerPanelEmailId: string | null;
+  /** When true, the reader panel renders as a full-page overlay instead of the 540px slide-out. */
+  readerPanelMaximized: boolean;
   /** Active filter state — applies to Cockpit + FolderListView; resets on folder change. */
   emailFilters: EmailFilters;
 
@@ -122,6 +124,8 @@ interface EmailUIState {
   setFocusedSignalRowId: (id: string | null) => void;
   setSnoozeTargetEmailId: (id: string | null) => void;
   setReaderPanelEmailId: (id: string | null) => void;
+  setReaderPanelMaximized: (max: boolean) => void;
+  openReaderPanel: (id: string, opts?: { maximized?: boolean }) => void;
   setEmailFilter: <K extends keyof EmailFilters>(key: K, value: EmailFilters[K]) => void;
   resetEmailFilters: () => void;
 }
@@ -148,6 +152,7 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   focusedSignalRowId: null,
   snoozeTargetEmailId: null,
   readerPanelEmailId: null,
+  readerPanelMaximized: false,
   emailFilters: DEFAULT_EMAIL_FILTERS,
 
   setZoomLevel: (level) => set({ zoomLevel: Math.max(50, Math.min(100, level)) }),
@@ -185,7 +190,12 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   setExpandedSignalRowId: (id) => set({ expandedSignalRowId: id }),
   setFocusedSignalRowId: (id) => set({ focusedSignalRowId: id }),
   setSnoozeTargetEmailId: (id) => set({ snoozeTargetEmailId: id }),
-  setReaderPanelEmailId: (id) => set({ readerPanelEmailId: id }),
+  setReaderPanelEmailId: (id) => set({ readerPanelEmailId: id, readerPanelMaximized: id === null ? false : undefined as unknown as boolean }),
+  setReaderPanelMaximized: (max) => set({ readerPanelMaximized: max }),
+  openReaderPanel: (id, opts) => set({
+    readerPanelEmailId: id,
+    readerPanelMaximized: opts?.maximized ?? false,
+  }),
   setEmailFilter: (key, value) => set((s) => ({
     emailFilters: { ...s.emailFilters, [key]: value },
   })),

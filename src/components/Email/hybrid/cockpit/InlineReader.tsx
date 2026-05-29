@@ -7,7 +7,7 @@
 //     in the same v1.1 sweep as the → Task button.
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Clock, Send, Reply, Archive, MoonStar, CheckSquare, Sparkles } from 'lucide-react';
+import { Clock, Send, Reply, Archive, MoonStar, CheckSquare, Sparkles, Maximize2 } from 'lucide-react';
 import { emailSyncService } from '../../../../services/emailSyncService';
 import { useEmailStore } from '../../../../store/emailStore';
 import { useEmailUIStore } from '../../../../store/emailUIStore';
@@ -144,6 +144,19 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
     setShowActions(false);
   };
 
+  // Phase 12.10 — "Open full page" affordance. The InlineReader is rendered
+  // both inline (Signal expansion) and inside the EmailReaderPanel; this
+  // button is only useful in the inline context, so it's hidden when the
+  // reader is already inside the panel (detect by walking up the DOM tree
+  // is fragile — instead we hide via CSS scope: .reader-panel hides it).
+  const handleOpenFullPage = () => {
+    if (!email._raw) {
+      toast('Mock row — full-page reader is a no-op here.');
+      return;
+    }
+    useEmailUIStore.getState().openReaderPanel(email._raw.id, { maximized: true });
+  };
+
   return (
     <div className="reader-expand px-5 py-4">
       <div className="flex items-center gap-2 mb-3 text-[11px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">
@@ -157,6 +170,16 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
         )}
         <span>·</span>
         <span className="lowercase tracking-normal">{email.fromEmail}</span>
+        <button
+          type="button"
+          onClick={handleOpenFullPage}
+          className="open-full-page-btn ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wide-mono pulse-ink-3-color hover:pulse-rose-color hover:pulse-rose-bg-soft-color transition"
+          title="Open full page"
+          aria-label="Open this email in the full-page reader"
+        >
+          <Maximize2 className="w-3 h-3" />
+          FULL PAGE
+        </button>
       </div>
 
       {/* Quick reply chips (Phase 12.7) — Claude-suggested one-tap replies */}
