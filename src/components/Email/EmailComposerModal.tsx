@@ -1,4 +1,16 @@
-// EmailComposerModal.tsx - Enhanced email composer with AI features
+// EmailComposerModal.tsx — Focal Canvas + Sidecar composer
+//
+// Two views from a single component, switched by `isMaximized`:
+//   • Focal Canvas (full-page): new messages, forwards, expanded replies.
+//     Editorial serif subject, two-column layout with AI rail on right.
+//   • Sidecar (slide-out): default reply view. Opaque slide-in from right;
+//     no backdrop so the source thread stays readable behind it.
+//
+// Locked spec: _design-playground/email-composer-final.html (2026-05-28).
+// Handoff: docs/email-composer-redesign.md.
+//
+// Every state, handler, and useEffect from the pre-redesign composer is
+// preserved verbatim. The rewrite is visual + structural only.
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { CachedEmail, emailSyncService, EmailTemplate } from '../../services/emailSyncService';
 import { SendEmailParams, EmailAttachment, getGmailService } from '../../services/gmailService';
@@ -13,8 +25,9 @@ import TemplateVariablesModal from './TemplateVariablesModal';
 import { VoiceTextButton } from '../shared/VoiceTextButton';
 import { useAIErrorHandler } from '../../hooks/useAIErrorHandler';
 import toast from 'react-hot-toast';
+import './email-composer.css';
 
-import { Bold, ChevronDown, Clock, FileText, Gauge, HardDrive, Italic, Link, Loader2, Lock, Maximize2, Minimize2, Minus, Paperclip, Pen, PenTool, Save, Send, Smile, SpellCheck, Square, Trash2, Underline, UserCog, Video, Wand2, X } from 'lucide-react';
+import { Bold, ChevronDown, Clock, FileText, Gauge, HardDrive, Italic, Link, Loader2, Lock, Maximize2, Minimize2, Minus, Paperclip, Save, Send, Smile, SpellCheck, Trash2, Underline, UserCog, Video, Wand2, X } from 'lucide-react';
 
 interface EmailComposerModalProps {
   userEmail: string;
@@ -707,703 +720,707 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
     setTimeout(onClose, 300); // Wait for animation to complete
   };
 
-  // Minimized view - bottom right mini bar
+  // Minimized view — collapsed bottom-right bar with subject + restore/close.
   if (isMinimized) {
     return (
       <div
-        className="fixed bottom-4 right-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-stone-200 dark:border-zinc-700 rounded-lg shadow-2xl w-72 z-50 transition-all duration-300 ease-out"
+        className="composer-minimized"
         style={{
           transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
-          opacity: isVisible ? 1 : 0
+          opacity: isVisible ? 1 : 0,
+          transition: 'transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease',
         }}
       >
-        <div className="flex items-center justify-between px-4 py-3">
-          <span className="text-sm font-medium text-stone-900 dark:text-white truncate flex-1">
-            {subject || 'New Message'}
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setIsMinimized(false)}
-              className="w-6 h-6 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition"
-            >
-              <Square className="text-xs" />
-            </button>
-            <button
-              onClick={handleClose}
-              className="w-6 h-6 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-red-400 transition"
-            >
-              <X className="text-xs" />
-            </button>
-          </div>
-        </div>
+        <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--pulse-ink)' }} className="truncate">
+          {subject || 'New Message'}
+        </span>
+        <button
+          onClick={() => setIsMinimized(false)}
+          className="composer-icon-btn"
+          title="Restore"
+          aria-label="Restore composer"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={handleClose}
+          className="composer-icon-btn"
+          title="Close"
+          aria-label="Close composer"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
       </div>
     );
   }
 
-  // Panel width classes based on state
-  const getPanelClasses = () => {
-    if (isMaximized) {
-      // Full screen minus sidebar (64px) and some padding
-      return 'w-[calc(100vw-80px)] h-[calc(100vh-32px)] top-4 right-4 rounded-xl';
-    }
-    // Default: 1/3 screen width, Gmail-style
-    return 'w-[480px] h-[600px] bottom-4 right-4 rounded-xl';
-  };
+  // Recipient summary line for the header (compressed format mirrors TriageCard).
+  const recipientList = parseEmails(to);
+  const recipientSummary = recipientList.length === 0
+    ? (replyTo ? `to ${replyTo.from_name || replyTo.from_email}` : 'Drafting…')
+    : recipientList.length === 1
+      ? `to ${recipientList[0]}`
+      : `to ${recipientList[0]} +${recipientList.length - 1} other${recipientList.length > 2 ? 's' : ''}`;
+
+  const isReplying = !!replyTo;
+  const headerLabel = isReplying
+    ? (isMaximized ? 'REPLY · FULLSCREEN' : 'REPLYING · IN CONTEXT')
+    : 'NEW MESSAGE';
 
   return (
     <>
-      {/* Backdrop - only show when maximized */}
-      {isMaximized && (
+      {/* Focal Canvas mounts an opaque dimmed backdrop; Sidecar mounts a
+          transparent no-pointer-events scrim so the source thread stays
+          visible AND clickable behind the slide-out. */}
+      {isMaximized ? (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300"
-          style={{ opacity: isVisible ? 1 : 0 }}
+          className="composer-focal-backdrop"
           onClick={handleClose}
+          style={{ opacity: isVisible ? 1 : 0 }}
         />
+      ) : (
+        <div className="composer-sidecar-backdrop" aria-hidden="true" />
       )}
 
-      {/* Composer Panel */}
       <div
-        className={`fixed z-50 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-stone-200/80 dark:border-zinc-700/80 shadow-2xl flex flex-col transition-all duration-300 ease-out ${getPanelClasses()}`}
-        style={{
-          transform: isVisible
-            ? 'translateX(0) scale(1)'
-            : 'translateX(100%) scale(0.95)',
-          opacity: isVisible ? 1 : 0,
-        }}
+        className={isMaximized ? 'composer-focal' : 'composer-sidecar'}
+        role="dialog"
+        aria-modal={isMaximized}
+        aria-label={replyTo ? `Reply to ${replyTo.from_name || replyTo.from_email}` : 'Compose email'}
+        style={{ opacity: isVisible ? 1 : 0, transition: 'opacity 240ms ease' }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200/80 dark:border-zinc-800/80 rounded-t-xl bg-white/80 dark:bg-zinc-900/80">
-          <span className="text-sm font-semibold text-stone-900 dark:text-white">
-            {replyTo ? 'Reply' : 'New Message'}
+        {/* Header — editorial label + recipient summary + minimize/maximize/close.
+            Matches TriageCard's serif-weight + mono-label header rhythm. */}
+        <div className={isMaximized ? 'composer-focal-header' : 'composer-sidecar-header'}>
+          <Wand2 className="w-4 h-4" style={{ color: 'var(--pulse-rose)', flexShrink: 0 }} aria-hidden />
+          <span className="composer-mono-label" style={{ color: 'var(--pulse-rose)' }}>
+            {headerLabel}
           </span>
-          <div className="flex items-center gap-1">
+          <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }} aria-hidden>·</span>
+          <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+            {recipientSummary}
+          </span>
+
+          <div style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
             <button
               onClick={() => setIsMinimized(true)}
-              className="w-7 h-7 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition-all duration-200"
+              className="composer-icon-btn"
               title="Minimize"
+              aria-label="Minimize composer"
             >
-              <Minus className="text-xs" />
+              <Minus className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setIsMaximized(!isMaximized)}
-              className="w-7 h-7 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition-all duration-200"
-              title={isMaximized ? 'Restore' : 'Expand'}
+              className="composer-icon-btn"
+              title={isMaximized ? 'Restore to sidecar' : 'Expand to fullscreen'}
+              aria-label={isMaximized ? 'Restore to sidecar' : 'Expand to fullscreen'}
             >
-              <i className={`fa-solid ${isMaximized ? 'fa-compress' : 'fa-expand'} text-xs`}></i>
+              {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
             <button
               onClick={handleClose}
-              className="w-7 h-7 rounded hover:bg-red-500/20 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-red-400 transition-all duration-200"
-              title="Close"
+              className="composer-icon-btn"
+              title="Close (Esc)"
+              aria-label="Close composer"
             >
-              <X className="text-sm" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Form */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Restored-draft strip — shown only on first mount when a saved draft exists */}
-          {restoredDraft && (
-            <div className="px-4 py-2.5 border-b border-rose-500/25 bg-rose-500/[0.06] flex items-center gap-3">
-              <Save className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-rose-400">
-                  Draft · Saved {new Date(restoredDraft.savedAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+        {/* Restored-draft strip — shown only on first mount when a saved draft exists */}
+        {restoredDraft && (
+          <div className="composer-restored-strip">
+            <Save className="w-3.5 h-3.5" style={{ color: 'var(--pulse-rose)', flexShrink: 0 }} aria-hidden />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="composer-mono-label" style={{ color: 'var(--pulse-rose)' }}>
+                Draft · Saved {new Date(restoredDraft.savedAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+              </div>
+            </div>
+            <button
+              onClick={applyRestoredDraft}
+              className="composer-send-pill"
+              style={{ padding: '6px 12px', fontSize: 12 }}
+            >
+              Restore
+            </button>
+            <button
+              onClick={dismissRestoredDraft}
+              className="composer-quiet-btn"
+              style={{ padding: '6px 10px', fontSize: 12 }}
+            >
+              Discard
+            </button>
+          </div>
+        )}
+
+        {/* Body region — Focal Canvas (two-column with AI rail) vs Sidecar
+            (single-column). Both share the same state/handlers so switching
+            isMaximized mid-compose preserves every field. */}
+        {isMaximized ? (
+          <div className="composer-focal-body">
+            {/* Editorial canvas */}
+            <div className="composer-focal-canvas">
+              <div className="composer-focal-canvas-inner">
+                <div className="composer-field-row">
+                  <span className="composer-field-label">To</span>
+                  <input
+                    type="text"
+                    value={to}
+                    onChange={(e) => setTo(e.target.value)}
+                    placeholder="Recipients (comma-separated)"
+                    className="composer-field-input"
+                    aria-label="To"
+                  />
+                  <div style={{ display: 'inline-flex', gap: 4, marginLeft: 'auto', flexShrink: 0 }}>
+                    {!showCc && <button onClick={() => setShowCc(true)} className="composer-quiet-btn">Cc</button>}
+                    {!showBcc && <button onClick={() => setShowBcc(true)} className="composer-quiet-btn">Bcc</button>}
+                  </div>
                 </div>
-              </div>
-              <button
-                onClick={applyRestoredDraft}
-                className="h-7 px-3 rounded-md text-xs font-medium bg-rose-500 hover:bg-rose-600 text-white transition-colors"
-              >
-                Restore
-              </button>
-              <button
-                onClick={dismissRestoredDraft}
-                className="h-7 px-2.5 rounded-md text-xs font-medium text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white hover:bg-white/[0.06] transition-colors"
-              >
-                Discard
-              </button>
-            </div>
-          )}
-
-          {/* Recipients */}
-          <div className="px-4 py-2 border-b border-stone-200/50 dark:border-zinc-800/50">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-stone-400 dark:text-zinc-500 w-12">To:</span>
-              <input
-                type="text"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                placeholder="Recipients"
-                className="flex-1 bg-transparent text-stone-900 dark:text-white text-sm focus:outline-none placeholder-stone-400 dark:placeholder-zinc-600"
-              />
-              <div className="flex items-center gap-2 text-xs">
-                {!showCc && (
-                  <button
-                    onClick={() => setShowCc(true)}
-                    className="text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
-                  >
-                    Cc
-                  </button>
+                {showCc && (
+                  <div className="composer-field-row">
+                    <span className="composer-field-label">Cc</span>
+                    <input type="text" value={cc} onChange={(e) => setCc(e.target.value)} placeholder="Carbon copy" className="composer-field-input" aria-label="Cc" />
+                  </div>
                 )}
-                {!showBcc && (
-                  <button
-                    onClick={() => setShowBcc(true)}
-                    className="text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
-                  >
-                    Bcc
-                  </button>
+                {showBcc && (
+                  <div className="composer-field-row">
+                    <span className="composer-field-label">Bcc</span>
+                    <input type="text" value={bcc} onChange={(e) => setBcc(e.target.value)} placeholder="Blind carbon copy" className="composer-field-input" aria-label="Bcc" />
+                  </div>
+                )}
+
+                <div style={{ marginTop: 24, marginBottom: 12 }}>
+                  <div className="composer-mono-label" style={{ marginBottom: 8 }}>SUBJECT</div>
+                  <input
+                    type="text"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="What's this about?"
+                    className="composer-editorial-subject"
+                    aria-label="Subject"
+                  />
+                </div>
+
+                <div style={{ position: 'relative', marginTop: 16 }}>
+                  <textarea
+                    ref={textareaRef}
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    placeholder={replyTo ? `Reply to ${replyTo.from_name || replyTo.from_email}…` : 'Compose your email…'}
+                    className="composer-body"
+                    rows={14}
+                    style={{ minHeight: 280, paddingRight: 56 }}
+                  />
+                  <div style={{ position: 'absolute', top: 4, right: 4 }}>
+                    <VoiceTextButton
+                      onTranscript={(text) => setBody(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
+                      size="sm"
+                    />
+                  </div>
+                </div>
+
+                {replyTo && (
+                  <details style={{ marginTop: 32 }}>
+                    <summary style={{ cursor: 'pointer', listStyle: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }} className="composer-mono-label">
+                      <ChevronDown className="w-3 h-3" />
+                      <span>SHOW QUOTED REPLY</span>
+                    </summary>
+                    <div style={{ marginTop: 12, padding: '10px 14px', borderLeft: '2px solid var(--pulse-border-strong)', background: 'var(--pulse-canvas-soft)', borderRadius: '0 8px 8px 0', fontSize: 13, fontStyle: 'italic', color: 'var(--pulse-ink-2)', whiteSpace: 'pre-wrap' }}>
+                      On {new Date(replyTo.received_at).toLocaleString()}, {replyTo.from_name || replyTo.from_email} wrote:
+                      {'\n\n'}
+                      {(replyTo.body_text || '').slice(0, 1500)}{(replyTo.body_text || '').length > 1500 ? '…' : ''}
+                    </div>
+                  </details>
                 )}
               </div>
             </div>
-          </div>
 
-          {showCc && (
-            <div className="px-4 py-2 border-b border-stone-200/50 dark:border-zinc-800/50">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-stone-400 dark:text-zinc-500 w-12">Cc:</span>
+            {/* AI rail — coral cluster + neutral helpers. Calls the existing
+                handleGenerateAiDraft / handleEnhanceEmail / handleToneCheck /
+                handleSmartCompose handlers verbatim. */}
+            <aside className="composer-focal-rail">
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <Wand2 className="w-4 h-4" style={{ color: 'var(--pulse-rose)' }} aria-hidden />
+                <span className="composer-mono-label" style={{ color: 'var(--pulse-rose)' }}>PULSE AI · ASSIST</span>
+              </div>
+
+              {/* Draft for me — coral card */}
+              <div className="composer-rail-card coral">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span className="composer-rail-card-title">Draft for me</span>
+                  <span className="composer-keycap">⌘J</span>
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--pulse-ink-2)', lineHeight: 1.5, marginBottom: 12 }}>
+                  Describe what to say — Claude drafts in your voice using {replyTo ? 'this thread' : 'recipient + calendar context'}.
+                </div>
                 <input
                   type="text"
-                  value={cc}
-                  onChange={(e) => setCc(e.target.value)}
-                  placeholder="Carbon copy"
-                  className="flex-1 bg-transparent text-stone-900 dark:text-white text-sm focus:outline-none placeholder-stone-400 dark:placeholder-zinc-600"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="e.g. accept, push back on timeline, ask for a call…"
+                  className="composer-rail-prompt"
+                  aria-label="AI draft intent"
                 />
-              </div>
-            </div>
-          )}
-
-          {showBcc && (
-            <div className="px-4 py-2 border-b border-stone-200/50 dark:border-zinc-800/50">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-stone-400 dark:text-zinc-500 w-12">Bcc:</span>
-                <input
-                  type="text"
-                  value={bcc}
-                  onChange={(e) => setBcc(e.target.value)}
-                  placeholder="Blind carbon copy"
-                  className="flex-1 bg-transparent text-stone-900 dark:text-white text-sm focus:outline-none placeholder-stone-400 dark:placeholder-zinc-600"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Subject */}
-          <div className="px-4 py-2 border-b border-stone-200/50 dark:border-zinc-800/50">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-stone-400 dark:text-zinc-500 w-12">Subject:</span>
-              <input
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Subject"
-                className="flex-1 bg-transparent text-stone-900 dark:text-white text-sm focus:outline-none placeholder-stone-400 dark:placeholder-zinc-600"
-              />
-            </div>
-          </div>
-
-          {/* AI Assistant Panel */}
-          {showAiPanel && (
-            <div className="mx-4 mt-3 p-4 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30">
-              <div className="flex items-center gap-2 text-purple-400 text-sm font-medium mb-3">
-                <Wand2 />
-                <span>AI Draft Assistant</span>
-                <button
-                  onClick={() => setShowAiPanel(false)}
-                  className="ml-auto text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white"
-                >
-                  <X />
-                </button>
-              </div>
-
-              <input
-                type="text"
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder='Describe what you want to say, e.g., "confirm meeting attendance", "decline politely"'
-                className="w-full bg-stone-50 dark:bg-zinc-900/50 border border-stone-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-zinc-500 focus:outline-none focus:border-purple-500"
-              />
-
-              <div className="flex items-center gap-3 mt-3">
-                <span className="text-xs text-stone-400 dark:text-zinc-500">Tone:</span>
-                <div className="flex items-center gap-2">
-                  {(['professional', 'friendly', 'formal', 'concise'] as ToneType[]).map((tone) => (
+                <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  {(['professional','friendly','formal','concise'] as ToneType[]).map(tone => (
                     <button
                       key={tone}
                       onClick={() => setSelectedTone(tone)}
-                      className={`text-xs px-3 py-1 rounded-full transition ${
-                        selectedTone === tone
-                          ? 'bg-purple-500 text-white'
-                          : 'bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'
-                      }`}
+                      className={`composer-tone-pill ${selectedTone === tone ? 'is-active' : ''}`}
                     >
                       {tone.charAt(0).toUpperCase() + tone.slice(1)}
                     </button>
                   ))}
                 </div>
+                <button
+                  onClick={handleGenerateAiDraft}
+                  disabled={aiGenerating || !aiPrompt.trim()}
+                  className="composer-send-pill"
+                  style={{ marginTop: 12, width: '100%', justifyContent: 'center', padding: '8px 14px', fontSize: 12.5 }}
+                >
+                  {aiGenerating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Generating…</> : <><Wand2 className="w-3.5 h-3.5" />Generate draft</>}
+                </button>
               </div>
 
-              <button
-                onClick={handleGenerateAiDraft}
-                disabled={aiGenerating || !aiPrompt.trim()}
-                className="mt-3 flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-stone-200 dark:disabled:bg-zinc-700 text-white rounded-lg text-sm font-medium transition"
-              >
-                {aiGenerating ? (
-                  <>
-                    <Loader2 className="animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 />
-                    Generate Draft
-                  </>
-                )}
-              </button>
-            </div>
-          )}
+              {/* Enhance current draft */}
+              <div className="composer-rail-card">
+                <div style={{ marginBottom: 8 }}>
+                  <span className="composer-rail-card-title">Enhance current draft</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <button onClick={() => handleEnhanceEmail('shorten')}     disabled={enhancing} className="composer-rail-action">
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Minimize2 className="w-3.5 h-3.5" />Shorten</span>
+                    <span className="meta">⌘1</span>
+                  </button>
+                  <button onClick={() => handleEnhanceEmail('elaborate')}   disabled={enhancing} className="composer-rail-action">
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Maximize2 className="w-3.5 h-3.5" />Elaborate</span>
+                    <span className="meta">⌘2</span>
+                  </button>
+                  <button onClick={() => handleEnhanceEmail('formalize')}   disabled={enhancing} className="composer-rail-action">
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><UserCog className="w-3.5 h-3.5" />Make formal</span>
+                    <span className="meta">⌘3</span>
+                  </button>
+                  <button onClick={() => handleEnhanceEmail('casualize')}   disabled={enhancing} className="composer-rail-action">
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Smile className="w-3.5 h-3.5" />Make casual</span>
+                    <span className="meta">⌘4</span>
+                  </button>
+                  <button onClick={() => handleEnhanceEmail('fix_grammar')} disabled={enhancing} className="composer-rail-action">
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><SpellCheck className="w-3.5 h-3.5" />Fix grammar</span>
+                    <span className="meta">⌘G</span>
+                  </button>
+                  {enhancing && (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--pulse-ink-3)', fontSize: 11, padding: '4px 10px' }}>
+                      <Loader2 className="w-3 h-3 animate-spin" /> Working…
+                    </div>
+                  )}
+                </div>
+              </div>
 
-          {/* Tone Check Results */}
-          {showToneCheck && (
-            <div className="mx-4 mt-3 p-4 rounded-xl bg-stone-100/50 dark:bg-zinc-800/50 border border-stone-200 dark:border-zinc-700">
-              {toneCheckResult ? (
-                <>
-                  <div className="flex items-center gap-2 mb-2">
-                    <i className={`fa-solid ${toneCheckResult.appropriate ? 'fa-circle-check text-green-500' : 'fa-exclamation-triangle text-yellow-500'}`}></i>
-                    <span className="text-sm font-medium text-stone-900 dark:text-white">
-                      {toneCheckResult.appropriate ? 'Tone looks good!' : 'Consider reviewing'}
+              {/* Tone check */}
+              <div className="composer-rail-card">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span className="composer-rail-card-title">Tone check</span>
+                  {toneCheckResult && (
+                    <span className={`composer-ai-chip ${toneCheckResult.appropriate ? 'positive' : 'muted'}`}>
+                      {toneCheckResult.currentTone}
                     </span>
-                    <span className="text-xs text-stone-400 dark:text-zinc-500 ml-2">
-                      Current tone: {toneCheckResult.currentTone}
-                    </span>
-                    <button
-                      onClick={() => setShowToneCheck(false)}
-                      className="ml-auto text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white"
-                    >
-                      <X />
-                    </button>
+                  )}
+                </div>
+                {showToneCheck && !toneCheckResult ? (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--pulse-ink-2)', fontSize: 12.5 }}>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Analyzing tone…
                   </div>
+                ) : toneCheckResult ? (
+                  <div style={{ fontSize: 12.5, color: 'var(--pulse-ink-2)', lineHeight: 1.55 }}>
+                    {toneCheckResult.appropriate ? 'Reads naturally for the recipient context.' : 'Consider reviewing.'}
+                    {toneCheckResult.issues.length > 0 && (
+                      <div style={{ marginTop: 6, color: 'var(--pulse-tone-warning)' }}>{toneCheckResult.issues.join('. ')}</div>
+                    )}
+                    {toneCheckResult.suggestions.length > 0 && (
+                      <div style={{ marginTop: 6, color: 'var(--pulse-ink-3)' }}>{toneCheckResult.suggestions.join('. ')}</div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12.5, color: 'var(--pulse-ink-3)', lineHeight: 1.55 }}>
+                    Check the tone before sending — Claude flags presumptive or curt phrasing.
+                  </div>
+                )}
+                <button onClick={handleToneCheck} className="composer-quiet-btn" style={{ marginTop: 10, padding: '6px 10px', fontSize: 12 }}>
+                  <Gauge className="w-3.5 h-3.5" />{toneCheckResult ? 'Re-check' : 'Run tone check'}
+                </button>
+              </div>
 
-                  {toneCheckResult.issues.length > 0 && (
-                    <div className="text-xs text-orange-400 mt-2">
-                      <span className="text-orange-500 font-medium">Issues: </span>
-                      {toneCheckResult.issues.join('. ')}
-                    </div>
-                  )}
-
-                  {toneCheckResult.suggestions.length > 0 && (
-                    <div className="text-xs text-stone-500 dark:text-zinc-400 mt-2">
-                      <span className="text-stone-400 dark:text-zinc-500">Suggestions: </span>
-                      {toneCheckResult.suggestions.join('. ')}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="flex items-center gap-2 text-stone-500 dark:text-zinc-400">
-                  <Loader2 className="animate-spin" />
-                  <span className="text-sm">Analyzing tone...</span>
+              {/* Smart Compose */}
+              <div className="composer-rail-card">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span className="composer-rail-card-title">Smart Compose</span>
+                  <span className="composer-mono-label">{smartComposeEnabled ? 'ON' : 'OFF'}</span>
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--pulse-ink-3)', lineHeight: 1.55, marginBottom: 8 }}>
+                  Suggests an inline completion based on the partial draft.
+                </div>
+                <button onClick={handleSmartCompose} disabled={smartComposeLoading || !smartComposeEnabled} className="composer-quiet-btn" style={{ padding: '6px 10px', fontSize: 12 }}>
+                  {smartComposeLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                  Suggest now
+                </button>
+              </div>
+            </aside>
+          </div>
+        ) : (
+          /* Sidecar: stacked fields + body. AI/Tone panels appear inline above
+              the action bar when toggled from the toolbar. */
+          <>
+            <div className="composer-sidecar-fields">
+              <div className="composer-field-row">
+                <span className="composer-field-label">To</span>
+                <input
+                  type="text"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  placeholder="Recipients"
+                  className="composer-field-input"
+                  aria-label="To"
+                />
+                <div style={{ display: 'inline-flex', gap: 4, marginLeft: 'auto', flexShrink: 0 }}>
+                  {!showCc && <button onClick={() => setShowCc(true)} className="composer-quiet-btn" style={{ padding: '5px 8px' }}>Cc</button>}
+                  {!showBcc && <button onClick={() => setShowBcc(true)} className="composer-quiet-btn" style={{ padding: '5px 8px' }}>Bcc</button>}
+                </div>
+              </div>
+              {showCc && (
+                <div className="composer-field-row">
+                  <span className="composer-field-label">Cc</span>
+                  <input type="text" value={cc} onChange={(e) => setCc(e.target.value)} placeholder="Carbon copy" className="composer-field-input" aria-label="Cc" />
                 </div>
               )}
+              {showBcc && (
+                <div className="composer-field-row">
+                  <span className="composer-field-label">Bcc</span>
+                  <input type="text" value={bcc} onChange={(e) => setBcc(e.target.value)} placeholder="Blind carbon copy" className="composer-field-input" aria-label="Bcc" />
+                </div>
+              )}
+              <div className="composer-field-row">
+                <span className="composer-field-label">{replyTo ? 'Re' : 'Sub'}</span>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Subject"
+                  className="composer-field-input"
+                  aria-label="Subject"
+                />
+              </div>
             </div>
-          )}
 
-          {/* Body */}
-          <div className="flex-1 overflow-hidden relative">
-            <textarea
-              ref={textareaRef}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Compose your email..."
-              className="w-full h-full p-4 pr-14 bg-transparent text-stone-900 dark:text-white text-sm focus:outline-none resize-none placeholder-stone-400 dark:placeholder-zinc-600"
-            />
-            <div className="absolute right-4 top-4">
-              <VoiceTextButton
-                onTranscript={(text) => setBody(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
-                size="sm"
-                className="bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700"
+            <div className="composer-sidecar-body">
+              <textarea
+                ref={textareaRef}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder={replyTo ? `Reply to ${replyTo.from_name || replyTo.from_email}…` : 'Compose your email…'}
+                className="composer-body"
+                rows={10}
+                style={{ minHeight: 200 }}
               />
+              <div style={{ marginTop: 8 }}>
+                <VoiceTextButton
+                  onTranscript={(text) => setBody(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
+                  size="sm"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Attachments display */}
-          {attachments.length > 0 && (
-            <div className="px-4 py-2 border-t border-stone-200/50 dark:border-zinc-800/50">
-              <div className="flex flex-wrap gap-2">
-                {attachments.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 bg-stone-100 dark:bg-zinc-800 rounded-lg px-3 py-1.5 text-sm"
-                  >
-                    <Paperclip className="text-stone-400 dark:text-zinc-500" />
-                    <span className="text-stone-700 dark:text-zinc-300 max-w-[150px] truncate">{file.name}</span>
-                    <span className="text-stone-400 dark:text-zinc-500 text-xs">
-                      ({(file.size / 1024).toFixed(0)}KB)
-                    </span>
+            {/* Sidecar AI-draft inline panel — popped from toolbar's Wand2 button */}
+            {showAiPanel && (
+              <div className="composer-ai-panel">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span className="composer-ai-chip">DRAFT FOR ME</span>
+                  <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }}>tone-aware, in your voice</span>
+                  <button onClick={() => setShowAiPanel(false)} className="composer-icon-btn" style={{ marginLeft: 'auto', width: 24, height: 24 }} aria-label="Close AI panel">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="Describe what to say…"
+                  className="composer-rail-prompt"
+                  aria-label="AI draft intent"
+                />
+                <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  {(['professional','friendly','formal','concise'] as ToneType[]).map(tone => (
                     <button
-                      onClick={() => removeAttachment(index)}
-                      className="text-stone-400 dark:text-zinc-500 hover:text-red-500 transition ml-1"
+                      key={tone}
+                      onClick={() => setSelectedTone(tone)}
+                      className={`composer-tone-pill ${selectedTone === tone ? 'is-active' : ''}`}
                     >
-                      <X className="text-xs" />
+                      {tone.charAt(0).toUpperCase() + tone.slice(1)}
                     </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {confidentialEnabled && (
-            <div className="px-4 py-3 border-t border-stone-200/50 dark:border-zinc-800/50 bg-stone-50/60 dark:bg-zinc-950/40">
-              <div className="text-xs text-stone-500 dark:text-zinc-400 uppercase tracking-wide mb-2">Confidential Mode</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-stone-400 dark:text-zinc-500 mb-1 block">Expiration</label>
-                  <input
-                    type="datetime-local"
-                    value={confidentialExpiresAt}
-                    onChange={(e) => setConfidentialExpiresAt(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm text-stone-800 dark:text-zinc-200"
-                  />
+                  ))}
                 </div>
-                <div>
-                  <label className="flex items-center gap-2 text-sm text-stone-500 dark:text-zinc-400 mt-6">
-                    <input
-                      type="checkbox"
-                      checked={confidentialRequirePasscode}
-                      onChange={(e) => setConfidentialRequirePasscode(e.target.checked)}
-                    />
-                    Require passcode
-                  </label>
-                  {confidentialRequirePasscode && (
-                    <input
-                      type="password"
-                      value={confidentialPasscode}
-                      onChange={(e) => setConfidentialPasscode(e.target.value)}
-                      placeholder="Enter passcode"
-                      className="mt-2 w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm text-stone-800 dark:text-zinc-200"
-                    />
-                  )}
-                </div>
-                <div className="md:col-span-2 flex flex-wrap gap-4 text-xs text-stone-500 dark:text-zinc-400">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={confidentialDisableForward}
-                      onChange={(e) => setConfidentialDisableForward(e.target.checked)}
-                    />
-                    Disable forward
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={confidentialDisableCopy}
-                      onChange={(e) => setConfidentialDisableCopy(e.target.checked)}
-                    />
-                    Disable copy
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={confidentialDisablePrint}
-                      onChange={(e) => setConfidentialDisablePrint(e.target.checked)}
-                    />
-                    Disable print
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={confidentialDisableDownload}
-                      onChange={(e) => setConfidentialDisableDownload(e.target.checked)}
-                    />
-                    Disable download
-                  </label>
-                </div>
+                <button
+                  onClick={handleGenerateAiDraft}
+                  disabled={aiGenerating || !aiPrompt.trim()}
+                  className="composer-send-pill"
+                  style={{ marginTop: 10, padding: '7px 12px', fontSize: 12.5 }}
+                >
+                  {aiGenerating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Generating…</> : <><Wand2 className="w-3.5 h-3.5" />Generate draft</>}
+                </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Inline pre-send warnings */}
-          {missingAttachmentWarning && (
-            <div className="px-4 py-2.5 border-t border-amber-500/30 bg-amber-500/[0.06] flex items-center gap-3">
-              <Paperclip className="w-4 h-4 text-amber-500 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-amber-600 dark:text-amber-400">
-                  Attachment · Missing
-                </div>
-                <div className="text-xs text-stone-700 dark:text-zinc-300 mt-0.5">
-                  Body mentions an attachment but none added.
-                </div>
-              </div>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="h-7 px-2.5 rounded-md text-xs font-medium text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors"
-              >
-                Add file
-              </button>
-              <button
-                onClick={() => { setMissingAttachmentWarning(false); handleSend(); }}
-                className="h-7 px-3 rounded-md text-xs font-medium bg-rose-500 hover:bg-rose-600 text-white transition-colors"
-              >
-                Send anyway
-              </button>
-            </div>
-          )}
-
-          {/* Toolbar */}
-          <div className="px-4 py-3 border-t border-stone-200 dark:border-zinc-800 flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              {/* Send button */}
-              <button
-                onClick={handleSend}
-                disabled={sending}
-                className="bg-red-500 hover:bg-red-600 disabled:bg-stone-200 dark:disabled:bg-zinc-700 text-white px-6 py-2 rounded-lg font-bold text-sm uppercase tracking-wider transition-all flex items-center gap-2"
-              >
-                {sending ? (
-                  <>
-                    <Loader2 className="animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Send />
-                    Send
-                  </>
-                )}
-              </button>
-
-              {/* Schedule send dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowScheduleModal(!showScheduleModal)}
-                  disabled={scheduling}
-                  className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-blue-400 transition"
-                  title="Schedule send"
-                >
-                  {scheduling ? (
-                    <Loader2 className="text-xs animate-spin" />
-                  ) : (
-                    <Clock />
-                  )}
-                </button>
-                {showScheduleModal && (
-                  <ScheduleSendModal
-                    onSchedule={handleScheduleSend}
-                    onClose={() => setShowScheduleModal(false)}
-                  />
-                )}
-              </div>
-
-              <button
-                onClick={() => setConfidentialEnabled(!confidentialEnabled)}
-                className={`w-8 h-8 rounded flex items-center justify-center transition ${
-                  confidentialEnabled ? 'bg-red-500/20 text-red-400' : 'hover:bg-stone-100 dark:hover:bg-zinc-800 text-stone-400 dark:text-zinc-500 hover:text-red-400'
-                }`}
-                title="Confidential mode"
-              >
-                <Lock className="text-xs" />
-              </button>
-
-              {/* Formatting toolbar */}
-              <div className="flex items-center gap-1 ml-2 border-l border-stone-200 dark:border-zinc-800 pl-2">
-                <button
-                  onClick={handleInsertMeetLink}
-                  disabled={meetCreating}
-                  className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-emerald-400 transition disabled:opacity-50"
-                  title="Insert Google Meet link"
-                >
-                  {meetCreating ? (
-                    <Loader2 className="text-xs animate-spin" />
-                  ) : (
-                    <Video className="text-xs" />
-                  )}
-                </button>
-                <button
-                  onClick={handleBold}
-                  className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
-                  title="Bold (**text**)"
-                >
-                  <Bold className="text-xs" />
-                </button>
-                <button
-                  onClick={handleItalic}
-                  className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
-                  title="Italic (*text*)"
-                >
-                  <Italic className="text-xs" />
-                </button>
-                <button
-                  onClick={handleUnderline}
-                  className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
-                  title="Underline"
-                >
-                  <Underline className="text-xs" />
-                </button>
-                <button
-                  onClick={handleLink}
-                  className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition"
-                  title="Insert link"
-                >
-                  <Link className="text-xs" />
-                </button>
-                {driveQuickAttach && (
-                  <button
-                    onClick={handleOpenDrive}
-                    className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-emerald-400 transition"
-                    title="Attach from Drive"
-                  >
-                    <HardDrive className="text-xs" />
-                  </button>
-                )}
-              </div>
-
-              {/* AI features */}
-              <div className="flex items-center gap-1 ml-2 border-l border-stone-200 dark:border-zinc-800 pl-2">
-                <button
-                  onClick={handleSmartCompose}
-                  disabled={smartComposeLoading || !smartComposeEnabled}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-50"
-                  title={smartComposeEnabled ? 'Smart Compose suggestion' : 'Enable Smart Compose in Settings'}
-                >
-                  {smartComposeLoading ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    <Pen />
-                  )}
-                  Smart
-                </button>
-                <button
-                  onClick={() => setShowAiPanel(!showAiPanel)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                    showAiPanel
-                      ? 'bg-purple-500 text-white'
-                      : 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30'
-                  }`}
-                  title="AI Draft Assistant"
-                >
-                  <Wand2 />
-                  AI Draft
-                </button>
-
-                {/* Enhancement tools dropdown */}
-                <div className="relative group">
-                  <button
-                    disabled={enhancing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-50"
-                    title="Enhance email with AI"
-                  >
-                    {enhancing ? (
-                      <Loader2 className="animate-spin" />
-                    ) : (
-                      <PenTool />
-                    )}
-                    Enhance
-                    <ChevronDown className="text-[10px] ml-0.5" />
-                  </button>
-                  <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block z-20">
-                    <div className="bg-stone-100 dark:bg-zinc-800 rounded-lg shadow-xl border border-stone-200 dark:border-zinc-700 py-1 text-xs min-w-[140px]">
-                      <button
-                        onClick={() => handleEnhanceEmail('shorten')}
-                        className="w-full px-3 py-2 text-left text-stone-700 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 hover:text-stone-900 dark:hover:text-white flex items-center gap-2"
-                      >
-                        <Minimize2 className="w-4" />
-                        Shorten
-                      </button>
-                      <button
-                        onClick={() => handleEnhanceEmail('elaborate')}
-                        className="w-full px-3 py-2 text-left text-stone-700 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 hover:text-stone-900 dark:hover:text-white flex items-center gap-2"
-                      >
-                        <Maximize2 className="w-4" />
-                        Elaborate
-                      </button>
-                      <button
-                        onClick={() => handleEnhanceEmail('formalize')}
-                        className="w-full px-3 py-2 text-left text-stone-700 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 hover:text-stone-900 dark:hover:text-white flex items-center gap-2"
-                      >
-                        <UserCog className="w-4" />
-                        Make Formal
-                      </button>
-                      <button
-                        onClick={() => handleEnhanceEmail('casualize')}
-                        className="w-full px-3 py-2 text-left text-stone-700 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 hover:text-stone-900 dark:hover:text-white flex items-center gap-2"
-                      >
-                        <Smile className="w-4" />
-                        Make Casual
-                      </button>
-                      <div className="border-t border-stone-200 dark:border-zinc-700 my-1"></div>
-                      <button
-                        onClick={() => handleEnhanceEmail('fix_grammar')}
-                        className="w-full px-3 py-2 text-left text-stone-700 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 hover:text-stone-900 dark:hover:text-white flex items-center gap-2"
-                      >
-                        <SpellCheck className="w-4" />
-                        Fix Grammar
+            {/* Sidecar tone-check inline panel */}
+            {showToneCheck && (
+              <div className="composer-tone-panel">
+                {toneCheckResult ? (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span className={`composer-ai-chip ${toneCheckResult.appropriate ? 'positive' : 'muted'}`}>
+                        {toneCheckResult.appropriate ? 'TONE OK' : 'REVIEW'}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }}>Current: {toneCheckResult.currentTone}</span>
+                      <button onClick={() => setShowToneCheck(false)} className="composer-icon-btn" style={{ marginLeft: 'auto', width: 24, height: 24 }} aria-label="Close tone check">
+                        <X className="w-3 h-3" />
                       </button>
                     </div>
+                    {toneCheckResult.issues.length > 0 && (
+                      <div style={{ fontSize: 12, color: 'var(--pulse-tone-warning)', marginTop: 4 }}>{toneCheckResult.issues.join('. ')}</div>
+                    )}
+                    {toneCheckResult.suggestions.length > 0 && (
+                      <div style={{ fontSize: 12, color: 'var(--pulse-ink-3)', marginTop: 4 }}>{toneCheckResult.suggestions.join('. ')}</div>
+                    )}
                   </div>
-                </div>
+                ) : (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--pulse-ink-2)', fontSize: 12.5 }}>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Analyzing tone…
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
 
+        {/* ── Attachments ── */}
+        {attachments.length > 0 && (
+          <div style={{ padding: '10px 20px', borderTop: '1px solid var(--pulse-border)', display: 'flex', flexWrap: 'wrap', gap: 8, flexShrink: 0 }}>
+            {attachments.map((file, index) => (
+              <div key={index} className="composer-attachment-chip">
+                <Paperclip className="w-3.5 h-3.5" style={{ color: 'var(--pulse-ink-3)' }} aria-hidden />
+                <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
+                <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }}>{(file.size / 1024).toFixed(0)}KB</span>
                 <button
-                  onClick={handleToneCheck}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition"
-                  title="Check tone before sending"
+                  onClick={() => removeAttachment(index)}
+                  className="composer-icon-btn"
+                  style={{ width: 20, height: 20 }}
+                  aria-label={`Remove ${file.name}`}
                 >
-                  <Gauge />
-                  Tone Check
-                </button>
-
-                {/* Templates button */}
-                <button
-                  onClick={() => setShowTemplatesModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition"
-                  title="Use email template"
-                >
-                  <FileText />
-                  Templates
+                  <X className="w-3 h-3" />
                 </button>
               </div>
-            </div>
+            ))}
+          </div>
+        )}
 
-            <div className="flex items-center gap-1">
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                multiple
-                onChange={handleFileChange}
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition relative"
-                title="Attach file (max 25MB total)"
-              >
-                <Paperclip />
-                {attachments.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {attachments.length}
-                  </span>
+        {/* ── Confidential mode panel ── */}
+        {confidentialEnabled && (
+          <div className="composer-confidential-panel">
+            <div className="composer-mono-label" style={{ marginBottom: 10 }}>CONFIDENTIAL MODE</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: 'var(--pulse-ink-3)', marginBottom: 4 }}>Expiration</label>
+                <input
+                  type="datetime-local"
+                  value={confidentialExpiresAt}
+                  onChange={(e) => setConfidentialExpiresAt(e.target.value)}
+                  style={{ width: '100%', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--pulse-border)', background: 'var(--pulse-surface)', color: 'var(--pulse-ink)', fontSize: 13 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--pulse-ink-2)', marginTop: 18 }}>
+                  <input
+                    type="checkbox"
+                    checked={confidentialRequirePasscode}
+                    onChange={(e) => setConfidentialRequirePasscode(e.target.checked)}
+                  />
+                  Require passcode
+                </label>
+                {confidentialRequirePasscode && (
+                  <input
+                    type="password"
+                    value={confidentialPasscode}
+                    onChange={(e) => setConfidentialPasscode(e.target.value)}
+                    placeholder="Enter passcode"
+                    style={{ marginTop: 8, width: '100%', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--pulse-border)', background: 'var(--pulse-surface)', color: 'var(--pulse-ink)', fontSize: 13 }}
+                  />
                 )}
-              </button>
-              <button
-                onClick={handleSaveDraft}
-                disabled={savingDraft}
-                className="w-8 h-8 rounded hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-50"
-                title="Save draft"
-              >
-                {savingDraft ? (
-                  <Loader2 className="text-xs animate-spin" />
-                ) : (
-                  <Save />
-                )}
-              </button>
-              <button
-                onClick={handleClose}
-                className="w-8 h-8 rounded hover:bg-red-500/20 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-red-500 transition"
-                title="Discard"
-              >
-                <Trash2 />
-              </button>
+              </div>
+              <div style={{ gridColumn: '1 / -1', display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 12.5, color: 'var(--pulse-ink-2)' }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <input type="checkbox" checked={confidentialDisableForward} onChange={(e) => setConfidentialDisableForward(e.target.checked)} />
+                  Disable forward
+                </label>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <input type="checkbox" checked={confidentialDisableCopy} onChange={(e) => setConfidentialDisableCopy(e.target.checked)} />
+                  Disable copy
+                </label>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <input type="checkbox" checked={confidentialDisablePrint} onChange={(e) => setConfidentialDisablePrint(e.target.checked)} />
+                  Disable print
+                </label>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <input type="checkbox" checked={confidentialDisableDownload} onChange={(e) => setConfidentialDisableDownload(e.target.checked)} />
+                  Disable download
+                </label>
+              </div>
             </div>
           </div>
+        )}
+
+        {/* ── Inline pre-send warnings ── */}
+        {missingAttachmentWarning && (
+          <div className="composer-warning-strip">
+            <Paperclip className="w-3.5 h-3.5" style={{ color: 'var(--pulse-tone-warning)', flexShrink: 0 }} aria-hidden />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="composer-mono-label" style={{ color: 'var(--pulse-tone-warning)' }}>ATTACHMENT · MISSING</div>
+              <div style={{ fontSize: 12, color: 'var(--pulse-ink-2)', marginTop: 2 }}>Body mentions an attachment but none added.</div>
+            </div>
+            <button onClick={() => fileInputRef.current?.click()} className="composer-quiet-btn" style={{ padding: '6px 10px', fontSize: 12 }}>Add file</button>
+            <button onClick={() => { setMissingAttachmentWarning(false); handleSend(); }} className="composer-send-pill" style={{ padding: '7px 12px', fontSize: 12 }}>
+              Send anyway
+            </button>
+          </div>
+        )}
+
+        {/* ── Action bar ── */}
+        <div className={isMaximized ? 'composer-focal-actions' : 'composer-sidecar-actions'}>
+          <button onClick={handleSend} disabled={sending} className="composer-send-pill">
+            {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            <span>{sending ? 'Sending…' : 'Send'}</span>
+            {!sending && <span className="kbd-hint">⌘↵</span>}
+          </button>
+
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowScheduleModal(!showScheduleModal)}
+              disabled={scheduling}
+              className="composer-quiet-btn"
+              title="Schedule send"
+            >
+              {scheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+              {isMaximized && <span>Schedule</span>}
+            </button>
+            {showScheduleModal && (
+              <ScheduleSendModal
+                onSchedule={handleScheduleSend}
+                onClose={() => setShowScheduleModal(false)}
+              />
+            )}
+          </div>
+
+          {isMaximized && (
+            <button onClick={handleSaveDraft} disabled={savingDraft} className="composer-quiet-btn" title="Save draft (⌘S)">
+              {savingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              <span>Save draft</span>
+            </button>
+          )}
+
+          {/* AI cluster — only in Sidecar (Focal has the right rail) */}
+          {!isMaximized && (
+            <>
+              <span className="composer-toolbar-sep" />
+              <button
+                onClick={() => { setShowAiPanel(p => !p); if (showToneCheck) setShowToneCheck(false); }}
+                className={`composer-icon-btn ${showAiPanel ? 'is-active' : ''}`}
+                title="AI draft"
+                aria-label="AI draft"
+              >
+                <Wand2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={handleToneCheck}
+                className={`composer-icon-btn ${showToneCheck ? 'is-active' : ''}`}
+                title="Tone check"
+                aria-label="Tone check"
+              >
+                <Gauge className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setShowTemplatesModal(true)}
+                className="composer-icon-btn"
+                title="Templates"
+                aria-label="Templates"
+              >
+                <FileText className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+
+          {/* Formatting cluster — Focal only (Sidecar is space-constrained) */}
+          {isMaximized && (
+            <>
+              <span className="composer-toolbar-sep" />
+              <button onClick={handleBold}      className="composer-icon-btn" title="Bold (**text**)" aria-label="Bold"><Bold className="w-3.5 h-3.5" /></button>
+              <button onClick={handleItalic}    className="composer-icon-btn" title="Italic (*text*)" aria-label="Italic"><Italic className="w-3.5 h-3.5" /></button>
+              <button onClick={handleUnderline} className="composer-icon-btn" title="Underline"        aria-label="Underline"><Underline className="w-3.5 h-3.5" /></button>
+              <button onClick={handleLink}      className="composer-icon-btn" title="Insert link"      aria-label="Insert link"><Link className="w-3.5 h-3.5" /></button>
+              <button onClick={() => setShowTemplatesModal(true)} className="composer-icon-btn" title="Templates" aria-label="Templates"><FileText className="w-3.5 h-3.5" /></button>
+            </>
+          )}
+
+          {/* Utility cluster — both views */}
+          <span className="composer-toolbar-sep" />
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            multiple
+            onChange={handleFileChange}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="composer-icon-btn"
+            title="Attach file (max 25MB total)"
+            aria-label="Attach file"
+            style={{ position: 'relative' }}
+          >
+            <Paperclip className="w-3.5 h-3.5" />
+            {attachments.length > 0 && (
+              <span style={{ position: 'absolute', top: -2, right: -2, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 999, background: 'var(--pulse-rose)', color: 'white', fontSize: 9, fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                {attachments.length}
+              </span>
+            )}
+          </button>
+          {driveQuickAttach && (
+            <button onClick={handleOpenDrive} className="composer-icon-btn" title="Attach from Drive" aria-label="Attach from Drive">
+              <HardDrive className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button onClick={handleInsertMeetLink} disabled={meetCreating} className="composer-icon-btn" title="Insert Google Meet link" aria-label="Insert Meet link">
+            {meetCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
+          </button>
+          <button
+            onClick={() => setConfidentialEnabled(!confidentialEnabled)}
+            className={`composer-icon-btn ${confidentialEnabled ? 'is-active' : ''}`}
+            title="Confidential mode"
+            aria-label="Confidential mode"
+          >
+            <Lock className="w-3.5 h-3.5" />
+          </button>
+
+          <div style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            {!isMaximized && (
+              <button onClick={handleSaveDraft} disabled={savingDraft} className="composer-icon-btn" title="Save draft (⌘S)" aria-label="Save draft">
+                {savingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              </button>
+            )}
+            <button onClick={handleClose} className="composer-icon-btn" title="Discard" aria-label="Discard draft">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
+
       </div>
 
       {/* Templates Modal */}
