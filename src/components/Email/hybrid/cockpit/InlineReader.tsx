@@ -3,8 +3,9 @@
 // content plus AI-extracted blocks (Phase 12.7):
 //   - Quick-reply chips from ai_suggested_replies
 //   - MeetingExtractor — opens Google Calendar in a new tab on confirm
-//   - ActionItemExtractor — toast stub for now; wires to DecisionTaskHub
-//     in the same v1.1 sweep as the → Task button.
+//   - ActionItemExtractor — wired in Phase 11b (2026-05-29) to
+//     createTasksFromEmailItems, which writes into extracted_tasks
+//     with email metadata so the tasks surface in DecisionTaskHub.
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import DOMPurify from 'isomorphic-dompurify';
@@ -15,6 +16,7 @@ import { useEmailStore } from '../../../../store/emailStore';
 import { useEmailUIStore } from '../../../../store/emailUIStore';
 import { useEmailComposeStore } from '../../../../store/emailComposeStore';
 import type { EmailRow } from '../data/emailRow';
+import { createTaskFromEmail, createTasksFromEmailItems } from '../data/createTaskFromEmail';
 import { AiChip, Keycap } from '../primitives';
 import MeetingExtractor from '../../MeetingExtractor';
 import ActionItemExtractor from '../../ActionItemExtractor';
@@ -137,10 +139,7 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
   };
 
   const handleTaskClick = () => {
-    // TODO(post-hybrid-soak): wire to decisionTaskHub after the Email
-    // Hybrid Phase 11 flag flip + legacy cleanup. Same stub used in
-    // TriageView. See memory: project_pulse_decisions_tasks_revisit.md
-    toast('Push to Decisions & Tasks coming soon.');
+    void createTaskFromEmail(email);
   };
 
   // Phase 12.7 — quick replies from ai_suggested_replies. Clicking one opens
@@ -167,10 +166,24 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
   };
 
   const handleCreateTasks = (items: unknown[]) => {
-    // TODO(post-hybrid-soak): wire to decisionTaskHub. Same v1.1 sweep as
-    // the → Task button. See memory: project_pulse_decisions_tasks_revisit.md
-    toast.success(`Created ${items.length} task${items.length === 1 ? '' : 's'} (stub).`);
-    setShowActions(false);
+    // ActionItemExtractor ships items shaped as { text, priority,
+    // dueDate: Date | null, assignee: string | null, ... }. Map onto
+    // the helper's ExtractedTaskItem shape (title + ISO deadline);
+    // drop assignee for now — the extractor returns a free-text name,
+    // not a user UUID, so resolving it to assignee_id needs its own
+    // workspace-member lookup pass (post-launch follow-up).
+    const mapped = (items as Array<{
+      text?: string;
+      priority?: 'high' | 'medium' | 'low';
+      dueDate?: Date | null;
+    }>).map((it) => ({
+      title: (it.text || '').trim(),
+      priority: it.priority,
+      deadline: it.dueDate ? it.dueDate.toISOString() : undefined,
+    }));
+    void createTasksFromEmailItems(email, mapped).then((created) => {
+      if (created > 0) setShowActions(false);
+    });
   };
 
   // Phase 12.10 — "Open full page" affordance. The InlineReader is rendered

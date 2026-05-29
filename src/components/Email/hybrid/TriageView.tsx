@@ -9,6 +9,7 @@ import { useEmailUIStore, type TriageActedLast } from '../../../store/emailUISto
 import { useEmailComposeStore } from '../../../store/emailComposeStore';
 import { emailSyncService } from '../../../services/emailSyncService';
 import { clamp, Keycap } from './primitives';
+import { createTaskFromEmail } from './data/createTaskFromEmail';
 import { TriageCard, type TriageAction } from './TriageCard';
 import { TriageActionToast } from './TriageActionToast';
 import { TriageDone } from './TriageDone';
@@ -76,14 +77,11 @@ export const TriageView: React.FC<TriageViewProps> = ({
           return;
         }
         case '→ Task':
-          // TODO(post-hybrid-soak): wire → Task to decisionTaskHub once the
-          // Email Hybrid (Phase 11) flag flip + legacy cleanup completes.
-          // Observed issue 2026-05-28: stub toast can duplicate when the
-          // queue advances mid-press (Task on email A, then T fires on
-          // email B = two toasts stacked). Real wiring will dedupe by
-          // creating a task per email id rather than per keypress.
-          // See memory: project_pulse_decisions_tasks_revisit.md
-          toast('Push to Decisions & Tasks lands in v1.1.');
+          // Wired in Phase 11b (2026-05-29). The double-toast race noted
+          // 2026-05-28 is handled inside the helper — it dedupes by
+          // email id, so a T-press during a queue advance can't create
+          // two tasks even if the keydown fires on the next email.
+          void createTaskFromEmail(row);
           return;
         case 'Reply':
           openReply(raw);
