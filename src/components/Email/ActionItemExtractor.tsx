@@ -325,12 +325,9 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
                   {item.text}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{
+                  <span className="email-mono-label" style={{
                     padding: '2px 6px', borderRadius: 4,
                     background: tone.bg, color: tone.color,
-                    fontFamily: 'var(--pulse-font-mono)',
-                    fontSize: 10, fontWeight: 500,
-                    letterSpacing: '0.1em', textTransform: 'uppercase', lineHeight: 1,
                   }}>
                     {tone.label}
                   </span>

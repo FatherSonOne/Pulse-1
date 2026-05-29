@@ -297,13 +297,13 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
       {/* Meeting details */}
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, background: 'var(--pulse-surface)' }}>
         <div>
-          <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Title</div>
+          <div className="email-mono-label" style={{ color: 'var(--pulse-ink-3)', marginBottom: 4 }}>Title</div>
           <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--pulse-ink)' }}>{meeting.title}</div>
         </div>
 
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 140 }}>
-            <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Date</div>
+            <div className="email-mono-label" style={{ color: 'var(--pulse-ink-3)', marginBottom: 4 }}>Date</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--pulse-ink-2)' }}>
               <Calendar className="w-3.5 h-3.5" style={{ color: 'var(--pulse-ink-3)' }} aria-hidden />
               {formatDate(meeting.date)}
@@ -311,7 +311,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
           </div>
           {meeting.time && (
             <div>
-              <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Time</div>
+              <div className="email-mono-label" style={{ color: 'var(--pulse-ink-3)', marginBottom: 4 }}>Time</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--pulse-ink-2)' }}>
                 <Clock className="w-3.5 h-3.5" style={{ color: 'var(--pulse-ink-3)' }} aria-hidden />
                 {meeting.time}
@@ -322,14 +322,14 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
 
         {meeting.duration && (
           <div>
-            <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Duration</div>
+            <div className="email-mono-label" style={{ color: 'var(--pulse-ink-3)', marginBottom: 4 }}>Duration</div>
             <div style={{ fontSize: 13, color: 'var(--pulse-ink-2)' }}>{meeting.duration}</div>
           </div>
         )}
 
         {meeting.location && (
           <div>
-            <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Location / Link</div>
+            <div className="email-mono-label" style={{ color: 'var(--pulse-ink-3)', marginBottom: 4 }}>Location / Link</div>
             <div style={{ fontSize: 13, color: 'var(--pulse-rose-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {meeting.location.startsWith('http') ? (
                 <a href={meeting.location} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}>
@@ -344,7 +344,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
 
         {meeting.attendees.length > 0 && (
           <div>
-            <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Attendees</div>
+            <div className="email-mono-label" style={{ color: 'var(--pulse-ink-3)', marginBottom: 4 }}>Attendees</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {meeting.attendees.slice(0, 4).map((attendee, i) => (
                 <span key={i} style={{
