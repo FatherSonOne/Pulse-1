@@ -105,8 +105,8 @@ export const FiltersDropdown: React.FC = () => {
           aria-label="Filter emails"
           className="absolute left-0 top-full mt-1.5 z-30 w-[320px] rounded-xl border pulse-border-color overflow-hidden fade-up"
           style={{
-            background: 'var(--pulse-surface)',
-            boxShadow: '0 18px 60px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04)',
+            background: 'var(--pulse-canvas-soft)',
+            boxShadow: '0 22px 60px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30)',
           }}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b pulse-border-color">

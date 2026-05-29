@@ -60,8 +60,8 @@ export const FoldersDropdown: React.FC = () => {
           role="listbox"
           className="absolute left-0 top-full mt-1.5 z-30 min-w-[260px] rounded-xl border pulse-border-color overflow-hidden fade-up"
           style={{
-            background: 'var(--pulse-surface)',
-            boxShadow: '0 18px 60px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04)',
+            background: 'var(--pulse-canvas-soft)',
+            boxShadow: '0 22px 60px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30)',
           }}
         >
           {FOLDER_ORDER.map((id) => {

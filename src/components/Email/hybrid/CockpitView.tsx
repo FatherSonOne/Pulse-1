@@ -72,52 +72,50 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
       )}
 
       {!loading && !isEmpty && (() => {
-        // Phase 12.15 — the right rail only earns its 320px column when it
-        // has real content. DraftedForYou is permanently empty (drafts={[]}),
-        // CalendarPeek is mock-only, and AwaitingReplies often has 0 rows;
-        // reserving the column anyway compressed Signal · Today against the
-        // left edge while leaving a vast empty gutter. Render the rail only
-        // when AwaitingReplies has at least one row.
-        const showRail = !compact && awaitingReplies.length > 0;
+        // Signal + Lanes always span the full canvas width. The former right
+        // rail (AwaitingReplies + CalendarPeek) is relocated below Lanes as a
+        // two-column secondary strip so nothing is lost but the primary
+        // editorial column gets the page it's designed for. DraftedForYou is
+        // currently always empty (drafts={[]}) so it's omitted here; restore
+        // it alongside the strip when the v1.1 AI-draft prop is wired.
+        const showFooterStrip = !compact && awaitingReplies.length > 0;
         return (
-          <div className={`grid gap-6 px-6 py-6 md:gap-8 md:px-10 md:py-7 ${
-            showRail ? 'grid-cols-1 md:grid-cols-[1fr_320px]' : 'grid-cols-1'
-          }`}>
-            <div>
-              <SignalSection
-                signals={signalEmails}
-                queueIds={upcomingQueueIds}
-                clearedIds={clearedIds}
-                onTriageOne={onTriageOne}
-              />
+          <div className="px-6 py-6 md:px-10 md:py-7 space-y-8">
+            <SignalSection
+              signals={signalEmails}
+              queueIds={upcomingQueueIds}
+              clearedIds={clearedIds}
+              onTriageOne={onTriageOne}
+            />
 
-              <section>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-semibold pulse-ink-color uppercase font-mono-pulse tracking-wide-mono">Lanes</h2>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono-pulse pulse-ink-3-color">AUTO-SORTED</span>
-                    <LanesHelpTip />
-                  </div>
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold pulse-ink-color uppercase font-mono-pulse tracking-wide-mono">Lanes</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono-pulse pulse-ink-3-color">AUTO-SORTED</span>
+                  <LanesHelpTip />
                 </div>
-                <div className="space-y-3">
-                  {MOCK_LANES.map((lane) => (
-                    <LaneSection
-                      key={lane.id}
-                      lane={lane}
-                      emails={laneBuckets[lane.id]}
-                    />
-                  ))}
-                </div>
-              </section>
-            </div>
+              </div>
+              <div className="space-y-3">
+                {MOCK_LANES.map((lane) => (
+                  <LaneSection
+                    key={lane.id}
+                    lane={lane}
+                    emails={laneBuckets[lane.id]}
+                  />
+                ))}
+              </div>
+            </section>
 
-            {showRail && (
-              <aside className="space-y-5 hidden md:block">
-                <DraftedForYouRail drafts={[]} />
-                <AwaitingRepliesRail rows={awaitingReplies} />
+            {showFooterStrip && (
+              <>
                 <div className="editorial-rule" />
-                <CalendarPeekRail />
-              </aside>
+                <div className="grid gap-6 md:gap-8 md:grid-cols-2">
+                  <DraftedForYouRail drafts={[]} />
+                  <AwaitingRepliesRail rows={awaitingReplies} />
+                  <CalendarPeekRail />
+                </div>
+              </>
             )}
           </div>
         );

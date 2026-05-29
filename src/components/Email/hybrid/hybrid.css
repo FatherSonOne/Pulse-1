@@ -303,9 +303,12 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
    their inline reader because they're already roomy cards. */
 .email-hybrid-shell .reader-panel-backdrop {
   position: absolute; inset: 0; z-index: 35;
-  background: rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   animation: hybridFadeUp 200ms ease;
+}
+html:not(.dark) .email-hybrid-shell .reader-panel-backdrop {
+  background: rgba(15, 23, 42, 0.48);
 }
 .email-hybrid-shell .reader-panel {
   position: absolute; top: 0; right: 0; bottom: 0; z-index: 40;
