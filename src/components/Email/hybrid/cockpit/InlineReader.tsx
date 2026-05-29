@@ -6,9 +6,8 @@
 //   - ActionItemExtractor — wired in Phase 11b (2026-05-29) to
 //     createTasksFromEmailItems, which writes into extracted_tasks
 //     with email metadata so the tasks surface in DecisionTaskHub.
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import DOMPurify from 'isomorphic-dompurify';
 import { Clock, Send, Reply, Archive, MoonStar, CheckSquare, Maximize2 } from 'lucide-react';
 import { GeminiSummaryCard } from './GeminiSummaryCard';
 import { emailSyncService } from '../../../../services/emailSyncService';
@@ -18,6 +17,7 @@ import { useEmailComposeStore } from '../../../../store/emailComposeStore';
 import type { EmailRow } from '../data/emailRow';
 import { createTaskFromEmail, createTasksFromEmailItems } from '../data/createTaskFromEmail';
 import { AiChip, Keycap } from '../primitives';
+import { EmailBody } from '../EmailBody';
 import MeetingExtractor from '../../MeetingExtractor';
 import ActionItemExtractor from '../../ActionItemExtractor';
 
@@ -84,35 +84,6 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
     })();
     return () => { cancelled = true; };
   }, [email.threadId]);
-
-  // Phase 12.11 + 12.13 — body rendering:
-  //   1. Prefer email._raw.body_html when populated (most senders ship one
-  //      alongside body_text). Sanitized with DOMPurify so embedded scripts
-  //      / styles / inline event handlers can't execute.
-  //   2. Some HTML-only senders (booking confirmations, marketing platforms)
-  //      ship body_text that's literally raw HTML source — Gmail's text
-  //      fallback just dumps the markup. Detect by sniffing for a leading
-  //      `<` and a closing tag, then route through DOMPurify too. Without
-  //      this guard the user sees raw `<center style="...">` source instead
-  //      of the rendered email.
-  //   3. Plain-text fallback for true plain-text emails — preserved
-  //      whitespace + newlines via `white-space: pre-wrap`.
-  const rawHtml = email._raw?.body_html?.trim();
-  const rawText = email.body || email._raw?.snippet || '';
-  const looksLikeHtml = (s: string) => {
-    const trimmed = s.trim();
-    if (!trimmed.startsWith('<')) return false;
-    return /<[a-z][^>]*>/i.test(trimmed) && /<\/[a-z]+>|\/>/i.test(trimmed);
-  };
-  const htmlSource = rawHtml || (looksLikeHtml(rawText) ? rawText : '');
-  const sanitizedHtml = useMemo(() => {
-    if (!htmlSource) return '';
-    return DOMPurify.sanitize(htmlSource, {
-      FORBID_TAGS: ['script', 'style', 'form', 'iframe', 'object', 'embed'],
-      FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover', 'onfocus'],
-    });
-  }, [htmlSource]);
-  const fallbackText = rawText;
 
   const handleArchiveClick = async () => {
     if (!email._raw) {
@@ -254,20 +225,10 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
         </div>
       )}
 
-      {/* Email body — Phase 12.11 + 12.13: HTML-aware with DOMPurify
-          sanitization; plain-text fallback; empty-state placeholder. */}
-      {sanitizedHtml ? (
-        <div
-          className="email-body-html max-w-[760px]"
-          dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-        />
-      ) : fallbackText.trim() ? (
-        <div className="email-body-text max-w-[760px]">{fallbackText}</div>
-      ) : (
-        <div className="text-[12.5px] pulse-ink-3-color italic py-3">
-          This email has no body content beyond the subject and AI summary above.
-        </div>
-      )}
+      {/* Email body — extracted to <EmailBody /> shared primitive so the
+          DOMPurify sanitization, HTML-sniff fallback, and empty-state
+          render are not duplicated across InlineReader + TriageCard. */}
+      <EmailBody email={email} />
 
       {email.draft && (
         <div className="mt-3 p-3 rounded-lg pulse-rose-bg-soft-color border pulse-rose-border">

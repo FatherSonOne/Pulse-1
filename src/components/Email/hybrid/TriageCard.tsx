@@ -2,13 +2,13 @@
 // Per handoff §6 step 5: subject + AI briefing strip + body + action bar
 // (Archive E / Snooze H / → Task T / Reply R or Send draft ⌘↵).
 // Phase 3 takes its email as an EmailRow (works with mock + live data alike).
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Clock, Archive, MoonStar, CheckSquare, Reply, Send, Maximize2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import DOMPurify from 'isomorphic-dompurify';
 import type { EmailRow } from './data/emailRow';
 import { useEmailUIStore } from '../../../store/emailUIStore';
 import { Avatar, AiChip, ToneChip, Keycap } from './primitives';
+import { EmailBody } from './EmailBody';
 
 export type TriageAction = 'Archive' | 'Snooze' | '→ Task' | 'Reply' | 'Send draft';
 
@@ -21,26 +21,6 @@ interface TriageCardProps {
 export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact = false }) => {
   const hasDraft = Boolean(email.draft);
   const openReaderPanel = useEmailUIStore((s) => s.openReaderPanel);
-
-  // Same body-rendering logic as InlineReader (Phase 12.11 + 12.13):
-  //   prefer body_html → fall through to HTML-shaped body_text → fall
-  //   through to plain text with pre-wrap. Keeps Triage focal cards from
-  //   showing raw HTML markup for senders like Pines Cottages.
-  const rawHtml = email._raw?.body_html?.trim();
-  const rawText = email.body || email._raw?.snippet || '';
-  const looksLikeHtml = (s: string) => {
-    const trimmed = s.trim();
-    if (!trimmed.startsWith('<')) return false;
-    return /<[a-z][^>]*>/i.test(trimmed) && /<\/[a-z]+>|\/>/i.test(trimmed);
-  };
-  const htmlSource = rawHtml || (looksLikeHtml(rawText) ? rawText : '');
-  const sanitizedHtml = useMemo(() => {
-    if (!htmlSource) return '';
-    return DOMPurify.sanitize(htmlSource, {
-      FORBID_TAGS: ['script', 'style', 'form', 'iframe', 'object', 'embed'],
-      FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover', 'onfocus'],
-    });
-  }, [htmlSource]);
 
   // Phase 12.10 — escape hatch from the bounded Triage stage into the
   // full-page reader. Triage idx stays put so the user comes back to the
@@ -126,25 +106,15 @@ export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact
 
       {/* Body — focusable scroll region. tabIndex=-1 keeps it out of the Tab
           cycle but lets focus management land here on Triage entry, so
-          accidental Space/Enter scrolls instead of firing Archive. */}
+          accidental Space/Enter scrolls instead of firing Archive. Inner
+          render lives in <EmailBody /> — shared with InlineReader. */}
       <div
         className={`triage-body flex-1 overflow-y-auto ${compact ? 'px-5 py-4' : 'px-7 py-5'}`}
         tabIndex={-1}
         role="article"
         aria-label={`Email body from ${email.from}`}
       >
-        {sanitizedHtml ? (
-          <div
-            className="email-body-html max-w-[760px]"
-            dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-          />
-        ) : rawText.trim() ? (
-          <div className="email-body-text max-w-[760px]">{rawText}</div>
-        ) : (
-          <div className="text-[12.5px] pulse-ink-3-color italic py-3">
-            This email has no body content beyond the subject and AI summary.
-          </div>
-        )}
+        <EmailBody email={email} />
       </div>
 
       {/* Action bar */}
