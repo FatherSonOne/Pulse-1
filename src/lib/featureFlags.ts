@@ -196,18 +196,21 @@ const featureFlagsConfig: FeatureFlagConfig = {
   //
   // When ON, EmailClientWrapper renders the new Cockpit (editorial briefing +
   // signal section + lanes + right rail + inline reader expansion) plus the
-  // Triage focal-card mode (⌘E toggles). When OFF, the legacy
+  // Triage focal-card mode (⌘E toggles), the slide-out / maximized reader
+  // panel, and the Focal Canvas + Sidecar composer. When OFF, the legacy
   // PulseEmailClientRedesign (sidebar + list + viewer split-pane) renders.
   //
-  // Both surfaces ship side-by-side behind this flag through Phase 11 of the
-  // handoff; flag default flips to true after a soak, then the legacy
-  // components are deleted. Local dev override: `?ff_emailHybrid=on`.
+  // Phase 11a (2026-05-29) — flipped default to true. Composer redesign +
+  // 12.1–12.15 soak items all shipped (commit e16413b + follow-ups). Legacy
+  // surface stays reachable via the bottom-left BETA pill rollback during
+  // the ~1-week soak. Phase 11b deletes the flag + legacy files after.
+  // Local dev override: `?ff_emailHybrid=off`.
   emailHybrid: {
-    enabled: false,
-    rolloutPercentage: 0,
-    targetUsers: ['internal'],
-    description: 'IN-PROGRESS — Cockpit+Triage email redesign per docs/EMAIL_HYBRID_REDESIGN_HANDOFF_2026-05-27.md. Flip to true after Phase 10 soak.',
-    version: '0.1.0'
+    enabled: true,
+    rolloutPercentage: 100,
+    targetUsers: ['all'],
+    description: 'DEFAULT ON (2026-05-29) — Cockpit+Triage email redesign. BETA pill still routes back to legacy during soak; Phase 11b deletes the flag after.',
+    version: '1.0.0'
   }
 };
 
