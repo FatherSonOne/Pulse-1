@@ -1,9 +1,7 @@
 // src/components/Email/index.tsx
-// AI-powered email client exports
-export { PulseEmailClientRedesign } from './PulseEmailClientRedesign';
-export { EmailSidebarRedesign } from './EmailSidebarRedesign';
-export { EmailListRedesign } from './EmailListRedesign';
-export { EmailViewerNew } from './EmailViewerNew';
+// AI-powered email client exports. Phase 11b removed the legacy
+// PulseEmailClientRedesign + EmailSidebarRedesign + EmailListRedesign +
+// EmailViewerNew exports along with the surfaces themselves.
 export { EmailComposerModal } from './EmailComposerModal';
 export { EmailClientWrapper } from './EmailClientWrapper';
 

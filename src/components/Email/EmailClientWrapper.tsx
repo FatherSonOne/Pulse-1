@@ -1,11 +1,15 @@
-// EmailClientWrapper.tsx - Wrapper to adapt legacy props to PulseEmailClient,
-// branched on the emailHybrid feature flag (see docs/EMAIL_HYBRID_REDESIGN_HANDOFF_2026-05-27.md).
+// EmailClientWrapper.tsx — thin prop adapter from the App's user object
+// onto EmailHybridClient. Pre-Phase-11b this was a feature-flag branch
+// between the hybrid surface and the legacy PulseEmailClientRedesign;
+// the legacy surface and the emailHybrid flag were removed in Phase 11b
+// (commit alongside this file), so the wrapper now just rewrites props.
+//
+// Kept as a separate file because App.tsx + useRoutePreload lazy-import
+// it by path; collapsing it into EmailHybridClient would force route
+// signature changes for no gain.
 import React from 'react';
 import { User } from '../../types';
-import { useFeatureFlag } from '../../lib/featureFlags';
-import { PulseEmailClientRedesign } from './PulseEmailClientRedesign';
 import { EmailHybridClient } from './hybrid/EmailHybridClient';
-import { EmailHybridFlagToggle } from './EmailHybridFlagToggle';
 
 interface EmailClientWrapperProps {
   user: User;
@@ -16,21 +20,7 @@ interface EmailClientWrapperProps {
 export const EmailClientWrapper: React.FC<EmailClientWrapperProps> = ({
   user,
 }) => {
-  const useHybrid = useFeatureFlag('emailHybrid', user.id, false);
-
-  return (
-    <>
-      {useHybrid ? (
-        <EmailHybridClient userEmail={user.email} userName={user.name} />
-      ) : (
-        <PulseEmailClientRedesign
-          userEmail={user.email}
-          userName={user.name}
-        />
-      )}
-      <EmailHybridFlagToggle />
-    </>
-  );
+  return <EmailHybridClient userEmail={user.email} userName={user.name} />;
 };
 
 export default EmailClientWrapper;
