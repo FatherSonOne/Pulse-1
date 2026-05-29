@@ -37,11 +37,15 @@ export const EmailReaderPanel: React.FC = () => {
 
   return (
     <>
-      <div
-        className="reader-panel-backdrop"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      {/* Backdrop only renders in slide-out mode; when maximized the panel
+          covers the entire view-shell and a backdrop is meaningless. */}
+      {!maximized && (
+        <div
+          className="reader-panel-backdrop"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
       <aside
         className={`reader-panel ${maximized ? 'is-maximized' : ''}`}
         role="dialog"

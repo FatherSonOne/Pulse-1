@@ -335,12 +335,30 @@ html.dark .email-hybrid-shell .reader-panel {
 @media (max-width: 767px) {
   .email-hybrid-shell .reader-panel { width: 100%; }
 }
-/* Maximized mode (Phase 12.10) — takes over the entire view-shell. */
+/* Maximized mode (Phase 12.10 + 12.14) — true full-page takeover.
+   --pulse-surface is rgba(255,255,255,0.03) in dark mode, so a panel
+   styled with the slide-out's default background goes nearly transparent
+   when maximized and the underlying Cockpit bleeds through. Force a
+   fully opaque canvas color and drop the slide-in shadow / border. */
 .email-hybrid-shell .reader-panel.is-maximized {
   width: 100%;
+  max-width: 100%;
   border-left: none;
   box-shadow: none;
+  background: var(--pulse-canvas);
   animation: hybridFadeUp 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Surfaces inside the maximized panel also need to be opaque since they
+   inherit translucency from --pulse-surface tokens. Add an explicit fill
+   to the header strip so it doesn't disappear into the canvas. */
+.email-hybrid-shell .reader-panel.is-maximized .reader-panel-header {
+  background: var(--pulse-canvas-soft);
+}
+/* The backdrop is pointless when the panel covers 100% — hide it so
+   stray pointer events between paint frames don't close the reader. */
+.email-hybrid-shell .reader-panel.is-maximized + .reader-panel-backdrop,
+.email-hybrid-shell .reader-panel-backdrop:has(+ .reader-panel.is-maximized) {
+  display: none;
 }
 .email-hybrid-shell .reader-panel-header {
   display: flex; align-items: flex-start; gap: 12px;
