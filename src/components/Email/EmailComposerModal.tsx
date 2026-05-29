@@ -135,6 +135,10 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
   const DRAFT_KEY = 'pulse-email-composer-draft';
   const isInitialMountRef = useRef(true);
   const [restoredDraft, setRestoredDraft] = useState<{ savedAt: number } | null>(null);
+  // Live autosave readout for the header — set by the debounced save
+  // effect below. Renders as the spec's inline `DRAFT · SAVED HH:MM`
+  // indicator next to NEW MESSAGE.
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
   // Restore draft on first mount (only if composer is opening fresh, no replyTo / restored params)
   useEffect(() => {
@@ -175,14 +179,29 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
     const hasContent = Boolean(to.trim() || subject.trim() || body.trim() || cc.trim() || bcc.trim());
     if (!hasContent) return;
     const timer = setTimeout(() => {
+      const savedAt = Date.now();
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify({
-          to, cc, bcc, subject, body, savedAt: Date.now(),
+          to, cc, bcc, subject, body, savedAt,
         }));
+        setLastSavedAt(savedAt);
       } catch { /* quota or unavailable */ }
     }, 800);
     return () => clearTimeout(timer);
   }, [to, cc, bcc, subject, body, replyTo, initialTo, initialSubject]);
+
+  // Dismiss the restored-draft prompt the moment the user types real
+  // content in this new composer. The prior draft was a passive "want
+  // to recover?" offer; if the user is actively writing instead, the
+  // prompt should disappear so it stops competing with the autosave
+  // readout in the header. The autosave loop above will overwrite the
+  // localStorage slot on the next debounce, which is the implicit "I
+  // chose to write fresh" outcome.
+  useEffect(() => {
+    if (!restoredDraft) return;
+    const hasUserContent = Boolean(to.trim() || subject.trim() || body.trim() || cc.trim() || bcc.trim());
+    if (hasUserContent) setRestoredDraft(null);
+  }, [restoredDraft, to, cc, bcc, subject, body]);
 
   // Schedule send state
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -841,13 +860,25 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
         aria-label={replyTo ? `Reply to ${replyTo.from_name || replyTo.from_email}` : 'Compose email'}
         style={{ opacity: isVisible ? 1 : 0, transition: 'opacity 240ms ease' }}
       >
-        {/* Header — editorial label + recipient summary + minimize/maximize/close.
-            Matches TriageCard's serif-weight + mono-label header rhythm. */}
+        {/* Header — editorial label + autosave readout + recipient summary +
+            minimize/maximize/close. Matches the locked playground spec
+            (_design-playground/email-composer-final.html:760-771): pen-rose
+            icon, NEW MESSAGE label, inline DRAFT · SAVED HH:MM autosave
+            indicator, then a quiet recipient summary. */}
         <div className={isMaximized ? 'composer-focal-header' : 'composer-sidecar-header'}>
           <Wand2 className="w-4 h-4" style={{ color: 'var(--pulse-rose)', flexShrink: 0 }} aria-hidden />
           <span className="composer-mono-label" style={{ color: 'var(--pulse-rose)' }}>
             {headerLabel}
           </span>
+          {lastSavedAt !== null && (
+            <span
+              className="composer-mono-label"
+              style={{ color: 'var(--pulse-ink-3)', marginLeft: 4 }}
+              title="Last autosave"
+            >
+              DRAFT · SAVED {new Date(lastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
           <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }} aria-hidden>·</span>
           <span style={{ fontSize: 11, color: 'var(--pulse-ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
             {recipientSummary}
