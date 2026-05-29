@@ -298,7 +298,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
             width: 24, height: 24, borderRadius: 6, border: 'none',
             background: 'transparent', color: 'var(--pulse-ink-3)', cursor: 'pointer',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'background 140ms ease, color 140ms ease',
+            transition: 'background 220ms cubic-bezier(0.16, 1, 0.3, 1), color 220ms cubic-bezier(0.16, 1, 0.3, 1)',
           }}
           onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--pulse-surface-raised)'; e.currentTarget.style.color = 'var(--pulse-ink-2)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--pulse-ink-3)'; }}
@@ -318,7 +318,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
           <div style={{ flex: 1, minWidth: 140 }}>
             <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Date</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--pulse-ink-2)' }}>
-              <Calendar className="w-3.5 h-3.5" style={{ color: 'var(--pulse-rose)' }} aria-hidden />
+              <Calendar className="w-3.5 h-3.5" style={{ color: 'var(--pulse-ink-3)' }} aria-hidden />
               {formatDate(meeting.date)}
             </div>
           </div>
@@ -326,7 +326,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
             <div>
               <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)', fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Time</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--pulse-ink-2)' }}>
-                <Clock className="w-3.5 h-3.5" style={{ color: 'var(--pulse-rose)' }} aria-hidden />
+                <Clock className="w-3.5 h-3.5" style={{ color: 'var(--pulse-ink-3)' }} aria-hidden />
                 {meeting.time}
               </div>
             </div>

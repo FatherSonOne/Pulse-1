@@ -290,7 +290,7 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
             width: 24, height: 24, borderRadius: 6, border: 'none',
             background: 'transparent', color: 'var(--pulse-ink-3)', cursor: 'pointer',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'background 140ms ease, color 140ms ease',
+            transition: 'background 220ms cubic-bezier(0.16, 1, 0.3, 1), color 220ms cubic-bezier(0.16, 1, 0.3, 1)',
           }}
           onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--pulse-surface-raised)'; e.currentTarget.style.color = 'var(--pulse-ink-2)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--pulse-ink-3)'; }}
@@ -314,7 +314,7 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
                 border: item.selected
                   ? '1px solid color-mix(in oklab, var(--pulse-rose) 35%, transparent)'
                   : '1px solid transparent',
-                transition: 'background 140ms ease, border-color 140ms ease',
+                transition: 'background 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 220ms cubic-bezier(0.16, 1, 0.3, 1)',
               }}
             >
               {/* Checkbox */}
@@ -327,7 +327,7 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
                   ? '1.5px solid var(--pulse-rose)'
                   : '1.5px solid var(--pulse-border-strong)',
                 color: 'white',
-                transition: 'background 140ms ease, border-color 140ms ease',
+                transition: 'background 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 220ms cubic-bezier(0.16, 1, 0.3, 1)',
               }}>
                 {item.selected && <Check className="w-3 h-3" strokeWidth={3} />}
               </div>
