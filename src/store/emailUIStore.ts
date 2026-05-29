@@ -58,6 +58,8 @@ interface EmailUIState {
   focusedSignalRowId: string | null;
   /** When non-null, the hybrid surface renders SnoozeModal targeting this email. */
   snoozeTargetEmailId: string | null;
+  /** When non-null, the hybrid surface renders the slide-out EmailReaderPanel for this email. */
+  readerPanelEmailId: string | null;
 
   // Actions
   setZoomLevel: (level: number) => void;
@@ -84,6 +86,7 @@ interface EmailUIState {
   setExpandedSignalRowId: (id: string | null) => void;
   setFocusedSignalRowId: (id: string | null) => void;
   setSnoozeTargetEmailId: (id: string | null) => void;
+  setReaderPanelEmailId: (id: string | null) => void;
 }
 
 export const useEmailUIStore = create<EmailUIState>()((set) => ({
@@ -107,6 +110,7 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   expandedSignalRowId: null,
   focusedSignalRowId: null,
   snoozeTargetEmailId: null,
+  readerPanelEmailId: null,
 
   setZoomLevel: (level) => set({ zoomLevel: Math.max(50, Math.min(100, level)) }),
   zoomIn: () => set((s) => ({ zoomLevel: Math.min(s.zoomLevel + 10, 100) })),
@@ -143,4 +147,5 @@ export const useEmailUIStore = create<EmailUIState>()((set) => ({
   setExpandedSignalRowId: (id) => set({ expandedSignalRowId: id }),
   setFocusedSignalRowId: (id) => set({ focusedSignalRowId: id }),
   setSnoozeTargetEmailId: (id) => set({ snoozeTargetEmailId: id }),
+  setReaderPanelEmailId: (id) => set({ readerPanelEmailId: id }),
 }));

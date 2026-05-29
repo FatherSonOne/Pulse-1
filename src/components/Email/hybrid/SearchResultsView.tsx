@@ -19,7 +19,7 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query, onC
   const handleArchive = useEmailStore((s) => s.handleArchive);
   const handleTrash = useEmailStore((s) => s.handleTrash);
   const handleToggleStar = useEmailStore((s) => s.handleToggleStar);
-  const setSelectedEmail = useEmailStore((s) => s.setSelectedEmail);
+  const setReaderPanelEmailId = useEmailUIStore((s) => s.setReaderPanelEmailId);
   const setSnoozeTargetEmailId = useEmailUIStore((s) => s.setSnoozeTargetEmailId);
 
   return (
@@ -71,7 +71,7 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query, onC
                   className={`selectable-row group flex items-center gap-3 px-4 py-2.5 cursor-pointer ${
                     idx > 0 ? 'border-t pulse-border-color' : ''
                   }`}
-                  onClick={() => setSelectedEmail(email)}
+                  onClick={() => setReaderPanelEmailId(email.id)}
                 >
                   <Avatar name={row.from} size={26} />
                   <span className="text-[12.5px] pulse-ink-color truncate min-w-[140px]">{row.from}</span>

@@ -24,9 +24,8 @@ export const FolderListView: React.FC = () => {
   const handleArchive = useEmailStore((s) => s.handleArchive);
   const handleTrash = useEmailStore((s) => s.handleTrash);
   const handleToggleStar = useEmailStore((s) => s.handleToggleStar);
-  const setSelectedEmail = useEmailStore((s) => s.setSelectedEmail);
-
   const setSnoozeTargetEmailId = useEmailUIStore((s) => s.setSnoozeTargetEmailId);
+  const setReaderPanelEmailId = useEmailUIStore((s) => s.setReaderPanelEmailId);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -87,10 +86,9 @@ export const FolderListView: React.FC = () => {
   }, [selectedIds]);
 
   const handleRowClick = useCallback((email: CachedEmail) => {
-    // Stash in selectedEmail so the Cockpit-side viewer can still react;
-    // inline expansion inside FolderListView lands in a later polish pass.
-    setSelectedEmail(email);
-  }, [setSelectedEmail]);
+    // Phase 12.4: open in the slide-out EmailReaderPanel.
+    setReaderPanelEmailId(email.id);
+  }, [setReaderPanelEmailId]);
 
   const empty = !loading && emails.length === 0;
 

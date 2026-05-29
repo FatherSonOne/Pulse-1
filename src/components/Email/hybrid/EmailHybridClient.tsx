@@ -35,6 +35,7 @@ import { useEmailHybridShortcuts } from './data/useEmailHybridShortcuts';
 import EmailComposerModal from '../EmailComposerModal';
 import EmailSettingsModal from '../EmailSettingsModal';
 import { SnoozeModal } from '../SnoozeModal';
+import { EmailReaderPanel } from './EmailReaderPanel';
 import { ReconnectGoogleModal } from '../../Auth/ReconnectGoogleModal';
 import './hybrid.css';
 
@@ -96,6 +97,8 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
   const setShowReauthModal = useEmailUIStore((s) => s.setShowReauthModal);
   const snoozeTargetEmailId = useEmailUIStore((s) => s.snoozeTargetEmailId);
   const setSnoozeTargetEmailId = useEmailUIStore((s) => s.setSnoozeTargetEmailId);
+  const readerPanelEmailId = useEmailUIStore((s) => s.readerPanelEmailId);
+  const setReaderPanelEmailId = useEmailUIStore((s) => s.setReaderPanelEmailId);
 
   const showComposer = useEmailComposeStore((s) => s.showComposer);
   const openCompose = useEmailComposeStore((s) => s.openCompose);
@@ -516,6 +519,11 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
         setSnoozeTargetEmailId(null);
         return;
       }
+      if (readerPanelEmailId) {
+        e.preventDefault();
+        setReaderPanelEmailId(null);
+        return;
+      }
       if (mode === 'triage') {
         e.preventDefault();
         setMode('cockpit');
@@ -531,6 +539,7 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
   }, [
     mode, expandedSignalRowId, setMode, setExpandedSignalRowId,
     snoozeTargetEmailId, setSnoozeTargetEmailId,
+    readerPanelEmailId, setReaderPanelEmailId,
     showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal,
   ]);
 
@@ -607,6 +616,10 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
             visible viewport bottom-right instead of scrolling with content.
             Hidden in Triage mode — no compose semantics there. */}
         {mode === 'cockpit' && <ComposeFab onClick={openCompose} />}
+
+        {/* Slide-out reader panel (Phase 12.4) — overlays the active view
+            when readerPanelEmailId is set. Backdrop + Esc both close it. */}
+        <EmailReaderPanel />
       </div>
 
       {showKeyboardShortcuts && (

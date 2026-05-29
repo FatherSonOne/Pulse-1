@@ -227,6 +227,65 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
 .email-hybrid-shell .selectable-row { transition: background 160ms ease, border-color 160ms ease; }
 .email-hybrid-shell .selectable-row:hover { background: var(--pulse-surface-raised); }
 
+/* ─── Slide-out reader panel (Phase 12.4) ───
+   Mounted at the view-shell container level so it overlays the active view.
+   Lane rows, folder rows, and search-result rows open emails here instead of
+   inline (those rows are too compact for inline expansion). Signal rows keep
+   their inline reader because they're already roomy cards. */
+.email-hybrid-shell .reader-panel-backdrop {
+  position: absolute; inset: 0; z-index: 35;
+  background: rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  animation: hybridFadeUp 200ms ease;
+}
+.email-hybrid-shell .reader-panel {
+  position: absolute; top: 0; right: 0; bottom: 0; z-index: 40;
+  width: 540px; max-width: 100%;
+  background: var(--pulse-surface);
+  border-left: 1px solid var(--pulse-border);
+  box-shadow: -18px 0 60px rgba(0, 0, 0, 0.10);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  animation: readerPanelIn 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+html.dark .email-hybrid-shell .reader-panel {
+  box-shadow: -22px 0 80px rgba(0, 0, 0, 0.55);
+}
+@keyframes readerPanelIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@media (max-width: 767px) {
+  .email-hybrid-shell .reader-panel { width: 100%; }
+}
+.email-hybrid-shell .reader-panel-header {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 18px 18px 12px 20px;
+  border-bottom: 1px solid var(--pulse-border);
+  shrink: 0;
+}
+.email-hybrid-shell .reader-panel-close {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  width: 30px; height: 30px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
+  transition: background 160ms ease, color 160ms ease;
+}
+.email-hybrid-shell .reader-panel-close:hover {
+  background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+}
+/* When InlineReader is rendered inside the panel, override its inline-mode
+   wrapper so it fills the panel and scrolls instead of looking like an
+   accordion drawer with a top border + canvas-soft background. */
+.email-hybrid-shell .reader-panel .reader-expand {
+  border-top: none;
+  background: transparent;
+  border-radius: 0;
+  flex: 1;
+  overflow-y: auto;
+  animation: none;
+}
+
 /* ─── Mobile (< 768px) ───
    Triage mode is hidden — the segmented pill collapses to a single Cockpit
    button via SegmentedModeToggle's data-mobile-hide attribute. The ⌘E hint
