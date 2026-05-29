@@ -185,9 +185,10 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Snap back to cockpit when leaving inbox
+  // Snap back to cockpit when leaving inbox — triage AND inbox modes are
+  // both inbox-only views, so a folder switch should reset to cockpit.
   useEffect(() => {
-    if (!isInbox && mode === 'triage') setMode('cockpit');
+    if (!isInbox && (mode === 'triage' || mode === 'inbox')) setMode('cockpit');
   }, [isInbox, mode, setMode]);
 
   // Reset filters when the folder changes — filters are scoped to the
@@ -597,9 +598,16 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
       />
 
       <div className="flex-1 overflow-hidden relative">
-        <div className={`view-shell ${mode === 'cockpit' ? 'view-active' : 'view-inactive'}`}>
+        {/* Cockpit shell hosts the briefing+lanes view (inbox mode), the
+            folder list (non-inbox), AND the plain inbox list when the user
+            picks the new Inbox tab (Phase 12.8). Three sub-renderings, one
+            shell — no cross-fade between Cockpit briefing and Inbox list
+            because they're both list-like content. */}
+        <div className={`view-shell ${(mode === 'cockpit' || mode === 'inbox') ? 'view-active' : 'view-inactive'}`}>
           {searchActive ? (
             <SearchResultsView query={executedQuery} onClear={clearSearch} />
+          ) : mode === 'inbox' && isInbox ? (
+            <FolderListView />
           ) : isInbox ? (
             <CockpitView
               density="normal"
@@ -621,8 +629,8 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
         {/* Compose FAB lives at the view-shell container level (not inside
             CockpitView's scrollable region) so it stays anchored to the
             visible viewport bottom-right instead of scrolling with content.
-            Hidden in Triage mode — no compose semantics there. */}
-        {mode === 'cockpit' && <ComposeFab onClick={openCompose} />}
+            Visible in Cockpit + Inbox modes; hidden in Triage. */}
+        {(mode === 'cockpit' || mode === 'inbox') && <ComposeFab onClick={openCompose} />}
 
         {/* Slide-out reader panel (Phase 12.4) — overlays the active view
             when readerPanelEmailId is set. Backdrop + Esc both close it. */}

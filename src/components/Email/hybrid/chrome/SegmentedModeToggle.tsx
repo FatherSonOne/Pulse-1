@@ -1,15 +1,18 @@
-// SegmentedModeToggle — [Cockpit | Triage · N] pill + ⌘E hint.
+// SegmentedModeToggle — [Cockpit | Triage · N | Inbox] pill + ⌘E hint.
 // Phase 6: collapses to a single "Cockpit" label when Triage isn't meaningful
-// (i.e. user is viewing a non-inbox folder). The toggle still mounts so the
-// layout doesn't shift; only the Triage button hides.
+// (i.e. user is viewing a non-inbox folder).
+// Phase 12.8: adds the third Inbox option — a plain chronological list of
+// the inbox folder, no AI curation. ⌘E continues to toggle only between
+// Cockpit ↔ Triage; Inbox is click-only on purpose (no destructive keypress
+// can land users on an unexpected view).
 import React from 'react';
-import { Newspaper, Layers, Check } from 'lucide-react';
+import { Newspaper, Layers, Check, Inbox } from 'lucide-react';
 import { useEmailUIStore } from '../../../../store/emailUIStore';
 import { Keycap } from '../primitives';
 
 interface SegmentedModeToggleProps {
   triageRemaining: number;
-  /** When true, hides the Triage half + ⌘E hint (non-inbox folders, mobile). */
+  /** When true, hides the Triage + Inbox halves + ⌘E hint (non-inbox folders, mobile). */
   triageDisabled?: boolean;
 }
 
@@ -26,10 +29,15 @@ export const SegmentedModeToggle: React.FC<SegmentedModeToggleProps> = ({
 
   const goCockpit = () => setMode('cockpit');
   const goTriage = () => setMode('triage');
+  const goInbox = () => setMode('inbox');
 
   const hasItems = triageRemaining > 0;
   const switchLabel = isMac ? '⌘E' : 'Ctrl+E';
 
+  // When triage is disabled (non-inbox folder), the seg-toggle collapses to a
+  // single Cockpit label — the user is browsing a folder via the dropdown,
+  // not the Cockpit/Triage/Inbox views. Click "Cockpit" treated as the
+  // currently-active label.
   return (
     <>
       <div className="seg-toggle" role="tablist" aria-label="Email view mode">
@@ -63,6 +71,20 @@ export const SegmentedModeToggle: React.FC<SegmentedModeToggleProps> = ({
                 <Check className="w-2.5 h-2.5" />
               </span>
             )}
+          </button>
+        )}
+        {!triageDisabled && (
+          <button
+            type="button"
+            data-active={mode === 'inbox'}
+            aria-pressed={mode === 'inbox'}
+            aria-label="Inbox list view"
+            role="tab"
+            onClick={goInbox}
+            title="Plain chronological list of the inbox, no AI curation"
+          >
+            <Inbox className="w-3.5 h-3.5" />
+            <span>Inbox</span>
           </button>
         )}
       </div>

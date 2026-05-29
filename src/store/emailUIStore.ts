@@ -7,7 +7,7 @@ import type { EmailCampaign } from '../services/emailCampaignService';
 type AccentColor = 'rose' | 'blue' | 'purple' | 'green';
 type Density = 'comfortable' | 'compact' | 'default';
 
-export type EmailHybridMode = 'cockpit' | 'triage';
+export type EmailHybridMode = 'cockpit' | 'triage' | 'inbox';
 
 // ─── Filter state (Phase 12.5) ────────────────────────────────────────────
 export type ReadStatusFilter = 'all' | 'unread' | 'read';
