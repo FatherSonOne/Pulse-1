@@ -73,7 +73,11 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
   const [showBcc, setShowBcc] = useState(!!initialBcc);
   const [sending, setSending] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [isMaximized, setIsMaximized] = useState(false);
+  // Default new messages + forwards + undo-restored drafts to fullscreen
+  // (no replyTo means we're starting from a blank-ish slate); replies +
+  // reply-all open in the smaller bottom-right panel because the user is
+  // mid-conversation and probably wants the original visible behind.
+  const [isMaximized, setIsMaximized] = useState(!replyTo);
 
   // AI state
   const [showAiPanel, setShowAiPanel] = useState(false);
