@@ -98,26 +98,105 @@ export function deriveTone(email: CachedEmail): EmailTone {
 
 /**
  * Bucket a CachedEmail into one of the five Cockpit lanes.
- * Order matters: sender-domain check beats Gmail category labels because
- * tooling senders (github.com, linear.app, etc.) often get filed into
- * CATEGORY_UPDATES by Gmail and we want them under Tools instead.
+ * Priority order:
+ *   1. Sender-domain check beats Gmail category labels — tooling senders
+ *      (github.com, linear.app, etc.) often get filed into CATEGORY_UPDATES
+ *      by Gmail; we want them under Tools instead.
+ *   2. Subject patterns catch the things Gmail labels miss — calendar
+ *      invites from custom domains, billing/receipts from non-`billing@`
+ *      addresses, and newsletter-shaped emails without CATEGORY_PROMOTIONS.
+ *   3. Gmail category labels.
+ *   4. Free-mail / no-category fallbacks.
  */
 const TOOL_DOMAINS = [
-  'github.com', 'gitlab.com', 'bitbucket.org', 'linear.app', 'notion.com',
-  'slack.com', 'figma.com', 'vercel.com', 'render.com', 'netlify.com',
-  'sentry.io', 'posthog.com', 'datadog.com', 'pagerduty.com', 'newrelic.com',
-  'cloudflare.com', 'aws.amazon.com', 'gcp.com', 'circleci.com',
+  // Source control / dev infra
+  'github.com', 'gitlab.com', 'bitbucket.org',
+  // Project / docs / planning
+  'linear.app', 'notion.com', 'atlassian.com', 'atlassian.net',
+  'jira.com', 'confluence.com', 'asana.com', 'monday.com', 'clickup.com',
+  // Comms / chat
+  'slack.com', 'discord.com',
+  // Design / product
+  'figma.com', 'framer.com', 'webflow.com',
+  // Hosting / CI / infra
+  'vercel.com', 'render.com', 'netlify.com', 'fly.io', 'railway.app',
+  'cloudflare.com', 'aws.amazon.com', 'amazonaws.com', 'gcp.com',
+  'cloud.google.com', 'digitalocean.com', 'circleci.com', 'travis-ci.com',
+  // Monitoring / analytics / errors
+  'sentry.io', 'posthog.com', 'datadog.com', 'pagerduty.com',
+  'newrelic.com', 'mixpanel.com', 'amplitude.com', 'segment.com',
+  'logrocket.com', 'fullstory.com',
 ];
+
+const ADMIN_SUBJECT_PATTERNS = [
+  // Calendar invites — Google, Outlook, Apple Calendar, etc.
+  /^(invitation|updated invitation|canceled event|new event|reminder):/i,
+  /^(invite|event)\s*[:|-]/i,
+  // Billing / receipts / invoices
+  /\b(receipt|invoice|payment|order confirmation|your order)\b/i,
+  /\b(billing|subscription|renewal|charge)\b/i,
+  // Shipping / tracking
+  /\b(shipped|delivered|out for delivery|tracking|order #)\b/i,
+];
+
+const ADMIN_SENDER_PATTERNS = [
+  /^(billing|receipts?|invoices?|orders?|noreply\+billing|payments?)@/i,
+  /@calendar(-noreply)?\.google\.com$/i,
+  /noreply@.*\.calendar/i,
+];
+
+const NEWS_SUBJECT_PATTERNS = [
+  /\b(newsletter|digest|weekly|monthly|roundup|recap)\b/i,
+  /^\[.+\]/, // Bracketed-prefix subjects ("[Substack]", "[Daily Brief]") are usually newsletters
+];
+
+const NEWS_SENDER_PATTERNS = [
+  /^(newsletter|updates|news|digest|weekly|monthly)@/i,
+  /@(substack|beehiiv|mailchimp|convertkit|buttondown|ghost)\.com$/i,
+];
+
+function hasListUnsubscribeHint(email: CachedEmail): boolean {
+  // CachedEmail doesn't surface raw headers, but ai_category sometimes does.
+  // Fall back to a snippet-level heuristic.
+  const snippet = (email.snippet || '').toLowerCase();
+  return snippet.includes('unsubscribe') || snippet.includes('view in browser');
+}
+
+function senderMatches(email: CachedEmail, patterns: RegExp[]): boolean {
+  const from = (email.from_email || '').toLowerCase();
+  return patterns.some((p) => p.test(from));
+}
+
+function subjectMatches(email: CachedEmail, patterns: RegExp[]): boolean {
+  const subject = email.subject || '';
+  return patterns.some((p) => p.test(subject));
+}
 
 export function categorize(email: CachedEmail): EmailLane {
   const domain = email.from_email?.split('@')[1]?.toLowerCase() || '';
+
+  // 1. Tool senders — beats everything because Gmail mis-files them.
   if (TOOL_DOMAINS.some((d) => domain === d || domain.endsWith('.' + d))) return 'tools';
 
+  // 2. Subject + sender heuristics for the categories Gmail labels miss.
+  if (senderMatches(email, ADMIN_SENDER_PATTERNS) || subjectMatches(email, ADMIN_SUBJECT_PATTERNS)) {
+    return 'admin';
+  }
+  if (
+    senderMatches(email, NEWS_SENDER_PATTERNS) ||
+    subjectMatches(email, NEWS_SUBJECT_PATTERNS) ||
+    hasListUnsubscribeHint(email)
+  ) {
+    return 'news';
+  }
+
+  // 3. Gmail category labels — still a strong signal when present.
   const labels = new Set((email.labels || []).map((l) => l.toUpperCase()));
   if (labels.has('CATEGORY_PROMOTIONS') || labels.has('CATEGORY_FORUMS')) return 'news';
   if (labels.has('CATEGORY_UPDATES')) return 'admin';
   if (labels.has('CATEGORY_SOCIAL')) return 'personal';
-  // Free-mail senders without a category usually = personal correspondence
+
+  // 4. Free-mail senders without a category usually = personal correspondence.
   if (FREE_MAIL.has(domain)) return 'personal';
   return 'work';
 }
