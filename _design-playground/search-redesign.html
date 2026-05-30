@@ -1,0 +1,878 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Search Redesign — Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: { extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        serif: ['Fraunces', 'Georgia', 'serif'],
+      },
+    } },
+  };
+</script>
+<style>
+  /* ─── Pulse design tokens ─── */
+  :root {
+    --pulse-rose: #f43f5e;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-bright: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+    --pulse-canvas: #f8f8f8;
+    --pulse-canvas-soft: #f2f2f2;
+    --pulse-surface: #ffffff;
+    --pulse-surface-raised: #f2f2f2;
+    --pulse-border: rgba(0, 0, 0, 0.08);
+    --pulse-border-strong: rgba(0, 0, 0, 0.16);
+    --pulse-ink: #0f0f0f;
+    --pulse-ink-2: #52525b;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral: var(--pulse-rose);
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 35%, black 65%);
+    --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-rose) 12%, transparent);
+    --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-rose) 8%, transparent);
+    --pulse-font: 'Inter', system-ui, sans-serif;
+    --pulse-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --pulse-serif: 'Fraunces', Georgia, serif;
+    --pulse-sidebar-bg: #ffffff;
+    --pulse-shadow-main: 0 6px 24px rgba(0, 0, 0, 0.08);
+    --pulse-shadow-modal: 0 30px 100px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(0,0,0,0.10);
+  }
+  html[data-theme='dark'] {
+    --pulse-canvas: #000000;
+    --pulse-canvas-soft: #080808;
+    --pulse-surface: rgba(255, 255, 255, 0.03);
+    --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+    --pulse-border: rgba(255, 255, 255, 0.06);
+    --pulse-border-strong: rgba(255, 255, 255, 0.10);
+    --pulse-ink: #fafafa;
+    --pulse-ink-2: #b4b4b8;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 60%, white 40%);
+    --pulse-rose: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.14);
+    --pulse-sidebar-bg: #0a0a0b;
+    --pulse-shadow-main: 0 10px 40px rgba(0, 0, 0, 0.4);
+    --pulse-shadow-modal: 0 40px 120px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--pulse-font);
+    background: var(--pulse-canvas);
+    color: var(--pulse-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .pulse-bg { background: var(--pulse-canvas); }
+  .pulse-bg-soft { background: var(--pulse-canvas-soft); }
+  .pulse-surface { background: var(--pulse-surface); }
+  .pulse-surface-raised { background: var(--pulse-surface-raised); }
+  .pulse-ink-color { color: var(--pulse-ink); }
+  .pulse-ink-2-color { color: var(--pulse-ink-2); }
+  .pulse-ink-3-color { color: var(--pulse-ink-3); }
+  .pulse-border-color { border-color: var(--pulse-border); }
+  .pulse-border-strong-color { border-color: var(--pulse-border-strong); }
+  .pulse-coral-fg-color { color: var(--pulse-coral-fg); }
+  .pulse-rose-color { color: var(--pulse-rose); }
+  .font-mono-pulse { font-family: var(--pulse-mono); font-feature-settings: 'tnum' 1; }
+  .font-serif-pulse { font-family: var(--pulse-serif); }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--pulse-border-strong); border-radius: 3px; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--pulse-ink-3); }
+
+  .tracking-wide-mono { letter-spacing: 0.16em; }
+  .tracking-wider-mono { letter-spacing: 0.22em; }
+
+  /* ─── Motion ─── */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .fade-in { animation: fadeIn 240ms ease both; }
+  @keyframes scaleIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+  .scale-in { animation: scaleIn 220ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.82); } }
+  .pulse-dot-anim { animation: pulseDot 1.6s ease-in-out infinite; }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+  /* ─── AI provenance chip (coral = AI output only) ─── */
+  .ai-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px;
+    background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+    font-family: var(--pulse-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; line-height: 1; white-space: nowrap;
+  }
+  .ai-chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+  .ai-chip.muted { background: var(--pulse-surface-raised); color: var(--pulse-ink-3); }
+  .ai-chip.muted::before { background: var(--pulse-ink-3); }
+
+  /* ─── Keycap ─── */
+  .keycap {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px; border-radius: 4px;
+    background: var(--pulse-surface-raised); border: 1px solid var(--pulse-border);
+    font-family: var(--pulse-mono); font-size: 10px; color: var(--pulse-ink-2);
+    line-height: 1;
+  }
+
+  /* ─── type accent dots ─── */
+  .type-email   { color: #6366f1; }
+  .type-message { color: #0ea5e9; }
+  .type-vox     { color: #a855f7; }
+  .type-task    { color: #f59e0b; }
+  .type-event   { color: #10b981; }
+  .type-contact { color: #14b8a6; }
+  .type-note    { color: #eab308; }
+  .type-sms     { color: #22c55e; }
+
+  /* ─── Playground chrome ─── */
+  .pg-bar {
+    height: 48px; flex: none; display: flex; align-items: center; gap: 16px;
+    padding: 0 16px; border-bottom: 1px solid var(--pulse-border);
+    background: var(--pulse-canvas-soft);
+  }
+  .pg-pill {
+    display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 13px;
+    border-radius: 8px; border: 1px solid var(--pulse-border);
+    background: transparent; color: var(--pulse-ink-3);
+    font-size: 12px; font-weight: 500; cursor: pointer; transition: all 160ms ease;
+    white-space: nowrap;
+  }
+  .pg-pill:hover { color: var(--pulse-ink); border-color: var(--pulse-border-strong); }
+  .pg-pill[data-active="true"] {
+    background: var(--pulse-surface); color: var(--pulse-ink);
+    border-color: var(--pulse-border-strong);
+    box-shadow: var(--pulse-shadow-main);
+  }
+  .pg-pill[data-active="true"] .pg-letter { color: var(--pulse-rose); }
+  .pg-letter { font-family: var(--pulse-mono); font-weight: 600; font-size: 11px; }
+
+  .pg-theme {
+    margin-left: auto; display: inline-flex; align-items: center;
+    border: 1px solid var(--pulse-border); border-radius: 8px; overflow: hidden;
+  }
+  .pg-theme button {
+    height: 28px; padding: 0 11px; font-family: var(--pulse-mono); font-size: 10px;
+    letter-spacing: 0.12em; color: var(--pulse-ink-3); background: transparent; cursor: pointer;
+  }
+  .pg-theme button[data-on="true"] { background: var(--pulse-surface); color: var(--pulse-ink); }
+
+  /* ─── shared row hover ─── */
+  .row-lift { transition: transform 160ms cubic-bezier(0.16,1,0.3,1), background 160ms ease, border-color 160ms ease; }
+  .row-lift:hover { transform: translateY(-1px); }
+
+  /* glow ring behind command bar (A) */
+  .cmd-glow { box-shadow: 0 0 0 1px var(--pulse-border-strong), 0 24px 80px -24px var(--pulse-rose-glow), var(--pulse-shadow-modal); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body class="overflow-hidden">
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect, useRef } = React;
+
+/* ════════════════════════════ ICONS ════════════════════════════ */
+const P = (d, key) => <path key={key} d={d} />;
+function Icon({ name, size = 16, className = '', style }) {
+  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
+    stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round',
+    className, style };
+  const paths = {
+    search: ['M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0', 'M21 21l-4.3-4.3'],
+    mail: ['M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', 'M3 7l9 6 9-6'],
+    message: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'],
+    mic: ['M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z', 'M19 10a7 7 0 0 1-14 0', 'M12 19v3'],
+    task: ['M9 11l3 3 8-8', 'M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9'],
+    event: ['M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z', 'M4 9h16', 'M8 3v4', 'M16 3v4'],
+    contact: ['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M9 11m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0', 'M22 21v-2a4 4 0 0 0-3-3.87', 'M16 3.13a4 4 0 0 1 0 7.75'],
+    note: ['M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9z', 'M15 3v6h6'],
+    sms: ['M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.8 12.8 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.8 12.8 0 0 0 2.81.7A2 2 0 0 1 22 16.92z'],
+    filter: ['M22 3H2l8 9.46V19l4 2v-8.54z'],
+    sparkles: ['M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z', 'M19 15l.7 1.9L21.6 17.6 19.7 18.3 19 20l-.7-1.7L16.4 17.6 18.3 16.9z'],
+    command: ['M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z'],
+    clock: ['M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0', 'M12 7v5l3 2'],
+    list: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'],
+    grid: ['M3 3h7v7H3z', 'M14 3h7v7h-7z', 'M14 14h7v7h-7z', 'M3 14h7v7H3z'],
+    table: ['M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', 'M3 9h18', 'M3 15h18', 'M12 9v12'],
+    mapPin: ['M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z', 'M12 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0'],
+    bookmark: ['M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'],
+    download: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M7 10l5 5 5-5', 'M12 15V3'],
+    plus: ['M12 5v14', 'M5 12h14'],
+    pin: ['M9 4v6l-2 4h10l-2-4V4', 'M12 14v7', 'M8 4h8'],
+    x: ['M18 6 6 18', 'M6 6l12 12'],
+    chevR: ['M9 6l6 6-6 6'],
+    chevD: ['M6 9l6 6 6-6'],
+    arrowR: ['M5 12h14', 'M13 6l6 6-6 6'],
+    arrowUp: ['M12 19V5', 'M6 11l6-6 6 6'],
+    sort: ['M3 6h11', 'M3 12h7', 'M3 18h4', 'M18 8V20', 'M14 16l4 4 4-4'],
+    layers: ['M12 2 2 7l10 5 10-5z', 'M2 17l10 5 10-5', 'M2 12l10 5 10-5'],
+    history: ['M3 3v5h5', 'M3.05 13A9 9 0 1 0 6 5.3L3 8', 'M12 7v5l4 2'],
+    send: ['M22 2 11 13', 'M22 2l-7 20-4-9-9-4z'],
+    bulb: ['M9 18h6', 'M10 22h4', 'M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z'],
+    check: ['M20 6 9 17l-5-5'],
+    bell: ['M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9', 'M13.7 21a2 2 0 0 1-3.4 0'],
+    star: ['M12 2l3 7 7 .5-5.5 4.5 1.8 7L12 17l-6.1 4 1.8-7L2 9.5 9 9z'],
+    folder: ['M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'],
+    bolt: ['M13 2 3 14h7l-1 8 10-12h-7z'],
+    at: ['M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0', 'M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8'],
+    calendar2: ['M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z', 'M4 9h16', 'M8 3v4', 'M16 3v4'],
+    activity: ['M22 12h-4l-3 9L9 3l-3 9H2'],
+  };
+  return <svg {...common}>{(paths[name] || []).map((d, i) => P(d, i))}</svg>;
+}
+
+const TYPE_META = {
+  email:   { icon: 'mail',    label: 'Email',   cls: 'type-email' },
+  message: { icon: 'message', label: 'Message', cls: 'type-message' },
+  vox:     { icon: 'mic',     label: 'Vox',     cls: 'type-vox' },
+  task:    { icon: 'task',    label: 'Task',    cls: 'type-task' },
+  event:   { icon: 'event',   label: 'Event',   cls: 'type-event' },
+  contact: { icon: 'contact', label: 'Contact', cls: 'type-contact' },
+  note:    { icon: 'note',    label: 'Note',    cls: 'type-note' },
+  sms:     { icon: 'sms',     label: 'SMS',     cls: 'type-sms' },
+};
+
+/* ════════════════════════════ MOCK DATA ════════════════════════════ */
+const PEOPLE = {
+  maria:  { name: 'Maria Schaefer',     color: '#f43f5e' },
+  sarah:  { name: 'Sarah Chen',         color: '#6366f1' },
+  jaylen: { name: 'Jaylen Park',        color: '#0ea5e9' },
+  theo:   { name: 'Theo Bridgewater',   color: '#10b981' },
+  priya:  { name: 'Priya Devarajan',    color: '#f59e0b' },
+  frank:  { name: 'Frank Messana',      color: '#a855f7' },
+  mom:    { name: 'Mom',                color: '#14b8a6' },
+};
+const initials = (n) => n.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+
+// Shared result set — same data feeds all three paths so the user judges
+// presentation, not content. Sorted newest-first; `score` drives AI ranking.
+const RESULTS = [
+  { id:'r1',  type:'email',   who:'maria',  title:'Q2 roadmap sign-off',           snippet:'Approved the milestone dates — let’s lock launch for the 14th and freeze scope after.', when:'2h ago',    bucket:'Today',      score:0.97, channel:'Inbox' },
+  { id:'r2',  type:'message', who:'frank',  title:'Frank Messana',                  snippet:'Counting the liquors can be tricky when the shelf is full — I’ll redo the tally tonight.', when:'5h ago',    bucket:'Today',      score:0.78, channel:'Direct' },
+  { id:'r3',  type:'email',   who:'sarah',  title:'Re: composer playground review', snippet:'Path A (inline toggle) is the one. Sidecar felt cramped on reply. Ship it.', when:'6h ago',    bucket:'Today',      score:0.93, channel:'Inbox' },
+  { id:'r4',  type:'vox',     who:'jaylen', title:'Standup recap · 0:48',      snippet:'“…shipped the search rail, decisions cockpit is next on deck, calendar after.”', when:'Yesterday', bucket:'Yesterday',  score:0.84, channel:'Relay' },
+  { id:'r5',  type:'task',    who:'theo',   title:'Send signed contract to Theo',   snippet:'Overdue · was due Apr 28 · high priority · blocks the onboarding call.', when:'Yesterday', bucket:'Yesterday',  score:0.88, channel:'Tasks' },
+  { id:'r6',  type:'message', who:'priya',  title:'Priya Devarajan',                snippet:'Can you forward the launch checklist? Want to map it against our QA window.', when:'Yesterday', bucket:'Yesterday',  score:0.71, channel:'Direct' },
+  { id:'r7',  type:'note',    who:'sarah',  title:'Decision · Email = Path A',  snippet:'Locked the email composer direction after the playground review. Flag emailHybrid OFF until phase 6.', when:'2d ago', bucket:'This Week', score:0.80, channel:'Decisions' },
+  { id:'r8',  type:'event',   who:'maria',  title:'Launch readiness review',        snippet:'Thu 2:00–3:00 PM · with Maria, Sarah, Jaylen · War Room.', when:'2d ago',    bucket:'This Week',  score:0.69, channel:'Calendar' },
+  { id:'r9',  type:'contact', who:'theo',   title:'Theo Bridgewater',               snippet:'theo@bridgewater.co · last spoke 2d ago · 3 open threads · 1 overdue task.', when:'3d ago', bucket:'This Week', score:0.64, channel:'People' },
+  { id:'r10', type:'sms',     who:'mom',    title:'Mom',                            snippet:'Don’t forget dinner Sunday — your sister’s bringing the dog.', when:'4d ago',  bucket:'This Week',  score:0.41, channel:'SMS' },
+  { id:'r11', type:'vox',     who:'frank',  title:'Voice note · 2:13',         snippet:'“The inventory count for the back room — I left it on the counter, photo incoming.”', when:'1w ago', bucket:'This Month', score:0.52, channel:'Relay' },
+  { id:'r12', type:'email',   who:'priya',  title:'QA window proposal',             snippet:'Proposing May 10–12 for the regression pass. Need sign-off by Friday.', when:'1w ago',  bucket:'This Month', score:0.58, channel:'Inbox' },
+  { id:'r13', type:'task',    who:'jaylen', title:'Wire V2 search flag',            snippet:'Done · completed last Tue · decisionsTriageCockpit default OFF.', when:'2w ago',   bucket:'This Month', score:0.47, channel:'Tasks' },
+];
+
+const RECENT = ['from:maria roadmap', 'type:task overdue', 'composer review', 'after:2026-04-01 decision'];
+const SAVED  = [
+  { name: 'Overdue tasks',        q: 'type:task overdue',           alert: true },
+  { name: 'Maria — all threads',  q: 'from:maria',                  alert: false },
+  { name: 'Launch decisions',     q: 'type:note launch',            alert: true },
+];
+const OPERATORS = [
+  { op: 'from:',   desc: 'by person' },
+  { op: 'type:',   desc: 'by content type' },
+  { op: 'after:',  desc: 'date lower bound' },
+  { op: 'before:', desc: 'date upper bound' },
+  { op: 'tag:',    desc: 'by tag' },
+  { op: 'near me', desc: 'geo radius' },
+];
+const TYPE_ORDER = ['email','message','vox','task','event','contact','note','sms'];
+
+/* ════════════════════════════ SHARED PRIMITIVES ════════════════════════════ */
+function Avatar({ who, size = 28 }) {
+  const p = PEOPLE[who];
+  return (
+    <span style={{ width: size, height: size, background: p.color, fontSize: size*0.36 }}
+      className="rounded-full flex items-center justify-center text-white font-semibold flex-none tracking-wide">
+      {initials(p.name)}
+    </span>
+  );
+}
+function TypeDot({ type, size = 14 }) {
+  const m = TYPE_META[type];
+  return <Icon name={m.icon} size={size} className={m.cls} />;
+}
+function TypeTag({ type }) {
+  const m = TYPE_META[type];
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${m.cls}`}>
+      <Icon name={m.icon} size={12} />
+      <span className="font-mono-pulse text-[10px] uppercase tracking-wide-mono">{m.label}</span>
+    </span>
+  );
+}
+
+/* ════════════════════════════ FAKE PULSE SIDEBAR ════════════════════════════ */
+const NAV = [
+  { group: 'Overview',      items: [['Dashboard','grid']] },
+  { group: 'Communication', items: [['Messages','message'],['Email','mail'],['Relay','activity'],['Glimpse','event']] },
+  { group: 'Work & People', items: [['Calendar','calendar2'],['Meetings','event'],['Contacts','contact'],['Decisions & Tasks','task']] },
+  { group: 'Intelligence',  items: [['Search','search', true],['Analytics','activity'],['War Room','folder'],['Archives','layers']] },
+];
+function PulseSidebar() {
+  return (
+    <aside className="flex-none w-[232px] h-full flex flex-col border-r pulse-border-color"
+      style={{ background: 'var(--pulse-sidebar-bg)' }}>
+      <div className="h-[60px] flex items-center gap-2.5 px-4 border-b pulse-border-color">
+        <span className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ background: 'linear-gradient(135deg, var(--pulse-rose), var(--pulse-rose-deep))' }}>
+          <Icon name="activity" size={17} className="text-white" />
+        </span>
+        <div className="leading-tight">
+          <div className="font-semibold text-[15px] pulse-rose-color">Pulse</div>
+          <div className="font-mono-pulse text-[9px] pulse-ink-3-color tracking-wide-mono">3EK</div>
+        </div>
+      </div>
+      <div className="px-3 py-3 border-b pulse-border-color">
+        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg pulse-surface-raised">
+          <span className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-semibold" style={{ background:'#6366f1' }}>M</span>
+          <span className="text-[12px] pulse-ink-color font-medium flex-1">My Workspace</span>
+          <span className="font-mono-pulse text-[8px] pulse-rose-color tracking-wide-mono">OWNER</span>
+        </div>
+      </div>
+      <nav className="flex-1 overflow-y-auto py-2">
+        {NAV.map(sec => (
+          <div key={sec.group} className="px-3 mb-2">
+            <div className="px-2 py-1 font-mono-pulse text-[8.5px] pulse-ink-3-color tracking-wider-mono uppercase">{sec.group}</div>
+            {sec.items.map(([label, icon, active]) => (
+              <div key={label}
+                className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg mb-0.5 cursor-pointer ${active ? 'pulse-rose-bg-soft-color' : ''}`}
+                style={active ? { background: 'var(--pulse-rose-soft)' } : {}}>
+                <Icon name={icon} size={15} className={active ? 'pulse-rose-color' : 'pulse-ink-3-color'} />
+                <span className={`text-[12.5px] ${active ? 'pulse-ink-color font-medium' : 'pulse-ink-2-color'}`}>{label}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </nav>
+      <div className="px-3 py-2.5 border-t pulse-border-color">
+        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background:'var(--pulse-rose-soft)' }}>
+          <span className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:'linear-gradient(135deg,var(--pulse-rose),var(--pulse-rose-deep))' }}>
+            <Icon name="sparkles" size={14} className="text-white" />
+          </span>
+          <span className="text-[12.5px] pulse-ink-color font-medium flex-1">Pulse AI</span>
+          <span className="keycap">⌘/</span>
+        </div>
+        <div className="flex items-center gap-2.5 px-2 py-2 mt-1">
+          <span className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-semibold" style={{ background:'#a855f7' }}>FM</span>
+          <div className="leading-tight flex-1">
+            <div className="text-[12px] pulse-ink-color font-medium">Frankie Messana</div>
+            <div className="text-[9px] pulse-ink-3-color">jehovahsneaky83@…</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ════════════════════════════ PATH A — COMMAND BAR ════════════════════════════ */
+/* Search as an OS launcher. One centered command surface, single ranked column,
+   inline operator chips. No left facet rail, no right clipboard — focus is total.
+   Keyboard-first: ↑↓ navigate, → peek, ⌘K focus, operators as chips you click in. */
+function PathA() {
+  const [q, setQ] = useState('roadmap');
+  const [active, setActive] = useState(0);
+  const ranked = useMemo(() => [...RESULTS].sort((a,b)=>b.score-a.score), []);
+  const shown = q.trim() ? ranked : [];
+  return (
+    <div className="h-full overflow-y-auto" style={{ background:'var(--pulse-canvas)' }}>
+      <div className="max-w-[760px] mx-auto px-6 pt-[64px] pb-16">
+        {/* command bar */}
+        <div className="rounded-2xl pulse-surface cmd-glow overflow-hidden fade-up">
+          <div className="flex items-center gap-3 px-5 h-[60px] border-b pulse-border-color">
+            <Icon name="search" size={20} className="pulse-ink-3-color" />
+            <input value={q} onChange={e=>setQ(e.target.value)}
+              className="flex-1 bg-transparent outline-none text-[18px] pulse-ink-color placeholder:pulse-ink-3-color"
+              placeholder="Search everything…" />
+            <span className="ai-chip"><Icon name="sparkles" size={11} />AI rank</span>
+            <span className="keycap">⌘K</span>
+          </div>
+          {/* inline operator chips */}
+          <div className="flex items-center gap-2 px-5 py-2.5 flex-wrap" style={{ background:'var(--pulse-canvas-soft)' }}>
+            <span className="font-mono-pulse text-[9px] pulse-ink-3-color tracking-wide-mono uppercase mr-1">Refine</span>
+            {OPERATORS.map(o => (
+              <button key={o.op} onClick={()=>setQ(q => (q + ' ' + o.op).trim())}
+                className="pg-pill h-[26px] font-mono-pulse text-[11px]" style={{ padding:'0 10px' }}>
+                <span className="pulse-rose-color">{o.op}</span>
+                <span className="pulse-ink-3-color text-[10px]">{o.desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* result column OR resume */}
+        {shown.length > 0 ? (
+          <div className="mt-5">
+            <div className="flex items-center justify-between px-1 mb-2.5">
+              <span className="font-mono-pulse text-[10px] pulse-ink-3-color tracking-wide-mono uppercase">
+                {shown.length} results · ranked
+              </span>
+              <span className="flex items-center gap-1.5 text-[11px] pulse-ink-3-color">
+                <span className="keycap">↑</span><span className="keycap">↓</span> navigate
+                <span className="keycap">→</span> peek
+                <span className="keycap">↵</span> open
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {shown.map((r, i) => {
+                const m = TYPE_META[r.type];
+                const isActive = i === active;
+                return (
+                  <div key={r.id} onMouseEnter={()=>setActive(i)}
+                    className="row-lift flex items-center gap-3.5 px-4 py-3 rounded-xl cursor-pointer border"
+                    style={{ background: isActive ? 'var(--pulse-surface-raised)' : 'var(--pulse-surface)',
+                             borderColor: isActive ? 'var(--pulse-border-strong)' : 'transparent' }}>
+                    <Avatar who={r.who} size={32} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[14px] font-medium pulse-ink-color truncate">{r.title}</span>
+                        <TypeDot type={r.type} size={13} />
+                      </div>
+                      <div className="text-[12.5px] pulse-ink-2-color truncate mt-0.5">{r.snippet}</div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 flex-none">
+                      <span className="font-mono-pulse text-[10px] pulse-ink-3-color tnum">{r.when}</span>
+                      {isActive && <Icon name="arrowR" size={15} className="pulse-rose-color fade-in" />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-7 grid grid-cols-2 gap-3 fade-up">
+            <ResumeCard title="Recent" icon="history" rows={RECENT.map((r,i)=>({key:i+1, text:r}))} onPick={setQ} />
+            <ResumeCard title="Saved" icon="bookmark" rows={SAVED.map((s,i)=>({key:'★', text:s.name, q:s.q, alert:s.alert}))} onPick={setQ} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+function ResumeCard({ title, icon, rows, onPick }) {
+  return (
+    <div className="rounded-xl pulse-surface border pulse-border-color p-3">
+      <div className="flex items-center gap-1.5 mb-2 px-1">
+        <Icon name={icon} size={12} className="pulse-ink-3-color" />
+        <span className="font-mono-pulse text-[9px] pulse-ink-3-color tracking-wide-mono uppercase">{title}</span>
+      </div>
+      {rows.map((r,i) => (
+        <button key={i} onClick={()=>onPick(r.q || r.text)}
+          className="row-lift w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:pulse-surface-raised"
+          style={{ background:'transparent' }}
+          onMouseEnter={e=>e.currentTarget.style.background='var(--pulse-surface-raised)'}
+          onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+          <span className="keycap flex-none">{r.key}</span>
+          <span className="text-[13px] pulse-ink-color flex-1 truncate">{r.text}</span>
+          {r.alert && <Icon name="bell" size={12} className="pulse-ink-3-color" />}
+          <Icon name="chevR" size={13} className="pulse-ink-3-color" />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ════════════════════════════ PATH B — WORKBENCH ════════════════════════════ */
+/* Search as a power-user data explorer. Strengthens the facet rail into a live
+   count-driven cockpit; center becomes a dense, sortable, lane-grouped table;
+   right rail is a "saved set" dock you build up and act on in bulk. */
+function PathB() {
+  const [types, setTypes] = useState(new Set());
+  const [sortKey, setSortKey] = useState('when');
+  const [selected, setSelected] = useState(new Set());
+  const counts = useMemo(() => {
+    const m = {}; RESULTS.forEach(r => m[r.type] = (m[r.type]||0)+1); return m;
+  }, []);
+  const rows = useMemo(() => {
+    let r = RESULTS.filter(x => types.size === 0 || types.has(x.type));
+    if (sortKey === 'score') r = [...r].sort((a,b)=>b.score-a.score);
+    return r;
+  }, [types, sortKey]);
+  const toggleType = (t) => setTypes(s => { const n = new Set(s); n.has(t)?n.delete(t):n.add(t); return n; });
+  const toggleSel = (id) => setSelected(s => { const n = new Set(s); n.has(id)?n.delete(id):n.add(id); return n; });
+  const lanes = useMemo(() => {
+    const order = ['Today','Yesterday','This Week','This Month'];
+    return order.map(b => ({ b, items: rows.filter(r => r.bucket === b) })).filter(l => l.items.length);
+  }, [rows]);
+
+  return (
+    <div className="h-full flex" style={{ background:'var(--pulse-canvas)' }}>
+      {/* LEFT — facet cockpit */}
+      <aside className="flex-none w-[228px] h-full overflow-y-auto border-r pulse-border-color px-3 py-4"
+        style={{ background:'var(--pulse-canvas-soft)' }}>
+        <FacetBlock title="Content type">
+          {TYPE_ORDER.map(t => {
+            const m = TYPE_META[t]; const on = types.has(t); const c = counts[t]||0;
+            return (
+              <button key={t} onClick={()=>toggleType(t)}
+                className="row-lift w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg"
+                style={{ background: on ? 'var(--pulse-surface-raised)' : 'transparent' }}>
+                <span className="w-3.5 h-3.5 rounded border flex items-center justify-center flex-none"
+                  style={{ borderColor: on ? 'var(--pulse-rose)' : 'var(--pulse-border-strong)', background: on ? 'var(--pulse-rose)' : 'transparent' }}>
+                  {on && <Icon name="check" size={10} className="text-white" />}
+                </span>
+                <Icon name={m.icon} size={13} className={m.cls} />
+                <span className="text-[12.5px] pulse-ink-2-color flex-1 text-left">{m.label}</span>
+                <span className="font-mono-pulse text-[10px] pulse-ink-3-color tnum">{c}</span>
+              </button>
+            );
+          })}
+        </FacetBlock>
+        <FacetBlock title="Intelligence">
+          <button className="row-lift w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg" style={{ background:'var(--pulse-rose-soft)' }}>
+            <Icon name="sparkles" size={13} className="pulse-rose-color" />
+            <span className="text-[12.5px] pulse-ink-color flex-1 text-left">AI ranking</span>
+            <span className="font-mono-pulse text-[9px] pulse-rose-color">ON</span>
+          </button>
+        </FacetBlock>
+        <FacetBlock title="Date">
+          {['Today','This week','This month','Custom…'].map(d => (
+            <button key={d} className="row-lift w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-left">
+              <Icon name="clock" size={13} className="pulse-ink-3-color" />
+              <span className="text-[12.5px] pulse-ink-2-color">{d}</span>
+            </button>
+          ))}
+        </FacetBlock>
+        <FacetBlock title="Saved searches">
+          {SAVED.map(s => (
+            <button key={s.name} className="row-lift w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-left">
+              <Icon name="bookmark" size={13} className="pulse-ink-3-color" />
+              <span className="text-[12.5px] pulse-ink-2-color flex-1 truncate">{s.name}</span>
+              {s.alert && <Icon name="bell" size={11} className="pulse-ink-3-color" />}
+            </button>
+          ))}
+        </FacetBlock>
+      </aside>
+
+      {/* CENTER — dense table */}
+      <main className="flex-1 min-w-0 h-full flex flex-col">
+        <div className="flex-none px-5 pt-4 pb-3 border-b pulse-border-color">
+          <div className="flex items-center gap-2.5">
+            <div className="flex-1 flex items-center gap-2.5 h-[42px] px-3.5 rounded-xl pulse-surface border pulse-border-color">
+              <Icon name="search" size={16} className="pulse-ink-3-color" />
+              <input defaultValue="from:maria OR roadmap" className="flex-1 bg-transparent outline-none text-[13.5px] font-mono-pulse pulse-ink-color" />
+              <span className="keycap">⌘K</span>
+            </div>
+            <button className="pg-pill h-[42px]"><Icon name="filter" size={14} />Filters</button>
+            <button className="pg-pill h-[42px]"><Icon name="download" size={14} />Export</button>
+          </div>
+          <div className="flex items-center justify-between mt-3">
+            <span className="font-mono-pulse text-[11px] pulse-ink-3-color tracking-wide-mono uppercase tnum">
+              {rows.length} of {RESULTS.length} results{types.size>0 && ` · ${types.size} filter`}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono-pulse text-[10px] pulse-ink-3-color uppercase tracking-wide-mono">Sort</span>
+              {[['when','Recent'],['score','Relevance']].map(([k,l]) => (
+                <button key={k} onClick={()=>setSortKey(k)}
+                  className="pg-pill h-[26px] text-[11px]" data-active={sortKey===k} style={{ padding:'0 10px' }}>{l}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {/* column header */}
+          <div className="sticky top-0 z-10 grid items-center gap-3 px-5 py-2 border-b pulse-border-color"
+            style={{ gridTemplateColumns:'24px 88px 1fr 120px 76px', background:'var(--pulse-canvas)' }}>
+            <span></span>
+            {['Type','Subject / preview','Person','When'].map((h,i) => (
+              <span key={h} className="font-mono-pulse text-[9.5px] pulse-ink-3-color uppercase tracking-wide-mono flex items-center gap-1"
+                style={i===2?{justifyContent:'flex-start'}:{}}>
+                {h}{i===3 && <Icon name="sort" size={11} />}
+              </span>
+            ))}
+          </div>
+          {lanes.map(lane => (
+            <div key={lane.b}>
+              <div className="flex items-center gap-2 px-5 py-1.5" style={{ background:'var(--pulse-canvas-soft)' }}>
+                <span className="font-mono-pulse text-[9.5px] pulse-rose-color uppercase tracking-wide-mono">{lane.b}</span>
+                <span className="font-mono-pulse text-[9.5px] pulse-ink-3-color tnum">{lane.items.length}</span>
+                <div className="flex-1 h-px" style={{ background:'var(--pulse-border)' }} />
+              </div>
+              {lane.items.map(r => {
+                const sel = selected.has(r.id);
+                return (
+                  <div key={r.id} onClick={()=>toggleSel(r.id)}
+                    className="grid items-center gap-3 px-5 py-2.5 cursor-pointer border-b group"
+                    style={{ gridTemplateColumns:'24px 88px 1fr 120px 76px',
+                             borderColor:'var(--pulse-border)',
+                             background: sel ? 'var(--pulse-rose-soft)' : 'transparent' }}
+                    onMouseEnter={e=>{ if(!sel) e.currentTarget.style.background='var(--pulse-surface)'; }}
+                    onMouseLeave={e=>{ if(!sel) e.currentTarget.style.background='transparent'; }}>
+                    <span className="w-3.5 h-3.5 rounded border flex items-center justify-center flex-none"
+                      style={{ borderColor: sel?'var(--pulse-rose)':'var(--pulse-border-strong)', background: sel?'var(--pulse-rose)':'transparent' }}>
+                      {sel && <Icon name="check" size={10} className="text-white" />}
+                    </span>
+                    <TypeTag type={r.type} />
+                    <div className="min-w-0 flex items-center gap-2">
+                      <span className="text-[13px] font-medium pulse-ink-color flex-none">{r.title}</span>
+                      <span className="text-[12.5px] pulse-ink-3-color truncate">— {r.snippet}</span>
+                    </div>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Avatar who={r.who} size={20} />
+                      <span className="text-[12px] pulse-ink-2-color truncate">{PEOPLE[r.who].name}</span>
+                    </div>
+                    <span className="font-mono-pulse text-[11px] pulse-ink-3-color tnum">{r.when}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* batch toolbar */}
+        {selected.size > 0 && (
+          <div className="flex-none flex items-center gap-3 px-5 h-[52px] border-t pulse-border-color fade-up" style={{ background:'var(--pulse-surface)' }}>
+            <span className="font-mono-pulse text-[11px] pulse-rose-color tnum">{selected.size} selected</span>
+            <button className="pg-pill h-[30px]"><Icon name="folder" size={13} />Add to set</button>
+            <button className="pg-pill h-[30px]"><Icon name="download" size={13} />Export CSV</button>
+            <button onClick={()=>setSelected(new Set())} className="pg-pill h-[30px] ml-auto"><Icon name="x" size={13} />Clear</button>
+          </div>
+        )}
+      </main>
+
+      {/* RIGHT — saved-set dock */}
+      <aside className="flex-none w-[256px] h-full border-l pulse-border-color flex flex-col" style={{ background:'var(--pulse-canvas-soft)' }}>
+        <div className="flex items-center gap-2 px-4 h-[52px] border-b pulse-border-color">
+          <Icon name="folder" size={14} className="pulse-ink-2-color" />
+          <span className="font-mono-pulse text-[10px] pulse-ink-2-color uppercase tracking-wide-mono flex-1">Working set</span>
+          <span className="font-mono-pulse text-[10px] pulse-ink-3-color tnum">3</span>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {RESULTS.slice(0,3).map(r => (
+            <div key={r.id} className="rounded-lg pulse-surface border pulse-border-color p-2.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <TypeDot type={r.type} size={12} />
+                <span className="text-[12px] font-medium pulse-ink-color truncate flex-1">{r.title}</span>
+                <Icon name="x" size={12} className="pulse-ink-3-color" />
+              </div>
+              <p className="text-[11px] pulse-ink-3-color line-clamp-2 leading-snug">{r.snippet}</p>
+            </div>
+          ))}
+        </div>
+        <div className="flex-none p-3 border-t pulse-border-color">
+          <button className="w-full pg-pill h-[34px] justify-center" data-active="true"><Icon name="download" size={13} />Export set</button>
+        </div>
+      </aside>
+    </div>
+  );
+}
+function FacetBlock({ title, children }) {
+  return (
+    <div className="mb-4">
+      <div className="px-2 py-1 font-mono-pulse text-[9px] pulse-ink-3-color uppercase tracking-wider-mono">{title}</div>
+      <div className="space-y-0.5">{children}</div>
+    </div>
+  );
+}
+
+/* ════════════════════════════ PATH C — ANSWER-FIRST ════════════════════════════ */
+/* Search as a question. AI synthesizes an answer across sources (the legit coral
+   surface — flagged as a stub since answer-synthesis isn't in production yet),
+   then cites the sources beneath, then offers related follow-ups. A thin scope
+   rail at left, an "inquiry trail" of past questions at right. */
+function PathC() {
+  const [q, setQ] = useState('what did we decide about the launch?');
+  const cited = useMemo(() => RESULTS.filter(r => ['r1','r3','r7','r8'].includes(r.id)), []);
+  return (
+    <div className="h-full flex" style={{ background:'var(--pulse-canvas)' }}>
+      {/* LEFT — scope/lens rail */}
+      <aside className="flex-none w-[180px] h-full border-r pulse-border-color px-3 py-4" style={{ background:'var(--pulse-canvas-soft)' }}>
+        <div className="px-2 py-1 font-mono-pulse text-[9px] pulse-ink-3-color uppercase tracking-wider-mono mb-1">Ask across</div>
+        {[['Everything','layers',true],['Email','mail'],['Messages','message'],['Voice','mic'],['Tasks','task'],['Decisions','note'],['People','contact']].map(([l,ic,on]) => (
+          <button key={l} className="row-lift w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-left mb-0.5"
+            style={{ background: on ? 'var(--pulse-surface-raised)' : 'transparent' }}>
+            <Icon name={ic} size={14} className={on ? 'pulse-rose-color' : 'pulse-ink-3-color'} />
+            <span className={`text-[12.5px] ${on ? 'pulse-ink-color font-medium' : 'pulse-ink-2-color'}`}>{l}</span>
+          </button>
+        ))}
+        <div className="px-2 py-1 font-mono-pulse text-[9px] pulse-ink-3-color uppercase tracking-wider-mono mt-5 mb-1">Mode</div>
+        <div className="flex items-center gap-1 p-1 rounded-lg pulse-surface border pulse-border-color">
+          <button className="flex-1 h-[26px] rounded-md text-[11px] font-medium pulse-ink-color" style={{ background:'var(--pulse-rose-soft)' }}>Answer</button>
+          <button className="flex-1 h-[26px] rounded-md text-[11px] pulse-ink-3-color">List</button>
+        </div>
+      </aside>
+
+      {/* CENTER — answer + sources */}
+      <main className="flex-1 min-w-0 h-full overflow-y-auto">
+        <div className="max-w-[720px] mx-auto px-7 py-7">
+          {/* question bar */}
+          <div className="flex items-center gap-3 h-[52px] px-4 rounded-xl pulse-surface border pulse-border-color mb-6">
+            <Icon name="search" size={18} className="pulse-ink-3-color" />
+            <input value={q} onChange={e=>setQ(e.target.value)}
+              className="flex-1 bg-transparent outline-none text-[15px] pulse-ink-color" placeholder="Ask a question…" />
+            <button className="w-8 h-8 rounded-lg flex items-center justify-center flex-none" style={{ background:'var(--pulse-rose)' }}>
+              <Icon name="send" size={15} className="text-white" />
+            </button>
+          </div>
+
+          {/* AI answer card — the legitimate coral surface (AI output) */}
+          <div className="rounded-2xl border p-5 fade-up" style={{ background:'var(--pulse-rose-soft)', borderColor:'color-mix(in oklab, var(--pulse-rose) 22%, transparent)' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="ai-chip"><Icon name="sparkles" size={11} />AI Answer</span>
+              <span className="ai-chip muted">stub · synthesis not in prod</span>
+            </div>
+            <p className="text-[15px] leading-relaxed pulse-ink-color font-serif-pulse">
+              The launch is locked for <strong className="pulse-coral-fg-color">the 14th</strong>, with scope frozen after
+              Maria’s roadmap sign-off. The email composer direction was settled on <strong className="pulse-coral-fg-color">Path A (inline toggle)</strong> following
+              the playground review, and a readiness review is on the calendar for Thursday 2–3pm. One blocker
+              remains: the signed contract to Theo is overdue.
+            </p>
+            <div className="flex items-center gap-1.5 mt-3.5 flex-wrap">
+              <span className="font-mono-pulse text-[10px] pulse-ink-3-color uppercase tracking-wide-mono mr-1">Drawn from</span>
+              {cited.map((r,i) => (
+                <span key={r.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-md pulse-surface border pulse-border-color">
+                  <span className="font-mono-pulse text-[10px] pulse-rose-color">{i+1}</span>
+                  <TypeDot type={r.type} size={11} />
+                  <span className="text-[11px] pulse-ink-2-color">{r.title.length>22?r.title.slice(0,22)+'…':r.title}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Sources */}
+          <div className="mt-7">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="font-mono-pulse text-[10px] pulse-ink-3-color uppercase tracking-wide-mono">Sources</span>
+              <span className="font-mono-pulse text-[10px] pulse-ink-3-color tnum">{cited.length}</span>
+              <div className="flex-1 h-px" style={{ background:'var(--pulse-border)' }} />
+            </div>
+            <div className="space-y-2">
+              {cited.map((r,i) => (
+                <div key={r.id} className="row-lift flex items-start gap-3 px-4 py-3 rounded-xl pulse-surface border pulse-border-color cursor-pointer">
+                  <span className="font-mono-pulse text-[11px] pulse-rose-color mt-0.5 flex-none">{i+1}</span>
+                  <Avatar who={r.who} size={30} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13.5px] font-medium pulse-ink-color truncate">{r.title}</span>
+                      <TypeTag type={r.type} />
+                    </div>
+                    <p className="text-[12.5px] pulse-ink-2-color mt-0.5 leading-snug">{r.snippet}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-[11px] pulse-ink-3-color">{PEOPLE[r.who].name}</span>
+                      <span className="w-1 h-1 rounded-full" style={{ background:'var(--pulse-ink-3)' }} />
+                      <span className="font-mono-pulse text-[10px] pulse-ink-3-color tnum">{r.when}</span>
+                    </div>
+                  </div>
+                  <Icon name="chevR" size={15} className="pulse-ink-3-color flex-none mt-1" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Related follow-ups */}
+          <div className="mt-7">
+            <div className="flex items-center gap-2 mb-3">
+              <Icon name="bulb" size={13} className="pulse-ink-3-color" />
+              <span className="font-mono-pulse text-[10px] pulse-ink-3-color uppercase tracking-wide-mono">Follow up</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {['What’s still blocking the launch?','Show me everything from Maria this week','When is the readiness review?'].map(f => (
+                <button key={f} onClick={()=>setQ(f)}
+                  className="row-lift flex items-center gap-2.5 px-4 py-2.5 rounded-xl pulse-surface border pulse-border-color text-left">
+                  <Icon name="search" size={13} className="pulse-ink-3-color flex-none" />
+                  <span className="text-[13px] pulse-ink-2-color flex-1">{f}</span>
+                  <Icon name="arrowR" size={14} className="pulse-ink-3-color" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* RIGHT — inquiry trail */}
+      <aside className="flex-none w-[232px] h-full border-l pulse-border-color flex flex-col" style={{ background:'var(--pulse-canvas-soft)' }}>
+        <div className="flex items-center gap-2 px-4 h-[52px] border-b pulse-border-color">
+          <Icon name="history" size={14} className="pulse-ink-2-color" />
+          <span className="font-mono-pulse text-[10px] pulse-ink-2-color uppercase tracking-wide-mono">Inquiry trail</span>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          {[
+            { q:'what did we decide about the launch?', now:true },
+            { q:'overdue tasks this week', t:'12m ago' },
+            { q:'Maria roadmap thread', t:'1h ago' },
+            { q:'composer playground feedback', t:'3h ago' },
+            { q:'who owns QA window?', t:'Yesterday' },
+          ].map((h,i) => (
+            <button key={i} className="row-lift w-full text-left px-3 py-2.5 rounded-lg mb-1 border"
+              style={{ background: h.now ? 'var(--pulse-rose-soft)' : 'transparent',
+                       borderColor: h.now ? 'color-mix(in oklab, var(--pulse-rose) 22%, transparent)' : 'transparent' }}>
+              <div className="flex items-center gap-1.5">
+                {h.now && <span className="w-1.5 h-1.5 rounded-full pulse-dot-anim flex-none" style={{ background:'var(--pulse-rose)' }} />}
+                <span className={`text-[12.5px] leading-snug ${h.now ? 'pulse-ink-color font-medium' : 'pulse-ink-2-color'}`}>{h.q}</span>
+              </div>
+              {h.t && <span className="font-mono-pulse text-[9.5px] pulse-ink-3-color tnum ml-0 mt-1 block">{h.t}</span>}
+            </button>
+          ))}
+        </div>
+        <div className="flex-none p-3 border-t pulse-border-color">
+          <button className="w-full pg-pill h-[32px] justify-center"><Icon name="plus" size={13} />New thread</button>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+/* ════════════════════════════ APP SHELL ════════════════════════════ */
+const PATHS = [
+  { id:'A', label:'Command Bar', icon:'command', Comp: PathA },
+  { id:'B', label:'Workbench',   icon:'table',   Comp: PathB },
+  { id:'C', label:'Answer-First',icon:'sparkles',Comp: PathC },
+];
+function App() {
+  const [path, setPath] = useState('A');
+  const [theme, setTheme] = useState('dark');
+  useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+  const Active = PATHS.find(p => p.id === path).Comp;
+  return (
+    <div className="h-screen flex flex-col">
+      {/* playground bar */}
+      <div className="pg-bar">
+        <div className="flex items-center gap-2">
+          <span className="w-5 h-5 rounded-md" style={{ background:'var(--pulse-rose)' }} />
+          <span className="font-mono-pulse text-[11px] pulse-ink-2-color tracking-wide-mono uppercase">Search Redesign · Playground</span>
+        </div>
+        <div className="flex items-center gap-2 ml-3">
+          {PATHS.map(p => (
+            <button key={p.id} className="pg-pill" data-active={path===p.id} onClick={()=>setPath(p.id)}>
+              <span className="pg-letter">{p.id}</span>
+              <Icon name={p.icon} size={13} />
+              <span>{p.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="pg-theme">
+          <button data-on={theme==='light'} onClick={()=>setTheme('light')}>LIGHT</button>
+          <button data-on={theme==='dark'} onClick={()=>setTheme('dark')}>DARK</button>
+        </div>
+      </div>
+      {/* body: pulse sidebar + active path */}
+      <div className="flex-1 flex min-h-0">
+        <PulseSidebar />
+        <div className="flex-1 min-w-0"><Active /></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
