@@ -108,14 +108,24 @@ const featureFlagsConfig: FeatureFlagConfig = {
     version: '1.0.0'
   },
 
-  // Proposal Mode is wired into the UI but multi-user voting is not yet
-  // persisted (votes are simulated). Disabled until the real schema and
-  // voting service ship — see Phase 1 deep-dive issue #3.
+  // ⚠️ NAMING CAVEAT (reconciled in #125): this flag does NOT gate the real
+  // Decisions voting. End-user decision voting is LIVE and DB-backed — the
+  // Decisions Cockpit (DecisionDetail.handleVote + CockpitHub quick-approve)
+  // calls decisionService.castVote() → the public.decision_votes table
+  // (RLS on, UNIQUE(decision_id, user_id), persists approve/reject/concern/
+  // abstain, one vote per user). That surface ships ungated to everyone and
+  // is the "Decisions + voting ✅" the Capability Matrix + landing page mean.
+  //
+  // `proposalMode` gates only a SEPARATE, narrower surface: the in-Messages
+  // composer "proposal mode" (Ctrl+Shift+P) that turns a chat message into an
+  // inline proposal whose votes are simulated client-side and NOT persisted.
+  // That piece stays OFF/internal until the in-message proposal flow is wired
+  // to the same decision_votes backend — see Phase 1 deep-dive issue #3.
   proposalMode: {
     enabled: false,
     rolloutPercentage: 0,
     targetUsers: ['internal'],
-    description: 'Proposal-mode decision capture and voting',
+    description: 'In-Messages composer proposal mode (simulated client-side votes) — NOT the real Decisions voting, which ships live + DB-backed via decision_votes',
     version: '0.1.0'
   },
 

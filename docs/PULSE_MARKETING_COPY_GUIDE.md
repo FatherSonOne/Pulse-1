@@ -45,7 +45,7 @@
 - **No "end-to-end encryption" claim** until #113 decides the posture. Allowed today: *"Encrypted in transit (TLS) and at rest. AI processes content server-side for the features you turn on."*
 - **No SMS in the headline or pricing hero** until #109/#120 make it real (`inAppSms` is OFF). If mentioned at all: *"SMS — coming in a later release."*
 - **AI vendor list = Gemini + Claude + OpenAI only.** Drop ElevenLabs / AssemblyAI / Whisper from the FAQ (they were removed from the Privacy Policy in #112). Fixes R-01.
-- **"Voting"** stays out of headline copy until #125 confirms `proposalMode` ships. Use "capture decisions and track them to action" — which is true today.
+- **"Voting" is cleared for use (#125 resolved 2026-05-30).** Real end-user decision voting ships ungated via the Decisions Cockpit (persisted to `decision_votes`); "capture, vote, and track decisions to action" is true today. Caveat: this is the **Decisions surface** voting — do **not** market the in-Messages composer "proposal mode" (the OFF `proposalMode` flag, simulated votes) as live.
 - **Pricing** stays flat ("one plan, everything included") — that claim is real and is a genuine differentiator vs per-seat competitors.
 
 ---
