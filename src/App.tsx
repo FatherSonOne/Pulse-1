@@ -18,6 +18,7 @@ const Messages = lazy(() => import('./components/Messages'));
 const LiveDashboard = lazy(() => import('./components/LiveDashboard'));
 const DecisionTaskHub = lazy(() => import('./components/decisions/DecisionTaskHub').then(module => ({ default: module.DecisionTaskHub })));
 const CockpitHub = lazy(() => import('./components/decisions/cockpit/CockpitHub').then(module => ({ default: module.CockpitHub })));
+const CockpitDevToggle = lazy(() => import('./components/decisions/cockpit/CockpitDevToggle').then(module => ({ default: module.CockpitDevToggle })));
 const EmailClient = lazy(() => import('./components/Email/EmailClientWrapper'));
 const Calendar = lazy(() => import('./components/Calendar'));
 const Settings = lazy(() => import('./components/Settings'));
@@ -339,7 +340,20 @@ const App: React.FC = () => {
   // Decisions & Tasks "Triage Cockpit" redesign — OFF for v1. When ON, the
   // DECISIONS_TASKS view renders the new CockpitHub instead of the legacy
   // DecisionTaskHub. Dev override: `?ff_decisionsTriageCockpit=on`.
-  const cockpitEnabled = useFeatureFlag('decisionsTriageCockpit', user?.id, false);
+  const cockpitFlag = useFeatureFlag('decisionsTriageCockpit', user?.id, false);
+  // Live dev toggle (CockpitDevToggle, dev build only) flips v1/v2 in place —
+  // no reload, no losing the current view. `null` = follow the flag/dev
+  // override; once the user toggles, that choice wins and is persisted to the
+  // `ff_` localStorage key the dev override already reads, so it sticks across
+  // sessions.
+  const [cockpitOverride, setCockpitOverride] = useState<boolean | null>(null);
+  const cockpitEnabled = cockpitOverride ?? cockpitFlag;
+  const handleCockpitToggle = useCallback((next: boolean) => {
+    try {
+      window.localStorage.setItem('ff_decisionsTriageCockpit', next ? 'on' : 'off');
+    } catch { /* private mode / sandboxed storage */ }
+    setCockpitOverride(next);
+  }, []);
 
   // Belt-and-suspenders: if a stale `view` state or deep-link lands on the
   // hidden SMS surface, bounce back to the Dashboard so the mock can't render.
@@ -944,9 +958,14 @@ const App: React.FC = () => {
             case AppView.LIVE_AI:
               return <LiveDashboard userId={user?.id || ''} />;
             case AppView.DECISIONS_TASKS:
-              return cockpitEnabled
-                ? <CockpitHub user={user} />
-                : <DecisionTaskHub user={user} />;
+              return (
+                <>
+                  {cockpitEnabled ? <CockpitHub user={user} /> : <DecisionTaskHub user={user} />}
+                  {import.meta.env.DEV && (
+                    <CockpitDevToggle enabled={cockpitEnabled} onToggle={handleCockpitToggle} />
+                  )}
+                </>
+              );
             case AppView.USERS_GUIDE:
               return <UsersGuide isDarkMode={isDarkMode} />;
             case AppView.DASHBOARD:

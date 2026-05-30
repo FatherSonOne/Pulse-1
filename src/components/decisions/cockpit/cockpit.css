@@ -264,10 +264,55 @@
 }
 .ck-cmdk-foot span { display: inline-flex; align-items: center; gap: 6px; }
 
+/* ───────── Dev-only v1 ⇄ v2 toggle (floating pill) ───────── */
+.ck-devtoggle {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px 10px;
+  border-radius: 999px;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border-strong);
+  box-shadow: var(--pulse-shadow-md);
+}
+.ck-devtoggle-label {
+  font-family: var(--pulse-font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pulse-ink-3);
+  margin-right: 2px;
+}
+.ck-devtoggle-btn {
+  min-width: 30px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--pulse-ink-3);
+  font-family: var(--pulse-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 130ms;
+}
+.ck-devtoggle-btn:hover { color: var(--pulse-ink); }
+.ck-devtoggle-btn[data-on='true'] {
+  background: var(--pulse-rose);
+  color: #fff;
+}
+
 /* focus rings — rose (brand), not coral */
 .ck-root button:focus-visible,
 .ck-cmdk-panel button:focus-visible,
-.ck-cmdk-input:focus-visible {
+.ck-cmdk-input:focus-visible,
+.ck-devtoggle-btn:focus-visible {
   outline: 2px solid var(--pulse-rose);
   outline-offset: 1px;
 }
