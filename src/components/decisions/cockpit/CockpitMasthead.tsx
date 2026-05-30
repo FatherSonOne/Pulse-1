@@ -8,7 +8,8 @@
  *
  * Coral budget (CLAUDE.md §4): all chrome → rose / neutral tokens only.
  */
-import { CheckSquare, Search, Bell, Activity, Bot, Plus, ChevronDown, Inbox, Archive } from 'lucide-react';
+import { useState } from 'react';
+import { CheckSquare, Search, Bell, Activity, Bot, Plus, ChevronDown, Inbox, Archive, Scale, Sparkles } from 'lucide-react';
 
 export type CockpitTab = 'triage' | 'archive';
 
@@ -21,7 +22,9 @@ interface CockpitMastheadProps {
   tab: CockpitTab;
   setTab: (tab: CockpitTab) => void;
   onOpenCommand: () => void;
-  onCreate?: () => void;
+  onNewDecision?: () => void;
+  onNewTask?: () => void;
+  onAskAI?: () => void;
   onAlerts?: () => void;
   onActivity?: () => void;
   onAssistant?: () => void;
@@ -35,13 +38,17 @@ export function CockpitMasthead({
   tab,
   setTab,
   onOpenCommand,
-  onCreate,
+  onNewDecision,
+  onNewTask,
+  onAskAI,
   onAlerts,
   onActivity,
   onAssistant,
   subtitle,
   alertCount,
 }: CockpitMastheadProps) {
+  const [newOpen, setNewOpen] = useState(false);
+  const pick = (fn?: () => void) => { setNewOpen(false); fn?.(); };
   return (
     <header className="ck-masthead">
       <div className="ck-masthead-row">
@@ -66,9 +73,21 @@ export function CockpitMasthead({
           <button className="ck-hbtn" onClick={onActivity} aria-label="Activity"><Activity size={17} /></button>
           <button className="ck-hbtn" onClick={onAssistant} aria-label="AI Assistant"><Bot size={17} /></button>
 
-          <button className="ck-new" onClick={onCreate} aria-label="Create new" aria-haspopup="menu">
-            <Plus size={16} /> New <ChevronDown size={13} aria-hidden />
-          </button>
+          <div className="ck-sv">
+            <button className="ck-new" onClick={() => setNewOpen((o) => !o)} aria-label="Create new" aria-haspopup="menu" aria-expanded={newOpen}>
+              <Plus size={16} /> New <ChevronDown size={13} aria-hidden />
+            </button>
+            {newOpen && (
+              <>
+                <div className="ck-menu-backdrop" onClick={() => setNewOpen(false)} aria-hidden />
+                <div className="ck-menu" role="menu" style={{ left: 'auto', right: 0, minWidth: 180 }}>
+                  <button className="ck-menu-item" role="menuitem" onClick={() => pick(onNewDecision)}><Scale size={15} /> New decision</button>
+                  <button className="ck-menu-item" role="menuitem" onClick={() => pick(onNewTask)}><Plus size={15} /> Quick task</button>
+                  <button className="ck-menu-item" role="menuitem" onClick={() => pick(onAskAI)}><Sparkles size={15} /> Ask Pulse AI</button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

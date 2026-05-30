@@ -32,6 +32,8 @@ import { FilterState } from '../FilterBar';
 import { ReassignTaskModal } from '../ReassignTaskModal';
 import { ExtendDeadlineDialog } from '../ExtendDeadlineDialog';
 import { DecisionDecomposer } from '../DecisionDecomposer';
+import { CreateOverlay, type CreateMode } from './create/CreateOverlay';
+import type { FrameId } from '../wizard/types';
 import { decisionService, DecisionWithVotes } from '../../../services/decisionService';
 import { taskService, Task } from '../../../services/taskService';
 import { decisionAnalyticsService, DecisionMetrics } from '../../../services/decisionAnalyticsService';
@@ -113,6 +115,9 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
 
   // ── Decision decompose (Generate Tasks → DecisionDecomposer) ──
   const [decisionToDecompose, setDecisionToDecompose] = useState<DecisionWithVotes | null>(null);
+
+  // ── Create overlay (New decision / Quick task / Ask AI) ──
+  const [createMode, setCreateMode] = useState<{ mode: CreateMode; frameId?: FrameId } | null>(null);
 
   // Debounced data → drives metric/nudge regeneration without thrash.
   const debouncedDecisions = useDebounce(decisions, 800);
@@ -263,8 +268,8 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
   // ── ⌘K commands ──
   const commands: CommandItem[] = useMemo(
     () => [
-      { id: 'new-decision', label: 'New decision', section: 'Create', icon: <Plus size={15} />, run: () => toast('Create overlay arrives in Phase 10', { icon: '⏳' }) },
-      { id: 'quick-task', label: 'Quick task', section: 'Create', icon: <Plus size={15} />, run: () => toast('Create overlay arrives in Phase 10', { icon: '⏳' }) },
+      { id: 'new-decision', label: 'New decision', section: 'Create', icon: <Plus size={15} />, run: () => setCreateMode({ mode: 'decision' }) },
+      { id: 'quick-task', label: 'Quick task', section: 'Create', icon: <Plus size={15} />, run: () => setCreateMode({ mode: 'task' }) },
       { id: 'prioritize', label: 'Prioritize tasks with AI', section: 'Actions', icon: <Zap size={15} />, run: () => toast('AI prioritizer arrives in Phase 11', { icon: '⏳' }) },
       { id: 'export', label: 'Export CSV', section: 'Actions', icon: <Download size={15} />, run: handleExportCSV },
       { id: 'refresh', label: 'Refresh', section: 'Actions', icon: <RotateCw size={15} />, run: handleRefresh },
@@ -471,9 +476,11 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     [effectiveWorkspaceId, user?.id, loadDuePrompts, loadDecisions]
   );
 
-  // CaughtUp / create entry points — wired to the create flows in Phase 10.
-  const handleNewDecision = useCallback(() => toast('Create overlay arrives in Phase 10', { icon: '⏳' }), []);
-  const handleAskAI = useCallback(() => toast('Ask Pulse AI arrives in Phase 10', { icon: '⏳' }), []);
+  // Create entry points → the New overlay.
+  const handleNewDecision = useCallback(() => setCreateMode({ mode: 'decision' }), []);
+  const handleNewTask = useCallback(() => setCreateMode({ mode: 'task' }), []);
+  const handleAskAI = useCallback(() => setCreateMode({ mode: 'ai' }), []);
+  const handleCreated = useCallback(() => { loadDecisions(); loadTasks(); loadDuePrompts(); }, [loadDecisions, loadTasks, loadDuePrompts]);
 
   // ── Realtime handlers (ported) ──
   const handleDecisionChange = useCallback(() => {
@@ -568,19 +575,27 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedDecisions, debouncedTasks]);
 
-  // Global ⌘K / Ctrl+K toggles the command palette; Escape closes it.
+  // Global ⌘K / Ctrl+K toggles the command palette; Escape closes it; `c`
+  // opens Quick task (Linear/Raycast convention) when nothing else is open.
   useEffect(() => {
+    const isTyping = (t: EventTarget | null) =>
+      t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
         setCommandOpen((open) => !open);
         return;
       }
-      if (e.key === 'Escape' && commandOpen) setCommandOpen(false);
+      if (e.key === 'Escape' && commandOpen) { setCommandOpen(false); return; }
+      if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+      if ((e.key === 'c' || e.key === 'C') && !commandOpen && !createMode) {
+        e.preventDefault();
+        setCreateMode({ mode: 'task' });
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [commandOpen]);
+  }, [commandOpen, createMode]);
 
   // ── Derived: filtered sets (Phase 3 queue rail consumes these) ──
   const filteredTasks = useMemo(() => {
@@ -627,6 +642,9 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
         tab={tab}
         setTab={setTab}
         onOpenCommand={() => setCommandOpen(true)}
+        onNewDecision={handleNewDecision}
+        onNewTask={handleNewTask}
+        onAskAI={handleAskAI}
         subtitle={subtitle}
         alertCount={nudges.length}
       />
@@ -705,6 +723,18 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
           workspaceMembers={workspaceMembers as any}
           onClose={() => setDecisionToDecompose(null)}
           onTasksGenerated={handleDecompositionComplete}
+        />
+      )}
+
+      {createMode && (
+        <CreateOverlay
+          mode={createMode.mode}
+          initialFrameId={createMode.frameId}
+          workspaceId={effectiveWorkspaceId}
+          currentUserId={user?.id || ''}
+          workspaceMembers={workspaceMembers}
+          onClose={() => setCreateMode(null)}
+          onCreated={handleCreated}
         />
       )}
     </div>
