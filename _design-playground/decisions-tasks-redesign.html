@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Decisions &amp; Tasks — Triage Cockpit (Playground)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { darkMode: ['class', '[data-theme="dark"]'], theme: { extend: { fontFamily: {
+    sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'], serif: ['Fraunces', 'Georgia', 'serif'],
+  } } } };
+</script>
+<style>
+  :root {
+    --pulse-rose: #f43f5e; --pulse-rose-deep: #e11d48; --pulse-rose-bright: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10); --pulse-rose-glow: rgba(244, 63, 94, 0.28);
+    --pulse-canvas: #f6f7f8; --pulse-canvas-soft: #eeeff1; --pulse-surface: #ffffff; --pulse-surface-raised: #f1f2f4;
+    --pulse-border: rgba(0, 0, 0, 0.10); --pulse-border-strong: rgba(0, 0, 0, 0.18);
+    --pulse-ink: #18181b; --pulse-ink-2: #52525b; --pulse-ink-3: #71717a;
+    --pulse-coral: var(--pulse-rose);
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 38%, black 62%);
+    --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-rose) 12%, transparent);
+    --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-rose) 7%, transparent);
+    --pulse-font: 'Inter', system-ui, sans-serif; --pulse-mono: 'JetBrains Mono', ui-monospace, monospace; --pulse-serif: 'Fraunces', Georgia, serif;
+    --pulse-sidebar-bg: #ffffff;
+    --pulse-shadow-card: 0 1px 2px rgba(0,0,0,0.04);
+    --pulse-shadow-lift: 0 2px 8px rgba(0,0,0,0.07);
+    --pulse-shadow-modal: 0 24px 70px rgba(0,0,0,0.16), 0 4px 16px rgba(0,0,0,0.08);
+    --st-overdue:#ef4444; --st-blocked:#f97316; --st-review:#a855f7; --st-progress:#3b82f6; --st-todo:#6b7280; --st-done:#22c55e;
+    --st-proposed:#8b5cf6; --st-voting:#f59e0b; --st-decided:#10b981; --st-cancelled:#9ca3af;
+    --r-panel:10px; --r-card:7px; --r-tag:4px;
+  }
+  html[data-theme='dark'] {
+    --pulse-canvas: #000000; --pulse-canvas-soft: #0a0a0b; --pulse-surface: rgba(255,255,255,0.025); --pulse-surface-raised: rgba(255,255,255,0.06);
+    --pulse-border: rgba(255, 255, 255, 0.09); --pulse-border-strong: rgba(255, 255, 255, 0.16);
+    --pulse-ink: #fafafa; --pulse-ink-2: #b4b4b8; --pulse-ink-3: #8a8a90;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 62%, white 38%);
+    --pulse-rose: #fb7185; --pulse-rose-soft: rgba(244, 63, 94, 0.15);
+    --pulse-sidebar-bg: #0a0a0b;
+    --pulse-shadow-card: 0 1px 2px rgba(0,0,0,0.4);
+    --pulse-shadow-lift: 0 2px 10px rgba(0,0,0,0.5);
+    --pulse-shadow-modal: 0 40px 120px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  html, body { height: 100%; }
+  body { font-family: var(--pulse-font); background: var(--pulse-canvas); color: var(--pulse-ink); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  .surface { background: var(--pulse-surface); } .surface-r { background: var(--pulse-surface-raised); }
+  .canvas { background: var(--pulse-canvas); } .canvas-s { background: var(--pulse-canvas-soft); }
+  .ink { color: var(--pulse-ink); } .ink-2 { color: var(--pulse-ink-2); } .ink-3 { color: var(--pulse-ink-3); }
+  .bd { border-color: var(--pulse-border); } .bd-s { border-color: var(--pulse-border-strong); }
+  .mono { font-family: var(--pulse-mono); font-feature-settings: 'tnum' 1; }
+  .serif { font-family: var(--pulse-serif); }
+  .tnum { font-variant-numeric: tabular-nums; }
+  .lbl { font-family: var(--pulse-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1; }
+  .lbl-s { font-family: var(--pulse-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; line-height: 1; }
+  .pulse-rose-color { color: var(--pulse-rose); }
+  *::-webkit-scrollbar { width: 7px; height: 7px; } *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--pulse-border-strong); border-radius: 4px; } *::-webkit-scrollbar-thumb:hover { background: var(--pulse-ink-3); }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(6px);} to { opacity:1; transform:translateY(0);} } .fade-up { animation: fadeUp 300ms cubic-bezier(0.16,1,0.3,1); }
+  @keyframes scaleIn { from { opacity:0; transform:scale(0.98);} to { opacity:1; transform:scale(1);} } .scale-in { animation: scaleIn 200ms cubic-bezier(0.16,1,0.3,1); }
+  @keyframes slideR { from { opacity:0; transform:translateX(12px);} to { opacity:1; transform:translateX(0);} } .slide-r { animation: slideR 240ms cubic-bezier(0.16,1,0.3,1); }
+  @keyframes backdropIn { from { opacity:0;} to { opacity:1;} } .backdrop-in { animation: backdropIn 160ms ease; }
+  .ai-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border-radius:var(--r-tag); background: var(--pulse-rose-soft); color: var(--pulse-coral-fg); font-family:var(--pulse-mono); font-size:9px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; line-height:1; white-space:nowrap; }
+  .ai-chip::before { content:''; width:5px; height:5px; border-radius:50%; background: currentColor; flex:none; }
+  .ai-chip.muted { background: var(--pulse-surface-raised); color: var(--pulse-ink-3); } .ai-chip.muted::before { background: var(--pulse-ink-3); }
+  .pill { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border-radius:var(--r-tag); font-family:var(--pulse-mono); font-size:9.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; line-height:1; white-space:nowrap; }
+  .ptag { font-family:var(--pulse-mono); font-size:9px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; padding:2px 6px; border-radius:var(--r-tag); line-height:1; }
+  .ptag.high { background: var(--pulse-surface-raised); color: var(--pulse-ink); box-shadow: inset 0 0 0 1px var(--pulse-border-strong); }
+  .ptag.medium { color: var(--pulse-ink-3); }
+  .keycap { font-family:var(--pulse-mono); font-size:10px; font-weight:600; padding:2px 6px; border-radius:var(--r-tag); background:var(--pulse-surface-raised); color:var(--pulse-ink-2); box-shadow: inset 0 0 0 1px var(--pulse-border); min-width:18px; text-align:center; }
+  .lift { transition: box-shadow 140ms, background 140ms, border-color 140ms; }
+  .lift:hover { box-shadow: var(--pulse-shadow-lift); border-color: var(--pulse-border-strong); }
+  .row-hover { transition: background 120ms; }
+  /* PostHog scene tabs (underline) */
+  .ph-tab { position:relative; display:inline-flex; align-items:center; gap:7px; height:34px; padding:0 2px; font-size:13px; font-weight:600; color:var(--pulse-ink-3); cursor:pointer; background:none; border:none; transition: color 130ms; }
+  .ph-tab:hover { color:var(--pulse-ink-2); }
+  .ph-tab[data-on='true'] { color:var(--pulse-ink); }
+  .ph-tab[data-on='true']::after { content:''; position:absolute; left:-2px; right:-2px; bottom:-9px; height:2px; background:var(--pulse-ink); }
+  /* PostHog property-filter pills */
+  .ph-filter { display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 8px; border-radius:var(--r-tag); font-size:12px; font-weight:500; background:var(--pulse-surface-raised); box-shadow: inset 0 0 0 1px var(--pulse-border); white-space:nowrap; color:var(--pulse-ink-2); }
+  .ph-filter .pk { color:var(--pulse-ink-3); }
+  .ph-filter.add { background:transparent; box-shadow: inset 0 0 0 1px var(--pulse-border-strong); color:var(--pulse-ink-3); cursor:pointer; }
+  .ph-filter.add.dashed { box-shadow:none; border:1px dashed var(--pulse-border-strong); }
+  .ph-filter.add:hover { color:var(--pulse-ink); }
+  /* PostHog property table row */
+  .ph-prop { display:grid; grid-template-columns:124px 1fr; gap:12px; align-items:center; padding:8px 0; border-bottom:1px solid var(--pulse-border); }
+  .ph-prop:last-child { border-bottom:none; }
+  /* command bar */
+  .kbar { display:inline-flex; align-items:center; gap:24px; height:32px; padding:0 8px 0 10px; border-radius:6px; background:var(--pulse-surface); border:1px solid var(--pulse-border); color:var(--pulse-ink-3); font-size:12.5px; cursor:pointer; transition: border-color 140ms; }
+  .kbar:hover { border-color:var(--pulse-border-strong); }
+  .pg-bar { height:48px; background:var(--pulse-sidebar-bg); border-bottom:1px solid var(--pulse-border); }
+  .pg-pill { display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 13px; border-radius:7px; font-size:12px; font-weight:600; color:var(--pulse-ink-3); cursor:pointer; transition: all 150ms; white-space:nowrap; border:1px solid transparent; }
+  .pg-pill:hover { color:var(--pulse-ink); background:var(--pulse-surface-raised); }
+  .pg-pill[data-active='true'] { color:var(--pulse-ink); background:var(--pulse-surface-raised); border-color:var(--pulse-border-strong); }
+  .theme-toggle { font-family:var(--pulse-mono); font-size:10px; letter-spacing:0.12em; font-weight:600; padding:6px 11px; border-radius:6px; border:1px solid var(--pulse-border); color:var(--pulse-ink-2); cursor:pointer; transition: all 150ms; }
+  .theme-toggle:hover { border-color:var(--pulse-border-strong); color:var(--pulse-ink); }
+  .navrow { transition: background 120ms; } .navrow:hover { background: var(--pulse-surface-raised); }
+  .seg { display:inline-flex; align-items:center; padding:3px; border-radius:8px; background:var(--pulse-surface-raised); border:1px solid var(--pulse-border); }
+  .seg-btn { display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 12px; border-radius:6px; font-size:12.5px; font-weight:600; color:var(--pulse-ink-3); cursor:pointer; transition: all 140ms; }
+  .seg-btn[data-on='true'] { background:var(--pulse-surface); color:var(--pulse-ink); box-shadow: var(--pulse-shadow-card); }
+  /* polish: row quick-actions, group headers, focus rings */
+  .qa-btn { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:5px; color:var(--pulse-ink-3); border:1px solid transparent; transition: all 120ms; }
+  .qa-btn:hover { background:var(--pulse-surface); border-color:var(--pulse-border); color:var(--pulse-ink); }
+  .qhead { transition: background 120ms; cursor:pointer; } .qhead:hover { background:var(--pulse-surface); }
+  button:focus-visible, [role='button']:focus-visible { outline:2px solid var(--pulse-rose); outline-offset:1px; }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+</style>
+</head>
+<body class="overflow-hidden">
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect } = React;
+
+/* ════════ ICONS ════════ */
+const ICONS = {
+  pulse:'M3 12h4l2 -6 4 14 3 -10 2 4h4',
+  check:'M20 6 9 17l-5-5',
+  checkSquare:'M9 11l3 3L22 4|M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
+  square:'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z',
+  circle:'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z',
+  checkCircle:'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z|M8 12l3 3 5-6',
+  clock:'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z|M12 6v6l4 2',
+  alert:'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z|M12 8v4|M12 16h.01',
+  ban:'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z|M4.9 4.9l14.2 14.2',
+  eye:'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  play:'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z|M10 8l6 4-6 4z',
+  mail:'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z|M22 7l-10 6L2 7',
+  message:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+  video:'M23 7l-7 5 7 5V7z|M14 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z',
+  mic:'M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z|M19 10v2a7 7 0 0 1-14 0v-2|M12 19v4',
+  plus:'M12 5v14|M5 12h14',
+  search:'M21 21l-4.3-4.3|M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14z',
+  chevDown:'M6 9l6 6 6-6', chevRight:'M9 6l6 6-6 6',
+  sparkles:'M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z|M5 16l.7 1.8L7.5 18.5 5.7 19.2 5 21l-.7-1.8L2.5 18.5l1.8-.7z',
+  zap:'M13 2L3 14h7l-1 8 10-12h-7l1-8z',
+  arrowRight:'M5 12h14|M13 5l7 7-7 7',
+  filter:'M22 3H2l8 9.5V19l4 2v-8.5z',
+  sort:'M11 5h10|M11 9h7|M11 13h4|M3 17l3 3 3-3|M6 20V4',
+  list:'M8 6h13|M8 12h13|M8 18h13|M3 6h.01|M3 12h.01|M3 18h.01',
+  scale:'M12 3v18|M5 21h14|M6 8h12|M6 8l-3.5 7a3.5 3.5 0 0 0 7 0z|M18 8l-3.5 7a3.5 3.5 0 0 0 7 0z',
+  user:'M20 21a8 8 0 1 0-16 0|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  bell:'M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9|M13.7 21a2 2 0 0 1-3.4 0',
+  bot:'M9 4h6a2 2 0 0 1 2 2v0H7v0a2 2 0 0 1 2-2z|M5 8h14v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z|M9 13v2|M15 13v2|M12 4V2',
+  activity:'M22 12h-4l-3 9L9 3l-3 9H2',
+  x:'M18 6 6 18|M6 6l12 12',
+  edit:'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7|M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z',
+  flow:'M6 3v12|M18 6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z|M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z|M18 6a9 9 0 0 1-9 9',
+  target:'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z|M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
+  archive:'M21 8v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8|M1 3h22v5H1z|M10 12h4',
+  link:'M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1|M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1',
+  snooze:'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z|M12 8v4l3 2',
+  trend:'M23 6l-9.5 9.5-5-5L1 18|M17 6h6v6',
+  dashboard:'M4 4h7v9H4z|M13 4h7v5h-7z|M13 13h7v7h-7z|M4 17h7v3H4z',
+  contacts:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2|M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z|M23 21v-2a4 4 0 0 0-3-3.87',
+  cal2:'M19 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z|M16 2v4|M8 2v4|M3 10h18',
+  settings:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z|M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 8l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 4.6V4a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 12H21a2 2 0 0 1 0 4h-.6z',
+  sun:'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z|M12 1v2|M12 21v2|M4.2 4.2l1.4 1.4|M18.4 18.4l1.4 1.4|M1 12h2|M21 12h2|M4.2 19.8l1.4-1.4|M18.4 5.6l1.4-1.4',
+  moon:'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z',
+  hammer:'M14 6l4 4|M10.5 9.5l-7 7a2.1 2.1 0 0 0 3 3l7-7|M17 3l4 4-3 3-4-4z',
+  inbox:'M22 12h-6l-2 3h-4l-2-3H2|M5 5h14l3 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z',
+  vote:'M9 12l2 2 4-4|M5 21h14a2 2 0 0 0 2-2V7l-5-4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z',
+  thumbUp:'M7 11v9H3a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z|M7 11l4-8a2 2 0 0 1 3 2l-1 5h5a2 2 0 0 1 2 2.4l-1.5 7A2 2 0 0 1 16 21H7',
+  thumbDown:'M17 13V4h4a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1z|M17 13l-4 8a2 2 0 0 1-3-2l1-5H6a2 2 0 0 1-2-2.4l1.5-7A2 2 0 0 1 8 3h9',
+  minus:'M5 12h14',
+  rotate:'M3 2v6h6|M21 12a9 9 0 1 1-3-6.7L21 8',
+  send:'M22 2 11 13|M22 2l-7 20-4-9-9-4z',
+  layers:'M12 2 2 7l10 5 10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5',
+};
+function Ic({ n, size=16, sw=2, cls='', fill='none' }) {
+  const d = ICONS[n] || '';
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" className={cls} aria-hidden="true">{d.split('|').map((p,i)=><path key={i} d={p} />)}</svg>);
+}
+
+/* ════════ DATA ════════ */
+const PEOPLE = {
+  fm:{ name:'Frankie Messana', short:'You', color:'#f43f5e' }, maria:{ name:'Maria Schaefer', short:'Maria', color:'#3b82f6' },
+  sarah:{ name:'Sarah Chen', short:'Sarah', color:'#8b5cf6' }, jaylen:{ name:'Jaylen Park', short:'Jaylen', color:'#10b981' },
+  theo:{ name:'Theo Bridgewater', short:'Theo', color:'#f59e0b' }, priya:{ name:'Priya Devarajan', short:'Priya', color:'#06b6d4' },
+};
+const SOURCES = { email:{ label:'Email', icon:'mail' }, messages:{ label:'Messages', icon:'message' }, meeting:{ label:'Meeting', icon:'video' }, relay:{ label:'Relay', icon:'mic' }, manual:{ label:'Manual', icon:'edit' } };
+const STATUS = {
+  todo:{ label:'To Do', color:'var(--st-todo)' }, in_progress:{ label:'In Progress', color:'var(--st-progress)' }, in_review:{ label:'In Review', color:'var(--st-review)' },
+  blocked:{ label:'Blocked', color:'var(--st-blocked)' }, done:{ label:'Done', color:'var(--st-done)' }, cancelled:{ label:'Cancelled', color:'var(--st-cancelled)' },
+  overdue:{ label:'Overdue', color:'var(--st-overdue)' }, proposed:{ label:'Proposed', color:'var(--st-proposed)' }, voting:{ label:'Voting', color:'var(--st-voting)' }, decided:{ label:'Decided', color:'var(--st-decided)' },
+};
+const STATUS_ICON = { todo:'circle', in_progress:'play', in_review:'eye', blocked:'ban', done:'check', cancelled:'x', overdue:'alert', proposed:'sparkles', voting:'scale', decided:'check' };
+
+const TASKS = [
+  { id:'t1', title:'Wire up Stripe invoices to the billing dashboard', desc:'PDF download + email delivery. Test with sandbox account first.', status:'in_progress', priority:'high', assignee:'fm', due:{label:'May 8', overdue:true}, source:'email', ai:{ extracted:true, score:88, blocks:1, est:'~3h' }, srcMeta:'Stripe billing thread · 2 days ago', srcQuote:'Can we get invoices showing on the billing dashboard before the board meeting?',
+    activity:[ {who:'fm', text:'extracted this task from Email', when:'2d', ai:true}, {who:'fm', text:'set priority High', when:'2d'}, {who:'sarah', text:'commented “sandbox keys are in 1Password”', when:'1d'}, {who:'fm', text:'moved to In Progress', when:'4h'} ] },
+  { id:'t2', title:'Schedule investor sync for next Tuesday', desc:'Confirm time with B & R, send agenda 24h ahead.', status:'todo', priority:'medium', assignee:'fm', due:{label:'May 6', overdue:true}, source:'messages', ai:{ extracted:true, score:74 }, srcMeta:'#founders · Theo', srcQuote:'lock the investor sync for Tues + send the agenda the day before pls',
+    activity:[ {who:'fm', text:'extracted from Messages', when:'3d', ai:true}, {who:'theo', text:'added to #founders', when:'3d'} ] },
+  { id:'t3', title:'Sign vendor MSA with Notion', desc:'Legal flagged the auto-renewal clause. Waiting on counter-redline.', status:'blocked', priority:'high', assignee:'sarah', due:{label:'May 3', overdue:true}, source:'email', ai:{ extracted:true, score:81 }, blockedReason:'Waiting on counter-redline from Legal', srcMeta:'Notion · contracts@',
+    activity:[ {who:'fm', text:'extracted from Email', when:'5d', ai:true}, {who:'sarah', text:'marked Blocked', when:'2d'} ] },
+  { id:'t4', title:'PR #142: realtime channel cleanup on workspace switch', desc:'Stale subscriptions leaked across switches. Fix + regression test.', status:'in_review', priority:'medium', assignee:'jaylen', due:{label:'May 31', overdue:false}, source:'manual', ai:{ extracted:false },
+    activity:[ {who:'jaylen', text:'opened PR #142', when:'1d'}, {who:'jaylen', text:'moved to In Review', when:'3h'} ] },
+  { id:'t5', title:'Migrate Capacitor 6 → 7', desc:'Audit plugins, run on Pixel 8 + iPhone 14, update splash assets.', status:'in_progress', priority:'medium', assignee:'theo', due:{label:'Jun 4', overdue:false}, source:'manual', ai:{ extracted:false },
+    activity:[ {who:'theo', text:'created task', when:'2d'}, {who:'theo', text:'moved to In Progress', when:'1d'} ] },
+  { id:'t6', title:'Draft onboarding email sequence (5 touch)', desc:'Welcome → activation → first win → nudge → check-in.', status:'todo', priority:'medium', assignee:'maria', due:{label:'Jun 2', overdue:false}, source:'meeting', ai:{ extracted:true, score:55 }, srcMeta:'GTM weekly · transcript',
+    activity:[ {who:'fm', text:'extracted from Meeting transcript', when:'1d', ai:true} ] },
+  { id:'t8', title:'Audit coral-budget usage across Relay chrome', desc:'Find rogue rose accents on chrome; demote to neutral tokens.', status:'todo', priority:'low', assignee:'fm', due:null, source:'relay', ai:{ extracted:true, score:38 }, srcMeta:'Voice note · 09:14',
+    activity:[ {who:'fm', text:'extracted from Relay voice note', when:'6h', ai:true} ] },
+];
+const DECISIONS = [
+  { id:'d1', title:'Analytics vendor — PostHog vs Amplitude', desc:'Self-host vs managed. PostHog wins on event-volume price + session replay; Amplitude on cohort UX.', status:'voting', type:'technical', source:'meeting', votes:{ approve:3, concern:1, total:4, needed:5 }, youVoted:false, ai:{ risk:'medium', consensus:'forming', note:'3 approve · 1 concern. One vote short of threshold — Sarah & Theo outstanding.' }, srcMeta:'Eng sync · 30 min ago',
+    activity:[ {who:'fm', text:'proposed this decision', when:'3h'}, {who:'maria', text:'voted Approve', when:'2h'}, {who:'priya', text:'voted Approve', when:'1h'}, {who:'jaylen', text:'voted Concern', when:'1h'}, {who:'fm', text:'opened voting', when:'3h'} ] },
+  { id:'d2', title:'Adopt Notion as the company wiki', desc:'Consolidate Google Docs + Coda sprawl into one workspace.', status:'voting', type:'process', source:'relay', votes:{ approve:2, reject:1, total:3, needed:4 }, youVoted:true, ai:{ risk:'low', consensus:'none', note:'Split 2–1. No consensus yet; migration cost is the sticking point.' },
+    activity:[ {who:'theo', text:'proposed from a Relay note', when:'1d'}, {who:'fm', text:'voted Approve', when:'5h'} ] },
+  { id:'d3', title:'Hire a founding product designer', desc:'Contract-to-hire vs full-time. Budget approved through Q3.', status:'proposed', type:'general', source:'manual', votes:{ total:0 }, ai:{ risk:'medium', note:'No frame attached. Run the Hire wizard to shape criteria + tasks.' },
+    activity:[ {who:'fm', text:'proposed this decision', when:'4h'} ] },
+];
+const ARCHIVE = [
+  { id:'a1', kind:'decision', title:'Q3 budget allocation across teams', final:'Eng 45 / GTM 35 / Ops 20', type:'product', source:'meeting', decidedBy:'fm', when:'May 24', group:'This week', tasksLinked:3, retro:{ rating:'good', text:'Clean split. Eng shipped on the higher allocation; revisit GTM at mid-quarter.' } },
+  { id:'a2', kind:'decision', title:'Migrate billing to Stripe Billing', final:'Adopt Stripe Billing; deprecate the custom invoicer', type:'technical', source:'meeting', decidedBy:'fm', when:'May 22', group:'This week', tasksLinked:2, retro:null },
+  { id:'a3', kind:'task', title:'Wire Deepgram transcription into Glimpse', status:'done', source:'manual', assignee:'jaylen', when:'May 27', cycle:'3d', group:'This week' },
+  { id:'a4', kind:'task', title:'Ship landing-page hero refresh', status:'done', source:'manual', assignee:'maria', when:'May 20', cycle:'6d', group:'Last week' },
+  { id:'a5', kind:'decision', title:'Sunset the legacy AI Lab module', final:'Remove AILab; reclaim --nexus-* tokens', type:'process', source:'relay', decidedBy:'fm', when:'May 18', group:'Last week', tasksLinked:1, retro:{ rating:'neutral', text:'Right call long-term but the token cleanup dragged. Scope removals tighter next time.' } },
+  { id:'a6', kind:'task', title:'Build custom analytics pipeline', status:'cancelled', source:'manual', assignee:'theo', when:'May 16', cycle:'—', group:'Last week' },
+];
+const ARCHIVE_METRICS = [
+  { label:'Tasks completed', value:'24', icon:'checkCircle', tone:'var(--st-done)' },
+  { label:'Avg cycle time', value:'4.2d', icon:'clock', tone:'var(--st-progress)' },
+  { label:'Decisions resolved', value:'8', icon:'scale', tone:'var(--st-decided)' },
+  { label:'Outcome success', value:'82%', icon:'trend', tone:'var(--st-proposed)' },
+];
+const FRAMES = [
+  { id:'hire', label:'Hire someone', icon:'contacts', blurb:'Shape a recruitment decision' },
+  { id:'pick', label:'Pick a tool', icon:'target', blurb:'Compare options on weighted criteria' },
+  { id:'build', label:'Build a feature', icon:'hammer', blurb:'Greenlight product work' },
+  { id:'allocate', label:'Allocate budget', icon:'scale', blurb:'Split a resource across recipients' },
+  { id:'strategy', label:'Set strategy', icon:'flow', blurb:'Direction + first move' },
+  { id:'conflict', label:'Resolve conflict', icon:'vote', blurb:'Weigh competing positions' },
+];
+
+/* ════════ PRIMITIVES ════════ */
+function Avatar({ id, size=22 }) {
+  const p = PEOPLE[id]; if (!p) return null;
+  const init = p.name.split(' ').map(w=>w[0]).slice(0,2).join('');
+  return <span style={{ width:size, height:size, background:p.color, fontSize:size*0.4 }} className="inline-flex items-center justify-center rounded-full text-white font-semibold flex-none mono" title={p.name}>{init}</span>;
+}
+function StatusPill({ status, small }) {
+  const s = STATUS[status]; if (!s) return null;
+  return <span className="pill" style={{ background:`color-mix(in oklab, ${s.color} 12%, transparent)`, color:s.color, fontSize: small?'9px':'9.5px' }}><Ic n={STATUS_ICON[status]} size={small?9:10} sw={2.4} />{s.label}</span>;
+}
+function PriorityTag({ p }) { if (!p || p === 'low') return null; return <span className={`ptag ${p}`}>{p}</span>; }
+function SourceTag({ source, label=true }) {
+  const s = SOURCES[source]; if (!s) return null;
+  return <span className="inline-flex items-center gap-1 ink-3" title={`From ${s.label}`}><Ic n={s.icon} size={11} sw={2} />{label && <span className="lbl-s">{s.label}</span>}</span>;
+}
+function AiChip({ children, muted }) { return <span className={`ai-chip ${muted?'muted':''}`}>{children}</span>; }
+function HBtn({ icon, label, badge }) {
+  return (<button title={label} aria-label={label} className="relative inline-flex items-center justify-center rounded-md lift" style={{ width:32, height:32, background:'var(--pulse-surface)', border:'1px solid var(--pulse-border)', color:'var(--pulse-ink-2)' }}>
+    <Ic n={icon} size={16} />{badge ? <span className="absolute -top-1 -right-1 mono tnum" style={{ fontSize:9, minWidth:15, height:15, lineHeight:'15px', borderRadius:8, background:'var(--pulse-rose)', color:'#fff', textAlign:'center', fontWeight:600 }}>{badge}</span> : null}</button>);
+}
+function ActBtn({ icon, label, primary, tone }) {
+  return (<button className="inline-flex items-center gap-2 h-9 px-3.5 rounded-md text-[12.5px] font-semibold lift" style={ primary ? { background:'var(--pulse-rose)', color:'#fff' } : { background:'var(--pulse-surface)', color: tone||'var(--pulse-ink-2)', border:'1px solid var(--pulse-border)' } }><Ic n={icon} size={15} /> {label}</button>);
+}
+function Prop({ label, children }) { return <div className="ph-prop"><span className="lbl ink-3">{label}</span><div className="text-[13px] ink">{children}</div></div>; }
+function ActivityLog({ rows }) {
+  return (
+    <div className="relative pl-4" style={{ marginLeft:2 }}>
+      <span className="absolute top-1 bottom-1 left-0 w-px" style={{ background:'var(--pulse-border)' }} />
+      {rows.map((r,i)=>(
+        <div key={i} className="relative flex items-center gap-2.5 py-1.5">
+          <span className="absolute -left-4 w-2 h-2 rounded-full" style={{ background: r.ai?'var(--pulse-rose)':'var(--pulse-border-strong)', marginLeft:'-3px' }} />
+          <Avatar id={r.who} size={18} />
+          <span className="text-[12.5px] ink-2 flex-1">{r.ai && <span className="ai-chip mr-1.5" style={{ padding:'1px 5px' }}>AI</span>}{r.text}</span>
+          <span className="lbl-s ink-3 tnum">{r.when}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ════════ SIDEBAR ════════ */
+const NAV = [
+  { group:'Overview', items:[ ['Dashboard','dashboard'] ] },
+  { group:'Communication', items:[ ['Messages','message'], ['Email','mail'], ['Relay','mic'], ['Glimpse','video'] ] },
+  { group:'Work & People', items:[ ['Calendar','cal2'], ['Meetings','video'], ['Contacts','contacts'], ['Decisions & Tasks','checkSquare'] ] },
+  { group:'Intelligence', items:[ ['Search','search'], ['Analytics','trend'], ['War Room','target'], ['Archives','archive'] ] },
+];
+function Sidebar({ theme, setTheme }) {
+  return (
+    <aside className="flex flex-col flex-none border-r bd" style={{ width:228, background:'var(--pulse-sidebar-bg)' }}>
+      <div className="px-3.5 pt-3.5 pb-2 flex items-center gap-2">
+        <span className="inline-flex items-center justify-center rounded-lg" style={{ width:30, height:30, background:'var(--pulse-rose)' }}><Ic n="pulse" size={18} cls="text-white" sw={2.4} /></span>
+        <span className="text-[17px] font-bold" style={{ color:'var(--pulse-rose)' }}>Pulse</span>
+      </div>
+      <div className="px-3 pb-2.5"><div className="flex items-center justify-between rounded-md surface-r px-2.5 py-2"><span className="text-[12px] font-semibold ink">My Workspace</span><span className="lbl-s" style={{ color:'var(--pulse-rose)' }}>Owner</span></div></div>
+      <nav className="flex-1 overflow-y-auto px-2 pb-3">
+        {NAV.map(sec => (
+          <div key={sec.group} className="mb-3">
+            <div className="lbl-s ink-3 px-2 pb-1.5" style={{ opacity:0.7 }}>{sec.group}</div>
+            {sec.items.map(([label, icon]) => {
+              const active = label === 'Decisions & Tasks';
+              return (<div key={label} className="navrow flex items-center gap-2.5 px-2 py-[7px] rounded-md cursor-pointer mb-0.5" style={ active ? { background:'var(--pulse-rose-soft)' } : {} }>
+                <Ic n={icon} size={16} sw={2} cls={active ? '' : 'ink-3'} /><span className="text-[12.5px]" style={{ color: active ? 'var(--pulse-rose)' : 'var(--pulse-ink-2)', fontWeight: active?600:500 }}>{label}</span></div>);
+            })}
+          </div>
+        ))}
+      </nav>
+      <div className="border-t bd p-2.5 space-y-1">
+        <div className="navrow flex items-center justify-between px-2 py-2 rounded-md cursor-pointer" style={{ background:'var(--pulse-rose-soft)' }}><span className="flex items-center gap-2 text-[12.5px] font-semibold" style={{ color:'var(--pulse-rose)' }}><Ic n="bot" size={16} /> Pulse AI</span><span className="keycap">⌘/</span></div>
+        <div onClick={()=>setTheme(theme==='dark'?'light':'dark')} className="navrow flex items-center gap-2.5 px-2 py-2 rounded-md cursor-pointer ink-2"><Ic n={theme==='dark'?'sun':'moon'} size={16} /> <span className="text-[12.5px]">{theme==='dark'?'Light mode':'Dark mode'}</span></div>
+        <div className="navrow flex items-center gap-2.5 px-2 py-2 rounded-md cursor-pointer ink-2"><Ic n="settings" size={16} /> <span className="text-[12.5px]">Settings</span></div>
+        <div className="flex items-center gap-2.5 px-2 pt-2"><Avatar id="fm" size={26} /><div className="leading-tight"><div className="text-[12px] font-semibold ink">Frankie Messana</div><div className="lbl-s ink-3" style={{ textTransform:'none', letterSpacing:0 }}>jehovahsneaky83@gmail.com</div></div></div>
+      </div>
+    </aside>
+  );
+}
+
+/* ════════ SCENE MASTHEAD (PostHog: title + ⌘K + actions, underline tabs on a bottom border) ════════ */
+const TABS = [ { id:'triage', label:'Triage', icon:'inbox' }, { id:'archive', label:'Archive', icon:'archive' } ];
+function SectionMasthead({ tab, setTab, onCreate, subtitle }) {
+  return (
+    <header className="px-6 pt-4 flex-none border-b bd canvas">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-flex items-center justify-center rounded-md" style={{ width:26, height:26, background:'var(--pulse-rose-soft)' }}><Ic n="checkSquare" size={15} cls="pulse-rose-color" /></span>
+          <h1 className="text-[18px] font-bold ink tracking-tight">Decisions &amp; Tasks</h1>
+          {subtitle && <span className="lbl ink-3 ml-1">{subtitle}</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="kbar"><span className="flex items-center gap-2"><Ic n="search" size={14} /> Search or run a command…</span><span className="keycap">⌘K</span></button>
+          <HBtn icon="bell" label="Alerts" badge="6" />
+          <HBtn icon="activity" label="Activity" />
+          <HBtn icon="bot" label="AI Assistant" />
+          <button onClick={onCreate} className="inline-flex items-center gap-2 h-8 px-3.5 rounded-md text-[13px] font-semibold lift" style={{ background:'var(--pulse-rose)', color:'#fff' }}><Ic n="plus" size={16} /> New <Ic n="chevDown" size={13} /></button>
+        </div>
+      </div>
+      <div className="flex items-center gap-6 mt-3">
+        {TABS.map(t => (<button key={t.id} className="ph-tab" data-on={tab===t.id} onClick={()=>setTab(t.id)}><Ic n={t.icon} size={14} /> {t.label}</button>))}
+      </div>
+    </header>
+  );
+}
+function FilterBar({ children }) {
+  return <div className="px-6 py-3 flex items-center gap-2 flex-none border-b bd canvas">{children}</div>;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   TRIAGE COCKPIT (primary)
+   ════════════════════════════════════════════════════════════════════════════ */
+function buildQueue() {
+  const dq = DECISIONS.filter(d=>d.status==='voting'&&!d.youVoted).map(d=>({ ...d, kind:'decision' }));
+  const overdue = TASKS.filter(t=>t.due&&t.due.overdue&&t.status!=='done').map(t=>({...t,kind:'task'}));
+  const blocked = TASKS.filter(t=>t.status==='blocked'&&!(t.due&&t.due.overdue)).map(t=>({...t,kind:'task'}));
+  const today = TASKS.filter(t=>['in_review','in_progress'].includes(t.status)&&!(t.due&&t.due.overdue)).map(t=>({...t,kind:'task'}));
+  const upcoming = TASKS.filter(t=>t.status==='todo'&&!(t.due&&t.due.overdue)).map(t=>({...t,kind:'task'}));
+  return [
+    { label:'Needs you', tone:'var(--st-overdue)', items:[...dq, ...overdue, ...blocked] },
+    { label:'Today', tone:'var(--st-progress)', items: today },
+    { label:'Upcoming', tone:'var(--st-todo)', items: upcoming },
+  ];
+}
+function TriageView({ tab, setTab, onCreate, empty }) {
+  const groups = useMemo(buildQueue, []);
+  const flat = groups.flatMap(g=>g.items);
+  const [selId, setSelId] = useState(flat[0] && flat[0].id);
+  const sel = flat.find(i=>i.id===selId) || flat[0];
+  const idx = flat.findIndex(i=>i.id===selId);
+
+  return (
+    <div className="h-full flex flex-col canvas">
+      <SectionMasthead tab={tab} setTab={setTab} onCreate={onCreate} subtitle={empty ? 'All clear' : `${idx+1} / ${flat.length} · ~12m to clear`} />
+      <FilterBar>
+        <button className="ph-filter"><Ic n="layers" size={13} cls="ink-3" /> <span className="font-semibold ink">Needs you</span> <Ic n="chevDown" size={12} cls="ink-3" /></button>
+        <span style={{ width:1, height:18, background:'var(--pulse-border)' }} />
+        <span className="ph-filter"><span className="pk">Assignee</span> <span className="font-semibold ink">You</span> <Ic n="x" size={11} cls="ink-3" /></span>
+        <span className="ph-filter"><span className="pk">Status</span> <span className="font-semibold ink">Open</span> <Ic n="x" size={11} cls="ink-3" /></span>
+        <button className="ph-filter add dashed"><Ic n="plus" size={12} /> Filter</button>
+        <div className="flex-1" />
+        <button className="ph-filter add"><Ic n="sort" size={12} /> <span className="pk">Sort</span> Priority <Ic n="chevDown" size={11} /></button>
+      </FilterBar>
+
+      {empty ? <CaughtUp /> : (
+      <div className="flex-1 flex min-h-0 px-6 py-4 gap-4">
+        {/* queue rail */}
+        <div className="flex-none flex flex-col rounded-lg surface border bd overflow-hidden" style={{ width:344, boxShadow:'var(--pulse-shadow-card)' }}>
+          <div className="flex items-center justify-between px-3.5 py-2.5 border-b bd"><span className="lbl ink-2">Queue · {flat.length}</span><span className="flex items-center gap-1.5 lbl-s ink-3"><span className="keycap">J</span><span className="keycap">K</span> move</span></div>
+          <div className="flex-1 overflow-y-auto">
+            {groups.map(g => g.items.length>0 && (
+              <div key={g.label}>
+                <div className="qhead px-3.5 py-1.5 flex items-center gap-2 surface-r border-b bd sticky top-0"><Ic n="chevDown" size={11} cls="ink-3" /><span className="rounded-full" style={{ width:6, height:6, background:g.tone }} /><span className="lbl ink-3">{g.label}</span><span className="mono tnum text-[10px] ink-3 ml-auto">{g.items.length}</span></div>
+                {g.items.map(it => <QueueItem key={it.id} it={it} active={it.id===selId} onClick={()=>setSelId(it.id)} />)}
+              </div>
+            ))}
+          </div>
+          <div className="border-t bd px-3.5 py-2 flex items-center justify-between lbl-s ink-3"><span className="flex items-center gap-1.5"><span className="keycap">E</span> done</span><span className="flex items-center gap-1.5"><span className="keycap">S</span> snooze</span><span className="flex items-center gap-1.5"><span className="keycap">⌘K</span> jump</span></div>
+        </div>
+
+        {/* focal pane */}
+        <div className="flex-1 min-w-0 rounded-lg surface border bd overflow-hidden flex flex-col" style={{ boxShadow:'var(--pulse-shadow-card)' }}>
+          {sel ? (sel.kind==='task' ? <TaskDetail key={sel.id} t={sel} /> : <DecisionDetail key={sel.id} d={sel} />) : null}
+        </div>
+      </div>
+      )}
+    </div>
+  );
+}
+function QueueItem({ it, active, onClick }) {
+  const isTask = it.kind==='task';
+  const displayStatus = (isTask && it.due && it.due.overdue) ? 'overdue' : it.status;
+  const [hover, setHover] = useState(false);
+  const stop = e => e.stopPropagation();
+  return (
+    <div role="button" tabIndex={0} onClick={onClick} onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
+      className="w-full text-left px-3.5 py-2.5 flex items-start gap-2.5 relative border-b bd cursor-pointer"
+      style={{ background: active?'var(--pulse-surface-raised)':(hover?'color-mix(in oklab, var(--pulse-ink) 3%, transparent)':'transparent'), transition:'background 120ms' }}>
+      {active && <span className="absolute left-0 top-0 bottom-0 w-0.5" style={{ background:'var(--pulse-rose)' }} />}
+      <span className="mt-0.5 flex-none" style={{ color: STATUS[displayStatus] ? STATUS[displayStatus].color : 'var(--pulse-ink-3)' }}><Ic n={isTask?STATUS_ICON[displayStatus]:'scale'} size={15} sw={2.2} /></span>
+      <div className="min-w-0 flex-1">
+        <div className="text-[12.5px] font-medium ink leading-snug line-clamp-2 pr-12">{it.title}</div>
+        <div className="flex items-center gap-2 mt-1">
+          <SourceTag source={it.source} label={false} />
+          {it.ai && it.ai.extracted && <span className="ai-chip" style={{ padding:'2px 5px' }}>AI</span>}
+          {isTask && it.due && <span className="lbl-s tnum" style={{ color: it.due.overdue?'var(--st-overdue)':'var(--pulse-ink-3)' }}>{it.due.label}</span>}
+          {!isTask && <span className="lbl-s" style={{ color:'var(--st-voting)' }}>needs vote</span>}
+        </div>
+      </div>
+      {/* hover quick-actions (PostHog row actions) */}
+      {hover && (
+        <div className="absolute right-2 top-1/2 flex items-center gap-1 scale-in" style={{ transform:'translateY(-50%)', background:'var(--pulse-surface-raised)', borderRadius:6, padding:2, boxShadow:'var(--pulse-shadow-card)' }} onClick={stop}>
+          <button className="qa-btn" title={isTask?'Mark done':'Approve'} aria-label={isTask?'Mark done':'Approve'}><Ic n="check" size={14} /></button>
+          <button className="qa-btn" title="Snooze" aria-label="Snooze"><Ic n="snooze" size={14} /></button>
+        </div>
+      )}
+    </div>
+  );
+}
+function CaughtUp() {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center text-center px-8 fade-up">
+      <span className="inline-flex items-center justify-center rounded-2xl mb-4" style={{ width:58, height:58, background:'color-mix(in oklab, var(--st-done) 12%, transparent)', color:'var(--st-done)' }}><Ic n="checkCircle" size={30} /></span>
+      <span className="lbl ink-3 mb-2">Queue clear</span>
+      <h3 className="text-[21px] font-bold ink mb-2 tracking-tight">You're caught up.</h3>
+      <p className="text-[13.5px] ink-2 mb-5 leading-relaxed" style={{ maxWidth:380 }}>Nothing needs you right now. Plan ahead with a decision, or let Pulse AI line up what's next.</p>
+      <div className="flex items-center gap-2">
+        <button className="inline-flex items-center gap-2 h-9 px-3.5 rounded-md text-[12.5px] font-semibold lift" style={{ background:'var(--pulse-rose)', color:'#fff' }}><Ic n="plus" size={15} /> New decision</button>
+        <button className="inline-flex items-center gap-2 h-9 px-3.5 rounded-md text-[12.5px] font-semibold surface border bd lift"><Ic n="sparkles" size={15} cls="pulse-rose-color" /> Ask Pulse AI</button>
+      </div>
+    </div>
+  );
+}
+function DetailScaffold({ children, foot }) {
+  return <><div className="flex-1 overflow-y-auto slide-r">{children}</div><div className="border-t bd px-5 py-3 flex items-center gap-2 flex-none surface-r">{foot}</div></>;
+}
+function SourceContext({ t }) {
+  if (!t.srcQuote) return null;
+  return (
+    <div className="rounded-md px-3.5 py-2.5 mb-5 surface-r border bd">
+      <div className="flex items-center gap-1.5 mb-1.5"><SourceTag source={t.source} /><span className="lbl-s ink-3">· {t.srcMeta}</span><span className="ml-auto lbl-s ink-3 inline-flex items-center gap-1 cursor-pointer hover:ink">Open <Ic n="arrowRight" size={11} /></span></div>
+      <p className="text-[12.5px] ink-2 italic leading-snug" style={{ borderLeft:'2px solid var(--pulse-border-strong)', paddingLeft:10 }}>“{t.srcQuote}”</p>
+    </div>
+  );
+}
+function TaskDetail({ t }) {
+  const displayStatus = (t.due && t.due.overdue) ? 'overdue' : t.status;
+  return (
+    <DetailScaffold foot={<><ActBtn icon="check" label="Mark done" primary /><ActBtn icon="user" label="Reassign" /><ActBtn icon="snooze" label="Snooze" /><div className="flex-1" /><ActBtn icon={SOURCES[t.source].icon} label={`Open ${SOURCES[t.source].label}`} /></>}>
+      <div className="px-6 pt-5 pb-6">
+        <div className="flex items-center gap-2 mb-3"><StatusPill status={displayStatus} /><PriorityTag p={t.priority} />{t.ai && t.ai.extracted && <AiChip>Extracted from {SOURCES[t.source].label}</AiChip>}<span className="ml-auto mono lbl-s ink-3">{t.id.toUpperCase()}-2026</span></div>
+        <h2 className="text-[21px] font-bold ink leading-tight tracking-tight mb-2">{t.title}</h2>
+        <p className="text-[14px] ink-2 leading-relaxed mb-5" style={{ maxWidth:620 }}>{t.desc}</p>
+        <SourceContext t={t} />
+        {t.blockedReason && (<div className="rounded-md px-3.5 py-2.5 mb-5 flex items-center gap-2.5" style={{ background:'color-mix(in oklab, var(--st-blocked) 8%, transparent)', border:'1px solid color-mix(in oklab, var(--st-blocked) 22%, transparent)' }}><Ic n="ban" size={15} cls="flex-none" /><span className="text-[12.5px]" style={{ color:'var(--st-blocked)' }}><strong>Blocked:</strong> {t.blockedReason}</span></div>)}
+
+        {/* property table (PostHog) */}
+        <div className="mb-6 border-y bd">
+          <Prop label="Assignee">{t.assignee ? <span className="flex items-center gap-2"><Avatar id={t.assignee} size={20} />{PEOPLE[t.assignee].name}</span> : 'Unassigned'}</Prop>
+          <Prop label="Due"><span className="mono tnum" style={{ color: t.due&&t.due.overdue?'var(--st-overdue)':'var(--pulse-ink)' }}>{t.due ? t.due.label : '—'}</span></Prop>
+          <Prop label="Source"><SourceTag source={t.source} /></Prop>
+          <Prop label="Priority">{t.priority==='low' ? <span className="ink-3 text-[12px]">Low</span> : <PriorityTag p={t.priority} />}</Prop>
+        </div>
+
+        {t.ai && (t.ai.score || t.ai.est || t.ai.blocks) && (
+          <div className="rounded-lg px-4 py-3.5 mb-6" style={{ background:'var(--pulse-coral-bg-08)', border:'1px solid var(--pulse-rose-soft)' }}>
+            <div className="flex items-center gap-2 mb-2.5"><AiChip>Pulse AI</AiChip><span className="lbl ink-3">Task intelligence</span></div>
+            <div className="grid grid-cols-3 gap-4">
+              {typeof t.ai.score==='number' && <div><div className="text-[22px] font-bold leading-none mb-1 serif" style={{ color:'var(--pulse-coral-fg)' }}>{t.ai.score}</div><div className="lbl-s ink-3">Priority score</div></div>}
+              {t.ai.est && <div><div className="text-[22px] font-bold leading-none mb-1 serif" style={{ color:'var(--pulse-coral-fg)' }}>{t.ai.est}</div><div className="lbl-s ink-3">Est. effort</div></div>}
+              {t.ai.blocks && <div><div className="text-[22px] font-bold leading-none mb-1 serif" style={{ color:'var(--pulse-coral-fg)' }}>{t.ai.blocks}</div><div className="lbl-s ink-3">Blocks tasks</div></div>}
+            </div>
+            <p className="text-[12.5px] mt-3 leading-snug" style={{ color:'var(--pulse-coral-fg)' }}>High urgency — overdue and on the billing critical path. Suggested next: finish the sandbox test, then hand the PDF step to Maria.</p>
+          </div>
+        )}
+
+        <div className="lbl ink-3 mb-2.5">Checklist</div>
+        <div className="space-y-1.5 mb-6">
+          {['Connect Stripe sandbox keys','Render invoice PDF','Wire email delivery','Regression test on staging'].map((s,i)=>(
+            <div key={i} className="flex items-center gap-2.5 text-[13px]"><span style={{ color: i<2?'var(--st-done)':'var(--pulse-ink-3)' }}><Ic n={i<2?'checkSquare':'square'} size={16} /></span><span className="ink-2" style={{ textDecoration: i<2?'line-through':'none', opacity: i<2?0.6:1 }}>{s}</span></div>
+          ))}
+        </div>
+
+        <div className="lbl ink-3 mb-3">Activity</div>
+        <ActivityLog rows={t.activity || []} />
+      </div>
+    </DetailScaffold>
+  );
+}
+function DecisionDetail({ d }) {
+  const VOTES = [ { k:'approve', label:'Approve', color:'var(--st-decided)' }, { k:'reject', label:'Reject', color:'var(--st-overdue)' }, { k:'concern', label:'Concern', color:'var(--st-voting)' }, { k:'abstain', label:'Abstain', color:'var(--st-todo)' } ];
+  return (
+    <DetailScaffold foot={<><span className="lbl ink-3 mr-1">Cast vote</span>{VOTES.map(v=>(<button key={v.k} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-[12.5px] font-semibold lift" style={{ background:`color-mix(in oklab, ${v.color} 12%, transparent)`, color:v.color }}>{v.label}</button>))}<div className="flex-1" /><ActBtn icon="bell" label="Remind" /></>}>
+      <div className="px-6 pt-5 pb-6">
+        <div className="flex items-center gap-2 mb-3"><StatusPill status={d.status} /><span className="lbl-s ink-3">{d.type}</span><SourceTag source={d.source} />{d.srcMeta && <span className="lbl-s ink-3">· {d.srcMeta}</span>}<span className="ml-auto mono lbl-s ink-3">{d.id.toUpperCase()}-2026</span></div>
+        <h2 className="text-[21px] font-bold ink leading-tight tracking-tight mb-2">{d.title}</h2>
+        <p className="text-[14px] ink-2 leading-relaxed mb-5" style={{ maxWidth:620 }}>{d.desc}</p>
+
+        <div className="mb-6 border-y bd">
+          <Prop label="Type">{d.type}</Prop>
+          <Prop label="Source"><SourceTag source={d.source} /></Prop>
+          <Prop label="Threshold"><span className="mono tnum">{d.votes.total} of {d.votes.needed} votes</span></Prop>
+          <Prop label="Proposed by"><span className="flex items-center gap-2"><Avatar id="fm" size={20} />You</span></Prop>
+        </div>
+
+        <div className="rounded-lg surface-r border bd px-4 py-3.5 mb-6">
+          <div className="flex items-center justify-between mb-3"><span className="lbl ink-2">Tally</span><span className="lbl-s ink-3 tnum">{d.votes.total} of {d.votes.needed} needed</span></div>
+          {[['Approve','approve','var(--st-decided)',d.votes.approve||0],['Concern','concern','var(--st-voting)',d.votes.concern||0],['Reject','reject','var(--st-overdue)',d.votes.reject||0]].map(([lab,k,c,n])=> n>0 && (
+            <div key={k} className="mb-2 last:mb-0"><div className="flex items-center justify-between mb-1"><span className="text-[12px] ink-2">{lab}</span><span className="mono tnum text-[11px] ink-3">{n}</span></div><div className="h-1.5 rounded-full overflow-hidden" style={{ background:'var(--pulse-border)' }}><div className="h-full rounded-full" style={{ width:`${(n/d.votes.total)*100}%`, background:c }} /></div></div>
+          ))}
+        </div>
+
+        <div className="rounded-lg px-4 py-3.5 mb-6" style={{ background:'var(--pulse-coral-bg-08)', border:'1px solid var(--pulse-rose-soft)' }}>
+          <div className="flex items-center gap-2 mb-2.5"><AiChip>Pulse AI</AiChip><span className="lbl ink-3">Decision intelligence</span><span className="ml-auto lbl-s px-1.5 py-1 rounded" style={{ background:`color-mix(in oklab, var(--st-voting) 14%, transparent)`, color:'var(--st-voting)' }}>{d.ai.risk} risk</span></div>
+          <p className="text-[12.5px] leading-snug" style={{ color:'var(--pulse-coral-fg)' }}>{d.ai.note}</p>
+          {d.ai.consensus==='forming' && <p className="text-[12.5px] leading-snug mt-2" style={{ color:'var(--pulse-coral-fg)' }}><strong>Consensus forming</strong> toward Approve — nudge the two outstanding voters to close it today.</p>}
+        </div>
+
+        <div className="lbl ink-3 mb-3">Activity</div>
+        <ActivityLog rows={d.activity || []} />
+      </div>
+    </DetailScaffold>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   ARCHIVE (same cockpit DNA + retrospective focal pane)
+   ════════════════════════════════════════════════════════════════════════════ */
+function ArchiveView({ tab, setTab, onCreate }) {
+  const [selId, setSelId] = useState(ARCHIVE[0].id);
+  const sel = ARCHIVE.find(i=>i.id===selId) || ARCHIVE[0];
+  const groups = useMemo(() => { const m = new Map(); ARCHIVE.forEach(it => { if (!m.has(it.group)) m.set(it.group, []); m.get(it.group).push(it); }); return [...m.entries()]; }, []);
+
+  return (
+    <div className="h-full flex flex-col canvas">
+      <SectionMasthead tab={tab} setTab={setTab} onCreate={onCreate} subtitle="Last 30 days" />
+      <FilterBar>
+        <button className="ph-filter"><Ic n="cal2" size={13} cls="ink-3" /> <span className="font-semibold ink">Last 30 days</span> <Ic n="chevDown" size={12} cls="ink-3" /></button>
+        <span style={{ width:1, height:18, background:'var(--pulse-border)' }} />
+        <button className="ph-filter add dashed"><Ic n="plus" size={12} /> Filter</button>
+        <div className="flex-1" />
+        {ARCHIVE_METRICS.map(m => (
+          <div key={m.label} className="flex items-center gap-2 px-2.5 h-7" style={{ borderLeft:'1px solid var(--pulse-border)' }}>
+            <Ic n={m.icon} size={13} style={{ color:m.tone }} />
+            <span className="text-[13px] font-bold ink tnum mono">{m.value}</span>
+            <span className="lbl-s ink-3">{m.label}</span>
+          </div>
+        ))}
+      </FilterBar>
+
+      <div className="flex-1 flex min-h-0 px-6 py-4 gap-4">
+        <div className="flex-none flex flex-col rounded-lg surface border bd overflow-hidden" style={{ width:344, boxShadow:'var(--pulse-shadow-card)' }}>
+          <div className="flex items-center justify-between px-3.5 py-2.5 border-b bd"><span className="lbl ink-2">Timeline</span><span className="lbl-s ink-3 tnum">{ARCHIVE.length} items</span></div>
+          <div className="flex-1 overflow-y-auto">
+            {groups.map(([label, items]) => (
+              <div key={label}>
+                <div className="qhead px-3.5 py-1.5 flex items-center gap-2 surface-r border-b bd sticky top-0"><Ic n="chevDown" size={11} cls="ink-3" /><span className="lbl ink-3">{label}</span></div>
+                {items.map(it => <ArchiveRow key={it.id} it={it} active={it.id===selId} onClick={()=>setSelId(it.id)} />)}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 min-w-0 rounded-lg surface border bd overflow-hidden flex flex-col" style={{ boxShadow:'var(--pulse-shadow-card)' }}>
+          {sel.kind==='decision' ? <ArchiveDecisionDetail key={sel.id} d={sel} /> : <ArchiveTaskDetail key={sel.id} t={sel} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+function ArchiveRow({ it, active, onClick }) {
+  const status = it.kind==='decision' ? 'decided' : it.status;
+  return (
+    <button onClick={onClick} className="w-full text-left px-3.5 py-2.5 flex items-start gap-2.5 row-hover relative border-b bd" style={{ background: active?'var(--pulse-surface-raised)':'transparent', opacity: status==='cancelled'?0.62:1 }}>
+      {active && <span className="absolute left-0 top-0 bottom-0 w-0.5" style={{ background:'var(--pulse-rose)' }} />}
+      <span className="mt-0.5 flex-none" style={{ color: STATUS[status].color }}><Ic n={it.kind==='decision'?'scale':STATUS_ICON[status]} size={15} sw={2.2} /></span>
+      <div className="min-w-0 flex-1">
+        <div className="text-[12.5px] font-medium ink leading-snug line-clamp-2">{it.title}</div>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="pill" style={{ background:`color-mix(in oklab, ${STATUS[status].color} 12%, transparent)`, color:STATUS[status].color, fontSize:'8.5px', padding:'2px 5px' }}>{STATUS[status].label}</span>
+          {it.kind==='decision' && it.retro && <span className="ai-chip" style={{ padding:'2px 5px' }} title="Outcome recorded">retro</span>}
+          {it.kind==='decision' && !it.retro && <span className="ai-chip muted" style={{ padding:'2px 5px' }}>look back</span>}
+          <span className="ml-auto lbl-s ink-3 tnum">{it.when}</span>
+        </div>
+      </div>
+    </button>
+  );
+}
+const RETRO_META = { good:{ label:'Worked well', icon:'thumbUp', color:'var(--st-done)' }, neutral:{ label:'Mixed', icon:'minus', color:'var(--st-voting)' }, poor:{ label:'Did not work', icon:'thumbDown', color:'var(--st-overdue)' } };
+function ArchiveDecisionDetail({ d }) {
+  return (
+    <DetailScaffold foot={<><ActBtn icon="rotate" label="Reopen decision" /><div className="flex-1" /><ActBtn icon="archive" label="Export" /></>}>
+      <div className="px-6 pt-5 pb-6">
+        <div className="flex items-center gap-2 mb-3"><StatusPill status="decided" /><span className="lbl-s ink-3">{d.type}</span><SourceTag source={d.source} /><span className="ml-auto mono lbl-s ink-3">{d.id.toUpperCase()}-2026</span></div>
+        <h2 className="text-[21px] font-bold ink leading-tight tracking-tight mb-3">{d.title}</h2>
+        <div className="rounded-md px-4 py-3 mb-5 flex items-start gap-2.5" style={{ background:'color-mix(in oklab, var(--st-decided) 8%, transparent)', border:'1px solid color-mix(in oklab, var(--st-decided) 22%, transparent)' }}><Ic n="checkCircle" size={17} cls="flex-none mt-0.5" /><div><div className="text-[13.5px] font-semibold ink">{d.final}</div><div className="lbl-s ink-3 mt-1">Decided {d.when} · by {PEOPLE[d.decidedBy].name}</div></div></div>
+        <div className="mb-6 border-y bd">
+          <Prop label="Decided by"><span className="flex items-center gap-2"><Avatar id={d.decidedBy} size={20} />{PEOPLE[d.decidedBy].name}</span></Prop>
+          <Prop label="When"><span className="mono">{d.when}</span></Prop>
+          <Prop label="Tasks spawned"><span className="inline-flex items-center gap-1.5"><Ic n="link" size={14} cls="ink-3" />{d.tasksLinked} tasks</span></Prop>
+        </div>
+        <div className="rounded-lg px-4 py-4" style={{ background:'var(--pulse-coral-bg-08)', border:'1px solid var(--pulse-rose-soft)' }}>
+          <div className="flex items-center gap-2 mb-3"><AiChip>Pulse AI</AiChip><span className="lbl ink-3">Look back</span></div>
+          {d.retro ? (<>
+            <div className="flex items-center gap-2 mb-2.5"><span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-semibold" style={{ background:`color-mix(in oklab, ${RETRO_META[d.retro.rating].color} 14%, transparent)`, color:RETRO_META[d.retro.rating].color }}><Ic n={RETRO_META[d.retro.rating].icon} size={14} />{RETRO_META[d.retro.rating].label}</span><span className="lbl-s ink-3">recorded {d.when}</span></div>
+            <p className="text-[13px] leading-relaxed" style={{ color:'var(--pulse-coral-fg)' }}>“{d.retro.text}”</p>
+          </>) : (<>
+            <p className="text-[12.5px] mb-3 leading-snug" style={{ color:'var(--pulse-coral-fg)' }}>How did this turn out? Recording the outcome trains better risk calls next time.</p>
+            <div className="flex items-center gap-2 mb-3">{Object.entries(RETRO_META).map(([k,m])=>(<button key={k} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-semibold surface border bd lift" style={{ color:m.color }}><Ic n={m.icon} size={14} />{m.label}</button>))}</div>
+            <div className="rounded-md surface border bd px-3 py-2 text-[12.5px] ink-3">What did you learn? What would you do differently…</div>
+          </>)}
+        </div>
+      </div>
+    </DetailScaffold>
+  );
+}
+function ArchiveTaskDetail({ t }) {
+  return (
+    <DetailScaffold foot={<><ActBtn icon="rotate" label="Reopen task" /><div className="flex-1" /><ActBtn icon={SOURCES[t.source].icon} label={`Open ${SOURCES[t.source].label}`} /></>}>
+      <div className="px-6 pt-5 pb-6">
+        <div className="flex items-center gap-2 mb-3"><StatusPill status={t.status} /><SourceTag source={t.source} /><span className="ml-auto mono lbl-s ink-3">{t.id.toUpperCase()}-2026</span></div>
+        <h2 className="text-[21px] font-bold ink leading-tight tracking-tight mb-4">{t.title}</h2>
+        <div className="mb-6 border-y bd">
+          <Prop label={t.status==='done'?'Completed by':'Cancelled by'}><span className="flex items-center gap-2"><Avatar id={t.assignee} size={20} />{PEOPLE[t.assignee].name}</span></Prop>
+          <Prop label="When"><span className="mono">{t.when}</span></Prop>
+          <Prop label="Cycle time"><span className="mono tnum">{t.cycle}</span></Prop>
+        </div>
+        {t.status==='cancelled'
+          ? <div className="rounded-md px-3.5 py-2.5 flex items-center gap-2.5" style={{ background:'color-mix(in oklab, var(--st-cancelled) 10%, transparent)', border:'1px solid var(--pulse-border)' }}><Ic n="x" size={15} cls="ink-3 flex-none" /><span className="text-[12.5px] ink-2">Cancelled — superseded by the Stripe Billing decision. No retro needed.</span></div>
+          : <div className="rounded-lg px-4 py-3.5" style={{ background:'var(--pulse-coral-bg-08)', border:'1px solid var(--pulse-rose-soft)' }}><div className="flex items-center gap-2 mb-2"><AiChip>Pulse AI</AiChip><span className="lbl ink-3">Note</span></div><p className="text-[12.5px] leading-snug" style={{ color:'var(--pulse-coral-fg)' }}>Closed in {t.cycle} — faster than your {SOURCES[t.source].label}-sourced median. Nice clip.</p></div>}
+      </div>
+    </DetailScaffold>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   CREATE OVERLAY (how decisions + tasks get made)
+   ════════════════════════════════════════════════════════════════════════════ */
+const CREATE_TABS = [ { id:'decision', label:'New decision', icon:'scale' }, { id:'task', label:'Quick task', icon:'checkSquare' }, { id:'ai', label:'Ask Pulse AI', icon:'sparkles' } ];
+function CreateOverlay({ onClose }) {
+  const [mode, setMode] = useState('decision');
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center" style={{ paddingTop:78 }}>
+      <div className="absolute inset-0 backdrop-in" style={{ background:'rgba(0,0,0,0.45)' }} onClick={onClose} />
+      <div className="relative scale-in rounded-xl surface overflow-hidden flex flex-col" style={{ width:760, maxHeight:'82vh', border:'1px solid var(--pulse-border)', boxShadow:'var(--pulse-shadow-modal)' }}>
+        <div className="flex items-center justify-between px-5 py-3.5 border-b bd flex-none">
+          <div className="flex items-center gap-3"><h2 className="text-[15px] font-bold ink">New</h2><div className="seg">{CREATE_TABS.map(t=>(<button key={t.id} className="seg-btn" data-on={mode===t.id} onClick={()=>setMode(t.id)}><Ic n={t.icon} size={13} />{t.label}</button>))}</div></div>
+          <button onClick={onClose} className="ink-3 hover:ink" aria-label="Close"><Ic n="x" size={18} /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto">{mode==='decision' && <CreateDecision />}{mode==='task' && <CreateTask />}{mode==='ai' && <CreateAI />}</div>
+      </div>
+    </div>
+  );
+}
+const WIZ_STEPS = ['Frame','Details','Tasks','Rhythm','Save'];
+function CreateDecision() {
+  const [frame, setFrame] = useState(null);
+  return (
+    <div className="px-5 py-5">
+      <ol className="flex items-center gap-1.5 mb-4">{WIZ_STEPS.map((s,i)=>(<li key={s} className="flex items-center gap-1.5"><span className="lbl-s" style={{ color: i===0?'var(--pulse-rose)':'var(--pulse-ink-3)' }}>{s}</span>{i<WIZ_STEPS.length-1 && <Ic n="chevRight" size={11} cls="ink-3" />}</li>))}</ol>
+      <div className="rounded-lg px-4 py-3 mb-4" style={{ background:'var(--pulse-coral-bg-08)', border:'1px solid var(--pulse-rose-soft)' }}>
+        <div className="flex items-center gap-2 mb-2"><AiChip>Pulse AI</AiChip><span className="lbl ink-3">Describe it — I'll pick the frame</span></div>
+        <div className="flex items-center gap-2"><input className="flex-1 h-9 px-3 rounded-md surface border bd text-[13px] ink" placeholder="e.g. We need to choose between PostHog and Amplitude for analytics…" /><button className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md text-[12.5px] font-semibold" style={{ background:'var(--pulse-rose)', color:'#fff' }}><Ic n="sparkles" size={14} /> Classify</button></div>
+      </div>
+      <div className="lbl ink-3 mb-2.5">Or pick a frame</div>
+      <div className="grid grid-cols-3 gap-2.5">
+        {FRAMES.map(f=>(<button key={f.id} onClick={()=>setFrame(f.id)} className="text-left rounded-lg p-3 surface border lift" style={{ borderColor: frame===f.id?'var(--pulse-rose)':'var(--pulse-border)', background: frame===f.id?'var(--pulse-rose-soft)':'var(--pulse-surface)' }}>
+          <span className="inline-flex items-center justify-center rounded-md mb-2" style={{ width:30, height:30, background:'var(--pulse-surface-raised)', color: frame===f.id?'var(--pulse-rose)':'var(--pulse-ink-2)' }}><Ic n={f.icon} size={16} /></span>
+          <div className="text-[13px] font-semibold ink mb-0.5">{f.label}</div><div className="text-[11.5px] ink-3 leading-snug">{f.blurb}</div></button>))}
+      </div>
+      <div className="flex items-center justify-between mt-5 pt-4 border-t bd"><span className="lbl-s ink-3">{frame ? `${FRAMES.find(f=>f.id===frame).label} selected` : 'Pick a frame to continue'}</span><button disabled={!frame} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-[12.5px] font-semibold" style={{ background: frame?'var(--pulse-rose)':'var(--pulse-surface-raised)', color: frame?'#fff':'var(--pulse-ink-3)', cursor: frame?'pointer':'default' }}>Details <Ic n="chevRight" size={13} /></button></div>
+    </div>
+  );
+}
+function CreateTask() {
+  return (
+    <div className="px-5 py-5 space-y-4">
+      <div><div className="lbl ink-3 mb-1.5">Title</div><input className="w-full h-10 px-3 rounded-md surface border bd text-[14px] ink" defaultValue="Send investor deck to Theo" /></div>
+      <div><div className="lbl ink-3 mb-1.5">Description</div><textarea rows={3} className="w-full px-3 py-2.5 rounded-md surface border bd text-[13px] ink resize-none" placeholder="Add detail (optional)…" /></div>
+      <div className="grid grid-cols-3 gap-3">
+        <div><div className="lbl ink-3 mb-1.5">Assignee</div><div className="flex items-center gap-2 h-10 px-3 rounded-md surface border bd"><Avatar id="fm" size={20} /><span className="text-[13px] ink">You</span><Ic n="chevDown" size={13} cls="ink-3 ml-auto" /></div></div>
+        <div><div className="lbl ink-3 mb-1.5">Due</div><div className="flex items-center gap-2 h-10 px-3 rounded-md surface border bd"><Ic n="cal2" size={14} cls="ink-3" /><span className="text-[13px] ink-2">Pick date</span></div></div>
+        <div><div className="lbl ink-3 mb-1.5">Priority</div><div className="flex items-center gap-1 h-10 px-1.5 rounded-md surface border bd">{['low','medium','high'].map(p=>(<span key={p} className="ptag" style={{ flex:1, textAlign:'center', padding:'5px 0', background: p==='medium'?'var(--pulse-surface-raised)':'transparent', color: p==='medium'?'var(--pulse-ink)':'var(--pulse-ink-3)', cursor:'pointer' }}>{p}</span>))}</div></div>
+      </div>
+      <div className="flex items-center justify-between pt-4 border-t bd"><span className="lbl-s ink-3 flex items-center gap-1.5"><span className="keycap">⌘</span><span className="keycap">⏎</span> to create</span><button className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-[12.5px] font-semibold" style={{ background:'var(--pulse-rose)', color:'#fff' }}><Ic n="plus" size={14} /> Create task</button></div>
+    </div>
+  );
+}
+function CreateAI() {
+  return (
+    <div className="px-5 py-5">
+      <div className="rounded-lg px-4 py-4 mb-4" style={{ background:'var(--pulse-coral-bg-08)', border:'1px solid var(--pulse-rose-soft)' }}><div className="flex items-center gap-2 mb-2.5"><AiChip>Pulse AI</AiChip><span className="lbl ink-3">Decision Mission</span></div><p className="text-[13px] leading-relaxed" style={{ color:'var(--pulse-coral-fg)' }}>Talk it through. I'll pull context from across your surfaces — Email, Messages, Meetings, Relay — frame the call, surface risks, and draft the tasks it spawns.</p></div>
+      <div className="lbl ink-3 mb-2">Start from</div>
+      <div className="space-y-2 mb-4">{['Should we keep the weekly all-hands or move async?','Which onboarding flow converts better — guided vs self-serve?','Pick the launch date for the v1 public beta'].map((s,i)=>(<button key={i} className="w-full text-left rounded-md px-3.5 py-2.5 surface border bd lift flex items-center gap-2.5"><Ic n="sparkles" size={14} cls="pulse-rose-color flex-none" /><span className="text-[13px] ink-2">{s}</span><Ic n="arrowRight" size={14} cls="ink-3 ml-auto" /></button>))}</div>
+      <div className="flex items-center gap-2"><input className="flex-1 h-10 px-3 rounded-md surface border bd text-[13px] ink" placeholder="Describe the decision you're facing…" /><button className="inline-flex items-center justify-center rounded-md" style={{ width:40, height:40, background:'var(--pulse-rose)', color:'#fff' }}><Ic n="send" size={16} /></button></div>
+    </div>
+  );
+}
+
+/* ════════ APP SHELL ════════ */
+const PG_VIEWS = [ { id:'triage', label:'Triage Cockpit', icon:'inbox' }, { id:'archive', label:'Archive', icon:'archive' }, { id:'create', label:'Create flow', icon:'plus' }, { id:'empty', label:'Caught up', icon:'checkCircle' } ];
+function App() {
+  const [tab, setTab] = useState('triage');
+  const [overlay, setOverlay] = useState(null);
+  const [demoEmpty, setDemoEmpty] = useState(false);
+  const [theme, setThemeState] = useState('dark');
+  const setTheme = t => { setThemeState(t); document.documentElement.setAttribute('data-theme', t); };
+  useEffect(()=>{ document.documentElement.setAttribute('data-theme', theme); }, []);
+  const setView = v => {
+    if (v==='create') { setOverlay('create'); return; }
+    if (v==='empty') { setTab('triage'); setOverlay(null); setDemoEmpty(true); return; }
+    setTab(v); setOverlay(null); setDemoEmpty(false);
+  };
+  const pickTab = t => { setTab(t); setDemoEmpty(false); };
+  const activeView = demoEmpty ? 'empty' : overlay==='create' ? 'create' : tab;
+
+  return (
+    <div className="h-screen flex flex-col">
+      <div className="pg-bar flex items-center px-4 gap-3 flex-none">
+        <div className="flex items-center gap-2 pr-3 mr-1 border-r bd"><span className="inline-flex items-center justify-center rounded-md" style={{ width:20, height:20, background:'var(--pulse-rose)' }}><Ic n="checkSquare" size={12} cls="text-white" /></span><span className="text-[12px] font-semibold ink">Decisions &amp; Tasks · Triage Cockpit</span><span className="lbl ink-3 ml-1">Playground</span></div>
+        <div className="flex items-center gap-1.5">{PG_VIEWS.map(p=>(<button key={p.id} className="pg-pill" data-view={p.id} data-active={activeView===p.id} onClick={()=>setView(p.id)}><Ic n={p.icon} size={14} /> <span>{p.label}</span></button>))}</div>
+        <div className="flex-1" />
+        <button className="theme-toggle" onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?'● DARK':'○ LIGHT'}</button>
+      </div>
+      <div className="flex-1 flex min-h-0">
+        <Sidebar theme={theme} setTheme={setTheme} />
+        <main className="flex-1 min-w-0 overflow-hidden">
+          {tab==='triage' ? <TriageView tab={tab} setTab={pickTab} onCreate={()=>setOverlay('create')} empty={demoEmpty} /> : <ArchiveView tab={tab} setTab={pickTab} onCreate={()=>setOverlay('create')} />}
+        </main>
+      </div>
+      {overlay==='create' && <CreateOverlay onClose={()=>setOverlay(null)} />}
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
