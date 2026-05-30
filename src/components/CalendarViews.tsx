@@ -764,9 +764,11 @@ export const WeekView: React.FC<ViewProps> = ({
 const TravelBufferChip: React.FC<{ info: BufferInfo | undefined }> = ({ info }) => {
   if (!info) return null;
   if (info.severity === 'comfortable') return null;
+  // Late = overdue tone (urgent status), NOT coral (reserved for AI signal).
+  // Status-Stays-Status Rule from DESIGN.md §2.
   const tone = info.severity === 'late'
-    ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
-    : 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800';
+    ? 'bg-[var(--pulse-tone-overdue-soft)] text-[var(--pulse-tone-overdue)] border-[var(--pulse-tone-overdue-soft)]'
+    : 'bg-[var(--pulse-tone-warning-soft)] text-[var(--pulse-tone-warning)] border-[var(--pulse-tone-warning-soft)]';
   return (
     <div
       className={`cal-day-event-buffer inline-flex items-center gap-1 px-1.5 py-0.5 mt-0.5 rounded-full text-[10px] font-medium border ${tone}`}

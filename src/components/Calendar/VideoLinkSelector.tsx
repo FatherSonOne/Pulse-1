@@ -136,10 +136,10 @@ export const VideoLinkSelector: React.FC<VideoLinkSelectorProps> = ({
             key={p.id}
             type="button"
             onClick={() => { void generate(p.id); }}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] ${
               selected === p.id
-                ? 'bg-rose-500 border-rose-500 text-white'
-                : 'bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border-[var(--pulse-border-strong)] text-[var(--pulse-ink-2)] hover:border-rose-300 dark:hover:border-rose-700 hover:text-rose-500'
+                ? 'bg-[var(--pulse-rose)] border-[var(--pulse-rose)] text-white'
+                : 'bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border-[var(--pulse-border-strong)] text-[var(--pulse-ink-2)] hover:border-[var(--pulse-rose-soft)] hover:text-[var(--pulse-rose)]'
             }`}
           >
             {p.icon}
@@ -170,7 +170,7 @@ export const VideoLinkSelector: React.FC<VideoLinkSelectorProps> = ({
                 type="button"
                 onClick={handleCopy}
                 title="Copy link"
-                className="flex-shrink-0 p-1.5 text-zinc-400 hover:text-rose-500 transition rounded"
+                className="flex-shrink-0 p-1.5 text-zinc-400 hover:text-[var(--pulse-rose)] transition rounded"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
@@ -178,7 +178,7 @@ export const VideoLinkSelector: React.FC<VideoLinkSelectorProps> = ({
                 type="button"
                 onClick={() => { void generate(selected); }}
                 title="Regenerate"
-                className="flex-shrink-0 p-1.5 text-zinc-400 hover:text-rose-500 transition rounded"
+                className="flex-shrink-0 p-1.5 text-zinc-400 hover:text-[var(--pulse-rose)] transition rounded"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>

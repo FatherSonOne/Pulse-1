@@ -152,13 +152,13 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               onChange={(e) => props.onNaturalLanguageChange(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && props.onNaturalLanguageSubmit()}
               placeholder="Try: 'Schedule a call with John tomorrow at 2pm'"
-              className="w-full bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border-strong)] rounded-xl px-4 py-3 pr-12 text-sm outline-none focus:ring-2 focus:ring-rose-500"
+              className="w-full bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border-strong)] rounded-xl px-4 py-3 pr-12 text-sm outline-none focus:ring-2 focus:ring-[var(--pulse-rose)]"
             />
             <button
               onClick={props.onNaturalLanguageSubmit}
               disabled={props.aiLoading || !props.naturalLanguageInput.trim()}
               aria-label="Submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-rose-500 text-white rounded-lg hover:bg-rose-600 disabled:opacity-50 transition"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-[var(--pulse-rose)] text-white rounded-lg hover:bg-[var(--pulse-rose-deep)] disabled:opacity-50 transition"
             >
               {props.aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
             </button>
@@ -176,7 +176,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
             <button
               key={tab.id}
               onClick={() => props.onTabChange(tab.id as typeof props.aiPanelTab)}
-              className={`flex-1 px-3 py-3 font-mono text-[10px] tracking-[0.1em] uppercase flex items-center justify-center gap-1.5 transition ${props.aiPanelTab === tab.id ? 'text-rose-600 dark:text-rose-400 border-b-2 border-rose-500 bg-rose-500/5 dark:bg-rose-500/10' : 'text-zinc-500 hover:text-[var(--pulse-ink)] border-b-2 border-transparent'}`}
+              className={`flex-1 px-3 py-3 font-mono text-[10px] tracking-[0.1em] uppercase flex items-center justify-center gap-1.5 transition ${props.aiPanelTab === tab.id ? 'text-[var(--pulse-rose-text)] border-b-2 border-[var(--pulse-rose)] bg-[var(--pulse-rose-softer)]' : 'text-zinc-500 hover:text-[var(--pulse-ink)] border-b-2 border-transparent'}`}
             >
               <i className={`fa-solid ${tab.icon}`}></i>
               {tab.label}
@@ -188,7 +188,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {props.aiLoading && (
             <div className="flex items-center justify-center py-8">
-              <div className="flex items-center gap-3 text-rose-500">
+              <div className="flex items-center gap-3 text-[var(--pulse-rose)]">
                 <Loader2 className="animate-spin text-xl" />
                 <span className="font-mono text-[11px] tracking-[0.1em] uppercase">Analyzing calendar</span>
               </div>
@@ -284,7 +284,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="font-mono text-[11px] tracking-wider font-semibold text-emerald-600 dark:text-emerald-400" style={{ fontVariantNumeric: 'tabular-nums' }}>{suggestion.score}%</span>
-                          <Plus className="w-4 h-4 text-zinc-400 group-hover:text-rose-500 transition" />
+                          <Plus className="w-4 h-4 text-zinc-400 group-hover:text-[var(--pulse-rose)] transition" />
                         </div>
                       </button>
                     ))}
@@ -313,7 +313,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                         </div>
                         <button
                           onClick={() => props.onAddFocusBlock(block)}
-                          className="px-3 py-1.5 bg-rose-500 text-white font-mono text-[11px] tracking-[0.1em] uppercase rounded-lg hover:bg-rose-600 transition"
+                          className="px-3 py-1.5 bg-[var(--pulse-rose)] text-white font-mono text-[11px] tracking-[0.1em] uppercase rounded-lg hover:bg-[var(--pulse-rose-deep)] transition"
                         >
                           Add
                         </button>
@@ -347,7 +347,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                         {conflict.suggestedResolutions[0] && (
                           <button
                             onClick={() => props.onSmartReschedule(conflict.conflictingEvents[0])}
-                            className="font-mono text-[11px] tracking-[0.05em] text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-semibold"
+                            className="font-mono text-[11px] tracking-[0.05em] text-[var(--pulse-rose-text)] hover:text-[var(--pulse-rose-deep)] font-semibold"
                           >
                             {conflict.suggestedResolutions[0].description} →
                           </button>
@@ -385,7 +385,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                 <AIProvenanceChip vendor="CLAUDE" type="INSIGHTS" />
                 <button
                   onClick={props.onAnalyzeRelationships}
-                  className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 hover:text-rose-500 dark:hover:text-rose-400 transition flex items-center gap-1.5"
+                  className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 hover:text-[var(--pulse-rose)] transition flex items-center gap-1.5"
                 >
                   <RefreshCw className="w-3 h-3" />
                   Refresh
@@ -423,7 +423,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                       {insight.suggestedActions.length > 0 && (
                         <button
                           onClick={() => props.onOpenInviteModal(insight.contact)}
-                          className="mt-2 font-mono text-[11px] tracking-[0.05em] text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-semibold flex items-center gap-1.5"
+                          className="mt-2 font-mono text-[11px] tracking-[0.05em] text-[var(--pulse-rose-text)] hover:text-[var(--pulse-rose-deep)] font-semibold flex items-center gap-1.5"
                         >
                           <CalendarPlus className="w-3 h-3" />
                           Schedule catch-up →
@@ -443,7 +443,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                 <AIProvenanceChip vendor="CLAUDE" type="ANALYTICS" />
                 <button
                   onClick={props.onGenerateAnalytics}
-                  className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 hover:text-rose-500 dark:hover:text-rose-400 transition flex items-center gap-1.5"
+                  className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 hover:text-[var(--pulse-rose)] transition flex items-center gap-1.5"
                 >
                   <RefreshCw className="w-3 h-3" />
                   Refresh
@@ -516,7 +516,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                 <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500">Your Goals</h4>
                 <button
                   onClick={() => props.onOpenGoalModal(null)}
-                  className="font-mono text-[11px] tracking-[0.1em] uppercase text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-semibold flex items-center gap-1"
+                  className="font-mono text-[11px] tracking-[0.1em] uppercase text-[var(--pulse-rose-text)] hover:text-[var(--pulse-rose-deep)] font-semibold flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> Add Goal
                 </button>
@@ -668,7 +668,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               )}
             </div>
             <div className="p-4 border-t border-[var(--pulse-border)]">
-              <button onClick={props.onCloseMeetingPrep} className="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-mono text-[11px] tracking-[0.1em] uppercase font-semibold transition">
+              <button onClick={props.onCloseMeetingPrep} className="w-full py-2.5 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white rounded-lg font-mono text-[11px] tracking-[0.1em] uppercase font-semibold transition">
                 Done
               </button>
             </div>
@@ -713,7 +713,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="font-mono text-[11px] tracking-wider font-semibold text-emerald-600 dark:text-emerald-400" style={{ fontVariantNumeric: 'tabular-nums' }}>{option.availabilityScore}%</span>
-                        <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-rose-500 transition" />
+                        <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-[var(--pulse-rose)] transition" />
                       </div>
                     </div>
                   </button>
@@ -761,7 +761,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                   defaultValue={props.editingGoal?.title}
                   required
                   placeholder="e.g., Deep Work"
-                  className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-3 text-sm text-[var(--pulse-ink)] outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                  className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-3 text-sm text-[var(--pulse-ink)] outline-none focus:ring-2 focus:ring-[var(--pulse-rose)] focus:border-transparent transition"
                 />
               </div>
               <div>
@@ -772,7 +772,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                   defaultValue={props.editingGoal?.category}
                   required
                   placeholder="e.g., focus, meetings, client"
-                  className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-3 text-sm text-[var(--pulse-ink)] outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                  className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-3 text-sm text-[var(--pulse-ink)] outline-none focus:ring-2 focus:ring-[var(--pulse-rose)] focus:border-transparent transition"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -785,7 +785,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                     required
                     min="1"
                     max="40"
-                    className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-3 text-sm text-[var(--pulse-ink)] outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                    className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-3 text-sm text-[var(--pulse-ink)] outline-none focus:ring-2 focus:ring-[var(--pulse-rose)] focus:border-transparent transition"
                     style={{ fontVariantNumeric: 'tabular-nums' }}
                   />
                 </div>
@@ -794,7 +794,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                   <select
                     name="priority"
                     defaultValue={props.editingGoal?.priority || 1}
-                    className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-3 text-sm text-[var(--pulse-ink)] outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                    className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-3 text-sm text-[var(--pulse-ink)] outline-none focus:ring-2 focus:ring-[var(--pulse-rose)] focus:border-transparent transition"
                   >
                     <option value="1">High</option>
                     <option value="2">Medium</option>
@@ -808,7 +808,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                   {EVENT_COLORS.map(color => (
                     <label key={color.id} className="cursor-pointer">
                       <input type="radio" name="color" value={color.class} defaultChecked={props.editingGoal?.color === color.class || (!props.editingGoal && color.id === 'blue')} className="sr-only peer" />
-                      <div className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ring-transparent peer-checked:ring-rose-500 dark:ring-offset-zinc-900`}></div>
+                      <div className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ring-transparent peer-checked:ring-[var(--pulse-rose)] dark:ring-offset-zinc-900`}></div>
                     </label>
                   ))}
                 </div>
@@ -829,7 +829,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                   <button type="button" onClick={props.onCloseGoalModal} className="px-4 py-2 font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 hover:text-[var(--pulse-ink)] transition">
                     Cancel
                   </button>
-                  <button type="submit" className="px-5 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-mono text-[11px] tracking-[0.1em] uppercase font-semibold transition">
+                  <button type="submit" className="px-5 py-2 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white rounded-lg font-mono text-[11px] tracking-[0.1em] uppercase font-semibold transition">
                     {props.editingGoal ? 'Save' : 'Create'}
                   </button>
                 </div>

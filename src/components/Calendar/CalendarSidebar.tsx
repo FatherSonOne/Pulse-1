@@ -74,10 +74,15 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
   showFreeTimeFinder, setShowFreeTimeFinder, freeTimeSlots,
   setNewEventDate, setNewEventTime, setShowEventModal,
 }) => {
+  // User-pickable calendar accent palette.
+  // Excludes the two brand-reserved hexes per DESIGN.md:
+  //   #f43f5e (rose-pulse) — coral is AI signal only (Coral-As-Signal Rule)
+  //   #10b981 (status-decided) — status hue (Status-Stays-Status Rule)
+  // Pulse keeps 10 generic accents that don't conflict with reserved roles.
   const CAL_PALETTE = [
     '#ef4444', '#f97316', '#eab308', '#22c55e',
     '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899',
-    '#6b7280', '#0ea5e9', '#10b981', '#f43f5e',
+    '#6b7280', '#0ea5e9',
   ];
 
   return (
@@ -89,7 +94,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
       {/* Resize Handle */}
       <div
         onMouseDown={handleMouseDown}
-        className={`absolute right-0 top-0 bottom-0 w-2 cursor-col-resize transition ${isResizing ? 'bg-rose-400/50' : 'bg-transparent hover:bg-rose-400/30'}`}
+        className={`absolute right-0 top-0 bottom-0 w-2 cursor-col-resize transition ${isResizing ? 'bg-[var(--pulse-rose-glow)]' : 'bg-transparent hover:bg-[var(--pulse-rose-soft)]'}`}
       />
 
       {/* My Calendars */}
@@ -117,7 +122,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
             </span>
             <button
               onClick={() => setShowCreateCalendarModal(true)}
-              className="text-rose-400 hover:text-rose-500 transition flex-shrink-0"
+              className="text-[var(--pulse-rose-bright)] hover:text-[var(--pulse-rose)] transition flex-shrink-0"
               title="Create New Calendar"
             >
               <Plus className="text-[10px]" />
@@ -132,7 +137,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
                   <div className="flex items-center gap-2 group">
                     <button
                       onClick={(e) => { e.stopPropagation(); setColorPickerOpenFor(isPickerOpen ? null : cal.id); }}
-                      className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-transparent hover:ring-zinc-300 dark:hover:ring-zinc-600 transition focus:outline-none focus-visible:ring-rose-400"
+                      className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-transparent hover:ring-zinc-300 dark:hover:ring-zinc-600 transition focus:outline-none focus-visible:ring-[var(--pulse-rose)]"
                       style={{ backgroundColor: dotColor }}
                       aria-label={`Change color for ${cal.summary}`}
                       title="Change calendar color"
@@ -160,7 +165,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
                         <button
                           key={hex}
                           onClick={() => setCalendarColor(cal.id, hex)}
-                          className={`w-5 h-5 rounded-full transition hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-rose-400 ${dotColor === hex ? 'ring-2 ring-offset-1 ring-zinc-700 dark:ring-white' : ''}`}
+                          className={`w-5 h-5 rounded-full transition hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--pulse-rose)] ${dotColor === hex ? 'ring-2 ring-offset-1 ring-zinc-700 dark:ring-white' : ''}`}
                           style={{ backgroundColor: hex }}
                           aria-label={hex}
                         />
@@ -221,7 +226,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowTeamModal(true)}
-              className="text-rose-400 hover:text-rose-500 transition"
+              className="text-[var(--pulse-rose-bright)] hover:text-[var(--pulse-rose)] transition"
               title="Create New Team"
             >
               <Plus className="text-[10px]" />
@@ -244,7 +249,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
             aria-label="Select team"
             value={selectedTeamId}
             onChange={(e) => setSelectedTeamId(e.target.value)}
-            className="w-full mb-4 bg-white dark:bg-zinc-800 border border-[var(--pulse-border-strong)] rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-rose-400 transition"
+            className="w-full mb-4 bg-white dark:bg-zinc-800 border border-[var(--pulse-border-strong)] rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--pulse-rose)] focus:border-[var(--pulse-rose)] transition"
           >
             {teams.map(team => (
               <option key={team.id} value={team.id}>{team.name}</option>
@@ -259,7 +264,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
               <p className="text-xs text-zinc-500">No team members yet</p>
               <button
                 onClick={() => openEditTeam(selectedTeam!)}
-                className="text-xs text-rose-400 hover:text-rose-500 mt-2"
+                className="text-xs text-[var(--pulse-rose-text)] hover:text-[var(--pulse-rose-deep)] mt-2"
               >
                 Add members
               </button>
@@ -303,7 +308,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
                         setInviteContact(contact);
                         setShowInviteModal(true);
                       }}
-                      className="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-lg bg-rose-500 text-white hover:bg-rose-600 transition flex-shrink-0"
+                      className="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-lg bg-[var(--pulse-rose)] text-white hover:bg-[var(--pulse-rose-deep)] transition flex-shrink-0"
                       title="Schedule meeting with this contact"
                     >
                       <CalendarPlus className="text-[10px]" />
@@ -320,7 +325,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
                   onClick={() => setShowFreeTimeFinder(f => !f)}
                   className={`mt-1 w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition ${
                     showFreeTimeFinder
-                      ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30'
+                      ? 'bg-[var(--pulse-rose-soft)] text-[var(--pulse-rose-text)] border border-[var(--pulse-rose-glow)]'
                       : 'border border-transparent text-[var(--pulse-ink-3)] hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-white'
                   }`}
                 >
@@ -357,7 +362,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
                               setShowEventModal(true);
                             }}
                           >
-                            <div className="text-[11px] font-medium text-[var(--pulse-ink-2)] group-hover:text-rose-600 dark:group-hover:text-rose-400 transition">
+                            <div className="text-[11px] font-medium text-[var(--pulse-ink-2)] group-hover:text-[var(--pulse-rose-text)] transition">
                               {fmt(slot.start)} – {fmt(slot.end)}
                             </div>
                             <div className="text-[10px] text-[var(--pulse-ink-3)]">

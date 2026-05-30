@@ -114,17 +114,17 @@ const CNode: React.FC<CNodeProps> = ({ comment, replies = [], currentUserId, onR
           <p className="text-xs text-zinc-400 italic">[Comment deleted]</p>
         ) : editMode ? (
           <div className="space-y-1.5">
-            <textarea value={editBody} onChange={e => setEditBody(e.target.value)} rows={2} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border-strong)] rounded-lg px-2.5 py-1.5 text-sm dark:text-zinc-200 outline-none focus:border-rose-400 resize-none transition" />
+            <textarea value={editBody} onChange={e => setEditBody(e.target.value)} rows={2} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border-strong)] rounded-lg px-2.5 py-1.5 text-sm dark:text-zinc-200 outline-none focus:border-[var(--pulse-rose)] resize-none transition" />
             <div className="flex gap-2">
               <button type="button" onClick={() => setEditMode(false)} className="text-xs text-zinc-400 hover:text-zinc-600 transition">Cancel</button>
-              <button type="button" onClick={() => { void onEdit(comment.id, editBody.trim()); setEditMode(false); }} className="text-xs text-rose-500 font-medium hover:text-rose-400 transition">Save</button>
+              <button type="button" onClick={() => { void onEdit(comment.id, editBody.trim()); setEditMode(false); }} className="text-xs text-[var(--pulse-rose)] font-medium hover:text-[var(--pulse-rose-bright)] transition">Save</button>
             </div>
           </div>
         ) : (
           <p className="text-sm text-[var(--pulse-ink-2)] leading-relaxed">{renderBody(comment.body)}</p>
         )}
         {!isDeleted && depth === 0 && (
-          <button type="button" onClick={() => setReplyOpen(o => !o)} className="mt-1 flex items-center gap-1 text-[10px] text-zinc-400 hover:text-rose-500 transition font-medium">
+          <button type="button" onClick={() => setReplyOpen(o => !o)} className="mt-1 flex items-center gap-1 text-[10px] text-zinc-400 hover:text-[var(--pulse-rose)] transition font-medium">
             <CornerDownRight className="w-3 h-3" /> Reply
           </button>
         )}
@@ -132,9 +132,9 @@ const CNode: React.FC<CNodeProps> = ({ comment, replies = [], currentUserId, onR
           <div className="mt-2 flex gap-2">
             <textarea rows={2} placeholder="Write a reply..." value={replyBody} onChange={e => setReplyBody(e.target.value)}
               onKeyDown={e => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { void onReply(comment.id, replyBody.trim()); setReplyBody(''); setReplyOpen(false); } }}
-              className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border-strong)] rounded-lg px-2.5 py-1.5 text-sm dark:text-zinc-200 outline-none focus:border-rose-400 resize-none transition" autoFocus />
+              className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border-strong)] rounded-lg px-2.5 py-1.5 text-sm dark:text-zinc-200 outline-none focus:border-[var(--pulse-rose)] resize-none transition" autoFocus />
             <button type="button" onClick={() => { void onReply(comment.id, replyBody.trim()); setReplyBody(''); setReplyOpen(false); }}
-              disabled={!replyBody.trim()} className="self-end p-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 disabled:opacity-40 transition">
+              disabled={!replyBody.trim()} className="self-end p-2 bg-[var(--pulse-rose)] text-white rounded-lg hover:bg-[var(--pulse-rose-deep)] disabled:opacity-40 transition">
               <Send className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -208,8 +208,8 @@ export const EventCommentThread: React.FC<EventCommentThreadProps> = ({ eventId,
         <div className="flex gap-2 items-end">
           <textarea rows={2} placeholder="Write a comment... (Cmd+Enter to send)" value={newBody} onChange={e => setNewBody(e.target.value)}
             onKeyDown={e => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { void submit(); } }}
-            className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-xl px-3 py-2.5 text-sm dark:text-zinc-200 outline-none focus:border-rose-400 resize-none transition" />
-          <button type="button" onClick={() => { void submit(); }} disabled={sending || !newBody.trim()} className="p-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition disabled:opacity-40 shadow-sm">
+            className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-xl px-3 py-2.5 text-sm dark:text-zinc-200 outline-none focus:border-[var(--pulse-rose)] resize-none transition" />
+          <button type="button" onClick={() => { void submit(); }} disabled={sending || !newBody.trim()} className="p-2.5 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white rounded-xl transition disabled:opacity-40 shadow-sm">
             {sending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>

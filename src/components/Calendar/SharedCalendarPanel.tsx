@@ -70,7 +70,7 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
               onChange={e => setName(e.target.value)}
               placeholder="e.g., Marketing Calendar"
               required
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-[var(--pulse-rose)] transition"
             />
           </div>
           <div>
@@ -81,7 +81,7 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`w-7 h-7 rounded-full transition ring-offset-2 ${color === c ? 'ring-2 ring-rose-500' : 'ring-transparent hover:scale-110'}`}
+                  className={`w-7 h-7 rounded-full transition ring-offset-2 ${color === c ? 'ring-2 ring-[var(--pulse-rose)]' : 'ring-transparent hover:scale-110'}`}
                   style={{ backgroundColor: c }}
                   aria-label={c}
                 />
@@ -95,7 +95,7 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
               value={description}
               onChange={e => setDesc(e.target.value)}
               placeholder="What's this calendar for?"
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-rose-400 transition"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-[var(--pulse-rose)] transition"
             />
           </div>
           <div className="flex gap-3 pt-2">
@@ -105,7 +105,7 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
             <button
               type="submit"
               disabled={saving || !name.trim()}
-              className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
+              className="flex-1 py-2 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
             >
               {saving ? 'Creating…' : 'Create'}
             </button>
@@ -179,7 +179,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
           <h3 className="text-[10px] lg:text-xs font-bold text-zinc-400 uppercase tracking-widest">Team Calendars</h3>
           <button
             onClick={() => setShowCreate(true)}
-            className="text-rose-400 hover:text-rose-500 transition flex-shrink-0"
+            className="text-[var(--pulse-rose-bright)] hover:text-[var(--pulse-rose)] transition flex-shrink-0"
             title="Create Team Calendar"
           >
             <Plus className="w-3 h-3" />
@@ -201,7 +201,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
         <h3 className="text-[10px] lg:text-xs font-bold text-zinc-400 uppercase tracking-widest">Team Calendars</h3>
         <button
           onClick={() => setShowCreate(true)}
-          className="text-rose-400 hover:text-rose-500 transition flex-shrink-0"
+          className="text-[var(--pulse-rose-bright)] hover:text-[var(--pulse-rose)] transition flex-shrink-0"
           title="Create Team Calendar"
         >
           <Plus className="w-3 h-3" />
@@ -273,7 +273,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
               className="flex-1 px-2 py-1 text-xs bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border-strong)] rounded"
               autoFocus
             />
-            <button type="button" onClick={handleSaveEdit} disabled={editSaving || !editName.trim()} className="px-2 py-1 text-xs bg-rose-500 text-white rounded disabled:opacity-50">
+            <button type="button" onClick={handleSaveEdit} disabled={editSaving || !editName.trim()} className="px-2 py-1 text-xs bg-[var(--pulse-rose)] text-white rounded disabled:opacity-50">
               {editSaving ? '…' : 'Save'}
             </button>
             <button type="button" onClick={() => setEditingCalId(null)} title="Cancel rename" className="px-2 py-1 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">

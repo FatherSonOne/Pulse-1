@@ -88,7 +88,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                       key={color.id}
                       type="button"
                       onClick={() => setNewTeamColor(color.class)}
-                      className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ${newTeamColor === color.class ? 'ring-rose-500' : 'ring-transparent'}`}
+                      className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ${newTeamColor === color.class ? 'ring-[var(--pulse-rose)]' : 'ring-transparent'}`}
                     />
                   ))}
                 </div>
@@ -241,7 +241,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                 <button type="button" onClick={() => { setShowInviteModal(false); setInviteContact(null); }} className="px-4 py-2 text-zinc-500 hover:text-[var(--pulse-ink)] transition">
                   Cancel
                 </button>
-                <button type="submit" className="px-5 py-2 bg-rose-500 text-white rounded-lg text-sm font-bold hover:bg-rose-600 transition flex items-center gap-2">
+                <button type="submit" className="px-5 py-2 bg-[var(--pulse-rose)] text-white rounded-lg text-sm font-bold hover:bg-[var(--pulse-rose-deep)] transition flex items-center gap-2">
                   <Send />
                   Send Invite
                 </button>
@@ -293,7 +293,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
               <button
                 onClick={handleCreateGoogleCalendar}
                 disabled={creatingCalendar || !newCalendarName.trim()}
-                className="px-5 py-2 bg-rose-500 text-white rounded-lg text-sm font-bold hover:bg-rose-600 transition flex items-center gap-2 disabled:opacity-50"
+                className="px-5 py-2 bg-[var(--pulse-rose)] text-white rounded-lg text-sm font-bold hover:bg-[var(--pulse-rose-deep)] transition flex items-center gap-2 disabled:opacity-50"
               >
                 {creatingCalendar ? (
                   <>

@@ -112,7 +112,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
           const isPast = date < today && !isToday;
 
           return (
-            <div key={dateKey} className={isToday ? 'bg-rose-500/[0.04] dark:bg-rose-500/[0.06]' : ''}>
+            <div key={dateKey} className={isToday ? 'bg-[var(--pulse-rose-softer)]' : ''}>
               {/* Date Header — today is signaled by the rose pill on the date number, not a side-stripe. */}
               <div
                 className="sticky top-[57px] z-[9] px-4 py-3 bg-zinc-50 dark:bg-zinc-900/95 border-b border-zinc-200 dark:border-zinc-800 backdrop-blur-sm cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -121,12 +121,12 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`text-center ${isPast ? 'text-zinc-400' : 'text-zinc-900 dark:text-white'}`}>
-                      <div className={`font-mono text-[10px] tracking-[0.1em] uppercase font-semibold ${isToday ? 'text-rose-600 dark:text-rose-400' : ''}`}>
+                      <div className={`font-mono text-[10px] tracking-[0.1em] uppercase font-semibold ${isToday ? 'text-[var(--pulse-rose-text)]' : ''}`}>
                         {WEEKDAYS[date.getDay()].slice(0, 3)}
                       </div>
                       <div
                         className={isToday
-                          ? 'text-2xl font-semibold bg-rose-500 text-white rounded-full w-10 h-10 flex items-center justify-center mt-0.5'
+                          ? 'text-2xl font-semibold bg-[var(--pulse-rose)] text-white rounded-full w-10 h-10 flex items-center justify-center mt-0.5'
                           : 'text-2xl font-semibold mt-0.5'}
                         style={{ fontVariantNumeric: 'tabular-nums' }}
                       >
@@ -134,7 +134,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                       </div>
                     </div>
                     <div>
-                      <div className={`text-sm font-semibold ${isToday ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-900 dark:text-white'}`}>
+                      <div className={`text-sm font-semibold ${isToday ? 'text-[var(--pulse-rose-text)]' : 'text-zinc-900 dark:text-white'}`}>
                         {isToday ? 'Today' : WEEKDAYS[date.getDay()]}
                       </div>
                       <div className="font-mono text-[10px] tracking-[0.05em] uppercase text-zinc-500 dark:text-zinc-400" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -250,10 +250,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                   onClick={() => onDateClick?.(date)}
                   className="w-full px-4 py-5 flex items-center gap-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition group"
                 >
-                  <div className="w-8 h-8 rounded-full border-2 border-dashed border-zinc-200 dark:border-zinc-700 flex items-center justify-center group-hover:border-rose-400 dark:group-hover:border-rose-400/60 transition">
-                    <Plus className="w-3 h-3 text-zinc-300 dark:text-zinc-600 group-hover:text-rose-500 transition" />
+                  <div className="w-8 h-8 rounded-full border-2 border-dashed border-zinc-200 dark:border-zinc-700 flex items-center justify-center group-hover:border-[var(--pulse-rose-bright)] transition">
+                    <Plus className="w-3 h-3 text-zinc-300 dark:text-zinc-600 group-hover:text-[var(--pulse-rose)] transition" />
                   </div>
-                  <span className="text-sm text-zinc-400 dark:text-zinc-600 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition">
+                  <span className="text-sm text-zinc-400 dark:text-zinc-600 group-hover:text-[var(--pulse-rose-text)] transition">
                     No events. Tap to add one.
                   </span>
                 </button>
@@ -281,7 +281,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
           {/* Primary CTA — coral, the only solid signal at rest */}
           <button
             onClick={() => onDateClick?.(new Date())}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-mono text-[11px] tracking-[0.1em] uppercase font-semibold rounded-xl shadow-[0_2px_12px_rgba(244,63,94,0.25)] transition active:scale-95"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white font-mono text-[11px] tracking-[0.1em] uppercase font-semibold rounded-xl shadow-[0_2px_12px_rgba(244,63,94,0.25)] transition active:scale-95"
           >
             <Plus className="w-3.5 h-3.5" />
             Add first event

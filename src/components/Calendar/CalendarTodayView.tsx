@@ -92,8 +92,8 @@ const WeekStrip: React.FC<{ focusDate: Date; events: CalendarEvent[]; onPick: (d
                 background: isFocus ? 'rgba(244,63,94,0.06)' : 'transparent',
               }}
             >
-              <div className={`font-mono text-[9px] tracking-[0.12em] ${isToday ? 'text-rose-500' : 'text-zinc-500 dark:text-zinc-400'}`}>{DOW3[d.getDay()]}</div>
-              <div className={`text-[15px] mt-0.5 ${isFocus ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-zinc-900 dark:text-white'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>{d.getDate()}</div>
+              <div className={`font-mono text-[9px] tracking-[0.12em] ${isToday ? 'text-[var(--pulse-rose)]' : 'text-zinc-500 dark:text-zinc-400'}`}>{DOW3[d.getDay()]}</div>
+              <div className={`text-[15px] mt-0.5 ${isFocus ? 'text-[var(--pulse-rose-text)] font-semibold' : 'text-zinc-900 dark:text-white'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>{d.getDate()}</div>
               <div className="flex items-center justify-center gap-0.5 mt-1 h-1.5">
                 {Array.from({ length: Math.min(count, 4) }).map((_, k) => <span key={k} className="w-1 h-1 rounded-full bg-zinc-400 dark:bg-zinc-500" />)}
               </div>
@@ -335,7 +335,7 @@ const DayTimeline: React.FC<{
           {/* now line */}
           {showNow && nowMins >= winTop && nowMins <= endH * 60 && (
             <div className="absolute left-0 right-2 z-20 pointer-events-none" style={{ top: topOf(nowMins) }}>
-              <div className="h-px bg-rose-500" /><div className="absolute -left-1 -top-1 w-2 h-2 rounded-full bg-rose-500" />
+              <div className="h-px bg-[var(--pulse-rose)]" /><div className="absolute -left-1 -top-1 w-2 h-2 rounded-full bg-[var(--pulse-rose)]" />
             </div>
           )}
 
@@ -435,8 +435,8 @@ const AiRail: React.FC<{
       {/* Pulse AI header card */}
       <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(244,63,94,0.25)', background: 'rgba(244,63,94,0.05)' }}>
         <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="w-4 h-4 text-rose-500" />
-          <span className="font-mono text-[11px] tracking-[0.12em] text-rose-600 dark:text-rose-400">PULSE AI · TODAY</span>
+          <Sparkles className="w-4 h-4 text-[var(--pulse-rose)]" />
+          <span className="font-mono text-[11px] tracking-[0.12em] text-[var(--pulse-rose-text)]">PULSE AI · TODAY</span>
         </div>
 
         <div className="space-y-2">
@@ -465,7 +465,7 @@ const AiRail: React.FC<{
           ))}
           {/* deepen / clean states */}
           {!aiReady && (
-            <button onClick={onOpenAIPanel} className="w-full mt-0.5 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-[12px] font-medium transition">
+            <button onClick={onOpenAIPanel} className="w-full mt-0.5 py-1.5 rounded-lg bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white text-[12px] font-medium transition">
               {tightBuffers.length > 0 ? 'Scan for conflicts & focus' : 'Run analysis'}
             </button>
           )}
@@ -478,9 +478,9 @@ const AiRail: React.FC<{
       {/* fix / assistant entry */}
       {aiReady && hasSignal && (
         <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(244,63,94,0.25)', background: 'rgba(244,63,94,0.05)' }}>
-          <div className="font-mono text-[11px] tracking-[0.12em] text-rose-600 dark:text-rose-400 mb-2">RESOLVE</div>
+          <div className="font-mono text-[11px] tracking-[0.12em] text-[var(--pulse-rose-text)] mb-2">RESOLVE</div>
           <p className="text-[12px] text-zinc-600 dark:text-zinc-300 leading-snug">Open the assistant to auto-arrange the day, reschedule a conflict, or protect a focus block.</p>
-          <button onClick={onOpenAIPanel} className="mt-2.5 w-full py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-[12px] font-medium transition">Open assistant</button>
+          <button onClick={onOpenAIPanel} className="mt-2.5 w-full py-1.5 rounded-lg bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white text-[12px] font-medium transition">Open assistant</button>
         </div>
       )}
 
@@ -579,7 +579,7 @@ export const CalendarTodayView: React.FC<CalendarTodayViewProps> = ({
           ))}
         </div>
         <button onClick={() => onDateClick(currentDate)}
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-[12px] font-medium transition">
+          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white text-[12px] font-medium transition">
           <Plus className="w-3.5 h-3.5" />New event
         </button>
       </div>

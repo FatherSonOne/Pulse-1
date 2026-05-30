@@ -103,16 +103,16 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
                 style={{ width: COL_W, minWidth: COL_W }}
                 className={`text-center py-2 border-r border-[var(--pulse-border)]/50 flex-shrink-0 ${
                   isToday
-                    ? 'bg-rose-50 dark:bg-rose-500/10'
+                    ? 'bg-[var(--pulse-rose-soft)]'
                     : day.getDay() === 0 || day.getDay() === 6
                       ? 'bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)]/40'
                       : ''
                 }`}
               >
-                <div className={`text-[10px] font-medium ${isToday ? 'text-rose-500' : 'text-zinc-400'}`}>
+                <div className={`text-[10px] font-medium ${isToday ? 'text-[var(--pulse-rose)]' : 'text-zinc-400'}`}>
                   {DAY_NAMES[day.getDay()]}
                 </div>
-                <div className={`text-sm font-bold ${isToday ? 'text-rose-500' : 'text-[var(--pulse-ink)]'}`}>
+                <div className={`text-sm font-bold ${isToday ? 'text-[var(--pulse-rose)]' : 'text-[var(--pulse-ink)]'}`}>
                   {day.getDate()}
                 </div>
                 {i === 0 || day.getDate() === 1 ? (
@@ -150,7 +150,7 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
                     key={i}
                     style={{ width: COL_W, minWidth: COL_W }}
                     className={`flex-shrink-0 border-r border-[var(--pulse-border)]/40 h-full ${
-                      isSameDay(day, today) ? 'bg-rose-50/50 dark:bg-rose-500/5' : ''
+                      isSameDay(day, today) ? 'bg-[var(--pulse-rose-softer)]' : ''
                     }`}
                   />
                 ))}
@@ -186,7 +186,7 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
                       height: ROW_H - 12,
                       backgroundColor: getEventColor(ev),
                     }}
-                    className="rounded-md px-1.5 text-[10px] font-semibold text-white truncate text-left hover:brightness-110 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                    className="rounded-md px-1.5 text-[10px] font-semibold text-white truncate text-left hover:brightness-110 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)]"
                   >
                     {ev.title}
                   </button>
