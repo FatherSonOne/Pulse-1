@@ -8,11 +8,11 @@
 //
 // Spec: docs/SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md §2, §5.1
 import './search-workbench.css';
-// Verbatim-reuse bridge: SearchResultCard (Cards) and SearchMapView (Map) are
-// styled by the legacy sheet (--search-* vars + .result-*/.map rules). It only
-// adds dead, non-colliding rules to the Workbench; Phase 11 migrates the
-// still-needed card/map rules here before deleting the legacy component.
-import '../UnifiedSearchRedesign.css';
+// Styles for the three reused legacy sub-components (SearchResultCard,
+// SearchDetailPanel, OperatorReferencePopover) — extracted from the deleted
+// UnifiedSearchRedesign.css in Phase 11. SearchMapView + SaveSearchModal are
+// Tailwind-only and need no sheet.
+import './reused-legacy.css';
 import { useUnifiedSearch } from './useUnifiedSearch';
 import SearchToolbar from './SearchToolbar';
 import FacetCockpit from './FacetCockpit';

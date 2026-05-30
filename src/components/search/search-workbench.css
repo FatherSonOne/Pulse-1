@@ -14,59 +14,6 @@
  * _design-playground/search-redesign.html (Path B).
  */
 
-/* ──────────────────────────────────────────────────────────────────────────
- * Dev-only v1 ⇄ v2 toggle (SearchDevToggle). Mirrors .ck-devtoggle from the
- * Decisions cockpit. NEUTRAL active state on purpose — the Phase 9 coral audit
- * greps this sheet for rose/coral, and a dev affordance must not register as an
- * AI surface. Removed wholesale at Phase 11 cleanup.
- * ────────────────────────────────────────────────────────────────────────── */
-.sw-devtoggle {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 900;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 4px 4px 10px;
-  border-radius: 999px;
-  background: var(--pulse-surface);
-  border: 1px solid var(--pulse-border-strong);
-  box-shadow: var(--pulse-shadow-md);
-}
-.sw-devtoggle-label {
-  font-family: var(--pulse-font-mono);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--pulse-ink-3);
-  margin-right: 2px;
-}
-.sw-devtoggle-btn {
-  min-width: 30px;
-  height: 24px;
-  padding: 0 9px;
-  border-radius: 999px;
-  border: none;
-  background: transparent;
-  color: var(--pulse-ink-3);
-  font-family: var(--pulse-font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 130ms;
-}
-.sw-devtoggle-btn:hover { color: var(--pulse-ink); }
-.sw-devtoggle-btn[data-on='true'] {
-  background: var(--pulse-ink);
-  color: var(--pulse-surface);
-}
-.sw-devtoggle-btn:focus-visible {
-  outline: 2px solid var(--pulse-ink-3);
-  outline-offset: 1px;
-}
-
 /* Spinner keyframes (toolbar search spinner) */
 @keyframes sw-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
@@ -1138,8 +1085,7 @@
 .sw-wm-onboard-chip:hover { transform: translateY(-1px); }
 
 @media (prefers-reduced-motion: reduce) {
-  .search-workbench *,
-  .sw-devtoggle * {
+  .search-workbench * {
     transition: none !important;
     animation: none !important;
   }

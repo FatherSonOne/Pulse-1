@@ -30,7 +30,7 @@ const routeImports: Record<string, () => Promise<any>> = {
   '/contacts': () => import('../components/Contacts'),
   '/archives': () => import('../components/Archives'),
   '/analytics': () => import('../components/Analytics'),
-  '/search': () => import('../components/UnifiedSearchRedesign'),
+  '/search': () => import('../components/search/SearchWorkbench'),
 };
 
 export const useRoutePreload = () => {

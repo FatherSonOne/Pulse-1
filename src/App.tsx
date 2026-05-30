@@ -31,14 +31,9 @@ const PulseMapView = lazy(() => import('./components/map/PulseMapView'));
 const Archives = lazy(() => import('./components/Archives'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const MessageAnalytics = lazy(() => import('./components/MessageAnalytics'));
-const UnifiedSearchRedesign = lazy(() => import('./components/UnifiedSearchRedesign'));
-// Search "Workbench" redesign — flag-ON entry. Legacy UnifiedSearchRedesign
-// stays the default until `searchWorkbench` flips. See
-// docs/SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md
+// Search "Workbench" — the only Search surface (legacy UnifiedSearchRedesign
+// removed in Phase 11). See docs/SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md
 const SearchWorkbench = lazy(() => import('./components/search/SearchWorkbench'));
-// Dev-only floating v1 ⇄ v2 switch for the Search surface (mirrors
-// CockpitDevToggle). Gated behind import.meta.env.DEV at the render site.
-const SearchDevToggle = lazy(() => import('./components/search/SearchDevToggle').then(module => ({ default: module.SearchDevToggle })));
 const AnalyticsDashboard = lazy(() => import('./components/Analytics').then(module => ({ default: module.AnalyticsDashboard })));
 const UsersGuide = lazy(() => import('./components/UsersGuide/UsersGuide'));
 
@@ -342,22 +337,6 @@ const App: React.FC = () => {
   // here in the component body.
   const smsEnabled = useFeatureFlag('inAppSms', user?.id, false);
 
-  // Search "Workbench" redesign — OFF for v1. When ON, the MULTI_MODAL view
-  // renders the new SearchWorkbench instead of the legacy
-  // UnifiedSearchRedesign. Dev override: `?ff_searchWorkbench=on`.
-  const searchWorkbenchFlag = useFeatureFlag('searchWorkbench', user?.id, false);
-  // Live dev toggle (SearchDevToggle, dev build only) flips v1/v2 in place,
-  // same pattern as the Decisions cockpit: `null` follows the flag/override;
-  // once the user toggles, that choice wins and persists to the `ff_`
-  // localStorage key the dev override already reads.
-  const [searchWorkbenchOverride, setSearchWorkbenchOverride] = useState<boolean | null>(null);
-  const searchWorkbenchEnabled = searchWorkbenchOverride ?? searchWorkbenchFlag;
-  const handleSearchWorkbenchToggle = useCallback((next: boolean) => {
-    try {
-      window.localStorage.setItem('ff_searchWorkbench', next ? 'on' : 'off');
-    } catch { /* private mode / sandboxed storage */ }
-    setSearchWorkbenchOverride(next);
-  }, []);
   // Belt-and-suspenders: if a stale `view` state or deep-link lands on the
   // hidden SMS surface, bounce back to the Dashboard so the mock can't render.
   useEffect(() => {
@@ -949,19 +928,7 @@ const App: React.FC = () => {
             case AppView.MESSAGE_ANALYTICS:
               return <MessageAnalytics />;
             case AppView.MULTI_MODAL:
-              // Workbench redesign behind `searchWorkbench` (OFF for v1);
-              // legacy card-feed search renders until the flag flips. The
-              // dev-only toggle flips v1/v2 in place while building.
-              return (
-                <>
-                  {searchWorkbenchEnabled
-                    ? <SearchWorkbench isDarkMode={isDarkMode} />
-                    : <UnifiedSearchRedesign isDarkMode={isDarkMode} />}
-                  {import.meta.env.DEV && (
-                    <SearchDevToggle enabled={searchWorkbenchEnabled} onToggle={handleSearchWorkbenchToggle} />
-                  )}
-                </>
-              );
+              return <SearchWorkbench isDarkMode={isDarkMode} />;
             case AppView.ANALYTICS:
               return <AnalyticsDashboard
                 onClose={() => setView(AppView.DASHBOARD)}
