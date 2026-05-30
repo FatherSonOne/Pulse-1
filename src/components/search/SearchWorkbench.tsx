@@ -8,11 +8,13 @@
 //
 // Spec: docs/SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md §2, §5.1
 import './search-workbench.css';
-import { Table, LayoutGrid, MapPin } from 'lucide-react';
+import { LayoutGrid, MapPin } from 'lucide-react';
 import { useUnifiedSearch } from './useUnifiedSearch';
 import SearchToolbar from './SearchToolbar';
 import FacetCockpit from './FacetCockpit';
+import ResultsTable from './ResultsTable';
 import { SaveSearchModal } from '../SaveSearchModal';
+import { SearchDetailPanel } from '../SearchDetailPanel';
 
 interface SearchWorkbenchProps {
   isDarkMode?: boolean;
@@ -53,31 +55,10 @@ export default function SearchWorkbench(_props: SearchWorkbenchProps = {}) {
             {s.loading ? 'Searching…' : s.sortedResults.length > 0 ? `${s.sortedResults.length} results for "${s.searchQuery}"` : ''}
           </div>
 
-          {/* Interim center: per-view placeholder. Table keeps a live result
-              list so search remains demonstrable until Phase 4's dense table. */}
           {s.viewMode === 'table' && (
-            <div className="sw-center-table">
-              {s.searchQuery.trim() && !s.loading && (
-                <p className="sw-interim-meta">
-                  {s.sortedResults.length} result{s.sortedResults.length !== 1 ? 's' : ''}
-                  {s.searchErrors.length > 0 && ` · ${s.searchErrors.length} source error${s.searchErrors.length !== 1 ? 's' : ''}`}
-                </p>
-              )}
-              {!s.searchQuery.trim() && (
-                <div className="sw-region-placeholder sw-center-empty">
-                  Working memory — Phase 7
-                </div>
-              )}
-              <ul className="sw-interim-list">
-                {s.sortedResults.slice(0, s.visibleCount).map(r => (
-                  <li key={r.id} className="sw-interim-row">
-                    <span className="sw-interim-row-type">{r.type}</span>
-                    <span className="sw-interim-row-title">{r.title}</span>
-                    <span className="sw-interim-row-sender">{r.sender || ''}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            s.isEmptyState
+              ? <div className="sw-region-placeholder sw-center-empty">Working memory — Phase 7</div>
+              : <ResultsTable s={s} />
           )}
 
           {s.viewMode === 'cards' && (
@@ -91,12 +72,6 @@ export default function SearchWorkbench(_props: SearchWorkbenchProps = {}) {
               <MapPin size={18} /> Map view — Phase 5
             </div>
           )}
-
-          {s.viewMode !== 'table' && s.viewMode !== 'cards' && s.viewMode !== 'map' && (
-            <div className="sw-region-placeholder sw-center-empty">
-              <Table size={18} /> Results — Phase 4
-            </div>
-          )}
         </main>
 
         {/* ── RIGHT: Working Set dock (Phase 6) ──────────────────────────── */}
@@ -104,6 +79,13 @@ export default function SearchWorkbench(_props: SearchWorkbenchProps = {}) {
           <div className="sw-region-placeholder">Working Set — Phase 6</div>
         </aside>
       </div>
+
+      {/* Result detail panel — opened from a table row (click / Enter). */}
+      <SearchDetailPanel
+        result={s.detailResult}
+        onClose={() => s.setDetailResult(null)}
+        onClip={r => { s.handleClipResult(r); s.setDetailResult(null); }}
+      />
     </div>
   );
 }

@@ -39,7 +39,9 @@ import toast from 'react-hot-toast';
 // GroupMode extends to 'date' in Phase 4; kept at none|conversation here.
 export type ViewMode      = 'table' | 'cards' | 'map';
 export type ClipboardView = 'notes' | 'categories';
-export type GroupMode     = 'none' | 'conversation';
+// 'date' → date lanes (table default); 'conversation' → thread grouping;
+// 'none' → flat. (§4.2/§5.4)
+export type GroupMode     = 'date' | 'conversation' | 'none';
 
 // Migrate the persisted `pulse:search:viewMode` from the legacy vocabulary
 // (timeline|list|grid|map) to the Workbench set (table|cards|map). §4.2.
@@ -73,7 +75,7 @@ export function useUnifiedSearch() {
     setViewModeRaw(mode);
     try { localStorage.setItem('pulse:search:viewMode', mode); } catch { /* sandboxed */ }
   }, []);
-  const [groupMode,     setGroupMode]     = useState<GroupMode>('conversation');
+  const [groupMode,     setGroupMode]     = useState<GroupMode>('date');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [recentThreads,  setRecentThreads]  = useState<RecentThread[]>([]);
 
