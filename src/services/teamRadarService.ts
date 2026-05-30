@@ -122,61 +122,20 @@ async function fetchBroadcasting(
   });
 }
 
-async function fetchCoverageGaps(days: number): Promise<CoverageGap[]> {
-  const cutoff = new Date(Date.now() - days * 86_400_000).toISOString();
-
-  // Two passes joined client-side because Postgres OR with mixed
-  // null/value comparisons is awkward via supabase-js. We get the
-  // staleest contacts first; never-contacted contacts second.
-  const [staleQuery, neverQuery] = await Promise.all([
-    supabase
-      .from('contacts')
-      .select('id, name, company, avatar_color, last_contacted_at')
-      .lt('last_contacted_at', cutoff)
-      .order('last_contacted_at', { ascending: true })
-      .limit(MAX_GAP_PREVIEW * 2),
-    supabase
-      .from('contacts')
-      .select('id, name, company, avatar_color, last_contacted_at')
-      .is('last_contacted_at', null)
-      .limit(MAX_GAP_PREVIEW * 2),
-  ]);
-
-  // Graceful degradation when contacts.last_contacted_at hasn't been
-  // provisioned on this Supabase project. Code expects the column
-  // (carried over from email_contacts semantics) but no public.contacts
-  // migration adds it yet. Warn once and return an empty radar instead
-  // of bubbling a 400 into the Dashboard tile.
-  const missingColumn =
-    (staleQuery.error?.code === '42703' && /last_contacted_at/.test(staleQuery.error.message ?? '')) ||
-    (neverQuery.error?.code === '42703' && /last_contacted_at/.test(neverQuery.error.message ?? ''));
-  if (missingColumn) {
-    console.warn(
-      '[teamRadarService] contacts.last_contacted_at column missing. ' +
-      'Coverage gaps surface inert until an "ALTER TABLE public.contacts ADD COLUMN last_contacted_at timestamptz" migration is applied.'
-    );
-    return [];
-  }
-
-  const rows = [
-    ...(staleQuery.data ?? []),
-    ...(neverQuery.data ?? []),
-  ];
-
-  const now = Date.now();
-  return rows.map(row => {
-    const lastTs = row.last_contacted_at
-      ? new Date(row.last_contacted_at as string).getTime()
-      : null;
-    return {
-      contactId: String(row.id),
-      name: String(row.name ?? 'Unknown contact'),
-      company: (row.company ?? null) as string | null,
-      avatarColor: (row.avatar_color ?? null) as string | null,
-      lastContactedAt: lastTs,
-      daysStale: lastTs == null ? null : Math.floor((now - lastTs) / 86_400_000),
-    };
-  });
+// Coverage gaps are inert by design until a populated "last contacted"
+// source exists. The live `public.contacts` table has no
+// `last_contacted_at` column (only last_synced/created_at/updated_at,
+// which are sync/edit timestamps, not interaction recency), and
+// `email_contacts.last_contacted_at` is 100% NULL today — so there is
+// no authoritative interaction-recency source to drive this feature.
+//
+// Rather than fire a query that 400s (42703) on every Dashboard mount
+// and swallow the error, we short-circuit to an empty radar. The
+// CoverageGap type and the tile UI are preserved so this can be
+// re-enabled in one place the moment a real backfill (from messages /
+// emails / calls) populates contacts.last_contacted_at.
+async function fetchCoverageGaps(_days: number): Promise<CoverageGap[]> {
+  return [];
 }
 
 /** Compact "12m" / "3h" / "2d" staleness label. */
