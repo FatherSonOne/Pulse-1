@@ -20,7 +20,7 @@ import toast from 'react-hot-toast';
 import { Plus, Zap, Download, RotateCw } from 'lucide-react';
 import { User } from '../../../types';
 import { CockpitMasthead, type CockpitTab } from './CockpitMasthead';
-import { CommandBar, type CommandItem } from './CommandBar';
+import { useCommandPalette, useRegisterCommands, type Command } from '../../../contexts/CommandPaletteContext';
 import { PropertyFilterBar, type ViewKind, type ViewAssignee } from './filters/PropertyFilterBar';
 import { type SavedViewPreset } from './filters/SavedViews';
 import { TriageView } from './triage/TriageView';
@@ -77,7 +77,9 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
 
   // ── Cockpit shell state ──
   const [tab, setTab] = useState<CockpitTab>('triage');
-  const [commandOpen, setCommandOpen] = useState(false);
+  // ⌘K is the app-wide GlobalCommandPalette — the cockpit registers its
+  // commands into it rather than running a second palette.
+  const { open: openCommandPalette } = useCommandPalette();
 
   // ── Data state (ported) ──
   const [decisions, setDecisions] = useState<DecisionWithVotes[]>([]);
@@ -136,8 +138,6 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
   const debouncedTasks = useDebounce(tasks, 800);
 
   const effectiveWorkspaceId = workspaceId || currentWorkspace?.id || user?.id || '';
-
-  const closeCommand = useCallback(() => setCommandOpen(false), []);
 
   // ── Loaders ──
   const loadDecisions = useCallback(async () => {
@@ -277,22 +277,18 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     if (id === 'decisions') setViewKind('decisions');
   }, [clearAllFilters]);
 
-  // ── ⌘K commands ──
-  const commands: CommandItem[] = useMemo(
+  // ── ⌘K commands — registered into the app-wide GlobalCommandPalette ──
+  const paletteCommands: Command[] = useMemo(
     () => [
-      { id: 'new-decision', label: 'New decision', section: 'Create', icon: <Plus size={15} />, run: () => setCreateMode({ mode: 'decision' }) },
-      { id: 'quick-task', label: 'Quick task', section: 'Create', icon: <Plus size={15} />, run: () => setCreateMode({ mode: 'task' }) },
-      { id: 'prioritize', label: 'Prioritize tasks with AI', section: 'Actions', icon: <Zap size={15} />, run: () => setShowPrioritizer(true) },
-      { id: 'export', label: 'Export CSV', section: 'Actions', icon: <Download size={15} />, run: handleExportCSV },
-      { id: 'refresh', label: 'Refresh', section: 'Actions', icon: <RotateCw size={15} />, run: handleRefresh },
+      { id: 'dt-new-decision', label: 'New decision', desc: 'Open the decision wizard', icon: Plus, kind: 'action', group: 'Decisions & Tasks', keywords: ['create'], run: () => setCreateMode({ mode: 'decision' }) },
+      { id: 'dt-quick-task', label: 'Quick task', desc: 'Create a task', icon: Plus, kind: 'action', group: 'Decisions & Tasks', keywords: ['create', 'new'], shortcut: 'c', run: () => setCreateMode({ mode: 'task' }) },
+      { id: 'dt-prioritize', label: 'Prioritize tasks with AI', icon: Zap, kind: 'action', group: 'Decisions & Tasks', run: () => setShowPrioritizer(true) },
+      { id: 'dt-export', label: 'Export decisions & tasks (CSV)', icon: Download, kind: 'action', group: 'Decisions & Tasks', run: handleExportCSV },
+      { id: 'dt-refresh', label: 'Refresh decisions & tasks', icon: RotateCw, kind: 'action', group: 'Decisions & Tasks', run: handleRefresh },
     ],
     [handleExportCSV, handleRefresh]
   );
-
-  const applySearch = useCallback((q: string) => {
-    setFilters((prev) => ({ ...prev, search: q }));
-    setTab('triage');
-  }, []);
+  useRegisterCommands('decisions-cockpit', { commands: paletteCommands });
 
   // Queue row hover quick-actions. `done` marks a task done (realtime refreshes
   // the queue) or casts an Approve vote on a decision. Snooze lands in Phase 8.
@@ -637,27 +633,21 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedDecisions, debouncedTasks]);
 
-  // Global ⌘K / Ctrl+K toggles the command palette; Escape closes it; `c`
-  // opens Quick task (Linear/Raycast convention) when nothing else is open.
+  // `c` opens Quick task (Linear/Raycast convention) when nothing else is open.
+  // ⌘K is owned by the app-wide GlobalCommandPalette — not handled here.
   useEffect(() => {
     const isTyping = (t: EventTarget | null) =>
       t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
-        e.preventDefault();
-        setCommandOpen((open) => !open);
-        return;
-      }
-      if (e.key === 'Escape' && commandOpen) { setCommandOpen(false); return; }
       if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
-      if ((e.key === 'c' || e.key === 'C') && !commandOpen && !createMode) {
+      if ((e.key === 'c' || e.key === 'C') && !createMode) {
         e.preventDefault();
         setCreateMode({ mode: 'task' });
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [commandOpen, createMode]);
+  }, [createMode]);
 
   // ── Derived: filtered sets (Phase 3 queue rail consumes these) ──
   const filteredTasks = useMemo(() => {
@@ -703,7 +693,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
       <CockpitMasthead
         tab={tab}
         setTab={setTab}
-        onOpenCommand={() => setCommandOpen(true)}
+        onOpenCommand={openCommandPalette}
         onNewDecision={handleNewDecision}
         onNewTask={handleNewTask}
         onAskAI={handleAskAI}
@@ -756,8 +746,6 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
           onChanged={() => { loadTasks(); loadDecisions(); loadDuePrompts(); }}
         />
       )}
-
-      <CommandBar open={commandOpen} onClose={closeCommand} commands={commands} onApplySearch={applySearch} />
 
       {taskToReassign && (
         <ReassignTaskModal
