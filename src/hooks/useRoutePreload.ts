@@ -21,7 +21,7 @@ const routeImports: Record<string, () => Promise<any>> = {
   '/glimpse': () => import('../components/Glimpse'),
   '/dashboard': () => import('../components/LiveDashboard'),
   '/live': () => import('../components/LiveDashboard'),
-  '/decisions': () => import('../components/decisions/DecisionTaskHub'),
+  '/decisions': () => import('../components/decisions/cockpit/CockpitHub'),
   '/email': () => import('../components/Email/EmailClientWrapper'),
   '/calendar': () => import('../components/Calendar'),
   '/settings': () => import('../components/Settings'),

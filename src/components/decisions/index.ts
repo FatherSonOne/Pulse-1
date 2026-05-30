@@ -1,18 +1,15 @@
 /**
  * Decisions Components - Public API
- * Export all decision and task management components
+ *
+ * The legacy hub surface (DecisionTaskHub / ActiveView / BoardView /
+ * ArchiveView / EnhancedDecisionCard / HubHeader) was removed in Phase 12 of
+ * the Triage Cockpit redesign. The cockpit lives in `./cockpit/` (CockpitHub).
  */
 
-// Main hub
-export { DecisionTaskHub } from './DecisionTaskHub';
-
-// Views
-export { ActiveView } from './ActiveView';
-export { BoardView } from './BoardView';
-export { ArchiveView } from './ArchiveView';
+// Triage Cockpit (the Decisions & Tasks surface)
+export { CockpitHub } from './cockpit/CockpitHub';
 
 // Decision components
-export { EnhancedDecisionCard } from './EnhancedDecisionCard';
 export { DecisionDecomposer } from './DecisionDecomposer';
 export { DecisionTemplates } from './DecisionTemplates';
 export { ConversationalAssistant } from './ConversationalAssistant';
@@ -23,8 +20,7 @@ export { ExtendDeadlineDialog } from './ExtendDeadlineDialog';
 export { SubtaskList } from './SubtaskList';
 export { default as TaskActivityFeed } from './TaskActivityFeed';
 
-// UI elements
-export { HubHeader } from './HubHeader';
+// UI elements (FilterBar still consumed by Messages + the cockpit's FilterState)
 export { FilterBar } from './FilterBar';
 export { AlertsPanel } from './AlertsPanel';
 export { RealTimeIndicator } from './RealTimeIndicator';
