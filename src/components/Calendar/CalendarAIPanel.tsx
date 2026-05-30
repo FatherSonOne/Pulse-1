@@ -212,29 +212,44 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
           {/* Assistant Tab */}
           {props.aiPanelTab === 'assistant' && !props.aiLoading && (
             <div className="space-y-5">
-              {/* Quick Actions */}
+              {/* Quick Actions — horizontal mono-chip rail (Path A).
+                  Was a 2x2 grid of icon+heading+subtext cards (the identical-card
+                  antipattern). Rail compresses to a single row that scrolls on
+                  narrow widths and reads as a toolbar, not a card stack. */}
               <div>
-                <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 mb-3">Quick Actions</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => props.onGetSuggestions(30)} className="p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-white/[0.055] transition border border-transparent hover:border-zinc-200 dark:hover:border-white/10">
-                    <Clock className="text-[var(--pulse-ink-3)] mb-2 w-4 h-4" />
-                    <p className="text-xs font-semibold text-[var(--pulse-ink)]">Find Meeting Time</p>
-                    <p className="text-[10px] text-zinc-500">30 min slot</p>
+                <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 mb-2">Quick actions</h4>
+                <div className="flex gap-1.5 overflow-x-auto pb-1">
+                  <button
+                    onClick={() => props.onGetSuggestions(30)}
+                    title="Find a 30-minute meeting slot"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--pulse-canvas-soft)] dark:bg-white/[0.03] hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-white/[0.055] text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] font-mono text-[10px] font-semibold uppercase tracking-[0.1em] border border-transparent hover:border-[var(--pulse-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition whitespace-nowrap"
+                  >
+                    <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                    Find time
                   </button>
-                  <button onClick={props.onSuggestFocusBlocks} className="p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-white/[0.055] transition border border-transparent hover:border-zinc-200 dark:hover:border-white/10">
-                    <Brain className="text-[var(--pulse-ink-3)] mb-2 w-4 h-4" />
-                    <p className="text-xs font-semibold text-[var(--pulse-ink)]">Add Focus Time</p>
-                    <p className="text-[10px] text-zinc-500">Protect deep work</p>
+                  <button
+                    onClick={props.onSuggestFocusBlocks}
+                    title="Suggest deep-work focus blocks"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--pulse-canvas-soft)] dark:bg-white/[0.03] hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-white/[0.055] text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] font-mono text-[10px] font-semibold uppercase tracking-[0.1em] border border-transparent hover:border-[var(--pulse-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition whitespace-nowrap"
+                  >
+                    <Brain className="w-3.5 h-3.5" aria-hidden="true" />
+                    Focus
                   </button>
-                  <button onClick={props.onDetectConflicts} className="p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-white/[0.055] transition border border-transparent hover:border-zinc-200 dark:hover:border-white/10">
-                    <AlertTriangle className="text-amber-500 mb-2 w-4 h-4" />
-                    <p className="text-xs font-semibold text-[var(--pulse-ink)]">Check Conflicts</p>
-                    <p className="text-[10px] text-zinc-500">Find overlaps</p>
+                  <button
+                    onClick={props.onDetectConflicts}
+                    title="Detect schedule conflicts"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--pulse-canvas-soft)] dark:bg-white/[0.03] hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-white/[0.055] text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] font-mono text-[10px] font-semibold uppercase tracking-[0.1em] border border-transparent hover:border-[var(--pulse-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition whitespace-nowrap"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
+                    Conflicts
                   </button>
-                  <button onClick={props.onAnalyzeTravelBuffers} className="p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-white/[0.055] transition border border-transparent hover:border-zinc-200 dark:hover:border-white/10">
-                    <Car className="text-[var(--pulse-ink-3)] mb-2 w-4 h-4" />
-                    <p className="text-xs font-semibold text-[var(--pulse-ink)]">Travel Buffers</p>
-                    <p className="text-[10px] text-zinc-500">Check gaps</p>
+                  <button
+                    onClick={props.onAnalyzeTravelBuffers}
+                    title="Analyze travel buffers between events"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--pulse-canvas-soft)] dark:bg-white/[0.03] hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-white/[0.055] text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] font-mono text-[10px] font-semibold uppercase tracking-[0.1em] border border-transparent hover:border-[var(--pulse-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition whitespace-nowrap"
+                  >
+                    <Car className="w-3.5 h-3.5" aria-hidden="true" />
+                    Travel
                   </button>
                 </div>
               </div>
@@ -436,82 +451,57 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               </div>
 
               {props.analytics && (
-                <div className="space-y-4">
-                  {/* Overview Cards */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-4 bg-zinc-50 dark:bg-white/[0.03] rounded-xl border border-zinc-200 dark:border-white/[0.06]">
-                      <p className="text-2xl font-light text-[var(--pulse-ink)] tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>{props.analytics.totalMeetingHours}<span className="text-base text-zinc-500 ml-0.5">h</span></p>
-                      <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-zinc-500 mt-1">Meetings</p>
-                    </div>
-                    <div className="p-4 bg-zinc-50 dark:bg-white/[0.03] rounded-xl border border-zinc-200 dark:border-white/[0.06]">
-                      <p className="text-2xl font-light text-[var(--pulse-ink)] tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>{props.analytics.focusTimeHours}<span className="text-base text-zinc-500 ml-0.5">h</span></p>
-                      <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-zinc-500 mt-1">Focus</p>
-                    </div>
-                  </div>
+                <div className="space-y-5">
+                  {/* Typographic phrase — was a 2-card hero-metric template
+                      (text-2xl numerals in stat cards). The phrase reads as
+                      one thought, not two interchangeable cards.
+                      TODO(impeccable): when calendarAIService starts returning
+                      prior-week deltas, add a "vs last week" mono line below. */}
+                  <p className="text-base leading-relaxed text-[var(--pulse-ink)]">
+                    <span className="font-semibold tabular-nums">{props.analytics.totalMeetingHours}h</span> in meetings,{' '}
+                    <span className="font-semibold tabular-nums">{props.analytics.focusTimeHours}h</span> in focus.
+                  </p>
 
-                  {/* Productivity Score */}
-                  <div className="p-4 bg-zinc-50 dark:bg-white/[0.03] rounded-xl border border-zinc-200 dark:border-white/[0.06]">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500">Productivity</p>
-                      <span className={`text-xl font-semibold tabular-nums ${props.analytics.productivityScore >= 70 ? 'text-emerald-600 dark:text-emerald-400' : props.analytics.productivityScore >= 50 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {props.analytics.productivityScore}%
-                      </span>
-                    </div>
-                    <div className="h-1.5 bg-zinc-200 dark:bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full transition-all"
-                        style={{
-                          width: `${props.analytics.productivityScore}%`,
-                          backgroundColor:
-                            props.analytics.productivityScore >= 70 ? 'var(--pulse-tone-positive)' :
-                            props.analytics.productivityScore >= 50 ? 'var(--pulse-tone-warning)' :
-                                                                       'var(--pulse-tone-overdue)',
-                          opacity: 0.7,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Meeting Overload Warning */}
+                  {/* Meeting Overload Warning — kept as a legitimate warning state */}
                   {props.analytics.meetingOverload && (
-                    <div className="p-3 bg-red-500/[0.06] dark:bg-red-500/[0.08] rounded-xl border border-red-500/20">
-                      <p className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 shrink-0" />
-                        Meeting Overload Detected
+                    <div className="p-3 bg-[var(--pulse-tone-overdue-soft)] rounded-xl border border-[var(--pulse-tone-overdue-soft)]">
+                      <p className="text-sm font-semibold text-[var(--pulse-tone-overdue)] flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                        Over 50% of your time is in meetings.
                       </p>
-                      <p className="text-xs text-red-600 dark:text-red-400 mt-1 ml-6">Over 50% of your time is in meetings</p>
                     </div>
                   )}
 
-                  {/* Time by Category */}
+                  {/* Time by Category — quiet two-column table */}
                   <div>
-                    <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 mb-3">Time by Event Type</h4>
-                    <div className="space-y-2">
+                    <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-[var(--pulse-ink-3)] mb-2">By event type</h4>
+                    <div className="space-y-1.5">
                       {Object.entries(props.analytics.timeByCategory).map(([type, hours]) => (
-                        <div key={type} className="flex items-center justify-between">
-                          <span className="text-sm capitalize text-[var(--pulse-ink-2)]">{type}</span>
-                          <span className="font-mono text-xs font-semibold text-[var(--pulse-ink)]" style={{ fontVariantNumeric: 'tabular-nums' }}>{typeof hours === 'number' ? hours.toFixed(1) : hours}h</span>
+                        <div key={type} className="flex items-center justify-between text-sm">
+                          <span className="capitalize text-[var(--pulse-ink-2)]">{type}</span>
+                          <span className="font-mono text-xs font-semibold text-[var(--pulse-ink)] tabular-nums">{typeof hours === 'number' ? hours.toFixed(1) : hours}h</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Recommendations */}
+                  {/* Two ideas — recommendations as prose, not card stack.
+                      Replaces the per-item bordered-card pattern that compounded
+                      with the killed Productivity Score to form the hero-metric
+                      template body. */}
                   {props.analytics.recommendations.length > 0 && (
                     <div>
-                      <div className="mb-3">
-                        <AIProvenanceChip vendor="CLAUDE" type="RECOMMENDATIONS" />
+                      <div className="flex items-center gap-2 mb-2">
+                        <AIProvenanceChip vendor="CLAUDE" type="IDEAS" />
                       </div>
-                      <div className="space-y-2">
+                      <ul className="space-y-2.5">
                         {props.analytics.recommendations.map((rec, i) => (
-                          <div key={i} className="p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl border border-zinc-200 dark:border-white/[0.06]">
-                            <p className="text-xs text-[var(--pulse-ink-2)] flex items-start gap-2">
-                              <Lightbulb className="w-3.5 h-3.5 shrink-0 text-amber-500 mt-0.5" />
-                              <span>{rec}</span>
-                            </p>
-                          </div>
+                          <li key={i} className="text-sm text-[var(--pulse-ink-2)] flex items-start gap-2">
+                            <Lightbulb className="w-3.5 h-3.5 shrink-0 text-[var(--pulse-tone-warning)] mt-0.5" aria-hidden="true" />
+                            <span>{rec}</span>
+                          </li>
                         ))}
-                      </div>
+                      </ul>
                     </div>
                   )}
                 </div>

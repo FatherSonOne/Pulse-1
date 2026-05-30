@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Calendar AI Panel — Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: { extend: { fontFamily: {
+      sans: ['Inter', 'system-ui', 'sans-serif'],
+      mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+    } } },
+  };
+</script>
+<style>
+  :root {
+    --pulse-rose: #f43f5e;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+    --pulse-rose-softer: rgba(244, 63, 94, 0.06);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+    --pulse-canvas: #f8f8f8;
+    --pulse-canvas-soft: #f2f2f2;
+    --pulse-surface: #ffffff;
+    --pulse-surface-raised: #f2f2f2;
+    --pulse-border: rgba(0, 0, 0, 0.08);
+    --pulse-border-strong: rgba(0, 0, 0, 0.16);
+    --pulse-ink: #0f0f0f;
+    --pulse-ink-2: #52525b;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 35%, black 65%);
+    --pulse-tone-positive: #22c55e;
+    --pulse-tone-positive-soft: rgba(34, 197, 94, 0.10);
+    --pulse-tone-warning: #f97316;
+    --pulse-tone-warning-soft: rgba(249, 115, 22, 0.10);
+    --pulse-tone-info: #3b82f6;
+    --pulse-tone-info-soft: rgba(59, 130, 246, 0.10);
+    --pulse-tone-overdue: #ef4444;
+    --pulse-tone-overdue-soft: rgba(239, 68, 68, 0.10);
+    --pulse-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --pulse-sidebar-bg: #ffffff;
+  }
+  html[data-theme='dark'] {
+    --pulse-canvas: #000000;
+    --pulse-canvas-soft: #080808;
+    --pulse-surface: rgba(255, 255, 255, 0.03);
+    --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+    --pulse-border: rgba(255, 255, 255, 0.06);
+    --pulse-border-strong: rgba(255, 255, 255, 0.10);
+    --pulse-ink: #fafafa;
+    --pulse-ink-2: #b4b4b8;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 60%, white 40%);
+    --pulse-rose: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.14);
+    --pulse-rose-softer: rgba(244, 63, 94, 0.08);
+    --pulse-sidebar-bg: #0a0a0b;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: Inter, system-ui, sans-serif;
+    background: var(--pulse-canvas);
+    color: var(--pulse-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--pulse-border-strong); border-radius: 3px; }
+  .font-mono-pulse { font-family: var(--pulse-mono); font-feature-settings: 'tnum' 1; }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  /* Motion */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 280ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes slideInR { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+  .slide-in-r { animation: slideInR 320ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .pulse-dot { animation: pulseDot 1.6s ease-in-out infinite; }
+
+  /* AI provenance chip — coral budget reserved for AI surfaces only */
+  .ai-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px;
+    background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+    font-family: var(--pulse-mono); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase; line-height: 1;
+  }
+  .ai-chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+
+  /* Mono label */
+  .mono-label {
+    font-family: var(--pulse-mono); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--pulse-ink-3);
+  }
+
+  /* Playground chrome */
+  .pg-bar { backdrop-filter: blur(8px); background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); }
+  html[data-theme='light'] .pg-bar { background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent); }
+  .pg-pill { transition: background 180ms, color 180ms; padding: 6px 12px; border-radius: 7px; font-size: 11px; font-weight: 500; }
+  .pg-pill[data-active='true'] { background: var(--pulse-rose); color: white; }
+  .pg-pill:not([data-active='true']):hover { background: var(--pulse-surface-raised); }
+
+  /* Faked calendar grid (so paths render with realistic context behind them) */
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-auto-rows: 1fr; height: 100%;
+  }
+  .cal-grid-cell {
+    border-right: 1px solid var(--pulse-border);
+    border-bottom: 1px solid var(--pulse-border);
+    padding: 6px 8px; font-size: 11px; color: var(--pulse-ink-3);
+    font-family: var(--pulse-mono); font-variant-numeric: tabular-nums;
+    overflow: hidden;
+  }
+  .cal-grid-cell.today { background: var(--pulse-rose-softer); color: var(--pulse-coral-fg); font-weight: 700; }
+
+  /* Path A: refined panel */
+  .a-panel { width: 380px; border-left: 1px solid var(--pulse-border); background: var(--pulse-surface); display: flex; flex-direction: column; }
+  .a-tab { flex: 1; padding: 10px 8px; font-family: var(--pulse-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pulse-ink-3); border-bottom: 2px solid transparent; cursor: pointer; }
+  .a-tab[data-active='true'] { color: var(--pulse-rose); border-bottom-color: var(--pulse-rose); background: var(--pulse-rose-softer); }
+  .a-action-rail { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; }
+  .a-action-chip { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 8px; background: var(--pulse-surface-raised); font-family: var(--pulse-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pulse-ink-2); cursor: pointer; transition: background 180ms; border: 1px solid transparent; }
+  .a-action-chip:hover { background: var(--pulse-canvas-soft); color: var(--pulse-ink); border-color: var(--pulse-border); }
+  .a-sparkline { display: flex; align-items: flex-end; gap: 2px; height: 28px; }
+  .a-spark-bar { flex: 1; background: var(--pulse-rose-soft); border-radius: 1.5px; min-height: 3px; }
+  .a-spark-bar:last-child { background: var(--pulse-rose); }
+  .a-trend-up { color: var(--pulse-tone-positive); }
+  .a-trend-flat { color: var(--pulse-ink-3); }
+
+  /* Path B: inline ribbons + Today rail */
+  .b-ribbon { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--pulse-border); background: var(--pulse-canvas-soft); font-size: 12px; }
+  .b-rail-card { background: var(--pulse-surface); border: 1px solid var(--pulse-border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+  .b-rail-coral { background: var(--pulse-rose-softer); border-color: var(--pulse-rose-soft); }
+  .b-kbar { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; background: var(--pulse-surface-raised); border: 1px solid var(--pulse-border); font-family: var(--pulse-mono); font-size: 10px; color: var(--pulse-ink-3); }
+  .b-kbar kbd { padding: 1px 5px; border-radius: 3px; background: var(--pulse-canvas); border: 1px solid var(--pulse-border); font-size: 9px; }
+
+  /* Path C: command canvas */
+  .c-overlay { position: absolute; inset: 0; background: var(--pulse-canvas); padding: 40px 64px; display: flex; flex-direction: column; }
+  .c-search { width: 100%; max-width: 720px; margin: 0 auto 32px; background: var(--pulse-surface); border: 1px solid var(--pulse-border); border-radius: 14px; padding: 16px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 12px; }
+  .c-search input { flex: 1; background: transparent; border: 0; outline: 0; font-size: 18px; color: var(--pulse-ink); }
+  .c-lens-bar { display: flex; gap: 6px; justify-content: center; margin-bottom: 24px; }
+  .c-lens { padding: 8px 16px; border-radius: 999px; font-family: var(--pulse-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pulse-ink-3); background: var(--pulse-surface); border: 1px solid var(--pulse-border); cursor: pointer; transition: all 180ms; }
+  .c-lens[data-active='true'] { background: var(--pulse-rose); color: white; border-color: var(--pulse-rose); }
+  .c-canvas { flex: 1; max-width: 1080px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; overflow-y: auto; }
+  .c-tile { background: var(--pulse-surface); border: 1px solid var(--pulse-border); border-radius: 14px; padding: 20px; }
+  .c-tile-hero { grid-column: 1 / -1; background: linear-gradient(135deg, var(--pulse-rose-softer) 0%, var(--pulse-surface) 80%); border-color: var(--pulse-rose-soft); }
+</style>
+</head>
+<body class="overflow-hidden">
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+
+const { useState, useEffect, useRef } = React;
+
+// ── INLINE LUCIDE ICONS (subset) ─────────────────────────────────────────
+const I = {
+  Calendar: (p={}) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
+  Clock: (p={}) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
+  Brain: (p={}) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M12 2a4.5 4.5 0 0 0-4.5 4.5v0a4.5 4.5 0 0 0-3 8.5v0a4.5 4.5 0 0 0 3 8.5v0a4.5 4.5 0 0 0 9 0v0a4.5 4.5 0 0 0 3-8.5v0a4.5 4.5 0 0 0-3-8.5v0A4.5 4.5 0 0 0 12 2Z"/></svg>,
+  Alert: (p={}) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4M12 17h.01"/></svg>,
+  Car: (p={}) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>,
+  Users: (p={}) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>,
+  Chart: (p={}) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M3 3v18h18M7 16l4-4 4 4 6-6"/></svg>,
+  Target: (p={}) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+  Sparkles: (p={}) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2zM19 3l.5 1.5L21 5l-1.5.5L19 7l-.5-1.5L17 5l1.5-.5zM5 17l.5 1.5L7 19l-1.5.5L5 21l-.5-1.5L3 19l1.5-.5z"/></svg>,
+  X: (p={}) => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M18 6 6 18M6 6l12 12"/></svg>,
+  Arrow: (p={}) => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M5 12h14M12 5l7 7-7 7"/></svg>,
+  Search: (p={}) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+  Send: (p={}) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m3 3 3 9-3 9 19-9zM6 12h16"/></svg>,
+  Cmd: (p={}) => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg>,
+};
+
+// ── MOCK DATA ─────────────────────────────────────────────────────────────
+// Reuse Pulse persona set for continuity across playgrounds.
+const PEOPLE = [
+  { id: 'maria',  name: 'Maria Schaefer',     last: '2 days ago',    health: 'strong',          color: '#f43f5e' },
+  { id: 'sarah',  name: 'Sarah Chen',         last: '5 days ago',    health: 'healthy',         color: '#3b82f6' },
+  { id: 'jaylen', name: 'Jaylen Park',        last: '12 days ago',   health: 'needs_attention', color: '#f97316' },
+  { id: 'theo',   name: 'Theo Bridgewater',   last: '21 days ago',   health: 'at_risk',         color: '#ef4444' },
+  { id: 'priya',  name: 'Priya Devarajan',    last: '1 day ago',     health: 'strong',          color: '#22c55e' },
+];
+
+const CONFLICTS = [
+  { id: 'c1', a: 'Q3 roadmap review', b: 'Mom · birthday call', when: 'Today · 3:00–3:30 pm', priority: 'high', suggest: 'Move roadmap → Thu 2 pm' },
+  { id: 'c2', a: 'Design crit',        b: 'Dentist',             when: 'Thu · 1:00–1:45 pm',  priority: 'medium', suggest: 'Shorten crit to 30 min' },
+];
+
+const SUGGESTIONS = [
+  { id: 's1', label: 'Thu May 30', range: '2:00–2:30 pm', score: 94, reason: 'Both free · no travel buffer needed' },
+  { id: 's2', label: 'Fri May 31', range: '10:00–10:30 am', score: 88, reason: 'After your focus block · before standup' },
+  { id: 's3', label: 'Mon Jun 3',  range: '3:00–3:30 pm', score: 82, reason: 'Maria prefers afternoons · clear week so far' },
+];
+
+const FOCUS_BLOCKS = [
+  { id: 'f1', label: 'Tomorrow', range: '9:00–11:00 am', type: 'Deep work · roadmap draft' },
+  { id: 'f2', label: 'Thu',      range: '2:00–4:00 pm',  type: 'Strategy · Q3 planning' },
+];
+
+const TRAVEL = [
+  { id: 't1', from: 'Pier 39 lunch', to: 'SoMa 1:1 review', minutes: 14, gap: 10, status: 'tight' },
+];
+
+// Analytics (Path A reframe)
+const ANALYTICS = {
+  meetingHours: 18.2, lastWeek: 16.4,
+  focusHours: 7.1,    lastWeekFocus: 4.8,
+  trend: [3, 4, 2, 6, 5, 8, 7, 9, 11, 7, 6, 8],
+};
+
+// ── SHARED PRIMITIVES ─────────────────────────────────────────────────────
+const AiChip = ({ children, className = '' }) => (
+  <span className={`ai-chip ${className}`}>{children}</span>
+);
+
+const MonoLabel = ({ children, className = '' }) => (
+  <span className={`mono-label ${className}`}>{children}</span>
+);
+
+const Avatar = ({ name, color, size = 24 }) => (
+  <span
+    className="rounded-full flex items-center justify-center text-white font-bold shrink-0"
+    style={{ width: size, height: size, backgroundColor: color, fontSize: Math.round(size / 2.5) }}
+  >
+    {name.charAt(0)}
+  </span>
+);
+
+// ── FAKED CALENDAR CANVAS (behind every path) ─────────────────────────────
+const CalendarCanvas = ({ children }) => {
+  const days = Array.from({ length: 35 }, (_, i) => ({
+    day: ((i % 31) + 1),
+    today: i === 16,
+    events: i % 4 === 0 ? 2 : i % 5 === 0 ? 1 : 0,
+  }));
+  return (
+    <div className="flex-1 relative flex flex-col" style={{ background: 'var(--pulse-canvas)' }}>
+      {/* fake toolbar */}
+      <div className="h-14 px-4 flex items-center justify-between border-b" style={{ borderColor: 'var(--pulse-border)' }}>
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-semibold tnum">May 2026</h2>
+          <div className="flex gap-1">
+            <button className="w-9 h-9 rounded-full flex items-center justify-center" style={{ color: 'var(--pulse-ink-3)' }}>‹</button>
+            <button className="w-9 h-9 rounded-full flex items-center justify-center" style={{ color: 'var(--pulse-ink-3)' }}>›</button>
+          </div>
+          <button className="px-3 py-1.5 rounded-full font-mono-pulse text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: 'var(--pulse-rose)', background: 'var(--pulse-rose-soft)', border: '1px solid var(--pulse-rose-soft)' }}>Today</button>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex p-1 rounded-lg gap-0.5" style={{ background: 'var(--pulse-surface-raised)' }}>
+            {['Today', 'Month', 'Day'].map((v, i) => (
+              <button key={v} className={`px-3 py-1.5 rounded-md font-mono-pulse text-[10px] font-semibold uppercase tracking-[0.1em] ${i === 1 ? '' : ''}`} style={i === 1 ? { background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' } : { color: 'var(--pulse-ink-3)' }}>{v}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      {/* fake grid + the overlaid path's panel */}
+      <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* weekday header */}
+          <div className="grid grid-cols-7 border-b text-center font-mono-pulse text-[10px] font-semibold uppercase tracking-[0.1em] py-2" style={{ borderColor: 'var(--pulse-border)', color: 'var(--pulse-ink-3)' }}>
+            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => <div key={d}>{d}</div>)}
+          </div>
+          {/* grid */}
+          <div className="flex-1 cal-grid">
+            {days.map((d, i) => (
+              <div key={i} className={`cal-grid-cell ${d.today ? 'today' : ''}`}>
+                {d.day}
+                {Array.from({ length: d.events }).map((_, j) => (
+                  <div key={j} className="mt-1 rounded h-3" style={{ background: 'var(--pulse-tone-info-soft)' }} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// ═════════════════════════════════════════════════════════════════════════
+// PATH A · REFINED PANEL — Keep the side panel, fix the 3 known sins
+// ═════════════════════════════════════════════════════════════════════════
+const PathA = () => {
+  const [tab, setTab] = useState('assistant');
+  return (
+    <CalendarCanvas>
+      <aside className="a-panel slide-in-r">
+        {/* Header */}
+        <div className="p-4 border-b" style={{ borderColor: 'var(--pulse-border)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <AiChip>Claude · Assistant</AiChip>
+            <button className="w-7 h-7 rounded-md inline-flex items-center justify-center" style={{ color: 'var(--pulse-ink-3)' }}><I.X /></button>
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Schedule a call with Maria Thu 2pm"
+              className="w-full px-3 py-2.5 pr-10 rounded-lg text-sm outline-none"
+              style={{ background: 'var(--pulse-canvas-soft)', border: '1px solid var(--pulse-border)', color: 'var(--pulse-ink)' }}
+            />
+            <button className="absolute right-1.5 top-1.5 w-7 h-7 rounded-md inline-flex items-center justify-center" style={{ background: 'var(--pulse-rose)', color: 'white' }}><I.Send /></button>
+          </div>
+        </div>
+        {/* Tabs */}
+        <div className="flex border-b" style={{ borderColor: 'var(--pulse-border)' }}>
+          {[
+            { id: 'assistant', label: 'Assistant' },
+            { id: 'insights',  label: 'Insights'  },
+            { id: 'analytics', label: 'Analytics' },
+            { id: 'goals',     label: 'Goals'     },
+          ].map(t => (
+            <button key={t.id} className="a-tab" data-active={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>
+          ))}
+        </div>
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          {tab === 'assistant' && (
+            <>
+              {/* FIX #1: action rail, not 4-card grid */}
+              <div>
+                <MonoLabel className="mb-2 block">Quick actions</MonoLabel>
+                <div className="a-action-rail">
+                  <button className="a-action-chip"><I.Clock /> Find time</button>
+                  <button className="a-action-chip"><I.Brain /> Focus</button>
+                  <button className="a-action-chip"><I.Alert /> Conflicts</button>
+                  <button className="a-action-chip"><I.Car /> Travel</button>
+                </div>
+              </div>
+              {/* Suggestions */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <AiChip>Claude · Times</AiChip>
+                  <MonoLabel>{SUGGESTIONS.length} options</MonoLabel>
+                </div>
+                <div className="space-y-1.5">
+                  {SUGGESTIONS.map(s => (
+                    <button key={s.id} className="w-full p-3 rounded-lg text-left flex items-center justify-between" style={{ background: 'var(--pulse-canvas-soft)' }}>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold" style={{ color: 'var(--pulse-ink)' }}>{s.label}</div>
+                        <div className="font-mono-pulse text-[11px] tnum" style={{ color: 'var(--pulse-ink-3)' }}>{s.range}</div>
+                        <div className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--pulse-ink-3)' }}>{s.reason}</div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-mono-pulse text-[11px] font-semibold tnum" style={{ color: 'var(--pulse-tone-positive)' }}>{s.score}%</span>
+                        <I.Arrow />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Conflicts — full-border tinted card, no side-stripe */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <AiChip>Claude · Conflicts</AiChip>
+                  <MonoLabel className="text-[var(--pulse-tone-warning)]" style={{ color: 'var(--pulse-tone-warning)' }}>{CONFLICTS.length} detected</MonoLabel>
+                </div>
+                {CONFLICTS.map(c => (
+                  <div key={c.id} className="p-3 rounded-lg mb-1.5" style={{ background: 'var(--pulse-tone-warning-soft)', border: '1px solid var(--pulse-tone-warning-soft)' }}>
+                    <div className="text-sm font-semibold mb-0.5" style={{ color: 'var(--pulse-ink)' }}>{c.a}</div>
+                    <div className="text-xs mb-1.5" style={{ color: 'var(--pulse-ink-3)' }}>conflicts with <span style={{ color: 'var(--pulse-ink-2)' }}>{c.b}</span> · {c.when}</div>
+                    <button className="font-mono-pulse text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: 'var(--pulse-rose)' }}>{c.suggest} <I.Arrow /></button>
+                  </div>
+                ))}
+              </div>
+              {/* Focus blocks */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <AiChip>Claude · Focus blocks</AiChip>
+                </div>
+                {FOCUS_BLOCKS.map(b => (
+                  <div key={b.id} className="p-3 rounded-lg mb-1.5 flex items-center justify-between" style={{ background: 'var(--pulse-canvas-soft)' }}>
+                    <div>
+                      <div className="text-sm font-semibold" style={{ color: 'var(--pulse-ink)' }}>{b.label}</div>
+                      <div className="font-mono-pulse text-[11px] tnum" style={{ color: 'var(--pulse-ink-3)' }}>{b.range}</div>
+                      <div className="mono-label mt-0.5">{b.type}</div>
+                    </div>
+                    <button className="px-2.5 py-1 rounded-md font-mono-pulse text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ background: 'var(--pulse-rose)', color: 'white' }}>Add</button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {tab === 'insights' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <AiChip>Claude · Insights</AiChip>
+                <button className="font-mono-pulse text-[11px]" style={{ color: 'var(--pulse-ink-3)' }}>Refresh</button>
+              </div>
+              {PEOPLE.map(p => (
+                <div key={p.id} className="p-3 rounded-lg" style={{ background: 'var(--pulse-canvas-soft)' }}>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <Avatar name={p.name} color={p.color} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold truncate" style={{ color: 'var(--pulse-ink)' }}>{p.name}</div>
+                      <div className="font-mono-pulse text-[10px] uppercase tracking-[0.1em]" style={{ color: 'var(--pulse-ink-3)' }}>Last met {p.last}</div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded font-mono-pulse text-[10px] font-semibold uppercase tracking-[0.1em]" style={{
+                      background: p.health === 'strong' ? 'var(--pulse-tone-positive-soft)' : p.health === 'healthy' ? 'var(--pulse-tone-info-soft)' : p.health === 'needs_attention' ? 'var(--pulse-tone-warning-soft)' : 'var(--pulse-tone-overdue-soft)',
+                      color:      p.health === 'strong' ? 'var(--pulse-tone-positive)'      : p.health === 'healthy' ? 'var(--pulse-tone-info)'      : p.health === 'needs_attention' ? 'var(--pulse-tone-warning)'      : 'var(--pulse-tone-overdue)',
+                    }}>{p.health.replace('_', ' ')}</span>
+                  </div>
+                  <button className="font-mono-pulse text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: 'var(--pulse-rose)' }}>Schedule catch-up <I.Arrow /></button>
+                </div>
+              ))}
+            </div>
+          )}
+          {tab === 'analytics' && (
+            <div className="space-y-4">
+              <AiChip>Claude · This week</AiChip>
+              {/* FIX #2: hero-metric template → typographic phrase + sparkline + trend */}
+              <div>
+                <p className="text-base" style={{ color: 'var(--pulse-ink)' }}>
+                  <span className="tnum font-semibold">{ANALYTICS.meetingHours}h</span> in meetings,{' '}
+                  <span className="tnum font-semibold">{ANALYTICS.focusHours}h</span> in focus.
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <MonoLabel>vs last week</MonoLabel>
+                  <span className="font-mono-pulse text-[11px] font-semibold a-trend-up" style={{ color: 'var(--pulse-tone-positive)' }}>+47% focus</span>
+                  <span className="font-mono-pulse text-[11px] a-trend-flat" style={{ color: 'var(--pulse-ink-3)' }}>+11% meetings</span>
+                </div>
+              </div>
+              <div>
+                <MonoLabel className="mb-2 block">Last 12 weeks · meeting hours</MonoLabel>
+                <div className="a-sparkline">
+                  {ANALYTICS.trend.map((v, i) => (
+                    <div key={i} className="a-spark-bar" style={{ height: `${v * 3}px` }} />
+                  ))}
+                </div>
+              </div>
+              {/* FIX #3: no "Productivity Score". Recommendations as prose. */}
+              <div>
+                <MonoLabel className="mb-2 block">Two ideas</MonoLabel>
+                <ul className="space-y-2 text-sm" style={{ color: 'var(--pulse-ink-2)' }}>
+                  <li className="flex gap-2"><I.Sparkles /> <span>Your Tuesdays are 73% meetings. Block 9–11 am for focus.</span></li>
+                  <li className="flex gap-2"><I.Sparkles /> <span>Maria, Sarah, Theo went 3+ weeks without time on calendar. <a className="underline" style={{ color: 'var(--pulse-rose)' }}>Suggest catch-ups</a></span></li>
+                </ul>
+              </div>
+            </div>
+          )}
+          {tab === 'goals' && (
+            <div className="space-y-3">
+              <AiChip>Claude · Goal alignment</AiChip>
+              <p className="text-sm" style={{ color: 'var(--pulse-ink-2)' }}>You spent <span className="tnum font-semibold" style={{ color: 'var(--pulse-tone-positive)' }}>62%</span> of your week on Ship Q3 roadmap — up from 41% last week.</p>
+              <div className="p-3 rounded-lg" style={{ background: 'var(--pulse-canvas-soft)' }}>
+                <div className="flex items-center justify-between text-sm mb-1.5">
+                  <span style={{ color: 'var(--pulse-ink)' }}>Ship Q3 roadmap</span>
+                  <span className="font-mono-pulse text-[11px] tnum" style={{ color: 'var(--pulse-ink-2)' }}>62%</span>
+                </div>
+                <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--pulse-border)' }}>
+                  <div className="h-full rounded-full" style={{ width: '62%', background: 'var(--pulse-rose)' }} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
+    </CalendarCanvas>
+  );
+};
+
+// ═════════════════════════════════════════════════════════════════════════
+// PATH B · TODAY-RAIL NATIVE — Delete the side panel; AI woven into context
+// ═════════════════════════════════════════════════════════════════════════
+const PathB = () => (
+  <div className="flex-1 relative flex flex-col" style={{ background: 'var(--pulse-canvas)' }}>
+    {/* AI conflict ribbon — appears at top of canvas when conflicts exist */}
+    <div className="b-ribbon fade-up">
+      <AiChip>Claude</AiChip>
+      <span className="flex-1 text-[13px]" style={{ color: 'var(--pulse-ink)' }}>
+        <strong>2 conflicts today.</strong>{' '}
+        <span style={{ color: 'var(--pulse-ink-2)' }}>Roadmap review overlaps Mom's birthday call at 3 pm.</span>
+      </span>
+      <button className="font-mono-pulse text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: 'var(--pulse-rose)' }}>Resolve →</button>
+      <button className="w-6 h-6 rounded inline-flex items-center justify-center" style={{ color: 'var(--pulse-ink-3)' }}><I.X /></button>
+    </div>
+    {/* Toolbar */}
+    <div className="h-14 px-4 flex items-center justify-between border-b" style={{ borderColor: 'var(--pulse-border)' }}>
+      <div className="flex items-center gap-3">
+        <h2 className="text-xl font-semibold tnum">Today · May 29</h2>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="b-kbar"><I.Cmd /> <kbd>K</kbd> <span>Calendar AI</span></div>
+        <div className="inline-flex p-1 rounded-lg gap-0.5" style={{ background: 'var(--pulse-surface-raised)' }}>
+          {['Today', 'Month', 'Day'].map((v, i) => (
+            <button key={v} className="px-3 py-1.5 rounded-md font-mono-pulse text-[10px] font-semibold uppercase tracking-[0.1em]" style={i === 0 ? { background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' } : { color: 'var(--pulse-ink-3)' }}>{v}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+    {/* Today layout: agenda spine + AI rail (which IS the panel, inline) */}
+    <div className="flex-1 flex overflow-hidden">
+      {/* Agenda spine */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <MonoLabel>Today · 4 events</MonoLabel>
+        {[
+          { t: '9:00 am',  title: 'Focus · roadmap draft', dur: '2h', tone: 'focus' },
+          { t: '11:30 am', title: 'Standup', dur: '15m', tone: 'meet' },
+          { t: '12:30 pm', title: 'Lunch with Tom', dur: '1h', tone: 'social' },
+          { t: '3:00 pm',  title: 'Q3 roadmap review', dur: '30m', tone: 'meet', conflict: true },
+          { t: '3:00 pm',  title: 'Mom · birthday call', dur: '15m', tone: 'social', conflict: true },
+        ].map((e, i) => (
+          <div key={i} className="flex gap-4 items-start">
+            <div className="w-20 shrink-0 pt-1">
+              <div className="font-mono-pulse text-[12px] font-semibold tnum" style={{ color: 'var(--pulse-ink)' }}>{e.t}</div>
+              <div className="font-mono-pulse text-[10px] uppercase tracking-[0.1em]" style={{ color: 'var(--pulse-ink-3)' }}>{e.dur}</div>
+            </div>
+            <div className="flex-1 p-3 rounded-lg" style={{ background: 'var(--pulse-surface)', border: e.conflict ? '1px solid var(--pulse-tone-warning-soft)' : '1px solid var(--pulse-border)' }}>
+              <div className="text-sm font-medium" style={{ color: 'var(--pulse-ink)' }}>{e.title}</div>
+              {e.conflict && <div className="mono-label mt-0.5" style={{ color: 'var(--pulse-tone-warning)' }}>Conflict</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* AI rail (no tabs, no panel chrome — just a series of cards) */}
+      <aside className="w-[340px] overflow-y-auto p-4 space-y-3 border-l" style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas-soft)' }}>
+        <div className="b-rail-card b-rail-coral">
+          <AiChip className="mb-2">Pulse AI · Today</AiChip>
+          <p className="text-[13px]" style={{ color: 'var(--pulse-ink)' }}>2 conflicts at 3 pm. 1 tight drive (10 min) at noon. Your focus block looks safe.</p>
+        </div>
+        <div className="b-rail-card">
+          <MonoLabel className="block mb-2">Suggested times · Maria</MonoLabel>
+          {SUGGESTIONS.slice(0, 2).map(s => (
+            <button key={s.id} className="w-full p-2 rounded text-left text-[12px] hover:bg-[var(--pulse-canvas-soft)]" style={{ color: 'var(--pulse-ink-2)' }}>
+              {s.label} · <span className="font-mono-pulse tnum">{s.range}</span> <span className="font-mono-pulse text-[10px]" style={{ color: 'var(--pulse-tone-positive)' }}>· {s.score}%</span>
+            </button>
+          ))}
+        </div>
+        <div className="b-rail-card">
+          <MonoLabel className="block mb-2">People · drifting</MonoLabel>
+          <div className="space-y-1.5">
+            {PEOPLE.filter(p => ['needs_attention', 'at_risk'].includes(p.health)).map(p => (
+              <button key={p.id} className="w-full p-1.5 rounded flex items-center gap-2 hover:bg-[var(--pulse-canvas-soft)] text-left">
+                <Avatar name={p.name} color={p.color} size={20} />
+                <span className="text-[12px] flex-1" style={{ color: 'var(--pulse-ink)' }}>{p.name}</span>
+                <span className="font-mono-pulse text-[10px]" style={{ color: 'var(--pulse-ink-3)' }}>{p.last}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="b-rail-card">
+          <MonoLabel className="block mb-2">This week</MonoLabel>
+          <p className="text-[13px]" style={{ color: 'var(--pulse-ink)' }}><span className="tnum font-semibold">7.1h</span> focus,{' '}<span className="tnum font-semibold">18.2h</span> meetings.</p>
+          <a className="font-mono-pulse text-[11px] font-semibold inline-flex items-center gap-1 mt-1" style={{ color: 'var(--pulse-rose)' }}>Open weekly review <I.Arrow /></a>
+        </div>
+      </aside>
+    </div>
+  </div>
+);
+
+// ═════════════════════════════════════════════════════════════════════════
+// PATH C · COMMAND CANVAS — AI is a dedicated full-canvas surface (⌘I)
+// ═════════════════════════════════════════════════════════════════════════
+const PathC = () => {
+  const [lens, setLens] = useState('plan');
+  return (
+    <div className="flex-1 relative" style={{ background: 'var(--pulse-canvas)' }}>
+      {/* dim background hint */}
+      <div className="absolute inset-0 opacity-[0.04] flex items-center justify-center">
+        <div className="text-[120px] font-mono-pulse tracking-[0.2em]">CAL</div>
+      </div>
+      <div className="c-overlay fade-up">
+        {/* Hero search */}
+        <div className="c-search">
+          <AiChip>Claude</AiChip>
+          <input autoFocus placeholder="Schedule, find, or ask anything…" />
+          <kbd className="font-mono-pulse text-[10px]" style={{ color: 'var(--pulse-ink-3)' }}>⌘↵</kbd>
+        </div>
+        {/* Lens bar */}
+        <div className="c-lens-bar">
+          <button className="c-lens" data-active={lens === 'plan'}    onClick={() => setLens('plan')}><I.Clock /> Plan</button>
+          <button className="c-lens" data-active={lens === 'reflect'} onClick={() => setLens('reflect')}><I.Chart /> Reflect</button>
+          <button className="c-lens" data-active={lens === 'people'}  onClick={() => setLens('people')}><I.Users /> People</button>
+        </div>
+        {/* Canvas */}
+        <div className="c-canvas">
+          {lens === 'plan' && (
+            <>
+              <div className="c-tile c-tile-hero">
+                <AiChip className="mb-3">Claude · Today</AiChip>
+                <p className="text-lg" style={{ color: 'var(--pulse-ink)' }}>You have <strong>2 conflicts</strong> at 3 pm and one <strong>tight drive</strong> at noon. Your <strong>9–11 am focus block</strong> is safe.</p>
+                <div className="flex gap-2 mt-3">
+                  <button className="px-3 py-1.5 rounded-md font-mono-pulse text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ background: 'var(--pulse-rose)', color: 'white' }}>Resolve conflicts</button>
+                  <button className="px-3 py-1.5 rounded-md font-mono-pulse text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink)' }}>Add buffer</button>
+                </div>
+              </div>
+              <div className="c-tile">
+                <div className="flex items-center gap-2 mb-3">
+                  <MonoLabel>Conflicts</MonoLabel>
+                  <span className="font-mono-pulse text-[10px]" style={{ color: 'var(--pulse-tone-warning)' }}>{CONFLICTS.length}</span>
+                </div>
+                {CONFLICTS.map(c => (
+                  <div key={c.id} className="py-2 border-b last:border-0" style={{ borderColor: 'var(--pulse-border)' }}>
+                    <div className="text-sm font-medium" style={{ color: 'var(--pulse-ink)' }}>{c.a} ↔ {c.b}</div>
+                    <div className="font-mono-pulse text-[11px] tnum" style={{ color: 'var(--pulse-ink-3)' }}>{c.when}</div>
+                    <a className="font-mono-pulse text-[11px] font-semibold mt-1 inline-block" style={{ color: 'var(--pulse-rose)' }}>{c.suggest} →</a>
+                  </div>
+                ))}
+              </div>
+              <div className="c-tile">
+                <div className="flex items-center gap-2 mb-3">
+                  <MonoLabel>Find time</MonoLabel>
+                </div>
+                {SUGGESTIONS.map(s => (
+                  <div key={s.id} className="py-2 border-b last:border-0 flex items-center justify-between" style={{ borderColor: 'var(--pulse-border)' }}>
+                    <div>
+                      <div className="text-sm" style={{ color: 'var(--pulse-ink)' }}>{s.label}</div>
+                      <div className="font-mono-pulse text-[11px] tnum" style={{ color: 'var(--pulse-ink-3)' }}>{s.range} · {s.reason}</div>
+                    </div>
+                    <span className="font-mono-pulse text-[12px] font-semibold tnum" style={{ color: 'var(--pulse-tone-positive)' }}>{s.score}%</span>
+                  </div>
+                ))}
+              </div>
+              <div className="c-tile">
+                <MonoLabel className="mb-3 block">Focus blocks</MonoLabel>
+                {FOCUS_BLOCKS.map(b => (
+                  <div key={b.id} className="py-2 border-b last:border-0 flex items-center justify-between" style={{ borderColor: 'var(--pulse-border)' }}>
+                    <div>
+                      <div className="text-sm" style={{ color: 'var(--pulse-ink)' }}>{b.label} · <span className="font-mono-pulse tnum">{b.range}</span></div>
+                      <div className="mono-label mt-0.5">{b.type}</div>
+                    </div>
+                    <button className="px-2.5 py-1 rounded-md font-mono-pulse text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ background: 'var(--pulse-rose)', color: 'white' }}>Add</button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {lens === 'reflect' && (
+            <>
+              <div className="c-tile c-tile-hero">
+                <AiChip className="mb-3">Claude · This week</AiChip>
+                <p className="text-lg" style={{ color: 'var(--pulse-ink)' }}>
+                  <span className="tnum font-semibold">{ANALYTICS.meetingHours}h</span> meetings,{' '}
+                  <span className="tnum font-semibold">{ANALYTICS.focusHours}h</span> focus.{' '}
+                  <span style={{ color: 'var(--pulse-tone-positive)' }}>+47% focus vs last week.</span>
+                </p>
+                <div className="a-sparkline mt-3" style={{ height: 40 }}>
+                  {ANALYTICS.trend.map((v, i) => (
+                    <div key={i} className="a-spark-bar" style={{ height: `${v * 3}px` }} />
+                  ))}
+                </div>
+              </div>
+              <div className="c-tile">
+                <MonoLabel className="mb-3 block">Two ideas</MonoLabel>
+                <ul className="space-y-3 text-sm" style={{ color: 'var(--pulse-ink-2)' }}>
+                  <li className="flex gap-2"><I.Sparkles /> <span>Tuesdays are <strong>73%</strong> meetings. Block 9–11 am for focus.</span></li>
+                  <li className="flex gap-2"><I.Sparkles /> <span>3 people went <strong>3+ weeks</strong> without time on calendar.</span></li>
+                </ul>
+              </div>
+              <div className="c-tile">
+                <MonoLabel className="mb-3 block">Ship Q3 roadmap</MonoLabel>
+                <p className="text-sm" style={{ color: 'var(--pulse-ink)' }}><span className="tnum font-semibold">62%</span> of week on this goal — up from 41%.</p>
+                <div className="h-1.5 rounded-full mt-2 overflow-hidden" style={{ background: 'var(--pulse-border)' }}>
+                  <div className="h-full rounded-full" style={{ width: '62%', background: 'var(--pulse-rose)' }} />
+                </div>
+              </div>
+            </>
+          )}
+          {lens === 'people' && (
+            <>
+              <div className="c-tile c-tile-hero">
+                <AiChip className="mb-3">Claude · Relationships</AiChip>
+                <p className="text-lg" style={{ color: 'var(--pulse-ink)' }}><strong>3 people</strong> are drifting. <strong>2</strong> hit a milestone this week.</p>
+              </div>
+              <div className="c-tile" style={{ gridColumn: '1 / -1' }}>
+                {PEOPLE.map(p => (
+                  <div key={p.id} className="py-3 border-b last:border-0 flex items-center gap-3" style={{ borderColor: 'var(--pulse-border)' }}>
+                    <Avatar name={p.name} color={p.color} size={32} />
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold" style={{ color: 'var(--pulse-ink)' }}>{p.name}</div>
+                      <div className="font-mono-pulse text-[11px] uppercase tracking-[0.1em]" style={{ color: 'var(--pulse-ink-3)' }}>Last met {p.last}</div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded font-mono-pulse text-[10px] font-semibold uppercase tracking-[0.1em]" style={{
+                      background: p.health === 'strong' ? 'var(--pulse-tone-positive-soft)' : p.health === 'healthy' ? 'var(--pulse-tone-info-soft)' : p.health === 'needs_attention' ? 'var(--pulse-tone-warning-soft)' : 'var(--pulse-tone-overdue-soft)',
+                      color:      p.health === 'strong' ? 'var(--pulse-tone-positive)'      : p.health === 'healthy' ? 'var(--pulse-tone-info)'      : p.health === 'needs_attention' ? 'var(--pulse-tone-warning)'      : 'var(--pulse-tone-overdue)',
+                    }}>{p.health.replace('_', ' ')}</span>
+                    <button className="font-mono-pulse text-[11px] font-semibold" style={{ color: 'var(--pulse-rose)' }}>Schedule →</button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── PULSE SIDEBAR (fake, marks Calendar active) ──────────────────────────
+const PulseSidebar = () => (
+  <aside className="w-[232px] shrink-0 flex flex-col border-r" style={{ background: 'var(--pulse-sidebar-bg)', borderColor: 'var(--pulse-border)' }}>
+    <div className="h-14 flex items-center gap-2 px-4 border-b" style={{ borderColor: 'var(--pulse-border)' }}>
+      <div className="w-6 h-6 rounded-md" style={{ background: 'var(--pulse-rose)' }} />
+      <span className="font-semibold tracking-tight">Pulse</span>
+    </div>
+    <nav className="flex-1 p-3 space-y-4 text-sm">
+      <div>
+        <div className="mono-label mb-1 px-2">Overview</div>
+        {['Today', 'Dashboard'].map(x => (
+          <button key={x} className="w-full text-left px-2 py-1.5 rounded-md" style={{ color: 'var(--pulse-ink-2)' }}>{x}</button>
+        ))}
+      </div>
+      <div>
+        <div className="mono-label mb-1 px-2">Communication</div>
+        {['Inbox', 'Email', 'Relay', 'Glimpse'].map(x => (
+          <button key={x} className="w-full text-left px-2 py-1.5 rounded-md" style={{ color: 'var(--pulse-ink-2)' }}>{x}</button>
+        ))}
+      </div>
+      <div>
+        <div className="mono-label mb-1 px-2">Work &amp; people</div>
+        {['Calendar', 'Contacts', 'Notes'].map(x => (
+          <button key={x} className="w-full text-left px-2 py-1.5 rounded-md font-medium" style={
+            x === 'Calendar' ? { background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' } : { color: 'var(--pulse-ink-2)' }
+          }>{x}</button>
+        ))}
+      </div>
+    </nav>
+    <div className="p-3 border-t" style={{ borderColor: 'var(--pulse-border)' }}>
+      <div className="flex items-center gap-2 p-2 rounded-md" style={{ background: 'var(--pulse-rose-softer)' }}>
+        <I.Sparkles />
+        <span className="font-mono-pulse text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: 'var(--pulse-rose)' }}>Pulse AI</span>
+      </div>
+    </div>
+  </aside>
+);
+
+// ── APP SHELL ──────────────────────────────────────────────────────────────
+const App = () => {
+  const [path, setPath] = useState('A');
+  const [theme, setTheme] = useState('dark');
+  useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+
+  return (
+    <div className="h-screen flex flex-col">
+      {/* Playground top bar */}
+      <div className="pg-bar h-12 flex items-center justify-between px-4 border-b shrink-0" style={{ borderColor: 'var(--pulse-border)' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded" style={{ background: 'var(--pulse-rose)' }} />
+          <span className="font-mono-pulse text-[11px] font-semibold uppercase tracking-[0.12em]">Calendar AI Panel · Playground</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button className="pg-pill" data-active={path === 'A'} onClick={() => setPath('A')}>A · Refined panel</button>
+          <button className="pg-pill" data-active={path === 'B'} onClick={() => setPath('B')}>B · Today-rail native</button>
+          <button className="pg-pill" data-active={path === 'C'} onClick={() => setPath('C')}>C · Command canvas (⌘I)</button>
+        </div>
+        <div className="flex items-center gap-1">
+          <button className="pg-pill font-mono-pulse uppercase tracking-[0.1em]" data-active={theme === 'light'} onClick={() => setTheme('light')}>Light</button>
+          <button className="pg-pill font-mono-pulse uppercase tracking-[0.1em]" data-active={theme === 'dark'}  onClick={() => setTheme('dark')}>Dark</button>
+        </div>
+      </div>
+      {/* Pulse-shell main */}
+      <div className="flex-1 flex overflow-hidden">
+        <PulseSidebar />
+        {path === 'A' && <PathA />}
+        {path === 'B' && <PathB />}
+        {path === 'C' && <PathC />}
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
