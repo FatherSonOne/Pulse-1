@@ -10,20 +10,9 @@
  * facets, selection, and the dock stay neutral (--pulse-ink* / --pulse-border*).
  * --pulse-rose is the brand color and is NOT used in this sheet.
  *
- * Phase 0 scaffold — placeholder style only; the real stylesheet is authored
- * in Phase 9 against _design-playground/search-redesign.html (Path B).
+ * Density and dark/light correctness validated in Phase 9 against
+ * _design-playground/search-redesign.html (Path B).
  */
-
-.search-workbench-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  min-height: 240px;
-  padding: 2rem;
-  color: var(--pulse-ink-3, #6b7280);
-  font-size: 0.875rem;
-}
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Dev-only v1 ⇄ v2 toggle (SearchDevToggle). Mirrors .ck-devtoggle from the
@@ -94,7 +83,7 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  background: var(--pulse-bg, var(--pulse-surface));
+  background: var(--pulse-canvas);
 }
 
 /* ── Toolbar ──────────────────────────────────────────────────────────────*/
@@ -117,7 +106,7 @@
   padding: 7px 10px;
   border-radius: 9px;
   border: 1px solid var(--pulse-border-strong);
-  background: var(--pulse-bg, var(--pulse-surface));
+  background: var(--pulse-canvas);
 }
 .sw-search-field:focus-within { border-color: var(--pulse-ink-3); }
 .sw-search-icon { color: var(--pulse-ink-3); flex: 0 0 auto; }
@@ -148,9 +137,9 @@
   cursor: pointer;
   transition: background 120ms, color 120ms;
 }
-.sw-icon-btn:hover { background: var(--pulse-hover, rgba(0,0,0,0.05)); color: var(--pulse-ink); }
-.sw-icon-btn.is-active { background: var(--pulse-hover, rgba(0,0,0,0.06)); color: var(--pulse-ink); }
-.sw-icon-btn.is-listening { color: var(--pulse-ink); background: var(--pulse-hover, rgba(0,0,0,0.08)); }
+.sw-icon-btn:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
+.sw-icon-btn.is-active { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
+.sw-icon-btn.is-listening { color: var(--pulse-ink); background: var(--pulse-surface-raised); }
 .sw-icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .sw-icon-btn:focus-visible { outline: 2px solid var(--pulse-ink-3); outline-offset: 1px; }
 
@@ -161,7 +150,7 @@
   gap: 2px;
   padding: 2px;
   border-radius: 8px;
-  background: var(--pulse-bg, rgba(0,0,0,0.04));
+  background: var(--pulse-canvas-soft);
   border: 1px solid var(--pulse-border);
   flex: 0 0 auto;
 }
@@ -212,7 +201,7 @@
   border-radius: 6px;
   cursor: pointer;
 }
-.sw-export-menu button:hover { background: var(--pulse-hover, rgba(0,0,0,0.05)); }
+.sw-export-menu button:hover { background: var(--pulse-surface-raised); }
 
 /* Suggestions / operator-hint dropdowns */
 .sw-suggestions {
@@ -242,7 +231,7 @@
   cursor: pointer;
 }
 .sw-suggestion-row:hover,
-.sw-suggestion-row.is-active { background: var(--pulse-hover, rgba(0,0,0,0.05)); }
+.sw-suggestion-row.is-active { background: var(--pulse-surface-raised); }
 .sw-suggestion-icon { color: var(--pulse-ink-3); }
 .sw-suggestion-code {
   font-family: var(--pulse-font-mono);
@@ -274,24 +263,6 @@
   min-width: 0;
   overflow: auto;
   padding: 16px 20px 48px;
-}
-
-/* Region placeholders (removed as each phase fills its region) */
-.sw-region-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 16px;
-  color: var(--pulse-ink-3);
-  font-family: var(--pulse-font-mono);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-}
-.sw-center-empty {
-  min-height: 220px;
-  border: 1px dashed var(--pulse-border-strong);
-  border-radius: 10px;
 }
 
 /* Screen-reader-only live region */
@@ -341,7 +312,7 @@
   padding: 2px 4px;
   border-radius: 5px;
 }
-.sw-facet-clear:hover { color: var(--pulse-ink); background: var(--pulse-hover, rgba(0,0,0,0.05)); }
+.sw-facet-clear:hover { color: var(--pulse-ink); background: var(--pulse-surface-raised); }
 
 /* Content-type checklist */
 .sw-facet-checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
@@ -356,7 +327,7 @@
   font-size: 13px;
   transition: background 110ms;
 }
-.sw-facet-check:hover { background: var(--pulse-hover, rgba(0,0,0,0.05)); }
+.sw-facet-check:hover { background: var(--pulse-surface-raised); }
 .sw-facet-check.is-on { color: var(--pulse-ink); }
 .sw-facet-check input { accent-color: var(--pulse-ink-3); margin: 0; cursor: pointer; }
 .sw-facet-check-icon { color: var(--pulse-ink-3); flex: 0 0 auto; }
@@ -365,7 +336,7 @@
   font-family: var(--pulse-font-mono);
   font-size: 11px;
   color: var(--pulse-ink-3);
-  background: var(--pulse-hover, rgba(0,0,0,0.05));
+  background: var(--pulse-surface-raised);
   border-radius: 5px;
   padding: 1px 6px;
 }
@@ -481,7 +452,7 @@
   cursor: pointer;
   text-align: left;
 }
-.sw-facet-saved-btn:hover { background: var(--pulse-hover, rgba(0,0,0,0.05)); color: var(--pulse-ink); }
+.sw-facet-saved-btn:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
 .sw-facet-saved-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sw-facet-saved-bell { color: var(--pulse-ink-3); flex: 0 0 auto; }
 .sw-facet-saved-del {
@@ -499,7 +470,7 @@
   transition: opacity 110ms, background 110ms;
 }
 .sw-facet-saved-row:hover .sw-facet-saved-del { opacity: 1; }
-.sw-facet-saved-del:hover { background: var(--pulse-hover, rgba(0,0,0,0.06)); color: var(--pulse-ink); }
+.sw-facet-saved-del:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
 .sw-facet-saved-empty {
   color: var(--pulse-ink-3);
   font-size: 12px;
@@ -529,7 +500,7 @@
 .sw-source-error {
   font-size: 11px;
   color: var(--pulse-ink-2, var(--pulse-ink));
-  background: var(--pulse-hover, rgba(0,0,0,0.05));
+  background: var(--pulse-surface-raised);
   border: 1px solid var(--pulse-border-strong);
   border-radius: 6px;
   padding: 3px 8px;
@@ -543,7 +514,7 @@
   gap: 5px;
   font-size: 12px;
   color: var(--pulse-ink-2, var(--pulse-ink));
-  background: var(--pulse-hover, rgba(0,0,0,0.05));
+  background: var(--pulse-surface-raised);
   border-radius: 999px;
   padding: 3px 10px;
 }
@@ -571,7 +542,7 @@
   gap: 2px;
   padding: 2px;
   border-radius: 7px;
-  background: var(--pulse-bg, rgba(0,0,0,0.04));
+  background: var(--pulse-canvas-soft);
   border: 1px solid var(--pulse-border);
 }
 .sw-segmented-label {
@@ -629,7 +600,7 @@
   cursor: pointer;
   transition: background 110ms, border-color 110ms;
 }
-.sw-batch-btn:hover { background: var(--pulse-hover, rgba(0,0,0,0.05)); }
+.sw-batch-btn:hover { background: var(--pulse-surface-raised); }
 .sw-batch-btn.is-primary { background: var(--pulse-ink); border-color: var(--pulse-ink); color: var(--pulse-surface); }
 .sw-batch-btn.is-primary:hover { opacity: 0.9; background: var(--pulse-ink); }
 .sw-batch-btn.is-ghost { border-color: transparent; color: var(--pulse-ink-3); }
@@ -663,7 +634,7 @@
   top: 0;
   z-index: 5;
   height: 30px;
-  background: var(--pulse-bg, var(--pulse-surface));
+  background: var(--pulse-canvas);
   border-bottom: 1px solid var(--pulse-border);
   font-family: var(--pulse-font-mono);
   font-size: 9.5px;
@@ -683,7 +654,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  background: var(--pulse-bg, var(--pulse-surface));
+  background: var(--pulse-canvas);
   border-bottom: 1px solid var(--pulse-border);
 }
 .sw-lane-label {
@@ -709,9 +680,9 @@
 }
 .sw-row:last-child { border-bottom: none; }
 .sw-row-main { min-height: 40px; padding-top: 5px; padding-bottom: 5px; }
-.sw-row:hover { background: var(--pulse-hover, rgba(0,0,0,0.035)); }
+.sw-row:hover { background: var(--pulse-surface-raised); }
 .sw-row:focus-visible { box-shadow: inset 0 0 0 2px var(--pulse-ink-3); }
-.sw-row.is-selected { background: var(--pulse-hover, rgba(0,0,0,0.05)); }
+.sw-row.is-selected { background: var(--pulse-surface-raised); }
 
 .sw-row-select {
   display: inline-flex;
@@ -767,7 +738,7 @@
   font-size: 10px;
   font-weight: 600;
   color: var(--pulse-ink-2, var(--pulse-ink));
-  background: var(--pulse-hover, rgba(0,0,0,0.07));
+  background: var(--pulse-surface-raised);
 }
 .sw-row-person-name {
   color: var(--pulse-ink-2, var(--pulse-ink));
@@ -863,7 +834,7 @@
   font-family: var(--pulse-font-mono);
   font-size: 10px;
   color: var(--pulse-ink-2, var(--pulse-ink));
-  background: var(--pulse-hover, rgba(0,0,0,0.06));
+  background: var(--pulse-surface-raised);
   border-radius: 999px;
   padding: 1px 7px;
   letter-spacing: 0;
@@ -884,7 +855,7 @@
   padding: 7px 10px;
   border-radius: 8px;
   border: 1px solid var(--pulse-border-strong);
-  background: var(--pulse-bg, var(--pulse-surface));
+  background: var(--pulse-canvas);
   color: var(--pulse-ink);
   font-size: 13px;
   outline: none;
@@ -904,7 +875,7 @@
   cursor: pointer;
   transition: background 110ms;
 }
-.sw-dock-note-add:hover { background: var(--pulse-hover, rgba(0,0,0,0.05)); color: var(--pulse-ink); }
+.sw-dock-note-add:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
 
 /* Items */
 .sw-dock-items {
@@ -920,7 +891,7 @@
   padding: 9px 10px;
   border-radius: 9px;
   border: 1px solid var(--pulse-border);
-  background: var(--pulse-bg, var(--pulse-surface));
+  background: var(--pulse-canvas);
 }
 .sw-dock-card-row { display: flex; align-items: flex-start; gap: 6px; }
 .sw-dock-card-title {
@@ -945,7 +916,7 @@
   border-radius: 5px;
   cursor: pointer;
 }
-.sw-dock-card-btn:hover { background: var(--pulse-hover, rgba(0,0,0,0.06)); color: var(--pulse-ink); }
+.sw-dock-card-btn:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
 .sw-dock-pin.is-pinned { color: var(--pulse-ink); fill: currentColor; }
 .sw-dock-card-preview {
   margin: 5px 0 0;
@@ -968,7 +939,7 @@
   color: var(--pulse-ink-3);
 }
 .sw-dock-card-tag {
-  background: var(--pulse-hover, rgba(0,0,0,0.05));
+  background: var(--pulse-surface-raised);
   border-radius: 5px;
   padding: 1px 6px;
   text-transform: capitalize;
@@ -1006,7 +977,7 @@
   cursor: pointer;
   transition: background 110ms;
 }
-.sw-dock-export:hover { background: var(--pulse-hover, rgba(0,0,0,0.05)); color: var(--pulse-ink); }
+.sw-dock-export:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Phase 7 — working-memory empty state (center, when query is empty).
@@ -1051,7 +1022,7 @@
   text-align: left;
   transition: background 110ms;
 }
-.sw-wm-resume-row:hover { background: var(--pulse-hover, rgba(0,0,0,0.05)); }
+.sw-wm-resume-row:hover { background: var(--pulse-surface-raised); }
 .sw-wm-resume-key {
   flex: 0 0 auto;
   display: inline-flex;
@@ -1059,7 +1030,7 @@
   justify-content: center;
   width: 18px; height: 18px;
   border-radius: 5px;
-  background: var(--pulse-hover, rgba(0,0,0,0.06));
+  background: var(--pulse-surface-raised);
   font-family: var(--pulse-font-mono);
   font-size: 10px;
   color: var(--pulse-ink-3);
@@ -1083,7 +1054,7 @@
   text-align: left;
   transition: background 110ms;
 }
-.sw-wm-thread-row:hover { background: var(--pulse-hover, rgba(0,0,0,0.05)); }
+.sw-wm-thread-row:hover { background: var(--pulse-surface-raised); }
 .sw-wm-thread-avatar {
   flex: 0 0 auto;
   width: 22px; height: 22px;
@@ -1114,7 +1085,7 @@
   text-align: left;
   transition: background 110ms;
 }
-.sw-wm-pinned-row:hover { background: var(--pulse-hover, rgba(0,0,0,0.05)); }
+.sw-wm-pinned-row:hover { background: var(--pulse-surface-raised); }
 .sw-wm-pinned-title { color: var(--pulse-ink); font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sw-wm-pinned-preview { color: var(--pulse-ink-3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -1155,3 +1126,24 @@
 .sw-wm-onboard-chip:hover { border-color: var(--pulse-ink-3); }
 .sw-wm-onboard-syntax { font-family: var(--pulse-font-mono); font-size: 12px; color: var(--pulse-ink); }
 .sw-wm-onboard-caption { font-size: 11px; color: var(--pulse-ink-3); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Phase 9 — motion + a11y. A gentle hover-lift on the empty-state chips
+ * (dense table/list rows stay tint-only — a transform there would jitter the
+ * grid). Everything is disabled under prefers-reduced-motion.
+ * ────────────────────────────────────────────────────────────────────────── */
+.sw-wm-browse-chip,
+.sw-wm-onboard-chip { transition: border-color 110ms, transform 110ms, background 110ms; }
+.sw-wm-browse-chip:hover,
+.sw-wm-onboard-chip:hover { transform: translateY(-1px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .search-workbench *,
+  .sw-devtoggle * {
+    transition: none !important;
+    animation: none !important;
+  }
+  .sw-wm-browse-chip:hover,
+  .sw-wm-onboard-chip:hover { transform: none; }
+  .sw-body { transition: none !important; }
+}
