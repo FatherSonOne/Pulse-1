@@ -283,7 +283,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                           <p className="text-[10px] text-[var(--pulse-ink-3)] mt-1 truncate">{suggestion.reason}</p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-mono text-[11px] tracking-wider font-semibold text-emerald-600 dark:text-emerald-400" style={{ fontVariantNumeric: 'tabular-nums' }}>{suggestion.score}%</span>
+                          <span className="font-mono text-[11px] tracking-wider font-semibold text-[var(--pulse-tone-positive)]" style={{ fontVariantNumeric: 'tabular-nums' }}>{suggestion.score}%</span>
                           <Plus className="w-4 h-4 text-zinc-400 group-hover:text-[var(--pulse-rose)] transition" />
                         </div>
                       </button>
@@ -328,16 +328,16 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <AIProvenanceChip vendor="CLAUDE" type="CONFLICTS" />
-                    <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-amber-600 dark:text-amber-400">{props.conflicts.length} detected</span>
+                    <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-[var(--pulse-tone-warning)]">{props.conflicts.length} detected</span>
                   </div>
                   <div className="space-y-2">
                     {props.conflicts.map((conflict, i) => (
-                      <div key={i} className="p-3 bg-amber-500/[0.06] dark:bg-amber-500/[0.08] rounded-xl border border-amber-500/20 dark:border-amber-500/25">
+                      <div key={i} className="p-3 bg-[var(--pulse-tone-warning-soft)] rounded-xl border border-[var(--pulse-tone-warning-soft)]">
                         <div className="flex items-center gap-2 mb-2">
                           <span className={`px-2 py-0.5 rounded font-mono text-[10px] tracking-[0.1em] uppercase font-semibold ${
-                            conflict.priority === 'high'   ? 'bg-red-500/15 text-red-700 dark:text-red-400' :
-                            conflict.priority === 'medium' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' :
-                                                              'bg-zinc-500/15 text-[var(--pulse-ink-2)]'
+                            conflict.priority === 'high'   ? 'bg-[var(--pulse-tone-overdue-soft)] text-[var(--pulse-tone-overdue)]' :
+                            conflict.priority === 'medium' ? 'bg-[var(--pulse-tone-warning-soft)] text-[var(--pulse-tone-warning)]' :
+                                                              'bg-[var(--pulse-tone-neutral-soft)] text-[var(--pulse-ink-2)]'
                           }`}>
                             {conflict.priority}
                           </span>
@@ -405,10 +405,10 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                           <p className="text-[10px] text-zinc-500 truncate">{insight.contact.email}</p>
                         </div>
                         <span className={`px-2 py-0.5 rounded font-mono text-[10px] tracking-[0.1em] uppercase font-semibold border ${
-                          insight.relationshipHealth === 'strong'          ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-400' :
-                          insight.relationshipHealth === 'healthy'         ? 'bg-blue-500/15 border-blue-500/40 text-blue-700 dark:text-blue-400' :
-                          insight.relationshipHealth === 'needs_attention' ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-400' :
-                                                                              'bg-red-500/15 border-red-500/40 text-red-700 dark:text-red-400'
+                          insight.relationshipHealth === 'strong'          ? 'bg-[var(--pulse-tone-positive-soft)] border-[var(--pulse-tone-positive-glow)] text-[var(--pulse-tone-positive)]' :
+                          insight.relationshipHealth === 'healthy'         ? 'bg-[var(--pulse-tone-info-soft)] border-[var(--pulse-tone-info-glow)] text-[var(--pulse-tone-info)]' :
+                          insight.relationshipHealth === 'needs_attention' ? 'bg-[var(--pulse-tone-warning-soft)] border-[var(--pulse-tone-warning-glow)] text-[var(--pulse-tone-warning)]' :
+                                                                              'bg-[var(--pulse-tone-overdue-soft)] border-[var(--pulse-tone-overdue-glow)] text-[var(--pulse-tone-overdue)]'
                         }`}>
                           {insight.relationshipHealth.replace('_', ' ')}
                         </span>
@@ -417,7 +417,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                         <p className="flex items-center gap-1.5"><CalendarIcon className="w-3 h-3 shrink-0" /> Last met: {insight.lastMeeting ? insight.lastMeeting.toLocaleDateString() : 'Never'}</p>
                         <p className="flex items-center gap-1.5"><Clock className="w-3 h-3 shrink-0" /> {insight.daysSinceLastContact} days since last contact</p>
                         {insight.upcomingMilestones.length > 0 && (
-                          <p className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400"><Star className="w-3 h-3 shrink-0" /> {insight.upcomingMilestones[0].description} in {insight.upcomingMilestones[0].daysUntil} days</p>
+                          <p className="flex items-center gap-1.5 text-[var(--pulse-tone-warning)]"><Star className="w-3 h-3 shrink-0" /> {insight.upcomingMilestones[0].description} in {insight.upcomingMilestones[0].daysUntil} days</p>
                         )}
                       </div>
                       {insight.suggestedActions.length > 0 && (
@@ -636,7 +636,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                   <ul className="space-y-2">
                     {props.meetingPrep.talkingPoints.map((point, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <Check className="w-3.5 h-3.5 text-emerald-500 mt-1 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-[var(--pulse-tone-positive)] mt-1 shrink-0" />
                         <span className="text-sm text-[var(--pulse-ink-2)] leading-relaxed">{point}</span>
                       </li>
                     ))}
@@ -712,7 +712,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                         <p className="text-[10px] text-[var(--pulse-ink-3)] mt-1 truncate">{option.reason}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-mono text-[11px] tracking-wider font-semibold text-emerald-600 dark:text-emerald-400" style={{ fontVariantNumeric: 'tabular-nums' }}>{option.availabilityScore}%</span>
+                        <span className="font-mono text-[11px] tracking-wider font-semibold text-[var(--pulse-tone-positive)]" style={{ fontVariantNumeric: 'tabular-nums' }}>{option.availabilityScore}%</span>
                         <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-[var(--pulse-rose)] transition" />
                       </div>
                     </div>
@@ -820,7 +820,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                     onClick={() => {
                       props.onDeleteGoal(props.editingGoal!.id);
                     }}
-                    className="px-4 py-2 font-mono text-[11px] tracking-[0.1em] uppercase text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                    className="px-4 py-2 font-mono text-[11px] tracking-[0.1em] uppercase text-[var(--pulse-tone-overdue)] hover:bg-[var(--pulse-tone-overdue-soft)] rounded-lg transition"
                   >
                     Delete
                   </button>

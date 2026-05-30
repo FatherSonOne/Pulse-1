@@ -359,13 +359,16 @@ const DayTimeline: React.FC<{
                   left: `calc(${lay.col * widthPct}% )`,
                   width: `calc(${widthPct}% - ${gap}px)`,
                   background: 'var(--pulse-surface, #fff)',
-                  border: `1px solid ${active ? 'rgb(244 63 94)' : (conflict ? 'rgb(239 68 68)' : 'var(--pulse-border-strong, rgba(0,0,0,0.16))')}`,
-                  boxShadow: active ? '0 0 0 1.5px rgb(244 63 94), 0 4px 14px rgba(0,0,0,0.12)' : '0 1px 4px rgba(0,0,0,0.10)',
+                  border: `1px solid ${active ? 'var(--pulse-rose)' : (conflict ? 'var(--pulse-tone-overdue)' : 'var(--pulse-border-strong, rgba(0,0,0,0.16))')}`,
+                  boxShadow: active ? '0 0 0 1.5px var(--pulse-rose), 0 4px 14px rgba(0,0,0,0.12)' : '0 1px 4px rgba(0,0,0,0.10)',
                 }}>
-                <span className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l" style={{ background: meta.color }} />
+                {/* 1px left tick — compliant with the side-stripe ban
+                    (rule allows ≤1px colored accents). Matches the
+                    getEventTypeStyle vocabulary used in Week/Day views. */}
+                <span className="absolute left-0 top-0 bottom-0 w-px" style={{ background: meta.color }} />
                 <div className="flex items-center gap-1 pl-1.5">
                   <span className="text-[12px] font-medium text-zinc-900 dark:text-white truncate">{ev.title}</span>
-                  {conflict && <AlertTriangle className="w-3 h-3 text-red-500 shrink-0" />}
+                  {conflict && <AlertTriangle className="w-3 h-3 text-[var(--pulse-tone-overdue)] shrink-0" />}
                 </div>
                 {!dense && h > 34 && (
                   <div className="pl-1.5 font-mono text-[10px] text-zinc-500 dark:text-zinc-400 truncate" style={{ fontVariantNumeric: 'tabular-nums' }}>

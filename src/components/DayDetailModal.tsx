@@ -127,11 +127,10 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                         onClick={() => onEventClick(event)}
                         className="w-full text-left p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] hover:bg-zinc-100 dark:hover:bg-white/[0.055] transition flex items-start gap-3"
                       >
-                        <span
-                          className="w-1 self-stretch rounded-full shrink-0"
-                          style={{ backgroundColor: 'var(--cal-accent)' }}
-                          aria-hidden="true"
-                        />
+                        {/* Coral side-bar removed — Step 10 polish. The
+                            modal chrome already establishes signal, and
+                            w-1 self-stretch reproduces the banned
+                            side-stripe affordance per DESIGN.md §5. */}
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{event.title}</h4>
                           {event.location && (
@@ -178,11 +177,10 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                             {Math.round((event.end.getTime() - event.start.getTime()) / (1000 * 60))} min
                           </p>
                         </div>
-                        <span
-                          className="w-1 self-stretch rounded-full shrink-0"
-                          style={{ backgroundColor: 'var(--cal-accent)' }}
-                          aria-hidden="true"
-                        />
+                        {/* Coral side-bar removed — Step 10 polish. The
+                            modal chrome already establishes signal, and
+                            w-1 self-stretch reproduces the banned
+                            side-stripe affordance per DESIGN.md §5. */}
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{event.title}</h4>
                           {event.location && (
