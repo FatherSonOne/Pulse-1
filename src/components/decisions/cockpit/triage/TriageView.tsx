@@ -15,6 +15,7 @@ import { RealTimeIndicator, type ConnectionStatus } from '../../RealTimeIndicato
 import { QueueGroup } from './QueueGroup';
 import { FocalPane } from '../focal/FocalPane';
 import type { TaskActions } from '../focal/TaskDetail';
+import type { DecisionActions } from '../focal/DecisionDetail';
 import { buildQueue, type QueueEntry, type QueueGroupModel } from './queueModel';
 
 interface TriageViewProps {
@@ -25,6 +26,7 @@ interface TriageViewProps {
   connectionStatus: ConnectionStatus;
   onQuickAction: (entry: QueueEntry, action: 'done' | 'snooze') => void;
   taskActions: TaskActions;
+  decisionActions: DecisionActions;
 }
 
 const isTypingTarget = (target: EventTarget | null): boolean => {
@@ -34,7 +36,7 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
 };
 
 export function TriageView({
-  tasks, decisions, currentUserId, loading, connectionStatus, onQuickAction, taskActions,
+  tasks, decisions, currentUserId, loading, connectionStatus, onQuickAction, taskActions, decisionActions,
 }: TriageViewProps) {
   const groups: QueueGroupModel[] = useMemo(
     () => buildQueue(tasks, decisions, currentUserId).filter((g) => g.items.length > 0),
@@ -140,7 +142,7 @@ export function TriageView({
 
       {/* Focal pane — TaskDetail (Phase 4) / DecisionDetail (Phase 5) */}
       <div className="ck-focal">
-        <FocalPane entry={selected} taskActions={taskActions} />
+        <FocalPane entry={selected} taskActions={taskActions} decisionActions={decisionActions} />
       </div>
     </div>
   );

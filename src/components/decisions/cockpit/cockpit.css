@@ -623,6 +623,55 @@
 .ck-act-btn[data-danger]:hover { color: var(--dt-status-overdue); border-color: color-mix(in oklab, var(--dt-status-overdue) 40%, transparent); }
 .ck-act-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* ───────── DecisionDetail: tally + vote + risk ───────── */
+.ck-focal-type {
+  font-family: var(--pulse-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pulse-ink-3);
+}
+.ck-mono-num { font-family: var(--pulse-font-mono); font-variant-numeric: tabular-nums; font-size: 12px; color: var(--pulse-ink-2); }
+
+.ck-tally { margin-bottom: 22px; padding: 14px 16px; border-radius: 10px; background: var(--pulse-surface-raised); border: 1px solid var(--pulse-border); }
+.ck-tally-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.ck-tally-total { color: var(--pulse-ink-3); }
+.ck-tally-row { margin-bottom: 10px; }
+.ck-tally-row:last-child { margin-bottom: 0; }
+.ck-tally-row-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; font-size: 12px; }
+.ck-tally-bar { height: 6px; border-radius: 999px; overflow: hidden; background: var(--pulse-border); }
+.ck-tally-fill { height: 100%; border-radius: 999px; }
+
+.ck-vote-label { font-family: var(--pulse-font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pulse-ink-3); margin-right: 2px; }
+.ck-vote-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 7px;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 130ms;
+}
+.ck-vote-btn:hover { filter: brightness(1.06); }
+.ck-voted-indicator { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--dt-status-done); }
+
+.ck-risk-badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-family: var(--pulse-font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ck-ai-recs { margin: 10px 0 0; padding-left: 18px; }
+.ck-ai-recs li { font-size: 12.5px; line-height: 1.5; color: var(--pulse-coral-fg); margin-bottom: 4px; }
+
 /* ───────── Dev-only v1 ⇄ v2 toggle (floating pill) ───────── */
 .ck-devtoggle {
   position: fixed;

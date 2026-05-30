@@ -1,28 +1,23 @@
 /**
  * FocalPane — routes the selected queue/timeline entry to its detail view:
- * TaskDetail (Phase 4) or DecisionDetail (Phase 5, placeholder for now).
+ * TaskDetail (Phase 4) or DecisionDetail (Phase 5).
  */
 import type { QueueEntry } from '../triage/queueModel';
 import { TaskDetail, type TaskActions } from './TaskDetail';
+import { DecisionDetail, type DecisionActions } from './DecisionDetail';
 
 interface FocalPaneProps {
   entry: QueueEntry | undefined;
   taskActions: TaskActions;
+  decisionActions: DecisionActions;
 }
 
-export function FocalPane({ entry, taskActions }: FocalPaneProps) {
+export function FocalPane({ entry, taskActions, decisionActions }: FocalPaneProps) {
   if (!entry) return null;
 
   if (entry.kind === 'task') {
     return <TaskDetail key={entry.task.id} task={entry.task} {...taskActions} />;
   }
 
-  // Decision focal — Phase 5 (tally + vote + AI risk/consensus).
-  return (
-    <div className="ck-focal-placeholder">
-      <span className="ck-focal-kicker">Decision</span>
-      <h2 className="ck-focal-title">{entry.decision.title}</h2>
-      <span className="ck-focal-note">DecisionDetail — tally · vote · AI risk/consensus (Phase 5)</span>
-    </div>
-  );
+  return <DecisionDetail key={entry.decision.id} decision={entry.decision} {...decisionActions} />;
 }

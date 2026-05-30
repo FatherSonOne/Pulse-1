@@ -23,9 +23,11 @@ import { CommandBar } from './CommandBar';
 import { TriageView } from './triage/TriageView';
 import { type QueueEntry } from './triage/queueModel';
 import { type TaskActions } from './focal/TaskDetail';
+import { type DecisionActions } from './focal/DecisionDetail';
 import { FilterState } from '../FilterBar';
 import { ReassignTaskModal } from '../ReassignTaskModal';
 import { ExtendDeadlineDialog } from '../ExtendDeadlineDialog';
+import { DecisionDecomposer } from '../DecisionDecomposer';
 import { decisionService, DecisionWithVotes } from '../../../services/decisionService';
 import { taskService, Task } from '../../../services/taskService';
 import { decisionAnalyticsService, DecisionMetrics } from '../../../services/decisionAnalyticsService';
@@ -97,6 +99,9 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
   // ── Focal task modals ──
   const [taskToReassign, setTaskToReassign] = useState<Task | null>(null);
   const [taskToExtend, setTaskToExtend] = useState<Task | null>(null);
+
+  // ── Decision decompose (Generate Tasks → DecisionDecomposer) ──
+  const [decisionToDecompose, setDecisionToDecompose] = useState<DecisionWithVotes | null>(null);
 
   // Debounced data → drives metric/nudge regeneration without thrash.
   const debouncedDecisions = useDebounce(decisions, 800);
@@ -187,17 +192,18 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     generateNudges();
   }, [loadDecisions, loadTasks, generateMetrics, generateNudges]);
 
-  // Queue row hover quick-actions. Phase 3 wires the safe, lean one — mark a
-  // task done (realtime refreshes the queue). Decision approve (= vote) and
-  // snooze land in Phases 5 / 8; until then they say so rather than no-op.
+  // Queue row hover quick-actions. `done` marks a task done (realtime refreshes
+  // the queue) or casts an Approve vote on a decision. Snooze lands in Phase 8.
   const handleQuickAction = useCallback(
     async (entry: QueueEntry, action: 'done' | 'snooze') => {
-      if (action === 'done' && entry.kind === 'task') {
+      if (action === 'snooze') {
+        toast('Snooze arrives in a later phase', { icon: '⏳' });
+        return;
+      }
+      if (entry.kind === 'task') {
         try {
           await taskService.updateTaskStatus(entry.task.id, 'done');
-          setTasks((prev) =>
-            prev.map((t) => (t.id === entry.task.id ? { ...t, status: 'done' } : t))
-          );
+          setTasks((prev) => prev.map((t) => (t.id === entry.task.id ? { ...t, status: 'done' } : t)));
           toast.success('Marked done');
         } catch (error) {
           console.error('Failed to mark task done:', error);
@@ -205,11 +211,18 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
         }
         return;
       }
-      toast(action === 'done' ? 'Open to vote — coming in Phase 5' : 'Snooze arrives in a later phase', {
-        icon: '⏳',
-      });
+      // Decision: approve from the queue.
+      if (!user?.id) return;
+      try {
+        await decisionService.castVote({ decision_id: entry.decision.id, user_id: user.id, choice: 'approve' });
+        toast.success('Approved');
+        loadDecisions();
+      } catch (error) {
+        console.error('Failed to approve decision:', error);
+        toast.error('Could not record vote');
+      }
     },
-    []
+    [user?.id, loadDecisions]
   );
 
   // ── Focal task actions (property-table edits + footer actions) ──
@@ -290,6 +303,66 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
       onOpenSource: handleOpenSource,
     }),
     [workspaceMembers, tasks, user?.id, handleStatusChange, handlePatchTask, handleMarkDone, handleDeleteTask, handleOpenSource]
+  );
+
+  // ── Decision actions ──
+  // Pre-compute linked task counts per decision (avoids N+1 in the focal pane).
+  const linkedTaskCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const task of tasks) {
+      const decisionId = task.metadata?.decision_id || task.metadata?.generated_from_decision;
+      if (decisionId) counts[decisionId] = (counts[decisionId] || 0) + 1;
+    }
+    return counts;
+  }, [tasks]);
+
+  // Generate Tasks → DecisionDecomposer writes the tasks (ported verbatim).
+  const handleDecompositionComplete = useCallback(
+    async (generated: Partial<Task>[], brief: string) => {
+      if (!decisionToDecompose) return;
+      try {
+        for (const taskData of generated) {
+          await taskService.createTask({
+            workspace_id: taskData.workspace_id!,
+            title: taskData.title!,
+            description: taskData.description,
+            priority: taskData.priority,
+            assignee_id: taskData.assignee_id,
+            deadline: taskData.deadline,
+            status: taskData.status || 'todo',
+            metadata: {
+              ...taskData.metadata,
+              generated_from_decision: decisionToDecompose.id,
+              decision_title: decisionToDecompose.title,
+            },
+          });
+        }
+        // `brief` + `tasks_generated_at` are real `decisions` columns the
+        // Decision TS interface omits; cast through unknown (matches legacy).
+        await decisionService.updateDecision(
+          decisionToDecompose.id,
+          { brief, tasks_generated_at: new Date().toISOString() } as unknown as Partial<DecisionWithVotes>
+        );
+        await Promise.all([loadTasks(), loadDecisions()]);
+        setDecisionToDecompose(null);
+      } catch (error) {
+        console.error('Failed to create tasks from decomposition:', error);
+        throw error;
+      }
+    },
+    [decisionToDecompose, loadTasks, loadDecisions]
+  );
+
+  const decisionActions: DecisionActions = useMemo(
+    () => ({
+      currentUserId: user?.id || '',
+      workspaceId: effectiveWorkspaceId,
+      members: workspaceMembers,
+      linkedTaskCounts,
+      onVoted: loadDecisions,
+      onGenerateTasks: (decision: DecisionWithVotes) => setDecisionToDecompose(decision),
+    }),
+    [user?.id, effectiveWorkspaceId, workspaceMembers, linkedTaskCounts, loadDecisions]
   );
 
   // ── Realtime handlers (ported) ──
@@ -451,6 +524,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
           connectionStatus={connectionStatus}
           onQuickAction={handleQuickAction}
           taskActions={taskActions}
+          decisionActions={decisionActions}
         />
       ) : (
         <div className="ck-body">
@@ -506,6 +580,16 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
           onExtend={async (taskId, newDeadline) => {
             await handlePatchTask(taskId, { deadline: newDeadline });
           }}
+        />
+      )}
+
+      {decisionToDecompose && (
+        <DecisionDecomposer
+          decision={decisionToDecompose}
+          workspaceId={effectiveWorkspaceId}
+          workspaceMembers={workspaceMembers as any}
+          onClose={() => setDecisionToDecompose(null)}
+          onTasksGenerated={handleDecompositionComplete}
         />
       )}
     </div>
