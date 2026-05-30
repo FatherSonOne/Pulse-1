@@ -20,12 +20,20 @@ interface MeetingExtractorProps {
   email: CachedEmail;
   onAddToCalendar: (meeting: ExtractedMeeting) => void;
   onDismiss: () => void;
+  /**
+   * When true, drops the outer rose-bordered surface and the body-stripe
+   * white background. Used by EmailAiBlock to compose this extractor as
+   * one section inside a shared rose-bordered shell, separated from
+   * neighboring sections by hairline dividers instead of an outer border.
+   */
+  nested?: boolean;
 }
 
 export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
   email,
   onAddToCalendar,
   onDismiss,
+  nested = false,
 }) => {
   const [meeting, setMeeting] = useState<ExtractedMeeting | null>(null);
   const [loading, setLoading] = useState(true);
@@ -241,7 +249,9 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
 
   if (loading) {
     return (
-      <div style={{ background: 'var(--pulse-rose-soft)', border: '1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border))', borderRadius: 12, padding: 16 }}>
+      <div style={nested
+        ? { padding: 16 }
+        : { background: 'var(--pulse-rose-soft)', border: '1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border))', borderRadius: 12, padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--pulse-rose)' }} aria-hidden />
           <span style={{ fontSize: 13, color: 'var(--pulse-ink-2)' }}>Scanning the thread for meeting details…</span>
@@ -257,12 +267,14 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
   const tone = getConfidenceTone(meeting.confidence);
 
   return (
-    <div style={{
-      background: 'var(--pulse-rose-soft)',
-      border: '1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border))',
-      borderRadius: 12,
-      overflow: 'hidden',
-    }}>
+    <div style={nested
+      ? {}
+      : {
+          background: 'var(--pulse-rose-soft)',
+          border: '1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border))',
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}>
       {/* Header — AiChip-style provenance label + confidence chip */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -295,7 +307,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
       </div>
 
       {/* Meeting details */}
-      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, background: 'var(--pulse-surface)' }}>
+      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, background: nested ? 'transparent' : 'var(--pulse-surface)' }}>
         <div>
           <div className="email-mono-label" style={{ color: 'var(--pulse-ink-3)', marginBottom: 4 }}>Title</div>
           <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--pulse-ink)' }}>{meeting.title}</div>
