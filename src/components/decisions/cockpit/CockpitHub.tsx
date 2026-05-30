@@ -34,6 +34,12 @@ import { ExtendDeadlineDialog } from '../ExtendDeadlineDialog';
 import { DecisionDecomposer } from '../DecisionDecomposer';
 import { CreateOverlay, type CreateMode } from './create/CreateOverlay';
 import type { FrameId } from '../wizard/types';
+import { AlertsPanel } from '../AlertsPanel';
+import { ConversationalAssistant } from '../ConversationalAssistant';
+import { WorkspaceActivityPanel } from '../activity/WorkspaceActivityPanel';
+import { AITaskPrioritizer } from '../../tasks/AITaskPrioritizer';
+import { type AITaskPriority } from '../../../services/taskIntelligenceService';
+import { dismissNudge, dismissMultipleNudges, snoozeNudge } from '../../../utils/dismissedNudgesStorage';
 import { decisionService, DecisionWithVotes } from '../../../services/decisionService';
 import { taskService, Task } from '../../../services/taskService';
 import { decisionAnalyticsService, DecisionMetrics } from '../../../services/decisionAnalyticsService';
@@ -118,6 +124,12 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
 
   // ── Create overlay (New decision / Quick task / Ask AI) ──
   const [createMode, setCreateMode] = useState<{ mode: CreateMode; frameId?: FrameId } | null>(null);
+
+  // ── Ancillary panels ──
+  const [showAlerts, setShowAlerts] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
+  const [showActivity, setShowActivity] = useState(false);
+  const [showPrioritizer, setShowPrioritizer] = useState(false);
 
   // Debounced data → drives metric/nudge regeneration without thrash.
   const debouncedDecisions = useDebounce(decisions, 800);
@@ -270,7 +282,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     () => [
       { id: 'new-decision', label: 'New decision', section: 'Create', icon: <Plus size={15} />, run: () => setCreateMode({ mode: 'decision' }) },
       { id: 'quick-task', label: 'Quick task', section: 'Create', icon: <Plus size={15} />, run: () => setCreateMode({ mode: 'task' }) },
-      { id: 'prioritize', label: 'Prioritize tasks with AI', section: 'Actions', icon: <Zap size={15} />, run: () => toast('AI prioritizer arrives in Phase 11', { icon: '⏳' }) },
+      { id: 'prioritize', label: 'Prioritize tasks with AI', section: 'Actions', icon: <Zap size={15} />, run: () => setShowPrioritizer(true) },
       { id: 'export', label: 'Export CSV', section: 'Actions', icon: <Download size={15} />, run: handleExportCSV },
       { id: 'refresh', label: 'Refresh', section: 'Actions', icon: <RotateCw size={15} />, run: handleRefresh },
     ],
@@ -482,6 +494,56 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
   const handleAskAI = useCallback(() => setCreateMode({ mode: 'ai' }), []);
   const handleCreated = useCallback(() => { loadDecisions(); loadTasks(); loadDuePrompts(); }, [loadDecisions, loadTasks, loadDuePrompts]);
 
+  // ── Nudge (AlertsPanel) handlers ──
+  const handleDismissNudge = useCallback((id: string) => {
+    dismissNudge(id);
+    setDismissedNudges((prev) => new Set(prev).add(id));
+    setNudges((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
+  const handleDismissAllNudges = useCallback(() => {
+    const ids = nudges.map((n) => n.id);
+    dismissMultipleNudges(ids);
+    setDismissedNudges((prev) => { const next = new Set(prev); ids.forEach((id) => next.add(id)); return next; });
+    setShowAlerts(false);
+  }, [nudges]);
+
+  const handleNudgeAction = useCallback((nudge: Nudge) => {
+    switch (nudge.actionType) {
+      case 'send_reminder':
+        toast.success(`Reminder queued for: ${nudge.relatedTitle}`);
+        handleDismissNudge(nudge.id);
+        break;
+      case 'reassign': {
+        const task = tasks.find((t) => t.id === nudge.relatedId);
+        if (task) setTaskToReassign(task);
+        break;
+      }
+      case 'extend_deadline': {
+        const task = tasks.find((t) => t.id === nudge.relatedId);
+        if (task) setTaskToExtend(task);
+        break;
+      }
+      case 'review':
+        handleDismissNudge(nudge.id);
+        break;
+      default:
+        break;
+    }
+  }, [tasks, handleDismissNudge]);
+
+  // ── AI prioritization (AITaskPrioritizer) — apply scores to task metadata ──
+  const handlePrioritizationComplete = useCallback((prioritized: AITaskPriority[]) => {
+    setTasks((prev) =>
+      prev.map((task) => {
+        const ai = prioritized.find((p) => p.taskId === task.id);
+        return ai
+          ? { ...task, metadata: { ...task.metadata, ai_priority_score: ai.aiScore, ai_suggested_assignee: ai.suggestedAssignee, ai_predicted_duration: ai.predictedDuration } }
+          : task;
+      })
+    );
+  }, []);
+
   // ── Realtime handlers (ported) ──
   const handleDecisionChange = useCallback(() => {
     loadDecisions();
@@ -645,6 +707,9 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
         onNewDecision={handleNewDecision}
         onNewTask={handleNewTask}
         onAskAI={handleAskAI}
+        onAlerts={() => setShowAlerts((o) => !o)}
+        onActivity={() => setShowActivity(true)}
+        onAssistant={() => setShowAssistant((o) => !o)}
         subtitle={subtitle}
         alertCount={nudges.length}
       />
@@ -735,6 +800,45 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
           workspaceMembers={workspaceMembers}
           onClose={() => setCreateMode(null)}
           onCreated={handleCreated}
+        />
+      )}
+
+      {/* Ancillary panels */}
+      {nudges.length > 0 && showAlerts && (
+        <AlertsPanel
+          nudges={nudges}
+          onDismiss={handleDismissNudge}
+          onDismissAll={handleDismissAllNudges}
+          onAction={handleNudgeAction}
+          onClose={() => setShowAlerts(false)}
+          onSnooze={(id, minutes) => { snoozeNudge(id, minutes); setNudges((prev) => prev.filter((n) => n.id !== id)); }}
+        />
+      )}
+
+      {showAssistant && user && (
+        <ConversationalAssistant
+          user={user}
+          decisions={decisions}
+          tasks={tasks}
+          metrics={metrics}
+          onClose={() => setShowAssistant(false)}
+        />
+      )}
+
+      {showActivity && (
+        <WorkspaceActivityPanel
+          workspaceId={effectiveWorkspaceId}
+          workspaceMembers={workspaceMembers}
+          onOpenItem={() => setShowActivity(false)}
+          onClose={() => setShowActivity(false)}
+        />
+      )}
+
+      {showPrioritizer && (
+        <AITaskPrioritizer
+          tasks={tasks}
+          onPrioritizationComplete={handlePrioritizationComplete}
+          onClose={() => setShowPrioritizer(false)}
         />
       )}
     </div>

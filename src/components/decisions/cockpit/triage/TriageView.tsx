@@ -77,21 +77,30 @@ export function TriageView({
   const selected = visibleFlat.find((i) => i.id === selectedId);
   const total = visibleFlat.length;
 
-  // J/K move selection within the visible list.
+  // Keyboard: J/K move selection; E = primary act (done/approve); S = snooze.
+  // Bails when typing or a modifier is held (so it never clashes with the
+  // global KeyboardChordsLayer or text inputs).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key !== 'j' && e.key !== 'J' && e.key !== 'k' && e.key !== 'K') return;
       if (visibleFlat.length === 0) return;
-      e.preventDefault();
-      const cur = visibleFlat.findIndex((i) => i.id === selectedId);
-      const dir = e.key === 'j' || e.key === 'J' ? 1 : -1;
-      const next = cur < 0 ? 0 : Math.min(Math.max(cur + dir, 0), visibleFlat.length - 1);
-      setSelectedId(visibleFlat[next].id);
+      const key = e.key.toLowerCase();
+      if (key === 'j' || key === 'k') {
+        e.preventDefault();
+        const cur = visibleFlat.findIndex((i) => i.id === selectedId);
+        const dir = key === 'j' ? 1 : -1;
+        const next = cur < 0 ? 0 : Math.min(Math.max(cur + dir, 0), visibleFlat.length - 1);
+        setSelectedId(visibleFlat[next].id);
+        return;
+      }
+      const sel = visibleFlat.find((i) => i.id === selectedId);
+      if (!sel) return;
+      if (key === 'e') { e.preventDefault(); onQuickAction(sel, 'done'); }
+      else if (key === 's') { e.preventDefault(); onQuickAction(sel, 'snooze'); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [visibleFlat, selectedId]);
+  }, [visibleFlat, selectedId, onQuickAction]);
 
   const toggleCollapse = (key: string) =>
     setCollapsed((prev) => {
