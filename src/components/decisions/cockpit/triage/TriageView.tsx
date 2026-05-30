@@ -13,6 +13,8 @@ import type { Task } from '../../../../services/taskService';
 import type { DecisionWithVotes } from '../../../../services/decisionService';
 import { RealTimeIndicator, type ConnectionStatus } from '../../RealTimeIndicator';
 import { QueueGroup } from './QueueGroup';
+import { FocalPane } from '../focal/FocalPane';
+import type { TaskActions } from '../focal/TaskDetail';
 import { buildQueue, type QueueEntry, type QueueGroupModel } from './queueModel';
 
 interface TriageViewProps {
@@ -22,6 +24,7 @@ interface TriageViewProps {
   loading: boolean;
   connectionStatus: ConnectionStatus;
   onQuickAction: (entry: QueueEntry, action: 'done' | 'snooze') => void;
+  taskActions: TaskActions;
 }
 
 const isTypingTarget = (target: EventTarget | null): boolean => {
@@ -31,7 +34,7 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
 };
 
 export function TriageView({
-  tasks, decisions, currentUserId, loading, connectionStatus, onQuickAction,
+  tasks, decisions, currentUserId, loading, connectionStatus, onQuickAction, taskActions,
 }: TriageViewProps) {
   const groups: QueueGroupModel[] = useMemo(
     () => buildQueue(tasks, decisions, currentUserId).filter((g) => g.items.length > 0),
@@ -60,7 +63,6 @@ export function TriageView({
 
   const selected = visibleFlat.find((i) => i.id === selectedId);
   const total = visibleFlat.length;
-  const idx = visibleFlat.findIndex((i) => i.id === selectedId);
 
   // J/K move selection within the visible list.
   useEffect(() => {
@@ -136,23 +138,9 @@ export function TriageView({
         </div>
       </div>
 
-      {/* Focal pane — placeholder until TaskDetail/DecisionDetail (Phase 4/5) */}
+      {/* Focal pane — TaskDetail (Phase 4) / DecisionDetail (Phase 5) */}
       <div className="ck-focal">
-        {selected ? (
-          <div className="ck-focal-placeholder">
-            <span className="ck-focal-kicker">
-              {selected.kind === 'task' ? 'Task' : 'Decision'} · {idx + 1} / {total}
-            </span>
-            <h2 className="ck-focal-title">
-              {selected.kind === 'task' ? selected.task.title : selected.decision.title}
-            </h2>
-            <span className="ck-focal-note">
-              {selected.kind === 'task'
-                ? 'TaskDetail — property table · AI intel · checklist · actions (Phase 4)'
-                : 'DecisionDetail — tally · vote · AI risk/consensus (Phase 5)'}
-            </span>
-          </div>
-        ) : null}
+        <FocalPane entry={selected} taskActions={taskActions} />
       </div>
     </div>
   );

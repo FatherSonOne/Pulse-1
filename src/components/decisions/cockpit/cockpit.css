@@ -475,6 +475,154 @@
 .ck-focal-title { margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.02em; color: var(--pulse-ink); }
 .ck-focal-note { font-size: 12.5px; color: var(--pulse-ink-3); }
 
+/* ───────── Focal pane: TaskDetail / DecisionDetail ───────── */
+.ck-focal-body { flex: 1; min-height: 0; overflow-y: auto; }
+.ck-focal-pad { padding: 20px 24px 28px; }
+.ck-focal-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  border-top: 1px solid var(--pulse-border);
+  background: var(--pulse-surface-raised);
+}
+
+.ck-focal-strip { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.ck-focal-id {
+  margin-left: auto;
+  font-family: var(--pulse-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--pulse-ink-3);
+}
+.ck-focal-h2 { margin: 0 0 8px; font-size: 21px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; color: var(--pulse-ink); }
+.ck-focal-desc { margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: var(--pulse-ink-2); max-width: 620px; }
+.ck-focal-section-label {
+  font-family: var(--pulse-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pulse-ink-3);
+  margin: 8px 0 12px;
+}
+
+.ck-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.ck-prio-tag {
+  font-family: var(--pulse-font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 4px;
+  color: var(--pulse-ink-2);
+  box-shadow: inset 0 0 0 1px var(--pulse-border-strong);
+}
+.ck-prio-tag[data-prio='urgent'] { color: var(--dt-status-overdue); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--dt-status-overdue) 40%, transparent); }
+.ck-prio-tag[data-prio='high'] { color: var(--pulse-ink); }
+
+/* Source context block */
+.ck-source-context { margin-bottom: 18px; padding: 10px 14px; border-radius: 8px; background: var(--pulse-surface-raised); border: 1px solid var(--pulse-border); }
+.ck-source-context-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ck-source-context-meta { font-size: 11px; color: var(--pulse-ink-3); }
+.ck-source-context-open { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--pulse-ink-3); background: none; border: none; cursor: pointer; }
+.ck-source-context-open:hover { color: var(--pulse-ink); }
+.ck-source-context-quote { margin: 0; font-size: 12.5px; font-style: italic; line-height: 1.45; color: var(--pulse-ink-2); border-left: 2px solid var(--pulse-border-strong); padding-left: 10px; }
+
+.ck-source-tag { display: inline-flex; align-items: center; gap: 5px; color: var(--pulse-ink-2); }
+.ck-source-tag-label { font-size: 12px; }
+
+/* Blocked banner */
+.ck-blocked-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: var(--dt-status-blocked);
+  background: color-mix(in oklab, var(--dt-status-blocked) 8%, transparent);
+  border: 1px solid color-mix(in oklab, var(--dt-status-blocked) 24%, transparent);
+  font-size: 12.5px;
+}
+
+/* Property table */
+.ck-prop-table { margin-bottom: 22px; border-top: 1px solid var(--pulse-border); border-bottom: 1px solid var(--pulse-border); }
+.ck-prop { display: grid; grid-template-columns: 124px 1fr; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--pulse-border); }
+.ck-prop:last-child { border-bottom: none; }
+.ck-prop-label { font-size: 12px; color: var(--pulse-ink-3); }
+.ck-prop-value { font-size: 13px; color: var(--pulse-ink); min-width: 0; }
+.ck-prop-edit {
+  appearance: none;
+  width: 100%;
+  max-width: 280px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  color: var(--pulse-ink);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: border-color 130ms;
+}
+.ck-prop-edit:hover { border-color: var(--pulse-border-strong); }
+.ck-prop-edit:focus-visible { outline: 2px solid var(--pulse-rose); outline-offset: 1px; }
+
+/* AI intelligence block — coral (AI-output surface). CLAUDE.md §4. */
+.ck-ai-block {
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--pulse-coral-bg-08);
+  border: 1px solid var(--pulse-rose-soft);
+}
+.ck-ai-block-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.ck-ai-block-title {
+  font-family: var(--pulse-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pulse-ink-3);
+}
+.ck-ai-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.ck-ai-metric-num { font-size: 22px; font-weight: 700; line-height: 1; margin-bottom: 4px; color: var(--pulse-coral-fg); }
+.ck-ai-metric-lbl { font-size: 10px; letter-spacing: 0.04em; color: var(--pulse-ink-3); }
+.ck-ai-note { margin: 12px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--pulse-coral-fg); }
+
+/* Footer action buttons */
+.ck-act-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--pulse-ink-2);
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  cursor: pointer;
+  transition: all 130ms;
+}
+.ck-act-btn:hover { color: var(--pulse-ink); border-color: var(--pulse-border-strong); }
+.ck-act-btn[data-primary] { color: #fff; background: var(--pulse-rose); border-color: transparent; }
+.ck-act-btn[data-primary]:hover { filter: brightness(1.05); }
+.ck-act-btn[data-danger]:hover { color: var(--dt-status-overdue); border-color: color-mix(in oklab, var(--dt-status-overdue) 40%, transparent); }
+.ck-act-btn:disabled { opacity: 0.5; cursor: default; }
+
 /* ───────── Dev-only v1 ⇄ v2 toggle (floating pill) ───────── */
 .ck-devtoggle {
   position: fixed;

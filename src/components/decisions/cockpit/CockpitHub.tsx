@@ -22,14 +22,18 @@ import { CockpitMasthead, type CockpitTab } from './CockpitMasthead';
 import { CommandBar } from './CommandBar';
 import { TriageView } from './triage/TriageView';
 import { type QueueEntry } from './triage/queueModel';
+import { type TaskActions } from './focal/TaskDetail';
 import { FilterState } from '../FilterBar';
+import { ReassignTaskModal } from '../ReassignTaskModal';
+import { ExtendDeadlineDialog } from '../ExtendDeadlineDialog';
 import { decisionService, DecisionWithVotes } from '../../../services/decisionService';
 import { taskService, Task } from '../../../services/taskService';
 import { decisionAnalyticsService, DecisionMetrics } from '../../../services/decisionAnalyticsService';
 import { proactiveSuggestionsService, Nudge } from '../../../services/proactiveSuggestionsService';
+import { dependenciesService } from '../../../services/dependenciesService';
+import { workspaceService } from '../../../services/workspaceService';
 import { useDecisionTaskRealtime } from '../../../hooks/useDecisionTaskRealtime';
 import { RealTimeIndicator } from '../RealTimeIndicator';
-import { supabase } from '../../../services/supabase';
 import { useWorkspace } from '../../../contexts/WorkspaceContext';
 import { listUserPlaces, getEntityPlaceMap } from '../../../services/locationService';
 import { Place } from '../../../types/placeTypes';
@@ -89,6 +93,10 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
 
   // ── Workspace members (assignee dropdowns) ──
   const [workspaceMembers, setWorkspaceMembers] = useState<User[]>([]);
+
+  // ── Focal task modals ──
+  const [taskToReassign, setTaskToReassign] = useState<Task | null>(null);
+  const [taskToExtend, setTaskToExtend] = useState<Task | null>(null);
 
   // Debounced data → drives metric/nudge regeneration without thrash.
   const debouncedDecisions = useDebounce(decisions, 800);
@@ -204,6 +212,86 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     []
   );
 
+  // ── Focal task actions (property-table edits + footer actions) ──
+  const patchTaskLocal = useCallback((taskId: string, updates: Partial<Task>) => {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)));
+  }, []);
+
+  const handleStatusChange = useCallback(
+    async (taskId: string, status: Task['status']) => {
+      patchTaskLocal(taskId, { status });
+      try {
+        await taskService.updateTaskStatus(taskId, status);
+        if (status === 'done') {
+          const unblocked = await dependenciesService.getNewlyUnblockedTasks(taskId, effectiveWorkspaceId);
+          if (unblocked.length) {
+            toast.success(`${unblocked.length} task${unblocked.length > 1 ? 's' : ''} unblocked`);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to update task status:', error);
+        toast.error('Could not update status');
+        loadTasks();
+      }
+    },
+    [patchTaskLocal, effectiveWorkspaceId, loadTasks]
+  );
+
+  const handlePatchTask = useCallback(
+    async (taskId: string, updates: Partial<Task>) => {
+      patchTaskLocal(taskId, updates);
+      try {
+        await taskService.updateTask(taskId, updates);
+      } catch (error) {
+        console.error('Failed to save task:', error);
+        toast.error('Could not save changes');
+        loadTasks();
+      }
+    },
+    [patchTaskLocal, loadTasks]
+  );
+
+  const handleMarkDone = useCallback(
+    (task: Task) => handleStatusChange(task.id, 'done'),
+    [handleStatusChange]
+  );
+
+  const handleDeleteTask = useCallback(
+    async (taskId: string) => {
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      try {
+        await taskService.deleteTask(taskId);
+        toast.success('Task deleted');
+      } catch (error) {
+        console.error('Failed to delete task:', error);
+        toast.error('Could not delete task');
+        loadTasks();
+      }
+    },
+    [loadTasks]
+  );
+
+  const handleOpenSource = useCallback((task: Task) => {
+    const source = (task.metadata?.source as string | undefined) ?? 'its origin';
+    toast(`Opening from ${source} arrives with cross-surface deep links`, { icon: '🔗' });
+  }, []);
+
+  const taskActions: TaskActions = useMemo(
+    () => ({
+      members: workspaceMembers,
+      allTasks: tasks,
+      currentUserId: user?.id,
+      onStatusChange: handleStatusChange,
+      onPatch: handlePatchTask,
+      onMarkDone: handleMarkDone,
+      onReassign: (task: Task) => setTaskToReassign(task),
+      onExtend: (task: Task) => setTaskToExtend(task),
+      onDelete: handleDeleteTask,
+      onOpenSource: handleOpenSource,
+    }),
+    [workspaceMembers, tasks, user?.id, handleStatusChange, handlePatchTask, handleMarkDone, handleDeleteTask, handleOpenSource]
+  );
+
   // ── Realtime handlers (ported) ──
   const handleDecisionChange = useCallback(() => {
     loadDecisions();
@@ -245,21 +333,27 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     }
   }, [effectiveWorkspaceId, loadDecisions, loadTasks]);
 
-  // Workspace members for assignee dropdowns.
+  // Workspace members for assignee dropdowns. Uses the canonical
+  // get_enriched_workspace_members RPC (via workspaceService.getMembers) which
+  // joins pulse_users for display names — the legacy hub's raw
+  // `workspace_members → profiles(*)` join returned 0 (profiles is sparse).
   useEffect(() => {
     if (!effectiveWorkspaceId) return;
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await supabase
-          .from('workspace_members')
-          .select('*, profiles(*)')
-          .eq('workspace_id', effectiveWorkspaceId);
-        if (!cancelled && data) {
-          setWorkspaceMembers(
-            data.filter((m: any) => m.profiles).map((m: any) => m.profiles as User)
-          );
-        }
+        const members = await workspaceService.getMembers(effectiveWorkspaceId);
+        if (cancelled) return;
+        setWorkspaceMembers(
+          members.map((mem) => ({
+            id: mem.user_id,
+            name: mem.name || mem.email || 'Member',
+            email: mem.email || '',
+            avatarUrl: mem.avatar_url,
+            googleConnected: false,
+            connectedProviders: {},
+          } as User))
+        );
       } catch (error) {
         console.error('Failed to load workspace members:', error);
       }
@@ -356,6 +450,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
           loading={loading}
           connectionStatus={connectionStatus}
           onQuickAction={handleQuickAction}
+          taskActions={taskActions}
         />
       ) : (
         <div className="ck-body">
@@ -391,6 +486,28 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
       )}
 
       <CommandBar open={commandOpen} onClose={closeCommand} />
+
+      {taskToReassign && (
+        <ReassignTaskModal
+          task={taskToReassign}
+          currentAssignee={taskToReassign.assignee_id}
+          workspaceMembers={workspaceMembers}
+          onClose={() => setTaskToReassign(null)}
+          onReassign={async (taskId, newAssignee) => {
+            await handlePatchTask(taskId, { assignee_id: newAssignee });
+          }}
+        />
+      )}
+
+      {taskToExtend && (
+        <ExtendDeadlineDialog
+          task={taskToExtend}
+          onClose={() => setTaskToExtend(null)}
+          onExtend={async (taskId, newDeadline) => {
+            await handlePatchTask(taskId, { deadline: newDeadline });
+          }}
+        />
+      )}
     </div>
   );
 }
