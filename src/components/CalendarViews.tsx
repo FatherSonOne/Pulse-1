@@ -185,11 +185,20 @@ const WEEKDAYS_MINI = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 // ink keeps a packed Month grid calm, so coral stays the calendar's only
 // saturated signal and AI output reads as the exception, not one more pill.
 // (Icon + text inherit `color`, so neutral ink neutralizes them automatically.)
+// Pulse vocabulary for ALL views (Year/Month/Week/Day/Agenda/Timeline):
+//   • Type-tinted background at ~8% — categorical hint, never saturated solid.
+//   • 1px left tick in the type color — compliant with the side-stripe ban
+//     (rule allows colored accents of 1px; only >1px is forbidden). Preserves
+//     directional category cue in packed Week/Day grids without painting a stripe.
+//   • 1px full-perimeter hairline at ~22% — gives definition against the canvas.
+//   • Ink text (--cal-text) — saturated coral stays the calendar's only solid
+//     signal; type color is communicated via tint + tick, not via white-on-color.
+// color-mix in oklab so the rendering matches the design tokens' chroma curve.
 const getEventTypeStyle = (type?: string, _fallbackColor?: string): React.CSSProperties => {
   const hex = getEventTypeMeta(type).color;
   return {
-    backgroundColor: 'rgba(127, 127, 127, 0.10)',
-    boxShadow: `inset 3px 0 0 0 ${hex}, inset 0 0 0 1px rgba(127, 127, 127, 0.18)`,
+    backgroundColor: `color-mix(in oklab, ${hex} 8%, transparent)`,
+    boxShadow: `inset 1px 0 0 0 ${hex}, inset 0 0 0 1px color-mix(in oklab, ${hex} 22%, transparent)`,
     color: 'var(--cal-text)',
   };
 };

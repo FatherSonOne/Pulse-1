@@ -1054,7 +1054,11 @@
   background: var(--cal-bg-subtle);
 }
 
-/* Week Events */
+/* Week Events
+   Default color is --cal-text (ink), not white — typed events override via
+   the inline getEventTypeStyle which already returns var(--cal-text). The
+   prior `color: white` default would paint untyped events as illegible white
+   on a tinted neutral; ink is the safe baseline. */
 .cal-week-event {
   position: absolute;
   left: 2px;
@@ -1063,7 +1067,7 @@
   padding: 4px 8px;
   font-size: 0.6875rem;
   font-weight: 600;
-  color: white;
+  color: var(--cal-text);
   overflow: hidden;
   cursor: pointer;
   transition: var(--cal-transition);
@@ -1199,12 +1203,14 @@
   gap: 8px;
 }
 
+/* All-day events render via inline getEventTypeStyle (same vocabulary as
+   week/day) — ink text baseline, type-tinted background. */
 .cal-day-allday-event {
   padding: 8px 16px;
   border-radius: 8px;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: white;
+  color: var(--cal-text);
   cursor: pointer;
   transition: var(--cal-transition);
   display: flex;
@@ -1275,14 +1281,16 @@
   background: var(--cal-bg-subtle);
 }
 
-/* Day Events */
+/* Day Events
+   Same posture as week events — ink text baseline, inline getEventTypeStyle
+   keeps it ink for typed events. White-on-tinted-neutral was illegible. */
 .cal-day-event {
   position: absolute;
   left: 8px;
   right: 8px;
   border-radius: 10px;
   padding: 10px 14px;
-  color: white;
+  color: var(--cal-text);
   cursor: pointer;
   transition: var(--cal-transition);
   z-index: 5;
