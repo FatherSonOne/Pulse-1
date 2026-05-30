@@ -33,6 +33,9 @@ interface TriageViewProps {
   retroActions: RetroActions;
   onNewDecision: () => void;
   onAskAI: () => void;
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
 }
 
 const isTypingTarget = (target: EventTarget | null): boolean => {
@@ -44,6 +47,7 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
 export function TriageView({
   tasks, decisions, retros, currentUserId, loading, connectionStatus,
   onQuickAction, taskActions, decisionActions, retroActions, onNewDecision, onAskAI,
+  hasMore, loadingMore, onLoadMore,
 }: TriageViewProps) {
   const groups: QueueGroupModel[] = useMemo(
     () => buildQueue(tasks, decisions, currentUserId, retros).filter((g) => g.items.length > 0),
@@ -132,6 +136,11 @@ export function TriageView({
               onQuickAction={onQuickAction}
             />
           ))}
+          {hasMore && (
+            <button type="button" className="ck-rail-loadmore" onClick={onLoadMore} disabled={loadingMore}>
+              {loadingMore ? 'Loading…' : 'Load more'}
+            </button>
+          )}
         </div>
 
         <div className="ck-rail-foot">

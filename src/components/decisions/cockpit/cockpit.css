@@ -353,6 +353,35 @@ button.ck-pill:hover { color: var(--pulse-ink); box-shadow: inset 0 0 0 1px var(
   color: var(--pulse-ink-3);
 }
 
+/* ───────── Archive ───────── */
+.ck-archive-metrics { display: flex; align-items: center; gap: 4px; }
+.ck-archive-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-left: 1px solid var(--pulse-border);
+}
+.ck-archive-metric-val { font-family: var(--pulse-font-mono); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 700; color: var(--pulse-ink); }
+.ck-archive-metric-lbl { font-size: 11px; color: var(--pulse-ink-3); }
+
+.ck-rail-loadmore {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-top: 1px solid var(--pulse-border);
+  background: transparent;
+  color: var(--pulse-ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.ck-rail-loadmore:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
+.ck-rail-loadmore:disabled { opacity: 0.6; cursor: default; }
+
 /* ───────── Triage view: queue rail + focal ───────── */
 .ck-triage {
   flex: 1;

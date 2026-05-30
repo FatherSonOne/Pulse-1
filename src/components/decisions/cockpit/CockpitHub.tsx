@@ -40,7 +40,7 @@ import { decisionContextService, type RetrospectivePrompt } from '../../../servi
 import { dependenciesService } from '../../../services/dependenciesService';
 import { workspaceService } from '../../../services/workspaceService';
 import { useDecisionTaskRealtime } from '../../../hooks/useDecisionTaskRealtime';
-import { RealTimeIndicator } from '../RealTimeIndicator';
+import { ArchiveView } from './archive/ArchiveView';
 import { useWorkspace } from '../../../contexts/WorkspaceContext';
 import { listUserPlaces, getEntityPlaceMap } from '../../../services/locationService';
 import { Place } from '../../../types/placeTypes';
@@ -662,39 +662,16 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
             retroActions={retroActions}
             onNewDecision={handleNewDecision}
             onAskAI={handleAskAI}
+            hasMore={hasMoreDecisions || hasMoreTasks}
+            loadingMore={loadingMore}
+            onLoadMore={handleLoadMore}
           />
         </>
       ) : (
-        <div className="ck-body">
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-            <RealTimeIndicator status={connectionStatus} />
-            <div style={{ fontSize: 13, color: 'var(--pulse-ink-2)' }}>
-              Archive — timeline + retrospective (Phase 9)
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }}>
-              {`${filteredDecisions.length} decisions · ${filteredTasks.length} tasks · ${nudges.length} nudges · ${workspaceMembers.length} members`}
-              {metrics ? ' · metrics computed' : ' · metrics pending'}
-              {availablePlaces.length > 0 && ` · ${availablePlaces.length} places`}
-            </div>
-            {(hasMoreDecisions || hasMoreTasks) && (
-              <button
-                className="ck-cmdk-item"
-                style={{ width: 'auto', padding: '4px 10px', fontSize: 12 }}
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-              >
-                {loadingMore ? 'Loading…' : 'Load more'}
-              </button>
-            )}
-            <button
-              className="ck-cmdk-item"
-              style={{ width: 'auto', padding: '4px 10px', fontSize: 12 }}
-              onClick={handleRefresh}
-            >
-              Refresh
-            </button>
-          </div>
-        </div>
+        <ArchiveView
+          workspaceId={effectiveWorkspaceId}
+          onChanged={() => { loadTasks(); loadDecisions(); loadDuePrompts(); }}
+        />
       )}
 
       <CommandBar open={commandOpen} onClose={closeCommand} commands={commands} onApplySearch={applySearch} />
