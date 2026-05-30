@@ -17,6 +17,8 @@ Drive Pulse toward launch by working the pre-launch roadmap **one GitHub issue p
 
 The living document is `docs/PULSE_PRELAUNCH_ROADMAP.md`. The tracking label is `launch-roadmap`. The epic is #98.
 
+**Sibling commands.** `/launch-followups` works the human-only items (Vercel, OAuth smokes, legal reads). `/review-sync` is the **review intake funnel**: it compiles an outside-in product review (`docs/PULSE_REVIEW_AUDIT_<date>.md`, with a machine-readable Findings Ledger) into new issues + roadmap edits. Findings filed via `/review-sync` show up here as normal `launch-roadmap` issues — e.g. the 2026-05-29 review added **#124** (public-copy truth-in-product) + **#125** (reconcile Decisions voting). When picking work, treat review-sourced issues exactly like any other (priority + Depends-on). The latest review's **Fix-Before-Launch Punch List** (`docs/PULSE_FIX_BEFORE_LAUNCH_PUNCHLIST_GUIDE.md`) is a useful cross-check on whether the Status Table is missing anything.
+
 Usage:
 - `/launch-prep` — auto-pick the next highest-priority unblocked open issue.
 - `/launch-prep 102` — work a specific issue number.
@@ -41,6 +43,7 @@ Read, in order:
 1. `docs/PULSE_PRELAUNCH_ROADMAP.md` — especially the **Resume Pointer** and **Status Table**.
 2. `CLAUDE.md` — git discipline, Pulse gotchas (coral budget, design tokens, server-side Gemini, real-time dedup).
 3. `C:\Users\Aegis{FM}\.claude\projects\f--pulse1\memory\MEMORY.md` — persistent project facts.
+4. (If present) the newest `docs/PULSE_REVIEW_AUDIT_*.md` — skim its **Fix-Before-Launch Punch List** so you don't miss a review-sourced gap that the Status Table hasn't absorbed yet.
 
 If the argument is `status`: print the Status Table + Resume Pointer and stop here.
 
