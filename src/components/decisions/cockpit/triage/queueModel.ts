@@ -13,10 +13,12 @@
  */
 import { Task } from '../../../../services/taskService';
 import { DecisionWithVotes } from '../../../../services/decisionService';
+import type { RetrospectivePrompt } from '../../../../services/decisionContextService';
 
 export interface QueueTaskItem { id: string; kind: 'task'; task: Task; }
 export interface QueueDecisionItem { id: string; kind: 'decision'; decision: DecisionWithVotes; }
-export type QueueEntry = QueueTaskItem | QueueDecisionItem;
+export interface QueueRetroItem { id: string; kind: 'retro'; prompt: RetrospectivePrompt; decisionTitle: string; }
+export type QueueEntry = QueueTaskItem | QueueDecisionItem | QueueRetroItem;
 
 export interface QueueGroupModel {
   key: 'needs-you' | 'today' | 'upcoming';
@@ -32,7 +34,8 @@ const wrapDecision = (d: DecisionWithVotes): QueueDecisionItem => ({ id: `dec-${
 export function buildQueue(
   tasks: Task[],
   decisions: DecisionWithVotes[],
-  currentUserId?: string
+  currentUserId?: string,
+  retros: QueueRetroItem[] = []
 ): QueueGroupModel[] {
   const now = new Date();
 
@@ -60,7 +63,8 @@ export function buildQueue(
       key: 'needs-you',
       label: 'Needs you',
       tone: 'var(--dt-status-overdue)',
-      items: [...needsVote.map(wrapDecision), ...overdue.map(wrapTask), ...blocked.map(wrapTask)],
+      // Due retrospectives surface first — a look-back is the lightest "needs you".
+      items: [...retros, ...needsVote.map(wrapDecision), ...overdue.map(wrapTask), ...blocked.map(wrapTask)],
     },
     {
       key: 'today',

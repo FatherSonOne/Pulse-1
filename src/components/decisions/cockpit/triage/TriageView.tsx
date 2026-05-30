@@ -16,17 +16,23 @@ import { QueueGroup } from './QueueGroup';
 import { FocalPane } from '../focal/FocalPane';
 import type { TaskActions } from '../focal/TaskDetail';
 import type { DecisionActions } from '../focal/DecisionDetail';
-import { buildQueue, type QueueEntry, type QueueGroupModel } from './queueModel';
+import type { RetroActions } from '../focal/RetrospectivePane';
+import { CaughtUp } from './CaughtUp';
+import { buildQueue, type QueueEntry, type QueueGroupModel, type QueueRetroItem } from './queueModel';
 
 interface TriageViewProps {
   tasks: Task[];
   decisions: DecisionWithVotes[];
+  retros: QueueRetroItem[];
   currentUserId?: string;
   loading: boolean;
   connectionStatus: ConnectionStatus;
   onQuickAction: (entry: QueueEntry, action: 'done' | 'snooze') => void;
   taskActions: TaskActions;
   decisionActions: DecisionActions;
+  retroActions: RetroActions;
+  onNewDecision: () => void;
+  onAskAI: () => void;
 }
 
 const isTypingTarget = (target: EventTarget | null): boolean => {
@@ -36,11 +42,12 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
 };
 
 export function TriageView({
-  tasks, decisions, currentUserId, loading, connectionStatus, onQuickAction, taskActions, decisionActions,
+  tasks, decisions, retros, currentUserId, loading, connectionStatus,
+  onQuickAction, taskActions, decisionActions, retroActions, onNewDecision, onAskAI,
 }: TriageViewProps) {
   const groups: QueueGroupModel[] = useMemo(
-    () => buildQueue(tasks, decisions, currentUserId).filter((g) => g.items.length > 0),
-    [tasks, decisions, currentUserId]
+    () => buildQueue(tasks, decisions, currentUserId, retros).filter((g) => g.items.length > 0),
+    [tasks, decisions, currentUserId, retros]
   );
 
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -94,13 +101,7 @@ export function TriageView({
   }
 
   if (groups.length === 0) {
-    // Minimal caught-up placeholder; the full CaughtUp focal lands in Phase 8.
-    return (
-      <div className="ck-triage-empty">
-        <span className="ck-triage-empty-title">You're caught up.</span>
-        <span className="ck-triage-empty-sub">Nothing needs you right now.</span>
-      </div>
-    );
+    return <CaughtUp onNewDecision={onNewDecision} onAskAI={onAskAI} />;
   }
 
   return (
@@ -142,7 +143,7 @@ export function TriageView({
 
       {/* Focal pane — TaskDetail (Phase 4) / DecisionDetail (Phase 5) */}
       <div className="ck-focal">
-        <FocalPane entry={selected} taskActions={taskActions} decisionActions={decisionActions} />
+        <FocalPane entry={selected} taskActions={taskActions} decisionActions={decisionActions} retroActions={retroActions} />
       </div>
     </div>
   );

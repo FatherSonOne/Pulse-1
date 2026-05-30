@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import {
   AlertCircle, Ban, Eye, Hammer, ListTodo, CheckCircle2, Scale, Circle,
-  Mail, MessageSquare, Video, Mic, Pencil, Check, Clock,
+  Mail, MessageSquare, Video, Mic, Pencil, Check, Clock, History,
   type LucideIcon,
 } from 'lucide-react';
 import type { Task } from '../../../../services/taskService';
@@ -48,6 +48,33 @@ function taskDisplayStatus(task: Task, overdue: boolean): string {
 
 export function QueueItem({ entry, active, onSelect, onQuickAction }: QueueItemProps) {
   const [hover, setHover] = useState(false);
+
+  // Retro look-back rows are their own shape (no task/decision payload).
+  if (entry.kind === 'retro') {
+    return (
+      <div
+        role="option"
+        aria-selected={active}
+        tabIndex={-1}
+        onClick={onSelect}
+        className="ck-qitem"
+        data-active={active}
+      >
+        {active && <span className="ck-qitem-stripe" aria-hidden />}
+        <span className="ck-qitem-status" style={{ color: 'var(--dt-status-voting)' }}>
+          <History size={15} strokeWidth={2.2} />
+        </span>
+        <div className="ck-qitem-main">
+          <div className="ck-qitem-title">Look back: {entry.decisionTitle}</div>
+          <div className="ck-qitem-meta">
+            <span className="ck-ai-chip">AI</span>
+            <span className="ck-qitem-due" style={{ color: 'var(--dt-status-voting)' }}>retrospective due</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const isTask = entry.kind === 'task';
 
   const due = isTask ? dueInfo(entry.task.deadline) : null;

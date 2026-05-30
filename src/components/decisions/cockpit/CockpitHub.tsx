@@ -24,9 +24,10 @@ import { CommandBar, type CommandItem } from './CommandBar';
 import { PropertyFilterBar, type ViewKind, type ViewAssignee } from './filters/PropertyFilterBar';
 import { type SavedViewPreset } from './filters/SavedViews';
 import { TriageView } from './triage/TriageView';
-import { type QueueEntry } from './triage/queueModel';
+import { type QueueEntry, type QueueRetroItem } from './triage/queueModel';
 import { type TaskActions } from './focal/TaskDetail';
 import { type DecisionActions } from './focal/DecisionDetail';
+import { type RetroActions } from './focal/RetrospectivePane';
 import { FilterState } from '../FilterBar';
 import { ReassignTaskModal } from '../ReassignTaskModal';
 import { ExtendDeadlineDialog } from '../ExtendDeadlineDialog';
@@ -35,6 +36,7 @@ import { decisionService, DecisionWithVotes } from '../../../services/decisionSe
 import { taskService, Task } from '../../../services/taskService';
 import { decisionAnalyticsService, DecisionMetrics } from '../../../services/decisionAnalyticsService';
 import { proactiveSuggestionsService, Nudge } from '../../../services/proactiveSuggestionsService';
+import { decisionContextService, type RetrospectivePrompt } from '../../../services/decisionContextService';
 import { dependenciesService } from '../../../services/dependenciesService';
 import { workspaceService } from '../../../services/workspaceService';
 import { useDecisionTaskRealtime } from '../../../hooks/useDecisionTaskRealtime';
@@ -100,6 +102,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
   const [metrics, setMetrics] = useState<DecisionMetrics | null>(null);
   const [nudges, setNudges] = useState<Nudge[]>([]);
   const [dismissedNudges, setDismissedNudges] = useState<Set<string>>(new Set());
+  const [duePrompts, setDuePrompts] = useState<RetrospectivePrompt[]>([]);
 
   // ── Workspace members (assignee dropdowns) ──
   const [workspaceMembers, setWorkspaceMembers] = useState<User[]>([]);
@@ -166,6 +169,16 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
       console.error('Failed to generate nudges:', error);
     }
   }, [user, decisions, tasks, dismissedNudges]);
+
+  const loadDuePrompts = useCallback(async () => {
+    if (!effectiveWorkspaceId || !user?.id) return;
+    try {
+      const prompts = await decisionContextService.getDuePrompts(effectiveWorkspaceId, user.id);
+      setDuePrompts(prompts);
+    } catch (error) {
+      console.error('Failed to load due retrospectives:', error);
+    }
+  }, [effectiveWorkspaceId, user?.id]);
 
   const handleLoadMore = useCallback(async () => {
     setLoadingMore(true);
@@ -283,8 +296,8 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
         }
         return;
       }
-      // Decision: approve from the queue.
-      if (!user?.id) return;
+      // Decision: approve from the queue. (Retro rows have no quick-action.)
+      if (entry.kind !== 'decision' || !user?.id) return;
       try {
         await decisionService.castVote({ decision_id: entry.decision.id, user_id: user.id, choice: 'approve' });
         toast.success('Approved');
@@ -437,6 +450,31 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     [user?.id, effectiveWorkspaceId, workspaceMembers, linkedTaskCounts, loadDecisions]
   );
 
+  // ── Due retrospectives → queue `retro` items (title resolved from decisions) ──
+  const retros: QueueRetroItem[] = useMemo(
+    () =>
+      duePrompts.map((p) => ({
+        id: `retro-${p.id}`,
+        kind: 'retro' as const,
+        prompt: p,
+        decisionTitle: decisions.find((d) => d.id === p.decisionId)?.title ?? 'a past decision',
+      })),
+    [duePrompts, decisions]
+  );
+
+  const retroActions: RetroActions = useMemo(
+    () => ({
+      workspaceId: effectiveWorkspaceId,
+      currentUserId: user?.id || '',
+      onResolved: () => { loadDuePrompts(); loadDecisions(); },
+    }),
+    [effectiveWorkspaceId, user?.id, loadDuePrompts, loadDecisions]
+  );
+
+  // CaughtUp / create entry points — wired to the create flows in Phase 10.
+  const handleNewDecision = useCallback(() => toast('Create overlay arrives in Phase 10', { icon: '⏳' }), []);
+  const handleAskAI = useCallback(() => toast('Ask Pulse AI arrives in Phase 10', { icon: '⏳' }), []);
+
   // ── Realtime handlers (ported) ──
   const handleDecisionChange = useCallback(() => {
     loadDecisions();
@@ -477,6 +515,12 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
       loadTasks();
     }
   }, [effectiveWorkspaceId, loadDecisions, loadTasks]);
+
+  // Due retrospectives (reload when the decision set changes — a freshly
+  // Decided decision may have queued a look-back).
+  useEffect(() => {
+    loadDuePrompts();
+  }, [loadDuePrompts, decisions.length]);
 
   // Workspace members for assignee dropdowns. Uses the canonical
   // get_enriched_workspace_members RPC (via workspaceService.getMembers) which
@@ -608,12 +652,16 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
           <TriageView
             tasks={filteredTasks}
             decisions={filteredDecisions}
+            retros={retros}
             currentUserId={user?.id}
             loading={loading}
             connectionStatus={connectionStatus}
             onQuickAction={handleQuickAction}
             taskActions={taskActions}
             decisionActions={decisionActions}
+            retroActions={retroActions}
+            onNewDecision={handleNewDecision}
+            onAskAI={handleAskAI}
           />
         </>
       ) : (
