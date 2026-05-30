@@ -212,20 +212,21 @@ const featureFlagsConfig: FeatureFlagConfig = {
   // DecisionTaskHub (Active / Board / Archive) was deleted alongside this
   // entry. App.tsx renders CockpitHub directly.
 
-  // Search "Workbench" redesign — gates the new SearchWorkbench (facet
-  // cockpit + dense results table + Working Set dock) against the legacy
-  // UnifiedSearchRedesign card feed. OFF for v1 while the Workbench is built
-  // out phase-by-phase behind the flag; legacy stays byte-identical until the
-  // flag flips. Presentation/IA rewrite only — all search services, sources,
-  // and operators are ported verbatim. Spec + plan:
-  // docs/SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md. Local dev override:
-  // `?ff_searchWorkbench=on`.
+  // Search "Workbench" redesign — the new SearchWorkbench (facet cockpit +
+  // dense results table + Working Set dock) replaces the legacy
+  // UnifiedSearchRedesign card feed. GA as of 2026-05-30 (Phase 10): flipped
+  // ON after a headless smoke test on a real account passed in dark + light
+  // with zero Workbench-originated errors. Presentation/IA rewrite only — all
+  // search services, sources, and operators ported verbatim. Legacy kept one
+  // phase for soak, then removed in Phase 11. Spec:
+  // docs/SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md. Dev override:
+  // `?ff_searchWorkbench=on|off`.
   searchWorkbench: {
-    enabled: false,
-    rolloutPercentage: 0,
-    targetUsers: ['internal'],
-    description: 'OFF for v1 — Search Workbench redesign; building behind the flag, legacy UnifiedSearchRedesign stays default until flip (see SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md)',
-    version: '0.1.0'
+    enabled: true,
+    rolloutPercentage: 100,
+    targetUsers: ['all'],
+    description: 'GA (2026-05-30) — Search Workbench is the default Search surface; legacy UnifiedSearchRedesign removed in Phase 11',
+    version: '1.0.0'
   },
 };
 
