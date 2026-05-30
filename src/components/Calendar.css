@@ -1472,7 +1472,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: top 60ms linear, height 60ms linear;
+  /* Animating `height` triggers layout every frame — shared design law
+     forbids animating CSS layout properties. `top` on an absolute-positioned
+     element is composited efficiently; height snaps to target without
+     transition so the ghost stays fast and the layout cost stays out. */
+  transition: top 60ms linear;
 }
 
 /* Time label inside ghost — Mono numerals */

@@ -3115,7 +3115,21 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
                  <div className="space-y-1">
                      {tasks.map(task => (
-                         <div key={task.id} className="group flex items-start gap-3 p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition cursor-pointer" onClick={() => toggleTask(task.id)}>
+                         <div
+                             key={task.id}
+                             role="button"
+                             tabIndex={0}
+                             aria-pressed={task.completed}
+                             aria-label={`Toggle task: ${task.title}`}
+                             className="group flex items-start gap-3 p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)]"
+                             onClick={() => toggleTask(task.id)}
+                             onKeyDown={(e) => {
+                                 if (e.key === 'Enter' || e.key === ' ') {
+                                     e.preventDefault();
+                                     toggleTask(task.id);
+                                 }
+                             }}
+                         >
                              <div 
                                 className={`mt-1 w-4 h-4 rounded border flex items-center justify-center transition ${task.completed ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white' : 'border-zinc-300 dark:border-zinc-600 group-hover:border-zinc-500'}`}
                              >
