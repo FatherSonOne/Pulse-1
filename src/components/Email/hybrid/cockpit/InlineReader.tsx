@@ -9,7 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Clock, Send, Reply, Archive, MoonStar, CheckSquare, Maximize2 } from 'lucide-react';
-import { GeminiSummaryCard } from './GeminiSummaryCard';
+import { EmailAiBlock } from './EmailAiBlock';
 import { emailSyncService } from '../../../../services/emailSyncService';
 import { useEmailStore } from '../../../../store/emailStore';
 import { useEmailUIStore } from '../../../../store/emailUIStore';
@@ -18,8 +18,6 @@ import type { EmailRow } from '../data/emailRow';
 import { createTaskFromEmail, createTasksFromEmailItems } from '../data/createTaskFromEmail';
 import { AiChip, Keycap } from '../primitives';
 import { EmailBody } from '../EmailBody';
-import MeetingExtractor from '../../MeetingExtractor';
-import ActionItemExtractor from '../../ActionItemExtractor';
 
 interface InlineReaderProps {
   email: EmailRow;
@@ -57,15 +55,9 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
   const openReply = useEmailComposeStore((s) => s.openReply);
 
   const [threadCount, setThreadCount] = useState<number>(email.threadCount);
-  // Extractor visibility — reset per email so dismissing for one doesn't
-  // suppress the cards on the next one rendered through the same component.
-  const [showMeeting, setShowMeeting] = useState<boolean>(true);
-  const [showActions, setShowActions] = useState<boolean>(true);
-
-  useEffect(() => {
-    setShowMeeting(true);
-    setShowActions(true);
-  }, [email.id]);
+  // Per-subsection visibility (showMeeting / showActions) was lifted into
+  // <EmailAiBlock /> in round 7 so the composite AI surface owns its own
+  // section-dismissal state. InlineReader no longer needs to track it.
 
   // Lazy-fetch the full thread when the reader expands, if this looks like
   // a multi-message thread. Updates the displayed count once known.
@@ -130,13 +122,16 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
   };
 
   // Calendar + Tasks extractor callbacks (Phase 12.7).
+  // Subsection-dismiss-on-success is owned by EmailAiBlock (round 7) —
+  // these handlers run the side effects (open calendar, create tasks)
+  // and return a Promise<boolean> so EmailAiBlock can auto-dismiss the
+  // subsection when the action lands.
   const handleAddToCalendar = (meeting: ExtractedMeetingShape) => {
     openGoogleCalendar(meeting, email.subject);
     toast.success('Opening Google Calendar…');
-    setShowMeeting(false);
   };
 
-  const handleCreateTasks = (items: unknown[]) => {
+  const handleCreateTasks = async (items: unknown[]): Promise<number> => {
     // ActionItemExtractor ships items shaped as { text, priority,
     // dueDate: Date | null, assignee: string | null, ... }. Map onto
     // the helper's ExtractedTaskItem shape (title + ISO deadline);
@@ -152,9 +147,7 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
       priority: it.priority,
       deadline: it.dueDate ? it.dueDate.toISOString() : undefined,
     }));
-    void createTasksFromEmailItems(email, mapped).then((created) => {
-      if (created > 0) setShowActions(false);
-    });
+    return await createTasksFromEmailItems(email, mapped);
   };
 
   // Phase 12.10 — "Open full page" affordance. The InlineReader is rendered
@@ -195,35 +188,22 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
         </button>
       </div>
 
-      {/* Phase 12.12 — Gemini Summary card unifies summary + status chips
-          + action items list + quick replies in one block at the top of
-          the reader. Replaces the loose Quick Replies row + duplicates the
-          summary line that used to live in SignalRow's header. */}
-      <GeminiSummaryCard email={email} />
-
-      {/* Meeting + action items extractors — interactive widgets, distinct
-          from the read-only Gemini Summary card above. Only render when
-          the email has a _raw CachedEmail (mock rows don't, and the
-          extractors call AI services internally that expect a real email). */}
-      {showMeeting && email._raw && (
-        <div className="mb-3">
-          <MeetingExtractor
-            email={email._raw}
-            onAddToCalendar={handleAddToCalendar}
-            onDismiss={() => setShowMeeting(false)}
-          />
-        </div>
-      )}
-
-      {showActions && email._raw && (
-        <div className="mb-3">
-          <ActionItemExtractor
-            email={email._raw}
-            onCreateTasks={handleCreateTasks}
-            onDismiss={() => setShowActions(false)}
-          />
-        </div>
-      )}
+      {/* Round 7 — replaces the round-6 stack of three separate
+          rose-bordered cards (GeminiSummaryCard + MeetingExtractor +
+          ActionItemExtractor) with one composite EmailAiBlock that
+          hosts Summary, Meeting, and Tasks as sibling subsections
+          inside a single rose-bordered shell. Resolves the three
+          stacked-rose-washes issue and the action-items duplication
+          (Gemini's read-only ai_action_items vs ActionItemExtractor's
+          interactive regex-extracted list) — ownership of action items
+          is now unambiguously the Tasks subsection. Subsection dismissal
+          state is owned by EmailAiBlock so a per-subsection Skip
+          dismisses only that subsection, not the whole composite. */}
+      <EmailAiBlock
+        email={email}
+        onAddToCalendar={handleAddToCalendar}
+        onCreateTasks={handleCreateTasks}
+      />
 
       {/* Email body — extracted to <EmailBody /> shared primitive so the
           DOMPurify sanitization, HTML-sniff fallback, and empty-state

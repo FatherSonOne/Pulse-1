@@ -16,6 +16,14 @@ import { AiChip } from '../primitives';
 
 interface GeminiSummaryCardProps {
   email: EmailRow;
+  /**
+   * When true, drops the outer rose-bordered surface and renders only
+   * the eyebrow + content. Used by EmailAiBlock to compose Summary +
+   * Meeting + Tasks inside one shared rose-bordered shell. Also
+   * auto-hides the internal ACTION ITEMS section because Tasks ownership
+   * moves to the sibling ActionItemExtractor at the merge boundary.
+   */
+  nested?: boolean;
 }
 
 function priorityChipText(score: number | null | undefined): string | null {
@@ -38,7 +46,7 @@ function categoryChipText(category: string | null | undefined): string | null {
   return category.toUpperCase().replace(/_/g, ' ');
 }
 
-export const GeminiSummaryCard: React.FC<GeminiSummaryCardProps> = ({ email }) => {
+export const GeminiSummaryCard: React.FC<GeminiSummaryCardProps> = ({ email, nested = false }) => {
   const openReply = useEmailComposeStore((s) => s.openReply);
   const raw = email._raw;
   const summary = email.aiSummary || raw?.ai_summary || null;
@@ -64,11 +72,15 @@ export const GeminiSummaryCard: React.FC<GeminiSummaryCardProps> = ({ email }) =
 
   return (
     <div
-      className="rounded-xl border pulse-rose-border mb-4"
-      style={{
-        background: 'var(--pulse-rose-soft, rgba(244,63,94,0.10))',
-        padding: '14px 16px',
-      }}
+      className={nested ? '' : 'rounded-xl border pulse-rose-border mb-4'}
+      style={
+        nested
+          ? { padding: '14px 16px' }
+          : {
+              background: 'var(--pulse-rose-soft, rgba(244,63,94,0.10))',
+              padding: '14px 16px',
+            }
+      }
     >
       {/* Eyebrow + status chips row */}
       <div className="flex items-start justify-between gap-3 mb-2.5">
@@ -88,8 +100,12 @@ export const GeminiSummaryCard: React.FC<GeminiSummaryCardProps> = ({ email }) =
         <p className="text-[13.5px] leading-relaxed pulse-ink-color mb-3">{summary}</p>
       )}
 
-      {/* Action items */}
-      {actionItems.length > 0 && (
+      {/* Action items — hidden when nested inside EmailAiBlock because
+          ownership of action items moves to the sibling ActionItemExtractor
+          subsection. Prevents the round-7 duplicate-list problem where
+          Gemini's read-only ai_action_items appeared above the interactive
+          regex-extracted list. */}
+      {!nested && actionItems.length > 0 && (
         <>
           <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mt-3 mb-2 pt-2 border-t pulse-border-color">
             ACTION ITEMS

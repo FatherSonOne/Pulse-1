@@ -19,12 +19,19 @@ interface ActionItemExtractorProps {
   email: CachedEmail;
   onCreateTasks: (items: ActionItem[]) => void;
   onDismiss: () => void;
+  /**
+   * When true, drops the outer rose-bordered surface and the body-stripe
+   * white background. Used by EmailAiBlock to compose this extractor as
+   * one section inside a shared rose-bordered shell.
+   */
+  nested?: boolean;
 }
 
 export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
   email,
   onCreateTasks,
   onDismiss,
+  nested = false,
 }) => {
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -232,7 +239,9 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
 
   if (loading) {
     return (
-      <div style={{ background: 'var(--pulse-rose-soft)', border: '1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border))', borderRadius: 12, padding: 16 }}>
+      <div style={nested
+        ? { padding: 16 }
+        : { background: 'var(--pulse-rose-soft)', border: '1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border))', borderRadius: 12, padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--pulse-rose)' }} aria-hidden />
           <span style={{ fontSize: 13, color: 'var(--pulse-ink-2)' }}>Scanning the thread for action items…</span>
@@ -248,12 +257,14 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
   const selectedCount = actionItems.filter(i => i.selected).length;
 
   return (
-    <div style={{
-      background: 'var(--pulse-rose-soft)',
-      border: '1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border))',
-      borderRadius: 12,
-      overflow: 'hidden',
-    }}>
+    <div style={nested
+      ? {}
+      : {
+          background: 'var(--pulse-rose-soft)',
+          border: '1px solid color-mix(in oklab, var(--pulse-rose) 25%, var(--pulse-border))',
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}>
       {/* Header — AiChip-style provenance + count chip */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -287,7 +298,7 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
       </div>
 
       {/* Action items list */}
-      <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 6, background: 'var(--pulse-surface)' }}>
+      <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 6, background: nested ? 'transparent' : 'var(--pulse-surface)' }}>
         {actionItems.map((item) => {
           const tone = getPriorityTone(item.priority);
           return (
