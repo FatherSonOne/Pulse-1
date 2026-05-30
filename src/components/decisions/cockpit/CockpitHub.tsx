@@ -2,34 +2,262 @@
  * CockpitHub — orchestrator for the Decisions & Tasks "Triage Cockpit"
  * redesign (flag: `decisionsTriageCockpit`, default OFF).
  *
- * Phase 1: masthead (⌘K bar, bell/activity/AI, New ▾, scene-tabs) + ⌘K
- * command palette + tab state driving a placeholder body. Subsequent phases
- * (see DECISIONS_TASKS_REDESIGN_HANDOFF_2026-05-29.md §6) port the data layer
- * + realtime from DecisionTaskHub, then layer in the triage queue rail, focal
- * detail panes, property filters, archive tab, and the New overlay. The legacy
- * DecisionTaskHub stays the default until Phase 12 flips this flag.
+ * Phase 2: ported data layer from DecisionTaskHub — decisions/tasks load +
+ * pagination, workspace members, place map, proactive nudges + velocity
+ * metrics (debounced), and the 3-channel realtime subscription via
+ * useDecisionTaskRealtime. Filtering (filteredTasks/filteredDecisions) is
+ * derived here so Phase 3's queue rail can consume it directly. The body is
+ * still a status placeholder; the queue rail + focal panes land in Phase 3+.
+ *
+ * The data logic is ported (not shared via a hook) per the handoff §5.2 so the
+ * legacy DecisionTaskHub stays 100% untouched while both surfaces run
+ * side-by-side behind the flag. Both read the same tables/services.
  *
  * Props match DecisionTaskHub so App.tsx can swap the two on the flag.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { User } from '../../../types';
 import { CockpitMasthead, type CockpitTab } from './CockpitMasthead';
 import { CommandBar } from './CommandBar';
+import { FilterState } from '../FilterBar';
+import { decisionService, DecisionWithVotes } from '../../../services/decisionService';
+import { taskService, Task } from '../../../services/taskService';
+import { decisionAnalyticsService, DecisionMetrics } from '../../../services/decisionAnalyticsService';
+import { proactiveSuggestionsService, Nudge } from '../../../services/proactiveSuggestionsService';
+import { useDecisionTaskRealtime } from '../../../hooks/useDecisionTaskRealtime';
+import { RealTimeIndicator } from '../RealTimeIndicator';
+import { supabase } from '../../../services/supabase';
+import { useWorkspace } from '../../../contexts/WorkspaceContext';
+import { listUserPlaces, getEntityPlaceMap } from '../../../services/locationService';
+import { Place } from '../../../types/placeTypes';
+import { getDismissedNudges } from '../../../utils/dismissedNudgesStorage';
 import '../design-tokens.css';
 import './cockpit.css';
 
 interface CockpitHubProps {
   user: User | null;
+  workspaceId?: string;
 }
 
-export function CockpitHub({ user: _user }: CockpitHubProps) {
+// Debounce hook (ported from DecisionTaskHub) — throttles expensive AI
+// metric/nudge regeneration so rapid data churn doesn't thrash the router.
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState<T>(value);
+  useEffect(() => {
+    const handle = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(handle);
+  }, [value, delay]);
+  return debounced;
+}
+
+export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
+  const { currentWorkspace } = useWorkspace();
+
+  // ── Cockpit shell state ──
   const [tab, setTab] = useState<CockpitTab>('triage');
   const [commandOpen, setCommandOpen] = useState(false);
 
+  // ── Data state (ported) ──
+  const [decisions, setDecisions] = useState<DecisionWithVotes[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [decisionsLoading, setDecisionsLoading] = useState(true);
+  const [tasksLoading, setTasksLoading] = useState(true);
+  const [hasMoreDecisions, setHasMoreDecisions] = useState(false);
+  const [hasMoreTasks, setHasMoreTasks] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // ── Filters (shared FilterState contract) ──
+  const [filters, setFilters] = useState<FilterState>({
+    search: '',
+    status: 'all',
+    priority: undefined,
+    dateRange: undefined,
+    placeId: undefined,
+  });
+
+  // ── Place-aware filtering: flat task→place map + the workspace's places ──
+  const [availablePlaces, setAvailablePlaces] = useState<Place[]>([]);
+  const [taskPlaceMap, setTaskPlaceMap] = useState<Record<string, string>>({});
+
+  // ── AI features ──
+  const [metrics, setMetrics] = useState<DecisionMetrics | null>(null);
+  const [nudges, setNudges] = useState<Nudge[]>([]);
+  const [dismissedNudges, setDismissedNudges] = useState<Set<string>>(new Set());
+
+  // ── Workspace members (assignee dropdowns) ──
+  const [workspaceMembers, setWorkspaceMembers] = useState<User[]>([]);
+
+  // Debounced data → drives metric/nudge regeneration without thrash.
+  const debouncedDecisions = useDebounce(decisions, 800);
+  const debouncedTasks = useDebounce(tasks, 800);
+
+  const effectiveWorkspaceId = workspaceId || currentWorkspace?.id || user?.id || '';
+
   const closeCommand = useCallback(() => setCommandOpen(false), []);
 
+  // ── Loaders ──
+  const loadDecisions = useCallback(async () => {
+    setDecisionsLoading(true);
+    try {
+      const { decisions: all, hasMore } = await decisionService.getWorkspaceDecisions(effectiveWorkspaceId);
+      setDecisions(all);
+      setHasMoreDecisions(hasMore);
+    } catch (error) {
+      console.error('Failed to load decisions:', error);
+      setDecisions([]);
+    } finally {
+      setDecisionsLoading(false);
+    }
+  }, [effectiveWorkspaceId]);
+
+  const loadTasks = useCallback(async () => {
+    setTasksLoading(true);
+    try {
+      const { tasks: all, hasMore } = await taskService.getWorkspaceTasks(effectiveWorkspaceId);
+      setTasks(all);
+      setHasMoreTasks(hasMore);
+    } catch (error) {
+      console.error('Failed to load tasks:', error);
+      setTasks([]);
+    } finally {
+      setTasksLoading(false);
+    }
+  }, [effectiveWorkspaceId]);
+
+  const generateMetrics = useCallback(async () => {
+    try {
+      const calculated = await decisionAnalyticsService.calculateDecisionVelocity(decisions);
+      setMetrics(calculated);
+    } catch (error) {
+      console.error('Failed to generate metrics:', error);
+    }
+  }, [decisions]);
+
+  const generateNudges = useCallback(async () => {
+    if (!user) return;
+    try {
+      const generated = await proactiveSuggestionsService.generateNudges(decisions, tasks, user, '');
+      setNudges(generated.filter((n) => !dismissedNudges.has(n.id)));
+    } catch (error) {
+      console.error('Failed to generate nudges:', error);
+    }
+  }, [user, decisions, tasks, dismissedNudges]);
+
+  const handleLoadMore = useCallback(async () => {
+    setLoadingMore(true);
+    try {
+      if (hasMoreDecisions) {
+        const { decisions: more, hasMore } = await decisionService.getWorkspaceDecisions(
+          effectiveWorkspaceId,
+          { offset: decisions.length }
+        );
+        setDecisions((prev) => [...prev, ...more]);
+        setHasMoreDecisions(hasMore);
+      }
+      if (hasMoreTasks) {
+        const { tasks: more, hasMore } = await taskService.getWorkspaceTasks(
+          effectiveWorkspaceId,
+          { offset: tasks.length }
+        );
+        setTasks((prev) => [...prev, ...more]);
+        setHasMoreTasks(hasMore);
+      }
+    } catch (error) {
+      console.error('Failed to load more:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [effectiveWorkspaceId, decisions.length, tasks.length, hasMoreDecisions, hasMoreTasks]);
+
+  const handleRefresh = useCallback(() => {
+    loadDecisions();
+    loadTasks();
+    generateMetrics();
+    generateNudges();
+  }, [loadDecisions, loadTasks, generateMetrics, generateNudges]);
+
+  // ── Realtime handlers (ported) ──
+  const handleDecisionChange = useCallback(() => {
+    loadDecisions();
+    setTimeout(() => {
+      generateMetrics();
+      generateNudges();
+    }, 500);
+  }, [loadDecisions, generateMetrics, generateNudges]);
+
+  const handleTaskChange = useCallback(() => {
+    loadTasks();
+    setTimeout(() => generateNudges(), 500);
+  }, [loadTasks, generateNudges]);
+
+  const handleVoteChange = useCallback(() => {
+    loadDecisions();
+    setTimeout(() => generateMetrics(), 500);
+  }, [loadDecisions, generateMetrics]);
+
+  const { connectionStatus } = useDecisionTaskRealtime({
+    effectiveWorkspaceId,
+    decisions,
+    onDecisionChange: handleDecisionChange,
+    onTaskChange: handleTaskChange,
+    onVoteChange: handleVoteChange,
+  });
+
+  // ── Effects ──
+  // Dismissed nudges from localStorage on mount.
+  useEffect(() => {
+    setDismissedNudges(getDismissedNudges());
+  }, []);
+
+  // Initial data load (+ on workspace switch).
+  useEffect(() => {
+    if (effectiveWorkspaceId) {
+      loadDecisions();
+      loadTasks();
+    }
+  }, [effectiveWorkspaceId, loadDecisions, loadTasks]);
+
+  // Workspace members for assignee dropdowns.
+  useEffect(() => {
+    if (!effectiveWorkspaceId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('workspace_members')
+          .select('*, profiles(*)')
+          .eq('workspace_id', effectiveWorkspaceId);
+        if (!cancelled && data) {
+          setWorkspaceMembers(
+            data.filter((m: any) => m.profiles).map((m: any) => m.profiles as User)
+          );
+        }
+      } catch (error) {
+        console.error('Failed to load workspace members:', error);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [effectiveWorkspaceId]);
+
+  // Places + task→place map (one shot; no N+1 in the queue/filters).
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([listUserPlaces(), getEntityPlaceMap('task')]).then(([places, map]) => {
+      if (cancelled) return;
+      setAvailablePlaces(places);
+      setTaskPlaceMap(map);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Regenerate metrics + nudges when (debounced) data changes.
+  useEffect(() => {
+    if (debouncedDecisions.length > 0) generateMetrics();
+    if (debouncedDecisions.length > 0 || debouncedTasks.length > 0) generateNudges();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedDecisions, debouncedTasks]);
+
   // Global ⌘K / Ctrl+K toggles the command palette; Escape closes it.
-  // The palette itself also handles Escape locally for when focus is inside it.
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
@@ -37,13 +265,47 @@ export function CockpitHub({ user: _user }: CockpitHubProps) {
         setCommandOpen((open) => !open);
         return;
       }
-      if (e.key === 'Escape' && commandOpen) {
-        setCommandOpen(false);
-      }
+      if (e.key === 'Escape' && commandOpen) setCommandOpen(false);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [commandOpen]);
+
+  // ── Derived: filtered sets (Phase 3 queue rail consumes these) ──
+  const filteredTasks = useMemo(() => {
+    let filtered = tasks;
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      filtered = filtered.filter(
+        (t) => t.title.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q)
+      );
+    }
+    if (filters.status !== 'all') filtered = filtered.filter((t) => t.status === filters.status);
+    if (filters.priority) filtered = filtered.filter((t) => t.priority === filters.priority);
+    if (filters.placeId !== undefined) {
+      filtered = filtered.filter((t) => {
+        const placeId = taskPlaceMap[t.id];
+        return filters.placeId === null ? !placeId : placeId === filters.placeId;
+      });
+    }
+    return filtered;
+  }, [tasks, filters, taskPlaceMap]);
+
+  const filteredDecisions = useMemo(() => {
+    let filtered = decisions;
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      filtered = filtered.filter(
+        (d) => d.title.toLowerCase().includes(q) || d.description?.toLowerCase().includes(q)
+      );
+    }
+    return filtered;
+  }, [decisions, filters]);
+
+  const loading = decisionsLoading || tasksLoading;
+  const subtitle = loading
+    ? 'Loading…'
+    : `${filteredDecisions.length} decisions · ${filteredTasks.length} tasks`;
 
   return (
     <div className="ck-root">
@@ -51,11 +313,48 @@ export function CockpitHub({ user: _user }: CockpitHubProps) {
         tab={tab}
         setTab={setTab}
         onOpenCommand={() => setCommandOpen(true)}
+        subtitle={subtitle}
+        alertCount={nudges.length}
       />
 
-      {/* Phase 2+ : Triage queue rail + focal pane / Archive timeline mount here. */}
+      {/* Phase 2 status body — proves data + realtime are live. The queue rail
+          + focal pane (Triage) and timeline + retrospective (Archive) mount
+          here in Phase 3+. */}
       <div className="ck-body">
-        {tab === 'triage' ? 'Triage cockpit — queue + focal (Phase 3+)' : 'Archive — timeline + retrospective (Phase 9)'}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <RealTimeIndicator status={connectionStatus} />
+          <div style={{ fontSize: 13, color: 'var(--pulse-ink-2)' }}>
+            {loading
+              ? 'Loading decisions & tasks…'
+              : tab === 'triage'
+                ? `${filteredDecisions.length} decisions · ${filteredTasks.length} tasks · ${nudges.length} nudges · ${workspaceMembers.length} members`
+                : 'Archive — timeline + retrospective (Phase 9)'}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }}>
+            {metrics ? 'Velocity metrics computed' : 'Metrics pending'}
+            {availablePlaces.length > 0 && ` · ${availablePlaces.length} places`}
+            {(hasMoreDecisions || hasMoreTasks) && (
+              <>
+                {' · '}
+                <button
+                  className="ck-cmdk-item"
+                  style={{ display: 'inline-flex', width: 'auto', padding: '2px 8px' }}
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? 'Loading…' : 'Load more'}
+                </button>
+              </>
+            )}
+          </div>
+          <button
+            className="ck-cmdk-item"
+            style={{ width: 'auto', padding: '4px 10px', fontSize: 12 }}
+            onClick={handleRefresh}
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       <CommandBar open={commandOpen} onClose={closeCommand} />
