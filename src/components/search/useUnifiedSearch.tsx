@@ -33,12 +33,23 @@ import { GeoFilter, parseGeoQuery } from '../../services/geoSearchParser';
 import { applyGeoFilter, resolveGeoCenter } from '../../services/spatialSearchService';
 import toast from 'react-hot-toast';
 
-// ── View / grouping / clipboard modes (legacy shapes, preserved verbatim) ──
-// NOTE: Phase 4/5 remap viewMode to the Workbench's Table|Cards|Map set and
-// extend GroupMode with 'date'. Kept legacy here so Phase 1 is a faithful lift.
-export type ViewMode      = 'list' | 'grid' | 'timeline' | 'map';
+// ── View / grouping / clipboard modes ──────────────────────────────────────
+// Workbench view set: Table (default) · Cards · Map. The legacy Timeline/List
+// collapse into Table (grouping control), Grid → Cards (handoff §4.2).
+// GroupMode extends to 'date' in Phase 4; kept at none|conversation here.
+export type ViewMode      = 'table' | 'cards' | 'map';
 export type ClipboardView = 'notes' | 'categories';
 export type GroupMode     = 'none' | 'conversation';
+
+// Migrate the persisted `pulse:search:viewMode` from the legacy vocabulary
+// (timeline|list|grid|map) to the Workbench set (table|cards|map). §4.2.
+function readPersistedViewMode(): ViewMode {
+  const raw = (typeof localStorage !== 'undefined' && localStorage.getItem('pulse:search:viewMode')) || '';
+  if (raw === 'grid' || raw === 'cards') return 'cards';
+  if (raw === 'map') return 'map';
+  // timeline | list | table | '' | anything else → table (the new default)
+  return 'table';
+}
 
 // ── Recent thread summary shape (mirrors dataService.getRecentThreads) ─────
 export interface RecentThread {
@@ -55,9 +66,13 @@ export function useUnifiedSearch() {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading,       setLoading]       = useState(false);
-  const [viewMode,      setViewMode]      = useState<ViewMode>(
-    () => (localStorage.getItem('pulse:search:viewMode') as ViewMode) || 'timeline'
-  );
+  const [viewMode,      setViewModeRaw]   = useState<ViewMode>(readPersistedViewMode);
+  // Persisting setter — every view switch writes through to localStorage so the
+  // choice survives reloads (replaces the per-onClick persistence in legacy).
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeRaw(mode);
+    try { localStorage.setItem('pulse:search:viewMode', mode); } catch { /* sandboxed */ }
+  }, []);
   const [groupMode,     setGroupMode]     = useState<GroupMode>('conversation');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [recentThreads,  setRecentThreads]  = useState<RecentThread[]>([]);
@@ -166,8 +181,9 @@ export function useUnifiedSearch() {
   // ── Group results by counterpart/thread when groupMode === 'conversation'.
   // Falls back to flat ordering for queries with explicit operators. ─────────
   const queryHasOperator = /\b(from|type|after|before|tag):/i.test(searchQuery);
+  // Map ignores grouping; Table & Cards honor conversation grouping.
   const shouldGroup = groupMode === 'conversation' && !queryHasOperator
-    && viewMode !== 'map' && viewMode !== 'timeline';
+    && viewMode !== 'map';
 
   const groupedResults = useMemo(() => {
     if (!shouldGroup) return null;
@@ -365,13 +381,12 @@ export function useUnifiedSearch() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchQuery]);
 
-  // ── If Map view is active and the geo filter clears, fall back to Timeline ──
+  // ── If Map view is active and the geo filter clears, fall back to Table ──
   useEffect(() => {
     if (viewMode === 'map' && !activeGeoFilter) {
-      setViewMode('timeline');
-      localStorage.setItem('pulse:search:viewMode', 'timeline');
+      setViewMode('table');
     }
-  }, [activeGeoFilter, viewMode]);
+  }, [activeGeoFilter, viewMode, setViewMode]);
 
   // ── Operator hints ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -435,6 +450,11 @@ export function useUnifiedSearch() {
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [searchResults.length]);
+
+  // ── Saved-searches reload (used by Save modal + facet delete/undo) ─────────
+  const reloadSavedSearches = useCallback(() => {
+    savedSearchesService.getSavedSearches(userId).then(setSavedSearches).catch(console.error);
+  }, [userId]);
 
   // ── Preference toggles ─────────────────────────────────────────────────────────
   const toggleAISearch = useCallback(() => setUseAISearch(v => {
@@ -600,7 +620,7 @@ export function useUnifiedSearch() {
     selectedResults, setSelectedResults, toggleResultSelect,
     expandedResultId, setExpandedResultId,
     // saved searches
-    savedSearches, setSavedSearches,
+    savedSearches, setSavedSearches, reloadSavedSearches,
     // errors / geo
     searchErrors,
     activeGeoFilter, geoCenter, geoFilterError,

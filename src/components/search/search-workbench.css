@@ -78,55 +78,12 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
- * Phase 1 interim surface. Replaced piece-by-piece as the real shell (Phase 2),
- * facet cockpit (Phase 3), and dense table (Phase 4) land. Neutral throughout.
+ * Interim center result list (Table view) — a plain dense list standing in for
+ * the real ResultsTable until Phase 4. Neutral throughout.
  * ────────────────────────────────────────────────────────────────────────── */
-.search-workbench {
-  height: 100%;
-  overflow: auto;
-  background: var(--pulse-bg, var(--pulse-surface));
-}
-.sw-interim {
-  max-width: 880px;
-  margin: 0 auto;
-  padding: 28px 24px 64px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.sw-interim-banner {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px dashed var(--pulse-border-strong);
-  background: var(--pulse-surface);
-  color: var(--pulse-ink-3);
-  font-family: var(--pulse-font-mono);
-  font-size: 11px;
-  letter-spacing: 0.02em;
-}
-.sw-interim-input-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--pulse-border-strong);
-  background: var(--pulse-surface);
-}
-.sw-interim-input-icon { color: var(--pulse-ink-3); flex: 0 0 auto; }
-.sw-interim-input {
-  flex: 1 1 auto;
-  border: none;
-  background: transparent;
-  outline: none;
-  color: var(--pulse-ink);
-  font-size: 15px;
-}
-.sw-interim-input::placeholder { color: var(--pulse-ink-3); }
-.sw-interim-spinner { color: var(--pulse-ink-3); animation: sw-spin 900ms linear infinite; }
 @keyframes sw-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
-  .sw-interim-spinner { animation: none; }
+  .sw-search-spinner { animation: none; }
 }
 .sw-interim-meta {
   margin: 0;
@@ -160,4 +117,226 @@
 .sw-interim-row-sender {
   color: var(--pulse-ink-3);
   font-size: 12px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Phase 2 — shell + toolbar. Neutral chrome throughout (CLAUDE.md §4): no
+ * coral anywhere here. The only coral surface in the whole redesign is the
+ * AI-ranking facet (Phase 3).
+ * ────────────────────────────────────────────────────────────────────────── */
+.search-workbench {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--pulse-bg, var(--pulse-surface));
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────*/
+.sw-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--pulse-border);
+  background: var(--pulse-surface);
+  flex: 0 0 auto;
+}
+.sw-search-field {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--pulse-border-strong);
+  background: var(--pulse-bg, var(--pulse-surface));
+}
+.sw-search-field:focus-within { border-color: var(--pulse-ink-3); }
+.sw-search-icon { color: var(--pulse-ink-3); flex: 0 0 auto; }
+.sw-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--pulse-ink);
+  font-size: 14px;
+}
+.sw-search-input::placeholder { color: var(--pulse-ink-3); }
+.sw-search-actions { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+.sw-search-spinner { color: var(--pulse-ink-3); animation: sw-spin 900ms linear infinite; }
+
+/* Icon buttons (neutral) */
+.sw-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--pulse-ink-3);
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.sw-icon-btn:hover { background: var(--pulse-hover, rgba(0,0,0,0.05)); color: var(--pulse-ink); }
+.sw-icon-btn.is-active { background: var(--pulse-hover, rgba(0,0,0,0.06)); color: var(--pulse-ink); }
+.sw-icon-btn.is-listening { color: var(--pulse-ink); background: var(--pulse-hover, rgba(0,0,0,0.08)); }
+.sw-icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.sw-icon-btn:focus-visible { outline: 2px solid var(--pulse-ink-3); outline-offset: 1px; }
+
+/* View toggle */
+.sw-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--pulse-bg, rgba(0,0,0,0.04));
+  border: 1px solid var(--pulse-border);
+  flex: 0 0 auto;
+}
+.sw-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--pulse-ink-3);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.sw-view-btn:hover { color: var(--pulse-ink); }
+.sw-view-btn.is-active { background: var(--pulse-surface); color: var(--pulse-ink); box-shadow: var(--pulse-shadow-sm, 0 1px 2px rgba(0,0,0,0.08)); }
+.sw-view-btn:focus-visible { outline: 2px solid var(--pulse-ink-3); outline-offset: 1px; }
+
+.sw-toolbar-divider { width: 1px; align-self: stretch; margin: 2px 4px; background: var(--pulse-border); flex: 0 0 auto; }
+
+/* Export dropdown */
+.sw-export-wrapper { position: relative; }
+.sw-export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 132px;
+  padding: 4px;
+  border-radius: 9px;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border-strong);
+  box-shadow: var(--pulse-shadow-md);
+  display: flex;
+  flex-direction: column;
+}
+.sw-export-menu button {
+  text-align: left;
+  padding: 7px 10px;
+  border: none;
+  background: transparent;
+  color: var(--pulse-ink);
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.sw-export-menu button:hover { background: var(--pulse-hover, rgba(0,0,0,0.05)); }
+
+/* Suggestions / operator-hint dropdowns */
+.sw-suggestions {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border-radius: 10px;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border-strong);
+  box-shadow: var(--pulse-shadow-md);
+  max-height: 320px;
+  overflow: auto;
+}
+.sw-suggestion-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--pulse-ink);
+  font-size: 13px;
+  cursor: pointer;
+}
+.sw-suggestion-row:hover,
+.sw-suggestion-row.is-active { background: var(--pulse-hover, rgba(0,0,0,0.05)); }
+.sw-suggestion-icon { color: var(--pulse-ink-3); }
+.sw-suggestion-code {
+  font-family: var(--pulse-font-mono);
+  font-size: 12px;
+  color: var(--pulse-ink);
+}
+
+/* ── Body grid ────────────────────────────────────────────────────────────*/
+.sw-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  /* grid-template-columns set inline (panel widths animate with toggles) */
+  transition: grid-template-columns 200ms ease;
+}
+.sw-facets, .sw-dock {
+  min-height: 0;
+  overflow: auto;
+  background: var(--pulse-surface);
+}
+.sw-facets { border-right: 1px solid var(--pulse-border); }
+.sw-dock { border-left: 1px solid var(--pulse-border); }
+.sw-facets.is-hidden, .sw-dock.is-hidden {
+  overflow: hidden;
+  border: none;
+}
+.sw-results {
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 16px 20px 48px;
+}
+.sw-center-table { display: flex; flex-direction: column; gap: 10px; }
+
+/* Region placeholders (removed as each phase fills its region) */
+.sw-region-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  color: var(--pulse-ink-3);
+  font-family: var(--pulse-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.sw-center-empty {
+  min-height: 220px;
+  border: 1px dashed var(--pulse-border-strong);
+  border-radius: 10px;
+}
+
+/* Screen-reader-only live region */
+.sw-sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
