@@ -40,6 +40,7 @@ import {
   MeetingEffectiveness,
 } from '../services/calendarAIService';
 import { useCalendarAI } from '../hooks/useCalendarAI';
+import { useCalendarTeam } from '../hooks/useCalendarTeam';
 
 interface CalendarProps {
   contacts: Contact[];
@@ -85,20 +86,21 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   /** Whether the free-time finder panel is open */
   const [showFreeTimeFinder, setShowFreeTimeFinder] = useState(false);
 
-  // Team Management State — persisted to localStorage
-  const [teams, setTeams] = useState<Team[]>(() => {
-    try {
-      const stored = localStorage.getItem('cal_teams');
-      if (stored) return JSON.parse(stored);
-    } catch { /* ignore */ }
-    return [{ id: 'default-team', name: 'My Team', color: 'bg-blue-500', memberIds: [] }];
-  });
-  const [selectedTeamId, setSelectedTeamId] = useState<string>('default-team');
-  const [showTeamModal, setShowTeamModal] = useState(false);
-  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
-  const [newTeamName, setNewTeamName] = useState('');
-  const [newTeamColor, setNewTeamColor] = useState('bg-blue-500');
-  const [newTeamMembers, setNewTeamMembers] = useState<string[]>([]);
+  // Team management lives in useCalendarTeam (extracted Step 9).
+  const {
+    teams,
+    selectedTeamId, setSelectedTeamId,
+    showTeamModal, setShowTeamModal,
+    editingTeam,
+    newTeamName, setNewTeamName,
+    newTeamColor, setNewTeamColor,
+    newTeamMembers, setNewTeamMembers,
+    handleCreateTeam,
+    handleUpdateTeam,
+    handleDeleteTeam,
+    openEditTeam,
+    resetTeamForm,
+  } = useCalendarTeam();
 
   // Calendar Invite Modal State
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -362,10 +364,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     return () => subscription.unsubscribe();
   }, []);
 
-  // Persist teams to localStorage on change
-  useEffect(() => {
-    localStorage.setItem('cal_teams', JSON.stringify(teams));
-  }, [teams]);
+  // Teams persistence lives in useCalendarTeam.
 
   // Persist goals to localStorage on change
   useEffect(() => {
@@ -1110,57 +1109,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     return result;
   }, [overlayMemberIds, teamMembers, currentDate, viewMode, avatarColorToHex]);
 
-  // Team management functions
-  const handleCreateTeam = () => {
-    if (!newTeamName.trim()) return;
-
-    const newTeam: Team = {
-      id: `team-${crypto.randomUUID()}`,
-      name: newTeamName.trim(),
-      color: newTeamColor,
-      memberIds: newTeamMembers,
-    };
-
-    setTeams(prev => [...prev, newTeam]);
-    setSelectedTeamId(newTeam.id);
-    setShowTeamModal(false);
-    resetTeamForm();
-  };
-
-  const handleUpdateTeam = () => {
-    if (!editingTeam || !newTeamName.trim()) return;
-
-    setTeams(prev => prev.map(t =>
-      t.id === editingTeam.id
-        ? { ...t, name: newTeamName.trim(), color: newTeamColor, memberIds: newTeamMembers }
-        : t
-    ));
-    setShowTeamModal(false);
-    resetTeamForm();
-  };
-
-  const handleDeleteTeam = (teamId: string) => {
-    if (teams.length <= 1) return; // Keep at least one team
-    setTeams(prev => prev.filter(t => t.id !== teamId));
-    if (selectedTeamId === teamId) {
-      setSelectedTeamId(teams[0].id);
-    }
-  };
-
-  const resetTeamForm = () => {
-    setNewTeamName('');
-    setNewTeamColor('bg-blue-500');
-    setNewTeamMembers([]);
-    setEditingTeam(null);
-  };
-
-  const openEditTeam = (team: Team) => {
-    setEditingTeam(team);
-    setNewTeamName(team.name);
-    setNewTeamColor(team.color);
-    setNewTeamMembers(team.memberIds);
-    setShowTeamModal(true);
-  };
+  // Team CRUD handlers moved to useCalendarTeam.
 
   // Calendar invite function
   const handleSendInvite = async (contact: Contact, eventDetails: {
