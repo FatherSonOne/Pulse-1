@@ -37,18 +37,9 @@ import { EventCommentThread } from './Calendar/EventCommentThread';
 import { ViewMode, RecurrenceType, ReminderTime, EVENT_COLORS, EVENT_TYPES, TIME_ZONES, Team, autoDetectEventType } from './Calendar/calendarTypes';
 import {
   calendarAIService,
-  SchedulingSuggestion,
-  MeetingPrepBriefing,
-  ConflictResolution,
-  FocusTimeBlock,
-  TravelBuffer,
-  RelationshipInsight,
   MeetingEffectiveness,
-  RescheduleOption,
-  GoalAlignment,
-  CalendarAnalytics,
-  Goal,
 } from '../services/calendarAIService';
+import { useCalendarAI } from '../hooks/useCalendarAI';
 
 interface CalendarProps {
   contacts: Contact[];
@@ -128,50 +119,17 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const minSidebarWidth = 200;
   const maxSidebarWidth = 400;
 
-  // AI Assistant Panel State
-  const [showAIPanel, setShowAIPanel] = useState(false);
-  const [aiPanelTab, setAIPanelTab] = useState<'assistant' | 'insights' | 'analytics' | 'goals'>('assistant');
-  const [aiLoading, setAILoading] = useState(false);
-  const [naturalLanguageInput, setNaturalLanguageInput] = useState('');
+  // AI panel state + handlers live in useCalendarAI (extracted during the
+  // impeccable critique Step 9 — see src/hooks/useCalendarAI.ts). The hook
+  // owns: panel visibility, NL input, all "analyze X" handlers, goals
+  // persistence, meeting-prep + reschedule modals. We destructure here so
+  // the rest of Calendar.tsx (in particular the CalendarAIPanel mount JSX
+  // ~line 3219) keeps the same variable names without prop-by-prop rewires.
 
-  // AI Feature States
-  const [schedulingSuggestions, setSchedulingSuggestions] = useState<SchedulingSuggestion[]>([]);
-  const [meetingPrep, setMeetingPrep] = useState<MeetingPrepBriefing | null>(null);
-  const [conflicts, setConflicts] = useState<ConflictResolution[]>([]);
-  const [focusBlocks, setFocusBlocks] = useState<FocusTimeBlock[]>([]);
+  // Out-of-hook AI-adjacent state (separate concerns kept in Calendar.tsx):
   const [followUps, setFollowUps] = useState<PostMeetingFollowUp[]>([]);
   const [activeFollowUpPrompt, setActiveFollowUpPrompt] = useState<PostMeetingFollowUp | null>(null);
-  const [travelBuffers, setTravelBuffers] = useState<TravelBuffer[]>([]);
-  const [relationshipInsights, setRelationshipInsights] = useState<RelationshipInsight[]>([]);
   const [meetingScores, setMeetingScores] = useState<Map<string, MeetingEffectiveness>>(new Map());
-  const [rescheduleOptions, setRescheduleOptions] = useState<RescheduleOption[]>([]);
-  const [goalAlignments, setGoalAlignments] = useState<GoalAlignment[]>([]);
-  const [analytics, setAnalytics] = useState<CalendarAnalytics | null>(null);
-
-  // Goals State — persisted to localStorage
-  const [goals, setGoals] = useState<Goal[]>(() => {
-    try {
-      const stored = localStorage.getItem('cal_goals');
-      if (stored) return JSON.parse(stored);
-    } catch { /* ignore */ }
-    return [
-      { id: 'goal-1', title: 'Deep Work', category: 'focus', priority: 1, targetHoursPerWeek: 20, color: 'bg-blue-500' },
-      { id: 'goal-2', title: 'Team Meetings', category: 'collaboration', priority: 2, targetHoursPerWeek: 8, color: 'bg-green-500' },
-      { id: 'goal-3', title: 'Client Work', category: 'client', priority: 3, targetHoursPerWeek: 10, color: 'bg-purple-500' },
-    ];
-  });
-  const [showGoalModal, setShowGoalModal] = useState(false);
-  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
-
-  // Meeting Prep Modal
-  const [showMeetingPrepModal, setShowMeetingPrepModal] = useState(false);
-  const [prepEvent, setPrepEvent] = useState<CalendarEvent | null>(null);
-
-  // Smart Reschedule Modal
-  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-  const [rescheduleEvent, setRescheduleEvent] = useState<CalendarEvent | null>(null);
-
-  // Voice Command State
   const [voiceCommandResult, setVoiceCommandResult] = useState<{ action: string; response: string; data?: any } | null>(null);
 
   // New Event Form State
@@ -195,6 +153,66 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [newEventLocation, setNewEventLocation] = useState('');
   const [newEventAllDay, setNewEventAllDay] = useState(false);
   const [newEventStatus, setNewEventStatus] = useState<'confirmed' | 'tentative' | 'cancelled'>('confirmed');
+
+  // ─── AI panel state + handlers (extracted to useCalendarAI) ──────────
+  // Destructured into the same names the rest of this file uses so the
+  // CalendarAIPanel mount JSX (~line 3175) and event-detail JSX keep
+  // working without prop renames.
+  const {
+    showAIPanel, setShowAIPanel,
+    aiPanelTab, setAIPanelTab,
+    aiLoading, setAILoading,
+    naturalLanguageInput, setNaturalLanguageInput,
+    schedulingSuggestions,
+    meetingPrep,
+    conflicts,
+    focusBlocks,
+    travelBuffers,
+    relationshipInsights,
+    rescheduleOptions,
+    goalAlignments,
+    analytics,
+    goals,
+    showGoalModal,
+    editingGoal,
+    openGoalModal,
+    closeGoalModal,
+    saveGoal,
+    deleteGoal,
+    showMeetingPrepModal,
+    prepEvent,
+    closeMeetingPrep,
+    showRescheduleModal,
+    rescheduleEvent,
+    closeRescheduleModal,
+    handleNaturalLanguageSubmit,
+    handleGetSuggestions,
+    handleGenerateMeetingPrep,
+    handleDetectConflicts,
+    handleSuggestFocusBlocks,
+    handleAddFocusBlock,
+    handleAnalyzeTravelBuffers,
+    handleAnalyzeRelationships,
+    handleGenerateAnalytics,
+    handleAnalyzeGoalAlignment,
+    handleSmartReschedule,
+    handleApplyReschedule,
+  } = useCalendarAI({
+    events,
+    contacts,
+    tasks,
+    setEvents,
+    setNewEventTitle,
+    setNewEventDate,
+    setNewEventTime,
+    setNewEventEndTime,
+    setNewEventType,
+    setNewEventLocation,
+    setNewEventDesc,
+    setNewEventAllDay,
+    setNewEventAttendees,
+    setShowEventModal,
+  });
 
   // (Drag-and-drop is owned by the view components — MonthView keeps its own
   //  draggedEventId / dragOverDate state in CalendarViews.tsx, Week/Day use the
@@ -1212,206 +1230,8 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     }
   };
 
-  // ============================================
-  // AI FEATURE HANDLERS
-  // ============================================
-
-  // Initialize goals in the AI service
-  useEffect(() => {
-    calendarAIService.setGoals(goals);
-  }, [goals]);
-
-  // Natural language event parsing
-  const handleNaturalLanguageSubmit = async () => {
-    if (!naturalLanguageInput.trim()) return;
-
-    setAILoading(true);
-    try {
-      const parsed = await calendarAIService.parseNaturalLanguageEvent(naturalLanguageInput, contacts);
-      if (parsed && parsed.title) {
-        // Pre-fill the event form
-        setNewEventTitle(parsed.title || '');
-        if (parsed.start) {
-          setNewEventDate(parsed.start.toISOString().split('T')[0]);
-          setNewEventTime(parsed.start.toTimeString().slice(0, 5));
-        }
-        if (parsed.end) {
-          setNewEventEndTime(parsed.end.toTimeString().slice(0, 5));
-        }
-        setNewEventType(parsed.type || 'event');
-        setNewEventLocation(parsed.location || '');
-        setNewEventDesc(parsed.description || '');
-        setNewEventAllDay(parsed.allDay || false);
-        if (parsed.attendees) {
-          const attendeeIds = contacts
-            .filter(c => parsed.attendees?.includes(c.email))
-            .map(c => c.id);
-          setNewEventAttendees(attendeeIds);
-        }
-        setShowEventModal(true);
-        setNaturalLanguageInput('');
-      }
-    } catch (error) {
-      console.error('Failed to parse natural language:', error);
-    } finally {
-      setAILoading(false);
-    }
-  };
-
-  // Get smart scheduling suggestions
-  const handleGetSuggestions = async (duration: number = 30) => {
-    setAILoading(true);
-    try {
-      const suggestions = await calendarAIService.suggestMeetingTimes(duration, [], {
-        avoidBackToBack: true,
-        prioritizeMornings: false,
-      });
-      setSchedulingSuggestions(suggestions);
-    } catch (error) {
-      console.error('Failed to get suggestions:', error);
-    } finally {
-      setAILoading(false);
-    }
-  };
-
-  // Generate meeting prep briefing
-  const handleGenerateMeetingPrep = async (event: CalendarEvent) => {
-    setAILoading(true);
-    setPrepEvent(event);
-    try {
-      const prep = await calendarAIService.generateMeetingPrep(event, contacts, [], events);
-      setMeetingPrep(prep);
-      setShowMeetingPrepModal(true);
-    } catch (error) {
-      console.error('Failed to generate meeting prep:', error);
-    } finally {
-      setAILoading(false);
-    }
-  };
-
-  // Detect conflicts
-  const handleDetectConflicts = async () => {
-    setAILoading(true);
-    try {
-      const detected = await calendarAIService.detectConflicts(events);
-      setConflicts(detected);
-    } catch (error) {
-      console.error('Failed to detect conflicts:', error);
-    } finally {
-      setAILoading(false);
-    }
-  };
-
-  // Suggest focus blocks
-  const handleSuggestFocusBlocks = async () => {
-    setAILoading(true);
-    try {
-      const suggestions = await calendarAIService.suggestFocusBlocks(events, tasks);
-      setFocusBlocks(suggestions);
-    } catch (error) {
-      console.error('Failed to suggest focus blocks:', error);
-    } finally {
-      setAILoading(false);
-    }
-  };
-
-  // Add focus block to calendar
-  const handleAddFocusBlock = (block: FocusTimeBlock) => {
-    const newEvent: CalendarEvent = {
-      id: block.id,
-      title: `Focus Time: ${block.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
-      start: block.date,
-      end: new Date(block.date.getTime() + 90 * 60 * 1000),
-      color: 'bg-indigo-600',
-      calendarId: 'user',
-      allDay: false,
-      type: 'event',
-      description: 'Protected focus time block - AI suggested',
-    };
-    setEvents(prev => [...prev, newEvent]);
-    setFocusBlocks(prev => prev.filter(b => b.id !== block.id));
-  };
-
-  // Analyze travel buffers
-  const handleAnalyzeTravelBuffers = async () => {
-    setAILoading(true);
-    try {
-      const buffers = await calendarAIService.analyzeTravelBuffers(events);
-      setTravelBuffers(buffers);
-    } catch (error) {
-      console.error('Failed to analyze travel buffers:', error);
-    } finally {
-      setAILoading(false);
-    }
-  };
-
-  // Analyze relationships
-  const handleAnalyzeRelationships = async () => {
-    setAILoading(true);
-    try {
-      const insights = await calendarAIService.analyzeRelationships(contacts, events);
-      setRelationshipInsights(insights);
-    } catch (error) {
-      console.error('Failed to analyze relationships:', error);
-    } finally {
-      setAILoading(false);
-    }
-  };
-
-  // Generate analytics
-  const handleGenerateAnalytics = async () => {
-    setAILoading(true);
-    try {
-      const result = await calendarAIService.generateAnalytics(events, 'week');
-      setAnalytics(result);
-    } catch (error) {
-      console.error('Failed to generate analytics:', error);
-    } finally {
-      setAILoading(false);
-    }
-  };
-
-  // Analyze goal alignment
-  const handleAnalyzeGoalAlignment = async () => {
-    setAILoading(true);
-    try {
-      const alignments = await calendarAIService.analyzeGoalAlignment(events);
-      setGoalAlignments(alignments);
-    } catch (error) {
-      console.error('Failed to analyze goal alignment:', error);
-    } finally {
-      setAILoading(false);
-    }
-  };
-
-  // Smart reschedule
-  const handleSmartReschedule = async (event: CalendarEvent) => {
-    setAILoading(true);
-    setRescheduleEvent(event);
-    try {
-      const options = await calendarAIService.generateRescheduleOptions(event, events);
-      setRescheduleOptions(options);
-      setShowRescheduleModal(true);
-    } catch (error) {
-      console.error('Failed to generate reschedule options:', error);
-    } finally {
-      setAILoading(false);
-    }
-  };
-
-  // Apply reschedule
-  const handleApplyReschedule = (option: RescheduleOption) => {
-    if (!rescheduleEvent) return;
-
-    setEvents(prev => prev.map(e =>
-      e.id === rescheduleEvent.id
-        ? { ...e, start: option.newStart, end: option.newEnd }
-        : e
-    ));
-    setShowRescheduleModal(false);
-    setRescheduleEvent(null);
-    setRescheduleOptions([]);
-  };
+  // AI feature handlers moved to useCalendarAI (above). Voice command +
+  // post-meeting follow-up handlers stay below (different concern).
 
   // Process voice command
   const handleVoiceCommand = async (command: string) => {
@@ -2208,41 +2028,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     setShowInviteModal(true);
   }, []);
 
-  const handleOpenGoalModal = useCallback((goal: any) => {
-    setEditingGoal(goal);
-    setShowGoalModal(true);
-  }, []);
-
-  const handleCloseGoalModal = useCallback(() => {
-    setShowGoalModal(false);
-    setEditingGoal(null);
-  }, []);
-
-  const handleSaveGoal = useCallback((newGoal: any) => {
-    if (editingGoal) {
-      setGoals(prev => prev.map(g => g.id === editingGoal.id ? newGoal : g));
-    } else {
-      setGoals(prev => [...prev, newGoal]);
-    }
-    setShowGoalModal(false);
-    setEditingGoal(null);
-  }, [editingGoal]);
-
-  const handleDeleteGoal = useCallback((id: string) => {
-    setGoals(prev => prev.filter(g => g.id !== id));
-    setShowGoalModal(false);
-    setEditingGoal(null);
-  }, []);
-
-  const handleCloseMeetingPrep = useCallback(() => {
-    setShowMeetingPrepModal(false);
-    setPrepEvent(null);
-  }, []);
-
-  const handleCloseRescheduleModal = useCallback(() => {
-    setShowRescheduleModal(false);
-    setRescheduleEvent(null);
-  }, []);
+  // Goal / meeting-prep / reschedule modal handlers moved to useCalendarAI:
+  //   handleOpenGoalModal     -> openGoalModal
+  //   handleCloseGoalModal    -> closeGoalModal
+  //   handleSaveGoal          -> saveGoal
+  //   handleDeleteGoal        -> deleteGoal
+  //   handleCloseMeetingPrep  -> closeMeetingPrep
+  //   handleCloseRescheduleModal -> closeRescheduleModal
 
   const handleFollowUpCreateAction = useCallback((suggestion: any) => {
     if (suggestion.type === 'event') {
@@ -3252,19 +3044,19 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         goalAlignments={goalAlignments}
         showGoalModal={showGoalModal}
         editingGoal={editingGoal}
-        onOpenGoalModal={handleOpenGoalModal}
-        onCloseGoalModal={handleCloseGoalModal}
-        onSaveGoal={handleSaveGoal}
-        onDeleteGoal={handleDeleteGoal}
+        onOpenGoalModal={openGoalModal}
+        onCloseGoalModal={closeGoalModal}
+        onSaveGoal={saveGoal}
+        onDeleteGoal={deleteGoal}
         onAnalyzeGoalAlignment={handleAnalyzeGoalAlignment}
         showMeetingPrepModal={showMeetingPrepModal}
         meetingPrep={meetingPrep}
         prepEvent={prepEvent}
-        onCloseMeetingPrep={handleCloseMeetingPrep}
+        onCloseMeetingPrep={closeMeetingPrep}
         showRescheduleModal={showRescheduleModal}
         rescheduleEvent={rescheduleEvent}
         rescheduleOptions={rescheduleOptions}
-        onCloseRescheduleModal={handleCloseRescheduleModal}
+        onCloseRescheduleModal={closeRescheduleModal}
         onApplyReschedule={handleApplyReschedule}
         activeFollowUpPrompt={activeFollowUpPrompt}
         onFollowUpCreateAction={handleFollowUpCreateAction}
