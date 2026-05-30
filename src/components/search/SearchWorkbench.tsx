@@ -11,6 +11,7 @@ import './search-workbench.css';
 import { Table, LayoutGrid, MapPin } from 'lucide-react';
 import { useUnifiedSearch } from './useUnifiedSearch';
 import SearchToolbar from './SearchToolbar';
+import FacetCockpit from './FacetCockpit';
 import { SaveSearchModal } from '../SaveSearchModal';
 
 interface SearchWorkbenchProps {
@@ -40,9 +41,9 @@ export default function SearchWorkbench(_props: SearchWorkbenchProps = {}) {
           gridTemplateColumns: `${s.showFilters ? 'var(--sw-facet-w, 232px)' : '0px'} minmax(0, 1fr) ${s.showClipboard ? (s.clipboardExpanded ? '420px' : 'var(--sw-dock-w, 260px)') : '0px'}`,
         }}
       >
-        {/* ── LEFT: facet cockpit (Phase 3) ──────────────────────────────── */}
+        {/* ── LEFT: facet cockpit ────────────────────────────────────────── */}
         <aside className={`sw-facets ${s.showFilters ? '' : 'is-hidden'}`} aria-label="Filters">
-          <div className="sw-region-placeholder">Facet cockpit — Phase 3</div>
+          <FacetCockpit s={s} />
         </aside>
 
         {/* ── CENTER: results ────────────────────────────────────────────── */}
