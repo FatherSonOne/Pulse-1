@@ -71,3 +71,26 @@ export function groupResultsByDate(results: SearchResult[]): { label: string; it
   }
   return buckets.filter(b => b.items.length > 0);
 }
+
+// ── Grouped lanes for the results body — shared by Table and Cards. ─────────
+// label === null means "no header" (the flat / None mode). Conversation
+// grouping comes pre-built from the hook (groupedResults); date lanes are
+// computed here; None is a single label-less lane.
+export interface ResultLane {
+  key: string;
+  label: string | null;
+  items: SearchResult[];
+}
+export function buildLanes(
+  groupMode: 'date' | 'conversation' | 'none',
+  visible: SearchResult[],
+  groupedResults: { key: string; label: string; items: SearchResult[] }[] | null,
+): ResultLane[] {
+  if (groupMode === 'date') {
+    return groupResultsByDate(visible).map(l => ({ key: l.label, label: l.label, items: l.items }));
+  }
+  if (groupMode === 'conversation' && groupedResults) {
+    return groupedResults.map(g => ({ key: g.key, label: g.label, items: g.items }));
+  }
+  return [{ key: '__flat__', label: null, items: visible }];
+}

@@ -813,3 +813,18 @@
 .sw-row-peek-hint { color: var(--pulse-ink-3); margin-left: auto; }
 
 .sw-scroll-sentinel { height: 1px; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Phase 5 — Cards view. The cards themselves are the reused legacy
+ * SearchResultCard (.result-card-modern), styled by the imported legacy sheet;
+ * here we only own the container + grouping headers. Map view is the reused
+ * SearchMapView, mounted full-bleed by the shell. Neutral throughout.
+ * ────────────────────────────────────────────────────────────────────────── */
+.sw-cards-wrap { display: flex; flex-direction: column; gap: 10px; }
+.sw-cards { display: flex; flex-direction: column; gap: 8px; }
+.sw-lane-header--cards {
+  position: static;
+  border: none;
+  padding: 10px 2px 2px;
+  background: transparent;
+}

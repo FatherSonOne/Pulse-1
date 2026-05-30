@@ -8,11 +8,17 @@
 //
 // Spec: docs/SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md §2, §5.1
 import './search-workbench.css';
-import { LayoutGrid, MapPin } from 'lucide-react';
+// Verbatim-reuse bridge: SearchResultCard (Cards) and SearchMapView (Map) are
+// styled by the legacy sheet (--search-* vars + .result-*/.map rules). It only
+// adds dead, non-colliding rules to the Workbench; Phase 11 migrates the
+// still-needed card/map rules here before deleting the legacy component.
+import '../UnifiedSearchRedesign.css';
 import { useUnifiedSearch } from './useUnifiedSearch';
 import SearchToolbar from './SearchToolbar';
 import FacetCockpit from './FacetCockpit';
 import ResultsTable from './ResultsTable';
+import ResultsCards from './ResultsCards';
+import SearchMapView from '../SearchMapView';
 import { SaveSearchModal } from '../SaveSearchModal';
 import { SearchDetailPanel } from '../SearchDetailPanel';
 
@@ -20,7 +26,7 @@ interface SearchWorkbenchProps {
   isDarkMode?: boolean;
 }
 
-export default function SearchWorkbench(_props: SearchWorkbenchProps = {}) {
+export default function SearchWorkbench({ isDarkMode = false }: SearchWorkbenchProps = {}) {
   const s = useUnifiedSearch();
 
   return (
@@ -62,15 +68,18 @@ export default function SearchWorkbench(_props: SearchWorkbenchProps = {}) {
           )}
 
           {s.viewMode === 'cards' && (
-            <div className="sw-region-placeholder sw-center-empty">
-              <LayoutGrid size={18} /> Cards view — Phase 5
-            </div>
+            s.isEmptyState
+              ? <div className="sw-region-placeholder sw-center-empty">Working memory — Phase 7</div>
+              : <ResultsCards s={s} />
           )}
 
           {s.viewMode === 'map' && (
-            <div className="sw-region-placeholder sw-center-empty">
-              <MapPin size={18} /> Map view — Phase 5
-            </div>
+            <SearchMapView
+              results={s.sortedResults}
+              center={s.geoCenter}
+              isDarkMode={isDarkMode}
+              onSelect={s.setDetailResult}
+            />
           )}
         </main>
 
