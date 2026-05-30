@@ -71,7 +71,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Team Name</label>
+                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Team Name</label>
                 <input
                   type="text"
                   value={newTeamName}
@@ -81,7 +81,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Team Color</label>
+                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-2 block">Team Color</label>
                 <div className="flex gap-2 flex-wrap">
                   {EVENT_COLORS.map(color => (
                     <button
@@ -94,7 +94,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                 </div>
               </div>
               <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Team Members</label>
+                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-2 block">Team Members</label>
                 <div className="max-h-48 overflow-y-auto space-y-2 border border-[var(--pulse-border)] rounded-lg p-2">
                   {contacts.map(contact => (
                     <label key={contact.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer">
@@ -185,7 +185,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
               className="p-6 space-y-4"
             >
               <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Meeting Title</label>
+                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Meeting Title</label>
                 <input
                   type="text"
                   name="title"
@@ -196,7 +196,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Date</label>
+                  <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Date</label>
                   <input
                     type="date"
                     name="date"
@@ -207,7 +207,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Start</label>
+                    <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Start</label>
                     <input
                       type="time"
                       name="startTime"
@@ -217,7 +217,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">End</label>
+                    <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">End</label>
                     <input
                       type="time"
                       name="endTime"
@@ -229,7 +229,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                 </div>
               </div>
               <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Description (Optional)</label>
+                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Description (Optional)</label>
                 <textarea
                   name="description"
                   rows={3}
@@ -266,7 +266,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Calendar Name</label>
+                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Calendar Name</label>
                 <input
                   type="text"
                   value={newCalendarName}
@@ -276,7 +276,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Description (Optional)</label>
+                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Description (Optional)</label>
                 <textarea
                   value={newCalendarDescription}
                   onChange={(e) => setNewCalendarDescription(e.target.value)}

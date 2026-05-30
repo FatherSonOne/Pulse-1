@@ -2328,7 +2328,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   <div className={`${selectedEvent.color} p-6`}>
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="flex items-center gap-2 text-white/80 text-xs uppercase tracking-wider mb-1">
+                        <div className="flex items-center gap-2 text-white/80 font-mono text-[10px] tracking-[0.1em] uppercase font-semibold mb-1">
                           {(() => {
                             const typeMeta = allEventTypes.find(t => t.id === selectedEvent.type);
                             return typeMeta ? (
@@ -2344,7 +2344,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                         <h3 className="text-xl font-bold text-white">{selectedEvent.title}</h3>
                         {/* Conflict badge — shown when this event overlaps a cross-provider duplicate */}
                         {syncConflicts.some(c => c.eventA.id === selectedEvent.id || c.eventB.id === selectedEvent.id) && (
-                          <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-amber-400/30 border border-amber-300/50 rounded-full text-[10px] font-semibold text-amber-100 uppercase tracking-wide">
+                          <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-amber-400/30 border border-amber-300/50 rounded-full font-mono text-[10px] font-semibold text-amber-100 uppercase tracking-[0.1em]">
                             <AlertTriangle className="text-[9px]" />
                             Possible duplicate
                           </div>
@@ -2361,7 +2361,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       <button
                         key={tab}
                         onClick={() => setEventDetailTab(tab)}
-                        className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wide border-b-2 transition -mb-px ${
+                        className={`px-4 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] border-b-2 transition -mb-px ${
                           eventDetailTab === tab
                             ? 'border-[var(--pulse-rose)] text-[var(--pulse-rose)]'
                             : 'border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
@@ -3107,7 +3107,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
          {showTaskPanel && (
              <div className="cal-task-panel w-80 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 p-6 animate-slide-in-right flex flex-col shadow-2xl z-20 absolute right-0 top-0 bottom-0 md:relative">
                  <div className="flex justify-between items-center mb-8">
-                     <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                     <h3 className="font-mono text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.1em] flex items-center gap-2">
                          Tasks
                      </h3>
                      <button onClick={() => setShowTaskPanel(false)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><X /></button>
