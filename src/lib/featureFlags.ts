@@ -196,6 +196,22 @@ const featureFlagsConfig: FeatureFlagConfig = {
   // Triage + Focal Canvas / Sidecar composer surface is the only email
   // surface — the legacy PulseEmailClientRedesign was deleted alongside
   // this entry.
+
+  // Decisions & Tasks "Triage Cockpit" redesign — gates the new
+  // CockpitHub (queue rail + focal detail pane + Archive tab) against the
+  // legacy DecisionTaskHub (Active / Board / Archive). OFF for v1 while
+  // the cockpit is built out phase-by-phase behind the flag; legacy stays
+  // byte-identical until the flag flips. Mirrors the retired `emailHybrid`
+  // side-by-side cutover. Spec + plan:
+  // docs/DECISIONS_TASKS_REDESIGN_HANDOFF_2026-05-29.md. Local dev
+  // override: `?ff_decisionsTriageCockpit=on`.
+  decisionsTriageCockpit: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'OFF for v1 — Decisions & Tasks Triage Cockpit redesign; building behind the flag, legacy hub stays default until flip (see DECISIONS_TASKS_REDESIGN_HANDOFF_2026-05-29.md)',
+    version: '0.1.0'
+  },
 };
 
 // User group definitions

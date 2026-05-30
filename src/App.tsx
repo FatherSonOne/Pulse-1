@@ -17,6 +17,7 @@ import { getRoomByName } from './services/pulseVideoService';
 const Messages = lazy(() => import('./components/Messages'));
 const LiveDashboard = lazy(() => import('./components/LiveDashboard'));
 const DecisionTaskHub = lazy(() => import('./components/decisions/DecisionTaskHub').then(module => ({ default: module.DecisionTaskHub })));
+const CockpitHub = lazy(() => import('./components/decisions/cockpit/CockpitHub').then(module => ({ default: module.CockpitHub })));
 const EmailClient = lazy(() => import('./components/Email/EmailClientWrapper'));
 const Calendar = lazy(() => import('./components/Calendar'));
 const Settings = lazy(() => import('./components/Settings'));
@@ -334,6 +335,11 @@ const App: React.FC = () => {
   // is a synchronous read despite the `use` prefix, so it is safe to call
   // here in the component body.
   const smsEnabled = useFeatureFlag('inAppSms', user?.id, false);
+
+  // Decisions & Tasks "Triage Cockpit" redesign — OFF for v1. When ON, the
+  // DECISIONS_TASKS view renders the new CockpitHub instead of the legacy
+  // DecisionTaskHub. Dev override: `?ff_decisionsTriageCockpit=on`.
+  const cockpitEnabled = useFeatureFlag('decisionsTriageCockpit', user?.id, false);
 
   // Belt-and-suspenders: if a stale `view` state or deep-link lands on the
   // hidden SMS surface, bounce back to the Dashboard so the mock can't render.
@@ -938,7 +944,9 @@ const App: React.FC = () => {
             case AppView.LIVE_AI:
               return <LiveDashboard userId={user?.id || ''} />;
             case AppView.DECISIONS_TASKS:
-              return <DecisionTaskHub user={user} />;
+              return cockpitEnabled
+                ? <CockpitHub user={user} />
+                : <DecisionTaskHub user={user} />;
             case AppView.USERS_GUIDE:
               return <UsersGuide isDarkMode={isDarkMode} />;
             case AppView.DASHBOARD:
