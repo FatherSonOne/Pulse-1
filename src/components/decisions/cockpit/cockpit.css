@@ -264,6 +264,95 @@
 }
 .ck-cmdk-foot span { display: inline-flex; align-items: center; gap: 6px; }
 
+/* ───────── Property filter bar ───────── */
+.ck-filterbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--pulse-border);
+  background: var(--pulse-canvas);
+}
+.ck-filter-divider { width: 1px; height: 18px; background: var(--pulse-border); }
+
+.ck-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pulse-ink-2);
+  background: var(--pulse-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--pulse-border);
+  white-space: nowrap;
+}
+.ck-pill strong { font-weight: 600; color: var(--pulse-ink); }
+.ck-pill-key { color: var(--pulse-ink-3); }
+.ck-pill-icon { color: var(--pulse-ink-3); }
+.ck-pill-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  color: var(--pulse-ink-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.ck-pill-x:hover { color: var(--pulse-ink); background: var(--pulse-border); }
+button.ck-pill { cursor: pointer; transition: box-shadow 130ms, color 130ms; }
+button.ck-pill:hover { color: var(--pulse-ink); box-shadow: inset 0 0 0 1px var(--pulse-border-strong); }
+.ck-pill-add { background: transparent; box-shadow: inset 0 0 0 1px var(--pulse-border-strong); color: var(--pulse-ink-3); }
+.ck-pill-add:hover { color: var(--pulse-ink); }
+
+/* Pill dropdown menu */
+.ck-sv { position: relative; }
+.ck-menu-backdrop { position: fixed; inset: 0; z-index: 40; }
+.ck-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 41;
+  min-width: 170px;
+  padding: 5px;
+  border-radius: 9px;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border-strong);
+  box-shadow: var(--pulse-shadow-md);
+}
+.ck-menu-wide { min-width: 190px; }
+.ck-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--pulse-ink);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 110ms;
+}
+.ck-menu-item:hover { background: var(--pulse-surface-raised); }
+.ck-menu-label {
+  padding: 8px 9px 4px;
+  font-family: var(--pulse-font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pulse-ink-3);
+}
+
 /* ───────── Triage view: queue rail + focal ───────── */
 .ck-triage {
   flex: 1;

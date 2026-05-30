@@ -17,9 +17,12 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { Plus, Zap, Download, RotateCw } from 'lucide-react';
 import { User } from '../../../types';
 import { CockpitMasthead, type CockpitTab } from './CockpitMasthead';
-import { CommandBar } from './CommandBar';
+import { CommandBar, type CommandItem } from './CommandBar';
+import { PropertyFilterBar, type ViewKind, type ViewAssignee } from './filters/PropertyFilterBar';
+import { type SavedViewPreset } from './filters/SavedViews';
 import { TriageView } from './triage/TriageView';
 import { type QueueEntry } from './triage/queueModel';
 import { type TaskActions } from './focal/TaskDetail';
@@ -83,6 +86,11 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     dateRange: undefined,
     placeId: undefined,
   });
+  // Cockpit-local view dimensions (not in the shared FilterState): kind +
+  // assignee. SavedViews presets set these alongside FilterState.
+  const [viewKind, setViewKind] = useState<ViewKind>('all');
+  const [viewAssignee, setViewAssignee] = useState<ViewAssignee>('all');
+  const [savedView, setSavedView] = useState<string>('all');
 
   // ── Place-aware filtering: flat task→place map + the workspace's places ──
   const [availablePlaces, setAvailablePlaces] = useState<Place[]>([]);
@@ -191,6 +199,70 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     generateMetrics();
     generateNudges();
   }, [loadDecisions, loadTasks, generateMetrics, generateNudges]);
+
+  // CSV export (ported from DecisionTaskHub) — over the full sets, not filtered.
+  const handleExportCSV = useCallback(() => {
+    const filename = `decisions_tasks_${new Date().toISOString().split('T')[0]}.csv`;
+    const headers = ['Type', 'Title', 'Status', 'Priority', 'Created', 'Deadline'];
+    const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
+    const rows = [
+      ...decisions.map((d) => ['Decision', esc(d.title), d.status, '-', new Date(d.created_at).toLocaleDateString(), d.decided_at ? new Date(d.decided_at).toLocaleDateString() : 'N/A']),
+      ...tasks.map((t) => ['Task', esc(t.title), t.status, t.priority || 'N/A', new Date(t.extracted_at).toLocaleDateString(), t.deadline ? new Date(t.deadline).toLocaleDateString() : 'N/A']),
+    ];
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [decisions, tasks]);
+
+  // ── Saved views + filters ──
+  const SAVED_VIEWS: SavedViewPreset[] = useMemo(
+    () => [
+      { id: 'all', label: 'All work' },
+      { id: 'needs-you', label: 'Needs you' },
+      { id: 'decisions', label: 'Decisions' },
+      { id: 'mine', label: 'My tasks' },
+    ],
+    []
+  );
+
+  const clearAllFilters = useCallback(() => {
+    setFilters({ search: '', status: 'all', priority: undefined, dateRange: undefined, placeId: undefined });
+    setViewKind('all');
+    setViewAssignee('all');
+  }, []);
+
+  const applyPreset = useCallback((id: string) => {
+    setSavedView(id);
+    clearAllFilters();
+    if (id === 'needs-you' || id === 'mine') setViewAssignee('me');
+    if (id === 'mine') setViewKind('tasks');
+    if (id === 'decisions') setViewKind('decisions');
+  }, [clearAllFilters]);
+
+  // ── ⌘K commands ──
+  const commands: CommandItem[] = useMemo(
+    () => [
+      { id: 'new-decision', label: 'New decision', section: 'Create', icon: <Plus size={15} />, run: () => toast('Create overlay arrives in Phase 10', { icon: '⏳' }) },
+      { id: 'quick-task', label: 'Quick task', section: 'Create', icon: <Plus size={15} />, run: () => toast('Create overlay arrives in Phase 10', { icon: '⏳' }) },
+      { id: 'prioritize', label: 'Prioritize tasks with AI', section: 'Actions', icon: <Zap size={15} />, run: () => toast('AI prioritizer arrives in Phase 11', { icon: '⏳' }) },
+      { id: 'export', label: 'Export CSV', section: 'Actions', icon: <Download size={15} />, run: handleExportCSV },
+      { id: 'refresh', label: 'Refresh', section: 'Actions', icon: <RotateCw size={15} />, run: handleRefresh },
+    ],
+    [handleExportCSV, handleRefresh]
+  );
+
+  const applySearch = useCallback((q: string) => {
+    setFilters((prev) => ({ ...prev, search: q }));
+    setTab('triage');
+  }, []);
 
   // Queue row hover quick-actions. `done` marks a task done (realtime refreshes
   // the queue) or casts an Approve vote on a decision. Snooze lands in Phase 8.
@@ -468,6 +540,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
 
   // ── Derived: filtered sets (Phase 3 queue rail consumes these) ──
   const filteredTasks = useMemo(() => {
+    if (viewKind === 'decisions') return [];
     let filtered = tasks;
     if (filters.search) {
       const q = filters.search.toLowerCase();
@@ -477,6 +550,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     }
     if (filters.status !== 'all') filtered = filtered.filter((t) => t.status === filters.status);
     if (filters.priority) filtered = filtered.filter((t) => t.priority === filters.priority);
+    if (viewAssignee === 'me' && user?.id) filtered = filtered.filter((t) => t.assignee_id === user.id);
     if (filters.placeId !== undefined) {
       filtered = filtered.filter((t) => {
         const placeId = taskPlaceMap[t.id];
@@ -484,9 +558,10 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
       });
     }
     return filtered;
-  }, [tasks, filters, taskPlaceMap]);
+  }, [tasks, filters, taskPlaceMap, viewKind, viewAssignee, user?.id]);
 
   const filteredDecisions = useMemo(() => {
+    if (viewKind === 'tasks') return [];
     let filtered = decisions;
     if (filters.search) {
       const q = filters.search.toLowerCase();
@@ -495,7 +570,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
       );
     }
     return filtered;
-  }, [decisions, filters]);
+  }, [decisions, filters, viewKind]);
 
   const loading = decisionsLoading || tasksLoading;
   const subtitle = loading
@@ -516,16 +591,31 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
           body (live counts + connection + Load more) until Phase 9 builds the
           timeline + retrospective. */}
       {tab === 'triage' ? (
-        <TriageView
-          tasks={filteredTasks}
-          decisions={filteredDecisions}
-          currentUserId={user?.id}
-          loading={loading}
-          connectionStatus={connectionStatus}
-          onQuickAction={handleQuickAction}
-          taskActions={taskActions}
-          decisionActions={decisionActions}
-        />
+        <>
+          <PropertyFilterBar
+            presets={SAVED_VIEWS}
+            savedView={savedView}
+            onSelectPreset={applyPreset}
+            filters={filters}
+            setFilters={setFilters}
+            viewKind={viewKind}
+            setViewKind={setViewKind}
+            viewAssignee={viewAssignee}
+            setViewAssignee={setViewAssignee}
+            availablePlaces={availablePlaces}
+            onClearAll={clearAllFilters}
+          />
+          <TriageView
+            tasks={filteredTasks}
+            decisions={filteredDecisions}
+            currentUserId={user?.id}
+            loading={loading}
+            connectionStatus={connectionStatus}
+            onQuickAction={handleQuickAction}
+            taskActions={taskActions}
+            decisionActions={decisionActions}
+          />
+        </>
       ) : (
         <div className="ck-body">
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
@@ -559,7 +649,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
         </div>
       )}
 
-      <CommandBar open={commandOpen} onClose={closeCommand} />
+      <CommandBar open={commandOpen} onClose={closeCommand} commands={commands} onApplySearch={applySearch} />
 
       {taskToReassign && (
         <ReassignTaskModal

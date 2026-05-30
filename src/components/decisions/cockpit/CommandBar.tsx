@@ -1,46 +1,37 @@
 /**
  * CommandBar — ⌘K command palette for the Triage Cockpit.
  *
- * Phase 1: functional shell — opens/closes, focus-managed, Escape + backdrop
- * dismiss, a filterable stub list. The real actions (New, Prioritize, Export,
- * Refresh, jump-to-item, search) are wired in Phase 7; here each item just
- * closes the palette so the open/close contract is verifiable.
+ * Phase 7: driven by real commands from CockpitHub (New / Prioritize / Export /
+ * Refresh). The input also doubles as a queue search — when the query is
+ * non-empty a "Filter queue by …" action applies it to the FilterState.
  *
  * Coral budget (CLAUDE.md §4): palette is chrome → rose/neutral tokens only.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, Plus, Zap, Download, RotateCw, X } from 'lucide-react';
+import { Search, Filter, X } from 'lucide-react';
 
 export interface CommandItem {
   id: string;
   label: string;
   section: string;
   icon: React.ReactNode;
-  /** Phase 7 wires real handlers; Phase 1 items just dismiss. */
-  run?: () => void;
+  run: () => void;
 }
 
 interface CommandBarProps {
   open: boolean;
   onClose: () => void;
+  commands: CommandItem[];
+  /** Apply the typed query as a queue search (the "jump/search" action). */
+  onApplySearch?: (query: string) => void;
 }
 
-const STUB_ITEMS: CommandItem[] = [
-  { id: 'new-decision', label: 'New decision', section: 'Create', icon: <Plus size={15} /> },
-  { id: 'quick-task', label: 'Quick task', section: 'Create', icon: <Plus size={15} /> },
-  { id: 'prioritize', label: 'Prioritize tasks with AI', section: 'Actions', icon: <Zap size={15} /> },
-  { id: 'export', label: 'Export CSV', section: 'Actions', icon: <Download size={15} /> },
-  { id: 'refresh', label: 'Refresh', section: 'Actions', icon: <RotateCw size={15} /> },
-];
-
-export function CommandBar({ open, onClose }: CommandBarProps) {
+export function CommandBar({ open, onClose, commands, onApplySearch }: CommandBarProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Focus the input when the palette opens; reset query when it closes.
   useEffect(() => {
     if (open) {
-      // rAF so the element is mounted before we focus.
       const id = requestAnimationFrame(() => inputRef.current?.focus());
       return () => cancelAnimationFrame(id);
     }
@@ -49,9 +40,9 @@ export function CommandBar({ open, onClose }: CommandBarProps) {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return STUB_ITEMS;
-    return STUB_ITEMS.filter((i) => i.label.toLowerCase().includes(q));
-  }, [query]);
+    if (!q) return commands;
+    return commands.filter((c) => c.label.toLowerCase().includes(q));
+  }, [query, commands]);
 
   const sections = useMemo(() => {
     const map = new Map<string, CommandItem[]>();
@@ -65,18 +56,17 @@ export function CommandBar({ open, onClose }: CommandBarProps) {
 
   if (!open) return null;
 
-  const handleRun = (item: CommandItem) => {
-    item.run?.();
-    onClose();
+  const trimmed = query.trim();
+  const run = (item: CommandItem) => { item.run(); onClose(); };
+  const applySearch = () => {
+    if (trimmed && onApplySearch) { onApplySearch(trimmed); onClose(); }
   };
 
   return (
     <div
       className="ck-cmdk-backdrop"
       role="presentation"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         className="ck-cmdk-panel scale-in"
@@ -84,10 +74,8 @@ export function CommandBar({ open, onClose }: CommandBarProps) {
         aria-modal="true"
         aria-label="Command palette"
         onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            e.stopPropagation();
-            onClose();
-          }
+          if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
+          if (e.key === 'Enter' && trimmed && filtered.length === 0) applySearch();
         }}
       >
         <div className="ck-cmdk-search">
@@ -107,20 +95,20 @@ export function CommandBar({ open, onClose }: CommandBarProps) {
         </div>
 
         <div className="ck-cmdk-list" role="listbox" aria-label="Commands">
-          {sections.length === 0 ? (
-            <div className="ck-cmdk-empty">No commands match “{query}”.</div>
+          {trimmed && onApplySearch && (
+            <button className="ck-cmdk-item" role="option" aria-selected={false} onClick={applySearch}>
+              <span className="ck-cmdk-icon"><Filter size={15} /></span>
+              Filter queue by “{trimmed}”
+            </button>
+          )}
+          {sections.length === 0 && !trimmed ? (
+            <div className="ck-cmdk-empty">No commands.</div>
           ) : (
             sections.map(([section, items]) => (
               <div key={section}>
                 <div className="ck-cmdk-section">{section}</div>
                 {items.map((item) => (
-                  <button
-                    key={item.id}
-                    className="ck-cmdk-item"
-                    role="option"
-                    aria-selected={false}
-                    onClick={() => handleRun(item)}
-                  >
+                  <button key={item.id} className="ck-cmdk-item" role="option" aria-selected={false} onClick={() => run(item)}>
                     <span className="ck-cmdk-icon">{item.icon}</span>
                     {item.label}
                   </button>
