@@ -18,6 +18,7 @@ import SearchToolbar from './SearchToolbar';
 import FacetCockpit from './FacetCockpit';
 import ResultsTable from './ResultsTable';
 import ResultsCards from './ResultsCards';
+import WorkingSetDock from './WorkingSetDock';
 import SearchMapView from '../SearchMapView';
 import { SaveSearchModal } from '../SaveSearchModal';
 import { SearchDetailPanel } from '../SearchDetailPanel';
@@ -83,9 +84,9 @@ export default function SearchWorkbench({ isDarkMode = false }: SearchWorkbenchP
           )}
         </main>
 
-        {/* ── RIGHT: Working Set dock (Phase 6) ──────────────────────────── */}
+        {/* ── RIGHT: Working Set dock ────────────────────────────────────── */}
         <aside className={`sw-dock ${s.showClipboard ? '' : 'is-hidden'}`} aria-label="Working Set">
-          <div className="sw-region-placeholder">Working Set — Phase 6</div>
+          <WorkingSetDock s={s} />
         </aside>
       </div>
 
