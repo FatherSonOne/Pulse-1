@@ -150,7 +150,8 @@ const AgendaSpine: React.FC<{
               }}
             >
               <div className="flex items-center gap-2">
-                <span className="w-1 self-stretch rounded" style={{ background: meta.color, minHeight: 16 }} />
+                {/* Type identity is the colored icon — the prior w-1
+                    self-stretch bar was the banned side-stripe affordance. */}
                 <i className={`fa-solid ${meta.icon} text-[11px]`} style={{ color: meta.color }} />
                 <span className="text-[13px] font-medium text-zinc-900 dark:text-white truncate">{ev.title}</span>
                 {!dense && !ev.allDay && (

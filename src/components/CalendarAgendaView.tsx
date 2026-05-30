@@ -171,11 +171,12 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                               )}
                             </div>
 
-                            {/* Color Bar (type-aware) */}
-                            <div
-                              className="flex-shrink-0 w-1 rounded-full self-stretch"
-                              style={{ backgroundColor: getEventTypeColor(event.type) }}
-                            />
+                            {/* Type identity is carried by the colored icon
+                                + uppercase mono label below. The prior
+                                w-1 self-stretch color bar was the same
+                                visual affordance as a banned side-stripe;
+                                dropping it removes redundancy without
+                                losing the categorical signal. */}
 
                             {/* Event Details */}
                             <div className="flex-1 min-w-0">
