@@ -1,6 +1,6 @@
 # Honest README — drop-in draft (closes the truth-in-product gap)
 
-**Source:** [`PULSE_REVIEW_AUDIT_2026-05-29.md`](./PULSE_REVIEW_AUDIT_2026-05-29.md) · **Issue:** #124 · **Status:** DRAFT — not yet applied to `README.md`
+**Source:** [`PULSE_REVIEW_AUDIT_2026-05-29.md`](./PULSE_REVIEW_AUDIT_2026-05-29.md) · **Issue:** #124 · **Status:** ✅ APPLIED to `README.md` 2026-05-29 (apply-time correction: TypeScript badge/stack is **5.8**, not 5.6 — `package.json` ships `typescript@~5.8.2`; the old README's 5.6 was also stale). The README half of #124 is done; landing-FAQ + SMS-pricing copy remain open under #124.
 
 > **Artifact (c)** of the 2026-05-29 review. This is a ready-to-swap replacement for `README.md` that removes every claim contradicted by `package.json`, the corrected Privacy Policy (#112), or an OFF feature flag. Nothing real is removed — the genuinely-shipped surface is described accurately. **Apply step:** once approved, copy the "## Proposed README" section below over `README.md` verbatim, then close #124.
 
