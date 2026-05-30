@@ -1,0 +1,25 @@
+/*
+ * search-workbench.css — styles for the Search Workbench redesign.
+ *
+ * NEW stylesheet. Do NOT touch legacy UnifiedSearchRedesign.css.
+ * All color comes from canonical tokens in src/styles/pulse-tokens.css —
+ * consume via var(--pulse-*); never redeclare colors locally.
+ *
+ * Coral budget (CLAUDE.md §4): --pulse-rose / --pulse-rose-soft are reserved
+ * for the AI-ranking facet ONLY. Chrome, table, facets, selection, and the
+ * dock stay neutral (--pulse-ink* / --pulse-border*).
+ *
+ * Phase 0 scaffold — placeholder style only; the real stylesheet is authored
+ * in Phase 9 against _design-playground/search-redesign.html (Path B).
+ */
+
+.search-workbench-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 240px;
+  padding: 2rem;
+  color: var(--pulse-ink-3, #6b7280);
+  font-size: 0.875rem;
+}

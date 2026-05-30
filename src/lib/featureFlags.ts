@@ -212,6 +212,22 @@ const featureFlagsConfig: FeatureFlagConfig = {
     description: 'OFF for v1 — Decisions & Tasks Triage Cockpit redesign; building behind the flag, legacy hub stays default until flip (see DECISIONS_TASKS_REDESIGN_HANDOFF_2026-05-29.md)',
     version: '0.1.0'
   },
+
+  // Search "Workbench" redesign — gates the new SearchWorkbench (facet
+  // cockpit + dense results table + Working Set dock) against the legacy
+  // UnifiedSearchRedesign card feed. OFF for v1 while the Workbench is built
+  // out phase-by-phase behind the flag; legacy stays byte-identical until the
+  // flag flips. Presentation/IA rewrite only — all search services, sources,
+  // and operators are ported verbatim. Spec + plan:
+  // docs/SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md. Local dev override:
+  // `?ff_searchWorkbench=on`.
+  searchWorkbench: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'OFF for v1 — Search Workbench redesign; building behind the flag, legacy UnifiedSearchRedesign stays default until flip (see SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md)',
+    version: '0.1.0'
+  },
 };
 
 // User group definitions

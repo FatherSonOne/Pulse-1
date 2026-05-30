@@ -34,6 +34,10 @@ const Archives = lazy(() => import('./components/Archives'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const MessageAnalytics = lazy(() => import('./components/MessageAnalytics'));
 const UnifiedSearchRedesign = lazy(() => import('./components/UnifiedSearchRedesign'));
+// Search "Workbench" redesign — flag-ON entry. Legacy UnifiedSearchRedesign
+// stays the default until `searchWorkbench` flips. See
+// docs/SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md
+const SearchWorkbench = lazy(() => import('./components/search/SearchWorkbench'));
 const AnalyticsDashboard = lazy(() => import('./components/Analytics').then(module => ({ default: module.AnalyticsDashboard })));
 const UsersGuide = lazy(() => import('./components/UsersGuide/UsersGuide'));
 
@@ -341,6 +345,11 @@ const App: React.FC = () => {
   // DECISIONS_TASKS view renders the new CockpitHub instead of the legacy
   // DecisionTaskHub. Dev override: `?ff_decisionsTriageCockpit=on`.
   const cockpitFlag = useFeatureFlag('decisionsTriageCockpit', user?.id, false);
+
+  // Search "Workbench" redesign — OFF for v1. When ON, the MULTI_MODAL view
+  // renders the new SearchWorkbench instead of the legacy
+  // UnifiedSearchRedesign. Dev override: `?ff_searchWorkbench=on`.
+  const searchWorkbenchEnabled = useFeatureFlag('searchWorkbench', user?.id, false);
   // Live dev toggle (CockpitDevToggle, dev build only) flips v1/v2 in place —
   // no reload, no losing the current view. `null` = follow the flag/dev
   // override; once the user toggles, that choice wins and is persisted to the
@@ -946,8 +955,11 @@ const App: React.FC = () => {
             case AppView.MESSAGE_ANALYTICS:
               return <MessageAnalytics />;
             case AppView.MULTI_MODAL:
-              // Using the Redesigned Search Page
-              return <UnifiedSearchRedesign isDarkMode={isDarkMode} />;
+              // Workbench redesign behind `searchWorkbench` (OFF for v1);
+              // legacy card-feed search renders until the flag flips.
+              return searchWorkbenchEnabled
+                ? <SearchWorkbench isDarkMode={isDarkMode} />
+                : <UnifiedSearchRedesign isDarkMode={isDarkMode} />;
             case AppView.ANALYTICS:
               return <AnalyticsDashboard
                 onClose={() => setView(AppView.DASHBOARD)}
