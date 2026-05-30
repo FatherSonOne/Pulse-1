@@ -23,3 +23,141 @@
   color: var(--pulse-ink-3, #6b7280);
   font-size: 0.875rem;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Dev-only v1 ⇄ v2 toggle (SearchDevToggle). Mirrors .ck-devtoggle from the
+ * Decisions cockpit. NEUTRAL active state on purpose — the Phase 9 coral audit
+ * greps this sheet for rose/coral, and a dev affordance must not register as an
+ * AI surface. Removed wholesale at Phase 11 cleanup.
+ * ────────────────────────────────────────────────────────────────────────── */
+.sw-devtoggle {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px 10px;
+  border-radius: 999px;
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border-strong);
+  box-shadow: var(--pulse-shadow-md);
+}
+.sw-devtoggle-label {
+  font-family: var(--pulse-font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pulse-ink-3);
+  margin-right: 2px;
+}
+.sw-devtoggle-btn {
+  min-width: 30px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--pulse-ink-3);
+  font-family: var(--pulse-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 130ms;
+}
+.sw-devtoggle-btn:hover { color: var(--pulse-ink); }
+.sw-devtoggle-btn[data-on='true'] {
+  background: var(--pulse-ink);
+  color: var(--pulse-surface);
+}
+.sw-devtoggle-btn:focus-visible {
+  outline: 2px solid var(--pulse-ink-3);
+  outline-offset: 1px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Phase 1 interim surface. Replaced piece-by-piece as the real shell (Phase 2),
+ * facet cockpit (Phase 3), and dense table (Phase 4) land. Neutral throughout.
+ * ────────────────────────────────────────────────────────────────────────── */
+.search-workbench {
+  height: 100%;
+  overflow: auto;
+  background: var(--pulse-bg, var(--pulse-surface));
+}
+.sw-interim {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sw-interim-banner {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px dashed var(--pulse-border-strong);
+  background: var(--pulse-surface);
+  color: var(--pulse-ink-3);
+  font-family: var(--pulse-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.sw-interim-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--pulse-border-strong);
+  background: var(--pulse-surface);
+}
+.sw-interim-input-icon { color: var(--pulse-ink-3); flex: 0 0 auto; }
+.sw-interim-input {
+  flex: 1 1 auto;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--pulse-ink);
+  font-size: 15px;
+}
+.sw-interim-input::placeholder { color: var(--pulse-ink-3); }
+.sw-interim-spinner { color: var(--pulse-ink-3); animation: sw-spin 900ms linear infinite; }
+@keyframes sw-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .sw-interim-spinner { animation: none; }
+}
+.sw-interim-meta {
+  margin: 0;
+  font-family: var(--pulse-font-mono);
+  font-size: 11px;
+  color: var(--pulse-ink-3);
+}
+.sw-interim-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.sw-interim-row {
+  display: grid;
+  grid-template-columns: 88px 1fr auto;
+  gap: 12px;
+  align-items: baseline;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--pulse-border);
+}
+.sw-interim-row-type {
+  font-family: var(--pulse-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pulse-ink-3);
+}
+.sw-interim-row-title {
+  color: var(--pulse-ink);
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sw-interim-row-sender {
+  color: var(--pulse-ink-3);
+  font-size: 12px;
+}

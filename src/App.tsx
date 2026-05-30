@@ -38,6 +38,9 @@ const UnifiedSearchRedesign = lazy(() => import('./components/UnifiedSearchRedes
 // stays the default until `searchWorkbench` flips. See
 // docs/SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md
 const SearchWorkbench = lazy(() => import('./components/search/SearchWorkbench'));
+// Dev-only floating v1 ⇄ v2 switch for the Search surface (mirrors
+// CockpitDevToggle). Gated behind import.meta.env.DEV at the render site.
+const SearchDevToggle = lazy(() => import('./components/search/SearchDevToggle').then(module => ({ default: module.SearchDevToggle })));
 const AnalyticsDashboard = lazy(() => import('./components/Analytics').then(module => ({ default: module.AnalyticsDashboard })));
 const UsersGuide = lazy(() => import('./components/UsersGuide/UsersGuide'));
 
@@ -349,7 +352,19 @@ const App: React.FC = () => {
   // Search "Workbench" redesign — OFF for v1. When ON, the MULTI_MODAL view
   // renders the new SearchWorkbench instead of the legacy
   // UnifiedSearchRedesign. Dev override: `?ff_searchWorkbench=on`.
-  const searchWorkbenchEnabled = useFeatureFlag('searchWorkbench', user?.id, false);
+  const searchWorkbenchFlag = useFeatureFlag('searchWorkbench', user?.id, false);
+  // Live dev toggle (SearchDevToggle, dev build only) flips v1/v2 in place,
+  // same pattern as the Decisions cockpit: `null` follows the flag/override;
+  // once the user toggles, that choice wins and persists to the `ff_`
+  // localStorage key the dev override already reads.
+  const [searchWorkbenchOverride, setSearchWorkbenchOverride] = useState<boolean | null>(null);
+  const searchWorkbenchEnabled = searchWorkbenchOverride ?? searchWorkbenchFlag;
+  const handleSearchWorkbenchToggle = useCallback((next: boolean) => {
+    try {
+      window.localStorage.setItem('ff_searchWorkbench', next ? 'on' : 'off');
+    } catch { /* private mode / sandboxed storage */ }
+    setSearchWorkbenchOverride(next);
+  }, []);
   // Live dev toggle (CockpitDevToggle, dev build only) flips v1/v2 in place —
   // no reload, no losing the current view. `null` = follow the flag/dev
   // override; once the user toggles, that choice wins and is persisted to the
@@ -956,10 +971,18 @@ const App: React.FC = () => {
               return <MessageAnalytics />;
             case AppView.MULTI_MODAL:
               // Workbench redesign behind `searchWorkbench` (OFF for v1);
-              // legacy card-feed search renders until the flag flips.
-              return searchWorkbenchEnabled
-                ? <SearchWorkbench isDarkMode={isDarkMode} />
-                : <UnifiedSearchRedesign isDarkMode={isDarkMode} />;
+              // legacy card-feed search renders until the flag flips. The
+              // dev-only toggle flips v1/v2 in place while building.
+              return (
+                <>
+                  {searchWorkbenchEnabled
+                    ? <SearchWorkbench isDarkMode={isDarkMode} />
+                    : <UnifiedSearchRedesign isDarkMode={isDarkMode} />}
+                  {import.meta.env.DEV && (
+                    <SearchDevToggle enabled={searchWorkbenchEnabled} onToggle={handleSearchWorkbenchToggle} />
+                  )}
+                </>
+              );
             case AppView.ANALYTICS:
               return <AnalyticsDashboard
                 onClose={() => setView(AppView.DASHBOARD)}
