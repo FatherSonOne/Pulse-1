@@ -16,9 +16,12 @@
  * Props match DecisionTaskHub so App.tsx can swap the two on the flag.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { User } from '../../../types';
 import { CockpitMasthead, type CockpitTab } from './CockpitMasthead';
 import { CommandBar } from './CommandBar';
+import { TriageView } from './triage/TriageView';
+import { type QueueEntry } from './triage/queueModel';
 import { FilterState } from '../FilterBar';
 import { decisionService, DecisionWithVotes } from '../../../services/decisionService';
 import { taskService, Task } from '../../../services/taskService';
@@ -176,6 +179,31 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     generateNudges();
   }, [loadDecisions, loadTasks, generateMetrics, generateNudges]);
 
+  // Queue row hover quick-actions. Phase 3 wires the safe, lean one — mark a
+  // task done (realtime refreshes the queue). Decision approve (= vote) and
+  // snooze land in Phases 5 / 8; until then they say so rather than no-op.
+  const handleQuickAction = useCallback(
+    async (entry: QueueEntry, action: 'done' | 'snooze') => {
+      if (action === 'done' && entry.kind === 'task') {
+        try {
+          await taskService.updateTaskStatus(entry.task.id, 'done');
+          setTasks((prev) =>
+            prev.map((t) => (t.id === entry.task.id ? { ...t, status: 'done' } : t))
+          );
+          toast.success('Marked done');
+        } catch (error) {
+          console.error('Failed to mark task done:', error);
+          toast.error('Could not update task');
+        }
+        return;
+      }
+      toast(action === 'done' ? 'Open to vote — coming in Phase 5' : 'Snooze arrives in a later phase', {
+        icon: '⏳',
+      });
+    },
+    []
+  );
+
   // ── Realtime handlers (ported) ──
   const handleDecisionChange = useCallback(() => {
     loadDecisions();
@@ -317,45 +345,50 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
         alertCount={nudges.length}
       />
 
-      {/* Phase 2 status body — proves data + realtime are live. The queue rail
-          + focal pane (Triage) and timeline + retrospective (Archive) mount
-          here in Phase 3+. */}
-      <div className="ck-body">
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          <RealTimeIndicator status={connectionStatus} />
-          <div style={{ fontSize: 13, color: 'var(--pulse-ink-2)' }}>
-            {loading
-              ? 'Loading decisions & tasks…'
-              : tab === 'triage'
-                ? `${filteredDecisions.length} decisions · ${filteredTasks.length} tasks · ${nudges.length} nudges · ${workspaceMembers.length} members`
-                : 'Archive — timeline + retrospective (Phase 9)'}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }}>
-            {metrics ? 'Velocity metrics computed' : 'Metrics pending'}
-            {availablePlaces.length > 0 && ` · ${availablePlaces.length} places`}
+      {/* Triage tab → queue rail + focal. Archive tab keeps the Phase-2 status
+          body (live counts + connection + Load more) until Phase 9 builds the
+          timeline + retrospective. */}
+      {tab === 'triage' ? (
+        <TriageView
+          tasks={filteredTasks}
+          decisions={filteredDecisions}
+          currentUserId={user?.id}
+          loading={loading}
+          connectionStatus={connectionStatus}
+          onQuickAction={handleQuickAction}
+        />
+      ) : (
+        <div className="ck-body">
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+            <RealTimeIndicator status={connectionStatus} />
+            <div style={{ fontSize: 13, color: 'var(--pulse-ink-2)' }}>
+              Archive — timeline + retrospective (Phase 9)
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--pulse-ink-3)' }}>
+              {`${filteredDecisions.length} decisions · ${filteredTasks.length} tasks · ${nudges.length} nudges · ${workspaceMembers.length} members`}
+              {metrics ? ' · metrics computed' : ' · metrics pending'}
+              {availablePlaces.length > 0 && ` · ${availablePlaces.length} places`}
+            </div>
             {(hasMoreDecisions || hasMoreTasks) && (
-              <>
-                {' · '}
-                <button
-                  className="ck-cmdk-item"
-                  style={{ display: 'inline-flex', width: 'auto', padding: '2px 8px' }}
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                >
-                  {loadingMore ? 'Loading…' : 'Load more'}
-                </button>
-              </>
+              <button
+                className="ck-cmdk-item"
+                style={{ width: 'auto', padding: '4px 10px', fontSize: 12 }}
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? 'Loading…' : 'Load more'}
+              </button>
             )}
+            <button
+              className="ck-cmdk-item"
+              style={{ width: 'auto', padding: '4px 10px', fontSize: 12 }}
+              onClick={handleRefresh}
+            >
+              Refresh
+            </button>
           </div>
-          <button
-            className="ck-cmdk-item"
-            style={{ width: 'auto', padding: '4px 10px', fontSize: 12 }}
-            onClick={handleRefresh}
-          >
-            Refresh
-          </button>
         </div>
-      </div>
+      )}
 
       <CommandBar open={commandOpen} onClose={closeCommand} />
     </div>
