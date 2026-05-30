@@ -3,7 +3,9 @@
  * Offers the two forward moves: start a decision, or let Pulse AI line up
  * what's next. Both route to the create flows (wired in Phase 10).
  */
-import { CheckCircle2, Plus, Sparkles } from 'lucide-react';
+import { CheckCircle2, Plus, Sparkles, UserPlus } from 'lucide-react';
+import { useWorkspaceData, useWorkspacePermissions } from '../../../../contexts/WorkspaceContext';
+import { navigateToTeamInvite } from '../../../../utils/inviteTeammateNavigation';
 
 interface CaughtUpProps {
   onNewDecision: () => void;
@@ -11,6 +13,12 @@ interface CaughtUpProps {
 }
 
 export function CaughtUp({ onNewDecision, onAskAI }: CaughtUpProps) {
+  // AC3: don't leave a solo admin at a dead-end on an empty queue — route
+  // toward team activation. Member-count proxy + canManageMembers gate.
+  const { currentWorkspace, members } = useWorkspaceData();
+  const { canManageMembers } = useWorkspacePermissions();
+  const showInvite = members.length < 2 && canManageMembers;
+
   return (
     <div className="ck-caughtup" role="status" aria-live="polite">
       <span className="ck-caughtup-badge"><CheckCircle2 size={30} /></span>
@@ -26,6 +34,17 @@ export function CaughtUp({ onNewDecision, onAskAI }: CaughtUpProps) {
         <button type="button" className="ck-caughtup-ghost" onClick={onAskAI}>
           <Sparkles size={15} /> Ask Pulse AI
         </button>
+        {showInvite && (
+          <button
+            type="button"
+            className="ck-caughtup-ghost"
+            onClick={() =>
+              navigateToTeamInvite({ workspaceId: currentWorkspace?.id ?? null, source: 'decisions-caughtup' })
+            }
+          >
+            <UserPlus size={15} /> Invite a teammate
+          </button>
+        )}
       </div>
     </div>
   );

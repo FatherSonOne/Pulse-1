@@ -90,6 +90,8 @@ import {
 } from './studio';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
+import { useWorkspaceData, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
+import { navigateToTeamInvite } from '../../utils/inviteTeammateNavigation';
 
 // Message Menu & Download Modal
 import VoxMessageMenu from './VoxMessageMenu';
@@ -302,6 +304,19 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const emptyConfig = getEmptyStateConfig('classic');
+
+  // AC3: route still-solo admins toward team activation from the empty thread,
+  // instead of a solo dead-end. Member-count proxy + canManageMembers gate.
+  const { currentWorkspace, members } = useWorkspaceData();
+  const { canManageMembers } = useWorkspacePermissions();
+  const showInviteCta = members.length < 2 && canManageMembers;
+  const inviteSecondaryAction = showInviteCta
+    ? {
+        label: 'Invite a teammate',
+        onClick: () =>
+          navigateToTeamInvite({ workspaceId: currentWorkspace?.id ?? null, source: 'relay-direct-empty' }),
+      }
+    : undefined;
 
   // Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -1453,6 +1468,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       if (!isRecording) startRecording();
                     },
                   }}
+                  secondaryAction={inviteSecondaryAction}
                 />
               ) : (
                 // PathCDirect rows: flat StudioMessageCard (NOT chat bubbles).

@@ -37,6 +37,13 @@ interface VoxEmptyStateProps {
     label: string;
     onClick: () => void;
   };
+  /** Optional quiet secondary action — a rose ghost link below the primary
+   *  CTA. Used for team-activation routes ("Invite a teammate") on solo empty
+   *  states. Deterministic activation chrome: rose tokens, never coral. */
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+  };
   /** Optional tertiary hint below the CTA — typically a keyboard-shortcut
    *  reminder (e.g. "Hold space to record · ? for shortcuts"). */
   hint?: React.ReactNode;
@@ -48,6 +55,7 @@ export const VoxEmptyState: React.FC<VoxEmptyStateProps> = ({
   title,
   description,
   action,
+  secondaryAction,
   hint,
 }) => {
   return (
@@ -84,6 +92,12 @@ export const VoxEmptyState: React.FC<VoxEmptyStateProps> = ({
         </button>
       )}
 
+      {secondaryAction && (
+        <button onClick={secondaryAction.onClick} type="button" className="vox-empty-invite">
+          {secondaryAction.label}
+        </button>
+      )}
+
       {hint && (
         <p
           className="font-mono text-[10px] uppercase tracking-[0.1em] mt-4"
@@ -111,6 +125,23 @@ export const VoxEmptyState: React.FC<VoxEmptyStateProps> = ({
           box-shadow: 0 6px 20px rgba(244, 63, 94, 0.40);
         }
         .vox-empty-cta:active { transform: translateY(0); }
+        /* Secondary "Invite a teammate" — quiet rose ghost link (deterministic
+           activation chrome; rose token, never coral, no gradient). */
+        .vox-empty-invite {
+          margin-top: 12px;
+          padding: 8px 14px;
+          border-radius: 10px;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--pulse-rose);
+          background: transparent;
+          transition: background 150ms ease;
+        }
+        .vox-empty-invite:hover { background: var(--pulse-rose-soft); }
+        .vox-empty-invite:focus-visible {
+          outline: 2px solid var(--pulse-rose);
+          outline-offset: 2px;
+        }
         @media (prefers-reduced-motion: reduce) {
           .vox-empty-cta { transition: none; }
           .vox-empty-cta:hover { transform: none; }

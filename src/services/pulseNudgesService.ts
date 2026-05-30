@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { AppView } from '../types';
 
-export type NudgeKind = 'friction-to-decision' | 'stale-reply' | 'decisions-waiting' | 'focus-gap' | 'capture-streak';
+export type NudgeKind = 'friction-to-decision' | 'stale-reply' | 'decisions-waiting' | 'focus-gap' | 'capture-streak' | 'invite-teammate';
 export type NudgeProvider = 'pulse' | 'claude' | 'gemini';
 
 export interface NudgeAction {
@@ -12,6 +12,9 @@ export interface NudgeAction {
   event?: { type: string; detail?: unknown };
   focusNoteId?: string;
   focusDecisionId?: string;
+  /** Route to a Settings section + focus token (deterministic activation
+   *  chrome). The widget resolves this via navigateToTeamInvite. */
+  settings?: { section: string; focus?: string };
 }
 
 export interface Nudge {
@@ -29,10 +32,18 @@ interface NudgeContext {
   // Optional: caller-supplied awaiting-reply derived state — saves a duplicate
   // fetch since the dashboard already computes this.
   staleAwaitingReply?: { contactName: string; ageDays: number; threadId: string } | null;
+  // Caller-supplied workspace/permission state (already in React context, no
+  // duplicate fetch). Drives the first-30-days invite-teammate nudge (AC2):
+  // member-count proxy for the collaborative-depth signal — NOT a message
+  // query (the NSM weekly-message half is deferred to the unshipped cron).
+  memberCount?: number;
+  workspaceCreatedAt?: string | null;
+  canManageMembers?: boolean;
 }
 
 const ONE_DAY_MS = 86_400_000;
 const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
+const THIRTY_DAYS_MS = 30 * ONE_DAY_MS;
 
 // Deterministic synthesis from a small batched query set. No LLM call by
 // default — predictable, cheap, runs once on dashboard mount. Returns the top
@@ -169,6 +180,36 @@ export async function getPulseNudges(ctx: NudgeContext): Promise<Nudge[]> {
         event: { type: 'pulse:capture-open', detail: { sourceSection: 'dashboard' } },
       },
       priority: 30,
+      provider: 'pulse',
+    });
+  }
+
+  // 6) Invite a teammate — first-30-days activation nudge (AC2). Deterministic
+  //    (NOT AI): fires only while the workspace is still solo (member-count
+  //    proxy), within the first-30-days window, and the user can actually act
+  //    (canManageMembers). Routes to the existing invite surface. Priority sits
+  //    below relational/operational debt but above habit nudges so it surfaces
+  //    for a fresh solo workspace (where those rarely fire) without crowding an
+  //    active team's urgent items.
+  const memberCount = ctx.memberCount;
+  const createdAt = ctx.workspaceCreatedAt ? new Date(ctx.workspaceCreatedAt).getTime() : null;
+  const withinFirst30Days =
+    createdAt !== null && !Number.isNaN(createdAt) && Date.now() - createdAt <= THIRTY_DAYS_MS;
+  if (
+    ctx.canManageMembers === true &&
+    typeof memberCount === 'number' &&
+    memberCount < 2 &&
+    withinFirst30Days
+  ) {
+    nudges.push({
+      id: `invite-teammate:${workspaceId}`,
+      kind: 'invite-teammate',
+      text: 'Pulse gets better with your team — invite a teammate to start collaborating.',
+      cta: {
+        label: 'Invite a teammate',
+        settings: { section: 'team', focus: 'invite' },
+      },
+      priority: 55,
       provider: 'pulse',
     });
   }

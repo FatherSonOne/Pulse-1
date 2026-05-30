@@ -3,11 +3,18 @@ import { ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import { AppView } from '../../types';
 import { getPulseNudges, Nudge } from '../../services/pulseNudgesService';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
+import { navigateToTeamInvite } from '../../utils/inviteTeammateNavigation';
+import { getDismissedNudges } from '../../utils/dismissedNudgesStorage';
 
 interface PulseNudgesWidgetProps {
   workspaceId: string | null | undefined;
   authUserId: string | null | undefined;
   staleAwaitingReply: { contactName: string; ageDays: number; threadId: string } | null;
+  /** Member-count proxy + first-30-days inputs for the deterministic
+   *  invite-teammate activation nudge (AC2). */
+  memberCount?: number;
+  workspaceCreatedAt?: string | null;
+  canManageMembers?: boolean;
   setView: (view: AppView) => void;
   askQuery: string;
   setAskQuery: (s: string) => void;
@@ -26,6 +33,9 @@ const PulseNudgesWidget: React.FC<PulseNudgesWidgetProps> = ({
   workspaceId,
   authUserId,
   staleAwaitingReply,
+  memberCount,
+  workspaceCreatedAt,
+  canManageMembers,
   setView,
   askQuery,
   setAskQuery,
@@ -48,9 +58,15 @@ const PulseNudgesWidget: React.FC<PulseNudgesWidgetProps> = ({
       workspaceId,
       authUserId,
       staleAwaitingReply: staleAwaitingReply ?? null,
+      memberCount,
+      workspaceCreatedAt: workspaceCreatedAt ?? null,
+      canManageMembers,
     })
       .then(rows => {
-        if (active) setNudges(rows);
+        // Honour existing dismissals (dismissedNudgesStorage) — a dismissed
+        // nudge id stays suppressed for its TTL.
+        const dismissed = getDismissedNudges();
+        if (active) setNudges(rows.filter(n => !dismissed.has(n.id)));
       })
       .catch(err => {
         console.warn('[PulseNudgesWidget] nudges load failed', err);
@@ -60,7 +76,7 @@ const PulseNudgesWidget: React.FC<PulseNudgesWidgetProps> = ({
         if (active) setLoadingNudges(false);
       });
     return () => { active = false; };
-  }, [workspaceId, authUserId, staleAwaitingReply?.threadId, staleAwaitingReply?.ageDays]);
+  }, [workspaceId, authUserId, staleAwaitingReply?.threadId, staleAwaitingReply?.ageDays, memberCount, workspaceCreatedAt, canManageMembers]);
 
   const dispatchNudge = (nudge: Nudge): void => {
     const { cta } = nudge;
@@ -69,6 +85,12 @@ const PulseNudgesWidget: React.FC<PulseNudgesWidgetProps> = ({
     }
     if (cta.focusDecisionId) {
       sessionStorage.setItem('pulse_focus_decision', cta.focusDecisionId);
+    }
+    if (cta.settings) {
+      // Deterministic activation route (e.g. invite-teammate). Reuses the
+      // shared invite-surface navigation; fires its own funnel event.
+      navigateToTeamInvite({ workspaceId: workspaceId ?? null, source: `nudge:${nudge.kind}` });
+      return;
     }
     if (cta.event) {
       window.dispatchEvent(new CustomEvent(cta.event.type, { detail: cta.event.detail }));
@@ -79,6 +101,12 @@ const PulseNudgesWidget: React.FC<PulseNudgesWidgetProps> = ({
     }
   };
 
+  // The header AIProvenanceChip brands the list as Pulse-AI synthesis. Gate it
+  // so deterministic activation chrome (the invite-teammate nudge) never gets
+  // an AI-provenance tag — only render when an actual AI-synthesized nudge is
+  // present (CLAUDE.md: activation/onboarding chrome is NOT AI output).
+  const hasAiNudge = nudges.some(n => n.kind !== 'invite-teammate');
+
   return (
     <div className="bg-white dark:bg-white/[0.03] rounded-xl p-5 border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150">
       <div className="flex items-center justify-between mb-3">
@@ -86,7 +114,7 @@ const PulseNudgesWidget: React.FC<PulseNudgesWidgetProps> = ({
           <Sparkles className="w-4 h-4 text-rose-500 dark:text-rose-400" aria-hidden="true" />
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Pulse Nudges</h3>
         </div>
-        <AIProvenanceChip vendor="PULSE AI" type="NUDGES" />
+        {hasAiNudge && <AIProvenanceChip vendor="PULSE AI" type="NUDGES" />}
       </div>
 
       {loadingNudges ? (

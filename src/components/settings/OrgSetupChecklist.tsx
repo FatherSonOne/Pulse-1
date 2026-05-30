@@ -36,6 +36,9 @@ interface ChecklistItem {
    *  settings section can scroll + highlight (and sometimes auto-open) the
    *  specific control instead of dropping the user on a long settings page. */
   focus: string;
+  /** Primary activation move — visually emphasized while incomplete so the
+   *  onboarding sequence leads with it (AC1: invite → first multiplayer). */
+  primary?: boolean;
 }
 
 /**
@@ -54,15 +57,9 @@ export const OrgSetupChecklist: React.FC<OrgSetupChecklistProps> = ({ openSettin
     if (!currentWorkspace) return [];
     return [
       {
-        id: 'logo',
-        label: 'Add your organization logo',
-        description: 'Make it yours: upload a square image.',
-        icon: ImageIcon,
-        done: !!currentWorkspace.avatar_url,
-        section: 'workspace',
-        focus: 'logo',
-      },
-      {
+        // AC1: invite is the primary activation move — surfaced first so the
+        // onboarding sequence pushes invite → first multiplayer interaction
+        // early. Emphasized when still incomplete.
         id: 'team',
         label: 'Invite your team',
         description: 'Bring collaborators in by email or link.',
@@ -70,6 +67,16 @@ export const OrgSetupChecklist: React.FC<OrgSetupChecklistProps> = ({ openSettin
         done: members.length > 1,
         section: 'team',
         focus: 'invite',
+        primary: true,
+      },
+      {
+        id: 'logo',
+        label: 'Add your organization logo',
+        description: 'Make it yours: upload a square image.',
+        icon: ImageIcon,
+        done: !!currentWorkspace.avatar_url,
+        section: 'workspace',
+        focus: 'logo',
       },
       {
         id: 'domain',
@@ -198,10 +205,14 @@ export const OrgSetupChecklist: React.FC<OrgSetupChecklistProps> = ({ openSettin
       <ul className="relative space-y-2">
         {items.map((item) => {
           const Icon = item.icon;
+          const emphasize = !!item.primary && !item.done;
           return (
             <li key={item.id}>
               <button
                 type="button"
+                style={emphasize
+                  ? { borderColor: 'var(--pulse-rose)', background: 'var(--pulse-rose-soft)' }
+                  : undefined}
                 onClick={() => {
                   trackOnboarding(OnboardingEvent.ChoreClicked, {
                     workspace_id: currentWorkspace.id,
@@ -241,11 +252,21 @@ export const OrgSetupChecklist: React.FC<OrgSetupChecklistProps> = ({ openSettin
                   aria-hidden="true"
                 />
                 <div className="min-w-0 flex-1">
-                  <div
-                    className={`text-sm font-medium ${item.done ? 'line-through' : ''}`}
-                    style={{ color: item.done ? 'var(--pulse-ink-2)' : 'var(--pulse-ink)' }}
-                  >
-                    {item.label}
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-sm font-medium ${item.done ? 'line-through' : ''}`}
+                      style={{ color: item.done ? 'var(--pulse-ink-2)' : 'var(--pulse-ink)' }}
+                    >
+                      {item.label}
+                    </span>
+                    {emphasize && (
+                      <span
+                        className="text-[10px] font-mono uppercase tracking-[0.1em] px-1.5 py-0.5 rounded text-white shrink-0"
+                        style={{ background: 'var(--pulse-rose)' }}
+                      >
+                        Start here
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs mt-0.5 text-[var(--pulse-ink-2)]">
                     {item.description}

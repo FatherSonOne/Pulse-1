@@ -7,7 +7,7 @@ import { generateDailyBriefing, generateThinkingResponse } from '../services/gem
 import { useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
 import { InlineCommandPalette } from './GlobalCommandPalette';
 import { dataService } from '../services/dataService';
-import { useWorkspaceData } from '../contexts/WorkspaceContext';
+import { useWorkspaceData, useWorkspacePermissions } from '../contexts/WorkspaceContext';
 import { dailyBriefingService, BriefingContext } from '../services/dailyBriefingService';
 import { useAIErrorHandler } from '../hooks/useAIErrorHandler';
 import { UsageWarningBanner } from './billing/UsageWarningBanner';
@@ -347,7 +347,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
   // dashboard channel from one workspace doesn't keep streaming after the
   // user switches to another. dataService also tears down all channels on
   // workspace switch via the pulse:workspace-changed event bus.
-  const { currentWorkspace } = useWorkspaceData();
+  const { currentWorkspace, members } = useWorkspaceData();
+  const { canManageMembers } = useWorkspacePermissions();
   // Real data state
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -1817,6 +1818,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
             workspaceId={currentWorkspace?.id}
             authUserId={user?.id}
             staleAwaitingReply={staleAwaitingReplyForNudges}
+            memberCount={members.length}
+            workspaceCreatedAt={currentWorkspace?.created_at ?? null}
+            canManageMembers={canManageMembers}
             setView={setView}
             askQuery={pulseAiQuery}
             setAskQuery={setPulseAiQuery}

@@ -70,6 +70,8 @@ import { useRelayStudio, useRelayModeRecorder, StudioCard, StudioMasthead, Wavef
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
+import { useWorkspaceData, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
+import { navigateToTeamInvite } from '../../utils/inviteTeammateNavigation';
 
 interface PulseRadioProps {
   apiKey?: string;
@@ -149,6 +151,19 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
   const emptyConfig = getEmptyStateConfig('pulse_radio');
+
+  // AC3: a broadcast with no audience is a solo dead-end — route still-solo
+  // admins toward team activation. Member-count proxy + canManageMembers gate.
+  const { currentWorkspace, members } = useWorkspaceData();
+  const { canManageMembers } = useWorkspacePermissions();
+  const inviteSecondaryAction =
+    members.length < 2 && canManageMembers
+      ? {
+          label: 'Invite a teammate',
+          onClick: () =>
+            navigateToTeamInvite({ workspaceId: currentWorkspace?.id ?? null, source: 'relay-broadcast-empty' }),
+        }
+      : undefined;
 
 
   const {
@@ -796,6 +811,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                         if (recordingState === 'idle') startRecording();
                       },
                     }}
+                    secondaryAction={inviteSecondaryAction}
                   />
                 </div>
               ) : (
