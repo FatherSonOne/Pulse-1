@@ -20,6 +20,8 @@ import type { User } from '../../../../types';
 import PlacePicker from '../../../map/PlacePicker';
 import { Prop, PropertyTable } from './PropertyTable';
 import { FocalScaffold, ActBtn } from './FocalActions';
+import { ActivityLog } from './ActivityLog';
+import { CommentsSection } from './CommentsSection';
 import { resolveSource, SourceTag } from '../sources';
 
 export interface DecisionActions {
@@ -253,6 +255,15 @@ export function DecisionDetail({
         <div style={{ maxWidth: 360, marginBottom: 8 }}>
           <PlacePicker entityType="decision" entityId={decision.id} role="venue" />
         </div>
+
+        <ActivityLog source="decision" itemId={decision.id} members={members} />
+        <CommentsSection
+          source="decision"
+          itemId={decision.id}
+          workspaceId={decision.workspace_id}
+          currentUserId={currentUserId}
+          members={members}
+        />
       </div>
     </FocalScaffold>
   );

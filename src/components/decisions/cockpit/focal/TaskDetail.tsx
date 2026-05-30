@@ -18,6 +18,8 @@ import { SubtaskList } from '../../SubtaskList';
 import { Prop, PropertyTable } from './PropertyTable';
 import { SourceContext } from './SourceContext';
 import { FocalScaffold, ActBtn } from './FocalActions';
+import { ActivityLog } from './ActivityLog';
+import { CommentsSection } from './CommentsSection';
 import { resolveSource } from '../sources';
 
 export interface TaskActions {
@@ -240,7 +242,14 @@ export function TaskDetail({
           currentUserId={currentUserId}
         />
 
-        {/* Activity + comments mount here in Phase 6. */}
+        <ActivityLog source="task" itemId={task.id} members={members} />
+        <CommentsSection
+          source="task"
+          itemId={task.id}
+          workspaceId={task.workspace_id}
+          currentUserId={currentUserId || ''}
+          members={members}
+        />
       </div>
     </FocalScaffold>
   );

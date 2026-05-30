@@ -623,6 +623,12 @@
 .ck-act-btn[data-danger]:hover { color: var(--dt-status-overdue); border-color: color-mix(in oklab, var(--dt-status-overdue) 40%, transparent); }
 .ck-act-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* ───────── Inline activity + comments ───────── */
+.ck-activity-state { display: flex; align-items: center; gap: 8px; padding: 8px 0 18px; font-size: 12.5px; color: var(--pulse-ink-3); }
+.ck-spin { animation: ckSpin 1s linear infinite; }
+@keyframes ckSpin { to { transform: rotate(360deg); } }
+.ck-comments { margin-top: 22px; padding-top: 4px; }
+
 /* ───────── DecisionDetail: tally + vote + risk ───────── */
 .ck-focal-type {
   font-family: var(--pulse-font-mono);
