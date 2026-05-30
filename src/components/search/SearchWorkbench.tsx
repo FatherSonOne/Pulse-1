@@ -19,6 +19,7 @@ import FacetCockpit from './FacetCockpit';
 import ResultsTable from './ResultsTable';
 import ResultsCards from './ResultsCards';
 import WorkingSetDock from './WorkingSetDock';
+import WorkingMemory from './WorkingMemory';
 import SearchMapView from '../SearchMapView';
 import { SaveSearchModal } from '../SaveSearchModal';
 import { SearchDetailPanel } from '../SearchDetailPanel';
@@ -63,15 +64,11 @@ export default function SearchWorkbench({ isDarkMode = false }: SearchWorkbenchP
           </div>
 
           {s.viewMode === 'table' && (
-            s.isEmptyState
-              ? <div className="sw-region-placeholder sw-center-empty">Working memory — Phase 7</div>
-              : <ResultsTable s={s} />
+            s.isEmptyState ? <WorkingMemory s={s} /> : <ResultsTable s={s} />
           )}
 
           {s.viewMode === 'cards' && (
-            s.isEmptyState
-              ? <div className="sw-region-placeholder sw-center-empty">Working memory — Phase 7</div>
-              : <ResultsCards s={s} />
+            s.isEmptyState ? <WorkingMemory s={s} /> : <ResultsCards s={s} />
           )}
 
           {s.viewMode === 'map' && (
