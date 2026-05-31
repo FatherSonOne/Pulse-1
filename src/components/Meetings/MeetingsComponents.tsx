@@ -642,13 +642,13 @@ function formatHours(h: number): string {
 export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose }) => {
   const [data, setData] = useState<MeetingAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [entomateConnected, setEntomateConnected] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'topics' | 'people'>('overview');
 
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
-    isEntomateConnected().then(setEntomateConnected);
+    // #121: analytics are now native (sourced from pulse_video_rooms), so there
+    // is no Entomate gate — render for any user once there's at least one meeting.
     fetchMeetingAnalytics().then(d => {
       setData(d);
       setLoading(false);
@@ -691,17 +691,11 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
               <Loader2 className="animate-spin" />
               <div>Loading analytics...</div>
             </div>
-          ) : !entomateConnected ? (
-            <div className="meetings-analytics-empty">
-              <BarChart />
-              <div style={{ fontWeight: 600, marginBottom: 6 }}>Meeting analytics needs Entomate</div>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>Connect Entomate to unlock meeting sentiment, topics, and decision analytics. Your Pulse meeting transcripts and summaries are always available in Recordings.</div>
-            </div>
           ) : !data || data.totalMeetings === 0 ? (
             <div className="meetings-analytics-empty">
               <BarChart />
               <div style={{ fontWeight: 600, marginBottom: 6 }}>No meeting analytics yet</div>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>Analytics populate from processed meeting data.</div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>Host a Pulse meeting with recording and transcription enabled — analytics populate from your meeting summaries.</div>
             </div>
           ) : (
             <>
@@ -830,7 +824,11 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                     Top Attendees
                   </div>
                   {data.topAttendees.length === 0 ? (
-                    <div className="meetings-analytics-empty">No attendee data available yet.</div>
+                    <div className="meetings-analytics-empty">
+                      <Users />
+                      <div style={{ fontWeight: 600, marginBottom: 6 }}>Attendee analytics aren't available yet</div>
+                      <div style={{ fontSize: 12, opacity: 0.7 }}>Pulse meetings don't currently capture per-attendee data, so this view stays empty. Overview and Topics are sourced from your meeting summaries.</div>
+                    </div>
                   ) : (
                     <div>
                       {data.topAttendees.map((a, i) => (

@@ -82,17 +82,52 @@ export const fetchMeetingAnalytics = async (): Promise<MeetingAnalyticsData> => 
     const userId = dataService.getUserId();
     if (!userId) return empty;
 
+    // OPTION 1 (#121): analytics are sourced from the native pulse_video_rooms
+    // store, not the legacy `meetings` table (which nothing writes). We count
+    // only rooms that actually represent a meeting that occurred — status
+    // 'ended' — which is the cleanest honest definition of "a meeting happened"
+    // and matches what getMeetingRecordings() already reads. The AI summary is
+    // persisted as a JSON string by the daily-webhook edge function; we parse it
+    // defensively per-row to derive sentiment / topics / decisions.
     const { data: rows, error } = await supabase
-      .from('meetings')
-      .select('id, title, duration_minutes, sentiment_label, key_points, decisions, attendees, topics, created_at, start_time')
+      .from('pulse_video_rooms')
+      .select('id, title, duration_seconds, summary, created_at')
       .eq('created_by', userId)
+      .eq('status', 'ended')
       .order('created_at', { ascending: false });
 
     if (error || !rows || rows.length === 0) return empty;
 
+    // Defensively parse the structured AI summary JSON per row. A row may have
+    // a plain-text summary, a null summary, or malformed JSON — in every such
+    // case we fall back to neutral sentiment + empty topic/decision arrays so
+    // the room still contributes to count/duration without fabricating signal.
+    type ParsedSummary = { sentiment: string; topics: string[]; decisions: string[] };
+    const parseSummary = (raw: unknown): ParsedSummary => {
+      const fallback: ParsedSummary = { sentiment: 'neutral', topics: [], decisions: [] };
+      if (!raw || typeof raw !== 'string') return fallback;
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return fallback;
+        return {
+          sentiment: typeof parsed.sentiment === 'string' ? parsed.sentiment : 'neutral',
+          topics: Array.isArray(parsed.topics) ? parsed.topics.filter((t: unknown) => typeof t === 'string') : [],
+          decisions: Array.isArray(parsed.decisions) ? parsed.decisions.filter((d: unknown) => typeof d === 'string') : [],
+        };
+      } catch {
+        return fallback;
+      }
+    };
+
+    const parsedRows = rows.map((r: any) => ({
+      ...r,
+      durationMinutes: r.duration_seconds ? Math.round(r.duration_seconds / 60) : 0,
+      parsed: parseSummary(r.summary),
+    }));
+
     // Basic stats
-    const totalMeetings = rows.length;
-    const totalMinutes = rows.reduce((sum: number, r: any) => sum + (r.duration_minutes || 0), 0);
+    const totalMeetings = parsedRows.length;
+    const totalMinutes = parsedRows.reduce((sum: number, r: any) => sum + (r.durationMinutes || 0), 0);
     const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
     const avgDuration = totalMeetings > 0 ? Math.round(totalMinutes / totalMeetings) : 0;
 
@@ -103,31 +138,30 @@ export const fetchMeetingAnalytics = async (): Promise<MeetingAnalyticsData> => 
       weekStart.setDate(now.getDate() - (7 - i) * 7);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 7);
-      const weekRows = rows.filter((r: any) => {
+      const weekRows = parsedRows.filter((r: any) => {
         const d = new Date(r.created_at);
         return d >= weekStart && d < weekEnd;
       });
       return {
         label: `W${i + 1}`,
         count: weekRows.length,
-        hours: Math.round(weekRows.reduce((s: number, r: any) => s + (r.duration_minutes || 0), 0) / 60 * 10) / 10,
+        hours: Math.round(weekRows.reduce((s: number, r: any) => s + (r.durationMinutes || 0), 0) / 60 * 10) / 10,
       };
     });
 
-    // Sentiment
+    // Sentiment (from parsed summary.sentiment)
     const sentimentBreakdown = { positive: 0, neutral: 0, negative: 0 };
-    rows.forEach((r: any) => {
-      const s = (r.sentiment_label || '').toLowerCase();
+    parsedRows.forEach((r: any) => {
+      const s = (r.parsed.sentiment || '').toLowerCase();
       if (s === 'positive') sentimentBreakdown.positive++;
       else if (s === 'negative') sentimentBreakdown.negative++;
       else sentimentBreakdown.neutral++;
     });
 
-    // Topics
+    // Topics (from parsed summary.topics)
     const topicCounts: Record<string, number> = {};
-    rows.forEach((r: any) => {
-      const topics = Array.isArray(r.topics) ? r.topics : [];
-      topics.forEach((t: string) => {
+    parsedRows.forEach((r: any) => {
+      r.parsed.topics.forEach((t: string) => {
         topicCounts[t] = (topicCounts[t] || 0) + 1;
       });
     });
@@ -136,31 +170,21 @@ export const fetchMeetingAnalytics = async (): Promise<MeetingAnalyticsData> => 
       .slice(0, 10)
       .map(([topic, count]) => ({ topic, count }));
 
-    // Decisions
+    // Decisions (from parsed summary.decisions)
     const topDecisions: MeetingAnalyticsData['topDecisions'] = [];
-    rows.slice(0, 10).forEach((r: any) => {
-      const decisions = Array.isArray(r.decisions) ? r.decisions : [];
-      decisions.slice(0, 2).forEach((d: string) => {
+    parsedRows.slice(0, 10).forEach((r: any) => {
+      r.parsed.decisions.slice(0, 2).forEach((d: string) => {
         topDecisions.push({
           decision: d,
-          meetingTitle: r.title,
+          meetingTitle: r.title || 'Pulse Meeting',
           date: new Date(r.created_at),
         });
       });
     });
 
-    // Attendees
-    const attendeeCounts: Record<string, number> = {};
-    rows.forEach((r: any) => {
-      const attendees = Array.isArray(r.attendees) ? r.attendees : [];
-      attendees.forEach((name: string) => {
-        attendeeCounts[name] = (attendeeCounts[name] || 0) + 1;
-      });
-    });
-    const topAttendees = Object.entries(attendeeCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([name, meetingCount]) => ({ name, meetingCount }));
+    // Attendees: pulse_video_rooms has no attendees column — no native source.
+    // Return empty honestly; the UI shows an explicit "not available" state.
+    const topAttendees: MeetingAnalyticsData['topAttendees'] = [];
 
     return {
       totalMeetings,
