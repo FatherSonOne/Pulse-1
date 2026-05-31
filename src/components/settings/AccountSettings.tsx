@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { pulseService, UserProfile } from '../../services/pulseService';
-import { supabase } from '../../services/supabase';
 import { logoutUser } from '../../services/authService';
 import { settingsService } from '../../services/settingsService';
 import { Camera, Check, Loader2, LogOut, Monitor, Moon, Sun, User as UserIcon } from 'lucide-react';
@@ -153,67 +152,31 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
 
     setIsUploadingImage(true);
 
+    // Instant local preview via an object URL — this is NEVER persisted to the DB.
+    const previewUrl = URL.createObjectURL(file);
+    setProfileImageUrl(previewUrl);
+
     try {
-      // Convert to data URL for immediate preview
-      const reader = new FileReader();
-      const dataUrlPromise = new Promise<string>((resolve) => {
-        reader.onload = (event) => {
-          const dataUrl = event.target?.result as string;
-          setProfileImageUrl(dataUrl);
-          resolve(dataUrl);
-        };
-        reader.readAsDataURL(file);
-      });
+      // Upload the file to Supabase Storage (pulse-attachments) and persist the
+      // resulting PUBLIC URL — never a base64 data URL. Inline base64 avatars
+      // bloat user_profiles rows to >1 MB and get re-shipped on every
+      // contact-directory query, which was the cause of a multi-GB Supabase
+      // egress spike. (The old code uploaded to a non-existent `avatars` bucket,
+      // silently failed, and fell back to saving the data URL.) See
+      // scripts/migrate-base64-avatars.mjs for the one-time backfill.
+      const { url } = await pulseService.uploadAttachment(file);
 
-      const dataUrl = await dataUrlPromise;
-
-      // Try to upload to Supabase storage if available
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && supabase.storage) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-          const filePath = `avatars/${fileName}`;
-
-          // Upload to Supabase storage
-          const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(filePath, file, {
-              cacheControl: '3600',
-              upsert: true
-            });
-
-          if (!uploadError) {
-            // Get public URL
-            const { data: urlData } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(filePath);
-
-            if (urlData?.publicUrl) {
-              setProfileImageUrl(urlData.publicUrl);
-              // Update profile with storage URL
-              await pulseService.updateProfile({ avatar_url: urlData.publicUrl });
-              setPulseProfile(prev => prev ? { ...prev, avatar_url: urlData.publicUrl } : null);
-              setIsUploadingImage(false);
-              if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-              }
-              return;
-            }
-          }
-        }
-      } catch (storageError) {
-        // Storage not available or error, fall through to data URL method
-        console.log('Storage upload not available, using data URL:', storageError);
-      }
-
-      // Fallback: use data URL and save to profile
-      await pulseService.updateProfile({ avatar_url: dataUrl });
-      setPulseProfile(prev => prev ? { ...prev, avatar_url: dataUrl } : null);
+      await pulseService.updateProfile({ avatar_url: url });
+      setProfileImageUrl(url);
+      setPulseProfile(prev => (prev ? { ...prev, avatar_url: url } : null));
     } catch (error) {
       console.error('Error uploading image:', error);
       toast.error('Could not upload image. Try again.');
+      // Revert the optimistic preview to the previously saved avatar so we never
+      // leave a transient blob URL staged for save.
+      setProfileImageUrl(pulseProfile?.avatar_url || '');
     } finally {
+      URL.revokeObjectURL(previewUrl);
       setIsUploadingImage(false);
       // Reset file input
       if (fileInputRef.current) {
