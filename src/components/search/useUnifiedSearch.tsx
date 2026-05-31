@@ -383,6 +383,21 @@ export function useUnifiedSearch() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchQuery]);
 
+  // ── Re-search instantly when a facet changes (content type, Date facet /
+  // filters, AI ranking) — not just on query change. Debounced 250ms so rapid
+  // multi-toggle coalesces into one fetch; the searchGeneration guard in
+  // performSearch discards any stale in-flight results. Skipped when the query
+  // is empty (nothing to re-filter), which also no-ops the mount run. This
+  // keys on facet state only (NOT the query), so it stays orthogonal to the
+  // effect above — typing fires one, toggling fires the other. (Sort is
+  // client-side via sortedResults and needs no re-fetch.)
+  useEffect(() => {
+    if (!debouncedSearchQuery.trim()) return;
+    const t = setTimeout(() => performSearch(), 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, selectedTypes, useAISearch]);
+
   // ── If Map view is active and the geo filter clears, fall back to Table ──
   useEffect(() => {
     if (viewMode === 'map' && !activeGeoFilter) {
