@@ -571,7 +571,7 @@ The agent updates this section every time an item changes state. Each row:
 | `vercel-region` | done | P0 | 2026-05-27 | Set in Vercel (Prod+Preview), redeployed, bundle verified — `US East (us-east-1)` baked into `vendor-BRPKT_wH.js` |
 | `vercel-posthog` | done | P0 | 2026-05-28 | Set `VITE_POSTHOG_API_KEY` + `VITE_POSTHOG_HOST` + `VITE_APP_MODE=production` in Vercel; redeployed; smoke verified ($identify + Message Sent arrived in Live events). Side benefit: Sentry init also unblocked by `VITE_APP_MODE` flip |
 | `live-smoke-99` | done | P0 | 2026-05-31 | Slack bot-token pull (4 chans, msg synced w/ resolved sender "Frank Messana") + Gmail Google-piggyback pull (10 real emails) both passed from prod; backend health 200. NOT OAuth — see INTEGRATIONS_BUILT_VS_STUB audit. Follow-ups: "Connected to undefined" bug + no prod reader for synced msgs |
-| `delete-test-111` | pending | P0 | — | Throwaway account → erasure → Supabase verify |
+| `delete-test-111` | in-progress | P0 | 2026-05-31 | Throwaway account → erasure → Supabase verify |
 | `keystore-backup` | pending | P0 | — | Backup keystore + properties to 2 offsite locations |
 | `play-signing` | pending | P0 | — | Enroll Play App Signing on first AAB upload |
 | `calea` | pending | P1 | — | Lawyer consult + memo + runbook |
