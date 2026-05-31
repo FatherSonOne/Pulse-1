@@ -202,6 +202,25 @@ const featureFlagsConfig: FeatureFlagConfig = {
     version: '0.1.0'
   },
 
+  // Glimpse Tier-2 inbox digest (#122). The always-on, honest fallback is the
+  // Tier-1 deterministic briefing card (GlimpseBriefingCard) — it TEMPLATES a
+  // digest line strictly from counts, no LLM. This flag layers Tier-2 on top: a
+  // server-side `ai-router` (`glimpse_inbox_digest` task) cross-conversation
+  // synthesis — a short, Claude-written headline of what's waiting and why,
+  // grounded in the per-conversation summaries the client already holds, with a
+  // visible Claude provenance chip. OFF for v1. ⚠️ Before flipping ON in prod,
+  // ai-router MUST be redeployed with the new task — an un-redeployed router
+  // returns `invalid_task`, which the client catches and degrades to Tier-1, so
+  // it's safe but inert. Loading/error/no-needs/no-workspace all fall back to
+  // pure Tier-1. Local dev override: `?ff_glimpseInboxDigest=on`.
+  glimpseInboxDigest: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'OFF for v1 — Tier-2 server-side Claude inbox synthesis layered over the always-on Tier-1 deterministic briefing; redeploy ai-router with glimpse_inbox_digest before enabling (#122)',
+    version: '0.1.0'
+  },
+
   // emailHybrid flag retired in Phase 11b (2026-05-29). The Cockpit +
   // Triage + Focal Canvas / Sidecar composer surface is the only email
   // surface — the legacy PulseEmailClientRedesign was deleted alongside

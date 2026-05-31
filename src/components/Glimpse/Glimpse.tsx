@@ -1,7 +1,7 @@
 // Glimpse Component - Full-Featured Video Messaging
 // Includes: Recording, Conversations, AI Transcripts, Reactions, Threading, Search
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   ArrowLeft,
   FlipHorizontal,
@@ -50,6 +50,8 @@ import {
 import { glimpseService } from '../../services/glimpse/glimpseService';
 import { voxModeService } from '../../services/relay/voxModeService';
 import { type GlimpseMessage, type GlimpseConversation } from '../../services/glimpse/glimpseTypes';
+import { useFeatureFlag } from '../../lib/featureFlags';
+import { useGlimpseInboxDigest, type GlimpseDigestState } from '../../services/glimpse/useGlimpseInboxDigest';
 import type { PulseUser } from '../../services/relay/voxModeTypes';
 import './Glimpse.css';
 
@@ -273,7 +275,12 @@ const GlimpseBriefingCard: React.FC<{
   totalUnread: number;
   currentUserId: string;
   onOpen: (conversation: GlimpseConversation) => void;
-}> = ({ conversations, totalUnread, currentUserId, onOpen }) => {
+  /** Tier-2 flag — when false the card renders pure Tier-1 (default prod path). */
+  aiEnabled?: boolean;
+  /** Tier-2 digest state. Only consulted when aiEnabled; degrades to Tier-1
+   *  on idle / loading (with a pending chip) / error. */
+  digestState?: GlimpseDigestState;
+}> = ({ conversations, totalUnread, currentUserId, onOpen, aiEnabled = false, digestState }) => {
   const total = conversations.length;
   const needs = conversations.filter(
     c => (c.unreadCount ?? 0) > 0 || (c.lastMessageActionCount ?? 0) > 0
@@ -319,6 +326,19 @@ const GlimpseBriefingCard: React.FC<{
     digest = s;
   }
 
+  // Tier-2: surface the AI headline IN PLACE OF the templated digest line only
+  // when the flag is on AND a ready digest exists. Loading shows Tier-1 + a
+  // pending chip. Idle/error/flag-off = pure Tier-1 (the default prod path),
+  // zero visual change. The deterministic counts + Needs-you list always render.
+  const aiReady = aiEnabled && digestState?.status === 'ready';
+  const aiLoading = aiEnabled && digestState?.status === 'loading';
+  const aiHighlights = aiReady ? digestState.digest.highlights : [];
+  const convById = useMemo(() => {
+    const m = new Map<string, GlimpseConversation>();
+    conversations.forEach(c => m.set(c.id, c));
+    return m;
+  }, [conversations]);
+
   return (
     <section className="gl-briefing" aria-label="Glimpse briefing">
       <header className="gl-briefing-head">
@@ -331,6 +351,10 @@ const GlimpseBriefingCard: React.FC<{
             {total} {total === 1 ? 'SIGNAL' : 'SIGNALS'} · {needs.length} NEED YOU
           </span>
         </div>
+        {aiReady && <span className="gl-ai-chip muted">Claude</span>}
+        {aiLoading && (
+          <span className="gl-ai-chip pending">Reading your inbox…</span>
+        )}
         {metaParts.length > 0 && (
           <span
             className="gl-briefing-meta"
@@ -341,7 +365,34 @@ const GlimpseBriefingCard: React.FC<{
         )}
       </header>
 
-      <p className="gl-briefing-line">{digest}</p>
+      {aiReady ? (
+        <p className="gl-briefing-ai-line">{digestState.digest.headline}</p>
+      ) : (
+        <p className="gl-briefing-line">{digest}</p>
+      )}
+
+      {aiHighlights.length > 0 && (
+        <ul className="gl-briefing-ai-highlights">
+          {aiHighlights.map((h, i) => {
+            const conv = convById.get(h.conversationId);
+            return conv ? (
+              <li key={`${h.conversationId}-${i}`}>
+                <button
+                  type="button"
+                  className="gl-briefing-ai-highlight is-link"
+                  onClick={() => onOpen(conv)}
+                >
+                  {h.note}
+                </button>
+              </li>
+            ) : (
+              <li key={`${h.conversationId}-${i}`}>
+                <span className="gl-briefing-ai-highlight">{h.note}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {needs.length > 0 && (
         <div className="gl-briefing-needs">
@@ -1251,6 +1302,15 @@ const Glimpse: React.FC<GlimpseProps> = ({
 
   // Hooks
   const { conversations, isLoading: conversationsLoading, totalUnread } = useGlimpseConversations();
+
+  // Tier-2 "Claude watched your inbox" synthesis (#122). Flag OFF for v1 → the
+  // hook stays idle and never calls ai-router; the briefing renders pure Tier-1.
+  const glimpseDigestEnabled = useFeatureFlag('glimpseInboxDigest', currentUserId);
+  const inboxDigest = useGlimpseInboxDigest({
+    enabled: glimpseDigestEnabled,
+    conversations,
+    currentUserId,
+  });
   const { sendToRecipients, isSending, progress, error: sendError } = useGlimpseSend();
   const { results: searchResults, isSearching, search: performSearch } = useGlimpseSearch();
   const [searchQuery, setSearchQuery] = useState('');
@@ -1905,6 +1965,8 @@ const Glimpse: React.FC<GlimpseProps> = ({
                   totalUnread={totalUnread}
                   currentUserId={currentUserId}
                   onOpen={handleSelectConversation}
+                  aiEnabled={glimpseDigestEnabled}
+                  digestState={inboxDigest}
                 />
 
                 {needsConversations.length > 0 && (

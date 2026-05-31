@@ -29,6 +29,7 @@ export type AITask =
   | 'content_generation'
   | 'voice_command_parse'
   | 'web_search'
+  | 'glimpse_inbox_digest'
   | 'translation';
 
 export interface AIMessage {

@@ -32,6 +32,7 @@ export type AITask =
   | 'content_generation'         // FAQ/podcast/study guide → Sonnet
   | 'voice_command_parse'        // Parse voice commands → Gemini Flash
   | 'web_search'                 // Web-grounded search with citations → Gemini Flash + googleSearch
+  | 'glimpse_inbox_digest'       // Tier-2 "Claude watched your inbox" cross-glimpse synthesis → Haiku
   | 'translation';               // Text translation → Gemini Flash
 
 interface TaskConfig {
@@ -82,6 +83,12 @@ export const TASK_MODELS: Record<AITask, TaskConfig> = {
     provider: 'claude', model: CLAUDE_HAIKU,
     fallback: { provider: 'gemini', model: GEMINI_FLASH },
     maxOutputTokens: 1024,
+  },
+  glimpse_inbox_digest: {
+    provider: 'claude', model: CLAUDE_HAIKU,
+    fallback: { provider: 'gemini', model: GEMINI_FLASH },
+    maxOutputTokens: 512,
+    cacheSystemPrompt: true,
   },
 
   // High-value reasoning — Claude Sonnet
