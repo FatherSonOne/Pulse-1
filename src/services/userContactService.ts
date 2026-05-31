@@ -395,7 +395,13 @@ export class UserContactService {
 
       let query = supabase
         .from('user_profiles')
-        .select('*')
+        // Explicit column list — never `select('*')`. The directory is fetched
+        // by Relay contact pickers; `*` would re-ship wide/PII columns on every
+        // call (and once shipped >1 MB inline base64 avatars, the cause of a
+        // Supabase egress spike). These are exactly the fields mapped below.
+        .select(
+          'id, handle, display_name, full_name, email, phone_number, avatar_url, bio, company, role, location, birthday, is_verified, online_status, last_active_at, last_seen_at'
+        )
         .neq('id', user.id) // Exclude current user
         .order('display_name', { ascending: true });
 

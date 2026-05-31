@@ -22,11 +22,25 @@ import type {
   VoxDeliveryStatus,
 } from './voxModeTypes';
 
+// Explicit column list for the Pulse-user directory queries. Never `select('*')`
+// here — the directory is fetched by every Relay/Glimpse contact picker, and `*`
+// would re-ship wide/PII columns (and, before the Storage migration, a >1 MB
+// inline base64 avatar) on every call. These are exactly the fields
+// mapUserProfileToPulseUser() consumes.
+const PULSE_DIRECTORY_COLUMNS =
+  'id, handle, display_name, full_name, avatar_url, bio, is_verified, created_at, last_seen_at';
+
+// Short TTL so rapid re-mounts / render storms collapse into a single network
+// round-trip instead of one fetch per render.
+const ALL_USERS_CACHE_TTL_MS = 60_000;
+
 class VoxModeService {
   private userId: string | null = null;
   private workspaceId: string | null = null;
   private bucketChecked: boolean = false;
   private bucketExists: boolean = false;
+  private _allUsersCache: { at: number; users: PulseUser[] } | null = null;
+  private _allUsersInflight: Promise<PulseUser[]> | null = null;
 
   setUserId(userId: string) {
     this.userId = userId;
@@ -301,10 +315,12 @@ class VoxModeService {
   }
 
   async searchPulseUsers(query: string): Promise<PulseUser[]> {
-    // Search in user_profiles (all registered Pulse app users)
+    // Search in user_profiles (all registered Pulse app users).
+    // Select only the columns the picker renders — never `*`, which would pull
+    // wide/PII columns (and historically a >1 MB inline avatar) on every call.
     const { data, error } = await supabase
       .from('user_profiles')
-      .select('*')
+      .select(PULSE_DIRECTORY_COLUMNS)
       .eq('is_public', true)
       .or(`handle.ilike.%${query}%,display_name.ilike.%${query}%,full_name.ilike.%${query}%`)
       .limit(20);
@@ -314,17 +330,37 @@ class VoxModeService {
   }
 
   async getAllPulseUsers(): Promise<PulseUser[]> {
-    // Get all registered Pulse app users from user_profiles
-    // This includes all users who have signed up for the app
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('is_public', true)
-      .order('display_name', { ascending: true })
-      .limit(100);
+    // Get all registered Pulse app users from user_profiles.
+    //
+    // This is hit by every Relay/Glimpse contact picker and was historically
+    // re-fired in render storms (dozens/sec). Two guards keep that from
+    // becoming an egress problem: (1) an explicit column list instead of `*`,
+    // and (2) a short-TTL in-memory cache that collapses bursts into one query.
+    const now = Date.now();
+    if (this._allUsersCache && now - this._allUsersCache.at < ALL_USERS_CACHE_TTL_MS) {
+      return this._allUsersCache.users;
+    }
+    if (this._allUsersInflight) return this._allUsersInflight;
 
-    if (error || !data) return [];
-    return data.map(user => this.mapUserProfileToPulseUser(user));
+    this._allUsersInflight = (async () => {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select(PULSE_DIRECTORY_COLUMNS)
+        .eq('is_public', true)
+        .order('display_name', { ascending: true })
+        .limit(100);
+
+      if (error || !data) return [];
+      const users = data.map(user => this.mapUserProfileToPulseUser(user));
+      this._allUsersCache = { at: Date.now(), users };
+      return users;
+    })();
+
+    try {
+      return await this._allUsersInflight;
+    } finally {
+      this._allUsersInflight = null;
+    }
   }
 
   async getPulseUsersByIds(userIds: string[]): Promise<PulseUser[]> {
