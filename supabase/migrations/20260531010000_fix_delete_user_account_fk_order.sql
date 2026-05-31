@@ -1,9 +1,9 @@
--- Fix delete_user_account: FOUR bugs that made GDPR erasure 500 and erase NOTHING.
+-- Fix delete_user_account: FOUR classes of bug that made GDPR erasure 500 and
+-- erase NOTHING. Verified 2026-05-31 via a throwaway-account test (the
+-- delete-account edge fn returned 500 and the account stayed fully intact).
 --
--- Verified 2026-05-31 via a throwaway-account test: the delete-account edge fn
--- returned 500 (Internal Server Error) and the account remained fully intact.
--- The RPC runs as one transaction, so the first failure aborted everything and
--- masked the bugs behind it. Diagnosed by replaying the full body inside a
+-- The RPC runs as ONE transaction, so the first failure aborted everything and
+-- hid the bugs behind it. Each was found by replaying the full body inside a
 -- rolled-back transaction until it completed clean:
 --
 -- 1. FK ORDER: deleted pulse_messages BEFORE pulse_conversations, but
@@ -17,18 +17,22 @@
 -- 2. DEAD TABLE: referenced team_invites, which does not exist (real table is
 --    org_invites, already handled). Removed.
 --
--- 3. MISSING COLUMNS: vox_notes and vox_drops have no user_id column.
---    vox_notes is keyed by sender_id/recipient_id; vox_drops by creator_id.
---    The original "WHERE user_id = ..." raised undefined_column.
+-- 3. WRONG / MISSING COLUMNS — three tables have no user_id:
+--      vox_drops           -> keyed by sender_id      (has no user_id/creator_id)
+--      brainstorm_sessions -> keyed by created_by     (has no user_id)
+--      relationships       -> keyed by owner_user_id  (has no user_id)
+--    (vox_notes DOES have user_id and is left as-is.)
 --
--- 4. TEXT vs UUID: 10 columns store the id as TEXT, not uuid (archives.user_id,
---    calendar_events.user_id, contact_circles.user_id, contacts.user_id,
---    decision_votes.user_id, decisions.created_by, emails.user_id, event_rsvp.user_id,
---    tasks.user_id, voxer_recordings.user_id). Comparing to a uuid raised
---    "operator does not exist: text = uuid". Fixed with a target_user_id::text local.
+-- 4. TEXT vs UUID: 10 columns store the id as TEXT, not uuid, so comparing to a
+--    uuid raised "operator does not exist: text = uuid":
+--      archives.user_id, calendar_events.user_id, contact_circles.user_id,
+--      contacts.user_id, decision_votes.user_id, decisions.created_by,
+--      emails.user_id, event_rsvp.user_id, tasks.user_id, voxer_recordings.user_id.
+--    Fixed by comparing those against a target_user_id::text local (uid_text).
 --
--- Validated: the full body executed in a rolled-back transaction with zero
--- FK/type/undefined-column/undefined-table errors before this was applied.
+-- Validated: the full body executed in a rolled-back transaction reaching the
+-- sentinel with zero FK / type / undefined-column / undefined-table errors. This
+-- file matches the deployed function verbatim.
 
 CREATE OR REPLACE FUNCTION public.delete_user_account(target_user_id uuid)
  RETURNS void
@@ -54,39 +58,39 @@ BEGIN
     DELETE FROM in_app_messages         WHERE created_by = target_user_id;
 
     -- Voxer
-    DELETE FROM voxer_recordings        WHERE user_id = uid_text;                                   -- user_id is TEXT
+    DELETE FROM voxer_recordings        WHERE user_id = uid_text;            -- user_id is TEXT
     DELETE FROM quick_vox_messages      WHERE sender_id = target_user_id;
     DELETE FROM quick_vox_favorites     WHERE user_id = target_user_id;
     DELETE FROM quick_vox_status        WHERE user_id = target_user_id;
-    DELETE FROM vox_notes               WHERE sender_id = target_user_id OR recipient_id = target_user_id;  -- no user_id col
-    DELETE FROM vox_drops               WHERE creator_id = target_user_id;                          -- no user_id col
+    DELETE FROM vox_notes               WHERE user_id = target_user_id;
+    DELETE FROM vox_drops               WHERE sender_id = target_user_id;    -- no user_id col
     DELETE FROM vox_notifications       WHERE user_id = target_user_id;
 
     -- Email
-    DELETE FROM emails                  WHERE user_id = uid_text;                                   -- TEXT
+    DELETE FROM emails                  WHERE user_id = uid_text;            -- TEXT
     DELETE FROM email_campaigns         WHERE user_id = target_user_id;
     DELETE FROM email_segments          WHERE user_id = target_user_id;
 
     -- Calendar / Tasks
-    DELETE FROM calendar_events         WHERE user_id = uid_text;                                   -- TEXT
-    DELETE FROM tasks                   WHERE user_id = uid_text;                                   -- TEXT
-    DELETE FROM event_rsvp              WHERE user_id = uid_text;                                   -- TEXT
+    DELETE FROM calendar_events         WHERE user_id = uid_text;            -- TEXT
+    DELETE FROM tasks                   WHERE user_id = uid_text;            -- TEXT
+    DELETE FROM event_rsvp              WHERE user_id = uid_text;            -- TEXT
     DELETE FROM subtasks                WHERE created_by = target_user_id;
     UPDATE subtasks SET completed_by = NULL WHERE completed_by = target_user_id;
     DELETE FROM task_activity           WHERE user_id = target_user_id;
 
     -- Decisions (child -> parent)
-    DELETE FROM decision_votes          WHERE user_id = uid_text;                                   -- TEXT
+    DELETE FROM decision_votes          WHERE user_id = uid_text;            -- TEXT
     DELETE FROM decision_tasks          WHERE created_by = target_user_id;
-    DELETE FROM decisions               WHERE created_by = uid_text;                                -- TEXT
+    DELETE FROM decisions               WHERE created_by = uid_text;         -- TEXT
 
     -- AI Lab
     DELETE FROM ai_lab_workflows        WHERE user_id = target_user_id;
     DELETE FROM ai_lab_templates        WHERE user_id = target_user_id;
     DELETE FROM ai_lab_outputs          WHERE user_id = target_user_id;
 
-    -- AI Sessions / Intelligence
-    DELETE FROM brainstorm_sessions     WHERE user_id = target_user_id;
+    -- AI Sessions / Intelligence (brainstorm_sessions has no user_id)
+    DELETE FROM brainstorm_sessions     WHERE created_by = target_user_id;
     DELETE FROM conversation_summaries  WHERE user_id = target_user_id;
 
     -- Attention / Focus
@@ -95,13 +99,13 @@ BEGIN
     DELETE FROM focus_sessions          WHERE user_id = target_user_id;
 
     -- Archives / Search
-    DELETE FROM archives                WHERE user_id = uid_text OR created_by = target_user_id;    -- user_id TEXT
+    DELETE FROM archives                WHERE user_id = uid_text OR created_by = target_user_id;  -- user_id TEXT
     DELETE FROM saved_searches          WHERE user_id = target_user_id;
 
-    -- CRM / Contacts
-    DELETE FROM contacts                WHERE user_id = uid_text;                                   -- TEXT
-    DELETE FROM relationships           WHERE user_id = target_user_id;
-    DELETE FROM contact_circles         WHERE user_id = uid_text;                                   -- TEXT
+    -- CRM / Contacts (relationships has no user_id; keyed by owner_user_id)
+    DELETE FROM contacts                WHERE user_id = uid_text;            -- TEXT
+    DELETE FROM relationships           WHERE owner_user_id = target_user_id;
+    DELETE FROM contact_circles         WHERE user_id = uid_text;            -- TEXT
     DELETE FROM contact_goals           WHERE user_id = target_user_id;
     DELETE FROM relationship_profiles   WHERE user_id = target_user_id;
     DELETE FROM crm_actions             WHERE triggered_by_user_id = target_user_id;
