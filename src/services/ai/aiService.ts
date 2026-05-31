@@ -20,6 +20,7 @@ import {
   AIJsonParseError,
 } from './errors';
 import { maskParams, shouldMask } from './piiMasking';
+import { captureError, addBreadcrumb } from '../../lib/monitoring/sentry';
 
 export interface InvokeAIOptions {
   workspaceId: string;
@@ -55,6 +56,12 @@ export async function invokeAI(
   const maskingActive = await shouldMask({ enforced: opts.piiMaskingEnforced });
   const outboundParams = maskingActive ? maskParams(params) : params;
 
+  // AI-router SLI (see docs/PULSE_OBSERVABILITY_RUNBOOK.md §2.3): every client→
+  // ai-router call funnels through this one helper (invokeAIPrompt/invokeAIJson +
+  // all 29 geminiService exports delegate here), so this is the single
+  // instrumentation point for AI-router latency + error rate.
+  const startedAt = performance.now();
+
   // Use supabase.functions.invoke — it sets both apikey + Authorization headers
   // which the Supabase edge-function gateway requires.
   const { data, error } = await supabase.functions.invoke('ai-router', {
@@ -67,6 +74,15 @@ export async function invokeAI(
   });
 
   if (error) {
+    // AI-router SLI: error-rate signal. Capture before the typed-error mapping
+    // below so transport/edge failures are visible in Sentry (surface=ai-router).
+    const durationMs = Math.round(performance.now() - startedAt);
+    addBreadcrumb('ai-router call', 'ai', { outcome: 'failure', task, durationMs });
+    captureError(error instanceof Error ? error : new Error(String((error as any)?.message ?? error)), {
+      surface: 'ai-router',
+      task,
+      durationMs,
+    });
     // FunctionsHttpError exposes .context.response for non-2xx responses,
     // but supabase-js will sometimes hand back a typed error with NO
     // populated response (network blip, abort, certain edge runtime
@@ -113,6 +129,13 @@ export async function invokeAI(
       code,
     );
   }
+
+  // AI-router SLI: success + latency (full client→edge→model round-trip).
+  addBreadcrumb('ai-router call', 'ai', {
+    outcome: 'success',
+    task,
+    durationMs: Math.round(performance.now() - startedAt),
+  });
 
   return {
     text: data.text,

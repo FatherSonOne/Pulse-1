@@ -1,6 +1,7 @@
 // Pulse Service - User profiles and in-app messaging
 import { supabase } from './supabase';
 import { trackMessageSent } from '../lib/monitoring/analytics';
+import { captureError, addBreadcrumb } from '../lib/monitoring/sentry';
 import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
 
 export interface UserProfile {
@@ -365,6 +366,9 @@ class PulseService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
+    // Message-send SLI (see docs/PULSE_OBSERVABILITY_RUNBOOK.md §2.1): time the
+    // RPC round-trip so the p95-latency + success-rate signals are measurable.
+    const startedAt = performance.now();
     const { data, error } = await supabase
       .rpc('send_pulse_message', {
         p_sender_id: user.id,
@@ -375,9 +379,28 @@ class PulseService {
       });
 
     if (error) {
+      // Message-send SLI: error-rate signal, tagged surface=message-send so the
+      // alert rule can filter it (docs/PULSE_OBSERVABILITY_RUNBOOK.md §3.1).
+      addBreadcrumb('message send', 'message', {
+        outcome: 'failure',
+        durationMs: Math.round(performance.now() - startedAt),
+        content_type: contentType,
+      });
+      captureError(error instanceof Error ? error : new Error(String(error)), {
+        surface: 'message-send',
+        content_type: contentType,
+      });
       console.error('Error sending message:', error);
       throw error;
     }
+
+    // Message-send SLI: success + latency. The PostHog 'Message Sent' below is
+    // the success-count denominator; this breadcrumb carries the latency signal.
+    addBreadcrumb('message send', 'message', {
+      outcome: 'success',
+      durationMs: Math.round(performance.now() - startedAt),
+      content_type: contentType,
+    });
 
     // DAU/WAU/MAU + stickiness trunk event. Single chokepoint — all six Relay
     // modes / Pulse-DM surfaces funnel through this RPC, so we never spray

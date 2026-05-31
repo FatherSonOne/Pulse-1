@@ -16,6 +16,7 @@ import {
   isSessionValid,
 } from '../services/authService';
 import { identifyUser, resetAnalytics } from '../lib/monitoring/analytics';
+import { setUserContext, clearUserContext, captureError, addBreadcrumb } from '../lib/monitoring/sentry';
 
 /**
  * Authentication Context Interface
@@ -107,8 +108,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             google_connected: newUser.googleConnected,
             microsoft_connected: !!newUser.microsoftConnected,
           });
+          // Co-locate Sentry user context with the analytics identity so captured
+          // errors (incl. the auth / message-send / ai-router SLI captures) are
+          // attributable to a user. No-op until Sentry inits (gated on
+          // VITE_SENTRY_DSN + non-dev env in sentry.ts). Observability — #116.
+          setUserContext({ id: newUser.id, email: newUser.email });
         } else {
           resetAnalytics();
+          clearUserContext();
         }
       } catch (err) {
         console.error('[AuthProvider] Analytics identify/reset failed:', err);
@@ -146,12 +153,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loginFn: () => Promise<User>,
     providerName: string
   ): Promise<User> => {
+    // Auth SLI (see docs/PULSE_OBSERVABILITY_RUNBOOK.md §2.2): this is the single
+    // seam every provider (Google / Microsoft / Email) funnels through, so we
+    // measure sign-in latency + surface failures here rather than per authService fn.
+    const startedAt = performance.now();
     try {
       setIsLoading(true);
       const loggedInUser = await loginFn();
+      addBreadcrumb('sign-in succeeded', 'auth', {
+        provider: providerName,
+        durationMs: Math.round(performance.now() - startedAt),
+      });
       setUser(loggedInUser);
       return loggedInUser;
     } catch (error: any) {
+      const durationMs = Math.round(performance.now() - startedAt);
+      addBreadcrumb('sign-in failed', 'auth', { provider: providerName, durationMs });
+      captureError(error instanceof Error ? error : new Error(String(error?.message ?? error)), {
+        surface: 'auth',
+        provider: providerName,
+        durationMs,
+      });
       console.error(`[AuthProvider] ${providerName} login failed:`, error);
       throw error;
     } finally {
