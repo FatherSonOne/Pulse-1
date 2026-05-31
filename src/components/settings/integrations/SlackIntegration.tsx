@@ -150,6 +150,7 @@ export const SlackIntegration: React.FC<SlackIntegrationProps> = ({ user, slackC
               <li><code>groups:read</code> View private channels</li>
               <li><code>im:history</code> Read DM messages</li>
               <li><code>im:read</code> View DMs</li>
+              <li><code>mpim:read</code> View group DMs</li>
               <li><code>users:read</code> View user info</li>
             </ul>
             <p style={{ marginTop: '12px' }}>

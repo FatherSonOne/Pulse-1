@@ -173,10 +173,11 @@ you generate it in Slack, not in Pulse:
 1. Go to https://api.slack.com/apps → **Create New App** → **From scratch** →
    name it (e.g. "Pulse Smoke") → pick a workspace you own.
 2. Left sidebar → **OAuth & Permissions** → scroll to **Scopes → Bot Token
-   Scopes** → **Add an OAuth Scope** for each of these (exactly the 7 the Pulse
-   card lists):
+   Scopes** → **Add an OAuth Scope** for each of these **8** (must match the
+   `conversations.list` types the service requests — `mpim:read` covers group
+   DMs; omitting it returns `missing_scope` on the channel fetch):
    `channels:history`, `channels:read`, `groups:history`, `groups:read`,
-   `im:history`, `im:read`, `users:read`
+   `im:history`, `im:read`, `mpim:read`, `users:read`
 3. Scroll up → **Install to Workspace** → Allow. Copy the **Bot User OAuth
    Token** (starts `xoxb-`).
 4. In Slack, **add the bot to at least one channel** (open a channel → `/invite
@@ -225,8 +226,10 @@ you generate it in Slack, not in Pulse:
   redirects. If "Test Connection" fails, it's a token/scope problem, not a
   callback-URL problem:
   - Slack `invalid_auth` / `not_authed` → token is wrong or wasn't installed.
-  - Slack `missing_scope` → re-add the scope in Slack, **reinstall**, copy the
-    new token.
+  - Slack `missing_scope` on the channel fetch → almost always a missing
+    `mpim:read` (the service's `conversations.list` requests `mpim` group DMs).
+    Add the scope in Slack, **reinstall** (adding a scope does NOT update an
+    already-issued token), copy the new token.
   - Slack connects but **0 channels** → the bot isn't in any channel (`/invite`
     it).
 - **Gmail card stuck on the locked state** → the current session isn't a Google
