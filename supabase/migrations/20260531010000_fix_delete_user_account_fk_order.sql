@@ -1,10 +1,11 @@
--- Fix delete_user_account: FOUR classes of bug that made GDPR erasure 500 and
--- erase NOTHING. Verified 2026-05-31 via a throwaway-account test (the
--- delete-account edge fn returned 500 and the account stayed fully intact).
+-- Fix delete_user_account: FIVE classes of bug that made the GDPR self-erasure
+-- (delete-account edge fn) return 500 and erase NOTHING. Verified 2026-05-31 via
+-- a throwaway-account test: the edge fn 500'd and the account stayed fully intact.
 --
 -- The RPC runs as ONE transaction, so the first failure aborted everything and
--- hid the bugs behind it. Each was found by replaying the full body inside a
--- rolled-back transaction until it completed clean:
+-- masked every bug behind it. Each was found by replaying the full body inside a
+-- rolled-back transaction until it reached a sentinel with zero errors. This file
+-- matches the validated, deployed function verbatim.
 --
 -- 1. FK ORDER: deleted pulse_messages BEFORE pulse_conversations, but
 --    pulse_conversations.last_message_id is a NO-ACTION FK -> pulse_messages.
@@ -17,22 +18,25 @@
 -- 2. DEAD TABLE: referenced team_invites, which does not exist (real table is
 --    org_invites, already handled). Removed.
 --
--- 3. WRONG / MISSING COLUMNS — three tables have no user_id:
---      vox_drops           -> keyed by sender_id      (has no user_id/creator_id)
---      brainstorm_sessions -> keyed by created_by     (has no user_id)
---      relationships       -> keyed by owner_user_id  (has no user_id)
+-- 3. WRONG / MISSING COLUMNS — three tables have no user_id; the correct keys are:
+--      vox_drops           -> sender_id      (no user_id/creator_id)
+--      brainstorm_sessions -> owner_id       (no user_id/created_by)
+--      relationships       -> created_by     (TEXT; no user_id/owner_user_id)
 --    (vox_notes DOES have user_id and is left as-is.)
 --
 -- 4. TEXT vs UUID: 10 columns store the id as TEXT, not uuid, so comparing to a
 --    uuid raised "operator does not exist: text = uuid":
 --      archives.user_id, calendar_events.user_id, contact_circles.user_id,
---      contacts.user_id, decision_votes.user_id, decisions.created_by,
---      emails.user_id, event_rsvp.user_id, tasks.user_id, voxer_recordings.user_id.
---    Fixed by comparing those against a target_user_id::text local (uid_text).
+--      contacts.user_id, decision_votes.user_id, decisions.created_by, emails.user_id,
+--      event_rsvp.user_id, tasks.user_id, voxer_recordings.user_id
+--      (+ relationships.created_by from #3). Compared against target_user_id::text.
 --
--- Validated: the full body executed in a rolled-back transaction reaching the
--- sentinel with zero FK / type / undefined-column / undefined-table errors. This
--- file matches the deployed function verbatim.
+-- 5. LAST-OWNER GUARD: the workspace_members_protect_last_owner() trigger blocked
+--    removing the user's membership in a workspace they solely own ("cannot remove
+--    or demote the last owner"). For a self-erasure that's correct to bypass — the
+--    trigger exposes an app.skip_last_owner_check GUC for exactly this. We set it
+--    for the txn, delete the membership, then drop any now-empty owned workspaces
+--    (shared workspaces with other members are preserved).
 
 CREATE OR REPLACE FUNCTION public.delete_user_account(target_user_id uuid)
  RETURNS void
@@ -47,6 +51,10 @@ BEGIN
     IF auth.uid() != target_user_id THEN
         RAISE EXCEPTION 'Not authorized to delete this account';
     END IF;
+
+    -- Self-erasure legitimately removes the sole owner of the user's OWN
+    -- workspaces; bypass the last-owner protection trigger for this txn only.
+    PERFORM set_config('app.skip_last_owner_check', 'on', true);
 
     -- Messaging
     -- Conversations FIRST: pulse_conversations.last_message_id is a NO-ACTION FK
@@ -89,8 +97,8 @@ BEGIN
     DELETE FROM ai_lab_templates        WHERE user_id = target_user_id;
     DELETE FROM ai_lab_outputs          WHERE user_id = target_user_id;
 
-    -- AI Sessions / Intelligence (brainstorm_sessions has no user_id)
-    DELETE FROM brainstorm_sessions     WHERE created_by = target_user_id;
+    -- AI Sessions / Intelligence (brainstorm_sessions keyed by owner_id)
+    DELETE FROM brainstorm_sessions     WHERE owner_id = target_user_id;
     DELETE FROM conversation_summaries  WHERE user_id = target_user_id;
 
     -- Attention / Focus
@@ -102,9 +110,9 @@ BEGIN
     DELETE FROM archives                WHERE user_id = uid_text OR created_by = target_user_id;  -- user_id TEXT
     DELETE FROM saved_searches          WHERE user_id = target_user_id;
 
-    -- CRM / Contacts (relationships has no user_id; keyed by owner_user_id)
+    -- CRM / Contacts (relationships keyed by created_by, which is TEXT)
     DELETE FROM contacts                WHERE user_id = uid_text;            -- TEXT
-    DELETE FROM relationships           WHERE owner_user_id = target_user_id;
+    DELETE FROM relationships           WHERE created_by = uid_text;         -- TEXT
     DELETE FROM contact_circles         WHERE user_id = uid_text;            -- TEXT
     DELETE FROM contact_goals           WHERE user_id = target_user_id;
     DELETE FROM relationship_profiles   WHERE user_id = target_user_id;
@@ -128,7 +136,8 @@ BEGIN
     DELETE FROM user_settings           WHERE user_id = target_user_id;
     DELETE FROM user_subscriptions      WHERE user_id = target_user_id;
 
-    -- Workspace membership
+    -- Workspace membership first (guard bypassed above), then drop now-empty
+    -- owned workspaces (shared workspaces with other members are preserved).
     DELETE FROM workspace_members       WHERE user_id = target_user_id;
     DELETE FROM workspaces
     WHERE owner_id = target_user_id
