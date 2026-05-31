@@ -322,6 +322,21 @@
   text-align: center;
 }
 
+/* Informational notice (e.g. "check your email to confirm") — distinct from
+   the red error state so a pending-confirmation signup doesn't read as a
+   failure. */
+.login-notice {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(16, 185, 129, 0.10);
+  border: 1px solid rgba(16, 185, 129, 0.20);
+  border-radius: 12px;
+  color: #34d399;
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.4;
+}
+
 /* Button group */
 .login-btn-group {
   display: flex;

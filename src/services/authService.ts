@@ -311,7 +311,15 @@ export const loginWithEmail = async (email: string, password: string): Promise<U
 };
 
 // Email/Password Signup
-export const signUpWithEmail = async (email: string, password: string, name: string): Promise<User> => {
+export interface SignUpResult {
+  user: User | null;
+  // True when the project requires email confirmation and signUp returned a
+  // user but NO session. The caller must NOT treat this as a logged-in state —
+  // it should prompt the user to confirm via the emailed link, then sign in.
+  needsConfirmation: boolean;
+}
+
+export const signUpWithEmail = async (email: string, password: string, name: string): Promise<SignUpResult> => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -331,9 +339,19 @@ export const signUpWithEmail = async (email: string, password: string, name: str
     throw new Error('Signup failed - no user returned');
   }
 
+  // Email-confirmation-required projects return a user with NO session. Supabase
+  // ALSO returns a session-less, obfuscated user when the email is already
+  // registered (anti-enumeration), so this single branch covers both: the
+  // honest "check your email" case and the duplicate-email case. Either way we
+  // are NOT logged in — don't persist a bogus session, and signal the caller so
+  // the UI stops spinning and tells the user to confirm.
+  if (!data.session) {
+    return { user: null, needsConfirmation: true };
+  }
+
   const user = mapSupabaseUser(data.user);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
-  return user;
+  return { user, needsConfirmation: false };
 };
 
 // Session refresh threshold - refresh if less than 30 minutes remaining

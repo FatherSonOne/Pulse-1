@@ -6,7 +6,7 @@ import { ArrowLeft, Loader2, Lock, ShieldHalf } from 'lucide-react';
 interface LoginProps {
   onLogin: () => void;
   onEmailLogin: (email: string, password: string) => Promise<void>;
-  onSignup: (email: string, password: string, name: string) => Promise<void>;
+  onSignup: (email: string, password: string, name: string) => Promise<{ needsConfirmation: boolean }>;
   onMicrosoftLogin: () => void;
 }
 
@@ -19,6 +19,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const handleGoogleLogin = async () => {
     setIsLoggingIn(true);
@@ -51,13 +52,28 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
     setIsLoggingIn(true);
     setLoginMethod('email');
     setError(null);
+    setNotice(null);
 
     try {
       if (isSignupMode) {
         if (!name.trim()) {
           throw new Error('Please enter your name');
         }
-        await onSignup(email, password, name);
+        const { needsConfirmation } = await onSignup(email, password, name);
+        if (needsConfirmation) {
+          // No session came back — email confirmation is pending (or the email
+          // is already registered). Stop the spinner and tell the user to check
+          // their inbox; otherwise the button hangs on "Creating account…".
+          setNotice(
+            `Check ${email} to confirm your account, then sign in. ` +
+            `If you already have an account, just sign in instead.`
+          );
+          setIsSignupMode(false);
+          setIsLoggingIn(false);
+          setLoginMethod(null);
+          return;
+        }
+        // Session returned → AuthContext will swap us out of the Login screen.
       } else {
         await onEmailLogin(email, password);
       }
@@ -136,6 +152,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
 
           {error && (
             <div className="login-error">{error}</div>
+          )}
+
+          {notice && (
+            <div className="login-notice">{notice}</div>
           )}
 
           {!showEmailForm ? (
@@ -260,6 +280,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
                   onClick={() => {
                     setShowEmailForm(false);
                     setError(null);
+                    setNotice(null);
                   }}
                   className="login-back-btn"
                 >
@@ -270,6 +291,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
                   onClick={() => {
                     setIsSignupMode(!isSignupMode);
                     setError(null);
+                    setNotice(null);
                   }}
                   className="login-toggle-btn"
                 >
