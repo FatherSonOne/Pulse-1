@@ -40,9 +40,10 @@
   [#108](https://github.com/FatherSonOne/Pulse-1/issues/108)).
 - **Email campaigns** — disabled for v1 pending a compliant batched-send path
   ([#105](https://github.com/FatherSonOne/Pulse-1/issues/105)).
-- **Encryption posture** — data is encrypted in transit (TLS) and at rest. Pulse does **not** offer
-  end-to-end encryption: AI features process content server-side. (Positioning tracked in
-  [#113](https://github.com/FatherSonOne/Pulse-1/issues/113).)
+- **Encryption posture** — data is encrypted in transit (TLS) and at rest, with row-level security
+  per workspace. Pulse does **not** offer end-to-end encryption: AI features process content
+  server-side for the features you turn on. (Decided posture — see
+  [`docs/PULSE_E2EE_POSITIONING_GUIDE.md`](docs/PULSE_E2EE_POSITIONING_GUIDE.md).)
 
 ---
 
