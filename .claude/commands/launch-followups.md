@@ -149,34 +149,95 @@ Each item: a unique `key`, WHY (motivation), WHAT (exact steps), VERIFY (how to 
 
 ### `live-smoke-99` — Live Slack + Gmail round-trip smoke (P0, #99)
 
-**WHY.** The Render-deployed backend (`pulse-api-1epw.onrender.com`) has Slack/Twilio/Gmail proxy routes mounted, input-validating, and CORS-correct. But no human has yet completed a full OAuth round-trip from the live `pulse.logosvision.org` against a real Slack workspace or Gmail mailbox. Until that smoke runs, #99 stays `in-progress` with theoretical correctness, not verified.
+> **REWRITTEN 2026-05-31 to match real architecture.** The original version of
+> this item assumed a "Connect Slack" / "Connect Gmail" **OAuth redirect** flow
+> through the Render backend. That flow was never built — git history confirms no
+> `/api/slack/callback` or `/api/gmail/callback` route ever existed (see
+> `docs/INTEGRATIONS_BUILT_VS_STUB_AUDIT_2026-05-31.md`). Pulse's actual model:
+> **Slack = bring-your-own bot token** (paste `xoxb-…`, proxied via
+> `/api/slack/proxy`); **Gmail = piggybacks the user's Google sign-in** (no
+> separate connect button — if you logged in with Google, Gmail is "Connected").
+> The steps below test the *real* paths. There is no OAuth handshake to smoke and
+> no `redirect_uri` to misconfigure.
 
-**WHAT — Slack.**
-1. Open `pulse.logosvision.org` (production, not preview)
-2. Log in as `fm1@qntmecos.com`
-3. Settings → Integrations → Slack section → "Connect Slack" (or equivalent CTA)
-4. Authorize on Slack's OAuth screen for any workspace you own
-5. You should land back in Pulse with the workspace appearing in the integration card
-6. Open the Unified Inbox → Slack tab → channels should populate within a few seconds
-7. Pick a channel → click in → recent messages should load
+**WHY.** The Render-deployed backend (`pulse-api-1epw.onrender.com`) has the
+Slack/Gmail/Twilio **proxy** routes mounted, input-validating, and CORS-correct —
+health endpoint verified 200 on 2026-05-31. But no human has yet driven a real
+bot-token Slack pull or a Google-piggyback Gmail pull from production
+`pulse.logosvision.org` end-to-end (UI → Render proxy → upstream API → Unified
+Inbox). Until that smoke runs, #99 stays `in-progress` — proxies are correct in
+theory, not verified against live data.
 
-**WHAT — Gmail.**
-1. Settings → Integrations → Gmail
-2. "Connect Gmail" → grant scopes on the Google consent screen
-3. Return to Pulse → token stored (the integration card should switch to "Connected")
-4. Open Email / Unified Inbox view → recent Gmail threads should load
-5. (Optional, stronger smoke) wait an hour, refresh → backend should auto-refresh the access token via the Render route. If you see auth errors instead of fresh data, the refresh path is broken.
+**PREP — create a Slack bot token (one-time, ~3 min).** The UI needs a bot token;
+you generate it in Slack, not in Pulse:
+1. Go to https://api.slack.com/apps → **Create New App** → **From scratch** →
+   name it (e.g. "Pulse Smoke") → pick a workspace you own.
+2. Left sidebar → **OAuth & Permissions** → scroll to **Scopes → Bot Token
+   Scopes** → **Add an OAuth Scope** for each of these (exactly the 7 the Pulse
+   card lists):
+   `channels:history`, `channels:read`, `groups:history`, `groups:read`,
+   `im:history`, `im:read`, `users:read`
+3. Scroll up → **Install to Workspace** → Allow. Copy the **Bot User OAuth
+   Token** (starts `xoxb-`).
+4. In Slack, **add the bot to at least one channel** (open a channel → `/invite
+   @Pulse Smoke`). The token only sees channels the bot is a member of — skip
+   this and "Fetch Messages" returns empty (by design, not a bug).
+
+**WHAT — Slack (bot-token paste, NOT OAuth).**
+1. Open `pulse.logosvision.org` (production, not preview).
+2. Log in as `fm1@qntmecos.com`.
+3. **Settings → Integrations → "Other Integrations" → Slack** card.
+4. Paste the `xoxb-…` token into the **SLACK BOT TOKEN** field.
+5. Click **Test Connection** → expect the green **Connected to `<workspace>`**
+   status + an **Available Channels (N)** grid listing the channel(s) the bot is
+   in.
+6. Click **Fetch Messages** → expect **"Successfully synced N messages to
+   database"** (or the honest "No messages found — make sure your bot is added to
+   at least one channel" if the channel is empty).
+7. Open the **Unified Inbox** → Slack messages should appear (they're persisted
+   via `unifiedInboxDb`).
+
+**WHAT — Gmail (piggybacks Google sign-in, NO separate connect).**
+1. Confirm you're logged into Pulse **with Google** (the Gmail card keys off
+   `user.connectedProviders.google`). If `fm1@` signed in via Google, you're set.
+2. **Settings → Integrations → Gmail** card → it should already show a green
+   **Gmail Connected** panel with the account email. (If it shows the locked
+   "Connect your Google account above" state, the session isn't a Google session —
+   re-login with Google.)
+3. Click **Test Connection** → expect success with the connected email.
+4. Click the fetch button → expect **"Fetched N recent emails"**.
+5. Open the **Email** section → recent Gmail threads should load.
+6. *(Optional, stronger smoke)* wait ~1 hr, refresh → the backend should
+   auto-refresh the Google access token via `/api/google/refresh-token`. Auth
+   errors instead of fresh data = refresh path broken.
 
 **VERIFY.**
-- Agent: `curl -s https://pulse-api-1epw.onrender.com/api/health` should still 200 (backend up).
-- Human attestation for the OAuth round-trips (the agent can't drive the browser).
-- **Capture evidence:** screenshot Slack channels list + a loaded Gmail thread. Save to `docs/_evidence/99-live-smoke-<YYYY-MM-DD>/` (gitignored) OR drop into a comment on issue #99.
+- Agent: `curl -s https://pulse-api-1epw.onrender.com/api/health` should 200
+  (backend up — confirmed 2026-05-31).
+- Human attestation for the two pulls (the agent can't drive the browser).
+- **Capture evidence:** screenshot the Slack "Available Channels" grid + the
+  Gmail "Fetched N emails" / a loaded Email thread. Save to
+  `docs/_evidence/99-live-smoke-<YYYY-MM-DD>/` (gitignored) OR drop into a comment
+  on issue #99.
 
 **NOTES.**
-- If Slack OAuth fails with a "redirect_uri mismatch" — the Slack app's redirect URI in the Slack admin needs to be `https://pulse-api-1epw.onrender.com/api/slack/callback`. Update it in the Slack app config, retry.
-- If Gmail OAuth fails — same shape, check the Google Cloud Console OAuth credentials' Authorized redirect URIs include `https://pulse-api-1epw.onrender.com/api/gmail/callback`.
-- **CRM OAuth** is intentionally out of scope here — it's broken server-side (browser-Supabase coupling, see roadmap #99 notes) and tracked separately. Don't test it under this item.
-- Closing #99: requires both Slack + Gmail smokes pass. CRM refactor and LV redirect remain deferred follow-ups (file separately if needed).
+- **No `redirect_uri` to configure** — these are proxy/credential flows, not OAuth
+  redirects. If "Test Connection" fails, it's a token/scope problem, not a
+  callback-URL problem:
+  - Slack `invalid_auth` / `not_authed` → token is wrong or wasn't installed.
+  - Slack `missing_scope` → re-add the scope in Slack, **reinstall**, copy the
+    new token.
+  - Slack connects but **0 channels** → the bot isn't in any channel (`/invite`
+    it).
+- **Gmail card stuck on the locked state** → the current session isn't a Google
+  session. Gmail here has no token-paste fallback; it requires Google sign-in.
+- **Twilio/SMS** is out of scope — flag OFF for v1 (#100), A2P 10DLC parked.
+- **CRM OAuth** is out of scope — broken server-side (browser-Supabase coupling),
+  tracked separately.
+- **Zapier** is out of scope — never built as a connectable integration (policy
+  toggle only; see the audit doc). Webhook Manager is the real Zapier path.
+- Closing #99: requires both the Slack bot-token pull and the Gmail piggyback
+  pull to succeed. CRM refactor + LV redirect remain deferred follow-ups.
 
 ---
 
