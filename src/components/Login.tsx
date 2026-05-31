@@ -6,7 +6,7 @@ import { ArrowLeft, Loader2, Lock, ShieldHalf } from 'lucide-react';
 interface LoginProps {
   onLogin: () => void;
   onEmailLogin: (email: string, password: string) => Promise<void>;
-  onSignup: (email: string, password: string, name: string) => Promise<{ needsConfirmation: boolean }>;
+  onSignup: (email: string, password: string, name: string) => Promise<void>;
   onMicrosoftLogin: () => void;
 }
 
@@ -59,25 +59,26 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
         if (!name.trim()) {
           throw new Error('Please enter your name');
         }
-        const { needsConfirmation } = await onSignup(email, password, name);
-        if (needsConfirmation) {
-          // No session came back — email confirmation is pending (or the email
-          // is already registered). Stop the spinner and tell the user to check
-          // their inbox; otherwise the button hangs on "Creating account…".
-          setNotice(
-            `Check ${email} to confirm your account, then sign in. ` +
-            `If you already have an account, just sign in instead.`
-          );
-          setIsSignupMode(false);
-          setIsLoggingIn(false);
-          setLoginMethod(null);
-          return;
-        }
+        await onSignup(email, password, name);
         // Session returned → AuthContext will swap us out of the Login screen.
       } else {
         await onEmailLogin(email, password);
       }
     } catch (err: any) {
+      // Email confirmation pending (or email already registered): not a failure.
+      // Stop the spinner and tell the user to check their inbox; otherwise the
+      // button hangs on "Creating account…" forever. Matched by name to avoid a
+      // cross-module import of the error class.
+      if (err?.name === 'EmailConfirmationRequiredError') {
+        setNotice(
+          `Check ${email} to confirm your account, then sign in. ` +
+          `If you already have an account, just sign in instead.`
+        );
+        setIsSignupMode(false);
+        setIsLoggingIn(false);
+        setLoginMethod(null);
+        return;
+      }
       setError(err.message || 'Authentication failed');
       setIsLoggingIn(false);
       setLoginMethod(null);

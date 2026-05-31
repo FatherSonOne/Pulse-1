@@ -769,17 +769,15 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSignup = async (email: string, password: string, name: string): Promise<{ needsConfirmation: boolean }> => {
+  const handleSignup = async (email: string, password: string, name: string) => {
     try {
-      // AuthContext handles setting user state when a session is returned.
-      // When the project requires email confirmation (or the email is already
-      // registered), signUp returns no session — surface that to the Login UI
-      // so it can prompt "check your email" instead of spinning forever.
-      const result = await signUpWithEmail(email, password, name);
-      return { needsConfirmation: result.needsConfirmation };
+      // AuthContext will handle setting user state on a real session. If
+      // confirmation is pending, signUpWithEmail throws EmailConfirmationRequiredError
+      // which the Login component detects to show a "check your email" notice.
+      await signUpWithEmail(email, password, name);
     } catch (e) {
       console.error("Signup failed:", e);
-      throw e; // Re-throw so Login component can show error
+      throw e; // Re-throw so Login component can show error / notice
     }
   };
 

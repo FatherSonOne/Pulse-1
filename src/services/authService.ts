@@ -310,16 +310,23 @@ export const loginWithEmail = async (email: string, password: string): Promise<U
   return user;
 };
 
-// Email/Password Signup
-export interface SignUpResult {
-  user: User | null;
-  // True when the project requires email confirmation and signUp returned a
-  // user but NO session. The caller must NOT treat this as a logged-in state —
-  // it should prompt the user to confirm via the emailed link, then sign in.
-  needsConfirmation: boolean;
+// Thrown by signUpWithEmail when the project requires email confirmation and
+// signUp returned a user but NO session — the caller is NOT logged in and must
+// prompt the user to confirm via the emailed link. Supabase also returns a
+// session-less obfuscated user when the email is already registered
+// (anti-enumeration), so this same signal covers the duplicate-email case.
+// Modeled as an error (not a changed return type) so the existing
+// Promise<User> consumers — AuthContext's handleLogin wrapper included — keep
+// type-checking; they already catch/rethrow.
+export class EmailConfirmationRequiredError extends Error {
+  constructor(public readonly emailAddress: string) {
+    super('Email confirmation required');
+    this.name = 'EmailConfirmationRequiredError';
+  }
 }
 
-export const signUpWithEmail = async (email: string, password: string, name: string): Promise<SignUpResult> => {
+// Email/Password Signup
+export const signUpWithEmail = async (email: string, password: string, name: string): Promise<User> => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -339,19 +346,17 @@ export const signUpWithEmail = async (email: string, password: string, name: str
     throw new Error('Signup failed - no user returned');
   }
 
-  // Email-confirmation-required projects return a user with NO session. Supabase
-  // ALSO returns a session-less, obfuscated user when the email is already
-  // registered (anti-enumeration), so this single branch covers both: the
-  // honest "check your email" case and the duplicate-email case. Either way we
-  // are NOT logged in — don't persist a bogus session, and signal the caller so
-  // the UI stops spinning and tells the user to confirm.
+  // No session → not logged in. Confirmation pending (or email already taken).
+  // Don't persist a bogus session; signal the UI so it stops the spinner and
+  // tells the user to confirm, instead of waiting for a SIGNED_IN that never
+  // fires.
   if (!data.session) {
-    return { user: null, needsConfirmation: true };
+    throw new EmailConfirmationRequiredError(email);
   }
 
   const user = mapSupabaseUser(data.user);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
-  return { user, needsConfirmation: false };
+  return user;
 };
 
 // Session refresh threshold - refresh if less than 30 minutes remaining
