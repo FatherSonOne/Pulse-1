@@ -744,7 +744,7 @@ app.get('/api/crm/callback/:platform', async (req, res) => {
 
   try {
     // Import CRM OAuth helper dynamically
-    const { exchangeCodeForToken } = await import('./src/services/crm/oauthHelper.js');
+    const { exchangeCodeForToken } = await import('./server/crmOAuth.js');
 
     // Get credentials from environment
     const clientId = process.env[`${platform.toUpperCase()}_CLIENT_ID`];

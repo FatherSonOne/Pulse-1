@@ -16,6 +16,10 @@ export interface OAuthConfig {
 /**
  * OAuth configurations for each CRM platform
  */
+// NOTE: server.js cannot import this module (it runs under plain `node`, no TS
+// transpile, and this file imports the browser-only Supabase client). The
+// server uses a Node-safe mirror of CRM_OAUTH_CONFIGS + exchangeCodeForToken in
+// server/crmOAuth.js — keep the two in sync when editing either.
 export const CRM_OAUTH_CONFIGS: Record<CRMPlatform | 'zoho', OAuthConfig> = {
   hubspot: {
     authUrl: 'https://app.hubspot.com/oauth/authorize',
