@@ -15,7 +15,11 @@ function posthogOrNull(): typeof posthog | null {
 }
 
 const POSTHOG_API_KEY = import.meta.env.VITE_POSTHOG_API_KEY;
-const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com';
+// Default to the same-origin reverse proxy (/ingest -> PostHog, configured in
+// vercel.json) so ad-blockers don't drop events to a third-party domain and we
+// don't lose analytics from blocker users. VITE_POSTHOG_HOST can still override
+// (e.g. local dev pointing straight at us.i.posthog.com).
+const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST || '/ingest';
 const ENVIRONMENT = import.meta.env.VITE_APP_MODE || 'development';
 const APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.0.0';
 
@@ -29,6 +33,9 @@ export function initializeAnalytics(): void {
 
   posthog.init(POSTHOG_API_KEY, {
     api_host: POSTHOG_HOST,
+    // When api_host is the same-origin proxy, ui_host keeps the PostHog toolbar
+    // and "view in PostHog" links pointing at the real app.
+    ui_host: 'https://us.posthog.com',
 
     // Feature flags
     enable_recording_console_log: false,
