@@ -246,7 +246,21 @@ export function optInTracking(): void {
 
 export function trackMessageSent(
   messageType: 'text' | 'voice' | 'file',
-  properties?: Record<string, any>
+  properties?: Record<string, any> & {
+    /**
+     * Active workspace at send time. Pulse DMs aren't workspace-scoped at
+     * the RPC level (user-to-user), so this is the sender's currently
+     * selected workspace context — best-effort, omit when none is set.
+     * Enables the NSM "Weekly Active Collaborative Workspaces" GROUP BY.
+     */
+    workspace_id?: string;
+    /**
+     * Owning organization, when distinct from the workspace. Pulse models
+     * org == workspace today, so this is reserved for forward-compat and
+     * should be omitted unless a real org id is in hand.
+     */
+    organization_id?: string;
+  }
 ): void {
   trackEvent('Message Sent', {
     message_type: messageType,

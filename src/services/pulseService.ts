@@ -1,6 +1,7 @@
 // Pulse Service - User profiles and in-app messaging
 import { supabase } from './supabase';
 import { trackMessageSent } from '../lib/monitoring/analytics';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
 
 export interface UserProfile {
   id: string;
@@ -387,7 +388,17 @@ class PulseService {
         contentType === 'voice' ? 'voice'
         : contentType === 'file' || contentType === 'image' ? 'file'
         : 'text';
-      trackMessageSent(messageType, { content_type: contentType });
+      // Pulse DMs aren't workspace-scoped at the RPC level, so attach the
+      // sender's *active* workspace as a best-effort dimension for the NSM
+      // "Weekly Active Collaborative Workspaces" GROUP BY. Cheap synchronous
+      // localStorage read (same key WorkspaceContext persists) — no DB
+      // round-trip in the hot send path. Omitted entirely when unset; never
+      // faked. No separate org id exists (org == workspace today).
+      const workspaceId = getCurrentWorkspaceId();
+      trackMessageSent(messageType, {
+        content_type: contentType,
+        ...(workspaceId ? { workspace_id: workspaceId } : {}),
+      });
     } catch {
       // Analytics failures must never break the send path.
     }
