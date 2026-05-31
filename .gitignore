@@ -178,6 +178,7 @@ docs/*.md
 !docs/*-spec.md
 !docs/*-data-design.md
 !docs/*-ux.md
+!docs/*_BURNDOWN.md
 
 # Playwright HTML report — generated artifact, never commit.
 playwright-report/
