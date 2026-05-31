@@ -181,12 +181,12 @@ export class SlackService {
   /**
    * Test connection to Slack
    */
-  async testConnection(): Promise<{ success: boolean; workspaceName?: string; error?: string }> {
+  async testConnection(): Promise<{ success: boolean; workspace?: string; error?: string }> {
     try {
       const result = await this.slackRequest('auth.test');
       return {
         success: true,
-        workspaceName: result.team as string,
+        workspace: result.team as string,
       };
     } catch (error) {
       return {
