@@ -35,8 +35,25 @@ export const AttentionDashboard: React.FC<AttentionDashboardProps> = ({
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
+
+    // Only the budget needs frequent refresh (a cheap HEAD count); the 7-day
+    // analytics barely change, so they refresh on mount / tab-focus, not every
+    // tick. The interval is visibility-gated so a backgrounded or forgotten tab
+    // stops hitting the database entirely (was a 30s unconditional poll — a
+    // standing source of Supabase egress/requests).
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refreshBudget();
+    }, 120000);
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') loadData();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [userId]);
 
   useEffect(() => {
@@ -51,12 +68,18 @@ export const AttentionDashboard: React.FC<AttentionDashboardProps> = ({
 
   const loadData = async () => {
     await attentionService.initialize(userId);
+    refreshBudget();
+    const analyticsData = await attentionService.getAnalytics(userId, 7);
+    setAnalytics(analyticsData);
+  };
+
+  // Lightweight refresh used by the interval — budget is a HEAD count, the rest
+  // is in-memory state. Does NOT re-fetch the 7-day analytics.
+  const refreshBudget = async () => {
     const currentBudget = await attentionService.loadCurrentBudget(userId);
     setBudget(currentBudget);
     setBatchedNotifications(attentionService.getBatchedNotifications());
     setFocusSession(attentionService.getCurrentFocusSession());
-    const analyticsData = await attentionService.getAnalytics(userId, 7);
-    setAnalytics(analyticsData);
   };
 
   const handleStartFocus = async () => {

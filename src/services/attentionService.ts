@@ -371,19 +371,24 @@ export const attentionService = {
     startDate.setDate(startDate.getDate() - days);
     const startDateStr = startDate.toISOString();
 
-    // Get notification logs
+    // Get notification logs. Select only the columns the analytics math uses —
+    // never `*` (which drags the unused `metadata` jsonb over the wire). Cap the
+    // row count as a safety valve so a heavy-notification week can't balloon the
+    // response.
     const { data: logs } = await supabase
       .from('attention_logs')
-      .select('*')
+      .select('event_type, source, created_at')
       .eq('user_id', userId)
-      .gte('created_at', startDateStr);
+      .gte('created_at', startDateStr)
+      .limit(5000);
 
-    // Get focus sessions
+    // Get focus sessions (only the fields used below).
     const { data: sessions } = await supabase
       .from('focus_sessions')
-      .select('*')
+      .select('status, started_at, actual_duration_minutes, interruption_count')
       .eq('user_id', userId)
-      .gte('started_at', startDateStr);
+      .gte('started_at', startDateStr)
+      .limit(2000);
 
     const notifications = logs?.filter(l => l.event_type === 'notification') || [];
     const interruptions = logs?.filter(l => l.event_type === 'interrupt') || [];
