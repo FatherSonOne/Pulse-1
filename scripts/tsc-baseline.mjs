@@ -86,9 +86,27 @@ function toRelPosix(rawPath) {
   return p.split(path.sep).join('/').replace(/\\/g, '/');
 }
 
-/** Collapse whitespace so message normalization is stable across platforms. */
+// tsc embeds the *absolute* repo path inside some messages (e.g. dynamic-import
+// TS2322: `import("F:/pulse1/src/…")`). That prefix is environment-specific —
+// its drive-letter case varies by shell on Windows, and on Linux CI it's a
+// completely different root (`/home/runner/work/…`) — so leaving it in the
+// signature makes the baseline non-portable (spurious "new errors" on CI).
+// Strip the runtime repo root (either separator style, case-insensitive) so
+// embedded paths collapse to the same repo-relative form everywhere.
+const REPO_ROOT_RE = new RegExp(
+  REPO_ROOT
+    .split(path.sep)
+    .join('/')
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // regex-escape literals
+    .replace(/\//g, '[\\\\/]') +            // match / or \ at each separator
+    '[\\\\/]?',                             // and an optional trailing separator
+  'gi'
+);
+
+/** Collapse whitespace + strip the env-specific repo root so messages are
+ *  stable across platforms (Windows dev ↔ Linux CI) and drive-letter casing. */
 function normalizeMessage(msg) {
-  return msg.replace(/\s+/g, ' ').trim();
+  return msg.replace(REPO_ROOT_RE, '').replace(/\s+/g, ' ').trim();
 }
 
 // Matches: path/to/file.ts(LINE,COL): error TSxxxx: message
