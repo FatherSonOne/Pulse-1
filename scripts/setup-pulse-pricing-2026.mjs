@@ -23,14 +23,21 @@
  * so run ONCE per environment and paste the printed IDs into the migration.
  * The Solo product is matched by metadata.plan_id to avoid duplicate products.
  *
- * Run:
- *   STRIPE_SECRET_KEY=sk_test_... node scripts/setup-pulse-pricing-2026.mjs
- *   # override the seat price (within the decided $15-20 band):
- *   PULSE_TEAM_SEAT_AMOUNT=2000 STRIPE_SECRET_KEY=sk_test_... node scripts/setup-pulse-pricing-2026.mjs
- *   # re-mint ONLY the per-seat Team prices (skip Solo — avoids duplicate Solo prices):
- *   SKIP_SOLO=true STRIPE_SECRET_KEY=sk_test_... node scripts/setup-pulse-pricing-2026.mjs
- *   # point at a different Team product if the id changed:
- *   PULSE_TEAM_PRODUCT_ID=prod_xxx STRIPE_SECRET_KEY=sk_test_... node scripts/setup-pulse-pricing-2026.mjs
+ * Run (STRIPE_SECRET_KEY is read from .env.local if not set in the env):
+ *
+ *   PowerShell (Windows — this project's default shell):
+ *     node scripts/setup-pulse-pricing-2026.mjs
+ *     # re-mint ONLY the per-seat Team prices (skip Solo — avoids duplicate Solo prices):
+ *     $env:SKIP_SOLO='true'; node scripts/setup-pulse-pricing-2026.mjs; Remove-Item Env:SKIP_SOLO
+ *     # override the seat price (within the decided $15-20 band):
+ *     $env:PULSE_TEAM_SEAT_AMOUNT='2000'; node scripts/setup-pulse-pricing-2026.mjs; Remove-Item Env:PULSE_TEAM_SEAT_AMOUNT
+ *     # point at a different Team product if the id changed:
+ *     $env:PULSE_TEAM_PRODUCT_ID='prod_xxx'; node scripts/setup-pulse-pricing-2026.mjs; Remove-Item Env:PULSE_TEAM_PRODUCT_ID
+ *
+ *   bash/zsh:
+ *     node scripts/setup-pulse-pricing-2026.mjs
+ *     SKIP_SOLO=true node scripts/setup-pulse-pricing-2026.mjs
+ *     PULSE_TEAM_SEAT_AMOUNT=2000 node scripts/setup-pulse-pricing-2026.mjs
  *
  * After running: paste the printed IDs into the new plans migration
  * (pulse_solo plan row + pulse_team per-seat price ids). See the #pricing
@@ -197,8 +204,8 @@ try {
     console.log('   ✅ Archived.');
   } else {
     console.log('\n⏭️  Left the old $100 flat Team price ACTIVE (existing subs keep billing).');
-    console.log('   Once all Team subs are on per-seat, archive it with:');
-    console.log('   ARCHIVE_OLD_TEAM_FLAT=true OLD_TEAM_FLAT_PRICE_ID=price_xxx node scripts/setup-pulse-pricing-2026.mjs');
+    console.log('   Once all Team subs are on per-seat, archive it with (PowerShell):');
+    console.log("   $env:ARCHIVE_OLD_TEAM_FLAT='true'; $env:OLD_TEAM_FLAT_PRICE_ID='price_xxx'; node scripts/setup-pulse-pricing-2026.mjs");
   }
 
   console.log('\n══════════════════════════════════════════════════════');
