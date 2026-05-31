@@ -7,8 +7,8 @@
  *       · Monthly price: $20/mo   (30-day trial)
  *       · Yearly  price: $200/yr  (10 months for 12 — matches the existing annual discount)
  *   - Per-seat prices on the EXISTING "Pulse Team" product (reframe from $100 flat):
- *       · Monthly per-seat: $18/seat/mo  (30-day trial)
- *       · Yearly  per-seat: $180/seat/yr (10 months for 12)
+ *       · Monthly per-seat: $15/seat/mo  (30-day trial)
+ *       · Yearly  per-seat: $150/seat/yr (10 months for 12)
  *     Stripe per-seat = a normal licensed recurring price (unit_amount per seat);
  *     the *quantity* (seat count) is set by checkout + kept in sync by the
  *     existing billing-sync-seats / billing-reconcile-seats edge functions.
@@ -26,7 +26,9 @@
  * Run:
  *   STRIPE_SECRET_KEY=sk_test_... node scripts/setup-pulse-pricing-2026.mjs
  *   # override the seat price (within the decided $15-20 band):
- *   PULSE_TEAM_SEAT_AMOUNT=1500 STRIPE_SECRET_KEY=sk_test_... node scripts/setup-pulse-pricing-2026.mjs
+ *   PULSE_TEAM_SEAT_AMOUNT=2000 STRIPE_SECRET_KEY=sk_test_... node scripts/setup-pulse-pricing-2026.mjs
+ *   # re-mint ONLY the per-seat Team prices (skip Solo — avoids duplicate Solo prices):
+ *   SKIP_SOLO=true STRIPE_SECRET_KEY=sk_test_... node scripts/setup-pulse-pricing-2026.mjs
  *   # point at a different Team product if the id changed:
  *   PULSE_TEAM_PRODUCT_ID=prod_xxx STRIPE_SECRET_KEY=sk_test_... node scripts/setup-pulse-pricing-2026.mjs
  *
@@ -83,8 +85,8 @@ console.log('');
 // Decided amounts (cents). Seat amount overridable within the $15-20 band.
 const SOLO_MONTHLY = Number(process.env.PULSE_SOLO_MONTHLY_AMOUNT ?? 2000);   // $20/mo
 const SOLO_YEARLY  = Number(process.env.PULSE_SOLO_YEARLY_AMOUNT  ?? 20000);  // $200/yr (10-for-12)
-const SEAT_MONTHLY = Number(process.env.PULSE_TEAM_SEAT_AMOUNT    ?? 1800);   // $18/seat/mo
-const SEAT_YEARLY  = Number(process.env.PULSE_TEAM_SEAT_YEARLY    ?? 18000);  // $180/seat/yr (10-for-12)
+const SEAT_MONTHLY = Number(process.env.PULSE_TEAM_SEAT_AMOUNT    ?? 1500);   // $15/seat/mo
+const SEAT_YEARLY  = Number(process.env.PULSE_TEAM_SEAT_YEARLY    ?? 15000);  // $150/seat/yr (10-for-12)
 // Known active Pulse Team product (memory: stripe-configuration-price-ids, 2026-05-17).
 const TEAM_PRODUCT_ID = process.env.PULSE_TEAM_PRODUCT_ID ?? 'prod_UVsT5yp61p6Vxo';
 const TRIAL_DAYS = 30;
@@ -151,18 +153,26 @@ async function createPrice({ product, amount, interval, plan_id, cycle, nickname
 }
 
 // ── Main ────────────────────────────────────────────────────────────
+const SKIP_SOLO = process.env.SKIP_SOLO === 'true';
+
 try {
-  // 1) Pulse Solo (new tier)
-  const soloProduct = await ensureSoloProduct();
-  console.log('💰 Creating Pulse Solo prices...');
-  const soloMonthly = await createPrice({
-    product: soloProduct.id, amount: SOLO_MONTHLY, interval: 'month',
-    plan_id: 'pulse_solo', cycle: 'monthly', nickname: 'Pulse Solo Monthly',
-  });
-  const soloYearly = await createPrice({
-    product: soloProduct.id, amount: SOLO_YEARLY, interval: 'year',
-    plan_id: 'pulse_solo', cycle: 'yearly', nickname: 'Pulse Solo Yearly',
-  });
+  // 1) Pulse Solo (new tier) — skip when re-minting only the per-seat Team
+  //    prices (SKIP_SOLO=true), so a re-run doesn't create duplicate Solo prices.
+  let soloProduct = null, soloMonthly = null, soloYearly = null;
+  if (SKIP_SOLO) {
+    console.log('⏭️  SKIP_SOLO=true — leaving the Pulse Solo product/prices untouched.\n');
+  } else {
+    soloProduct = await ensureSoloProduct();
+    console.log('💰 Creating Pulse Solo prices...');
+    soloMonthly = await createPrice({
+      product: soloProduct.id, amount: SOLO_MONTHLY, interval: 'month',
+      plan_id: 'pulse_solo', cycle: 'monthly', nickname: 'Pulse Solo Monthly',
+    });
+    soloYearly = await createPrice({
+      product: soloProduct.id, amount: SOLO_YEARLY, interval: 'year',
+      plan_id: 'pulse_solo', cycle: 'yearly', nickname: 'Pulse Solo Yearly',
+    });
+  }
 
   // 2) Per-seat prices on the existing Pulse Team product
   console.log(`\n🔎 Verifying Pulse Team product ${TEAM_PRODUCT_ID}...`);
@@ -194,9 +204,13 @@ try {
   console.log('\n══════════════════════════════════════════════════════');
   console.log('✅ Done. Paste these into the new plans migration:');
   console.log('══════════════════════════════════════════════════════');
-  console.log(`  Pulse Solo product:        ${soloProduct.id}`);
-  console.log(`  Solo monthly ($20):        ${soloMonthly.id}`);
-  console.log(`  Solo yearly  ($200):       ${soloYearly.id}`);
+  if (!SKIP_SOLO) {
+    console.log(`  Pulse Solo product:        ${soloProduct.id}`);
+    console.log(`  Solo monthly ($20):        ${soloMonthly.id}`);
+    console.log(`  Solo yearly  ($200):       ${soloYearly.id}`);
+  } else {
+    console.log('  (Pulse Solo skipped — reuse the IDs from the prior run)');
+  }
   console.log(`  Team per-seat monthly:     ${seatMonthly.id}   ($${(SEAT_MONTHLY / 100).toFixed(0)}/seat)`);
   console.log(`  Team per-seat yearly:      ${seatYearly.id}   ($${(SEAT_YEARLY / 100).toFixed(0)}/seat)`);
   console.log('══════════════════════════════════════════════════════\n');
