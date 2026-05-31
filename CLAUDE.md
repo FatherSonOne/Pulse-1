@@ -251,6 +251,7 @@ spawns — the fix was to verify and commit after each step.
 - **Design tokens are canonical at `src/styles/pulse-tokens.css`.**
   Don't redeclare colors locally in component styles; consume via
   `var(--pulse-*)`. The `--pulse-coral` base lives in `src/App.css`.
+- **Schema-first for migrations — never guess at data structure.** Before writing ANY migration, RPC, or raw SQL that references a table/column, verify the real schema first (query `information_schema.columns`/`pg_proc` via the Supabase MCP, or read the table's migration). Do NOT infer column names or types from naming convention. Pulse's schema is inconsistent: some id columns are `text` not `uuid` (`voxer_recordings.user_id`, `tasks.user_id`, `contacts.user_id`, `emails.user_id`, etc.), some tables lack `user_id` and key off `sender_id`/`owner_id`/`created_by` (`vox_drops`, `brainstorm_sessions`, `relationships`), and triggers can block deletes (`workspace_members_protect_last_owner`). The 2026-05-31 `delete_user_account` repair took FIVE rounds because columns were guessed instead of checked. **Always dry-run a destructive migration in a rolled-back transaction (`DO $$ ... RAISE EXCEPTION 'rollback' $$`) until it completes clean, THEN apply once** — never apply-then-debug against the live function.
 - **Gemini routing is server-side.** All Gemini calls go through
   Supabase edge functions (`ai-router` and equivalents). Do not
   introduce direct API calls from React.
