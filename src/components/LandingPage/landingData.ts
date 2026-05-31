@@ -6,8 +6,8 @@
 // see "Index strip" comment in LandingPage.tsx. Counts retained here as a
 // reference doc against the shipped code:
 //   - 5 Relay peers (RelayView in Relay.tsx); Triage is a stream, not a peer
-//   - 6 communication surfaces (Messages, Email, SMS, Relay, Glimpse, Summit)
-//   - 7+ AI Models (Gemini, Claude, GPT-4o, Whisper, AssemblyAI, ElevenLabs, GPT-realtime)
+//   - 5 communication surfaces (Messages, Email, Relay, Glimpse, Summit) — in-app SMS gated OFF for v1 (inAppSms, #100)
+//   - 3 AI providers (Gemini, Claude, OpenAI) — matches Privacy Policy §5 (#112)
 //   - 4 CRMs (HubSpot, Salesforce, Pipedrive, Zoho)
 //   - 8 War Room commands (STUDIO_COMMANDS in useStudioCommands.ts)
 //   - 5 platform syncs (Slack, Gmail, Outlook+Teams, Zoom, Google Meet)
@@ -39,13 +39,13 @@ export const RELAY_PEERS = [
 ];
 
 export const FAQ_DATA = [
-  { q: "What is Pulse?", a: "Pulse is the AI-powered command surface for high-performance teams. It pulls messaging, email, SMS, voice (Relay's 5 peers + Triage stream), async video (Glimpse), calendar with meetings, contacts with CRM intelligence, maps and ETA sharing, an AI research studio (War Room), and analytics into one interface, organised by workspace. One operator, one screen, every signal." },
-  { q: "What AI models does Pulse support?", a: "Pulse integrates multiple AI providers: Google Gemini (primary, with built-in web search grounding), Anthropic Claude, OpenAI GPT-4, ElevenLabs for voice synthesis, OpenAI Whisper and AssemblyAI for transcription. You can switch between models in Settings → AI & Intelligence." },
+  { q: "What is Pulse?", a: "Pulse is the AI-powered command surface for high-performance teams. It pulls messaging, email, voice (Relay's 5 peers + Triage stream), async video (Glimpse), calendar with meetings, contacts with CRM intelligence, maps and ETA sharing, an AI research studio (War Room), and analytics into one interface, organised by workspace. One operator, one screen, every signal." },
+  { q: "What AI models does Pulse support?", a: "Pulse integrates Google Gemini (primary, with built-in web search grounding), Anthropic Claude, and OpenAI. You can switch between models in Settings → AI & Intelligence." },
   { q: "What is the War Room?", a: "The War Room is your AI command center — a research and strategy workspace with 8 slash commands (/brainstorm, /decide, /analyze, /summarize, /plan, /debrief, /risks, /compare), 4 specialized AI agents, RAG document intelligence, voice agent, and session management. Upload your docs and get context-aware AI responses." },
   { q: "What are the Relay peers?", a: "Triage (your unified voice-message stream — the default landing view), Direct (one-to-one voice with AI transcription), Channel (voice threads with @mentions), Broadcast (push-to-air for the whole team), Notes (personal voice journaling), and Live (persistent voice rooms, Discord-style). Glimpse — async video messaging with face-cam and screen recording — is a separate top-level section. AI transcription runs on every voice and video message." },
   { q: "Which CRM platforms does Pulse integrate with?", a: "Pulse offers 4 native CRM integrations: HubSpot, Salesforce, Pipedrive, and Zoho CRM. Additionally, Pulse includes Logos Vision — a built-in relationship intelligence system with 0-100 health scoring and bidirectional sync." },
   { q: "What platforms are in the Unified Inbox?", a: "Pulse syncs with Gmail, Slack, Microsoft Outlook/Teams, Zoom, and Google Meet. Each platform connects via OAuth in Settings → Integrations." },
-  { q: "Is my data encrypted?", a: "Yes. Pulse stores all data with AES-256 encryption at rest and TLS in transit. Support staff cannot read your message content — only metadata, with your explicit written consent." },
+  { q: "Is my data encrypted?", a: "Pulse encrypts your data in transit (TLS) and at rest (AES-256), and isolates every workspace with row-level security. Pulse does not offer end-to-end encryption: to power AI features like summaries, smart compose, and decision extraction, your content is processed server-side at the time of your request. We treat your content as confidential and restrict internal access through access controls and policy — but, unlike an end-to-end-encrypted messenger, there is no cryptographic barrier that makes content unreadable to us. We never use your content to train AI models." },
   { q: "What devices is Pulse available on?", a: "Pulse is available as a web app (any browser), Windows desktop app (installer or portable), and Android (Google Play Store or direct APK). iOS and macOS apps are coming soon." },
 ];
 
@@ -102,10 +102,10 @@ export const PULSE_TEAM_FEATURES = [
   'Unlimited team seats and workspaces',
   'All 5 Relay peers + Triage stream',
   'Glimpse async video + Studio RAG',
-  'Email, calendar, messaging, meetings, SMS',
+  'Email, calendar, messaging, meetings',
   'Maps with geofence alerts and ETA sharing',
   'Advanced analytics + full ecosystem bridge',
-  '2,000 AI messages / 500 SMS / 50 GB storage / mo',
+  '2,000 AI messages / 50 GB storage / mo',
 ];
 
 export const PULSE_TEAM_PRICING = {
@@ -116,12 +116,12 @@ export const PULSE_TEAM_PRICING = {
 };
 
 // ── Pricing — Pulse Growth tier ─────────────────────────────────────────────
-// 5× Team caps for AI/SMS/Relay, 10× storage, plus premium-only unlocks.
+// 5× Team caps for AI/Relay, 10× storage, plus premium-only unlocks.
 // Prices wired to Stripe test-mode product (price_1TWqj0Gb3AGXe9w8QMGNRIek monthly,
 // price_1TWqj1Gb3AGXe9w8oCk374f5 yearly). Keep in sync with the plans table.
 export const PULSE_GROWTH_FEATURES = [
   'Everything in Team, plus:',
-  '10,000 AI messages / 2,500 SMS / 500 GB / 2,500 Relay min / mo',
+  '10,000 AI messages / 500 GB / 2,500 Relay min / mo',
   'SSO / SAML, coming soon',
   'API access with rate-limited keys',
   'Audit log retention: 365 days',
