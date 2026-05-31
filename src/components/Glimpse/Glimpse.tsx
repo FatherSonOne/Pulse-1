@@ -135,134 +135,14 @@ const REACTION_EMOJIS = [
 // SUB-COMPONENTS
 // ============================================
 
-// Triage Cockpit row — information-dense conversation entry with AI summary
-// peek, action-count pill, and mono duration/timestamp. Replaces the previous
-// SMS-style ConversationItem (Direction 01, 2026-05-20).
-const ConversationItem: React.FC<{
-  conversation: GlimpseConversation;
-  currentUserId: string;
-  onClick: () => void;
-  isDarkMode: boolean;
-}> = ({ conversation, currentUserId, onClick, isDarkMode }) => {
-  const otherParticipants = conversation.participants.filter(p => p.id !== currentUserId);
-  const displayName = conversation.title ||
-    otherParticipants.map(p => p.name).join(', ') ||
-    'Video Chat';
-
-  const isUnread = (conversation.unreadCount ?? 0) > 0;
-  const isGroup = otherParticipants.length > 1;
-  const kindLabel = isGroup ? 'Group' : 'Glimpse';
-
-  const processing =
-    conversation.lastMessageProcessingStatus === 'pending' ||
-    conversation.lastMessageProcessingStatus === 'transcribing';
-  const hasSummary = !!conversation.lastMessageSummary;
-  const actionCount = conversation.lastMessageActionCount ?? 0;
-
-  // Summary text fallback chain: AI summary → caption → duration hint → empty.
-  const summary =
-    conversation.lastMessageSummary ||
-    conversation.lastMessageCaption ||
-    (conversation.lastMessageDuration
-      ? `${formatDuration(conversation.lastMessageDuration)} ${isGroup ? 'group ' : ''}glimpse`
-      : '');
-
-  // Neutral avatar fallback — no cyan, surface-soft tinted neutral.
-  const firstAvatar = otherParticipants[0];
-  const fallbackInitials = isGroup
-    ? `+${otherParticipants.length}`
-    : (firstAvatar?.name?.[0] || '?').toUpperCase();
-
-  // Build an aria-label that mirrors what sighted users see at a glance:
-  // unread weight, action count, AI status, sender, kind, duration, and a
-  // peek of the summary. Without these, AT users get a strictly worse inbox.
-  const ariaParts = [
-    isUnread && 'Unread',
-    actionCount > 0 && `${actionCount} action ${actionCount === 1 ? 'item' : 'items'}`,
-    processing && !hasSummary && 'AI transcribing',
-    displayName,
-    isGroup && 'group',
-    conversation.lastMessageDuration && formatDuration(conversation.lastMessageDuration),
-    conversation.lastMessageSummary && `Summary: ${conversation.lastMessageSummary}`,
-  ].filter(Boolean);
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`gl-tc-row ${isDarkMode ? 'dark' : 'light'}`}
-      data-unread={isUnread || undefined}
-      aria-label={ariaParts.join(' · ')}
-    >
-      <div className="gl-tc-avatar">
-        {firstAvatar?.avatarUrl ? (
-          <img src={firstAvatar.avatarUrl} alt="" />
-        ) : (
-          <span className="gl-tc-avatar-fallback">{fallbackInitials}</span>
-        )}
-      </div>
-
-      <div className="gl-tc-signal">
-        <div className="gl-tc-from">
-          {isUnread && <span className="gl-tc-unread-dot" aria-hidden="true" />}
-          <span className="gl-tc-from-name">{displayName}</span>
-          {/* Kind suffix only earns its place when it differentiates from the
-              default 1:1 glimpse — otherwise it's reading noise on every row. */}
-          {isGroup && <span className="gl-tc-kind">· {kindLabel}</span>}
-        </div>
-        {processing && !hasSummary ? (
-          <div className="gl-tc-summary-skeleton" aria-hidden="true">
-            <span /><span />
-          </div>
-        ) : summary ? (
-          <p className="gl-tc-summary">{summary}</p>
-        ) : (
-          <p className="gl-tc-summary gl-tc-summary-empty">No glimpses yet</p>
-        )}
-      </div>
-
-      <div className="gl-tc-actions">
-        {actionCount > 0 && (
-          <span className="gl-tc-action-pill">
-            {actionCount} {actionCount === 1 ? 'Action' : 'Actions'}
-          </span>
-        )}
-        {hasSummary && (
-          // Muted in triage rows: the summary IS the AI signal — a coral chip
-          // here just doubles the attention hit and busts the row's coral
-          // budget. Provenance stays via the leading-dot pattern + label.
-          <span className="gl-ai-chip muted gl-tc-ai-chip">Claude</span>
-        )}
-        {processing && !hasSummary && (
-          // Pending state stays loud: this is signaling active work in
-          // progress, which IS earned attention.
-          <span className="gl-ai-chip pending gl-tc-ai-chip">Transcribing</span>
-        )}
-        {/* Absence of action items is inferred from absence of pill — no need
-            to surface a "No actions" negative-signal label. */}
-      </div>
-
-      <div className="gl-tc-duration">
-        {conversation.lastMessageDuration
-          ? formatDuration(conversation.lastMessageDuration)
-          : '·'}
-      </div>
-
-      <div className="gl-tc-when">
-        {conversation.lastMessageAt
-          ? formatRelativeTime(conversation.lastMessageAt)
-          : 'NEW'}
-      </div>
-    </button>
-  );
-};
-
 // Reel poster card — the inbox grid unit that replaces the Triage Cockpit
 // table row (redesign 2026-05-27, Path D). Real thumbnail with a deterministic
 // gradient fallback, unread bead, sender, duration, 2-line AI summary, muted
 // provenance chip + coral action pill. One coral attention-hit per card.
-// NOTE: ConversationItem above + the .gl-tc-* table styles are retained until
-// the Reel grid is visually verified, per the redesign plan.
+// NOTE: the shared .gl-tc-action-pill / .gl-tc-ai-chip styles (reused below)
+// and the .gl-tc-empty* toolbar empty-state styles are intentionally kept; the
+// old ConversationItem table row + its dead .gl-tc-* layout styles were removed
+// once the Reel grid was verified (#122).
 const ReelCard: React.FC<{
   conversation: GlimpseConversation;
   currentUserId: string;

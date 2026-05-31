@@ -524,179 +524,6 @@
   padding: 0 0 32px;
 }
 
-.gl-tc-list {
-  /* Triage list owns its own padding so the sticky column-header can pin to
-     the section frame's top edge without an outer gap above it. */
-  padding-top: 0;
-}
-
-/* Column header strip. Widened actions column from 80px to 110px to fit the
-   horizontal pill+chip cluster on busy rows ("3 Actions" + "Claude" ≈ 108px). */
-.gl-tc-colhead {
-  display: grid;
-  grid-template-columns: 40px 1fr 110px 60px 56px;
-  gap: 12px;
-  align-items: center;
-  padding: 10px 20px;
-  border-bottom: 1px solid var(--gl-border);
-  background: var(--gl-canvas);
-  position: sticky;
-  top: 0;
-  z-index: 4;
-}
-
-.gl-tc-colhead .gl-label { color: var(--gl-ink-fog); }
-
-/* Triage row */
-.gl-tc-row {
-  display: grid;
-  grid-template-columns: 40px 1fr 110px 60px 56px;
-  gap: 12px;
-  align-items: center;
-  padding: 14px 20px;
-  border: none;
-  border-bottom: 1px solid var(--gl-border);
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  width: 100%;
-  cursor: pointer;
-  transition: background var(--gl-fast) var(--gl-ease);
-}
-
-.gl-tc-row:hover { background: var(--gl-surface-soft); }
-.gl-tc-row:focus-visible {
-  /* Outline is the focus signal — hover already supplies the background tint,
-     so keeping both rules on focus made the two states visually identical
-     apart from the outline. Lean on the outline alone. */
-  outline: 2px solid var(--gl-rose);
-  outline-offset: -2px;
-}
-.gl-tc-row:last-of-type { border-bottom: none; }
-
-.gl-tc-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-  background: var(--gl-surface-soft);
-  border: 1px solid var(--gl-border);
-  position: relative;
-}
-.gl-tc-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.gl-tc-avatar-fallback {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--gl-mono);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--gl-ink-cloth);
-}
-
-.gl-tc-signal {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.gl-tc-from {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--gl-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--gl-ink-cloth);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.gl-tc-row[data-unread] .gl-tc-from { color: var(--gl-ink); }
-
-.gl-tc-from-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-.gl-tc-unread-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--gl-rose);
-  flex-shrink: 0;
-}
-
-.gl-tc-kind {
-  font-family: var(--gl-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  color: var(--gl-ink-fog);
-  text-transform: uppercase;
-  flex-shrink: 0;
-}
-
-.gl-tc-summary {
-  margin: 0;
-  font-family: var(--gl-sans);
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--gl-ink-cloth);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  max-width: 56ch;
-}
-
-.gl-tc-row[data-unread] .gl-tc-summary { color: var(--gl-ink); }
-
-.gl-tc-summary-empty {
-  font-style: italic;
-  color: var(--gl-ink-fog);
-}
-
-.gl-tc-summary-skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-top: 2px;
-}
-.gl-tc-summary-skeleton span {
-  height: 9px;
-  border-radius: 3px;
-  background: var(--gl-surface-soft);
-  animation: gl-skel 1.6s ease-in-out infinite;
-}
-.gl-tc-summary-skeleton span:nth-child(1) { width: 76%; }
-.gl-tc-summary-skeleton span:nth-child(2) { width: 52%; }
-
-.gl-tc-actions {
-  /* Inline pill + chip on desktop — one coral attention-hit per row, not two
-     stacked vertically. Wraps to two lines only when the cluster doesn't fit
-     the 110px column (very long content; rare). */
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-}
-
 .gl-tc-action-pill {
   display: inline-flex;
   align-items: center;
@@ -724,47 +551,6 @@
   padding: 2px 6px;
   font-size: 9px;
 }
-
-.gl-tc-duration {
-  text-align: right;
-  font-family: var(--gl-mono);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
-  color: var(--gl-ink-cloth);
-}
-.gl-tc-row[data-unread] .gl-tc-duration { color: var(--gl-ink); }
-
-.gl-tc-when {
-  text-align: right;
-  font-family: var(--gl-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--gl-ink-fog);
-  white-space: nowrap;
-}
-
-/* Counter chip in the toolbar children slot — replaces the old cyan badge */
-.gl-tc-counter {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 4px;
-  background: var(--gl-surface-soft);
-  font-family: var(--gl-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  line-height: 1;
-}
-.gl-tc-counter-sep { color: var(--gl-ink-fog); }
-.gl-tc-counter-unread {
-  color: var(--gl-rose-deep);
-  font-weight: 500;
-}
-.video-vox-mode.dark .gl-tc-counter-unread { color: var(--gl-rose-bright); }
 
 /* Triage empty state */
 .gl-tc-empty {
@@ -855,8 +641,9 @@
    Replaces the Triage Cockpit table. A coral-bordered Tier-1 AI briefing
    card on top, then every glimpse as a poster card in a responsive grid,
    grouped Needs-you / FYI. Coral stays AI-signal-only (briefing border,
-   action pills, unread beads). The .gl-tc-* table styles above are retained
-   until the grid is visually verified.
+   action pills, unread beads). The shared .gl-tc-action-pill /
+   .gl-tc-ai-chip and .gl-tc-empty* styles above are kept (reused here + by the
+   empty state); the dead ConversationItem table styles were removed (#122).
    ============================================ */
 .gl-inbox {
   display: flex;
@@ -3300,46 +3087,6 @@
   .gl-recipient-bar-toggle { padding: 12px; }
   .gl-action-btn { padding: 12px 10px; }
   .gl-send-btn { padding: 14px 20px; }
-
-  /* Triage Cockpit row collapse — drop the 5-col grid into named areas.
-     The .gl-tc-signal wrapper goes display:contents so its children become
-     direct row children and can claim distinct grid areas.
-
-       columns: 40px 1fr auto
-       rows:    from      when
-                summary
-                actions   duration
-
-     Column-header strip hides — no room on mobile. */
-  .gl-tc-colhead { display: none; }
-
-  .gl-tc-row {
-    grid-template-columns: 40px 1fr auto;
-    grid-template-rows: auto auto auto;
-    grid-template-areas:
-      "avatar from     when"
-      "avatar summary  summary"
-      "avatar actions  duration";
-    padding: 14px 16px;
-    gap: 6px 12px;
-  }
-  .gl-tc-avatar { grid-area: avatar; grid-row: 1 / -1; align-self: start; }
-  .gl-tc-signal { display: contents; }
-  .gl-tc-from { grid-area: from; min-width: 0; }
-  .gl-tc-row .gl-tc-summary,
-  .gl-tc-row .gl-tc-summary-skeleton {
-    grid-area: summary;
-    max-width: none;
-  }
-  .gl-tc-actions {
-    grid-area: actions;
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .gl-tc-duration { grid-area: duration; justify-self: end; align-self: center; }
-  .gl-tc-when { grid-area: when; justify-self: end; align-self: center; }
 }
 
 /* ============================================
@@ -3350,14 +3097,12 @@
   .gl-stage[data-state="paused"],
   .gl-rec-dot,
   .gl-summary-skeleton span,
-  .gl-tc-summary-skeleton span,
   .gl-reel-summary-skel span,
   .gl-card-check,
   .gl-reaction-picker,
   .gl-record-btn,
   .gl-action-btn,
   .gl-card,
-  .gl-tc-row,
   .gl-tc-empty-cta,
   /* Path-D inbox / thread / header surfaces */
   .gl-inbox,
