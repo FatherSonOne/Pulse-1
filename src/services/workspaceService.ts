@@ -289,6 +289,22 @@ async function getCurrentUserId(): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
+// Members cache
+// ---------------------------------------------------------------------------
+// get_enriched_workspace_members is a moderately heavy RPC (joins pulse_users +
+// auth.users) called by every assignee dropdown / member list. Membership
+// changes rarely, so a short TTL cache + in-flight dedupe collapses repeated
+// mounts and render bursts into one round-trip. Mutations invalidate explicitly;
+// the TTL bounds any missed invalidation to a few seconds.
+const MEMBERS_CACHE_TTL_MS = 30_000;
+const _membersCache = new Map<string, { at: number; members: WorkspaceMember[] }>();
+const _membersInflight = new Map<string, Promise<WorkspaceMember[]>>();
+function invalidateMembersCache(workspaceId: string) {
+  _membersCache.delete(workspaceId);
+  _membersInflight.delete(workspaceId);
+}
+
+// ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
 
@@ -436,14 +452,23 @@ export const workspaceService = {
    * avatar_url, email, and handle from user_profiles + auth.users via
    * the get_enriched_workspace_members RPC.
    */
-  async getMembers(workspaceId: string): Promise<WorkspaceMember[]> {
-    const { data, error } = await supabase.rpc('get_enriched_workspace_members', {
-      p_workspace_id: workspaceId,
-    });
+  async getMembers(workspaceId: string, opts?: { force?: boolean }): Promise<WorkspaceMember[]> {
+    const now = Date.now();
+    if (!opts?.force) {
+      const cached = _membersCache.get(workspaceId);
+      if (cached && now - cached.at < MEMBERS_CACHE_TTL_MS) return cached.members;
+      const inflight = _membersInflight.get(workspaceId);
+      if (inflight) return inflight;
+    }
 
-    assertNoError(error, 'getMembers');
+    const fetchPromise = (async () => {
+      const { data, error } = await supabase.rpc('get_enriched_workspace_members', {
+        p_workspace_id: workspaceId,
+      });
 
-    return ((data ?? []) as Array<{
+      assertNoError(error, 'getMembers');
+
+      const members = ((data ?? []) as Array<{
       workspace_id: string;
       user_id: string;
       role: WorkspaceMember['role'];
@@ -464,7 +489,18 @@ export const workspaceService = {
       email: row.email || undefined,
       avatar_url: row.avatar_url || undefined,
       handle: row.handle || undefined,
-    }));
+      }));
+
+      _membersCache.set(workspaceId, { at: Date.now(), members });
+      return members;
+    })();
+
+    _membersInflight.set(workspaceId, fetchPromise);
+    try {
+      return await fetchPromise;
+    } finally {
+      _membersInflight.delete(workspaceId);
+    }
   },
 
   /**
@@ -722,6 +758,7 @@ export const workspaceService = {
       .neq('role', 'owner'); // guard: never overwrite the owner role
 
     assertNoError(error, 'updateMemberRole');
+    invalidateMembersCache(workspaceId);
   },
 
   /**
@@ -735,6 +772,7 @@ export const workspaceService = {
       .eq('user_id', userId);
 
     assertNoError(error, 'removeMember');
+    invalidateMembersCache(workspaceId);
 
     // Decrement the Stripe seat count. billingService.syncSeats queues a
     // billing_drift_log entry on failure so the reconciler picks it up.
