@@ -113,6 +113,19 @@ serve(async (req) => {
       ? plan.stripe_price_yearly
       : plan.stripe_price_monthly;
 
+    // Seat quantity. Pulse Team is PER-SEAT ($15/seat) — bill the current
+    // active member count (minimum 2 seats). billing-sync-seats /
+    // billing-reconcile-seats keep the quantity in sync after invites/removals.
+    // Solo (flat $20, 1 seat) and Growth (flat) stay quantity 1.
+    let seatQuantity = 1;
+    if (plan_id === 'pulse_team') {
+      const { count: memberCount } = await adminClient
+        .from('workspace_members')
+        .select('user_id', { count: 'exact', head: true })
+        .eq('workspace_id', workspace_id);
+      seatQuantity = Math.max(2, memberCount ?? 1);
+    }
+
     // Get or create Stripe customer
     const { data: workspace } = await adminClient
       .from('workspaces')
@@ -255,7 +268,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: seatQuantity }],
       success_url,
       cancel_url,
       metadata: { workspace_id },

@@ -19,8 +19,8 @@ const PULSE_TEAM_PLAN_ID = 'pulse_team';
 const PULSE_GROWTH_PLAN_ID = 'pulse_growth';
 
 const PULSE_TEAM_PRICING = {
-  monthly: 100,
-  yearly: 1000, // 2 months free vs. $1200
+  monthly: 15, // per seat / month
+  yearly: 150, // per seat / year — 2 months free vs. $180
 };
 
 const PULSE_GROWTH_PRICING = {
@@ -29,7 +29,7 @@ const PULSE_GROWTH_PRICING = {
 };
 
 const PULSE_TEAM_FEATURES: string[] = [
-  'Unlimited team seats',
+  'Per-seat billing — $15 / user / mo · min 2 seats',
   '2,000 AI messages / month',
   '500 SMS / month',
   '50 GB storage',
@@ -64,6 +64,29 @@ const GROWTH_COLORS = {
   gradient: 'linear-gradient(135deg, #7c3aed, #6366f1)',
   shadow: 'rgba(124, 58, 237, 0.3)',
   badge: '#7c3aed',
+};
+
+const PULSE_SOLO_PLAN_ID = 'pulse_solo';
+
+const PULSE_SOLO_PRICING = {
+  monthly: 20,
+  yearly: 200, // 10 months for 12 (matches the annual discount on Team/Growth)
+};
+
+const PULSE_SOLO_FEATURES: string[] = [
+  '1 seat — just you',
+  '1,500 AI messages / month',
+  '25 GB storage',
+  '300 Relay minutes / month',
+  'All Relay modes (Quick, Drop, Threads, Radio, Notes)',
+  'Video Vox + Studio RAG',
+  'Email, calendar, messaging, meetings',
+];
+
+const SOLO_COLORS = {
+  gradient: 'linear-gradient(135deg, #fb7185, #f43f5e)', // rose — distinct from Team magenta / Growth purple
+  shadow: 'rgba(244, 63, 94, 0.3)',
+  badge: '#f43f5e',
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -126,6 +149,7 @@ export const BillingSettings: React.FC = () => {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [growthCycle, setGrowthCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [soloCycle, setSoloCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -243,6 +267,27 @@ export const BillingSettings: React.FC = () => {
         window.location.href = url;
       } catch (err) {
         console.error('Checkout failed:', err);
+        setLoadError(err instanceof Error ? err.message : 'Checkout failed. Try again.');
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [workspaceId],
+  );
+
+  const handleCheckoutSolo = useCallback(
+    async (cycle: 'monthly' | 'yearly') => {
+      if (!workspaceId) return;
+      setActionLoading('checkout-solo');
+      try {
+        const url = await billingService.createCheckout({
+          workspaceId,
+          planId: PULSE_SOLO_PLAN_ID,
+          billingCycle: cycle,
+        });
+        window.location.href = url;
+      } catch (err) {
+        console.error('Solo checkout failed:', err);
         setLoadError(err instanceof Error ? err.message : 'Checkout failed. Try again.');
       } finally {
         setActionLoading(null);
@@ -520,9 +565,9 @@ export const BillingSettings: React.FC = () => {
                 </>
               ) : (
                 <>
-                  ${activeMonthlyEquivalent}/mo
+                  ${activeMonthlyEquivalent}/user/mo
                   {subscriptionCycle === 'yearly' &&
-                    ` (billed $${PULSE_TEAM_PRICING.yearly.toLocaleString()}/yr)`}
+                    ` (billed $${PULSE_TEAM_PRICING.yearly.toLocaleString()}/user/yr)`}
                   {subscription?.current_period_end &&
                     ` · Next renewal: ${formatDate(subscription.current_period_end)}`}
                   {subscription?.cancel_at_period_end && ' · Cancels at period end'}
@@ -596,6 +641,135 @@ export const BillingSettings: React.FC = () => {
         </div>
       )}
 
+      {/* Solo upgrade card — the entry/hero tier (1 seat, flat price). Rendered
+          first, gated identically to the Team trial card below. */}
+      {isTrialing && canManageBilling && entitlements?.apps?.pulse !== 'growth' && (
+        <div
+          className="rounded-2xl p-6"
+          style={{
+            background: 'var(--pulse-surface)',
+            border: `2px solid ${SOLO_COLORS.badge}40`,
+          }}
+        >
+          <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h4
+                  className="text-lg font-bold"
+                  style={{ color: 'var(--pulse-ink)' }}
+                >
+                  Pulse Solo
+                </h4>
+                <span
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded"
+                  style={{
+                    background: `${SOLO_COLORS.badge}20`,
+                    color: SOLO_COLORS.badge,
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  SOLO
+                </span>
+              </div>
+              <p className="text-sm" style={{ color: 'var(--pulse-ink-3)' }}>
+                Just you — the full Pulse toolkit at the entry price.
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold" style={{ color: 'var(--pulse-ink)' }}>
+                $
+                {soloCycle === 'monthly'
+                  ? PULSE_SOLO_PRICING.monthly
+                  : Math.round(PULSE_SOLO_PRICING.yearly / 12)}
+                <span
+                  className="text-sm font-normal"
+                  style={{ color: 'var(--pulse-ink-3)' }}
+                >
+                  /mo
+                </span>
+              </div>
+              {soloCycle === 'yearly' && (
+                <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
+                  ${PULSE_SOLO_PRICING.yearly.toLocaleString()} billed yearly · 2 months free
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Billing cycle toggle */}
+          <div
+            className="flex items-center gap-2 rounded-xl p-1 mb-5"
+            style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}
+          >
+            <button
+              type="button"
+              onClick={() => setSoloCycle('monthly')}
+              className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+              style={{
+                background: soloCycle === 'monthly' ? SOLO_COLORS.gradient : 'transparent',
+                color: soloCycle === 'monthly' ? 'white' : 'var(--pulse-ink-3)',
+                boxShadow: soloCycle === 'monthly' ? `0 2px 8px ${SOLO_COLORS.shadow}` : 'none',
+              }}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => setSoloCycle('yearly')}
+              className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+              style={{
+                background: soloCycle === 'yearly' ? SOLO_COLORS.gradient : 'transparent',
+                color: soloCycle === 'yearly' ? 'white' : 'var(--pulse-ink-3)',
+                boxShadow: soloCycle === 'yearly' ? `0 2px 8px ${SOLO_COLORS.shadow}` : 'none',
+              }}
+            >
+              Yearly
+              <span className="text-xs ml-1" style={{ color: '#10b981' }}>
+                2 months free
+              </span>
+            </button>
+          </div>
+
+          {/* Features */}
+          <ul className="space-y-2 mb-5">
+            {PULSE_SOLO_FEATURES.map((feat) => (
+              <li
+                key={feat}
+                className="flex items-start gap-2 text-sm"
+                style={{ color: 'var(--pulse-ink-2)' }}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ stroke: SOLO_COLORS.badge, marginTop: 3, flexShrink: 0 }}
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>{feat}</span>
+              </li>
+            ))}
+          </ul>
+
+          <button
+            type="button"
+            onClick={() => handleCheckoutSolo(soloCycle)}
+            disabled={actionLoading === 'checkout-solo'}
+            className="w-full py-3 px-4 text-sm font-semibold rounded-xl transition-all text-white disabled:opacity-50"
+            style={{
+              background: SOLO_COLORS.gradient,
+              boxShadow: `0 4px 12px ${SOLO_COLORS.shadow}`,
+            }}
+          >
+            {actionLoading === 'checkout-solo' ? 'Redirecting to checkout...' : 'Get Pulse Solo'}
+          </button>
+        </div>
+      )}
+
       {/* Trial upgrade card — only when on a Team trial. Defensive `apps.pulse`
           check prevents this card from leaking through if entitlements drift
           (e.g. trial sub left dangling after upgrade — see the May-14 incident). */}
@@ -629,12 +803,16 @@ export const BillingSettings: React.FC = () => {
                   className="text-sm font-normal"
                   style={{ color: 'var(--pulse-ink-3)' }}
                 >
-                  /mo
+                  /user/mo
                 </span>
               </div>
-              {selectedCycle === 'yearly' && (
+              {selectedCycle === 'yearly' ? (
                 <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
-                  ${PULSE_TEAM_PRICING.yearly.toLocaleString()} billed yearly · 2 months free
+                  ${PULSE_TEAM_PRICING.yearly.toLocaleString()} / user billed yearly · 2 months free
+                </div>
+              ) : (
+                <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
+                  billed per active seat, min 2
                 </div>
               )}
             </div>
