@@ -1,8 +1,8 @@
 # Pulse Positioning Guide — Lead Message & v1 Lane (#119)
 
-**Status: LANE A LOCKED 2026-05-31 (solo-first) — pricing gated on the unit-economics re-eval before landing copy executes.** · **Created 2026-05-31** · Issue [#119](https://github.com/FatherSonOne/Pulse-1/issues/119) (`priority: medium`, `launch-roadmap`)
+**Status: LANE A LOCKED + pricing structure DECIDED 2026-05-31 (solo-first).** Downstream execution (landing-copy swap, Stripe pricing implementation) files as its own issues. · **Created 2026-05-31** · Issue [#119](https://github.com/FatherSonOne/Pulse-1/issues/119) (`priority: medium`, `launch-roadmap`)
 
-> **Operator decision (2026-05-31):** **Lane A confirmed (solo-first cross-surface AI hub, team as on-ramp).** One condition before the landing-copy swap executes: the current **$100/$300** prices feel wrong for a solo product, so **pricing is being re-evaluated first** — see `docs/PULSE_PRICING_UNIT_ECONOMICS_GUIDE.md` (per-solo-user COGS, break-even, recommended Solo tier). Lead message + differentiator ranking below stand as locked; only the price points are open.
+> **Operator decisions (2026-05-31):** **Lane A confirmed (solo-first cross-surface AI hub, team as on-ramp).** Pricing re-evaluated and decided — **Pulse Solo $20/mo (new hero tier), Team reframed to per-seat $15–20/seat (min 2), Growth $300 unchanged** (full model + COGS/break-even in `docs/PULSE_PRICING_UNIT_ECONOMICS_GUIDE.md`). Lead message + differentiator ranking below stand as locked. **Follow-ups (separate issues):** the landing-copy swap (adopt `PULSE_MARKETING_COPY_GUIDE.md` lane-A copy with the new prices) and the Stripe pricing implementation (catalog + plans/entitlements + billing UI).
 
 > Drafted by `/launch-prep` as a decision, not code. It lays out the lead message, the v1-lane options, and a ranked differentiator list with a recommendation. **Nothing here is executed** until the operator picks a lane — at which point the landing copy (`PULSE_MARKETING_COPY_GUIDE.md`, already lane-A-shaped), onboarding (#118), and ASO can cohere. Pairs with `/launch-followups v1-lane`.
 

@@ -1,6 +1,17 @@
 # Pulse Pricing & Unit Economics (#119 follow-on)
 
-**Status: ANALYSIS DRAFT — awaiting operator direction.** · **Created 2026-05-31** · Follows the #119 Lane-A decision (solo-first). Pairs with `docs/PULSE_POSITIONING_GUIDE.md`.
+**Status: PRICING STRUCTURE DECIDED 2026-05-31 — exact `[EST]` vendor rates still to be verified against real invoices.** · **Created 2026-05-31** · Follows the #119 Lane-A decision (solo-first). Pairs with `docs/PULSE_POSITIONING_GUIDE.md`.
+
+> ## DECIDED pricing structure (operator, 2026-05-31)
+> | Tier | Price | Seats | Notes |
+> |---|---|---|---|
+> | **Pulse Solo** *(new — Lane-A hero)* | **$20/mo** (~$200/yr at the existing 10-for-12 annual discount) | 1 | Solo-operator caps (≈ current Team AI/voice ceilings are fine; the 2k-msg cap ≈ $8/mo worst-case COGS) |
+> | **Pulse Team** *(reframe from $100 flat)* | **per-seat, $15–20/seat band** (default **$18/seat**, operator-adjustable) | **min 2** | Smooth solo→team on-ramp: a solo who adds one teammate goes $20 → ~$36, not a $100 cliff. Team caps. |
+> | **Pulse Growth** | **$300/mo** (unchanged) | unlimited | High-caps tier (10k AI msgs, 500 GB). Revisit where it sits relative to per-seat Team once Team is live. |
+>
+> **Margin check:** Solo $20 − ~$5 COGS − ~$0.88 Stripe ≈ **$14/user contribution**; break-even on ~$65/mo fixed infra ≈ **~5 paying Solo users**. Comfortable.
+>
+> **Still open (data, not decision):** verify the `[EST]` vendor rates below against real Anthropic/Google-AI/Daily/Supabase invoices; pin the exact Team per-seat number within $15–20. **Implementation** (Stripe catalog + `plans` table + entitlements migration + billing UI) is a **separate follow-up** — not yet built; needs explicit go-ahead (money-touching).
 
 > The operator locked **Lane A (solo-first)** but flagged that the current **$100 (Team) / $300 (Growth)** prices feel off for a solo product, and asked three questions before re-pricing: **(1) what does a solo user cost *me*? (2) how many users to break even? (3) what should the pricing model be?** This doc answers all three.
 >
@@ -112,10 +123,12 @@ Because the team caps (and the multiplayer retention value) justify more than a 
 
 ---
 
-## Open questions for the operator
-1. **Solo tier price:** $19 (land-grab) vs $24–29 (margin)?
-2. **Team model:** keep $100 flat small-team, or convert to per-seat (~$15–20/seat) for a smooth on-ramp?
-3. Can you share **real vendor invoice numbers** (Anthropic/Google AI spend, Daily, Supabase) so I can replace the `[EST]` rates and tighten the model?
+## Resolved + remaining
+- ✅ **Solo tier price:** **$20/mo** (operator, 2026-05-31).
+- ✅ **Team model:** **per-seat, $15–20/seat band** (operator, 2026-05-31; default $18/seat, min 2 seats).
+- ⬜ **Verify `[EST]` vendor rates** against real Anthropic/Google-AI/Daily/Supabase invoices — share them to tighten the model (the conclusion won't change; exact margins will sharpen).
+- ⬜ **Implementation** — new Stripe Solo product + per-seat Team price, `plans` table + entitlements migration, billing/checkout UI for the Solo tier + seat quantity. Money-touching; file as its own issue and get explicit go-ahead before executing.
 
 ## Changelog
+- **2026-05-31 (decision)** — Operator locked the structure: **Solo $20/mo**, **Team per-seat $15–20/seat** (default $18, min 2 seats), **Growth $300 unchanged**. Status → DECIDED. Remaining: verify `[EST]` vendor rates vs real invoices; implementation (Stripe + plans/entitlements + billing UI) is a separate go-ahead-gated follow-up.
 - **2026-05-31** — Created after the #119 Lane-A decision surfaced a pricing re-eval. Models per-solo-user COGS (~$3–6 typical, ~$12–15 heavy; AI cap ~$8 worst-case), break-even (~3–7 paying users at $15–30), and recommends a new ~$20–24 Solo tier + per-seat Team reframe. External unit prices tagged `[EST]` pending real invoices.
