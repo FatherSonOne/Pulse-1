@@ -1,6 +1,8 @@
 # Pulse CALEA Determination — Voice/Video (#110)
 
-**Status: DETERMINATION DRAFT — awaiting operator sign-off.** · **Created 2026-05-31** · Issue [#110](https://github.com/FatherSonOne/Pulse-1/issues/110) (`priority: medium`, `compliance`, `launch-roadmap`)
+**Status: DECIDED 2026-05-31 — CALEA N/A for v1; shipping on this engineering determination (operator declined a separate lawyer sign-off). The PSTN tripwire stands.** · **Created 2026-05-31** · Issue [#110](https://github.com/FatherSonOne/Pulse-1/issues/110) (`priority: medium`, `compliance`, `launch-roadmap`)
+
+> **Operator decision (2026-05-31):** Approve "CALEA N/A for v1" and ship on this architecture analysis — no separate telecom-lawyer confirmation commissioned. The determination rests on the dispositive fact that no Pulse surface interconnects with the PSTN. **Tripwire remains binding:** if Pulse ever adds PSTN-interconnected calling (phone numbers, dial-in/out, SIP, or a Daily/Twilio PSTN bridge), this determination is void and CALEA must be re-evaluated (TTP/Buy path) — the same architectural gate as #109 SMS.
 
 > ⚠️ **This is an engineering/architecture determination, NOT legal advice.** It records the facts and applies the FCC's published CALEA test to Pulse as currently architected, so the operator can make an informed call. Given the penalties for getting carrier-classification wrong, the recommendation is a **one-time confirmation by a telecom/comms lawyer** before launch — but the analysis below should make that read short and cheap, because the determinative fact is unambiguous.
 
