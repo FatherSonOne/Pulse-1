@@ -551,9 +551,19 @@ export const usePulseMessagesStore = create<PulseMessagesStore>()(
       set(state => {
         // Check for duplicate
         if (state.messages.some(m => m.id === msg.id)) return state;
-        // Replace any optimistic messages
-        const withoutOptimistic = state.messages.filter(m => !m.id.startsWith('temp-'));
-        return { messages: [...withoutOptimistic, msg] };
+        // Reconcile ONLY the matching optimistic placeholder (sender +
+        // content), not every pending temp- row — see the Messages.tsx
+        // realtime handler for the "overwritten message" bug this avoids.
+        let reconciled = false;
+        const next = state.messages.filter(m => {
+          if (reconciled || !m.id.startsWith('temp-')) return true;
+          if (m.sender_id === msg.sender_id && m.content === msg.content) {
+            reconciled = true;
+            return false;
+          }
+          return true;
+        });
+        return { messages: [...next, msg] };
       });
 
       // Refresh conversations (async, fire and forget)

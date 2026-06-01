@@ -1004,10 +1004,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     setRecentPulseContacts(pulseStore.recentContacts);
   }, [pulseStore.recentContacts]);
 
-  // Bridge: store messages -> local state
-  useEffect(() => {
-    setPulseMessages(pulseStore.messages);
-  }, [pulseStore.messages]);
+  // NOTE: there is deliberately NO `pulseStore.messages -> local` bridge.
+  // The DM thread is owned entirely by local `pulseMessages`: loaded by
+  // `selectPulseConversation`, appended optimistically by `sendPulseMessage`,
+  // and reconciled by the realtime subscription below. The store's message
+  // paths (`sendMessage` / `handleRealtimeMessage` / `selectConversation`)
+  // are not wired on this surface, so bridging `store.messages` in could only
+  // clobber freshly-sent local state with a stale snapshot. Single source of
+  // truth = local state.
 
   // Bridge: store reactions/stars -> local state
   useEffect(() => {
@@ -1054,13 +1058,28 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
       // Don't add duplicate messages (e.g., from our own send)
       setPulseMessages(prev => {
-        // Check if message already exists
+        // Already present — our own send was id-swapped (see sendPulseMessage),
+        // or the realtime echo arrived twice.
         if (prev.some(m => m.id === newMessage.id)) {
           return prev;
         }
-        // Check if this is replacing an optimistic message
-        const withoutOptimistic = prev.filter(m => !m.id.startsWith('temp-'));
-        return [...withoutOptimistic, newMessage];
+        // Reconcile the optimistic placeholder this row corresponds to — and
+        // ONLY that one. Match on sender + content and remove a single pending
+        // temp- row, so concurrent sends (or a slower sibling whose id-swap
+        // hasn't landed yet) are never swept away. Previously this stripped
+        // EVERY temp- message, which dropped a just-sent message whenever a
+        // different send's realtime echo arrived first — the reported
+        // "last message overwritten / new message not appearing" bug.
+        let reconciled = false;
+        const next = prev.filter(m => {
+          if (reconciled || !m.id.startsWith('temp-')) return true;
+          if (m.sender_id === newMessage.sender_id && m.content === newMessage.content) {
+            reconciled = true;
+            return false; // drop exactly this optimistic placeholder
+          }
+          return true;
+        });
+        return [...next, newMessage];
       });
 
       // Refresh conversations to update preview and unread counts
@@ -2349,41 +2368,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   useEffect(() => { scrollToBottom(); }, [activeThreadId, activeThread?.messages?.length, searchQuery, typingThreads, mobileView, catchUpSummary, showHandoffCard]);
 
-  // Phase 1: Simulate typing indicator for active thread contact
+  // Typing indicator for the active thread.
+  //
+  // There is intentionally NO simulated/random typing here. The real
+  // per-conversation typing signal for Pulse DMs flows through the Supabase
+  // broadcast channel (see `subscribeToTyping` / `otherUserTyping`). Showing a
+  // fake "typing…" state the other user never triggered is dishonest and was a
+  // direct cause of the "not really real-time messaging" critique. Until the
+  // broadcast SEND path is wired into this surface, `typingCollaborators`
+  // stays empty rather than inventing activity.
   useEffect(() => {
     if (!activeThread) {
       setTypingCollaborators([]);
-      return;
     }
-
-    // Randomly show typing indicator for demo purposes
-    // In production, this would connect to real-time presence service
-    const simulateTyping = () => {
-      const shouldShowTyping = Math.random() > 0.7; // 30% chance to show typing
-
-      if (shouldShowTyping) {
-        setTypingCollaborators([{
-          userId: activeThread.contactId,
-          userName: activeThread.contactName,
-          avatarColor: activeThread.avatarColor,
-          activity: 'typing',
-          timestamp: new Date()
-        }]);
-
-        // Stop typing after 2-4 seconds
-        const stopTypingTimeout = setTimeout(() => {
-          setTypingCollaborators([]);
-        }, 2000 + Math.random() * 2000);
-
-        return () => clearTimeout(stopTypingTimeout);
-      }
-    };
-
-    // Start typing simulation after 8-15 seconds
-    const startDelay = 8000 + Math.random() * 7000;
-    const startTimeout = setTimeout(simulateTyping, startDelay);
-
-    return () => clearTimeout(startTimeout);
   }, [activeThread?.id]);
 
   // --- Export Messages ---
