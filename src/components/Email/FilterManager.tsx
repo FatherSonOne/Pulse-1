@@ -226,36 +226,36 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 pulse-modal-scrim"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Modal */}
       <div
-        className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden border border-stone-200 dark:border-zinc-800"
+        className="relative pulse-surface rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden border pulse-border-color"
         role="dialog"
         aria-modal="true"
         aria-labelledby="filter-manager-title"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 dark:border-zinc-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b pulse-border-color">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-              <Filter className="text-white" />
+            <div className="w-10 h-10 rounded-xl pulse-surface-raised border pulse-border-color flex items-center justify-center pulse-ink-2-color">
+              <Filter className="w-[18px] h-[18px]" />
             </div>
             <div>
-              <h2 id="filter-manager-title" className="text-lg font-semibold text-stone-900 dark:text-white">
+              <h2 id="filter-manager-title" className="text-lg font-semibold pulse-ink-color">
                 Email Filters
               </h2>
-              <p className="text-sm text-stone-500 dark:text-zinc-500">
+              <p className="text-sm pulse-ink-3-color">
                 Automatically organize incoming emails
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
+            className="w-8 h-8 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color transition"
             aria-label="Close"
           >
             <X />
@@ -269,7 +269,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
             <div className="space-y-6">
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 dark:text-zinc-300 mb-2">
+                <label className="block font-mono-pulse tracking-wide-mono text-[10px] uppercase pulse-ink-3-color mb-2">
                   Filter Name (optional)
                 </label>
                 <input
@@ -277,44 +277,44 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                   value={editingFilter?.name || ''}
                   onChange={(e) => setEditingFilter({ ...editingFilter, name: e.target.value })}
                   placeholder="Auto-generated if empty"
-                  className="w-full px-4 py-2 bg-stone-100 dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-stone-900 dark:text-white placeholder-stone-500 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 pulse-surface border pulse-border-color rounded-lg pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
                 />
               </div>
 
               {/* Conditions */}
               <div>
-                <h3 className="text-sm font-medium text-stone-700 dark:text-zinc-300 mb-3">
+                <h3 className="font-serif-pulse text-[15px] font-medium pulse-ink-color mb-3">
                   When emails match...
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-stone-500 dark:text-zinc-500 w-20">From:</span>
+                    <span className="text-sm pulse-ink-2-color font-medium w-20">From:</span>
                     <input
                       type="text"
                       value={editingFilter?.from_contains || ''}
                       onChange={(e) => setEditingFilter({ ...editingFilter, from_contains: e.target.value })}
                       placeholder="Sender email or name"
-                      className="flex-1 px-3 py-2 bg-stone-100 dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm text-stone-900 dark:text-white placeholder-stone-500 focus:outline-none focus:border-blue-500"
+                      className="flex-1 px-3 py-2 pulse-surface border pulse-border-color rounded-lg text-sm pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
                     />
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-stone-500 dark:text-zinc-500 w-20">Subject:</span>
+                    <span className="text-sm pulse-ink-2-color font-medium w-20">Subject:</span>
                     <input
                       type="text"
                       value={editingFilter?.subject_contains || ''}
                       onChange={(e) => setEditingFilter({ ...editingFilter, subject_contains: e.target.value })}
                       placeholder="Words in subject"
-                      className="flex-1 px-3 py-2 bg-stone-100 dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm text-stone-900 dark:text-white placeholder-stone-500 focus:outline-none focus:border-blue-500"
+                      className="flex-1 px-3 py-2 pulse-surface border pulse-border-color rounded-lg text-sm pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
                     />
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-stone-500 dark:text-zinc-500 w-20">Body:</span>
+                    <span className="text-sm pulse-ink-2-color font-medium w-20">Body:</span>
                     <input
                       type="text"
                       value={editingFilter?.body_contains || ''}
                       onChange={(e) => setEditingFilter({ ...editingFilter, body_contains: e.target.value })}
                       placeholder="Words in body"
-                      className="flex-1 px-3 py-2 bg-stone-100 dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm text-stone-900 dark:text-white placeholder-stone-500 focus:outline-none focus:border-blue-500"
+                      className="flex-1 px-3 py-2 pulse-surface border pulse-border-color rounded-lg text-sm pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
                     />
                   </div>
                   <label className="flex items-center gap-3 cursor-pointer">
@@ -322,32 +322,32 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                       type="checkbox"
                       checked={editingFilter?.has_attachment || false}
                       onChange={(e) => setEditingFilter({ ...editingFilter, has_attachment: e.target.checked || undefined })}
-                      className="w-4 h-4 rounded border-stone-300 dark:border-zinc-600 text-blue-500 focus:ring-blue-500/30"
+                      className="w-4 h-4 rounded pulse-border-strong-color accent-[color:var(--pulse-rose)]"
                     />
-                    <span className="text-sm text-stone-700 dark:text-zinc-300">Has attachment</span>
+                    <span className="text-sm pulse-ink-color">Has attachment</span>
                   </label>
                 </div>
               </div>
 
               {/* Actions */}
               <div>
-                <h3 className="text-sm font-medium text-stone-700 dark:text-zinc-300 mb-3">
+                <h3 className="font-serif-pulse text-[15px] font-medium pulse-ink-color mb-3">
                   Do this...
                 </h3>
                 <div className="space-y-3">
                   {/* Apply labels */}
                   {availableLabels.length > 0 && (
                     <div>
-                      <span className="text-sm text-stone-500 dark:text-zinc-500 block mb-2">Apply labels:</span>
+                      <span className="block font-mono-pulse tracking-wide-mono text-[10px] uppercase pulse-ink-3-color mb-2">Apply labels</span>
                       <div className="flex flex-wrap gap-2">
                         {availableLabels.map((label) => (
                           <button
                             key={label.id}
                             onClick={() => toggleFilterLabel(label.name)}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition ${
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border transition ${
                               editingFilter?.apply_labels?.includes(label.name)
-                                ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30'
-                                : 'bg-stone-100 dark:bg-zinc-800 text-stone-600 dark:text-zinc-400 hover:bg-stone-200 dark:hover:bg-zinc-700'
+                                ? 'pulse-rose-bg-soft-color pulse-rose-border pulse-rose-color'
+                                : 'pulse-surface pulse-border-color pulse-ink-2-color hover:pulse-surface-raised'
                             }`}
                           >
                             <span
@@ -368,55 +368,56 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                         type="checkbox"
                         checked={editingFilter?.mark_as_read || false}
                         onChange={(e) => setEditingFilter({ ...editingFilter, mark_as_read: e.target.checked })}
-                        className="w-4 h-4 rounded border-stone-300 dark:border-zinc-600 text-blue-500 focus:ring-blue-500/30"
+                        className="w-4 h-4 rounded pulse-border-strong-color accent-[color:var(--pulse-rose)]"
                       />
-                      <span className="text-sm text-stone-700 dark:text-zinc-300">Mark as read</span>
+                      <span className="text-sm pulse-ink-color">Mark as read</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={editingFilter?.archive || false}
                         onChange={(e) => setEditingFilter({ ...editingFilter, archive: e.target.checked })}
-                        className="w-4 h-4 rounded border-stone-300 dark:border-zinc-600 text-blue-500 focus:ring-blue-500/30"
+                        className="w-4 h-4 rounded pulse-border-strong-color accent-[color:var(--pulse-rose)]"
                       />
-                      <span className="text-sm text-stone-700 dark:text-zinc-300">Skip inbox (archive)</span>
+                      <span className="text-sm pulse-ink-color">Skip inbox (archive)</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={editingFilter?.star || false}
                         onChange={(e) => setEditingFilter({ ...editingFilter, star: e.target.checked })}
-                        className="w-4 h-4 rounded border-stone-300 dark:border-zinc-600 text-blue-500 focus:ring-blue-500/30"
+                        className="w-4 h-4 rounded pulse-border-strong-color accent-[color:var(--pulse-rose)]"
                       />
-                      <span className="text-sm text-stone-700 dark:text-zinc-300">Star it</span>
+                      <span className="text-sm pulse-ink-color">Star it</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={editingFilter?.delete || false}
                         onChange={(e) => setEditingFilter({ ...editingFilter, delete: e.target.checked })}
-                        className="w-4 h-4 rounded border-stone-300 dark:border-zinc-600 text-red-500 focus:ring-red-500/30"
+                        className="w-4 h-4 rounded accent-[#ef4444]"
+                        style={{ borderColor: '#ef4444' }}
                       />
-                      <span className="text-sm text-red-600 dark:text-red-400">Delete it</span>
+                      <span className="text-sm" style={{ color: '#ef4444' }}>Delete it</span>
                     </label>
                   </div>
                 </div>
               </div>
 
               {/* Editor Actions */}
-              <div className="flex gap-3 pt-4 border-t border-stone-200 dark:border-zinc-800">
+              <div className="flex gap-3 pt-4 border-t pulse-border-color">
                 <button
                   onClick={() => {
                     setEditingFilter(null);
                     setShowCreate(false);
                   }}
-                  className="flex-1 px-4 py-2 bg-stone-200 dark:bg-zinc-800 hover:bg-stone-300 dark:hover:bg-zinc-700 rounded-lg text-stone-700 dark:text-white font-medium transition"
+                  className="flex-1 px-4 py-2 pulse-surface-raised border pulse-border-color hover:pulse-border-strong-color rounded-lg pulse-ink-color font-medium transition"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveFilter}
-                  className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white font-medium transition"
+                  className="flex-1 px-4 py-2 pulse-rose-bg-color hover:opacity-90 rounded-lg text-white font-medium transition"
                 >
                   {editingFilter?.id ? 'Update Filter' : 'Create Filter'}
                 </button>
@@ -427,11 +428,11 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
             <>
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="text-2xl text-stone-400 dark:text-zinc-600 animate-spin" />
+                  <Loader2 className="w-6 h-6 pulse-ink-3-color animate-spin" />
                 </div>
               ) : filters.length === 0 ? (
-                <div className="text-center py-12 text-stone-500 dark:text-zinc-500">
-                  <Filter className="text-4xl mb-4 opacity-50" />
+                <div className="text-center py-12 pulse-ink-3-color">
+                  <Filter className="w-9 h-9 mx-auto mb-4 opacity-50" />
                   <p className="font-medium">No filters yet</p>
                   <p className="text-sm mt-1">Create filters to automatically organize your emails</p>
                 </div>
@@ -442,66 +443,65 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                       key={filter.id}
                       className={`p-4 rounded-xl border transition ${
                         filter.enabled
-                          ? 'bg-white dark:bg-zinc-800/50 border-stone-200 dark:border-zinc-800'
-                          : 'bg-stone-100 dark:bg-zinc-900/50 border-stone-200 dark:border-zinc-800/50 opacity-60'
+                          ? 'pulse-surface pulse-border-color hover:pulse-border-strong-color'
+                          : 'pulse-surface-raised pulse-border-color opacity-60'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium text-stone-900 dark:text-white truncate">
+                            <h4 className="font-semibold pulse-ink-color truncate">
                               {filter.name}
                             </h4>
                             {!filter.enabled && (
-                              <span className="text-xs px-2 py-0.5 bg-stone-200 dark:bg-zinc-700 text-stone-500 dark:text-zinc-400 rounded">
+                              <span className="font-mono-pulse text-[10px] uppercase tracking-wide-mono px-2 py-0.5 pulse-surface-raised pulse-ink-3-color rounded">
                                 Disabled
                               </span>
                             )}
                           </div>
 
-                          {/* Conditions */}
-                          <div className="flex flex-wrap gap-2 text-xs text-stone-500 dark:text-zinc-500 mb-2">
+                          {/* When … → Then … flow */}
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                            <span className="font-mono-pulse text-[9.5px] uppercase tracking-wide-mono pulse-ink-3-color">When</span>
                             {filter.from_contains && (
-                              <span className="px-2 py-0.5 bg-stone-100 dark:bg-zinc-800 rounded">
-                                from:{filter.from_contains}
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 pulse-surface-raised pulse-ink-2-color rounded">
+                                from: {filter.from_contains}
                               </span>
                             )}
                             {filter.subject_contains && (
-                              <span className="px-2 py-0.5 bg-stone-100 dark:bg-zinc-800 rounded">
-                                subject:{filter.subject_contains}
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 pulse-surface-raised pulse-ink-2-color rounded">
+                                subject: {filter.subject_contains}
                               </span>
                             )}
                             {filter.has_attachment && (
-                              <span className="px-2 py-0.5 bg-stone-100 dark:bg-zinc-800 rounded">
-                                has:attachment
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 pulse-surface-raised pulse-ink-2-color rounded">
+                                has: attachment
                               </span>
                             )}
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex flex-wrap gap-2 text-xs">
+                            <span className="pulse-ink-3-color text-sm">→</span>
+                            <span className="font-mono-pulse text-[9.5px] uppercase tracking-wide-mono pulse-ink-3-color">Then</span>
                             {filter.apply_labels.map((label) => (
-                              <span key={label} className="px-2 py-0.5 bg-violet-500/10 text-violet-600 dark:text-violet-400 rounded">
-                                label:{label}
+                              <span key={label} className="font-mono-pulse text-[10.5px] px-2 py-0.5 pulse-surface-raised pulse-ink-color rounded">
+                                label: {label}
                               </span>
                             ))}
                             {filter.mark_as_read && (
-                              <span className="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded">
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-positive-soft)', color: '#047857' }}>
                                 mark read
                               </span>
                             )}
                             {filter.archive && (
-                              <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded">
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-warning-soft)', color: '#b45309' }}>
                                 archive
                               </span>
                             )}
                             {filter.star && (
-                              <span className="px-2 py-0.5 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 rounded">
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-info-soft)', color: 'var(--pulse-tone-info)' }}>
                                 star
                               </span>
                             )}
                             {filter.delete && (
-                              <span className="px-2 py-0.5 bg-red-500/10 text-red-600 dark:text-red-400 rounded">
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-overdue-soft)', color: '#ef4444' }}>
                                 delete
                               </span>
                             )}
@@ -509,7 +509,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
 
                           {/* Stats */}
                           {filter.match_count > 0 && (
-                            <p className="text-xs text-stone-400 dark:text-zinc-600 mt-2">
+                            <p className="font-mono-pulse text-[11px] pulse-ink-3-color mt-2 tnum">
                               Matched {filter.match_count} email{filter.match_count !== 1 ? 's' : ''}
                             </p>
                           )}
@@ -517,30 +517,39 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
 
                         {/* Actions */}
                         <div className="flex items-center gap-1">
+                          {/* Enable/disable toggle switch (replaces fa-toggle glyph) */}
                           <button
+                            type="button"
+                            role="switch"
+                            aria-checked={filter.enabled}
                             onClick={() => handleToggleFilter(filter)}
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${
+                            className={`relative w-[38px] h-[22px] rounded-full border transition-colors flex-none ${
                               filter.enabled
-                                ? 'text-green-500 hover:bg-green-500/10'
-                                : 'text-stone-400 dark:text-zinc-600 hover:bg-stone-100 dark:hover:bg-zinc-800'
+                                ? 'border-transparent'
+                                : 'pulse-surface-raised pulse-border-color'
                             }`}
+                            style={filter.enabled ? { background: 'var(--pulse-tone-positive)' } : undefined}
                             title={filter.enabled ? 'Disable filter' : 'Enable filter'}
                           >
-                            <i className={`fa-solid ${filter.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}`}></i>
+                            <span
+                              className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                                filter.enabled ? 'translate-x-4' : 'translate-x-0'
+                              }`}
+                            ></span>
                           </button>
                           <button
                             onClick={() => setEditingFilter(filter)}
-                            className="w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
+                            className="w-8 h-8 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color transition"
                             title="Edit filter"
                           >
-                            <Pen className="text-xs" />
+                            <Pen className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeleteFilter(filter.id)}
-                            className="w-8 h-8 rounded-lg hover:bg-red-500/10 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-red-500 transition"
+                            className="w-8 h-8 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color transition hover:text-[#ef4444]"
                             title="Delete filter"
                           >
-                            <Trash2 className="text-xs" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
@@ -562,9 +571,9 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                   });
                   setShowCreate(true);
                 }}
-                className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 rounded-lg text-white font-medium transition"
+                className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 pulse-rose-bg-color hover:opacity-90 rounded-lg text-white font-medium transition"
               >
-                <Plus />
+                <Plus className="w-4 h-4" />
                 Create New Filter
               </button>
             </>

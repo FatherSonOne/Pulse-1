@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
 import { CachedEmail } from '../../services/emailSyncService';
+import { AiChip } from './hybrid/primitives';
 
 import { Loader2, X } from 'lucide-react';
 
@@ -175,7 +176,14 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
   const getStrengthColor = (strength: number) => {
     if (strength >= 70) return 'text-green-500';
     if (strength >= 40) return 'text-yellow-500';
-    return 'text-stone-400 dark:text-zinc-500';
+    return 'pulse-ink-3-color';
+  };
+
+  // Get relationship strength bar fill (same thresholds as the number color)
+  const getStrengthBarColor = (strength: number) => {
+    if (strength >= 70) return '#22c55e';
+    if (strength >= 40) return '#eab308';
+    return 'var(--pulse-ink-3)';
   };
 
   // Format relative time
@@ -195,8 +203,8 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
 
   if (loading) {
     return (
-      <div className="w-72 border-l border-stone-200 dark:border-zinc-800 bg-stone-50 dark:bg-zinc-900/50 p-4 flex items-center justify-center">
-        <Loader2 className="text-rose-500 animate-spin" />
+      <div className="w-72 border-l pulse-border-color pulse-surface p-4 flex items-center justify-center">
+        <Loader2 className="pulse-rose-color animate-spin" />
       </div>
     );
   }
@@ -204,15 +212,15 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
   if (!contact) return null;
 
   return (
-    <div className="w-72 border-l border-stone-200 dark:border-zinc-800 bg-stone-50 dark:bg-zinc-900/50 flex flex-col overflow-hidden">
+    <div className="w-72 border-l pulse-border-color pulse-surface flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-stone-200 dark:border-zinc-800">
-        <span className="text-sm font-semibold text-stone-700 dark:text-zinc-300">Contact Info</span>
+      <div className="flex items-center justify-between p-4 border-b pulse-border-color">
+        <span className="font-mono-pulse tracking-wide-mono text-[11px] uppercase pulse-ink-3-color">Contact Info</span>
         <button
           onClick={onClose}
-          className="w-6 h-6 rounded hover:bg-stone-200 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-600 dark:hover:text-white transition"
+          className="w-6 h-6 rounded hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color transition"
         >
-          <X className="text-xs" />
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
@@ -228,52 +236,68 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
               className="w-16 h-16 rounded-full mx-auto mb-3"
             />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center text-white text-xl font-bold mx-auto mb-3">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold mx-auto mb-3"
+              style={{ background: 'linear-gradient(135deg, var(--pulse-rose), var(--pulse-pink))' }}
+            >
               {getInitials(contact.name, contact.email)}
             </div>
           )}
 
-          <h3 className="font-semibold text-stone-900 dark:text-white">
+          <h3 className="font-semibold pulse-ink-color">
             {contact.name || contact.email.split('@')[0]}
           </h3>
 
           {contact.title && (
-            <p className="text-sm text-stone-500 dark:text-zinc-500">{contact.title}</p>
+            <p className="text-sm pulse-ink-2-color">{contact.title}</p>
           )}
 
           {contact.company && (
-            <p className="text-sm text-stone-500 dark:text-zinc-500">{contact.company}</p>
+            <p className="text-sm pulse-ink-2-color">{contact.company}</p>
           )}
 
-          <p className="text-xs text-stone-400 dark:text-zinc-600 mt-1">{contact.email}</p>
+          <p className="text-xs pulse-ink-3-color mt-1">{contact.email}</p>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white dark:bg-zinc-800/50 rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-stone-900 dark:text-white">{contact.email_count}</div>
-            <div className="text-xs text-stone-500 dark:text-zinc-500">emails</div>
-          </div>
-          <div className="bg-white dark:bg-zinc-800/50 rounded-lg p-3 text-center">
-            <div className={`text-lg font-bold ${getStrengthColor(contact.relationship_strength)}`}>
-              {contact.relationship_strength}%
+        <div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="pulse-surface-raised border pulse-border-color rounded-lg p-3 text-center">
+              <div className="text-lg font-bold pulse-ink-color tnum">{contact.email_count}</div>
+              <div className="text-xs pulse-ink-3-color">emails</div>
             </div>
-            <div className="text-xs text-stone-500 dark:text-zinc-500">strength</div>
+            <div className="pulse-surface-raised border pulse-border-color rounded-lg p-3 text-center">
+              <div className={`text-lg font-bold tnum ${getStrengthColor(contact.relationship_strength)}`}>
+                {contact.relationship_strength}%
+              </div>
+              <div className="text-xs pulse-ink-3-color">strength</div>
+            </div>
+          </div>
+
+          {/* Strength meter bar (additive) — fill width = strength %, keeps the same color logic */}
+          <div className="h-[5px] rounded-full pulse-surface-raised overflow-hidden mt-2" aria-label={`Relationship strength ${contact.relationship_strength}%`}>
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.max(0, Math.min(100, contact.relationship_strength))}%`,
+                backgroundColor: getStrengthBarColor(contact.relationship_strength),
+              }}
+            ></div>
           </div>
         </div>
 
         {/* Last contact */}
-        <div className="bg-white dark:bg-zinc-800/50 rounded-lg p-3">
+        <div className="pulse-surface-raised border pulse-border-color rounded-lg p-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-stone-500 dark:text-zinc-500">Last contact</span>
-            <span className="text-xs font-medium text-stone-700 dark:text-zinc-300">
+            <span className="text-xs pulse-ink-3-color">Last contact</span>
+            <span className="text-xs font-medium pulse-ink-color">
               {formatRelativeTime(contact.last_contacted_at)}
             </span>
           </div>
           {contact.avg_response_time_hours && (
             <div className="flex items-center justify-between mt-2">
-              <span className="text-xs text-stone-500 dark:text-zinc-500">Avg response</span>
-              <span className="text-xs font-medium text-stone-700 dark:text-zinc-300">
+              <span className="text-xs pulse-ink-3-color">Avg response</span>
+              <span className="text-xs font-medium pulse-ink-color">
                 {contact.avg_response_time_hours < 1
                   ? `${Math.round(contact.avg_response_time_hours * 60)} min`
                   : `${Math.round(contact.avg_response_time_hours)} hrs`}
@@ -285,19 +309,19 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
         {/* Recent threads */}
         {recentThreads.length > 0 && (
           <div>
-            <h4 className="text-xs font-semibold text-stone-500 dark:text-zinc-500 uppercase tracking-wide mb-2">
+            <h4 className="font-mono-pulse tracking-wide-mono text-[11px] uppercase pulse-ink-3-color mb-2">
               Recent Threads
             </h4>
             <div className="space-y-2">
               {recentThreads.map((thread) => (
                 <button
                   key={thread.id}
-                  className="w-full text-left p-2 bg-white dark:bg-zinc-800/50 hover:bg-stone-100 dark:hover:bg-zinc-800 rounded-lg transition"
+                  className="w-full text-left p-2 pulse-surface-raised border pulse-border-color hover:pulse-border-strong-color rounded-lg transition"
                 >
-                  <div className="text-sm text-stone-700 dark:text-zinc-300 truncate">
+                  <div className="text-sm pulse-ink-color truncate">
                     {thread.subject}
                   </div>
-                  <div className="text-xs text-stone-400 dark:text-zinc-500">
+                  <div className="text-xs pulse-ink-3-color">
                     {formatRelativeTime(thread.date)}
                   </div>
                 </button>
@@ -309,13 +333,13 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
         {/* Notes */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-semibold text-stone-500 dark:text-zinc-500 uppercase tracking-wide">
+            <h4 className="font-mono-pulse tracking-wide-mono text-[11px] uppercase pulse-ink-3-color">
               Your Notes
             </h4>
             {!editingNotes && (
               <button
                 onClick={() => setEditingNotes(true)}
-                className="text-xs text-rose-500 hover:text-rose-600 font-medium"
+                className="text-xs pulse-rose-color hover:opacity-80 font-medium"
               >
                 Edit
               </button>
@@ -328,13 +352,13 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add notes about this contact..."
-                className="w-full bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg p-2 text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-zinc-500 resize-none focus:outline-none focus:border-rose-500"
+                className="w-full pulse-surface border pulse-border-color rounded-lg p-2 text-sm pulse-ink-color placeholder:pulse-ink-3-color resize-none focus:outline-none focus:pulse-rose-border"
                 rows={3}
               />
               <div className="flex gap-2">
                 <button
                   onClick={saveNotes}
-                  className="flex-1 bg-rose-500 hover:bg-rose-600 text-white text-xs font-medium py-1.5 rounded-lg transition"
+                  className="flex-1 pulse-rose-bg-color hover:opacity-90 text-white text-xs font-medium py-1.5 rounded-lg transition"
                 >
                   Save
                 </button>
@@ -343,18 +367,30 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
                     setNotes(contact.custom_notes || '');
                     setEditingNotes(false);
                   }}
-                  className="flex-1 bg-stone-200 dark:bg-zinc-800 hover:bg-stone-300 dark:hover:bg-zinc-700 text-stone-700 dark:text-zinc-300 text-xs font-medium py-1.5 rounded-lg transition"
+                  className="flex-1 pulse-surface-raised border pulse-border-color hover:pulse-border-strong-color pulse-ink-color text-xs font-medium py-1.5 rounded-lg transition"
                 >
                   Cancel
                 </button>
               </div>
             </div>
           ) : (
-            <div className="bg-white dark:bg-zinc-800/50 rounded-lg p-3 text-sm text-stone-600 dark:text-zinc-400">
-              {contact.custom_notes || contact.ai_notes || (
-                <span className="text-stone-400 dark:text-zinc-500 italic">No notes yet</span>
-              )}
-            </div>
+            contact.custom_notes ? (
+              <div className="pulse-surface-raised border pulse-border-color rounded-lg p-3 text-sm pulse-ink-2-color">
+                {contact.custom_notes}
+              </div>
+            ) : contact.ai_notes ? (
+              /* ai_notes is AI output → coral-permitted block */
+              <div className="pulse-coral-bg-08-color border pulse-border-color rounded-lg p-3">
+                <div className="mb-2">
+                  <AiChip>AI Notes</AiChip>
+                </div>
+                <p className="m-0 text-sm pulse-ink-2-color">{contact.ai_notes}</p>
+              </div>
+            ) : (
+              <div className="pulse-surface-raised border pulse-border-color rounded-lg p-3 text-sm pulse-ink-2-color">
+                <span className="pulse-ink-3-color italic">No notes yet</span>
+              </div>
+            )
           )}
         </div>
       </div>

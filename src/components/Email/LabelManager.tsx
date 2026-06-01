@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
 
-import { Check, Loader2, Plus, Tags, Trash2, X } from 'lucide-react';
+import { Check, Loader2, Pencil, Plus, Tags, Trash2, X } from 'lucide-react';
 
 interface EmailLabel {
   id: string;
@@ -47,6 +47,8 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState(LABEL_COLORS[0].value);
   const [selectedLabels, setSelectedLabels] = useState<Set<string>>(new Set(currentLabels));
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
 
   // Load labels
   useEffect(() => {
@@ -126,6 +128,44 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
     }
   };
 
+  // Begin inline rename
+  const startRename = (label: EmailLabel) => {
+    setEditingId(label.id);
+    setEditingName(label.name);
+  };
+
+  // Cancel inline rename
+  const cancelRename = () => {
+    setEditingId(null);
+    setEditingName('');
+  };
+
+  // Save inline rename (mirrors handleDeleteLabel/handleCreateLabel pattern)
+  const handleRenameLabel = async (labelId: string) => {
+    const trimmed = editingName.trim();
+    if (!trimmed) {
+      toast.error('Label name is required');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('email_labels')
+        .update({ name: trimmed })
+        .eq('id', labelId);
+
+      if (error) throw error;
+
+      setLabels(prev => prev.map(l => (l.id === labelId ? { ...l, name: trimmed } : l)));
+      setEditingId(null);
+      setEditingName('');
+      toast.success('Label renamed');
+    } catch (error) {
+      console.error('Error renaming label:', error);
+      toast.error('Failed to rename label');
+    }
+  };
+
   // Toggle label selection for email
   const toggleLabelForEmail = (labelName: string) => {
     const newSelected = new Set(selectedLabels);
@@ -170,36 +210,36 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 pulse-modal-scrim"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Modal */}
       <div
-        className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden border border-stone-200 dark:border-zinc-800"
+        className="relative pulse-surface rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden border pulse-border-color"
         role="dialog"
         aria-modal="true"
         aria-labelledby="label-manager-title"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 dark:border-zinc-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b pulse-border-color">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
-              <Tags className="text-white" />
+            <div className="w-10 h-10 rounded-xl pulse-surface-raised border pulse-border-color flex items-center justify-center pulse-ink-2-color">
+              <Tags className="w-[18px] h-[18px]" />
             </div>
             <div>
-              <h2 id="label-manager-title" className="text-lg font-semibold text-stone-900 dark:text-white">
+              <h2 id="label-manager-title" className="text-lg font-semibold pulse-ink-color">
                 {emailId ? 'Manage Labels' : 'Labels'}
               </h2>
-              <p className="text-sm text-stone-500 dark:text-zinc-500">
+              <p className="text-sm pulse-ink-3-color">
                 {emailId ? 'Add or remove labels' : 'Create and manage labels'}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
+            className="w-8 h-8 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color transition"
             aria-label="Close"
           >
             <X />
@@ -210,15 +250,15 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
         <div className="overflow-y-auto max-h-[50vh] p-6">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="text-2xl text-stone-400 dark:text-zinc-600 animate-spin" />
+              <Loader2 className="w-6 h-6 pulse-ink-3-color animate-spin" />
             </div>
           ) : (
             <>
               {/* Label list */}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {labels.length === 0 && !showCreate && (
-                  <div className="text-center py-8 text-stone-500 dark:text-zinc-500">
-                    <Tags className="text-3xl mb-3 opacity-50" />
+                  <div className="text-center py-8 pulse-ink-3-color">
+                    <Tags className="w-8 h-8 mx-auto mb-3 opacity-50" />
                     <p>No labels yet</p>
                     <p className="text-sm mt-1">Create your first label to organize emails</p>
                   </div>
@@ -227,12 +267,12 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                 {labels.map((label) => (
                   <div
                     key={label.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg transition cursor-pointer ${
+                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition cursor-pointer border ${
                       selectedLabels.has(label.name)
-                        ? 'bg-violet-500/10 border border-violet-500/30'
-                        : 'hover:bg-stone-100 dark:hover:bg-zinc-800/50 border border-transparent'
+                        ? 'pulse-rose-bg-soft-color pulse-rose-border'
+                        : 'hover:pulse-surface-raised border-transparent hover:pulse-border-color'
                     }`}
-                    onClick={() => emailId && toggleLabelForEmail(label.name)}
+                    onClick={() => emailId && editingId !== label.id && toggleLabelForEmail(label.name)}
                   >
                     {/* Color dot */}
                     <div
@@ -240,36 +280,88 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                       style={{ backgroundColor: label.color }}
                     ></div>
 
-                    {/* Label name */}
-                    <span className="flex-1 text-stone-900 dark:text-white font-medium">
-                      {label.name}
-                    </span>
+                    {/* Label name OR inline rename input */}
+                    {editingId === label.id ? (
+                      <input
+                        type="text"
+                        value={editingName}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleRenameLabel(label.id);
+                          if (e.key === 'Escape') cancelRename();
+                        }}
+                        className="flex-1 px-2 py-1 pulse-surface border pulse-border-color rounded-lg text-sm pulse-ink-color focus:outline-none focus:pulse-rose-border"
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="flex-1 pulse-ink-color font-medium">
+                        {label.name}
+                      </span>
+                    )}
 
                     {/* Checkbox for email mode */}
                     {emailId && (
                       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition ${
                         selectedLabels.has(label.name)
-                          ? 'bg-violet-500 border-violet-500'
-                          : 'border-stone-300 dark:border-zinc-600'
+                          ? 'pulse-rose-bg-color pulse-rose-border'
+                          : 'pulse-border-strong-color'
                       }`}>
                         {selectedLabels.has(label.name) && (
-                          <Check className="text-white text-xs" />
+                          <Check className="w-3 h-3 text-white" />
                         )}
                       </div>
                     )}
 
-                    {/* Delete button (only in manage mode) */}
+                    {/* Rename + Delete (only in manage mode) */}
                     {!emailId && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteLabel(label.id);
-                        }}
-                        className="w-7 h-7 rounded hover:bg-stone-200 dark:hover:bg-zinc-700 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-red-500 transition"
-                        aria-label={`Delete ${label.name} label`}
-                      >
-                        <Trash2 className="text-xs" />
-                      </button>
+                      editingId === label.id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRenameLabel(label.id);
+                            }}
+                            className="w-7 h-7 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-rose-color transition"
+                            aria-label="Save name"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              cancelRename();
+                            }}
+                            className="w-7 h-7 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color transition"
+                            aria-label="Cancel rename"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startRename(label);
+                            }}
+                            className="w-7 h-7 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color transition"
+                            aria-label={`Rename ${label.name} label`}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteLabel(label.id);
+                            }}
+                            className="w-7 h-7 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color transition hover:text-[#ef4444]"
+                            aria-label={`Delete ${label.name} label`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )
                     )}
                   </div>
                 ))}
@@ -277,14 +369,15 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
 
               {/* Create new label */}
               {showCreate ? (
-                <div className="mt-4 p-4 bg-stone-100 dark:bg-zinc-800/50 rounded-xl">
+                <div className="mt-4 p-4 pulse-surface-raised border pulse-border-color rounded-xl">
+                  <span className="block font-mono-pulse tracking-wide-mono text-[10px] uppercase pulse-ink-3-color mb-2">New label</span>
                   <div className="mb-3">
                     <input
                       type="text"
                       value={newLabelName}
                       onChange={(e) => setNewLabelName(e.target.value)}
                       placeholder="Label name..."
-                      className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-300 dark:border-zinc-700 rounded-lg text-stone-900 dark:text-white placeholder-stone-500 dark:placeholder-zinc-500 focus:outline-none focus:border-violet-500"
+                      className="w-full px-3 py-2 pulse-surface border pulse-border-color rounded-lg pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
                       autoFocus
                     />
                   </div>
@@ -296,7 +389,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                         key={color.value}
                         onClick={() => setNewLabelColor(color.value)}
                         className={`w-6 h-6 rounded-full transition ${
-                          newLabelColor === color.value ? 'ring-2 ring-offset-2 ring-violet-500 dark:ring-offset-zinc-900' : ''
+                          newLabelColor === color.value ? 'ring-2 ring-offset-2 ring-offset-transparent pulse-rose-border ring-[color:var(--pulse-rose)]' : ''
                         }`}
                         style={{ backgroundColor: color.value }}
                         title={color.name}
@@ -312,13 +405,13 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                         setShowCreate(false);
                         setNewLabelName('');
                       }}
-                      className="flex-1 px-4 py-2 bg-stone-200 dark:bg-zinc-700 hover:bg-stone-300 dark:hover:bg-zinc-600 rounded-lg text-stone-700 dark:text-white text-sm font-medium transition"
+                      className="flex-1 px-4 py-2 pulse-surface-raised border pulse-border-color hover:pulse-border-strong-color rounded-lg pulse-ink-color text-sm font-medium transition"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleCreateLabel}
-                      className="flex-1 px-4 py-2 bg-violet-500 hover:bg-violet-600 rounded-lg text-white text-sm font-medium transition"
+                      className="flex-1 px-4 py-2 pulse-rose-bg-color hover:opacity-90 rounded-lg text-white text-sm font-medium transition"
                     >
                       Create
                     </button>
@@ -327,9 +420,9 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
               ) : (
                 <button
                   onClick={() => setShowCreate(true)}
-                  className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-stone-100 dark:bg-zinc-800/50 hover:bg-stone-200 dark:hover:bg-zinc-800 rounded-lg text-stone-600 dark:text-zinc-400 text-sm font-medium transition"
+                  className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 pulse-surface-raised border border-dashed pulse-border-color hover:pulse-border-strong-color rounded-lg pulse-ink-2-color text-sm font-medium transition"
                 >
-                  <Plus />
+                  <Plus className="w-4 h-4" />
                   Create New Label
                 </button>
               )}
@@ -339,17 +432,17 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
 
         {/* Footer - Apply button for email mode */}
         {emailId && (
-          <div className="px-6 py-4 border-t border-stone-200 dark:border-zinc-800 bg-stone-50 dark:bg-zinc-900/50">
+          <div className="px-6 py-4 border-t pulse-border-color pulse-surface-raised">
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-2 bg-stone-200 dark:bg-zinc-800 hover:bg-stone-300 dark:hover:bg-zinc-700 rounded-lg text-stone-700 dark:text-white font-medium transition"
+                className="flex-1 px-4 py-2 pulse-surface border pulse-border-color hover:pulse-border-strong-color rounded-lg pulse-ink-color font-medium transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleApplyLabels}
-                className="flex-1 px-4 py-2 bg-violet-500 hover:bg-violet-600 rounded-lg text-white font-medium transition"
+                className="flex-1 px-4 py-2 pulse-rose-bg-color hover:opacity-90 rounded-lg text-white font-medium transition"
               >
                 Apply Labels
               </button>
