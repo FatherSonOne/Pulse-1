@@ -167,6 +167,8 @@ docs/*.md
 !docs/*-followup.md
 !docs/*-handoff.md
 !docs/*-polish.md
+# Triage reports are durable inputs to /triage-repair — keep them tracked.
+!docs/triage/*.md
 !docs/*-phase*.md
 !docs/*_HANDOFF_*.md
 !docs/*_AUDIT_*.md
