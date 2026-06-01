@@ -18,9 +18,10 @@ import { InlineArtifact } from '../ArtifactRenderers';
 import { MarkdownContent } from '../MarkdownContent';
 import { ProvenanceTag } from '../ProvenanceTag';
 import { SourcesUsedPanel } from './SourcesUsedPanel';
+import { ReasoningTrace } from './ReasoningTrace';
 import type { NoteType } from '../useBoardNotes';
 
-import { Brain, Copy, Pin, Sparkles, User as UserIcon } from 'lucide-react';
+import { Copy, Pin, Sparkles, User as UserIcon } from 'lucide-react';
 
 export interface MessageListProps {
   messages: AIMessage[];
@@ -94,24 +95,13 @@ export const MessageList: React.FC<MessageListProps> = ({
           )}
 
           <div className="ps-message-content">
-            {/* Thinking toggle (Phase 4 → ReasoningTrace) */}
-            {thinking && thinking.length > 0 && (
-              <button className="ps-thinking-toggle" onClick={() => toggleThinking(msg.id)}>
-                <Brain size={12} />
-                {isThinkingExpanded ? 'Hide' : 'Show'} thinking ({thinking.length} steps)
-              </button>
-            )}
-
-            {/* Thinking steps */}
-            {thinking && isThinkingExpanded && (
-              <div className="ps-thinking-panel">
-                {thinking.map((step, i) => (
-                  <div key={i} className="ps-thinking-step">
-                    <span className="ps-thinking-step-time">[{step.duration_ms}ms]</span>
-                    {step.thought}
-                  </div>
-                ))}
-              </div>
+            {/* Reasoning trace — coral disclosure, collapsed by default */}
+            {!isUser && thinking && thinking.length > 0 && (
+              <ReasoningTrace
+                steps={thinking}
+                expanded={isThinkingExpanded}
+                onToggle={() => toggleThinking(msg.id)}
+              />
             )}
 
             {/* Message content — inline artifacts for AI messages */}
