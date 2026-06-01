@@ -75,7 +75,9 @@ serve(async (req) => {
       return json({ error: 'Failed to count members' }, 500);
     }
 
-    const quantity = Math.max(memberCount ?? 1, 1);
+    // Provisional count for the pre-Stripe early returns; the AUTHORITATIVE
+    // quantity is computed below once we know the plan (per-seat vs flat).
+    const provisionalQty = Math.max(memberCount ?? 1, 1);
 
     // Fetch the active subscription for this workspace.
     const { data: subRow } = await admin
@@ -88,14 +90,14 @@ serve(async (req) => {
       .maybeSingle();
 
     if (!subRow?.stripe_subscription_id) {
-      return json({ quantity, skipped: 'no_active_subscription' });
+      return json({ quantity: provisionalQty, skipped: 'no_active_subscription' });
     }
 
     // Local-only placeholder subs (e.g., 'trial_*' used before checkout) have
     // no Stripe counterpart — skip the Stripe API call but still return the count.
     if (subRow.stripe_subscription_id.startsWith('trial_')) {
       return json({
-        quantity,
+        quantity: provisionalQty,
         skipped: 'local_trial',
         subscription_id: subRow.stripe_subscription_id,
       });
@@ -107,6 +109,28 @@ serve(async (req) => {
     if (!item) {
       return json({ error: 'Subscription has no items to update' }, 500);
     }
+
+    // Plan-aware seat model (Model A — seats = active members):
+    //   • Per-seat plan (Pulse Team, price metadata per_seat='true'): Stripe
+    //     quantity tracks the active member count, floored at 2 (Team min-2 —
+    //     a 1-seat Team at $15 would undercut Solo $20).
+    //   • Flat plan (Solo / Growth): quantity MUST stay 1 regardless of member
+    //     count — multiplying a flat price by members would massively overbill.
+    const isPerSeat = item.price?.metadata?.per_seat === 'true';
+    if (!isPerSeat) {
+      if (item.quantity !== 1) {
+        await stripe.subscriptionItems.update(item.id, {
+          quantity: 1,
+          proration_behavior: 'create_prorations',
+        });
+        console.log('[billing-sync-seats] flat plan — reset quantity to 1', {
+          workspace_id, subscription_id: subscription.id, from: item.quantity,
+        });
+      }
+      return json({ quantity: 1, skipped: 'flat_plan', subscription_id: subscription.id });
+    }
+
+    const quantity = Math.max(memberCount ?? 1, 2);
 
     if (item.quantity === quantity) {
       return json({ quantity, skipped: 'unchanged', subscription_id: subscription.id });

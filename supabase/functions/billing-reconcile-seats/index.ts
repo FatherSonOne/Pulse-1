@@ -126,7 +126,8 @@ serve(async (req) => {
         if (countErr) {
           throw new Error(`count error: ${countErr.message}`);
         }
-        const expected = Math.max(memberCount ?? 1, 1);
+        // Provisional member-based count, used only for the no-item error row.
+        const memberQty = Math.max(memberCount ?? 1, 1);
 
         // 3. Pull live Stripe state for the first item on the subscription.
         const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
@@ -135,7 +136,7 @@ serve(async (req) => {
           summaries.push({
             workspace_id: wsId,
             subscription_id: stripeSubId,
-            expected,
+            expected: memberQty,
             observed: 0,
             action: 'error',
             detail: 'subscription has no items',
@@ -143,6 +144,13 @@ serve(async (req) => {
           errors += 1;
           continue;
         }
+
+        // Plan-aware expected quantity (Model A — seats = active members):
+        //   per-seat Pulse Team (price metadata per_seat='true') → member count
+        //   floored at 2; flat Solo/Growth → always 1 (never multiply a flat
+        //   price by members).
+        const isPerSeat = item.price?.metadata?.per_seat === 'true';
+        const expected = isPerSeat ? Math.max(memberCount ?? 1, 2) : 1;
 
         const observed = item.quantity ?? 0;
 
