@@ -475,9 +475,40 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
     }
   };
 
+  // Ensure a session exists before chatting. War Room is usable immediately —
+  // the composer is always visible and the first send (or example prompt)
+  // lazily creates a session under the active project, instead of dead-ending
+  // when none is selected. Returns the session id to use for THIS send (state
+  // updates are async, so callers must use the returned id, not selectedSessionId).
+  const ensureSession = async (): Promise<string | null> => {
+    if (selectedSessionId) return selectedSessionId;
+    try {
+      const { data, error } = await ragService.createSession(
+        userId,
+        'War Room Chat',
+        undefined,
+        selectedProjectId || undefined,
+      );
+      if (error || !data) {
+        console.error('[War Room] ensureSession failed:', error);
+        toast.error('Could not start a session');
+        return null;
+      }
+      setSessions(prev => [data, ...prev]);
+      setSelectedSessionId(data.id);
+      return data.id;
+    } catch (e) {
+      console.error('[War Room] ensureSession exception:', e);
+      toast.error('Could not start a session');
+      return null;
+    }
+  };
+
   // Direct send message function that accepts message as parameter
   const sendMessageDirect = async (messageText: string) => {
-    if (!selectedSessionId || !messageText.trim()) return;
+    if (!messageText.trim() || isLoading) return;
+    const sessionId = await ensureSession();
+    if (!sessionId) return;
 
     const userMessage = messageText.trim();
     setInput('');
@@ -493,7 +524,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
       const currentMessages = getMissionMessages();
 
       // Add user message
-      const { data: userMsg } = await ragService.addMessage(selectedSessionId, userId, 'user', userMessage);
+      const { data: userMsg } = await ragService.addMessage(sessionId, userId, 'user', userMessage);
       const updatedMessagesWithUser = userMsg ? [...currentMessages, userMsg] : currentMessages;
       setMissionMessagesForCurrent(updatedMessagesWithUser);
       // Also update global messages for backward compatibility
@@ -690,7 +721,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
 
       // Add AI message with citations
       const { data: aiMsg } = await ragService.addMessage(
-        selectedSessionId,
+        sessionId,
         null,
         'assistant',
         response || 'I encountered an issue processing your request.',
@@ -736,9 +767,10 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
     }
   };
 
-  // Wrapper that uses input state (for UI send button)
+  // Wrapper that uses input state (for UI send button). Session is ensured
+  // inside sendMessageDirect, so no session gate here.
   const handleSendMessage = async () => {
-    if (!selectedSessionId || !input.trim()) return;
+    if (!input.trim()) return;
     await sendMessageDirect(input);
   };
 
@@ -1433,18 +1465,18 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
     toast.success(`Exported Session: ${session.title}`);
   }, [sessions, projects, getSessionMessagesForExport]);
 
-  // Handle creating a project from sidebar
+  // Handle creating a project from sidebar.
+  // ragService.createProject(userId, name, description?, color?) → { data, error }.
   const handleSidebarCreateProject = useCallback((name: string) => {
     setNewProjectName(name);
-    // Directly create the project
     const createProject = async () => {
       try {
-        const newProject = await ragService.createProject({
-          name,
-          user_id: userId,
-          icon: 'fa-rocket',
-          color: '#f43f5e',
-        });
+        const { data: newProject, error } = await ragService.createProject(userId, name, undefined, '#f43f5e');
+        if (error || !newProject) {
+          console.error('Failed to create project:', error);
+          toast.error('Failed to create project');
+          return;
+        }
         setProjects(prev => [...prev, newProject]);
         setSelectedProjectId(newProject.id);
         toast.success(`Created Project: ${name}`);
@@ -1456,16 +1488,23 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
     createProject();
   }, [userId]);
 
-  // Handle creating a session from sidebar
+  // Handle creating a session from sidebar.
+  // ragService.createSession(userId, title, description?, projectId?) → { data, error }.
   const handleSidebarCreateSession = useCallback((title: string, projectId?: string) => {
     const createSession = async () => {
       try {
-        const newSession = await ragService.createSession({
+        const { data: newSession, error } = await ragService.createSession(
+          userId,
           title,
-          user_id: userId,
-          project_id: projectId || selectedProjectId || undefined,
-        });
-        setSessions(prev => [...prev, newSession]);
+          undefined,
+          projectId || selectedProjectId || undefined,
+        );
+        if (error || !newSession) {
+          console.error('Failed to create session:', error);
+          toast.error('Failed to create session');
+          return;
+        }
+        setSessions(prev => [newSession, ...prev]);
         setSelectedSessionId(newSession.id);
         setMessages([]);
         toast.success(`Created Session: ${title}`);

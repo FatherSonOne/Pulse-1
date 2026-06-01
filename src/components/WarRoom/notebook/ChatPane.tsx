@@ -292,8 +292,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
         />
       )}
 
-      {/* ── Composer ──────────────────────────────────────────────────────── */}
-      {selectedSessionId && (
+      {/* ── Composer — always visible; first send lazily creates a session ──── */}
+      {
         <Composer
           input={input}
           setInput={setInput}
@@ -312,7 +312,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
           voiceDockOpen={showVoiceAgentPanel}
           onToggleVoiceDock={() => setShowVoiceAgentPanel(!showVoiceAgentPanel)}
         />
-      )}
+      }
     </>
   );
 };
