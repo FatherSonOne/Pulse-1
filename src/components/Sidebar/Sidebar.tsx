@@ -45,6 +45,8 @@ interface NavSection {
   color: 'rose' | 'pink' | 'coral' | 'rose-light' | 'red' | 'amber';
   items: NavItemConfig[];
   collapsible?: boolean;
+  /** Small muted caption under the section header (e.g. "likely to be cut"). */
+  note?: string;
 }
 
 interface SidebarProps {
@@ -107,7 +109,6 @@ const getNavSections = (): NavSection[] => {
         { icon: Search, label: 'Search', view: AppView.MULTI_MODAL },
         { icon: BarChart3, label: 'Analytics', view: AppView.ANALYTICS },
         { icon: MailOpen, label: 'Message Analytics', view: AppView.MESSAGE_ANALYTICS },
-        { icon: BookOpen, label: 'War Room', view: AppView.LIVE_AI },
         { icon: Archive, label: 'Archives', view: AppView.ARCHIVES },
         { icon: HelpCircle, label: 'User Guide', view: AppView.USERS_GUIDE },
       ],
@@ -116,6 +117,7 @@ const getNavSections = (): NavSection[] => {
       label: 'Experimental',
       color: 'amber',
       collapsible: true,
+      note: 'Not part of the core app — likely to be cut',
       items: [
         { icon: MessageSquare, label: 'Summit', view: AppView.LIVE },
         // Map stack still drives cross-section features (calendar travel
@@ -124,6 +126,9 @@ const getNavSections = (): NavSection[] => {
         // spiderfy layer, autopilot stubs) — sit it in Experimental
         // until the strangler refactor lands on main.
         { icon: MapPin, label: 'Map', view: AppView.MAP },
+        // War Room (NotebookLM-style RAG workspace) moved here 2026-06-01:
+        // functional engine but not a core lane; flagged for possible cut.
+        { icon: BookOpen, label: 'War Room', view: AppView.LIVE_AI },
       ],
     },
   ];
@@ -373,6 +378,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   isExpanded={isSectionExpanded}
                   onToggle={() => toggleSection(section.label)}
                 />
+                {section.note && !isCollapsed && isSectionExpanded && (
+                  <div
+                    style={{
+                      padding: '0 16px 8px 28px',
+                      marginTop: -2,
+                      fontSize: 10,
+                      lineHeight: 1.35,
+                      fontStyle: 'italic',
+                      color: 'var(--pulse-ink-3, #8a8a8a)',
+                    }}
+                  >
+                    {section.note}
+                  </div>
+                )}
                 {isSectionExpanded && section.items.map((item, itemIdx) => (
                   <NavItem
                     key={item.view}
