@@ -11,12 +11,9 @@ export { PulseStudio } from './PulseStudio';
 export type { PulseStudioProps } from './PulseStudio';
 
 // ── Core Components ───────────────────────────────────────────────────────────
-export { AudioVisualizer } from './AudioVisualizer';
 export { ModeSwitcher } from './ModeSwitcher';
 export type { WarRoomMode, MissionType, RoomType } from './ModeSwitcher';
-export { TokenStream } from './TokenStream';
 export { VoiceControl } from './VoiceControl';
-export { ThinkingPanel } from './ThinkingPanel';
 export { useVoiceSynthesis } from './VoiceSynthesis';
 
 // ── Phase 2: Artifacts ───────────────────────────────────────────────────────
