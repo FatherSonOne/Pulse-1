@@ -123,9 +123,8 @@ import MessageInput from './MessageInput';
 // `MessageInput` when off. See docs/messages-tools-redesign.md.
 import PulseComposer from './PulseComposer';
 import { ToolsMenuV2 } from './ToolsMenuV2';
-// PR 2 — Messages Tools Redesign · Surface 2 (message context-menu).
-// Gated on the `messageContextMenuV2` feature flag; falls back to the
-// legacy right-click menu when off. See docs/messages-tools-redesign.md.
+// Messages Tools Redesign · Surface 2 (message context-menu) — GA, the
+// only message menu. See docs/messages-tools-redesign.md.
 import {
   MessageContextMenu,
   EditedBadge,
@@ -147,10 +146,9 @@ import { GestureHandler } from './Messages/GestureHandler';
 import { TypingIndicator } from './Messages/TypingIndicator';
 
 // REDESIGN COMPONENTS - Phase 3
-import { useRadialMenu } from './Messages/RadialMenu';
-const RadialMenu = lazy(() => import('./Messages/RadialMenu').then(m => ({ default: m.RadialMenu })));
-import { useContextMenu } from './Messages/ContextMenu';
-const ContextMenu = lazy(() => import('./Messages/ContextMenu').then(m => ({ default: m.ContextMenu })));
+// RadialMenu / ContextMenu (the Phase-3 menus) are no longer used here —
+// removed 2026-05-31 in favour of the single MessageContextMenu. The
+// component files remain for src/examples + their unit tests.
 // Lazy-loaded for better performance
 const FeatureSettingsPanel = lazy(() => import('./Messages/FeatureSettingsPanel').then(m => ({ default: m.FeatureSettingsPanel })));
 import { useFeatures } from '../contexts/FeatureContext';
@@ -816,13 +814,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [pulseMessageReactions, setPulseMessageReactions] = useState<Record<string, Array<{ emoji: string; count: number; me: boolean }>>>({});
   const [starredPulseMessages, setStarredPulseMessages] = useState<Set<string>>(new Set());
   const [replyingToPulseMessage, setReplyingToPulseMessage] = useState<PulseMessage | null>(null);
-  const [pulseContextMenuMsgId, setPulseContextMenuMsgId] = useState<string | null>(null);
-  const [pulseContextMenuPosition, setPulseContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
-  const longPressTimerRef = useRef<number | null>(null);
 
-  // PR 2 — Surface 2 (message context-menu v2).
-  // Gated on the `messageContextMenuV2` feature flag — when off, all of
-  // this is dead code and the legacy menu above renders instead.
+  // Surface 2 (message context-menu) — the single message menu.
   const pulseCtxMenu = useMessageContextMenu();
   // Single shared long-press handler set — the callback extracts the
   // message id from the originating `data-message-id` attribute. Lets
@@ -844,12 +837,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     return () => window.clearTimeout(handle);
   }, [pulseEditToast]);
 
-  // Phase 3 Integration - RadialMenu, ContextMenu, FeatureSettings
-  const radialMenu = useRadialMenu();
-  const contextMenu = useContextMenu();
   const features = useFeatures();
-  const [radialMenuMessageId, setRadialMenuMessageId] = useState<string | null>(null);
-  const [contextMenuMessageId, setContextMenuMessageId] = useState<string | null>(null);
   const [showFeatureSettings, setShowFeatureSettings] = useState(false);
 
   // Phase 7b — tags (Pulse DM scope for now). Pulled from
@@ -1443,83 +1431,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     }
   }, [pulseMessages]);
 
-  // Create RadialMenu items for reactions
-  const createReactionItems = useCallback((messageId: string) => {
-    return [
-      {
-        id: 'thumbsup',
-        emoji: '👍',
-        label: 'Like',
-        onClick: () => {
-          handlePulseReaction(messageId, '👍');
-          radialMenu.close();
-        }
-      },
-      {
-        id: 'heart',
-        emoji: '❤️',
-        label: 'Love',
-        onClick: () => {
-          handlePulseReaction(messageId, '❤️');
-          radialMenu.close();
-        }
-      },
-      {
-        id: 'laugh',
-        emoji: '😂',
-        label: 'Laugh',
-        onClick: () => {
-          handlePulseReaction(messageId, '😂');
-          radialMenu.close();
-        }
-      },
-      {
-        id: 'wow',
-        emoji: '😮',
-        label: 'Wow',
-        onClick: () => {
-          handlePulseReaction(messageId, '😮');
-          radialMenu.close();
-        }
-      },
-      {
-        id: 'sad',
-        emoji: '😢',
-        label: 'Sad',
-        onClick: () => {
-          handlePulseReaction(messageId, '😢');
-          radialMenu.close();
-        }
-      },
-      {
-        id: 'fire',
-        emoji: '🔥',
-        label: 'Fire',
-        onClick: () => {
-          handlePulseReaction(messageId, '🔥');
-          radialMenu.close();
-        }
-      },
-      {
-        id: 'rocket',
-        emoji: '🚀',
-        label: 'Rocket',
-        onClick: () => {
-          handlePulseReaction(messageId, '🚀');
-          radialMenu.close();
-        }
-      },
-      {
-        id: 'clap',
-        emoji: '👏',
-        label: 'Clap',
-        onClick: () => {
-          handlePulseReaction(messageId, '👏');
-          radialMenu.close();
-        }
-      }
-    ];
-  }, [handlePulseReaction, radialMenu]);
+  // (createReactionItems removed 2026-05-31 — the RadialMenu it fed is gone;
+  // reactions now run through QuickReactionsBar + FullEmojiPicker.)
 
   // Toggle starred Pulse messages - persisted to Supabase
   const toggleStarPulseMessage = useCallback(async (messageId: string) => {
@@ -1670,95 +1583,25 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     }
   }, []);
 
-  // Open context menu for Pulse message (right-click or long-press)
-  const openPulseContextMenu = useCallback((msgId: string, x: number, y: number, element?: HTMLElement) => {
-    // If element is provided, calculate position from element bounds
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      const menuWidth = 200;
-      const menuHeight = 320;
+  // Open the (single) MessageContextMenu for a message id, anchored beside
+  // its bubble. Used by the swipe/long-press gestures below.
+  const openCtxMenuForMessage = useCallback((msgId: string) => {
+    const el = document.querySelector(`[data-message-id="${msgId}"]`) as HTMLElement | null;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const POPOVER_W = 240;
+    const center = rect.left + rect.width / 2;
+    const anchorX = typeof window !== 'undefined' && center > window.innerWidth / 2
+      ? Math.max(0, rect.right - POPOVER_W)
+      : rect.left;
+    pulseCtxMenu.openFromLongPress(anchorX, rect.top, el, msgId);
+  }, [pulseCtxMenu]);
 
-      // Position menu to the right of the message on desktop, or centered on mobile
-      const isMobile = window.innerWidth < 768;
-
-      if (isMobile) {
-        // On mobile, center the menu horizontally and position below the message
-        setPulseContextMenuPosition({
-          x: Math.max(10, Math.min(window.innerWidth / 2 - menuWidth / 2, window.innerWidth - menuWidth - 10)),
-          y: Math.min(rect.bottom + 8, window.innerHeight - menuHeight - 10)
-        });
-      } else {
-        // On desktop, position to the right of the message if space allows, otherwise to the left
-        const spaceOnRight = window.innerWidth - rect.right;
-        const spaceOnLeft = rect.left;
-
-        setPulseContextMenuPosition({
-          x: spaceOnRight >= menuWidth ? rect.right + 8 : Math.max(10, rect.left - menuWidth - 8),
-          y: Math.max(10, Math.min(rect.top, window.innerHeight - menuHeight - 10))
-        });
-      }
-    } else {
-      // Fallback to provided coordinates
-      setPulseContextMenuPosition({
-        x: Math.min(x, window.innerWidth - 200),
-        y: Math.min(y, window.innerHeight - 320)
-      });
-    }
-    setPulseContextMenuMsgId(msgId);
-  }, []);
-
-  // Close context menu
-  const closePulseContextMenu = useCallback(() => {
-    setPulseContextMenuMsgId(null);
-    setPulseContextMenuPosition(null);
-  }, []);
-
-  // Handle right-click on Pulse message
-  const handlePulseMessageContextMenu = useCallback((e: React.MouseEvent, msgId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Use new ContextMenu component - hook only takes (x, y)
-    contextMenu.open(e.clientX, e.clientY);
-    setContextMenuMessageId(msgId);
-  }, [contextMenu]);
-
-  // Handle opening context menu from a button click (e.g., "..." button)
-  const handleOpenContextMenuFromButton = useCallback((e: React.MouseEvent, msgId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Use new ContextMenu component - hook only takes (x, y)
-    const button = e.currentTarget as HTMLElement;
-    const rect = button.getBoundingClientRect();
-    contextMenu.open(rect.left, rect.bottom + 4);
-    setContextMenuMessageId(msgId);
-  }, [contextMenu]);
-
-  // Handle long-press start on Pulse message (for mobile)
-  const handlePulseLongPressStart = useCallback((e: React.TouchEvent, msgId: string) => {
-    const touch = e.touches[0];
-    longPressTimerRef.current = window.setTimeout(() => {
-      openPulseContextMenu(msgId, touch.clientX, touch.clientY);
-    }, 500); // 500ms long-press
-  }, [openPulseContextMenu]);
-
-  // Handle long-press end (cancel if released early)
-  const handlePulseLongPressEnd = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
-
-  // Gesture handlers for Phase 2 mobile optimizations
+  // Gesture handlers (GestureHandler wraps each bubble). Swipe-left and
+  // long-press open the single MessageContextMenu; swipe-right quick-replies.
   const handleSwipeLeftDelete = useCallback((msgId: string) => {
-    // Show confirmation or delete immediately based on user preference
-    // For now, we'll just show the context menu with delete option highlighted
-    const messageElement = document.querySelector(`[data-message-id="${msgId}"]`) as HTMLElement;
-    if (messageElement) {
-      const rect = messageElement.getBoundingClientRect();
-      openPulseContextMenu(msgId, rect.right - 200, rect.top + rect.height / 2);
-    }
-  }, [openPulseContextMenu]);
+    openCtxMenuForMessage(msgId);
+  }, [openCtxMenuForMessage]);
 
   const handleSwipeRightReply = useCallback((msgId: string) => {
     // Use functional setState to avoid dependency on pulseMessages array
@@ -1772,24 +1615,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   }, []);
 
   const handleGestureLongPress = useCallback((msgId: string) => {
-    // Open context menu on long-press - find element by data attribute
-    const messageElement = document.querySelector(`[data-message-id="${msgId}"]`) as HTMLElement;
-    if (messageElement) {
-      const rect = messageElement.getBoundingClientRect();
-      openPulseContextMenu(msgId, rect.right - 200, rect.top + rect.height / 2);
-    }
-  }, [openPulseContextMenu]);
-
-  // Close context menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => {
-      if (pulseContextMenuMsgId) {
-        closePulseContextMenu();
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [pulseContextMenuMsgId, closePulseContextMenu]);
+    openCtxMenuForMessage(msgId);
+  }, [openCtxMenuForMessage]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -4234,11 +4061,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             onReact={(messageId, emoji) => handlePulseReaction(messageId, emoji)}
                             hoverDelay={300}
                             enableMobileLongPress={false}
-                            // Suppress the legacy hover-bar whenever the new
+                            // Suppress the hover-bar whenever the
                             // MessageContextMenu is open. Prevents the dual-
                             // menu state where both the quick-reactions bar
                             // and the right-click menu render at once.
-                            disabled={features.isFeatureEnabled('messageContextMenuV2') && pulseCtxMenu.isOpen}
+                            disabled={pulseCtxMenu.isOpen}
                           renderReactionBar={({ onReact, position, isExiting }) => (
                             <motion.div
                               initial={{ opacity: 0, scale: 0.9, y: 8 }}
@@ -4335,41 +4162,34 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.15, delay: 0.2 }}
                                 onClick={(e) => {
-                                  // PR 2: when messageContextMenuV2 is on,
-                                  // route the hover-bar "..." through the
-                                  // new MessageContextMenu (which has
-                                  // Reply / Edit / Delete / Forward / Pin /
-                                  // Block / Report). Anchor at the message
+                                  // Route the hover-bar "..." through the
+                                  // MessageContextMenu. Anchor at the message
                                   // bubble (not the floating "..." button)
                                   // so the menu opens uniformly per bubble
                                   // — matches the right-click anchor.
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  if (features.isFeatureEnabled('messageContextMenuV2')) {
-                                    const bubble = document.querySelector<HTMLElement>(
-                                      `[data-message-id="${msg.id}"]`,
-                                    );
-                                    const rect = (bubble ?? (e.currentTarget as HTMLElement))
-                                      .getBoundingClientRect();
-                                    // Right-half bubbles (sent) anchor at
-                                    // rect.right - POPOVER_WIDTH; left-half
-                                    // (received) at rect.left. Matches the
-                                    // right-click logic in useMessageContextMenu.
-                                    const POPOVER_W = 240;
-                                    const bubbleCenter = rect.left + rect.width / 2;
-                                    const anchorX = typeof window !== 'undefined'
-                                      && bubbleCenter > window.innerWidth / 2
-                                      ? Math.max(0, rect.right - POPOVER_W)
-                                      : rect.left;
-                                    pulseCtxMenu.openFromLongPress(
-                                      anchorX,
-                                      rect.top,
-                                      bubble,
-                                      msg.id,
-                                    );
-                                  } else {
-                                    handleOpenContextMenuFromButton(e as any, msg.id);
-                                  }
+                                  const bubble = document.querySelector<HTMLElement>(
+                                    `[data-message-id="${msg.id}"]`,
+                                  );
+                                  const rect = (bubble ?? (e.currentTarget as HTMLElement))
+                                    .getBoundingClientRect();
+                                  // Right-half bubbles (sent) anchor at
+                                  // rect.right - POPOVER_WIDTH; left-half
+                                  // (received) at rect.left. Matches the
+                                  // right-click logic in useMessageContextMenu.
+                                  const POPOVER_W = 240;
+                                  const bubbleCenter = rect.left + rect.width / 2;
+                                  const anchorX = typeof window !== 'undefined'
+                                    && bubbleCenter > window.innerWidth / 2
+                                    ? Math.max(0, rect.right - POPOVER_W)
+                                    : rect.left;
+                                  pulseCtxMenu.openFromLongPress(
+                                    anchorX,
+                                    rect.top,
+                                    bubble,
+                                    msg.id,
+                                  );
                                 }}
                                 className="w-8 h-8 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors text-zinc-500"
                                 title="More options"
@@ -4383,37 +4203,30 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         >
                           <div
                             data-message-id={msg.id}
-                            tabIndex={features.isFeatureEnabled('messageContextMenuV2') ? -1 : undefined}
+                            tabIndex={-1}
                             className={`message-bubble ${isMe ? 'message-bubble-sent' : 'message-bubble-received'} cursor-pointer select-none transition-all`}
-                            // PR 2: when the v2 flag is on, route right-
-                            // click and long-press through the new menu;
-                            // legacy handler stays for the off-path.
+                            // Right-click and long-press open the
+                            // MessageContextMenu (the only message menu).
                             onContextMenu={(e) => {
-                              if (features.isFeatureEnabled('messageContextMenuV2')) {
-                                pulseV2LongPress.onContextMenu(e);
-                                pulseCtxMenu.openFromContextMenu(e, msg.id);
-                              } else {
-                                handlePulseMessageContextMenu(e, msg.id);
+                              pulseV2LongPress.onContextMenu(e);
+                              pulseCtxMenu.openFromContextMenu(e, msg.id);
+                            }}
+                            onPointerDown={pulseV2LongPress.onPointerDown}
+                            onPointerMove={pulseV2LongPress.onPointerMove}
+                            onPointerUp={pulseV2LongPress.onPointerUp}
+                            onPointerCancel={pulseV2LongPress.onPointerCancel}
+                            onPointerLeave={pulseV2LongPress.onPointerLeave}
+                            onKeyDown={(e) => {
+                              // Shift+F10 + ContextMenu key open the
+                              // menu from the keyboard (per a11y spec).
+                              if (
+                                (e.shiftKey && e.key === 'F10') ||
+                                e.key === 'ContextMenu'
+                              ) {
+                                e.preventDefault();
+                                pulseCtxMenu.openFromKeyboard(e.currentTarget, msg.id);
                               }
                             }}
-                            onPointerDown={features.isFeatureEnabled('messageContextMenuV2') ? pulseV2LongPress.onPointerDown : undefined}
-                            onPointerMove={features.isFeatureEnabled('messageContextMenuV2') ? pulseV2LongPress.onPointerMove : undefined}
-                            onPointerUp={features.isFeatureEnabled('messageContextMenuV2') ? pulseV2LongPress.onPointerUp : undefined}
-                            onPointerCancel={features.isFeatureEnabled('messageContextMenuV2') ? pulseV2LongPress.onPointerCancel : undefined}
-                            onPointerLeave={features.isFeatureEnabled('messageContextMenuV2') ? pulseV2LongPress.onPointerLeave : undefined}
-                            onKeyDown={features.isFeatureEnabled('messageContextMenuV2')
-                              ? (e) => {
-                                  // Shift+F10 + ContextMenu key open the
-                                  // menu from the keyboard (per a11y spec).
-                                  if (
-                                    (e.shiftKey && e.key === 'F10') ||
-                                    e.key === 'ContextMenu'
-                                  ) {
-                                    e.preventDefault();
-                                    pulseCtxMenu.openFromKeyboard(e.currentTarget, msg.id);
-                                  }
-                                }
-                              : undefined}
                           >
                             {/* Media content (images, audio, files) */}
                             {msg.media_url && msg.content_type === 'image' && (
@@ -4481,20 +4294,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             {/* Phase 7b: OG link preview cards. Renders nothing if no
                              *  URLs in the text — graceful enhancement. Cached server-side. */}
                             <MessageLinkPreviews text={msg.content} max={2} />
-                            {/* "edited" affordance — PR 2 swaps in the
-                                tooltip-on-hover EditedBadge when the
-                                flag is on (locked decision #4). */}
+                            {/* "edited" affordance — tooltip-on-hover badge
+                                surfacing the pre-edit text (locked decision #4). */}
                             {msg.metadata?.edited && (
-                              features.isFeatureEnabled('messageContextMenuV2') ? (
-                                <EditedBadge
-                                  edited
-                                  originalText={pulseEditedOriginals[msg.id] || (msg.metadata?.original_content as string | undefined) || null}
-                                />
-                              ) : (
-                                <span className="ml-2 align-baseline font-mono uppercase tracking-[0.1em] text-[9px] opacity-60">
-                                  edited
-                                </span>
-                              )
+                              <EditedBadge
+                                edited
+                                originalText={pulseEditedOriginals[msg.id] || (msg.metadata?.original_content as string | undefined) || null}
+                              />
                             )}
                           </div>
                         </HoverReactionTrigger>
@@ -4509,137 +4315,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           </div>
                         )}
 
-                        {/* Context Menu - appears on right-click or long-press */}
-                        {/* PR 2: when `messageContextMenuV2` is on we
-                            hide this legacy menu entirely; the new
-                            <MessageContextMenu> singleton renders below
-                            the message list instead. */}
-                        {!features.isFeatureEnabled('messageContextMenuV2') && pulseContextMenuMsgId === msg.id && pulseContextMenuPosition && (
-                          <div
-                            className="fixed z-50 animate-fade-in"
-                            style={{
-                              top: Math.min(pulseContextMenuPosition.y, window.innerHeight - 320),
-                              left: Math.min(pulseContextMenuPosition.x, window.innerWidth - 200)
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <div className="bg-white dark:bg-black rounded-2xl shadow-2xl border border-zinc-200 dark:border-white/[0.06] overflow-hidden min-w-[180px] backdrop-blur-md">
-                              {/* Quick Reactions Row */}
-                              <div className="p-2 border-b border-zinc-100 dark:border-white/[0.04]">
-                                <div className="flex items-center justify-around">
-                                  {COMMON_REACTIONS.map(emoji => (
-                                    <button
-                                      key={emoji}
-                                      onClick={() => {
-                                        handlePulseReaction(msg.id, emoji);
-                                        closePulseContextMenu();
-                                      }}
-                                      className="w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-full transition text-lg"
-                                    >
-                                      {emoji}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                              {/* Action Items */}
-                              <div className="py-1">
-                                <button
-                                  onClick={() => {
-                                    setReplyingToPulseMessage(msg);
-                                    closePulseContextMenu();
-                                  }}
-                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
-                                >
-                                  <Reply className="text-zinc-400 group-hover:text-rose-500 dark:group-hover:text-rose-bright w-4" />
-                                  Reply
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    copyPulseMessage(msg.content);
-                                    closePulseContextMenu();
-                                  }}
-                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
-                                >
-                                  <Copy className="text-zinc-500 w-4" />
-                                  Copy Text
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    toggleStarPulseMessage(msg.id);
-                                    closePulseContextMenu();
-                                  }}
-                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
-                                >
-                                  <i className={`fa-${isStarred ? 'solid' : 'regular'} fa-star ${isStarred ? 'text-rose-500/70 dark:text-rose-bright/70' : 'text-zinc-500'} w-4`}></i>
-                                  {isStarred ? 'Unstar' : 'Star'}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    sharePulseMessage(msg);
-                                    closePulseContextMenu();
-                                  }}
-                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
-                                >
-                                  <Share className="text-[#f43f5e] w-4" />
-                                  Share
-                                </button>
-                                {/* Path D step 5b — create artifacts FROM this message, linked via
-                                    origin_message_id / message_id so the relationship rail surfaces
-                                    them. Workspace-scoped; text messages only. */}
-                                {currentWorkspace && msg.content?.trim() && (
-                                  <>
-                                    <button
-                                      onClick={() => { void handleCreateTaskFromMessage(msg); closePulseContextMenu(); }}
-                                      className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
-                                    >
-                                      <ListChecks className="text-zinc-500 w-4" />
-                                      Create task
-                                    </button>
-                                    <button
-                                      onClick={() => { void handleProposeDecisionFromMessage(msg); closePulseContextMenu(); }}
-                                      className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
-                                    >
-                                      <Scale className="text-zinc-500 w-4" />
-                                      Propose decision
-                                    </button>
-                                  </>
-                                )}
-                                {/* Edit - only for own messages */}
-                                {isMe && msg.content_type === 'text' && (
-                                  <button
-                                    onClick={() => {
-                                      startEditPulseMessage(msg);
-                                      closePulseContextMenu();
-                                    }}
-                                    className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
-                                  >
-                                    <i className="fa-solid fa-pen text-zinc-400 group-hover:text-rose-500 dark:group-hover:text-rose-bright w-4"></i>
-                                    Edit
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => {
-                                    // Forward to another conversation
-                                    setForwardingMessage({
-                                      id: msg.id,
-                                      sender: isMe ? 'me' : 'other',
-                                      source: 'pulse',
-                                      text: msg.content,
-                                      timestamp: new Date(msg.created_at),
-                                      status: 'read'
-                                    });
-                                    setShowForwardModal(true);
-                                    closePulseContextMenu();
-                                  }}
-                                  className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] flex items-center gap-3 transition"
-                                >
-                                  <ArrowRight className="text-rose-500 dark:text-rose-bright w-4" />
-                                  Forward
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                        {/* Legacy inline context menu removed 2026-05-31 —
+                            the MessageContextMenu singleton (rendered below the
+                            message list) is now the only message menu. */}
 
                         {/* Reactions display */}
                         {reactions.length > 0 && (
@@ -4846,25 +4524,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             </div>
           )}
 
-          {/* Phase 3: RadialMenu for Reactions */}
-          {radialMenuMessageId && radialMenu.isOpen && (
-            <RadialMenu
-              items={createReactionItems(radialMenuMessageId)}
-              isOpen={radialMenu.isOpen}
-              centerX={radialMenu.position.x}
-              centerY={radialMenu.position.y}
-              onClose={() => {
-                radialMenu.close();
-                setRadialMenuMessageId(null);
-              }}
-            />
-          )}
-
-          {/* PR 2 — Surface 2 · MessageContextMenu (singleton). Reads
-              the per-message viewpoint from `pulseCtxMenu.openMessageId`,
-              dispatches actions through `handlePulseV2Action`. Hidden
-              entirely when the flag is off. */}
-          {features.isFeatureEnabled('messageContextMenuV2') && pulseCtxMenu.openMessageId ? (() => {
+          {/* Surface 2 · MessageContextMenu (singleton). Reads the
+              per-message viewpoint from `pulseCtxMenu.openMessageId` and
+              dispatches actions through `handlePulseV2Action`. This is the
+              only message context menu. */}
+          {pulseCtxMenu.openMessageId ? (() => {
             const targetMsg = pulseMessages.find((m) => m.id === pulseCtxMenu.openMessageId) || null;
             if (!targetMsg) return null;
             const viewpoint: MessageViewpoint = {
@@ -4972,88 +4636,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             recentEmojis={recentReactionEmojis}
           />
 
-          {/* Phase 3: New ContextMenu (will replace old one) */}
-          {contextMenuMessageId && contextMenu.isOpen && (
-            <ContextMenu
-              isOpen={contextMenu.isOpen}
-              x={contextMenu.position.x}
-              y={contextMenu.position.y}
-              items={[
-                {
-                  label: 'Reply',
-                  icon: '💬',
-                  onClick: () => {
-                    const msg = pulseMessages.find(m => m.id === contextMenuMessageId);
-                    if (msg) {
-                      setReplyingToPulseMessage(msg);
-                    }
-                    contextMenu.close();
-                    setContextMenuMessageId(null);
-                  }
-                },
-                {
-                  label: 'React',
-                  icon: '😊',
-                  onClick: () => {
-                    // Open radial menu at context menu position
-                    radialMenu.open(contextMenu.position.x, contextMenu.position.y);
-                    setRadialMenuMessageId(contextMenuMessageId);
-                    contextMenu.close();
-                    setContextMenuMessageId(null);
-                  }
-                },
-                {
-                  label: 'Star',
-                  icon: '⭐',
-                  onClick: () => {
-                    toggleStarPulseMessage(contextMenuMessageId);
-                    contextMenu.close();
-                    setContextMenuMessageId(null);
-                  }
-                },
-                {
-                  label: userBookmarks.some(b => b.messageId === contextMenuMessageId)
-                    ? 'Remove bookmark'
-                    : 'Bookmark',
-                  icon: '🔖',
-                  onClick: () => {
-                    toggleBookmarkPulseMessage(contextMenuMessageId);
-                    contextMenu.close();
-                    setContextMenuMessageId(null);
-                  }
-                },
-                {
-                  label: 'Copy Text',
-                  icon: '📋',
-                  onClick: () => {
-                    const msg = pulseMessages.find(m => m.id === contextMenuMessageId);
-                    if (msg) {
-                      navigator.clipboard.writeText(msg.content);
-                    }
-                    contextMenu.close();
-                    setContextMenuMessageId(null);
-                  }
-                },
-                'divider',
-                {
-                  label: 'Delete',
-                  icon: '🗑️',
-                  onClick: () => {
-                    if (confirm('Delete this message?')) {
-                      setPulseMessages(prev => prev.filter(m => m.id !== contextMenuMessageId));
-                    }
-                    contextMenu.close();
-                    setContextMenuMessageId(null);
-                  },
-                  destructive: true
-                }
-              ]}
-              onClose={() => {
-                contextMenu.close();
-                setContextMenuMessageId(null);
-              }}
-            />
-          )}
+          {/* Phase-3 ContextMenu + RadialMenu removed 2026-05-31 — they were
+              a redundant second/third menu system. MessageContextMenu (above)
+              is the single message menu. */}
 
           {/* Message Input - Rendered in normal flex flow for Pulse conversations.
               PR 1 (Messages Tools Redesign · Surface 1): when the

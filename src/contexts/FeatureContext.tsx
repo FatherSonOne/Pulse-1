@@ -24,10 +24,8 @@ export interface FeatureFlags {
   scheduledMessages: boolean;
   draftManager: boolean;
 
-  // PR 2 — Messages Tools Redesign · Surface 2 (message context-menu).
-  // Gates the new long-press / right-click menu, quick-reactions bar,
-  // and "edited" badge tooltip. Legacy menu renders when off.
-  messageContextMenuV2: boolean;
+  // Surface 2 (message context-menu) shipped GA 2026-05-31 — the
+  // MessageContextMenu is now unconditional; flag removed.
 
   // PR 1 — Messages Tools Redesign · Surface 1 (compose bar).
   // Gates the new PulseComposer (attach sheet, Smart Compose ghost-text,
@@ -74,9 +72,6 @@ const DEFAULT_FEATURES: FeatureFlags = {
   toneAnalysis: false,
   scheduledMessages: false,
   draftManager: false,
-
-  // PR 2 — default off until rollout
-  messageContextMenuV2: false,
 
   // PR 1 — default off until rollout
   pulseComposerV2: false,
@@ -241,10 +236,9 @@ export const FEATURE_CATEGORIES = {
   },
   messagesRedesign: {
     name: 'Messages Tools Redesign (Beta)',
-    description: 'New compose bar, context-menu, and slim Tools menu. Toggle independently to A/B against legacy.',
+    description: 'New compose bar and slim Tools menu. Toggle independently to A/B against legacy.',
     features: [
       'pulseComposerV2',
-      'messageContextMenuV2',
       'toolsMenuV2'
     ] as (keyof FeatureFlags)[]
   }
@@ -261,7 +255,6 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   toneAnalysis: 'Tone Analysis',
   scheduledMessages: 'Scheduled Messages',
   draftManager: 'Draft Manager',
-  messageContextMenuV2: 'New Message Context-Menu (Beta)',
   pulseComposerV2: 'New Compose Bar (Beta)',
   toolsMenuV2: 'New Tools Menu (Beta)',
 };
