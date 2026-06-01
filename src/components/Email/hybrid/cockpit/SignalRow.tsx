@@ -12,6 +12,9 @@ import {
 import type { EmailRow, AiActionKind } from '../data/emailRow';
 import { AiChip, Avatar, ToneChip } from '../primitives';
 import { InlineReader } from './InlineReader';
+import { useEmailUIStore } from '../../../../store/emailUIStore';
+import { useEmailComposeStore } from '../../../../store/emailComposeStore';
+import { createTaskFromEmail } from '../data/createTaskFromEmail';
 
 interface SignalRowProps {
   email: EmailRow;
@@ -45,6 +48,34 @@ function isInsideInteractive(target: EventTarget | null): boolean {
 export const SignalRow: React.FC<SignalRowProps> = ({
   email, expanded, focused, onToggle, onFocus, onTriage, queuePos, queueTotal, queueCleared,
 }) => {
+  const openReply = useEmailComposeStore((s) => s.openReply);
+
+  // Collapsed-row AI chip click. Route per action kind, mirroring the
+  // expanded reader (InlineReader): reply opens the composer prefilled,
+  // task/snooze fire their store actions. Mock rows (no _raw) and the fuzzy
+  // kinds (meet/link/rsvp) expand the row so the user reaches the full
+  // reader + extractors — never a no-op, never a wrong action.
+  const handleChipAction = (
+    e: React.MouseEvent,
+    action: { kind: AiActionKind; label: string },
+  ) => {
+    e.stopPropagation();
+    if (!email._raw) { onToggle(); return; }
+    switch (action.kind) {
+      case 'reply':
+        openReply(email._raw, action.label);
+        break;
+      case 'task':
+        void createTaskFromEmail(email);
+        break;
+      case 'snooze':
+        useEmailUIStore.getState().setSnoozeTargetEmailId(email._raw.id);
+        break;
+      default:
+        onToggle();
+    }
+  };
+
   // Row-level click: toggle unless the click hit a real interactive child.
   const handleRowClick = (e: React.MouseEvent) => {
     if (isInsideInteractive(e.target)) return;
@@ -115,7 +146,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
             {email.aiActions.slice(0, 2).map((a) => (
               <button
                 key={a.id}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => handleChipAction(e, a)}
                 type="button"
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md pulse-surface-raised text-[12px] pulse-ink-color hover:pulse-rose-bg-soft-color"
               >
