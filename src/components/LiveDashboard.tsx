@@ -11,6 +11,8 @@ import { WarRoomMode, MissionType, RoomType } from './WarRoom/ModeSwitcher';
 
 // Phase 1 — War Room unified interface
 import { StudioLayout } from './WarRoom/StudioLayout';
+import { NotebookShell } from './WarRoom/notebook/NotebookShell';
+import { useFeature } from '../lib/featureFlags';
 import { StudioHeader } from './WarRoom/StudioHeader';
 import { PulseStudio } from './WarRoom/PulseStudio';
 import { StudioOnboarding, hasCompletedOnboarding } from './WarRoom/StudioOnboarding';
@@ -1285,6 +1287,11 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
   // Artifacts panel state (controlled from here, passed to StudioLayout)
   const [artifactsPanelOpen, setArtifactsPanelOpen] = useState(false);
 
+  // War Room "Notebook" redesign (Path A) — flag-gated. ON renders NotebookShell,
+  // OFF renders the legacy StudioLayout. Both wrap the same props/children.
+  const useNotebookShell = useFeature('warRoomNotebook', userId);
+  const StudioShell = useNotebookShell ? NotebookShell : StudioLayout;
+
   // File upload trigger for PulseStudio
   const handleUploadClick = () => {
     const fileInput = document.querySelector('input[type="file"][accept]') as HTMLInputElement;
@@ -1520,7 +1527,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
           handleGenerateAudioOverview={handleGenerateAudioOverview}
         />
 
-        <StudioLayout
+        <StudioShell
           className="flex-1 min-h-0"
           apiKey={apiKey}
           onVoiceSend={(text) => sendMessageDirect(text)}
@@ -1588,7 +1595,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
             }}
             isMobile={isMobile}
           />
-        </StudioLayout>
+        </StudioShell>
 
         {/* Audio Player */}
         {audioUrl && (

@@ -222,6 +222,22 @@ const featureFlagsConfig: FeatureFlagConfig = {
   // searchWorkbench flag retired (2026-05-30, Phase 11). The Search Workbench
   // is now the only Search surface — the legacy UnifiedSearchRedesign card feed
   // was deleted alongside this entry. App.tsx renders SearchWorkbench directly.
+
+  // War Room "Notebook" redesign (Path A — Sources · Chat · Studio). Gates the
+  // new NotebookShell (3-pane that re-IAs the existing engine: active-context
+  // first-class, inline citations, visible generator rail, docked voice). When
+  // OFF, LiveDashboard renders the legacy StudioLayout path — both consume the
+  // SAME warRoomStore + ragService; this is UI/IA only, the engine is untouched.
+  // OFF for v1; flip ON after soak, delete legacy StudioLayout one release later
+  // (handoff: docs/WAR_ROOM_IMPLEMENTATION_HANDOFF_2026-06-01.md). Local dev
+  // override: `?ff_warRoomNotebook=on`.
+  warRoomNotebook: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'OFF for v1 — War Room Notebook (Path A) 3-pane redesign; UI/IA only, same engine. Flip ON after soak (handoff 2026-06-01).',
+    version: '0.1.0'
+  },
 };
 
 // User group definitions
