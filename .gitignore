@@ -232,3 +232,4 @@ clear-cache.html
 package.json.patch
 build-output.txt
 .relay-verify/
+.warroom-verify/
