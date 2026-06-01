@@ -41,15 +41,14 @@ export class MessageService {
       body: payload.body,
       cta_text: payload.ctaText,
       cta_url: payload.ctaUrl,
-      trigger_event: payload.eventTrigger,
-      target_segment: payload.segment,
-      segment_filter: payload.customSegmentQuery,
-      start_date: payload.startsAt,
-      end_date: payload.endsAt,
-      active: true,
+      event_trigger: payload.eventTrigger,
+      segment: payload.segment,
+      custom_segment_query: payload.customSegmentQuery,
+      starts_at: payload.startsAt,
+      ends_at: payload.endsAt,
+      is_active: true,
       priority: payload.priority ?? 0,
-      max_displays_per_user: 1,
-      auto_dismiss_seconds: payload.displayDurationSeconds ?? 8,
+      display_duration_seconds: payload.displayDurationSeconds ?? 8,
       position: payload.position ?? 'bottom-right',
       style_type: payload.styleType ?? 'info',
       created_by: user?.user?.id,
@@ -76,9 +75,9 @@ export class MessageService {
     const { data, error } = await this.supabase
       .from('in_app_messages')
       .select('*')
-      .eq('active', true)
-      .or(`start_date.is.null,start_date.lte.${now}`)
-      .or(`end_date.is.null,end_date.gte.${now}`)
+      .eq('is_active', true)
+      .or(`starts_at.is.null,starts_at.lte.${now}`)
+      .or(`ends_at.is.null,ends_at.gte.${now}`)
       .order('priority', { ascending: false });
 
     if (error) throw new Error(`Failed to fetch messages: ${error.message}`);
@@ -94,10 +93,10 @@ export class MessageService {
     const { data, error } = await this.supabase
       .from('in_app_messages')
       .select('*')
-      .eq('trigger_event', eventTrigger)
-      .eq('active', true)
-      .or(`start_date.is.null,start_date.lte.${now}`)
-      .or(`end_date.is.null,end_date.gte.${now}`)
+      .eq('event_trigger', eventTrigger)
+      .eq('is_active', true)
+      .or(`starts_at.is.null,starts_at.lte.${now}`)
+      .or(`ends_at.is.null,ends_at.gte.${now}`)
       .order('priority', { ascending: false });
 
     if (error) throw new Error(`Failed to fetch messages: ${error.message}`);
@@ -117,13 +116,13 @@ export class MessageService {
     if (updates.body !== undefined) updateData.body = updates.body;
     if (updates.ctaText !== undefined) updateData.cta_text = updates.ctaText;
     if (updates.ctaUrl !== undefined) updateData.cta_url = updates.ctaUrl;
-    if (updates.eventTrigger !== undefined) updateData.trigger_event = updates.eventTrigger;
-    if (updates.segment !== undefined) updateData.target_segment = updates.segment;
-    if (updates.customSegmentQuery !== undefined) updateData.segment_filter = updates.customSegmentQuery;
-    if (updates.startsAt !== undefined) updateData.start_date = updates.startsAt;
-    if (updates.endsAt !== undefined) updateData.end_date = updates.endsAt;
+    if (updates.eventTrigger !== undefined) updateData.event_trigger = updates.eventTrigger;
+    if (updates.segment !== undefined) updateData.segment = updates.segment;
+    if (updates.customSegmentQuery !== undefined) updateData.custom_segment_query = updates.customSegmentQuery;
+    if (updates.startsAt !== undefined) updateData.starts_at = updates.startsAt;
+    if (updates.endsAt !== undefined) updateData.ends_at = updates.endsAt;
     if (updates.priority !== undefined) updateData.priority = updates.priority;
-    if (updates.displayDurationSeconds !== undefined) updateData.auto_dismiss_seconds = updates.displayDurationSeconds;
+    if (updates.displayDurationSeconds !== undefined) updateData.display_duration_seconds = updates.displayDurationSeconds;
     if (updates.position !== undefined) updateData.position = updates.position;
     if (updates.styleType !== undefined) updateData.style_type = updates.styleType;
 
@@ -156,7 +155,7 @@ export class MessageService {
   async toggleMessageStatus(id: string, isActive: boolean): Promise<void> {
     const { error } = await this.supabase
       .from('in_app_messages')
-      .update({ active: isActive, updated_at: new Date().toISOString() })
+      .update({ is_active: isActive, updated_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) throw new Error(`Failed to toggle status: ${error.message}`);
@@ -393,16 +392,17 @@ export class MessageService {
       body: data.body,
       ctaText: data.cta_text,
       ctaUrl: data.cta_url,
-      eventTrigger: data.trigger_event,
-      segment: data.target_segment,
-      customSegmentQuery: data.segment_filter,
-      startsAt: data.start_date ? new Date(data.start_date) : undefined,
-      endsAt: data.end_date ? new Date(data.end_date) : undefined,
-      isActive: data.active,
+      eventTrigger: data.event_trigger,
+      segment: data.segment,
+      customSegmentQuery: data.custom_segment_query,
+      startsAt: data.starts_at ? new Date(data.starts_at) : undefined,
+      endsAt: data.ends_at ? new Date(data.ends_at) : undefined,
+      isActive: data.is_active,
       priority: data.priority,
-      displayDurationSeconds: data.auto_dismiss_seconds,
+      displayDurationSeconds: data.display_duration_seconds,
       position: data.position || 'bottom-right',
       styleType: data.style_type || 'info',
+      recurringSchedule: data.recurring_schedule || 'none',
       createdBy: data.created_by,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
