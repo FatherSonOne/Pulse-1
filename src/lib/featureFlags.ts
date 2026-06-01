@@ -228,15 +228,17 @@ const featureFlagsConfig: FeatureFlagConfig = {
   // first-class, inline citations, visible generator rail, docked voice). When
   // OFF, LiveDashboard renders the legacy StudioLayout path — both consume the
   // SAME warRoomStore + ragService; this is UI/IA only, the engine is untouched.
-  // OFF for v1; flip ON after soak, delete legacy StudioLayout one release later
-  // (handoff: docs/WAR_ROOM_IMPLEMENTATION_HANDOFF_2026-06-01.md). Local dev
-  // override: `?ff_warRoomNotebook=on`.
+  // Phase 10 (2026-06-01): defaulted ON. The Notebook (Path A) is now the
+  // primary War Room surface; the legacy StudioLayout branch is kept for one
+  // release as a rollback path and deleted in Phase 11 after soak (handoff:
+  // docs/WAR_ROOM_IMPLEMENTATION_HANDOFF_2026-06-01.md). To fall back locally:
+  // `?ff_warRoomNotebook=off`.
   warRoomNotebook: {
-    enabled: false,
-    rolloutPercentage: 0,
-    targetUsers: ['internal'],
-    description: 'OFF for v1 — War Room Notebook (Path A) 3-pane redesign; UI/IA only, same engine. Flip ON after soak (handoff 2026-06-01).',
-    version: '0.1.0'
+    enabled: true,
+    rolloutPercentage: 100,
+    targetUsers: ['all'],
+    description: 'ON (Phase 10) — War Room Notebook (Path A) 3-pane redesign is the primary surface; legacy StudioLayout kept one release for rollback (Phase 11 deletes it).',
+    version: '1.0.0'
   },
 };
 
