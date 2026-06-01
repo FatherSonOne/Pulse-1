@@ -220,7 +220,7 @@
     },
     "empty": {
       "headline": "Your people are quiet here.",
-      "body": "We didn't bring any contacts in. When you're ready, pick exactly who Pulse should know about — one at a time, or in groups.",
+      "body": "No contacts imported yet. When you're ready, pick exactly who Pulse should know about, one at a time or in groups.",
       "cta_primary": "Connect Contacts",
       "cta_secondary": "Add one manually"
     },
@@ -264,11 +264,11 @@
       "scope_lost_body": "Pulse can't refresh your Google session silently. Reconnect once to grant offline access, then it stays refreshed in the background.",
       "scope_lost_cta": "Reconnect Google",
       "error_workspace_not_ready": "Your workspace isn't ready yet. Try again in a moment.",
-      "error_generic": "We couldn't connect those contacts. Try again in a moment."
+      "error_generic": "Couldn't reach Google. Try again in a moment."
     },
     "trimWizard": {
       "headline": "One last look.",
-      "body": "These {{count}} contacts came in. Anyone who looks off — a vendor, a one-off, an old number — uncheck them now and we'll skip them. You can always add them back later.",
+      "body": "These {{count}} contacts came in. Anyone who looks off (a vendor, a one-off, an old number), uncheck them now and we'll skip them. You can always add them back later.",
       "default_keep_banner": "All contacts kept by default. Uncheck any you want to skip.",
       "inverted_default_banner": "Large import — start by checking only the contacts you want to keep.",
       "row_skip_aria": "Skip {{name}}",
@@ -277,7 +277,7 @@
       "cta_secondary": "Skip trimming",
       "skip_confirm": "Skip {{count}} contacts? They'll stay on Google but Pulse won't see them.",
       "trim_complete_toast": "Connected {{kept}} contacts. {{skipped}} skipped.",
-      "trim_error_toast": "We couldn't finish trimming contacts. Try again in a moment.",
+      "trim_error_toast": "Couldn't finish trimming contacts. Try again in a moment.",
       "check_all": "Check all",
       "uncheck_all": "Uncheck all",
       "keep_label": "Keep"
@@ -290,11 +290,16 @@
     },
     "invalidGrantBanner": {
       "headline": "Google revoked this session.",
-      "body": "Your last connection was cancelled by Google or you. Reconnect to restore access — your data stays put."
+      "body": "Your last connection was cancelled by Google or you. Reconnect to restore access. Your data stays put."
     },
     "reconnectModal": {
       "title": "Reconnect Google Contacts",
-      "message": "Pulse needs Google Contacts permission before it can connect selected people."
+      "message": "Pulse needs Google Contacts permission before it can connect selected people.",
+      "why_label": "Why",
+      "later": "Later",
+      "connecting": "Connecting...",
+      "cta": "Reconnect Google",
+      "help": "You'll be redirected to Google to reconnect your account securely."
     },
     "tabs": {
       "received_label": "Received"

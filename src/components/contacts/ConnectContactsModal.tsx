@@ -364,6 +364,13 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
   const stepIndex = STEPS.indexOf(step);
   const canAdvance = step === 'stage' ? selectedCount > 0 : step === 'tag' ? selectedCount > 0 : true;
 
+  // Don't discard multi-step work on a stray backdrop click. Once anyone
+  // is picked, require an explicit X / Cancel / Esc to close the wizard.
+  const handleBackdropClick = () => {
+    if (selectedCount > 0) return;
+    onClose();
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -372,7 +379,7 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-          onClick={onClose}
+          onClick={handleBackdropClick}
           onKeyDown={handleKeyDown}
         >
           <motion.div
@@ -803,12 +810,8 @@ const TagStep: React.FC<TagStepProps> = ({
         <button
           type="button"
           onClick={applyBulkCategory}
-          className="min-h-[40px] px-4 py-2 rounded-md text-sm font-semibold"
-          style={{
-            border: '1px solid var(--pulse-rose)',
-            color: 'var(--pulse-rose)',
-            background: 'var(--pulse-rose-softer)',
-          }}
+          className="min-h-[40px] px-4 py-2 rounded-md text-sm font-semibold text-white"
+          style={{ background: 'var(--pulse-rose)' }}
         >
           {t('contacts.connectModal.tag_set_all_apply')}
         </button>

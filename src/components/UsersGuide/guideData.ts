@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.5.0 · May 10, 2026
+// Version 25.6.0 · June 1, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -1602,7 +1602,7 @@ export const guideSections: GuideSection[] = [
     id: 'ai-features',
     title: 'AI Features',
     icon: '🤖',
-    summary: 'AI woven into every part of Pulse — global assistant, smart compose, translation in 90+ languages, tone analysis, action extraction, AI Lab workspaces, and Pulse Studio for research, analysis, and decision-making.',
+    summary: 'AI woven into every part of Pulse — global assistant, smart compose, translation in 90+ languages, tone analysis, action extraction, and the War Room Notebook: a source-grounded research workspace with cited answers, generators, and a realtime voice agent.',
     badge: 'Updated',
     steps: [
       'Press Ctrl+/ (or ⌘/ on Mac) or click the animated ECG icon in the sidebar to open the Pulse AI Assistant.',
@@ -1612,7 +1612,7 @@ export const guideSections: GuideSection[] = [
       'Translate any message: hover → click the globe icon → choose from 90+ languages.',
       'Click Summarize on any long thread to get a 2–4 sentence written summary.',
       'Click Extract Action Items on any email or message to pull tasks into your task list.',
-      'Click Studio in the sidebar for deep-work AI research, planning, and decision-making.',
+      'Click War Room in the sidebar (under Intelligence) for source-grounded AI research — your Notebook of Sources, Chat, and Studio generators.',
     ],
     subsections: [
       {
@@ -1685,56 +1685,57 @@ export const guideSections: GuideSection[] = [
       },
       {
         id: 'war-room',
-        title: 'Pulse Studio — AI Research & Analysis Workspace',
-        description: 'Click Studio in the sidebar. A unified AI workspace where the AI adapts to your needs — no mode switching required.',
-        badge: 'Updated',
+        title: 'War Room — Your Notebook (Sources · Chat · Studio)',
+        description: 'Click War Room in the sidebar (under Intelligence). A source-grounded AI notebook: bring in documents, ask questions that cite them, and turn them into study guides, FAQs, timelines, and podcasts. Rebuilt as one always-on 3-column layout — no modes to switch.',
+        badge: 'New',
         steps: [
-          'Upload sources in the left panel — documents, PDFs, and reference files.',
-          'Type naturally in the center canvas or use /commands for structured output.',
-          'Use /brainstorm, /decide, /analyze, /summarize, /plan, /debrief, /risks, or /compare.',
-          'Mention @skeptic, @scribe, or @deep-diver to switch AI personality mid-conversation.',
-          'AI auto-detects structured content and renders it as interactive Artifact cards.',
-          'Pin useful artifacts to the right panel for later export.',
-          'Use the Focus Timer for Pomodoro work sessions while chatting.',
-          'Press Ctrl+K / Cmd+K to open the Action Palette for quick commands.',
-          'Teammates in the same session appear as avatar indicators for real-time collaboration.',
+          'LEFT — Sources: upload documents, PDFs, and reference files; toggle which ones are active so answers ground only in what\'s relevant.',
+          'Use Add all to context / Clear context to manage scope; open the Knowledge Bank to browse your full library.',
+          'CENTER — Chat: ask anything; answers ground in your active sources and show inline citations (click one to jump to the source passage).',
+          'Click Show reasoning under any answer to expand the AI\'s reasoning trace.',
+          'Guide output with slash commands: /summarize, /analyze, /brainstorm, /decide, /plan, /risks, /compare, /debrief.',
+          'Click the microphone to talk it through — the realtime voice agent is docked right into the chat.',
+          'RIGHT — Studio: an always-on generator rail turns your sources into Study Guide, FAQ, Timeline, or Podcast (plus advanced Comparative Analysis and Knowledge Graph).',
+          'Pin generated artifacts and notes to the board (On the board) to keep them.',
+          'First time in with no sources, a teaching cold-start shows what the Notebook can do and gives you a "Add your first source" CTA or example prompts.',
+          'Press Ctrl+K / Cmd+K to open the Action Palette — launch any generator, toggle panels, or manage source context.',
         ],
       },
     ],
     tables: [
       {
-        title: 'Studio Slash Commands',
+        title: 'War Room Chat — Slash Commands',
         columns: ['Command', 'What It Produces'],
         rows: [
-          ['/brainstorm', '6–8 creative ideas in an Ideas artifact'],
-          ['/decide', 'Pros & Cons comparison with a recommendation'],
-          ['/analyze', 'Deep analysis with Key Points, Risks, and Action Items'],
           ['/summarize', 'Concise summary with bullet points and action items'],
+          ['/analyze', 'Deep analysis with Key Points, Risks, and Action Items'],
+          ['/brainstorm', 'A spread of creative ideas grounded in your sources'],
+          ['/decide', 'Pros & Cons comparison with a recommendation'],
           ['/plan', 'Structured roadmap with Timeline, Action Items, and Risks'],
-          ['/debrief', 'Retrospective with insights and lessons learned'],
           ['/risks', 'Risk assessment with severity and mitigation strategies'],
-          ['/compare', 'Side-by-side option comparison'],
+          ['/compare', 'Side-by-side comparison across your sources'],
+          ['/debrief', 'Retrospective with insights and lessons learned'],
         ],
       },
       {
-        title: 'AI Lab Workspaces',
-        columns: ['Workspace', 'Best For'],
+        title: 'War Room Studio — Generators',
+        columns: ['Generator', 'What It Creates'],
         rows: [
-          ['AI Studio', 'Drafting and refining written content'],
-          ['Mission Control', 'Multi-step AI workflow coordination'],
-          ['Intelligence Hub', 'Research and information synthesis'],
-          ['Quick Actions', 'Fast one-click AI operations'],
-          ['Proposal Builder', 'Structured proposals and presentations'],
-          ['Channel Digest', 'Auto-summaries of channels and conversations'],
-          ['Stand-up Briefing', 'Daily stand-up summaries from recent activity'],
+          ['Study Guide', 'Structured notes & flashcards from your sources'],
+          ['FAQ', 'The questions your sources answer, with answers'],
+          ['Timeline', 'A chronological view of events in your sources'],
+          ['Podcast', 'A two-host dialogue script that talks through your material'],
+          ['Comparative Analysis', 'A structured comparison across multiple sources (advanced)'],
+          ['Knowledge Graph', 'Key entities in your sources and how they relate (advanced)'],
         ],
       },
     ],
     tips: [
       'The AI Assistant can take real actions — don\'t just ask questions, tell it what to do.',
       'Be specific: "Draft a reply to Sarah\'s last email" is far more powerful than "help me write an email".',
-      'In Studio, use /commands to structure AI output — /brainstorm, /decide, /analyze, /plan, and more.',
-      'The Artifacts Board in Studio saves pinned items across sessions — use it to build a running intelligence file.',
+      'In the War Room, upload your sources first — every answer then cites the exact document it came from, so you can trust it.',
+      'Toggle only the sources you care about into the active context to keep answers focused; the Studio panel tells you what it will generate from.',
+      'Use the War Room generators (Study Guide, FAQ, Timeline, Podcast) to turn a stack of documents into something you can actually share.',
       'Chat history persists across sections during your session — pick up right where you left off.',
     ],
     useCases: [
@@ -1752,15 +1753,17 @@ export const guideSections: GuideSection[] = [
         ],
       },
       {
-        id: 'uc-brainstorm-marketing',
-        title: 'Marketing Campaign Brainstorming',
-        scenario: 'You need campaign ideas for your company\'s new product.',
+        id: 'uc-warroom-research',
+        title: 'Turning Documents into Cited Answers',
+        scenario: 'You have three vendor proposals and a requirements doc, and you need a recommendation by Friday.',
         steps: [
-          'Open Tools → AI Lab.',
-          'Enter: "Marketing campaign ideas for our project management software targeting mid-size teams."',
-          'Choose SCAMPER — Pulse generates variations: Substitute, Combine, Adapt the typical approach.',
-          'Switch to Six Thinking Hats — get creative, critical, optimistic, and data views in one session.',
-          'Export the best ideas as a document to share with your marketing team.',
+          'Open the War Room and drag all four files into Sources; wait for each to read "completed".',
+          'Toggle all four on so they\'re in the active context.',
+          'In Chat, run: /compare Compare these proposals against our requirements on price, timeline, and support.',
+          'The answer comes back with inline citations — click any to verify the claim against the source.',
+          'Click Show reasoning to see how the AI weighed the trade-offs.',
+          'In the Studio panel, run Comparative Analysis for a clean side-by-side artifact, then pin it to the board.',
+          'Run the FAQ generator to anticipate the questions your boss will ask — answered straight from the documents.',
         ],
       },
     ],
@@ -1985,7 +1988,7 @@ export const guideSections: GuideSection[] = [
     badge: 'New',
     steps: [
       'Click Archives in the sidebar, or archive any item from its original section.',
-      'Filter by content type: Studio Sessions, Transcripts, Meeting Notes, Decision Logs, Journals, Summaries, Artifacts, Images, Videos, Documents.',
+      'Filter by content type: War Room Sessions, Transcripts, Meeting Notes, Decision Logs, Journals, Summaries, Artifacts, Images, Videos, Documents.',
       'Switch between List View, Grid View, and Timeline View.',
       'Create Collections with custom colors and icons to group related archives.',
       'Create Smart Folders with filter rules that update automatically.',
@@ -2007,7 +2010,7 @@ export const guideSections: GuideSection[] = [
         title: 'Building a Project Knowledge Base',
         scenario: 'Your team completed a 6-month project and you want to preserve institutional knowledge.',
         steps: [
-          'Archive all Studio sessions related to the project.',
+          'Archive all War Room sessions related to the project.',
           'Archive finalized decisions with vote history and rationale.',
           'Archive meeting transcripts and notes from key project meetings.',
           'Create a Collection called "Project Alpha Archive" and move all items into it.',
@@ -2023,14 +2026,13 @@ export const guideSections: GuideSection[] = [
     id: 'tools',
     title: 'Tools Panel',
     icon: '🛠️',
-    summary: 'Automation rules, bulk operations, webhook manager, AI Lab, and Pulse Studio — power features for advanced workflows.',
+    summary: 'Automation rules, bulk operations, and a webhook manager — power features for advanced workflows. (AI research now lives in the War Room — see AI Features.)',
     steps: [
       'Click Tools in the sidebar to access the Tools Panel.',
       'Use Automation Rules to create trigger-action rules that run automatically.',
       'Use Bulk Operations to apply actions to many messages or contacts at once.',
       'Use Webhook Manager to send Pulse events to external systems via HTTP.',
-      'Access AI Lab for the full brainstorming workspace.',
-      'Access Pulse Studio for AI research, analysis, and content creation.',
+      'For AI research and analysis, open the War Room (under Intelligence) — the standalone AI Lab panel has been retired.',
     ],
     subsections: [
       {
@@ -2191,12 +2193,12 @@ export const guideSections: GuideSection[] = [
     title: 'Settings & Customization',
     icon: '⚙️',
     badge: 'Updated',
-    summary: 'Appearance, accessibility, AI model configuration, Studio, notification preferences, connected accounts, Ecosystem Bridge, Features & Labs, workspace management, billing, API keys, privacy controls, and data export.',
+    summary: 'Appearance, accessibility, AI model configuration, War Room (AI workspace), notification preferences, connected accounts, Ecosystem Bridge, Features & Labs, workspace management, billing, API keys, privacy controls, and data export.',
     steps: [
       'Click the gear icon at the bottom of the sidebar, or click your avatar → Settings.',
       'Go to Appearance to toggle Dark Mode, choose an accent color (7 brand presets or custom hex), set font size, and toggle High Contrast or Reduced Motion.',
       'Go to AI & Intelligence to choose your AI model, configure voice agent behavior, and select microphone and speaker devices.',
-      'Go to Studio to set AI depth, streaming behavior, and annotations.',
+      'Go to War Room to set AI depth, streaming behavior, the reasoning (thinking) panel, and annotations.',
       'Go to Notifications to configure per-channel alert preferences and Quiet Hours.',
       'Go to Connected Accounts to add or remove Google, Microsoft, Slack, CRM, and SMS.',
       'Go to Ecosystem Bridge to connect Entomate and Logos Vision — generate secure tokens and test the live connection.',
@@ -2231,14 +2233,14 @@ export const guideSections: GuideSection[] = [
       },
       {
         id: 'war-room-settings',
-        title: 'Studio Settings',
+        title: 'War Room Settings',
         badge: 'Updated',
         steps: [
-          'Go to Settings → Studio.',
+          'Go to Settings → War Room.',
           'Set AI Depth: Fast (quick answers), Balanced (default), or Deep (thorough multi-step reasoning).',
           'Toggle Token Streaming to see responses appear word-by-word rather than waiting for the full response.',
-          'Toggle Thinking Panel to show or hide the AI\'s internal reasoning steps.',
-          'Toggle Annotations to enable inline notes and highlights on Studio documents.',
+          'Toggle Thinking Panel to show or hide the AI\'s internal reasoning steps (the reasoning trace).',
+          'Toggle Annotations to enable inline notes and highlights on War Room documents.',
         ],
       },
       {
@@ -2447,7 +2449,7 @@ export const guideSections: GuideSection[] = [
         title: 'Pulse Team — What\'s Included',
         steps: [
           'Unlimited team seats — invite your whole workspace at no extra cost.',
-          'All 6 Relay modes: Quick, Team, Drop, Threads, Radio, Notes — plus Video Vox and Studio RAG.',
+          'All 6 Relay modes: Quick, Team, Drop, Threads, Radio, Notes — plus Video Vox and the War Room Notebook (source-grounded AI).',
           'Email, Calendar, Messaging, Meetings, Contacts, Decisions & Tasks — every feature unlocked.',
           'Advanced Analytics and the full QntmEcos Ecosystem Bridge (Entomate + Logos Vision sync).',
           'Monthly allowances: 2,000 AI messages · 500 SMS · 50 GB storage · 500 Relay minutes. All reset on the 1st.',
@@ -2954,5 +2956,5 @@ export const guideSections: GuideSection[] = [
   },
 ];
 
-export const guideVersion = '25.5.0';
-export const guideUpdated = 'May 10, 2026';
+export const guideVersion = '25.6.0';
+export const guideUpdated = 'June 1, 2026';

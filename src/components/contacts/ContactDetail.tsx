@@ -382,16 +382,22 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
               <div className="space-y-3">
                 {/* AI Summary (collapsible) */}
                 {profile.aiRelationshipSummary && (
-                  <div className="bg-rose-50/60 dark:bg-rose-900/15 rounded-xl p-3.5 border border-rose-100 dark:border-rose-900/30">
+                  <div
+                    className="rounded-xl p-3.5 border"
+                    style={{ background: 'var(--pulse-coral-bg-08)', borderColor: 'var(--pulse-coral-bg-12)' }}
+                  >
                     <button
                       onClick={() => setSummaryExpanded(v => !v)}
                       className="w-full flex items-center justify-between text-left mb-1.5"
                     >
                       <AIProvenanceChip vendor="PULSE AI" type="SUMMARY" />
-                      <i className={`fa-solid fa-chevron-${summaryExpanded ? 'up' : 'down'} text-xs text-rose-400`} />
+                      <i
+                        className={`fa-solid fa-chevron-${summaryExpanded ? 'up' : 'down'} text-xs`}
+                        style={{ color: 'var(--pulse-coral-fg)' }}
+                      />
                     </button>
                     {summaryExpanded && (
-                      <p className="text-sm text-rose-800 dark:text-rose-200 leading-relaxed">
+                      <p className="text-sm leading-relaxed" style={{ color: 'var(--pulse-coral-fg)' }}>
                         {profile.aiRelationshipSummary}
                       </p>
                     )}
@@ -400,17 +406,21 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
 
                 {/* Suggested next action */}
                 {profile.aiNextActionSuggestion && (
-                  <div className="p-3 bg-rose-50 dark:bg-rose-900/15 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                  <div
+                    className="p-3 rounded-xl border"
+                    style={{ background: 'var(--pulse-coral-bg-08)', borderColor: 'var(--pulse-coral-bg-12)' }}
+                  >
                     <div className="flex items-center justify-between mb-1.5">
                       <AIProvenanceChip vendor="PULSE AI" type="SUGGESTION" />
                       <button
                         onClick={() => onAction('message', contact.id)}
-                        className="flex-shrink-0 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-lg transition"
+                        className="flex-shrink-0 px-2.5 py-1 text-white text-xs font-medium rounded-lg transition"
+                        style={{ background: 'var(--pulse-rose)' }}
                       >
                         Act
                       </button>
                     </div>
-                    <p className="text-sm text-rose-800 dark:text-rose-200">{profile.aiNextActionSuggestion}</p>
+                    <p className="text-sm" style={{ color: 'var(--pulse-coral-fg)' }}>{profile.aiNextActionSuggestion}</p>
                   </div>
                 )}
 

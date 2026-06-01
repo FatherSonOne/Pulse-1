@@ -7,6 +7,83 @@ case it's actually needed.
 
 ---
 
+## 0. Code preservation & no-assumptions (read this first)
+
+This is an 8-month-old project. **Code that exists was written for a
+reason.** The default assumption is that any function, component,
+service, table, wiring, or UI/UX surface is intentional and load-bearing
+until proven otherwise. The two rules below outrank every convenience,
+cleanup instinct, or "this looks redundant" impulse. They exist because
+repeated sessions have over-estimated gaps, condemned working code on a
+bad read, and rebuilt-from-scratch something that was more complete
+before the rebuild. That is the single most expensive failure mode in
+this repo and it stops here.
+
+### Rule A — No destructive change without an explicit, approved pros/cons
+
+**Auditing/suggesting and executing are two different acts. Never let
+one slide into the other.** Finding an issue and forming a plan does
+NOT grant permission to carry it out. A plan that "looks sound" is still
+a proposal, not a green light.
+
+Any time Claude is about to **remove, replace, rewrite, overwrite,
+consolidate, "distill", or otherwise materially alter existing
+functional code or UI/UX**, Claude MUST first STOP and present:
+
+1. **Exactly what will change** — name the specific files, functions,
+   components, styles, or surfaces that would be overwritten or deleted.
+   No vague "clean up the X section." Quote the real lines.
+2. **A Pros / Cons list** for the removal or replacement:
+   - **Pros** — what is genuinely gained (be honest; "fewer lines" is
+     rarely a real gain on its own).
+   - **Cons** — what working behavior, edge-case handling, styling,
+     state, or integration is put at risk or lost. Assume there IS a
+     cost and go find it before writing the Cons.
+3. **What is preserved vs. what is sacrificed**, and whether the
+   replacement is provably at least as complete as what it replaces.
+4. **An explicit ask**: "Do you want me to proceed with this specific
+   removal/replacement?" Then WAIT. Do not execute until the user
+   approves THAT change. Approval of a direction is not approval to
+   delete.
+
+**No aggressive distilling.** When the choice is between preserving
+working code and trimming it for elegance, preserve. When in doubt,
+**over-engineer rather than undercut months of progress and replace it
+with slop.** Additive and reversible beats subtractive and clever.
+Deleting working code is the last resort, never the opening move.
+
+### Rule B — No assumptions; investigate before you judge
+
+**Never assume anything about tables, columns, data shape, wiring,
+control flow, or why code is written the way it is.** If something is in
+doubt, looks broken, looks redundant, or "needs servicing," that is a
+trigger to INVESTIGATE, not to conclude.
+
+Before declaring a gap, a bug, missing functionality, or dead code —
+and before proposing any plan that rests on that declaration:
+
+- **Read the actual code in full**, including the files it imports,
+  the files that import it, the services and hooks it calls, and the
+  schema it touches. Quote the real lines that justify the conclusion.
+- **Check git history** (`git log`, `git blame`, `git log -- <path>`,
+  reflog) to understand *why* the code is the way it is. Apparent
+  weirdness is often a deliberate fix for a past incident — find out
+  before "correcting" it.
+- **Verify the schema / types / signatures** against ground truth (the
+  real table, the real type, the real function), never against naming
+  convention or memory. Pulse's schema is deliberately inconsistent.
+- **Prove the gap is real.** Do not over-estimate what's missing. A
+  feature is not "incomplete" until you have confirmed in the code that
+  the path genuinely does not exist — not because you didn't find it on
+  a first skim. "I couldn't find it" ≠ "it isn't there."
+
+If after a thorough examination something is still genuinely unclear,
+**ask the user** rather than guessing and building on the guess. A
+clarifying question costs one turn; a rebuild founded on a bad
+assumption costs months.
+
+---
+
 ## 1. Branch & session discipline
 
 ### The one rule that matters

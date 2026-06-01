@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
-**Version**: 25.5.0
-**Last Updated**: May 10, 2026
+**Version**: 25.6.0
+**Last Updated**: June 1, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -157,8 +157,8 @@ The left sidebar is your main navigation. It is organized into sections:
 
 - **Contacts** — Your contact directory with relationship insights
 - **Decisions & Tasks** — Collaborative decision-making and task tracking
-- **Studio** — AI research, analysis, and content workspace
-- **Tools** — Automation, AI Lab, and power tools
+- **War Room** — AI research & analysis workspace — your Notebook (Sources · Chat · Studio)
+- **Tools** — Automation, bulk operations, and power features
 - **Analytics** — Reports, predictions, and communication metrics
 - **Archives** — Stored sessions, transcripts, decisions, and documents
 
@@ -1885,21 +1885,15 @@ Find hidden tasks in any message or email:
 3. Review the extracted list.
 4. Click **Add to Tasks** to save selected items to your task list — with the source message as context.
 
-### AI Brainstorming — AI Lab
+### AI Brainstorming
 
-AI Lab is a collection of specialized AI-powered workspaces, each designed for a different kind of work. Access it from **Tools → AI Lab** in the sidebar.
+Pulse no longer uses the old "AI Lab" panel — brainstorming and structured thinking now live where you're already working:
 
-| Workspace | What it does |
-| --------- | ------------ |
-| **AI Studio** | Draft, refine, and enhance written content with AI assistance |
-| **Mission Control** | Build and coordinate multi-step AI workflows |
-| **Intelligence Hub** | Research and synthesize information from multiple sources |
-| **Quick Actions** | Fast one-click AI operations: summarize, rewrite, translate, extract |
-| **Proposal Builder** | Create structured proposals and presentations with AI guidance |
-| **Channel Digest** | Generate summaries of your channels and conversations automatically |
-| **Stand-up Briefing** | Create daily stand-up summaries from your recent activity |
+- **In the War Room** (your Notebook) — type `/brainstorm`, `/decide`, `/analyze`, `/plan`, `/risks`, or `/compare` to get structured output grounded in your uploaded sources. See *War Room — Your Notebook* below.
+- **In Decisions & Tasks** — use **Break Down** on any complex decision to have AI propose sub-decisions and options (Section 11).
+- **In the Pulse AI Assistant** (`Ctrl+/`) — ask it to brainstorm anywhere in the app; it pulls in your current section's context automatically.
 
-**Tip:** Each AI Lab workspace is independent — you can run a Proposal Builder session while a Channel Digest is being generated.
+**Tip:** For research that needs to cite real documents, upload them as **Sources** in the War Room first, then brainstorm — every answer points back to the source it came from.
 
 ### Voice Commands
 
@@ -1943,140 +1937,84 @@ Choose from 8 AI voice characters for spoken feedback: Alloy, Ash, Ballad, Coral
 
 **Tip:** You can also type commands in the text input field at the bottom of the Voice Command Panel instead of speaking — useful in quiet environments.
 
-### Pulse Studio — AI Research & Analysis Workspace
+### War Room — Your Notebook (Sources · Chat · Studio)
 
-**Pulse Studio** is Pulse's unified AI workspace for research, analysis, planning, decision-making, and content creation. It replaces the previous multi-mode War Room with a single, intuitive interface where the AI adapts to your needs based on what you ask — no mode switching required.
+The **War Room** is Pulse's AI research and analysis workspace — a *notebook* built around your own material. You bring in **Sources** (documents, PDFs, notes), ask questions in **Chat**, and every answer is grounded in those sources and cites them. On the right, the **Studio** turns your sources into study guides, FAQs, timelines, and even a two-host podcast script. Think of it as a private NotebookLM that already knows your work.
 
-Access it by clicking **Studio** in the sidebar.
+Open it by clicking **War Room** in the sidebar (under *Intelligence*).
 
-#### Getting Started with Studio
+> **What changed:** The War Room was rebuilt as a clean, always-on three-column Notebook. There are no modes to switch between and no separate "Studio" tab in the sidebar — Sources, Chat, and the Studio generators are all visible at once. The underlying AI engine (retrieval, generators, and the realtime voice agent) is the same one you may have used before, just behind a clearer front door.
 
-The first time you open Pulse Studio, a 3-step onboarding guide walks you through the basics:
+#### The Three Columns
 
-1. **Add Your Sources** — Upload documents, paste URLs, or add context files to the left panel. The AI uses these as reference material.
-2. **Ask Anything** — Type naturally in the center canvas, use `/commands` for structured output, or mention `@agents` for specialized help.
-3. **Pin & Collect** — Save useful findings, tables, and insights to the Artifacts board on the right for later export.
+| Column | What it's for |
+| ------ | ------------- |
+| **Left — Sources** | Upload and manage documents, PDFs, and reference files. Toggle which ones are **active** so the AI grounds its answers only in what's relevant right now. |
+| **Center — Chat** | Ask anything. Answers are grounded in your active sources, show **inline citations**, and can reveal the AI's **reasoning trace**. Talk it through hands-free with the **docked voice agent**. |
+| **Right — Studio** | An always-visible **generator rail** that turns your sources into structured artifacts, plus a **board** where you pin what you want to keep. |
 
-You can skip the tutorial and return to it later from the Studio settings.
+On desktop all three columns are visible at once. On mobile they collapse — swipe from the left edge to open Sources, from the right to open Studio, or use the **Sources** / **Studio** buttons at the top.
 
-#### The Three-Panel Layout
+#### Sources & Active Context
 
-Pulse Studio uses a responsive three-panel layout:
+1. Click **Add source** (or drag files into the Sources panel) to upload documents, PDFs, and reference files.
+2. Each source shows a processing status — once it reads **completed**, it's ready to use.
+3. Toggle a source **on** to add it to the **active context**. The AI only grounds its answers in active sources, so you can narrow the focus to exactly the right material.
+4. Use **Add all to context** to activate everything at once, or **Clear context** to start fresh.
+5. Open the **Knowledge Bank** to browse your full document library across sessions.
 
-- **Left Panel — Sources** — Upload and manage documents, PDFs, and reference files. Toggle which sources are active for each conversation. The AI draws on active sources when answering your questions.
-- **Center — Conversation Canvas** — Your main workspace. Type questions, use slash commands, and read AI responses with inline artifacts. This is where all interaction happens.
-- **Right Panel — Artifacts Board** — Collected findings, tables, action items, and other structured content. Pin items from AI responses here and export them when your session is complete.
+**Tip:** The Studio panel tells you what it will generate from — "Generate from your 3 active sources" — so you always know the scope before you run a generator.
 
-On mobile, the panels collapse into a single view — swipe left or right to switch between Sources, Canvas, and Artifacts.
+#### Chat — Grounded Answers with Citations
 
-#### Slash Commands
-
-Type `/` followed by a command name to guide the AI's output format:
+1. Type your question in the composer at the bottom of the center column.
+2. The AI answers using your **active sources** and adds **inline citations** — click a citation to jump to the exact passage it came from. A **Sources used** panel lists everything the answer drew on.
+3. Click **Show reasoning** under any answer to expand the AI's **reasoning trace** — the steps it took to reach the conclusion.
+4. Guide the output format with slash commands (type `/`):
 
 | Command | What it produces |
 | ------- | ---------------- |
-| `/brainstorm` | 6–8 creative ideas in an Ideas artifact |
-| `/decide` | Pros & Cons comparison with a recommendation |
-| `/analyze` | Deep analysis with Key Points, Risks, and Action Items |
 | `/summarize` | Concise summary with bullet points and action items |
+| `/analyze` | Deep analysis with Key Points, Risks, and Action Items |
+| `/brainstorm` | A spread of creative ideas |
+| `/decide` | Pros & Cons comparison with a recommendation |
 | `/plan` | Structured roadmap with Timeline, Action Items, and Risks |
+| `/risks` | Risk assessment with severity and mitigation |
+| `/compare` | Side-by-side comparison across your sources |
 | `/debrief` | Retrospective with insights and lessons learned |
-| `/risks` | Risk assessment with severity and mitigation strategies |
-| `/compare` | Side-by-side option comparison |
 
-**Tip:** You can combine commands with natural language: `/analyze What are the pros and cons of migrating our database to PostgreSQL?`
+**Tip:** Combine a command with natural language: `/analyze Where are the gaps between these two vendor contracts?`
 
-#### AI Agent Personas
+#### Talk It Through — Docked Voice Agent
 
-Switch the AI's personality mid-conversation by mentioning an agent with `@` or using the agent dropdown:
+The realtime voice agent is built right into the Chat column. Click the **microphone** to start talking; the agent listens, responds out loud, and its turns appear in the same conversation as your typed messages — so you can move between typing and talking without losing your place. Choose from 8 AI voice characters: Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, and Verse.
 
-| Agent | What it does |
-| ----- | ------------ |
-| **General** | Balanced, all-purpose assistant — the default |
-| **@skeptic** | Critical thinker that questions assumptions and finds flaws |
-| **@scribe** | Note-taker and summarizer — excellent for documentation |
-| **@deep-diver** | Thorough researcher that explores topics in depth |
+#### Studio — Generators
 
-**Example:** Type `Ask @skeptic if there are flaws in this business plan` — the AI switches to a critical analysis style for that response.
+The right-hand **Studio** column has an always-on **generator rail**. Each generator reads your active sources (or all sources if none are toggled) and produces a finished artifact you can read, pin, or export:
 
-#### Smart Artifacts
+| Generator | What it creates |
+| --------- | --------------- |
+| **Study Guide** | Structured notes and flashcards from your sources |
+| **FAQ** | The questions your sources answer, with answers |
+| **Timeline** | A chronological view of the events in your sources |
+| **Podcast** | A two-host dialogue script that "talks through" your material |
+| **Comparative Analysis** *(advanced)* | A structured comparison across multiple sources |
+| **Knowledge Graph** *(advanced)* | The key entities in your sources and how they relate |
 
-When the AI generates structured content — summaries, pros/cons lists, action items, timelines, risk assessments, decision matrices, or idea lists — Pulse automatically detects and renders them as interactive **Artifact cards** inline in the conversation.
+Generated content opens in its own view and can be **pinned to the board** below the rail. The board keeps your pinned notes and artifacts for the session — find them under **On the board**.
 
-Each artifact card includes:
-- A color-coded badge showing its type (summary, pros-cons, action-items, timeline, etc.)
-- A **Pin** button to save it to the Artifacts board on the right
-- Properly formatted lists, tables, and headings
+#### Cold Start — Learning the Notebook
 
-**Artifact types detected automatically:**
+The first time you open the War Room with no sources or messages, the front door **teaches you the engine** instead of leaving you with a blank page:
 
-| Type | When it appears |
-| ---- | --------------- |
-| **Summary** | AI generates a "Key Points" or "Summary" section |
-| **Pros & Cons** | AI lists Pros and Cons side by side |
-| **Action Items** | AI generates numbered action steps |
-| **Decision Matrix** | AI produces a comparison table |
-| **Ideas** | AI brainstorms an ideas list |
-| **Timeline** | AI creates a dated roadmap |
-| **Risk Assessment** | AI identifies risks with details |
+- A one-line "what this can do," plus the three things it's good at — grounded chat, generators, and voice.
+- A **Add your first source** button (when you have no documents), or **example prompt chips** that fire real grounded queries (when sources are present).
+- The slash commands shown as affordances, plus the **⌘K** hint for the command palette.
 
-#### The Artifacts Board
+#### Command Palette
 
-Click the right panel to open the Artifacts Board — a persistent collection of everything you've pinned during your session.
-
-- Pin five types of notes: **Findings**, **Insights**, **Action Items**, **Questions**, and **Decisions**
-- Notes are timestamped and persist across sessions
-- Filter notes by type to focus on what matters
-- Export everything as Markdown, PDF, or CSV when your session is complete
-
-#### Focus Timer
-
-Click the **timer icon** in the Studio header to launch a draggable Pomodoro focus timer:
-
-- **Work sessions:** 25 minutes of focused work
-- **Short breaks:** 5 minutes between work sessions
-- **Long breaks:** 15 minutes after every 4th work session
-- The timer floats in the corner — you can continue chatting while it runs
-- Minimize or close it at any time
-- Session counter tracks how many focus cycles you've completed
-
-#### Voice in Studio
-
-- Click the **microphone icon** to start a voice conversation with the AI
-- Toggle **voice synthesis** to hear AI responses spoken aloud
-- Choose from 8 AI voice characters: Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, and Verse
-- Generate an **audio overview** of your session for listening on the go
-
-#### Quick-Start Actions
-
-When you first open Studio (or start a new session), six quick-action buttons help you get started:
-
-1. **Research a topic** — Opens with `/analyze` and Deep Diver agent
-2. **Analyze data** — Opens with `/analyze`
-3. **Brainstorm ideas** — Opens with `/brainstorm`
-4. **Make a decision** — Opens with `/decide`
-5. **Summarize sources** — Opens with `/summarize` and Scribe agent, auto-sends with your active sources
-6. **Quick question** — Opens an empty input for any natural-language question
-
-#### Guided Missions
-
-For structured multi-step workflows, Studio offers **Guided Missions** — step-by-step AI sessions for complex tasks:
-
-| Mission | What it guides you through |
-| ------- | -------------------------- |
-| **Decision** | Define the choice → List options → Set criteria → Evaluate → Get AI recommendation |
-
-Missions save your progress automatically — you can pause and return to where you left off.
-
-**Tip:** More mission types (Research, Brainstorm, Plan, Analyze, Create) are being added regularly.
-
-#### Action Palette
-
-Press `Cmd+K` (Mac) or `Ctrl+K` (Windows) inside Studio to open the **Action Palette** — a searchable command menu for quick access to all Studio actions, slash commands, and board shortcuts without leaving your current work.
-
-#### Real-Time Collaboration
-
-When teammates are viewing the same Studio session, their presence is shown via **avatar indicators** in the header. Artifacts pinned by any collaborator appear on everyone's board in real time.
+Press `⌘K` (Mac) or `Ctrl+K` (Windows) anywhere in the War Room to open the **Action Palette** — a searchable menu to launch any generator, toggle the Sources or Studio panels, add or clear source context, or open the Knowledge Bank without leaving your current work.
 
 <details>
 <summary><strong>Advanced: Getting the most from the Pulse AI Assistant</strong></summary>
@@ -2115,15 +2053,18 @@ Back up to speed in 15 minutes instead of 2 hours.
 </details>
 
 <details>
-<summary><strong>Use Case: Content creation with AI brainstorming</strong></summary>
+<summary><strong>Use Case: Turning a stack of documents into answers you can trust</strong></summary>
 
-**Scenario:** You need to come up with ideas for your company's new marketing campaign.
+**Scenario:** You have three vendor proposals and a requirements doc, and you need to make a recommendation by Friday.
 
-1. Open **Tools → AI Lab**.
-2. Enter: "New marketing campaign for our project management software targeting mid-size teams."
-3. Choose **SCAMPER** — Pulse generates variations: Substitute the typical messaging, Combine with social proof, Adapt competitor approaches…
-4. Switch to **Six Thinking Hats** — get the creative view, the critical view, the optimistic view, and the data view in one session.
-5. Export the best ideas as a document to share with your marketing team.
+1. Open the **War Room** and drag all four files into **Sources**. Wait for each to read *completed*.
+2. Toggle all four **on** so they're in the active context.
+3. In Chat, ask: `/compare Compare these proposals against our requirements doc on price, timeline, and support.` The answer comes back with **inline citations** so you can verify every claim against the source.
+4. Click **Show reasoning** to see how the AI weighed the trade-offs.
+5. In the **Studio** column, run **Comparative Analysis** for a clean side-by-side artifact, then **pin it to the board**.
+6. Run the **FAQ** generator to anticipate the questions your boss will ask — answered straight from the documents.
+
+You walk into the decision meeting with a cited recommendation instead of a gut feeling.
 
 </details>
 
@@ -2368,7 +2309,7 @@ Archives are organized by content type. Use the type filter in the sidebar to vi
 
 | Type | What's stored |
 | ---- | ------------- |
-| **Studio Sessions** | Completed Pulse Studio conversations and artifacts |
+| **War Room Sessions** | Completed War Room (Notebook) conversations, generated artifacts, and pinned board notes |
 | **Transcripts** | Meeting and Vox transcripts |
 | **Meeting Notes** | Notes from video meetings and AI Scribe sessions |
 | **Decision Logs** | Finalized decisions with vote history |
@@ -2468,8 +2409,8 @@ The **Tools** section gives you access to power features for automation, advance
 - **Automation Rules** — Set up rules to auto-archive, label, forward, or respond to messages
 - **Bulk Operations** — Select many messages or contacts and perform batch actions
 - **Webhook Manager** — Send Pulse events to external systems via webhooks
-- **AI Lab** — Advanced AI brainstorming workspace (see Section 12)
-- **Pulse Studio** — AI research and analysis workspace (see Section 12)
+
+For AI research and analysis, head to the **War Room** in the sidebar (your Notebook — see Section 12). The standalone "AI Lab" panel has been retired; its brainstorming workflows now live in the War Room and in Decisions & Tasks.
 
 ### Creating an Automation Rule
 
@@ -2894,15 +2835,15 @@ Pulse's AI runs on a managed platform — you don't need to provide your own Gem
 
 **Note:** If you need web-grounded answers with real-time citations (e.g., "latest news about…"), use Pulse AI or Live AI — both now search the web via Gemini Search Grounding and return source links with every answer.
 
-### Studio Settings
+### War Room Settings
 
-Customize your Pulse Studio AI workspace.
+Customize your War Room (AI research) workspace.
 
-1. Go to **Settings → Studio**.
+1. Go to **Settings → War Room**.
 2. Set **AI Depth**: Fast (quick answers), Balanced (default), or Deep (thorough multi-step reasoning).
 3. Toggle **Token Streaming** on to see AI responses appear word-by-word as they generate, rather than waiting for the full response.
-4. Toggle **Thinking Panel** to show or hide the AI's internal reasoning steps as it works.
-5. Toggle **Annotations** to enable inline notes and highlights on Studio documents.
+4. Toggle **Thinking Panel** to show or hide the AI's internal reasoning steps (the reasoning trace) as it works.
+5. Toggle **Annotations** to enable inline notes and highlights on War Room documents.
 
 ### Activity Monitor & Presence
 
