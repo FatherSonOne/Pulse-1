@@ -7,7 +7,7 @@ import { processWithModel, generateSpeech } from '../services/geminiService';
 import toast from 'react-hot-toast';
 import './WarRoomStyles.css';
 import { ErrorBoundary } from './shared/ErrorBoundary';
-import { WarRoomMode, MissionType, RoomType } from './WarRoom/ModeSwitcher';
+import { WarRoomMode, MissionType, RoomType } from './WarRoom/warRoom.types';
 
 // Phase 1 — War Room unified interface
 import { StudioLayout } from './WarRoom/StudioLayout';
@@ -83,9 +83,6 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
     activeContextDocs, setActiveContextDocs,
     showActiveContext, setShowActiveContext,
     isDeletingDoc, setIsDeletingDoc,
-    showMindMap, setShowMindMap,
-    showChartGenerator, setShowChartGenerator,
-    generatedChart, setGeneratedChart,
     showStudyGuide, setShowStudyGuide,
     showFAQ, setShowFAQ,
     showTimeline, setShowTimeline,
@@ -112,8 +109,6 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
     warRoomMode, setWarRoomMode,
     currentMission, setCurrentMission,
     currentRoom, setCurrentRoom,
-    showWarRoomHub, setShowWarRoomHub,
-    showMissionLauncher, setShowMissionLauncher,
     voiceEnabled, setVoiceEnabled,
     voiceMode, setVoiceMode,
     currentTokens, setCurrentTokens,
@@ -122,7 +117,6 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
     visualizerType, setVisualizerType,
     voiceSynthesisEnabled, setVoiceSynthesisEnabled,
     voiceGender, setVoiceGender,
-    glitchTrigger, setGlitchTrigger,
     showThinkingLogs, setShowThinkingLogs,
     thinkingLogs, setThinkingLogs,
     expandedThinking, setExpandedThinking,
@@ -709,10 +703,6 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
         setMissionMessagesForCurrent([...latestMessages, aiMsg]);
         // Also update global messages for backward compatibility
         setMessages(prev => [...prev, aiMsg]);
-
-        // Trigger glitch effect
-        setGlitchTrigger(true);
-        setTimeout(() => setGlitchTrigger(false), 100);
 
         // Speak the response if voice synthesis is enabled
         if (voiceSynthesisEnabled && response) {

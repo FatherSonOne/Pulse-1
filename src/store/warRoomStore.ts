@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import type { WarRoomMode, MissionType, RoomType } from '../components/WarRoom/ModeSwitcher';
+import type { WarRoomMode, MissionType, RoomType } from '../components/WarRoom/warRoom.types';
 import type { AIProject, AISession, AIMessage, KnowledgeDoc, ThinkingStep, PromptSuggestion } from '../services/ragService';
 import type { AgentType } from '../components/WarRoom/AgentSelector';
 
@@ -70,9 +70,6 @@ interface WarRoomState {
   expandedRooms: Set<string>;
 
   // Content generator modals
-  showMindMap: boolean;
-  showChartGenerator: boolean;
-  generatedChart: string | null;
   showStudyGuide: boolean;
   showFAQ: boolean;
   showTimeline: boolean;
@@ -99,9 +96,6 @@ interface WarRoomState {
   warRoomMode: WarRoomMode;
   currentMission: MissionType;
   currentRoom: RoomType;
-  showWarRoomHub: boolean;
-  showMissionLauncher: boolean;
-  glitchTrigger: boolean;
   showThinkingLogs: boolean;
 
   // Thinking state
@@ -159,9 +153,6 @@ interface WarRoomState {
   setShowSessionExport: (show: boolean) => void;
   setIsExporting: (exporting: boolean) => void;
   setExpandedRooms: (rooms: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
-  setShowMindMap: (show: boolean) => void;
-  setShowChartGenerator: (show: boolean) => void;
-  setGeneratedChart: (chart: string | null) => void;
   setShowStudyGuide: (show: boolean) => void;
   setShowFAQ: (show: boolean) => void;
   setShowTimeline: (show: boolean) => void;
@@ -188,9 +179,6 @@ interface WarRoomState {
   setWarRoomMode: (mode: WarRoomMode) => void;
   setCurrentMission: (mission: MissionType) => void;
   setCurrentRoom: (room: RoomType) => void;
-  setShowWarRoomHub: (show: boolean) => void;
-  setShowMissionLauncher: (show: boolean) => void;
-  setGlitchTrigger: (trigger: boolean) => void;
   setShowThinkingLogs: (show: boolean) => void;
   setThinkingLogs: (logs: Map<string, ThinkingStep[]> | ((prev: Map<string, ThinkingStep[]>) => Map<string, ThinkingStep[]>)) => void;
   setExpandedThinking: (expanded: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
@@ -280,9 +268,6 @@ export const useWarRoomStore = create<WarRoomState>()(
     showSessionExport: false,
     isExporting: false,
     expandedRooms: new Set<string>(),
-    showMindMap: false,
-    showChartGenerator: false,
-    generatedChart: null,
     showStudyGuide: false,
     showFAQ: false,
     showTimeline: false,
@@ -309,9 +294,6 @@ export const useWarRoomStore = create<WarRoomState>()(
     warRoomMode: 'tactical' as WarRoomMode,
     currentMission: 'research' as MissionType,
     currentRoom: 'war-room' as RoomType,
-    showWarRoomHub: true,
-    showMissionLauncher: false,
-    glitchTrigger: false,
     showThinkingLogs: true,
     thinkingLogs: new Map<string, ThinkingStep[]>(),
     expandedThinking: new Set<string>(),
@@ -377,9 +359,6 @@ export const useWarRoomStore = create<WarRoomState>()(
     setExpandedRooms: (updater) => set((state) => ({
       expandedRooms: resolveUpdater(updater, state.expandedRooms),
     })),
-    setShowMindMap: (show) => set({ showMindMap: show }),
-    setShowChartGenerator: (show) => set({ showChartGenerator: show }),
-    setGeneratedChart: (chart) => set({ generatedChart: chart }),
     setShowStudyGuide: (show) => set({ showStudyGuide: show }),
     setShowFAQ: (show) => set({ showFAQ: show }),
     setShowTimeline: (show) => set({ showTimeline: show }),
@@ -406,9 +385,6 @@ export const useWarRoomStore = create<WarRoomState>()(
     setWarRoomMode: (mode) => set({ warRoomMode: mode }),
     setCurrentMission: (mission) => set({ currentMission: mission }),
     setCurrentRoom: (room) => set({ currentRoom: room }),
-    setShowWarRoomHub: (show) => set({ showWarRoomHub: show }),
-    setShowMissionLauncher: (show) => set({ showMissionLauncher: show }),
-    setGlitchTrigger: (trigger) => set({ glitchTrigger: trigger }),
     setShowThinkingLogs: (show) => set({ showThinkingLogs: show }),
     setThinkingLogs: (updater) => set((state) => ({
       thinkingLogs: resolveUpdater(updater, state.thinkingLogs),

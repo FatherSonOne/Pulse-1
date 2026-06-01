@@ -11,8 +11,8 @@ export { PulseStudio } from './PulseStudio';
 export type { PulseStudioProps } from './PulseStudio';
 
 // ── Core Components ───────────────────────────────────────────────────────────
-export { ModeSwitcher } from './ModeSwitcher';
-export type { WarRoomMode, MissionType, RoomType } from './ModeSwitcher';
+// ModeSwitcher (orphaned UI) deleted in Phase 9; its types live in warRoom.types.
+export type { WarRoomMode, MissionType, RoomType } from './warRoom.types';
 export { VoiceControl } from './VoiceControl';
 export { useVoiceSynthesis } from './VoiceSynthesis';
 

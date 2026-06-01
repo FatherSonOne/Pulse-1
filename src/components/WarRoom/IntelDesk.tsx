@@ -9,7 +9,7 @@
 
 import React, { useState, useRef } from 'react';
 import { KnowledgeDoc } from '../../services/ragService';
-import { WarRoomMode } from './ModeSwitcher';
+import { WarRoomMode } from './warRoom.types';
 
 import { Database, Eye, Plus, Satellite, Trash2, Upload } from 'lucide-react';
 import { MarkdownContent } from './MarkdownContent';

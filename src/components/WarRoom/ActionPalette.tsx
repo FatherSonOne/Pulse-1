@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { WarRoomMode } from './ModeSwitcher';
+import { WarRoomMode } from './warRoom.types';
 
 import { Search } from 'lucide-react';
 
