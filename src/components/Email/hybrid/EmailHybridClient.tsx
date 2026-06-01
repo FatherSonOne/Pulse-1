@@ -15,6 +15,7 @@ import { Send, MailCheck, AlertTriangle } from 'lucide-react';
 import { emailSyncService } from '../../../services/emailSyncService';
 import { getGmailService, resetGmailService, type SendEmailParams } from '../../../services/gmailService';
 import { supabase } from '../../../services/supabase';
+import { settingsService } from '../../../services/settingsService';
 import analyticsCollector from '../../../services/analyticsCollector';
 
 import { useEmailStore } from '../../../store/emailStore';
@@ -350,6 +351,38 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
       setSyncing(false);
     }
   }, [loadEmails, setSyncing]);
+
+  // ── Background auto-sync (WI-3) ───────────────────────────────────────
+  // User-controlled periodic fullSync while the Email surface is open.
+  // Settings live in settingsService; re-read on mount and whenever the
+  // settings modal closes, so cadence changes take effect without a remount.
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+  const [syncFrequencyMin, setSyncFrequencyMin] = useState(5);
+
+  useEffect(() => {
+    if (showEmailSettings) return; // re-read once the modal closes
+    let cancelled = false;
+    (async () => {
+      try {
+        const [enabled, freq] = await Promise.all([
+          settingsService.get('emailAutoSync'),
+          settingsService.get('emailSyncFrequencyMinutes'),
+        ]);
+        if (cancelled) return;
+        setAutoSyncEnabled(enabled);
+        setSyncFrequencyMin(freq);
+      } catch (err) {
+        console.warn('[EmailHybridClient] auto-sync settings load failed:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [showEmailSettings]);
+
+  useEffect(() => {
+    if (!autoSyncEnabled || syncFrequencyMin <= 0) return;
+    const id = setInterval(() => { void handleSync(); }, syncFrequencyMin * 60 * 1000);
+    return () => clearInterval(id);
+  }, [autoSyncEnabled, syncFrequencyMin, handleSync]);
 
   // ── handleReAuthenticate ──────────────────────────────────────────────
   const handleReAuthenticate = useCallback(async () => {

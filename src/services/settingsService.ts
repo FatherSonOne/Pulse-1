@@ -133,6 +133,10 @@ export interface PulseSettings {
   emailNotificationBundling: boolean;
   emailAutoArchiveDays: number;
   emailDriveQuickAttach: boolean;
+  // Background auto-sync (WI-3): when enabled, the Email surface runs a
+  // periodic fullSync at the chosen cadence while it is open.
+  emailAutoSync: boolean;
+  emailSyncFrequencyMinutes: number; // 5 | 15 | 30 | 60; 0 = manual only
 
   // Data Retention & Privacy
   dataRetentionEnabled: boolean;
@@ -320,6 +324,10 @@ const DEFAULT_SETTINGS: PulseSettings = {
   emailNotificationBundling: true,
   emailAutoArchiveDays: 0,
   emailDriveQuickAttach: true,
+  // Auto-sync OFF by default — opt-in, so we don't start periodic Gmail API
+  // calls for every user. 5-minute cadence when enabled.
+  emailAutoSync: false,
+  emailSyncFrequencyMinutes: 5,
 
   // Nudge frequency
   nudgeFrequencyHours: 24,

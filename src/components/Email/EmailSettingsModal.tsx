@@ -38,6 +38,8 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
   const [autoArchiveDays, setAutoArchiveDays] = useState(0);
   const [driveQuickAttach, setDriveQuickAttach] = useState(true);
   const [emailNotificationsOn, setEmailNotificationsOn] = useState(true);
+  const [autoSyncOn, setAutoSyncOn] = useState(false);
+  const [syncFrequency, setSyncFrequency] = useState(5);
 
   // Accounts
   const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([]);
@@ -166,6 +168,8 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
         autoArchiveValue,
         driveAttachValue,
         emailNotificationsValue,
+        autoSyncValue,
+        syncFrequencyValue,
       ] = await Promise.all([
         settingsService.get('aiSuggestionsEnabled'),
         settingsService.get('theme'),
@@ -175,6 +179,8 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
         settingsService.get('emailAutoArchiveDays'),
         settingsService.get('emailDriveQuickAttach'),
         settingsService.get('emailNotifications'),
+        settingsService.get('emailAutoSync'),
+        settingsService.get('emailSyncFrequencyMinutes'),
       ]);
       setAiSuggestionsEnabled(aiEnabled);
       setTheme(themeValue);
@@ -184,6 +190,8 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
       setAutoArchiveDays(autoArchiveValue);
       setDriveQuickAttach(driveAttachValue);
       setEmailNotificationsOn(emailNotificationsValue);
+      setAutoSyncOn(autoSyncValue);
+      setSyncFrequency(syncFrequencyValue);
     } catch (error) {
       console.error('Error loading settings:', error);
     }
@@ -555,10 +563,15 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                   <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
                     <div>
                       <div className="font-medium text-stone-900 dark:text-white">Auto-sync</div>
-                      <div className="text-sm text-stone-500 dark:text-zinc-400">Automatically sync emails in the background</div>
+                      <div className="text-sm text-stone-500 dark:text-zinc-400">Automatically sync emails in the background while Email is open</div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" defaultChecked className="sr-only peer" />
+                      <input
+                        type="checkbox"
+                        checked={autoSyncOn}
+                        onChange={(e) => handleSettingUpdate(e.target.checked, setAutoSyncOn, 'emailAutoSync')}
+                        className="sr-only peer"
+                      />
                       <div className="w-11 h-6 bg-stone-300 dark:bg-zinc-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-rose-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
                     </label>
                   </div>
@@ -581,12 +594,16 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
 
                   <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
                     <div className="font-medium text-stone-900 dark:text-white mb-2">Sync Frequency</div>
-                    <select className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-stone-900 dark:text-white text-sm focus:outline-none focus:border-rose-500">
-                      <option>Every 5 minutes</option>
-                      <option>Every 15 minutes</option>
-                      <option>Every 30 minutes</option>
-                      <option>Every hour</option>
-                      <option>Manual only</option>
+                    <select
+                      value={syncFrequency}
+                      onChange={(e) => handleSettingUpdate(Number(e.target.value), setSyncFrequency, 'emailSyncFrequencyMinutes')}
+                      className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-stone-900 dark:text-white text-sm focus:outline-none focus:border-rose-500"
+                    >
+                      <option value={5}>Every 5 minutes</option>
+                      <option value={15}>Every 15 minutes</option>
+                      <option value={30}>Every 30 minutes</option>
+                      <option value={60}>Every hour</option>
+                      <option value={0}>Manual only</option>
                     </select>
                   </div>
                 </div>
