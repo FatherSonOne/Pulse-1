@@ -12,6 +12,7 @@ import { WarRoomMode, MissionType, RoomType } from './WarRoom/ModeSwitcher';
 // Phase 1 — War Room unified interface
 import { StudioLayout } from './WarRoom/StudioLayout';
 import { NotebookShell } from './WarRoom/notebook/NotebookShell';
+import { ChatPane } from './WarRoom/notebook/ChatPane';
 import { useFeature } from '../lib/featureFlags';
 import { StudioHeader } from './WarRoom/StudioHeader';
 import { PulseStudio } from './WarRoom/PulseStudio';
@@ -1291,6 +1292,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
   // OFF renders the legacy StudioLayout. Both wrap the same props/children.
   const useNotebookShell = useFeature('warRoomNotebook', userId);
   const StudioShell = useNotebookShell ? NotebookShell : StudioLayout;
+  const ChatComponent = useNotebookShell ? ChatPane : PulseStudio;
 
   // File upload trigger for PulseStudio
   const handleUploadClick = () => {
@@ -1554,7 +1556,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
           onDeleteNote={deleteBoardNote}
           onClearNotes={clearBoardNotes}
         >
-          <PulseStudio
+          <ChatComponent
             selectedSessionId={selectedSessionId}
             messages={messages}
             isLoading={isLoading}
