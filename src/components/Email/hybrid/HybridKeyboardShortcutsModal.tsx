@@ -61,6 +61,7 @@ export const HYBRID_SHORTCUTS: ShortcutSection[] = [
       { keys: ['?'], description: 'Show this help' },
       { keys: ['/'], description: 'Focus search' },
       { keys: ['Shift', 'N'], description: 'Refresh, sync' },
+      { keys: [mod, 'Z'], description: 'Undo last send' },
       { keys: ['g', 'i'], description: 'Inbox' },
       { keys: ['g', 's'], description: 'Starred' },
       { keys: ['g', 't'], description: 'Sent' },

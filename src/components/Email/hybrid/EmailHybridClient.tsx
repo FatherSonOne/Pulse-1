@@ -70,6 +70,7 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
   const emails = useEmailStore((s) => s.emails);
   const loadEmails = useEmailStore((s) => s.loadEmails);
   const currentFolder = useEmailStore((s) => s.currentFolder);
+  const setCurrentFolder = useEmailStore((s) => s.setCurrentFolder);
   const activeCategory = useEmailStore((s) => s.activeCategory);
   const syncState = useEmailStore((s) => s.syncState);
   const setSyncState = useEmailStore((s) => s.setSyncState);
@@ -584,11 +585,40 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal,
   ]);
 
+  // Ctrl+Z: undo the most-recent pending send (mirrors the inline Undo toast).
+  // pendingSends is an insertion-ordered Map, so the last entry is newest.
+  const handleUndoLatestSend = useCallback(() => {
+    const sends = useEmailComposeStore.getState().pendingSends;
+    if (sends.size === 0) {
+      toast('Nothing to undo right now.');
+      return;
+    }
+    const entries = Array.from(sends.entries());
+    const [id, send] = entries[entries.length - 1];
+    clearTimeout(send.timeoutId);
+    removePendingSend(id);
+    restoreComposer(send.params);
+    toast.success('Send cancelled — email restored to composer');
+  }, [removePendingSend, restoreComposer]);
+
+  // g i/s/t/d: jump to a folder. Inbox uses the flat list (mode 'inbox');
+  // other folders render FolderListView under cockpit mode (see render).
+  const handleGoToFolder = useCallback(
+    (folder: 'inbox' | 'starred' | 'sent' | 'drafts') => {
+      if (searchActive) void clearSearch();
+      setCurrentFolder(folder);
+      setMode(folder === 'inbox' ? 'inbox' : 'cockpit');
+    },
+    [searchActive, clearSearch, setCurrentFolder, setMode],
+  );
+
   useEmailHybridShortcuts({
     onCompose: openCompose,
     onHelp: () => setShowKeyboardShortcuts(true),
     onSync: handleSync,
     onSnoozeFocused: handleSnoozeFocused,
+    onUndo: handleUndoLatestSend,
+    onGoToFolder: handleGoToFolder,
   });
 
   const goToTriage = useCallback(() => setMode('triage'), [setMode]);

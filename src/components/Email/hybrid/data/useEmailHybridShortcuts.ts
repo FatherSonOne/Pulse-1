@@ -4,9 +4,9 @@
 //   c       compose
 //   ?       open keyboard shortcuts help
 //   /       focus search (Phase 8 stub — toasts for now)
-//   Shift+N refresh / sync (Phase 7 stub — toasts)
-//   Ctrl+Z  undo last send (Phase 7 stub — toasts)
-//   g i / g s / g t / g d   switch folder (Phase 6 stub — toasts)
+//   Shift+N refresh / sync (wired via onSync)
+//   Ctrl+Z  undo last send (wired via onUndo; toast when nothing pending)
+//   g i / g s / g t / g d   switch folder (wired via onGoToFolder)
 //
 // Mode-specific keys live where they belong:
 //   E / H / T / R / ⌘↵   in TriageView (gated on mode === 'triage')
@@ -27,6 +27,10 @@ interface Options {
   onSync?: () => void;
   /** Optional snooze trigger for B. If omitted, the keypress shows a phase-stub toast. */
   onSnoozeFocused?: () => void;
+  /** Optional undo-last-send for Ctrl+Z. If omitted, the keypress shows a phase-stub toast. */
+  onUndo?: () => void;
+  /** Optional folder navigation for g i/s/t/d. If omitted, the keypress shows a phase-stub toast. */
+  onGoToFolder?: (folder: 'inbox' | 'starred' | 'sent' | 'drafts') => void;
 }
 
 function isTextInputTarget(target: EventTarget | null): boolean {
@@ -37,7 +41,7 @@ function isTextInputTarget(target: EventTarget | null): boolean {
   return false;
 }
 
-export function useEmailHybridShortcuts({ onCompose, onHelp, onSync, onSnoozeFocused }: Options): void {
+export function useEmailHybridShortcuts({ onCompose, onHelp, onSync, onSnoozeFocused, onUndo, onGoToFolder }: Options): void {
   const showKeyboardShortcuts = useEmailUIStore((s) => s.showKeyboardShortcuts);
   const showEmailSettings = useEmailUIStore((s) => s.showEmailSettings);
   const showReauthModal = useEmailUIStore((s) => s.showReauthModal);
@@ -92,7 +96,8 @@ export function useEmailHybridShortcuts({ onCompose, onHelp, onSync, onSnoozeFoc
         case 'z':
           if (hasCtrl) {
             e.preventDefault();
-            toast('Undo send lands in Phase 7.');
+            if (onUndo) onUndo();
+            else toast('Undo is only available right after sending.');
           }
           break;
       }
@@ -100,7 +105,7 @@ export function useEmailHybridShortcuts({ onCompose, onHelp, onSync, onSnoozeFoc
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [
-    onCompose, onHelp, onSync, onSnoozeFocused,
+    onCompose, onHelp, onSync, onSnoozeFocused, onUndo,
     showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal,
   ]);
 
@@ -132,8 +137,9 @@ export function useEmailHybridShortcuts({ onCompose, onHelp, onSync, onSnoozeFoc
         if (key === 'i' || key === 's' || key === 't' || key === 'd') {
           e.preventDefault();
           const folder =
-            key === 'i' ? 'Inbox' : key === 's' ? 'Starred' : key === 't' ? 'Sent' : 'Drafts';
-          toast(`Go to ${folder} lands in Phase 6.`);
+            key === 'i' ? 'inbox' : key === 's' ? 'starred' : key === 't' ? 'sent' : 'drafts';
+          if (onGoToFolder) onGoToFolder(folder);
+          else toast(`Go to ${folder} lands in Phase 6.`);
         }
         disarm();
       }
@@ -143,5 +149,5 @@ export function useEmailHybridShortcuts({ onCompose, onHelp, onSync, onSnoozeFoc
       window.removeEventListener('keydown', handler);
       disarm();
     };
-  }, [showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal]);
+  }, [onGoToFolder, showComposer, showKeyboardShortcuts, showEmailSettings, showReauthModal]);
 }
