@@ -339,11 +339,21 @@ Return ONLY valid JSON.`;
   } catch (e) {
     if (isRouterHardError(e)) throw e;
     if (e instanceof AIJsonParseError) {
-      // Model returned malformed/truncated JSON — likely hit max_output_tokens
-      // on a large briefing context. Log a head of the raw text for triage.
+      // Model returned malformed/truncated JSON — fell through every repair
+      // tier (strict / fence-strip / balanced-extract / trailing-comma). Log
+      // the underlying parser message + length + both ends so the failure mode
+      // is classifiable: "end of JSON input" => truncation (server output cap),
+      // "Unexpected token" => stray garbage, "control character" => unescaped
+      // newline in a string field. Head-only logging couldn't tell these apart.
+      const raw = e.rawText ?? '';
       console.warn(
-        '[briefing] model returned unparseable JSON; using fallback. Head:',
-        e.rawText.slice(0, 200),
+        '[briefing] model returned unparseable JSON; using fallback.',
+        {
+          parseError: e.parseError?.message,
+          length: raw.length,
+          head: raw.slice(0, 200),
+          tail: raw.slice(-200),
+        },
       );
     } else {
       console.error('Briefing generation error:', e);

@@ -218,6 +218,18 @@ export async function invokeAIJson<T = unknown>(
     } catch { /* fall through */ }
   }
 
+  // Tier 4: strip trailing commas (`,}` / `,]`) — a frequent LLM JSON fault
+  // that the strict parser rejects. The stripper is string-literal-aware, so
+  // it only removes commas JSON actually forbids; it can never turn valid
+  // data into different valid data. Try it on the tightest candidate we have.
+  const candidate = extracted ?? fenceStripped;
+  const decommatized = stripTrailingCommas(candidate);
+  if (decommatized !== candidate) {
+    try {
+      return JSON.parse(decommatized) as T;
+    } catch { /* fall through */ }
+  }
+
   // All repairs failed — surface a typed error with the raw text so callers
   // can log it and decide whether to fall back to defaults.
   const finalErr = (() => {
@@ -255,6 +267,36 @@ function extractBalancedJson(s: string): string | null {
     }
   }
   return null;
+}
+
+/** Removes commas that immediately precede a `}` or `]` (optionally across
+ *  whitespace) — i.e. trailing commas, which JSON forbids but LLMs frequently
+ *  emit. String-literal-aware: a comma inside a quoted string is never touched,
+ *  so the transform only ever removes characters that would otherwise make the
+ *  text unparseable. Returns the input unchanged when there's nothing to fix. */
+function stripTrailingCommas(s: string): string {
+  let out = '';
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inString) {
+      out += ch;
+      if (escaped) { escaped = false; continue; }
+      if (ch === '\\') { escaped = true; continue; }
+      if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; out += ch; continue; }
+    if (ch === ',') {
+      // Look ahead past whitespace; drop the comma if the next non-ws char closes.
+      let j = i + 1;
+      while (j < s.length && /\s/.test(s[j])) j++;
+      if (j < s.length && (s[j] === '}' || s[j] === ']')) continue; // skip the comma
+    }
+    out += ch;
+  }
+  return out;
 }
 
 export type { AITask, AIInvokeParams, AIResult, AIMessage } from './types';
