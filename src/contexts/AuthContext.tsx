@@ -47,6 +47,33 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Structural equality for the auth User. Supabase fires TOKEN_REFRESHED on a
+ * timer (the session monitor refreshes proactively), and each event hands us a
+ * freshly-built User object that is value-identical to the current one. If we
+ * blindly setUser() that new reference, every useAuth consumer re-renders and
+ * any effect keyed on the user object re-runs — which previously cascaded into
+ * WorkspaceContext flipping isLoading and WorkspaceGate remounting the whole
+ * authed tree on each refresh. Comparing ALL fields (so any genuine change —
+ * googleConnected after a connect, role, avatar — still propagates) lets us
+ * preserve the reference when nothing actually changed.
+ */
+const usersEqual = (a: User | null, b: User | null): boolean => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.id === b.id &&
+    a.name === b.name &&
+    a.email === b.email &&
+    a.avatarUrl === b.avatarUrl &&
+    a.googleConnected === b.googleConnected &&
+    a.microsoftConnected === b.microsoftConnected &&
+    a.role === b.role &&
+    a.isAdmin === b.isAdmin &&
+    JSON.stringify(a.connectedProviders) === JSON.stringify(b.connectedProviders)
+  );
+};
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -93,7 +120,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChange((newUser) => {
       console.log('[AuthProvider] Auth state changed:', newUser?.email || 'logged out');
-      setUser(newUser);
+      // Preserve the existing reference when the refreshed user is value-equal
+      // (the common TOKEN_REFRESHED case) so downstream effects/renders don't
+      // churn. Genuine changes still produce a new reference. See usersEqual.
+      setUser((prev) => (usersEqual(prev, newUser) ? prev : newUser));
       setIsLoading(false);
 
       // Tie PostHog distinct_id to the Supabase user id so D1/D7/D30 cohort

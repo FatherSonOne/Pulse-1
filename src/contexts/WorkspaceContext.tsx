@@ -137,7 +137,12 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
     const fetched = await workspaceService.getUserWorkspaces(user.id);
     setWorkspaces(fetched);
     return fetched;
-  }, [user]);
+    // Key on the stable user id, NOT the user object. AuthContext calls
+    // setUser(newUser) with a fresh reference on every TOKEN_REFRESHED, so
+    // depending on `user` would rebuild this callback (and every effect that
+    // lists it) on each proactive token refresh. See the init-effect note below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const loadMembers = useCallback(async (workspaceId: string): Promise<void> => {
     const fetched = await workspaceService.getMembers(workspaceId);
@@ -229,7 +234,15 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
 
     init();
     return () => { cancelled = true; };
-  }, [user, resolveActiveWorkspace]);
+    // Depend on the stable user id, NOT the user object. AuthContext replaces
+    // the user object reference on every auth event (incl. the session
+    // monitor's proactive TOKEN_REFRESHED). Keying on the object re-ran this
+    // init on each refresh, flipping isLoading true->false, which made
+    // WorkspaceGate (App.tsx) swap the whole authed tree for the loading
+    // screen and remount it — wiping in-flight modal/form state app-wide
+    // (e.g. ConnectContactsModal refetching contacts 3x per refresh burst).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, resolveActiveWorkspace]);
 
   // ---------------------------------------------------------------------------
   // Load members whenever currentWorkspace changes
@@ -316,7 +329,11 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, loadWorkspaces]);
+    // Stable user id only — see the init-effect note. Resubscribing the
+    // realtime channel on every token refresh is both wasteful and a
+    // reconnect-churn source.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, loadWorkspaces]);
 
   // ---------------------------------------------------------------------------
   // Derived state
