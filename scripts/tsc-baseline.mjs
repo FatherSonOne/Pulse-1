@@ -103,10 +103,23 @@ const REPO_ROOT_RE = new RegExp(
   'gi'
 );
 
-/** Collapse whitespace + strip the env-specific repo root so messages are
- *  stable across platforms (Windows dev ↔ Linux CI) and drive-letter casing. */
+// TypeScript emits the members of a union type in a NON-deterministic order
+// (e.g. `"tap" | "hold"` one run, `"hold" | "tap"` the next), which flips a
+// signature between runs and produces phantom "new error / fixed" pairs. Sort
+// the members of quoted-string-literal unions so the signature is order-stable.
+function sortQuotedUnions(s) {
+  return s.replace(/"[^"]*"(?:\s*\|\s*"[^"]*")+/g, (m) =>
+    m.split('|').map((p) => p.trim()).sort().join(' | '),
+  );
+}
+
+/** Collapse whitespace + strip the env-specific repo root + sort union members
+ *  so messages are stable across platforms (Windows dev ↔ Linux CI), drive-letter
+ *  casing, and TypeScript's nondeterministic union ordering. */
 function normalizeMessage(msg) {
-  return msg.replace(REPO_ROOT_RE, '').replace(/\s+/g, ' ').trim();
+  return sortQuotedUnions(
+    msg.replace(REPO_ROOT_RE, '').replace(/\s+/g, ' ').trim(),
+  );
 }
 
 // Matches: path/to/file.ts(LINE,COL): error TSxxxx: message
