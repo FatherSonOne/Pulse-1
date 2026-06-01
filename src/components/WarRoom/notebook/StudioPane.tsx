@@ -1,23 +1,18 @@
 /**
- * StudioPane — right pane of the Notebook shell (handoff Phase 5, P0).
+ * StudioPane — right column of the Notebook, built to the mockup.
  *
- * Two tabs over a single surface:
- *   • Generate  — the GeneratorRail (Study Guide / FAQ / Timeline / Podcast +
- *     Comparative / Knowledge Graph), each launched via the canonical store
- *     flags rendered by WarRoomModalStack.
- *   • Artifacts — TheBoard (pinned findings / decisions / insights). This is
- *     the durable artifacts list; generated content opens in its own modal and
- *     can be pinned here. No new "generated artifacts" store slice is invented
- *     (handoff: don't invent contracts).
- *
- * Tab state is local-only.
+ * Header ("Studio") → source hint → always-on GeneratorRail → "On the board"
+ * section (TheBoard pinned artifacts). No tabs — the rail is always visible
+ * (handoff §4.1: GeneratorRail over ArtifactsSection). Generated content opens
+ * in its own modal and can be pinned to the board here; no new store slice is
+ * invented.
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { TheBoard } from '../TheBoard';
 import { GeneratorRail } from './GeneratorRail';
 import type { BoardNote, NoteType, BoardNoteMeta } from '../useBoardNotes';
-import { Sparkles, Pin } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 export interface StudioPaneProps {
   notes: BoardNote[];
@@ -28,8 +23,6 @@ export interface StudioPaneProps {
   totalSourceCount: number;
 }
 
-type StudioTab = 'generate' | 'artifacts';
-
 export const StudioPane: React.FC<StudioPaneProps> = ({
   notes,
   onAddNote,
@@ -38,63 +31,45 @@ export const StudioPane: React.FC<StudioPaneProps> = ({
   activeSourceCount,
   totalSourceCount,
 }) => {
-  const [tab, setTab] = useState<StudioTab>('generate');
-
-  const tabBtn = (id: StudioTab, label: string, icon: React.ReactNode) => {
-    const active = tab === id;
-    return (
-      <button
-        onClick={() => setTab(id)}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 5,
-          padding: '6px 12px',
-          border: 'none',
-          borderBottom: `2px solid ${active ? 'var(--pulse-ink)' : 'transparent'}`,
-          background: 'transparent',
-          color: active ? 'var(--pulse-ink)' : 'var(--pulse-ink-3)',
-          cursor: 'pointer',
-          fontSize: 12,
-          fontWeight: 600,
-          transition: 'color var(--pulse-duration) var(--pulse-ease)',
-        }}
-      >
-        {icon}
-        {label}
-        {id === 'artifacts' && notes.length > 0 && (
-          <span style={{ fontSize: 10, color: 'var(--pulse-ink-3)' }}>({notes.length})</span>
-        )}
-      </button>
-    );
-  };
+  const sourceHint =
+    totalSourceCount === 0
+      ? 'Add a source to generate from'
+      : activeSourceCount > 0
+        ? `Generate from your ${activeSourceCount} active source${activeSourceCount !== 1 ? 's' : ''}`
+        : `Generate from all ${totalSourceCount} source${totalSourceCount !== 1 ? 's' : ''}`;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {/* Tab bar */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 4,
-          padding: '0 8px',
-          borderBottom: '1px solid var(--pulse-border)',
-          flexShrink: 0,
-        }}
-      >
-        {tabBtn('generate', 'Generate', <Sparkles size={13} />)}
-        {tabBtn('artifacts', 'Artifacts', <Pin size={13} />)}
+    <>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 14px 6px', flexShrink: 0 }}>
+        <Sparkles size={16} style={{ color: 'var(--pulse-rose)' }} />
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--pulse-ink)' }}>Studio</span>
       </div>
 
-      {/* Tab body */}
-      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        {tab === 'generate' ? (
-          <GeneratorRail activeSourceCount={activeSourceCount} totalSourceCount={totalSourceCount} />
-        ) : (
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 12px 14px' }}>
+        <div style={{ fontSize: 11, color: 'var(--pulse-ink-3)', marginBottom: 10 }}>{sourceHint}</div>
+
+        <GeneratorRail />
+
+        {/* On the board */}
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--pulse-border)' }}>
+          <div
+            style={{
+              fontFamily: 'var(--pulse-font-mono)',
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--pulse-ink-3)',
+              marginBottom: 8,
+            }}
+          >
+            On the board {notes.length > 0 && `· ${notes.length}`}
+          </div>
           <TheBoard notes={notes} onAddNote={onAddNote} onDeleteNote={onDeleteNote} onClearNotes={onClearNotes} />
-        )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

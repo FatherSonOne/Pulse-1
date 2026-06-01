@@ -25,12 +25,10 @@ interface GenCard {
 }
 
 export interface GeneratorRailProps {
-  /** Active source count, for the "generate from N sources" hint. */
-  activeSourceCount: number;
-  totalSourceCount: number;
+  /** noop placeholder removed — StudioPane renders the source hint. */
 }
 
-export const GeneratorRail: React.FC<GeneratorRailProps> = ({ activeSourceCount, totalSourceCount }) => {
+export const GeneratorRail: React.FC<GeneratorRailProps> = () => {
   const setShowStudyGuide = useWarRoomStore((s) => s.setShowStudyGuide);
   const setShowFAQ = useWarRoomStore((s) => s.setShowFAQ);
   const setShowTimeline = useWarRoomStore((s) => s.setShowTimeline);
@@ -46,30 +44,8 @@ export const GeneratorRail: React.FC<GeneratorRailProps> = ({ activeSourceCount,
     { id: 'knowledge-graph', label: 'Knowledge Graph', desc: 'Entities & relationships', icon: <Share2 size={16} />, advanced: true, open: () => setShowAdvancedAI(true) },
   ];
 
-  const grounded = totalSourceCount > 0;
-  const sourceHint = !grounded
-    ? 'Add a source to generate from'
-    : activeSourceCount > 0
-      ? `Generate from your ${activeSourceCount} active source${activeSourceCount !== 1 ? 's' : ''}`
-      : `Generate from all ${totalSourceCount} source${totalSourceCount !== 1 ? 's' : ''}`;
-
   return (
-    <div style={{ padding: '10px 12px', overflowY: 'auto' }}>
-      <div
-        style={{
-          fontFamily: 'var(--pulse-font-mono)',
-          fontSize: 10,
-          fontWeight: 600,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          color: 'var(--pulse-ink-3)',
-          marginBottom: 8,
-        }}
-      >
-        {sourceHint}
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {cards.map((card) => (
           <button
             key={card.id}
@@ -137,7 +113,6 @@ export const GeneratorRail: React.FC<GeneratorRailProps> = ({ activeSourceCount,
             <ChevronRight size={14} style={{ color: 'var(--pulse-ink-3)', flexShrink: 0 }} />
           </button>
         ))}
-      </div>
     </div>
   );
 };

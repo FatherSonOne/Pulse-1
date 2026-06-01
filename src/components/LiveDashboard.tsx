@@ -1275,8 +1275,12 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
   // Note: War Room hub / mode selection removed in Phase 1 (War Room redesign).
   // The unified PulseStudio component replaces all 7 modes.
 
-  // Artifacts panel state (controlled from here, passed to StudioLayout)
-  const [artifactsPanelOpen, setArtifactsPanelOpen] = useState(false);
+  // Artifacts/Studio panel state (controlled from here, passed to the shell).
+  // The Notebook's Studio column is open by default on desktop so the generator
+  // rail is visible (matches the mockup); legacy StudioLayout stays closed.
+  const [artifactsPanelOpen, setArtifactsPanelOpen] = useState(
+    () => useNotebookShell && typeof window !== 'undefined' && window.innerWidth >= 1160,
+  );
 
   // War Room "Notebook" redesign (Path A) — flag-gated. ON renders NotebookShell,
   // OFF renders the legacy StudioLayout. Both wrap the same props/children.
@@ -1493,8 +1497,11 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
         getSessionMessages={getSessionMessagesForExport}
       />
 
-      {/* Main Content — War Room unified interface */}
+      {/* Main Content — War Room unified interface.
+          The Notebook supplies its own per-pane headers + chat masthead, so the
+          legacy StudioHeader bar is suppressed on the flag-ON path. */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {!useNotebookShell && (
         <StudioHeader
           selectedProject={selectedProject}
           selectedSessionId={selectedSessionId}
@@ -1518,6 +1525,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
           isGeneratingAudio={isGeneratingAudio}
           handleGenerateAudioOverview={handleGenerateAudioOverview}
         />
+        )}
 
         <StudioShell
           className="flex-1 min-h-0"

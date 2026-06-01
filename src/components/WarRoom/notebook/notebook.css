@@ -1,0 +1,130 @@
+/* ============================================================================
+   War Room "Notebook" (Path A) — dedicated layout.
+
+   Built to the locked mockup (_design-playground/warroom-redesign.html), NOT
+   on the legacy StudioLayout `.ps-panel` bones. Always-on 3-column frame on
+   desktop (Sources · Chat · Studio); side columns become overlays on small
+   screens. Consumes --pulse-* tokens only.
+   ========================================================================== */
+
+.wr-nb {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  background: var(--pulse-bg, var(--pulse-surface));
+  color: var(--pulse-ink);
+}
+
+/* ── Mobile-only panel toggle bar ─────────────────────────────────────────── */
+.wr-nb-mobilebar { display: none; }
+.wr-nb-mobilebtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pulse-ink-2);
+  border: 1px solid var(--pulse-border);
+  background: transparent;
+  cursor: pointer;
+}
+@media (max-width: 768px) {
+  .wr-nb-mobilebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--pulse-border);
+    flex-shrink: 0;
+  }
+}
+
+/* ── Columns ──────────────────────────────────────────────────────────────── */
+.wr-nb-sources {
+  width: 288px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--pulse-border);
+  background: var(--pulse-surface);
+}
+
+.wr-nb-chat {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.wr-nb-studio {
+  width: 284px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--pulse-border);
+  background: var(--pulse-surface);
+}
+
+/* ── Shared column header ─────────────────────────────────────────────────── */
+.wr-nb-colhead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 10px;
+  flex-shrink: 0;
+}
+.wr-nb-colhead-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pulse-ink);
+}
+
+/* ── Backdrop (mobile overlay dismiss) ────────────────────────────────────── */
+.wr-nb-backdrop {
+  display: none;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+/* Narrow desktop / tablet: drop the Studio column to keep Sources + Chat. */
+@media (max-width: 1160px) {
+  .wr-nb-studio { display: none; }
+  .wr-nb-studio[data-force-open='true'] {
+    display: flex;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 41;
+    box-shadow: var(--pulse-shadow-modal, -8px 0 24px rgba(0,0,0,0.25));
+  }
+}
+
+/* Mobile: both side columns become slide-over overlays. */
+@media (max-width: 768px) {
+  .wr-nb-sources,
+  .wr-nb-studio {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 41;
+    width: min(86vw, 320px);
+    box-shadow: var(--pulse-shadow-modal, 8px 0 24px rgba(0,0,0,0.25));
+  }
+  .wr-nb-sources { left: 0; }
+  .wr-nb-studio { right: 0; }
+  .wr-nb-backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    background: rgba(0, 0, 0, 0.45);
+  }
+}
