@@ -20,10 +20,15 @@ import { KnowledgeDoc } from '../../../services/ragService';
 import { useWarRoomStore } from '../../../store/warRoomStore';
 import { MessageList } from './MessageList';
 import { Composer } from './Composer';
+import { DockedVoice } from './DockedVoice';
 
 import { ArrowRight, BookOpen } from 'lucide-react';
 
-export type ChatPaneProps = PulseStudioProps;
+export interface ChatPaneProps extends PulseStudioProps {
+  /** Threaded from LiveDashboard for the docked realtime voice agent. */
+  voiceUserId?: string;
+  openaiApiKey?: string;
+}
 
 export const ChatPane: React.FC<ChatPaneProps> = ({
   selectedSessionId,
@@ -55,6 +60,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
   artifactsOpen,
   onUploadClick,
   onPinArtifact,
+  voiceUserId,
+  openaiApiKey = '',
 }) => {
   const safeMessages = Array.isArray(messages) ? messages : [];
   const selectedAgent = AGENTS.find((a) => a.id === activeAgent) || AGENTS[0];
@@ -74,6 +81,13 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
     },
     [setViewingDoc, setViewerHighlightText],
   );
+
+  // ── Docked realtime voice agent (re-homed from the floating panel) ───────────
+  const showVoiceAgentPanel = useWarRoomStore((s) => s.showVoiceAgentPanel);
+  const voiceAgentExpanded = useWarRoomStore((s) => s.voiceAgentExpanded);
+  const setShowVoiceAgentPanel = useWarRoomStore((s) => s.setShowVoiceAgentPanel);
+  const setVoiceAgentExpanded = useWarRoomStore((s) => s.setVoiceAgentExpanded);
+  const selectedProjectId = useWarRoomStore((s) => s.selectedProjectId);
 
   // ── Welcome Screen (Phase 7 → EmptyState) ───────────────────────────────
   const renderWelcome = () => {
@@ -156,6 +170,21 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
           onPinArtifact={onPinArtifact}
           documents={documents}
           onOpenCitation={openCitation}
+        />
+      )}
+
+      {/* Docked realtime voice agent — inline, grounded on the same context */}
+      {showVoiceAgentPanel && (
+        <DockedVoice
+          userId={voiceUserId || ''}
+          projectId={selectedProjectId || undefined}
+          sessionId={selectedSessionId || undefined}
+          openaiApiKey={openaiApiKey}
+          documents={documents}
+          activeContextIds={activeContextDocs}
+          expanded={voiceAgentExpanded}
+          onToggleExpand={() => setVoiceAgentExpanded(!voiceAgentExpanded)}
+          onClose={() => setShowVoiceAgentPanel(false)}
         />
       )}
 

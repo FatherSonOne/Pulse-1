@@ -74,6 +74,13 @@ const LoadingFallback: React.FC<{ message?: string }> = ({ message = 'Loading...
 );
 
 export interface WarRoomModalStackProps {
+  /**
+   * When true (Notebook flag ON), the realtime voice agent is docked inline in
+   * ChatPane (DockedVoice), so this stack must NOT also render its floating
+   * VoiceAgentPanel — doing so would mount two panels / two WebRTC sessions.
+   */
+  dockVoiceInline?: boolean;
+
   // ── Visibility flags ──────────────────────────────────────────────────────
   showExportModal: boolean;
   showVoiceAgentPanel: boolean;
@@ -129,6 +136,7 @@ export interface WarRoomModalStackProps {
 
 export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
   const {
+    dockVoiceInline,
     showExportModal,
     showVoiceAgentPanel,
     voiceAgentExpanded,
@@ -291,8 +299,9 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
         </div>
       )}
 
-      {/* OpenAI Realtime Voice Agent Panel */}
-      {showVoiceAgentPanel && (
+      {/* OpenAI Realtime Voice Agent Panel — floating (legacy path only).
+          When dockVoiceInline is set, DockedVoice renders this inline in ChatPane. */}
+      {showVoiceAgentPanel && !dockVoiceInline && (
         <div
           className={`fixed z-50 ${
             voiceAgentExpanded

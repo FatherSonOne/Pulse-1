@@ -24,7 +24,6 @@ import '../PulseStudio.css';
 import { SourcesPane } from './SourcesPane';
 import { StudioPane } from './StudioPane';
 import { ActionPalette, PaletteAction } from '../ActionPalette';
-import { VoiceOverlay } from '../VoiceOverlay';
 import { useSwipeGesture } from '../useSwipeGesture';
 import { useWarRoomStore } from '../../../store/warRoomStore';
 import type { StudioLayoutProps } from '../StudioLayout';
@@ -80,7 +79,6 @@ export const NotebookShell: React.FC<NotebookShellProps> = ({
   };
 
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [voiceOpen, setVoiceOpen] = useState(false);
 
   const hasDocProps = documents !== undefined && onToggleDoc !== undefined;
   const hasBoardProps = notes !== undefined && onAddNote !== undefined;
@@ -312,10 +310,11 @@ export const NotebookShell: React.FC<NotebookShellProps> = ({
         )}
       </div>
 
-      {/* ── Voice Overlay (re-homed into a docked strip in Phase 6) ───────────── */}
-      {voiceOpen && onVoiceSend && (
-        <VoiceOverlay onSendMessage={onVoiceSend} onClose={() => setVoiceOpen(false)} />
-      )}
+      {/*
+        Realtime voice is docked inline inside ChatPane (DockedVoice), re-homing
+        the canonical VoiceAgentPanel — no floating shell, one voice surface
+        (Phase 6). The legacy floating VoiceOverlay was removed here.
+      */}
 
       {/* ── Action Palette (Cmd+K) ───────────────────────────────────────────── */}
       <ActionPalette

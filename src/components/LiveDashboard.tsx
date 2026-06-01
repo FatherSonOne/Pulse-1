@@ -1596,6 +1596,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
               });
             }}
             isMobile={isMobile}
+            {...(useNotebookShell ? ({ voiceUserId: userId, openaiApiKey } as any) : {})}
           />
         </StudioShell>
 
@@ -1613,6 +1614,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
       )}
 
       <WarRoomModalStack
+        dockVoiceInline={useNotebookShell}
         showExportModal={showExportModal}
         showVoiceAgentPanel={showVoiceAgentPanel}
         voiceAgentExpanded={voiceAgentExpanded}
