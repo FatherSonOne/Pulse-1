@@ -133,6 +133,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
   forceMobile,
   threadId,
   messageCount,
+  toolsEnabled = true,
 }) => {
   const isMobile = useIsMobile(forceMobile);
   const isDarkMode = useIsDarkMode(isDarkModeProp);
@@ -425,8 +426,9 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
         }
       }
 
-      // Tools menu opener: Cmd+Shift+P.
-      if (meta && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
+      // Tools menu opener: Cmd+Shift+P. Gated off while the tools surface is
+      // removed from the UX (toolsEnabled=false).
+      if (toolsEnabled && meta && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
         e.preventDefault();
         setToolsOpen(true);
         return;
@@ -604,6 +606,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
 
           {/* Send group */}
           <div role="group" aria-label="Send options" className="flex items-end gap-1">
+            {toolsEnabled && (
             <button
               type="button"
               aria-label="AI tools"
@@ -621,6 +624,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
             >
               <Sparkles size={18} aria-hidden="true" />
             </button>
+            )}
 
             {showMic ? (
               <button
@@ -709,6 +713,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
       {/* Tools menu placeholder — when toolsMenuV2 flag is on, swaps to
           the real slim menu. threadId + messageCount drive the
           tile-visibility state machine (Summary / Insights / Audit). */}
+      {toolsEnabled && (
       <ToolsMenuPlaceholder
         open={toolsOpen}
         isDarkMode={isDarkMode}
@@ -716,6 +721,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
         threadId={threadId}
         messageCount={messageCount}
       />
+      )}
     </>
   );
 };

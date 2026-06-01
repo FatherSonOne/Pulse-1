@@ -151,6 +151,13 @@ export interface PulseComposerProps {
    * Insights hidden &lt;20 / active 20+; Thread Audit disabled &lt;5).
    */
   messageCount?: number;
+  /**
+   * Whether the AI Tools entry point (button + Cmd+Shift+P + ToolsMenuPlaceholder)
+   * renders. Defaults to true for back-compat. Messages passes
+   * `MESSAGES_TOOLS_ENABLED` (currently false) to keep the tools surface removed
+   * from the UX while the scaffolding stays dormant.
+   */
+  toolsEnabled?: boolean;
 }
 
 /** Touch-target floor per WCAG 2.2 AA + spec. */

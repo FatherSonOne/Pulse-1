@@ -336,6 +336,12 @@ const renderTextWithLinks = (text: string): React.ReactNode => {
 // Generate smart/contextual template text based on conversation context
 const generateSmartTemplateText = genSmartTemplate;
 
+// Stable empty command list for the command-palette registration. Must be a
+// module-level constant (not an inline `[]`) so its identity never changes —
+// otherwise useRegisterCommands' effect re-fires every render and loops the
+// CommandPaletteContext registry version. See the MESSAGES_TOOLS_ENABLED gate.
+const EMPTY_PALETTE_COMMANDS: PaletteCommand[] = [];
+
 // Keyboard shortcuts configuration
 const KEYBOARD_SHORTCUTS = {
   'Ctrl+Enter': 'Send message',
@@ -1233,7 +1239,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // Register an empty command set while tools are gated off so the command
   // palette stops surfacing Messages tool launches. The hook itself must run
   // unconditionally.
-  useRegisterCommands('messages:tools', { commands: MESSAGES_TOOLS_ENABLED ? messagesToolCommands : [] });
+  useRegisterCommands('messages:tools', { commands: MESSAGES_TOOLS_ENABLED ? messagesToolCommands : EMPTY_PALETTE_COMMANDS });
 
   // Tool shortcuts (Ctrl+Shift+R/V/C/I/S/M/A) are now fired by the global
   // CommandPaletteContext runner — each tool command registers its `shortcut`
@@ -4680,6 +4686,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   disabled={false}
                   threadId={activePulseConv?.id}
                   messageCount={pulseMessages.length}
+                  toolsEnabled={MESSAGES_TOOLS_ENABLED}
                 />
               ) : (
                 <MessageInput
