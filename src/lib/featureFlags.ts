@@ -147,25 +147,13 @@ const featureFlagsConfig: FeatureFlagConfig = {
     version: '0.1.0'
   },
 
-  // Phase 5e — ⚠️ PAUSED as of 2026-04-27.
-  //
-  // The v2 entry exists as parallel-rebuild scaffolding but has a
-  // multi-session feature-parity gap vs. the legacy Messages.tsx
-  // (no slash commands, no smart compose, no inline reactions, no
-  // context menu, no mood badges, no rich cards, no voice transcript,
-  // no AI cards, etc.). See:
-  //   docs/deep-dives/messages_v2_parity_backlog.md
-  //
-  // **Do NOT flip this to enabled: true** for production users until
-  // the parity backlog is closed and a fresh smoke test passes.
-  // Local dev override is fine via `?ff_pulseMessagesV2=on` URL param.
-  pulseMessagesV2: {
-    enabled: false,
-    rolloutPercentage: 0,
-    targetUsers: ['internal'],
-    description: 'PAUSED — v2 Messages entry scaffolding; not production-ready. See docs/deep-dives/messages_v2_parity_backlog.md',
-    version: '2.0.0'
-  },
+  // pulseMessagesV2 flag REMOVED 2026-05-31 with the v2 Messages rebuild
+  // (MessagesSplitView + plugins + MessagesLayout + MessagesWithProviders).
+  // The live surface is the legacy `Messages.tsx`; the v2 parallel rebuild was
+  // feature-empty (the parity backlog estimated ~15-20 sessions just to reach
+  // legacy parity) and was deleted to stop the drift / coupling tax. The
+  // backlog at docs/deep-dives/messages_v2_parity_backlog.md remains the spec
+  // if a clean-room Messages rebuild is ever justified.
 
   // In-app SMS is a demo shell — smsService.isMockMode() is hard-coded true
   // and conversations live in in-memory arrays (src/services/smsService.ts).

@@ -6,9 +6,9 @@
  * @module layouts
  */
 
-// Main Layout Component
-export { MessagesLayout } from './MessagesLayout';
-export type { default as MessagesLayoutDefault } from './MessagesLayout';
+// NOTE: MessagesLayout was removed 2026-05-31 with the v2 Messages rebuild.
+// The live Messages surface is the legacy `Messages.tsx` (mounted directly by
+// App), not a split-view layout. This barrel now only re-exports sidebar bits.
 
 // Re-export sidebar components for convenience
 export { SidebarTabs } from '../Sidebar/SidebarTabs';

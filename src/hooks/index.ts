@@ -33,7 +33,7 @@ export { useCRMIntegration } from './useCRMIntegration';
 export { useVirtualList } from './useVirtualList';
 
 // UI/Layout
-export { useSplitViewMessages } from './useSplitViewMessages';
+// useSplitViewMessages removed 2026-05-31 with the v2 Messages rebuild.
 export { useResizablePanel } from './useResizablePanel';
 
 // Motion (DESIGN.md §4 — project ease-out, reduced-motion aware)
