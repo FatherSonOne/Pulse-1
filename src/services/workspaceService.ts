@@ -527,9 +527,27 @@ export const workspaceService = {
     const userId = await getCurrentUserId();
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Enforce member limit for the workspace plan
+    // Enforce member limit for the workspace plan.
     const workspace = await this.getWorkspace(workspaceId);
-    const limit = WORKSPACE_PLAN_LIMITS[workspace.plan] ?? 50;
+    let effectiveLimit = WORKSPACE_PLAN_LIMITS[workspace.plan] ?? 50;
+    let planLabel = WORKSPACE_PLAN_LABELS[workspace.plan] ?? workspace.plan;
+
+    // Pulse Solo is a strict SINGLE-SEAT plan. The workspaces.plan column is
+    // unreliable (often 'free' even on paid subs), so gate on the actual
+    // subscription plan_id. Billing integrity is already safe — Solo is flat
+    // ($20, quantity pinned to 1) — so this enforces the product rule "Solo =
+    // just you"; to add people you upgrade to per-seat Team.
+    try {
+      const billing = (await import('./billingService')).default;
+      const activePlanId = await billing.getActivePlanId(workspaceId);
+      if (activePlanId === 'pulse_solo') {
+        effectiveLimit = 1;
+        planLabel = 'Solo';
+      }
+    } catch {
+      // Fail open — keep the workspaces.plan-derived limit if the lookup fails.
+    }
+
     const [members, pendingInvites] = await Promise.all([
       this.getMembers(workspaceId),
       this.getPendingInvites(workspaceId),
@@ -560,9 +578,11 @@ export const workspaceService = {
       (existing && !(existing as WorkspaceInvite).accepted_at
         ? pendingInvites.length
         : pendingInvites.length + 1);
-    if (occupiedSeats > limit) {
+    if (occupiedSeats > effectiveLimit) {
       throw new Error(
-        `This workspace has reached its ${WORKSPACE_PLAN_LABELS[workspace.plan]} plan limit of ${limit} members. Upgrade your plan to add more.`,
+        effectiveLimit === 1
+          ? `Pulse Solo is a single-seat plan — it's just you. Upgrade to Pulse Team ($15/seat) to invite teammates.`
+          : `This workspace has reached its ${planLabel} plan limit of ${effectiveLimit} members. Upgrade your plan to add more.`,
       );
     }
 

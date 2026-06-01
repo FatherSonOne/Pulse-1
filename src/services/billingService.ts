@@ -210,6 +210,30 @@ const billingService = {
     return data;
   },
 
+  /** plan_id of the workspace's active/trialing subscription (e.g. 'pulse_solo',
+   *  'pulse_team', 'pulse_growth'), or null. Reads subscription_items directly
+   *  (the subscriptions table has no plan_id column; RLS lets workspace members
+   *  read their own items). Used for plan-accurate seat gating, since the
+   *  workspaces.plan column is unreliable (often 'free' on paid subs). */
+  async getActivePlanId(workspaceId: string): Promise<string | null> {
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .in('status', ['active', 'trialing', 'past_due'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!sub?.id) return null;
+    const { data: item } = await supabase
+      .from('subscription_items')
+      .select('plan_id')
+      .eq('subscription_id', (sub as { id: string }).id)
+      .limit(1)
+      .maybeSingle();
+    return (item as { plan_id?: string } | null)?.plan_id ?? null;
+  },
+
   // -- Checkout --
 
   async createCheckout(params: {
