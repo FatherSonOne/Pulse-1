@@ -610,7 +610,7 @@ class PulseService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return 0;
 
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from('pulse_messages')
       .select('id', { count: 'exact', head: true })
       .eq('recipient_id', user.id)
@@ -622,7 +622,8 @@ class PulseService {
       return 0;
     }
 
-    return data?.length || 0;
+    // `head: true` returns no rows — the tally lives in `count`, not `data`.
+    return count ?? 0;
   }
 
   /**
