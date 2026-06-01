@@ -6,5 +6,8 @@ output/
 .gradle/
 *.apk
 *.aab
+# …but the landing-page sideload download must ship to the site.
+# (android/ build APKs stay ignored via the android/ rule above.)
+!public/downloads/pulse-android.apk
 docs/*.docx
 docs/*.pdf
