@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · War Room Redesign — Playground (A/B/C)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: { extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        serif: ['Fraunces', 'Georgia', 'serif'],
+      },
+    } },
+  };
+</script>
+<style>
+  /* ─── Pulse design tokens (canonical mirror of src/styles/pulse-tokens.css) ─── */
+  :root {
+    --pulse-rose: #f43f5e;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-bright: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+    --pulse-canvas: #f8f8f8;
+    --pulse-canvas-soft: #f2f2f2;
+    --pulse-surface: #ffffff;
+    --pulse-surface-raised: #f2f2f2;
+    --pulse-border: rgba(0, 0, 0, 0.08);
+    --pulse-border-strong: rgba(0, 0, 0, 0.16);
+    --pulse-ink: #0f0f0f;
+    --pulse-ink-2: #52525b;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral: var(--pulse-rose);
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 35%, black 65%);
+    --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-rose) 12%, transparent);
+    --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-rose) 8%, transparent);
+    --pulse-font: 'Inter', system-ui, sans-serif;
+    --pulse-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --pulse-serif: 'Fraunces', Georgia, serif;
+    --pulse-sidebar-bg: #ffffff;
+    --pulse-shadow-main: 0 6px 24px rgba(0, 0, 0, 0.08);
+    --pulse-shadow-modal: 0 30px 100px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(0,0,0,0.10);
+    --tone-info: #3b82f6; --tone-info-soft: rgba(59,130,246,0.12);
+    --tone-pos: #16a34a; --tone-pos-soft: rgba(34,197,94,0.12);
+  }
+  html[data-theme='dark'] {
+    --pulse-canvas: #000000;
+    --pulse-canvas-soft: #080808;
+    --pulse-surface: rgba(255, 255, 255, 0.03);
+    --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+    --pulse-border: rgba(255, 255, 255, 0.06);
+    --pulse-border-strong: rgba(255, 255, 255, 0.10);
+    --pulse-ink: #fafafa;
+    --pulse-ink-2: #b4b4b8;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 60%, white 40%);
+    --pulse-rose: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.14);
+    --pulse-sidebar-bg: #0a0a0b;
+    --pulse-shadow-main: 0 10px 40px rgba(0, 0, 0, 0.4);
+    --pulse-shadow-modal: 0 40px 120px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.05);
+    --tone-info: #60a5fa; --tone-info-soft: rgba(59,130,246,0.16);
+    --tone-pos: #4ade80; --tone-pos-soft: rgba(34,197,94,0.16);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--pulse-font);
+    background: var(--pulse-canvas);
+    color: var(--pulse-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .pulse-bg { background: var(--pulse-canvas); }
+  .pulse-bg-soft { background: var(--pulse-canvas-soft); }
+  .pulse-surface { background: var(--pulse-surface); }
+  .pulse-surface-raised { background: var(--pulse-surface-raised); }
+  .pulse-ink-color { color: var(--pulse-ink); }
+  .pulse-ink-2-color { color: var(--pulse-ink-2); }
+  .pulse-ink-3-color { color: var(--pulse-ink-3); }
+  .pulse-border-color { border-color: var(--pulse-border); }
+  .pulse-border-strong-color { border-color: var(--pulse-border-strong); }
+  .pulse-coral-fg-color { color: var(--pulse-coral-fg); }
+  .pulse-coral-bg-color { background: var(--pulse-coral-bg-12); }
+  .pulse-coral-bg-08-color { background: var(--pulse-coral-bg-08); }
+  .pulse-rose-color { color: var(--pulse-rose); }
+  .pulse-rose-bg-color { background: var(--pulse-rose); }
+  .pulse-rose-bg-soft-color { background: var(--pulse-rose-soft); }
+  .pulse-rose-border { border-color: var(--pulse-rose); }
+  .font-mono-pulse { font-family: var(--pulse-mono); font-feature-settings: 'tnum' 1; }
+  .font-serif-pulse { font-family: var(--pulse-serif); }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--pulse-border-strong); border-radius: 3px; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--pulse-ink-3); }
+
+  .tracking-tight-mono { letter-spacing: 0.06em; }
+  .tracking-wide-mono { letter-spacing: 0.16em; }
+
+  /* ─── Motion ─── */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 300ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes scaleIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+  .scale-in { animation: scaleIn 220ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
+  .backdrop-in { animation: backdropIn 200ms ease; }
+  @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.8); } }
+  .pulse-dot-anim { animation: pulseDot 1.6s ease-in-out infinite; }
+
+  /* ─── AI provenance chip (reuse ProvenanceTag pattern) — coral budget: AI-only ─── */
+  .ai-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px;
+    background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+    font-family: var(--pulse-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; line-height: 1;
+  }
+  .ai-chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+  .ai-chip.muted { background: var(--pulse-surface-raised); color: var(--pulse-ink-2); }
+  .ai-chip.muted::before { background: var(--pulse-ink-3); }
+
+  /* ─── Citation footnote chip — AI grounding surface (coral) ─── */
+  .cite {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 16px; height: 16px; padding: 0 4px; vertical-align: middle;
+    border-radius: 4px; background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+    font-family: var(--pulse-mono); font-size: 9px; font-weight: 600; line-height: 1;
+    cursor: pointer; transition: background 140ms, transform 140ms;
+  }
+  .cite:hover { background: color-mix(in oklab, var(--pulse-rose) 22%, transparent); transform: translateY(-1px); }
+
+  /* ─── AI answer surface ─── */
+  .ai-surface { background: var(--pulse-coral-bg-08); border: 1px solid var(--pulse-rose-soft); }
+
+  .keycap {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 4px; border: 1px solid var(--pulse-border-strong);
+    background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
+    font-family: var(--pulse-mono); font-size: 10px; line-height: 1;
+  }
+  .doc-type {
+    font-family: var(--pulse-mono); font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+    padding: 2px 5px; border-radius: 3px; background: var(--pulse-surface-raised); color: var(--pulse-ink-3);
+  }
+  .row-hover { transition: background 150ms ease; }
+  .row-hover:hover { background: var(--pulse-surface-raised); }
+
+  /* ─── Voice visualizer bars ─── */
+  @keyframes vbar { 0%,100% { transform: scaleY(0.28); } 50% { transform: scaleY(1); } }
+  .vbar { transform-origin: center; animation: vbar 900ms ease-in-out infinite; }
+  @keyframes orbPulse { 0%,100% { transform: scale(1); box-shadow: 0 0 0 0 var(--pulse-rose-glow); } 50% { transform: scale(1.04); box-shadow: 0 0 60px 10px var(--pulse-rose-glow); } }
+  .orb-pulse { animation: orbPulse 2.4s ease-in-out infinite; }
+
+  /* ─── Playground chrome ─── */
+  .pg-bar { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); }
+  html[data-theme='light'] .pg-bar { background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent); }
+  .pg-pill { transition: background 180ms, color 180ms; }
+  .pg-pill[data-active='true'] { background: var(--pulse-rose); color: white; }
+  .pg-pill:not([data-active='true']):hover { background: var(--pulse-surface-raised); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vbar, .orb-pulse, .pulse-dot-anim { animation: none !important; }
+    .fade-up, .scale-in { animation: none !important; }
+  }
+</style>
+</head>
+<body class="overflow-hidden">
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+/* ════════════════════════════════════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════════════════════════════════════ */
+function colorForId(s) {
+  const colors = ['#f43f5e','#3b82f6','#8b5cf6','#10b981','#f59e0b','#ec4899','#06b6d4','#6366f1'];
+  let h = 0; for (let i = 0; i < s.length; i++) h = s.charCodeAt(i) + ((h << 5) - h);
+  return colors[Math.abs(h) % colors.length];
+}
+function initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase(); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   ICONS
+   ════════════════════════════════════════════════════════════════════════ */
+function Icon({ name, className = 'w-4 h-4' }) {
+  const c = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  switch (name) {
+    case 'logo': return <svg viewBox="0 0 24 24" className={className} fill="currentColor" stroke="none"><path d="M12 21s-7-4.35-9.5-8.5C.8 9.5 2 6 5.5 6 7.5 6 9 7 12 10c3-3 4.5-4 6.5-4C22 6 23.2 9.5 21.5 12.5 19 16.65 12 21 12 21z"/></svg>;
+    case 'settings': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 11 3.09V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 16 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>;
+    case 'chevD': return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="6 9 12 15 18 9"/></svg>;
+    case 'chevR': return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 18 15 12 9 6"/></svg>;
+    case 'dot': return <svg viewBox="0 0 24 24" className={className} fill="currentColor" stroke="none"><circle cx="12" cy="12" r="6"/></svg>;
+    case 'sparkles': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17l-1.9-5.1L4.5 10l5.6-1.4z"/><path d="M19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg>;
+    case 'sun': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>;
+    case 'moon': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>;
+    case 'inbox': return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.5 5.5h13l3.5 6.5v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/></svg>;
+    case 'mail': return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></svg>;
+    case 'live': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="2.5"/><path d="M7 7a7 7 0 0 0 0 10M17 7a7 7 0 0 1 0 10M4.5 4.5a11 11 0 0 0 0 15M19.5 4.5a11 11 0 0 1 0 15"/></svg>;
+    case 'video': return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3"/></svg>;
+    case 'calendar': return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></svg>;
+    case 'user': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 16 0v1"/></svg>;
+    case 'task': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>;
+    case 'brain': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M9.5 3a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 1 5.5A3 3 0 0 0 9.5 21a2.5 2.5 0 0 0 2.5-2.5V5.5A2.5 2.5 0 0 0 9.5 3z"/><path d="M14.5 3a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-1 5.5A3 3 0 0 1 14.5 21 2.5 2.5 0 0 1 12 18.5"/></svg>;
+    case 'doc': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>;
+    case 'search': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+    case 'upload': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+    case 'mic': return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"/></svg>;
+    case 'send': return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
+    case 'plus': return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+    case 'book': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>;
+    case 'faq': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg>;
+    case 'timeline': return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="6" y1="3" x2="6" y2="21"/><circle cx="6" cy="7" r="1.5" fill="currentColor"/><circle cx="6" cy="14" r="1.5" fill="currentColor"/><line x1="10" y1="7" x2="19" y2="7"/><line x1="10" y1="14" x2="17" y2="14"/></svg>;
+    case 'podcast': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><rect x="2" y="13" width="5" height="8" rx="2"/><rect x="17" y="13" width="5" height="8" rx="2"/></svg>;
+    case 'compare': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 0 0 3 3h6M18 15V9a3 3 0 0 0-3-3H9"/></svg>;
+    case 'graph': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><line x1="6.8" y1="7.6" x2="10.2" y2="16.4"/><line x1="17.2" y1="7.6" x2="13.8" y2="16.4"/><line x1="7.5" y1="6" x2="16.5" y2="6"/></svg>;
+    case 'play': return <svg viewBox="0 0 24 24" className={className} fill="currentColor" stroke="none"><polygon points="6 4 20 12 6 20 6 4"/></svg>;
+    case 'cmd': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z"/></svg>;
+    case 'x': return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+    case 'volume': return <svg viewBox="0 0 24 24" className={className} {...c}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>;
+    case 'check': return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="20 6 9 17 4 12"/></svg>;
+    case 'folder': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>;
+    case 'panel': return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/><line x1="15" y1="4" x2="15" y2="20"/></svg>;
+    case 'layers': return <svg viewBox="0 0 24 24" className={className} {...c}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 12 12 17 22 12"/><polyline points="2 17 12 22 22 17"/></svg>;
+    case 'wave': return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="3" y1="12" x2="3" y2="12"/><line x1="7" y1="8" x2="7" y2="16"/><line x1="11" y1="4" x2="11" y2="20"/><line x1="15" y1="7" x2="15" y2="17"/><line x1="19" y1="10" x2="19" y2="14"/></svg>;
+    case 'quote': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M7 7H4v6h3l-1 4M17 7h-3v6h3l-1 4"/></svg>;
+    default: return null;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PRIMITIVES
+   ════════════════════════════════════════════════════════════════════════ */
+function Avatar({ name, size = 36 }) {
+  return (
+    <div className="rounded-full flex items-center justify-center text-white font-semibold shrink-0"
+      style={{ width: size, height: size, fontSize: size * 0.34, background: colorForId(name) }}>
+      {initials(name)}
+    </div>
+  );
+}
+function AiChip({ variant = 'summary', children }) {
+  return <span className={variant === 'muted' ? 'ai-chip muted' : 'ai-chip'}>{children}</span>;
+}
+function Keycap({ children }) { return <kbd className="keycap">{children}</kbd>; }
+function Cite({ n, onClick }) { return <span className="cite" onClick={onClick}>{n}</span>; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED MOCK DATA — a "Series A Raise" knowledge workspace
+   ════════════════════════════════════════════════════════════════════════ */
+const DOCS = [
+  { id: 'd1', title: 'Term Sheet — Sequoia v3',          type: 'PDF',  pages: 8,  chunks: 42,  tag: 'Legal',    active: true,  fresh: true },
+  { id: 'd2', title: 'Cap Table — 2026 Q2',              type: 'XLSX', pages: 3,  chunks: 18,  tag: 'Finance',  active: true },
+  { id: 'd3', title: 'Market Sizing — TAM / SAM / SOM',   type: 'DOCX', pages: 12, chunks: 64,  tag: 'Strategy', active: true },
+  { id: 'd4', title: 'Competitive Teardown',             type: 'MD',   pages: 6,  chunks: 31,  tag: 'Strategy', active: true },
+  { id: 'd5', title: 'Board Deck — May 2026',            type: 'PPTX', pages: 24, chunks: 88,  tag: 'Strategy', active: false },
+  { id: 'd6', title: 'Customer Interviews (12 calls)',    type: 'TXT',  pages: 40, chunks: 210, tag: 'Research', active: false },
+];
+
+const PROJECTS = [
+  { id: 'p1', name: 'Series A Raise',      docs: 6, active: true },
+  { id: 'p2', name: 'Q3 Product Strategy', docs: 9 },
+  { id: 'p3', name: 'Pulse Launch Brief',  docs: 4 },
+];
+
+const SESSIONS = [
+  { id: 's1', name: 'Liquidation pref + dilution', when: 'Now',   active: true },
+  { id: 's2', name: 'Investor FAQ prep',           when: '2h ago' },
+  { id: 's3', name: 'Board narrative draft',       when: 'Yesterday' },
+];
+
+const CITATIONS = [
+  { n: 1, doc: 'Term Sheet — Sequoia v3', loc: 'p.3 · §4.2', passage: '“…a non-participating liquidation preference equal to 1.0x the Original Issue Price…”' },
+  { n: 2, doc: 'Competitive Teardown',    loc: '“Deal terms”',  passage: '“1x non-participating is the market-standard Series A structure; participating or >1x reads as founder-unfriendly.”' },
+  { n: 3, doc: 'Cap Table — 2026 Q2',     loc: 'Scenario B',    passage: '“$3.5M on $14M post → 25.0% dilution; option pool top-up to 12% pre-money.”' },
+];
+
+const SUGGESTIONS = [
+  'Compare the option pool ask across our last two rounds',
+  'Draft a 1-paragraph board update from the deck',
+  'What objections did customers raise in the interviews?',
+];
+
+const GENERATORS = [
+  { id: 'study',    icon: 'book',     label: 'Study Guide',          desc: 'Key terms & flashcards from active docs',  kind: 'gen' },
+  { id: 'faq',      icon: 'faq',      label: 'FAQ',                  desc: 'Anticipated investor questions, answered', kind: 'gen' },
+  { id: 'timeline', icon: 'timeline', label: 'Timeline',             desc: 'Milestones across all sources',            kind: 'gen' },
+  { id: 'podcast',  icon: 'podcast',  label: 'Podcast',              desc: 'Two-host audio briefing · real TTS',       kind: 'gen' },
+  { id: 'compare',  icon: 'compare',  label: 'Comparative Analysis', desc: 'Diff multiple docs side-by-side',          kind: 'adv' },
+  { id: 'graph',    icon: 'graph',    label: 'Knowledge Graph',      desc: 'Entities & relationships, extracted',      kind: 'adv' },
+];
+
+const ASK = "What's the liquidation preference in the Sequoia term sheet — and is it standard for our stage?";
+
+/* Shared rich AI answer with inline citations */
+function AiAnswerBody({ onCite }) {
+  return (
+    <div className="text-[13.5px] leading-relaxed pulse-ink-color space-y-2.5">
+      <p>The Sequoia term sheet specifies a <strong>1× non-participating</strong> liquidation preference
+        <Cite n="1" onClick={() => onCite(1)} /> — investors get their money back first, but don't double-dip
+        on the upside.</p>
+      <p>That's the <strong>market-standard structure</strong> for a Series A <Cite n="2" onClick={() => onCite(2)} />.
+        Participating preferred, or any multiple above 1×, would read as founder-unfriendly at this stage.</p>
+      <p>For context, your cap table models this raise at <strong>$3.5M on a $14M post-money</strong> — about
+        25% dilution after the option-pool top-up <Cite n="3" onClick={() => onCite(3)} />. The preference only
+        bites in a down-side exit below that valuation.</p>
+    </div>
+  );
+}
+
+/* Reasoning-trace disclosure (coral provenance surface) */
+function ReasoningTrace() {
+  const [open, setOpen] = useState(false);
+  const steps = [
+    'Parsed §4 of the term sheet for preference language',
+    'Cross-checked against the competitive teardown’s deal-terms section',
+    'Pulled the matching dilution scenario from the cap table',
+    'Confirmed 1× non-participating is standard, not a red flag',
+  ];
+  return (
+    <div className="mt-2">
+      <button onClick={() => setOpen(o => !o)} className="inline-flex items-center gap-1.5 ai-chip muted" style={{ cursor: 'pointer' }}>
+        <Icon name="brain" className="w-3 h-3" />THOUGHT FOR {steps.length} STEPS
+        <Icon name={open ? 'chevD' : 'chevR'} className="w-3 h-3" />
+      </button>
+      {open && (
+        <ol className="mt-2 ml-1 space-y-1.5 fade-up">
+          {steps.map((s, i) => (
+            <li key={i} className="flex gap-2 text-[12px] pulse-ink-2-color">
+              <span className="font-mono-pulse pulse-coral-fg-color">{i + 1}</span><span>{s}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+/* Sources-used / citation panel (shared) */
+function SourcesUsed({ compact }) {
+  return (
+    <div className={`mt-3 rounded-lg ai-surface ${compact ? 'p-2.5' : 'p-3'}`}>
+      <div className="flex items-center gap-2 mb-2">
+        <Icon name="quote" className="w-3.5 h-3.5 pulse-coral-fg-color" />
+        <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">SOURCES USED · 3 PASSAGES</span>
+      </div>
+      <div className="space-y-1.5">
+        {CITATIONS.map(c => (
+          <div key={c.n} className="flex items-start gap-2 row-hover rounded-md px-1.5 py-1 cursor-pointer">
+            <span className="cite mt-0.5">{c.n}</span>
+            <div className="min-w-0">
+              <div className="text-[12px] font-medium pulse-ink-color truncate">{c.doc} <span className="pulse-ink-3-color font-normal">· {c.loc}</span></div>
+              {!compact && <div className="text-[11px] pulse-ink-2-color leading-snug mt-0.5 italic">{c.passage}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* Voice visualizer */
+function VoiceViz({ state = 'speaking', size = 'lg' }) {
+  const bars = size === 'lg' ? 28 : 18;
+  const h = size === 'lg' ? 120 : 40;
+  const active = state === 'speaking' || state === 'listening';
+  const label = { listening: 'LISTENING', thinking: 'THINKING', speaking: 'SPEAKING', idle: 'TAP TO TALK' }[state];
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="flex items-end justify-center gap-[3px]" style={{ height: h }}>
+        {Array.from({ length: bars }).map((_, i) => {
+          const peak = Math.sin((i / bars) * Math.PI);
+          return (
+            <div key={i} className={active ? 'vbar' : ''} style={{
+              width: size === 'lg' ? 5 : 3,
+              height: Math.max(8, peak * h),
+              borderRadius: 4,
+              background: 'var(--pulse-rose)',
+              opacity: active ? 0.55 + peak * 0.45 : 0.25,
+              animationDelay: `${(i % 7) * 90}ms`,
+              animationDuration: `${700 + (i % 5) * 120}ms`,
+            }} />
+          );
+        })}
+      </div>
+      <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-coral-fg-color">{label}</span>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PULSE SIDEBAR (War Room active under INTELLIGENCE)
+   ════════════════════════════════════════════════════════════════════════ */
+function PulseSidebar({ theme, onToggleTheme }) {
+  const groups = [
+    { group: 'Overview',      rows: [{ icon: 'inbox', label: 'Dashboard' }] },
+    { group: 'Communication', rows: [
+        { icon: 'inbox', label: 'Messages' }, { icon: 'mail', label: 'Email' },
+        { icon: 'live', label: 'Relay' }, { icon: 'video', label: 'Glimpse' },
+      ] },
+    { group: 'Intelligence', rows: [
+        { icon: 'brain', label: 'War Room', active: true },
+        { icon: 'search', label: 'Search' },
+      ] },
+    { group: 'Work & People', rows: [
+        { icon: 'calendar', label: 'Calendar' }, { icon: 'user', label: 'Contacts' },
+        { icon: 'task', label: 'Decisions & Tasks' },
+      ] },
+  ];
+  return (
+    <aside className="h-full w-[232px] shrink-0 flex flex-col border-r pulse-border-color" style={{ background: 'var(--pulse-sidebar-bg)' }}>
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center pulse-rose-bg-color text-white shrink-0"><Icon name="logo" className="w-5 h-5" /></div>
+        <div className="leading-tight">
+          <div className="text-lg font-semibold pulse-rose-color">Pulse</div>
+          <div className="text-[10px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">JCK</div>
+        </div>
+        <div className="ml-auto flex items-center gap-2 pulse-ink-3-color">
+          <button className="hover:pulse-ink-color"><Icon name="settings" className="w-4 h-4" /></button>
+        </div>
+      </div>
+      <div className="mx-3 mb-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--pulse-surface-raised)' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md pulse-rose-bg-color" />
+          <span className="text-sm font-medium pulse-ink-color">My Workspace</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse pulse-coral-bg-color pulse-coral-fg-color tracking-tight-mono">OWNER</span>
+          <Icon name="chevD" className="w-3 h-3 pulse-ink-3-color" />
+        </div>
+      </div>
+      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        {groups.map(grp => (
+          <div key={grp.group} className="mb-3">
+            <div className="flex items-center gap-2 px-2 py-1.5 text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color">
+              <Icon name="dot" className="w-1.5 h-1.5" /><span>{grp.group.toUpperCase()}</span>
+            </div>
+            {grp.rows.map(r => (
+              <button key={r.label} className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition ${r.active ? 'pulse-rose-color pulse-rose-bg-soft-color font-medium' : 'pulse-ink-2-color hover:pulse-ink-color'}`}>
+                <Icon name={r.icon} className="w-4 h-4 opacity-90" /><span>{r.label}</span>
+              </button>
+            ))}
+          </div>
+        ))}
+      </nav>
+      <div className="px-3 pb-2">
+        <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl pulse-rose-bg-soft-color">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="sparkles" className="w-4 h-4" /></div>
+            <span className="text-sm font-medium pulse-rose-color">Pulse AI</span>
+          </div>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono-pulse pulse-ink-3-color border pulse-border-color">Ctrl·/</span>
+        </button>
+      </div>
+      <div className="border-t pulse-border-color px-3 py-2 space-y-1">
+        <button onClick={onToggleTheme} className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm pulse-ink-2-color hover:pulse-ink-color">
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" /><span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+        </button>
+        <div className="mt-2 pt-2 border-t pulse-border-color flex items-center gap-2.5 px-2 py-1">
+          <Avatar name="Frank Richard Messana" size={28} />
+          <div className="leading-tight">
+            <div className="text-xs font-medium pulse-ink-color">Frank Messana</div>
+            <div className="text-[10px] pulse-ink-3-color truncate max-w-[140px]">jehovahsneaky83@gmail.com</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED: SOURCES PANEL (used by Path A; variants reused elsewhere)
+   ════════════════════════════════════════════════════════════════════════ */
+function SourcesPanel({ docs, onToggle, width = 288 }) {
+  const activeCount = docs.filter(d => d.active).length;
+  const tags = ['All', 'Legal', 'Finance', 'Strategy', 'Research'];
+  const [tag, setTag] = useState('All');
+  const shown = tag === 'All' ? docs : docs.filter(d => d.tag === tag);
+  return (
+    <div className="h-full flex flex-col border-r pulse-border-color shrink-0" style={{ width }}>
+      <div className="px-3.5 pt-3.5 pb-2">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-2">
+            <Icon name="folder" className="w-4 h-4 pulse-ink-2-color" />
+            <span className="text-sm font-semibold pulse-ink-color">Sources</span>
+            <span className="text-[11px] font-mono-pulse pulse-ink-3-color tnum">{docs.length}</span>
+          </div>
+          <button className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium pulse-ink-2-color border pulse-border-color hover:pulse-surface-raised">
+            <Icon name="upload" className="w-3.5 h-3.5" />Add
+          </button>
+        </div>
+        {/* Active-context summary — first-class control */}
+        <div className="rounded-lg ai-surface px-2.5 py-2 mb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full pulse-rose-bg-color pulse-dot-anim" />
+            <span className="text-[11px] font-medium pulse-coral-fg-color">{activeCount} of {docs.length} grounding the AI</span>
+          </div>
+          <div className="text-[10px] pulse-ink-3-color mt-0.5 ml-4">Toggle a source to add or remove it from context</div>
+        </div>
+        <div className="relative mb-2">
+          <Icon name="search" className="w-3.5 h-3.5 pulse-ink-3-color absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <input placeholder="Search sources" className="w-full pl-8 pr-2 py-1.5 rounded-md text-[12px] pulse-surface-raised pulse-ink-color border pulse-border-color outline-none" />
+        </div>
+        <div className="flex items-center gap-1 flex-wrap">
+          {tags.map(t => (
+            <button key={t} onClick={() => setTag(t)} data-active={tag === t}
+              className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${tag === t ? 'pulse-ink-color pulse-surface-raised pulse-border-strong-color' : 'pulse-ink-3-color pulse-border-color hover:pulse-surface-raised'}`}>{t}</button>
+          ))}
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-1">
+        {shown.map(d => (
+          <button key={d.id} onClick={() => onToggle(d.id)}
+            className={`source-row w-full flex items-start gap-2.5 px-2.5 py-2 rounded-lg text-left row-hover border ${d.active ? 'pulse-surface-raised pulse-border-strong-color' : 'border-transparent'}`}>
+            <span className={`mt-0.5 w-4 h-4 rounded-[5px] flex items-center justify-center border ${d.active ? 'pulse-rose-bg-color border-transparent text-white' : 'pulse-border-strong-color pulse-ink-3-color'}`}>
+              {d.active && <Icon name="check" className="w-3 h-3" />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[12.5px] font-medium pulse-ink-color truncate">{d.title}</span>
+                {d.fresh && <span className="text-[8px] font-mono-pulse px-1 py-0.5 rounded" style={{ background: 'var(--tone-pos-soft)', color: 'var(--tone-pos)' }}>NEW</span>}
+              </div>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="doc-type">{d.type}</span>
+                <span className="text-[10px] pulse-ink-3-color tnum">{d.pages}p · {d.chunks} chunks</span>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* Composer with slash hints + suggestion chips + inline voice dock (Path A/B) */
+function Composer({ withVoice, voiceOpen, onToggleVoice, big }) {
+  return (
+    <div className="border-t pulse-border-color p-3">
+      {voiceOpen && (
+        <div className="mb-2.5 rounded-xl ai-surface p-3 fade-up">
+          <div className="flex items-center justify-between mb-2">
+            <span className="ai-chip"><Icon name="mic" className="w-3 h-3" />VOICE · GROUNDED ON 4 SOURCES</span>
+            <button onClick={onToggleVoice} className="pulse-ink-3-color hover:pulse-ink-color"><Icon name="x" className="w-3.5 h-3.5" /></button>
+          </div>
+          <div className="flex items-center gap-4">
+            <VoiceViz state="speaking" size="sm" />
+            <div className="flex-1 min-w-0">
+              <span className="ai-chip muted mb-1.5"><Icon name="search" className="w-3 h-3" />RAG_SEARCH → 3 PASSAGES</span>
+              <p className="text-[12px] pulse-ink-color mt-1.5 leading-snug">“It's a one-times non-participating preference — clean and standard for your stage…”</p>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {SUGGESTIONS.map((s, i) => (
+          <button key={i} className="px-2.5 py-1 rounded-full text-[11px] pulse-ink-2-color border pulse-border-color hover:pulse-surface-raised text-left">{s}</button>
+        ))}
+      </div>
+      <div className="flex items-end gap-2 rounded-xl border pulse-border-strong-color pulse-surface px-3 py-2.5">
+        {withVoice && (
+          <button onClick={onToggleVoice} data-voice className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${voiceOpen ? 'pulse-rose-bg-color text-white' : 'pulse-surface-raised pulse-ink-2-color hover:pulse-ink-color'}`}>
+            <Icon name="mic" className="w-4 h-4" />
+          </button>
+        )}
+        <textarea rows={big ? 2 : 1} placeholder="Ask anything, or type / for a command…"
+          className="flex-1 bg-transparent resize-none outline-none text-[13.5px] pulse-ink-color placeholder:pulse-ink-3-color py-1" />
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1 text-[10px] font-mono-pulse pulse-ink-3-color">
+            <Keycap>/</Keycap>summarize <Keycap>/</Keycap>analyze <Keycap>/</Keycap>brainstorm
+          </div>
+          <button className="w-8 h-8 rounded-lg pulse-rose-bg-color text-white flex items-center justify-center"><Icon name="send" className="w-4 h-4" /></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH A — NOTEBOOK (sources-led 3-pane)
+   ════════════════════════════════════════════════════════════════════════ */
+function PathA() {
+  const [docs, setDocs] = useState(DOCS);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [active, setActive] = useState(null);
+  const toggle = id => setDocs(ds => ds.map(d => d.id === id ? { ...d, active: !d.active } : d));
+  return (
+    <div className="h-full flex">
+      <SourcesPanel docs={docs} onToggle={toggle} />
+      {/* CENTER — chat canvas */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b pulse-border-color">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Icon name="brain" className="w-4 h-4 pulse-rose-color" />
+            <div className="leading-tight min-w-0">
+              <div className="text-sm font-semibold pulse-ink-color truncate">Series A Raise</div>
+              <div className="text-[10px] pulse-ink-3-color">Liquidation pref + dilution · session</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button className="px-2 py-1 rounded-md text-[11px] font-medium pulse-ink-2-color border pulse-border-color hover:pulse-surface-raised flex items-center gap-1.5"><Icon name="sparkles" className="w-3.5 h-3.5" />Analyst</button>
+            <button className="w-7 h-7 rounded-md pulse-surface-raised pulse-ink-2-color flex items-center justify-center"><Icon name="search" className="w-3.5 h-3.5" /></button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+          {/* user */}
+          <div className="flex justify-end">
+            <div className="max-w-[78%] rounded-2xl rounded-br-md pulse-surface-raised px-3.5 py-2.5 text-[13.5px] pulse-ink-color">{ASK}</div>
+          </div>
+          {/* ai */}
+          <div className="flex gap-3">
+            <div className="w-7 h-7 rounded-lg pulse-rose-bg-color text-white flex items-center justify-center shrink-0 mt-0.5"><Icon name="sparkles" className="w-4 h-4" /></div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1.5">
+                <AiChip><Icon name="check" className="w-3 h-3" />GROUNDED · 3 SOURCES</AiChip>
+              </div>
+              <AiAnswerBody onCite={setActive} />
+              <ReasoningTrace />
+              <SourcesUsed />
+              <div className="flex items-center gap-1.5 mt-3">
+                <button className="px-2 py-1 rounded-md text-[11px] pulse-ink-2-color border pulse-border-color hover:pulse-surface-raised flex items-center gap-1.5"><Icon name="volume" className="w-3.5 h-3.5" />Read aloud</button>
+                <button className="px-2 py-1 rounded-md text-[11px] pulse-ink-2-color border pulse-border-color hover:pulse-surface-raised">Save to board</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Composer withVoice voiceOpen={voiceOpen} onToggleVoice={() => setVoiceOpen(v => !v)} />
+      </div>
+      {/* RIGHT — Studio / generators */}
+      <div className="w-[264px] shrink-0 border-l pulse-border-color flex flex-col">
+        <div className="px-3.5 pt-3.5 pb-2 flex items-center gap-2">
+          <Icon name="sparkles" className="w-4 h-4 pulse-rose-color" />
+          <span className="text-sm font-semibold pulse-ink-color">Studio</span>
+        </div>
+        <div className="px-3 pb-2 text-[11px] pulse-ink-3-color">Generate from your {docs.filter(d => d.active).length} active sources</div>
+        <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1.5">
+          {GENERATORS.map(g => (
+            <button key={g.id} className="w-full flex items-start gap-2.5 px-2.5 py-2.5 rounded-xl text-left row-hover border pulse-border-color">
+              <div className="w-8 h-8 rounded-lg pulse-coral-bg-color pulse-coral-fg-color flex items-center justify-center shrink-0"><Icon name={g.icon} className="w-4 h-4" /></div>
+              <div className="min-w-0">
+                <div className="text-[12.5px] font-medium pulse-ink-color flex items-center gap-1.5">{g.label}{g.kind === 'adv' && <span className="text-[8px] font-mono-pulse pulse-ink-3-color border pulse-border-color rounded px-1 py-0.5">ADV</span>}</div>
+                <div className="text-[10.5px] pulse-ink-3-color leading-snug mt-0.5">{g.desc}</div>
+              </div>
+            </button>
+          ))}
+          {/* Generated artifact */}
+          <div className="mt-3 pt-3 border-t pulse-border-color">
+            <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">GENERATED</div>
+            <div className="rounded-xl ai-surface p-2.5">
+              <div className="flex items-center gap-2 mb-1">
+                <Icon name="podcast" className="w-4 h-4 pulse-coral-fg-color" />
+                <span className="text-[12px] font-medium pulse-ink-color">Investor briefing</span>
+                <button className="ml-auto w-6 h-6 rounded-md pulse-rose-bg-color text-white flex items-center justify-center"><Icon name="play" className="w-3 h-3" /></button>
+              </div>
+              <div className="text-[10px] pulse-ink-3-color">Podcast · 4:12 · 2 voices · ElevenLabs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {active && <CitationPopover n={active} onClose={() => setActive(null)} />}
+    </div>
+  );
+}
+
+function CitationPopover({ n, onClose }) {
+  const c = CITATIONS.find(x => x.n === n);
+  return (
+    <div className="absolute inset-0 z-30 flex items-center justify-center backdrop-in" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} className="w-[460px] rounded-2xl pulse-surface border pulse-border-strong-color scale-in overflow-hidden" style={{ boxShadow: 'var(--pulse-shadow-modal)' }}>
+        <div className="flex items-center justify-between px-4 py-3 border-b pulse-border-color">
+          <div className="flex items-center gap-2"><span className="cite">{c.n}</span><span className="text-sm font-semibold pulse-ink-color">{c.doc}</span></div>
+          <button onClick={onClose} className="pulse-ink-3-color hover:pulse-ink-color"><Icon name="x" className="w-4 h-4" /></button>
+        </div>
+        <div className="px-4 py-4">
+          <div className="text-[11px] font-mono-pulse pulse-ink-3-color mb-2">{c.loc}</div>
+          <div className="rounded-lg pulse-surface-raised p-3 text-[13px] pulse-ink-color leading-relaxed border-l-2 pulse-rose-border italic">{c.passage}</div>
+          <button className="mt-3 w-full py-2 rounded-lg pulse-rose-bg-color text-white text-[12px] font-medium flex items-center justify-center gap-2"><Icon name="doc" className="w-3.5 h-3.5" />Open source &amp; highlight</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH B — BRIEFING ROOM (answer-led, ⌘K-first)
+   ════════════════════════════════════════════════════════════════════════ */
+function PathB() {
+  const [palette, setPalette] = useState(false);
+  const [active, setActive] = useState(null);
+  useEffect(() => {
+    const h = e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette(p => !p); } };
+    window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
+  }, []);
+  return (
+    <div className="h-full flex">
+      {/* compact context rail */}
+      <div className="w-[64px] shrink-0 border-r pulse-border-color flex flex-col items-center py-3 gap-2">
+        <div className="text-[8px] font-mono-pulse tracking-wide-mono pulse-ink-3-color rotate-180 mb-1" style={{ writingMode: 'vertical-rl' }}>CONTEXT · 4</div>
+        {DOCS.filter(d => d.active).map(d => (
+          <div key={d.id} title={d.title} className="w-9 h-9 rounded-lg pulse-surface-raised flex items-center justify-center cursor-pointer row-hover border pulse-border-color">
+            <span className="text-[8px] font-mono-pulse font-semibold pulse-ink-2-color">{d.type}</span>
+          </div>
+        ))}
+        <button className="w-9 h-9 rounded-lg pulse-coral-bg-color pulse-coral-fg-color flex items-center justify-center mt-1"><Icon name="plus" className="w-4 h-4" /></button>
+      </div>
+      {/* answer canvas */}
+      <div className="flex-1 flex flex-col min-w-0 items-center overflow-y-auto">
+        <div className="w-full max-w-[720px] px-6 pt-8 pb-10">
+          {/* ask bar */}
+          <button onClick={() => setPalette(true)} className="w-full flex items-center gap-3 rounded-2xl border pulse-border-strong-color pulse-surface px-4 py-3.5 mb-6 text-left" style={{ boxShadow: 'var(--pulse-shadow-main)' }}>
+            <Icon name="sparkles" className="w-5 h-5 pulse-rose-color" />
+            <span className="text-[14px] pulse-ink-3-color flex-1">Ask your knowledge base…</span>
+            <span className="flex items-center gap-1"><Keycap>⌘</Keycap><Keycap>K</Keycap></span>
+            <span className="w-px h-5 pulse-border-strong-color border-l" />
+            <span className="flex items-center gap-1.5 text-[11px] font-medium pulse-ink-2-color"><Icon name="mic" className="w-4 h-4" />Hold to talk</span>
+          </button>
+          {/* the answer, large */}
+          <div className="fade-up">
+            <div className="flex items-center gap-2 mb-3">
+              <AiChip><Icon name="check" className="w-3 h-3" />GROUNDED · 3 SOURCES</AiChip>
+              <span className="text-[11px] pulse-ink-3-color">answering · {ASK.slice(0, 46)}…</span>
+            </div>
+            <div className="text-[20px] leading-snug font-serif-pulse pulse-ink-color mb-3">A 1× non-participating preference — clean, and exactly what a Series A should look like.</div>
+            <AiAnswerBody onCite={setActive} />
+            <ReasoningTrace />
+            <SourcesUsed />
+            {/* contextual generators offered beneath the answer */}
+            <div className="mt-5">
+              <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">TURN THIS INTO</div>
+              <div className="flex flex-wrap gap-2">
+                {GENERATORS.map(g => (
+                  <button key={g.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium pulse-ink-2-color border pulse-border-color hover:pulse-surface-raised">
+                    <Icon name={g.icon} className="w-3.5 h-3.5 pulse-coral-fg-color" />{g.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {palette && <CommandPalette onClose={() => setPalette(false)} />}
+      {active && <CitationPopover n={active} onClose={() => setActive(null)} />}
+    </div>
+  );
+}
+
+function CommandPalette({ onClose }) {
+  const groups = [
+    { label: 'Generate & analyze', items: GENERATORS.map(g => ({ icon: g.icon, label: g.label, hint: g.desc })) },
+    { label: 'Sources', items: [
+        { icon: 'upload', label: 'Add a source', hint: 'PDF, DOCX, paste, or URL' },
+        { icon: 'folder', label: 'Manage active context', hint: '4 of 6 grounding the AI' },
+        { icon: 'search', label: 'Search the knowledge bank', hint: 'across all sources' },
+      ] },
+    { label: 'Voice', items: [{ icon: 'mic', label: 'Talk to your docs', hint: 'realtime · grounded on active context' }] },
+    { label: 'Session', items: [
+        { icon: 'doc', label: 'Export to Archives', hint: '' },
+        { icon: 'plus', label: 'New session', hint: '' },
+      ] },
+  ];
+  return (
+    <div className="absolute inset-0 z-30 flex items-start justify-center pt-[12vh] backdrop-in" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} className="w-[600px] rounded-2xl pulse-surface border pulse-border-strong-color scale-in overflow-hidden" style={{ boxShadow: 'var(--pulse-shadow-modal)' }}>
+        <div className="flex items-center gap-3 px-4 py-3 border-b pulse-border-color">
+          <Icon name="search" className="w-4 h-4 pulse-ink-3-color" />
+          <input autoFocus placeholder="Ask, generate, analyze, or talk…" className="flex-1 bg-transparent outline-none text-[14px] pulse-ink-color placeholder:pulse-ink-3-color" />
+          <Keycap>esc</Keycap>
+        </div>
+        <div className="max-h-[440px] overflow-y-auto py-2">
+          {groups.map(grp => (
+            <div key={grp.label} className="mb-1">
+              <div className="px-4 py-1.5 text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">{grp.label.toUpperCase()}</div>
+              {grp.items.map(it => (
+                <button key={it.label} className="w-full flex items-center gap-3 px-4 py-2 row-hover text-left">
+                  <div className="w-8 h-8 rounded-lg pulse-coral-bg-color pulse-coral-fg-color flex items-center justify-center shrink-0"><Icon name={it.icon} className="w-4 h-4" /></div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-medium pulse-ink-color">{it.label}</div>
+                    {it.hint && <div className="text-[11px] pulse-ink-3-color">{it.hint}</div>}
+                  </div>
+                  <Icon name="chevR" className="w-3.5 h-3.5 pulse-ink-3-color" />
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH C — GROUNDED VOICE (conversation-led)
+   ════════════════════════════════════════════════════════════════════════ */
+function PathC() {
+  const [state, setState] = useState('speaking');
+  const [mode, setMode] = useState('push-to-talk');
+  return (
+    <div className="h-full flex">
+      {/* collapsed sources/sessions rail */}
+      <div className="w-[68px] shrink-0 border-r pulse-border-color flex flex-col items-center py-3 gap-3">
+        <button className="w-10 h-10 rounded-xl pulse-rose-bg-soft-color pulse-rose-color flex items-center justify-center"><Icon name="brain" className="w-5 h-5" /></button>
+        <div className="w-8 border-t pulse-border-color" />
+        {SESSIONS.map(s => (
+          <button key={s.id} title={s.name} className={`w-10 h-10 rounded-xl flex items-center justify-center ${s.active ? 'pulse-surface-raised pulse-ink-color border pulse-border-strong-color' : 'pulse-ink-3-color row-hover'}`}><Icon name="wave" className="w-4 h-4" /></button>
+        ))}
+        <button className="w-10 h-10 rounded-xl pulse-ink-3-color row-hover flex items-center justify-center mt-auto"><Icon name="plus" className="w-4 h-4" /></button>
+      </div>
+      {/* center stage — voice + transcript */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex flex-col items-center justify-center pt-7 pb-5 border-b pulse-border-color">
+          <div className="relative mb-3">
+            <div className="w-28 h-28 rounded-full ai-surface flex items-center justify-center orb-pulse">
+              <Icon name="sparkles" className="w-9 h-9 pulse-rose-color" />
+            </div>
+          </div>
+          <VoiceViz state={state} size="lg" />
+          <div className="flex items-center gap-2 mt-3">
+            <span className="ai-chip muted"><Icon name="brain" className="w-3 h-3" />OPENAI GPT-REALTIME</span>
+            <span className="ai-chip"><Icon name="check" className="w-3 h-3" />GROUNDED ON 4 SOURCES</span>
+          </div>
+        </div>
+        {/* live transcript */}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          <div className="max-w-[640px] mx-auto space-y-4">
+            <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color text-center">LIVE TRANSCRIPT</div>
+            {/* you */}
+            <div className="flex gap-3 justify-end">
+              <div className="max-w-[80%] rounded-2xl rounded-br-md pulse-surface-raised px-3.5 py-2.5 text-[13.5px] pulse-ink-color">Walk me through the liquidation preference in the term sheet.</div>
+              <Avatar name="Frank Messana" size={28} />
+            </div>
+            {/* tool call */}
+            <div className="flex justify-center">
+              <span className="ai-chip muted"><Icon name="search" className="w-3 h-3" />RAG_SEARCH “liquidation preference” → 3 PASSAGES · Term Sheet, Cap Table</span>
+            </div>
+            {/* agent */}
+            <div className="flex gap-3">
+              <div className="w-7 h-7 rounded-lg pulse-rose-bg-color text-white flex items-center justify-center shrink-0 mt-0.5"><Icon name="sparkles" className="w-4 h-4" /></div>
+              <div className="max-w-[80%] rounded-2xl rounded-bl-md ai-surface px-3.5 py-2.5">
+                <p className="text-[13.5px] pulse-ink-color leading-relaxed">It's a one-times non-participating preference <span className="cite">1</span> — clean, and the standard for your stage. Investors recover their $3.5M first, but don't double-dip on the upside.</p>
+              </div>
+            </div>
+            {/* you */}
+            <div className="flex gap-3 justify-end">
+              <div className="max-w-[80%] rounded-2xl rounded-br-md pulse-surface-raised px-3.5 py-2.5 text-[13.5px] pulse-ink-color">And how much do we dilute?</div>
+              <Avatar name="Frank Messana" size={28} />
+            </div>
+            <div className="flex gap-3">
+              <div className="w-7 h-7 rounded-lg pulse-rose-bg-color text-white flex items-center justify-center shrink-0 mt-0.5"><Icon name="sparkles" className="w-4 h-4" /></div>
+              <div className="max-w-[80%] rounded-2xl rounded-bl-md ai-surface px-3.5 py-2.5">
+                <p className="text-[13.5px] pulse-ink-color leading-relaxed">About 25%, after topping the option pool to 12% pre-money <span className="cite">3</span>. Want me to pull up Scenario B from the cap table?</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* mic controls */}
+        <div className="border-t pulse-border-color px-6 py-3.5 flex items-center justify-center gap-4">
+          <div className="flex items-center gap-1 p-0.5 rounded-lg pulse-surface-raised">
+            {['push-to-talk', 'always-on'].map(m => (
+              <button key={m} onClick={() => setMode(m)} data-active={mode === m}
+                className={`px-2.5 py-1 rounded-md text-[10px] font-mono-pulse tracking-tight-mono ${mode === m ? 'pulse-ink-color pulse-surface' : 'pulse-ink-3-color'}`}>{m.toUpperCase()}</button>
+            ))}
+          </div>
+          <button onClick={() => setState(s => s === 'idle' ? 'listening' : s === 'listening' ? 'speaking' : 'idle')}
+            className="w-14 h-14 rounded-full pulse-rose-bg-color text-white flex items-center justify-center" style={{ boxShadow: '0 8px 30px var(--pulse-rose-glow)' }}>
+            <Icon name="mic" className="w-6 h-6" />
+          </button>
+          <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] pulse-ink-2-color border pulse-border-color hover:pulse-surface-raised"><Icon name="volume" className="w-3.5 h-3.5" />Read-back on</button>
+        </div>
+      </div>
+      {/* right rail — grounded sources + artifacts */}
+      <div className="w-[248px] shrink-0 border-l pulse-border-color flex flex-col">
+        <div className="px-3.5 pt-3.5 pb-2 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full pulse-rose-bg-color pulse-dot-anim" />
+          <span className="text-sm font-semibold pulse-ink-color">Grounded on</span>
+          <span className="text-[11px] font-mono-pulse pulse-ink-3-color tnum">4</span>
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1.5">
+          {DOCS.filter(d => d.active).map(d => (
+            <div key={d.id} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg row-hover border pulse-border-color">
+              <span className="doc-type">{d.type}</span>
+              <span className="text-[12px] font-medium pulse-ink-color truncate flex-1">{d.title}</span>
+            </div>
+          ))}
+          <div className="pt-3 mt-2 border-t pulse-border-color">
+            <div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">FROM THIS TALK</div>
+            <button className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg ai-surface mb-1.5">
+              <Icon name="timeline" className="w-4 h-4 pulse-coral-fg-color" />
+              <span className="text-[12px] font-medium pulse-ink-color">Raise timeline</span>
+            </button>
+            <button className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg row-hover border pulse-border-color">
+              <Icon name="doc" className="w-4 h-4 pulse-ink-2-color" />
+              <span className="text-[12px] pulse-ink-2-color">Export transcript</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   APP SHELL
+   ════════════════════════════════════════════════════════════════════════ */
+function App() {
+  const [theme, setTheme] = useState('dark');
+  const [path, setPath] = useState('A');
+  useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+  return (
+    <div className="h-screen w-screen flex flex-col overflow-hidden pulse-bg">
+      <div className="pg-bar flex items-center gap-3 px-4 py-2 border-b pulse-border-color shrink-0" style={{ height: 48 }}>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="brain" className="w-3.5 h-3.5" /></div>
+          <span className="text-sm font-semibold pulse-ink-color">War Room Redesign</span>
+          <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">· SURFACE THE ENGINE · 3 DIRECTIONS</span>
+        </div>
+        <div className="ml-6 flex items-center gap-1 p-0.5 rounded-lg pulse-surface-raised">
+          {[
+            { id: 'A', label: 'A · Notebook',      icon: 'panel' },
+            { id: 'B', label: 'B · Briefing Room', icon: 'cmd' },
+            { id: 'C', label: 'C · Grounded Voice', icon: 'mic' },
+          ].map(p => (
+            <button key={p.id} data-active={path === p.id} onClick={() => setPath(p.id)}
+              className="pg-pill px-3 py-1.5 rounded-md text-[12px] font-medium pulse-ink-2-color flex items-center gap-1.5">
+              <Icon name={p.icon} className="w-3.5 h-3.5" /><span>{p.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-1">
+          <button onClick={toggleTheme} className="px-2.5 py-1.5 rounded-md text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color hover:pulse-surface-raised flex items-center gap-1.5">
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5" />{theme === 'dark' ? 'LIGHT' : 'DARK'}
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 flex overflow-hidden">
+        <PulseSidebar theme={theme} onToggleTheme={toggleTheme} />
+        <main className="flex-1 overflow-hidden m-3 rounded-2xl border pulse-border-color pulse-surface relative" style={{ boxShadow: 'var(--pulse-shadow-main)' }}>
+          {path === 'A' && <PathA />}
+          {path === 'B' && <PathB />}
+          {path === 'C' && <PathC />}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
