@@ -262,14 +262,14 @@ export class MessageService {
         // Users who haven't been active in 7+ days
         const { data: cohort } = await this.supabase
           .from('user_retention_cohorts')
-          .select('last_seen_at')
+          .select('updated_at')
           .eq('user_id', userId)
           .single();
 
         if (!cohort) return false;
 
         const daysSinceLastSeen = Math.floor(
-          (Date.now() - new Date(cohort.last_seen_at).getTime()) / (1000 * 60 * 60 * 24)
+          (Date.now() - new Date(cohort.updated_at).getTime()) / (1000 * 60 * 60 * 24)
         );
         return daysSinceLastSeen >= 7;
 
@@ -360,9 +360,9 @@ export class MessageService {
         returned_day_1: false,
         returned_day_7: false,
         returned_day_30: false,
-        messages_seen_count: 0,
-        messages_clicked_count: 0,
-        last_seen_at: new Date().toISOString(),
+        total_messages_seen: 0,
+        total_messages_clicked: 0,
+        updated_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
       });
 
@@ -377,7 +377,7 @@ export class MessageService {
   async updateUserActivity(userId: string): Promise<void> {
     const { error } = await this.supabase
       .from('user_retention_cohorts')
-      .update({ last_seen_at: new Date().toISOString() })
+      .update({ updated_at: new Date().toISOString() })
       .eq('user_id', userId);
 
     if (error) console.error('Failed to update activity:', error);
