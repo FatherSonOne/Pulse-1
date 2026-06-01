@@ -1275,18 +1275,19 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
   // Note: War Room hub / mode selection removed in Phase 1 (War Room redesign).
   // The unified PulseStudio component replaces all 7 modes.
 
+  // War Room "Notebook" redesign (Path A) — flag-gated. ON renders NotebookShell,
+  // OFF renders the legacy StudioLayout. Both wrap the same props/children.
+  // Declared BEFORE artifactsPanelOpen — its initializer reads this flag.
+  const useNotebookShell = useFeature('warRoomNotebook', userId);
+  const StudioShell = useNotebookShell ? NotebookShell : StudioLayout;
+  const ChatComponent = useNotebookShell ? ChatPane : PulseStudio;
+
   // Artifacts/Studio panel state (controlled from here, passed to the shell).
   // The Notebook's Studio column is open by default on desktop so the generator
   // rail is visible (matches the mockup); legacy StudioLayout stays closed.
   const [artifactsPanelOpen, setArtifactsPanelOpen] = useState(
     () => useNotebookShell && typeof window !== 'undefined' && window.innerWidth >= 1160,
   );
-
-  // War Room "Notebook" redesign (Path A) — flag-gated. ON renders NotebookShell,
-  // OFF renders the legacy StudioLayout. Both wrap the same props/children.
-  const useNotebookShell = useFeature('warRoomNotebook', userId);
-  const StudioShell = useNotebookShell ? NotebookShell : StudioLayout;
-  const ChatComponent = useNotebookShell ? ChatPane : PulseStudio;
 
   // File upload trigger for PulseStudio
   const handleUploadClick = () => {
