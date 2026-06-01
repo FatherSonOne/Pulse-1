@@ -22,7 +22,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../PulseStudio.css';
 import { SourcesPane } from './SourcesPane';
-import { TheBoard } from '../TheBoard';
+import { StudioPane } from './StudioPane';
 import { ActionPalette, PaletteAction } from '../ActionPalette';
 import { VoiceOverlay } from '../VoiceOverlay';
 import { useSwipeGesture } from '../useSwipeGesture';
@@ -84,6 +84,10 @@ export const NotebookShell: React.FC<NotebookShellProps> = ({
 
   const hasDocProps = documents !== undefined && onToggleDoc !== undefined;
   const hasBoardProps = notes !== undefined && onAddNote !== undefined;
+
+  // ── Source counts for the Studio rail hint ───────────────────────────────────
+  const completedDocs = (documents ?? []).filter((d) => d.processing_status === 'completed');
+  const activeSourceCount = completedDocs.filter((d) => (activeContextDocs ?? new Set()).has(d.id)).length;
 
   // ── Mobile swipe gestures ────────────────────────────────────────────────────
   const swipeRef = useSwipeGesture<HTMLDivElement>({
@@ -274,22 +278,24 @@ export const NotebookShell: React.FC<NotebookShellProps> = ({
 
         {/* Artifacts Panel */}
         {artifactsOpen && (
-          <aside className="ps-panel ps-panel-right" aria-label="Artifacts">
+          <aside className="ps-panel ps-panel-right" aria-label="Studio">
             <div className="ps-panel-header">
               <h3>
-                <Pin size={14} />
-                Artifacts
+                <Layers size={14} />
+                Studio
               </h3>
-              <button className="ps-icon-btn" onClick={toggleArtifacts} title="Close artifacts">
+              <button className="ps-icon-btn" onClick={toggleArtifacts} title="Close studio">
                 <X size={14} />
               </button>
             </div>
             {hasBoardProps ? (
-              <TheBoard
+              <StudioPane
                 notes={notes!}
                 onAddNote={onAddNote!}
                 onDeleteNote={onDeleteNote ?? (() => {})}
                 onClearNotes={onClearNotes ?? (() => {})}
+                activeSourceCount={activeSourceCount}
+                totalSourceCount={completedDocs.length}
               />
             ) : (
               <div className="ps-empty-state">

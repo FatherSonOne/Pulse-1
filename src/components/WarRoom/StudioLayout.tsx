@@ -8,20 +8,18 @@
  * rebranded panel headers.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import './PulseStudio.css';
 import { IntelDesk } from './IntelDesk';
 import { TheBoard } from './TheBoard';
 import { ActionPalette, PaletteAction } from './ActionPalette';
-import { StudyGuideGenerator, FAQGenerator, TimelineGenerator, PodcastGenerator } from './ContentGenerators';
 import { VoiceOverlay } from './VoiceOverlay';
 import { useSwipeGesture } from './useSwipeGesture';
+import { useWarRoomStore } from '../../store/warRoomStore';
 import { KnowledgeDoc } from '../../services/ragService';
 import { BoardNote, NoteType, BoardNoteMeta } from './useBoardNotes';
 
-import { BookOpen, FileText, Layers, Pin, Sparkles, X } from 'lucide-react';
-
-type GeneratorType = 'study-guide' | 'faq' | 'timeline' | 'podcast' | null;
+import { FileText, Layers, Pin, X } from 'lucide-react';
 
 export interface StudioLayoutProps {
   children: React.ReactNode;
@@ -100,8 +98,16 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
   };
 
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [activeGen, setActiveGen] = useState<GeneratorType>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
+
+  // Generators dispatch through the canonical store flags (rendered by
+  // WarRoomModalStack) — the single dispatch path. The former local `activeGen`
+  // state + inline generator modals were removed here to end the dual dispatch
+  // (handoff Phase 5).
+  const setShowStudyGuide = useWarRoomStore((s) => s.setShowStudyGuide);
+  const setShowFAQ = useWarRoomStore((s) => s.setShowFAQ);
+  const setShowTimeline = useWarRoomStore((s) => s.setShowTimeline);
+  const setShowPodcast = useWarRoomStore((s) => s.setShowPodcast);
 
   const hasDocProps = documents !== undefined && onToggleDoc !== undefined;
   const hasBoardProps = notes !== undefined && onAddNote !== undefined;
@@ -150,7 +156,7 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
       icon: 'fa-book-open',
       category: 'generate',
       accent: '#f59e0b',
-      execute: () => setActiveGen('study-guide'),
+      execute: () => setShowStudyGuide(true),
     },
     {
       id: 'gen-faq',
@@ -159,7 +165,7 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
       icon: 'fa-circle-question',
       category: 'generate',
       accent: '#f59e0b',
-      execute: () => setActiveGen('faq'),
+      execute: () => setShowFAQ(true),
     },
     {
       id: 'gen-timeline',
@@ -168,7 +174,7 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
       icon: 'fa-timeline',
       category: 'generate',
       accent: '#f59e0b',
-      execute: () => setActiveGen('timeline'),
+      execute: () => setShowTimeline(true),
     },
     {
       id: 'gen-podcast',
@@ -177,7 +183,7 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
       icon: 'fa-microphone',
       category: 'generate',
       accent: '#f59e0b',
-      execute: () => setActiveGen('podcast'),
+      execute: () => setShowPodcast(true),
     },
     {
       id: 'source-toggle',
@@ -225,18 +231,6 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
       execute: onClearAllDocs,
     }] : []),
   ];
-
-  const effectiveActions = apiKey
-    ? paletteActions
-    : paletteActions.map(a =>
-        a.category === 'generate'
-          ? { ...a, description: 'API key required', execute: () => {} }
-          : a,
-      );
-
-  const closeGen = useCallback(() => setActiveGen(null), []);
-  const genDocs = documents ?? [];
-  const genCtxIds = activeContextDocs ?? new Set<string>();
 
   return (
     <div className={`pulse-studio ${className}`}>
@@ -362,22 +356,14 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
       <ActionPalette
         isOpen={paletteOpen}
         onClose={() => setPaletteOpen(false)}
-        actions={effectiveActions}
+        actions={paletteActions}
       />
 
-      {/* ── Content Generator Modals ──────────────────────────────── */}
-      {activeGen === 'study-guide' && apiKey && (
-        <StudyGuideGenerator documents={genDocs} activeContextIds={genCtxIds} apiKey={apiKey} onClose={closeGen} />
-      )}
-      {activeGen === 'faq' && apiKey && (
-        <FAQGenerator documents={genDocs} activeContextIds={genCtxIds} apiKey={apiKey} onClose={closeGen} />
-      )}
-      {activeGen === 'timeline' && apiKey && (
-        <TimelineGenerator documents={genDocs} activeContextIds={genCtxIds} apiKey={apiKey} onClose={closeGen} />
-      )}
-      {activeGen === 'podcast' && apiKey && (
-        <PodcastGenerator documents={genDocs} activeContextIds={genCtxIds} apiKey={apiKey} onClose={closeGen} />
-      )}
+      {/*
+        Generator modals are rendered by WarRoomModalStack (store flags) —
+        the single dispatch path. The former local activeGen modal block was
+        removed here in Phase 5 to end the dual dispatch.
+      */}
     </div>
   );
 };
