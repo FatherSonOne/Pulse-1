@@ -4681,6 +4681,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   onSend={({ text }) => {
                     sendPulseMessage(text);
                   }}
+                  onTyping={(isTyping) => {
+                    if (isTyping && activePulseConversation) broadcastPulseTyping();
+                  }}
                   placeholder={`Message ${activePulseConv?.other_user?.display_name || 'user'}...`}
                   maxLength={2000}
                   disabled={false}

@@ -22,11 +22,12 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Mic, Paperclip, Send, Sparkles } from 'lucide-react';
+import { Paperclip, Send, Sparkles } from 'lucide-react';
 import AttachSheet from './AttachSheet';
 import FormatPopover, { applyFormat } from './FormatPopover';
 import SlashAutocomplete from './SlashAutocomplete';
 import ToolsMenuPlaceholder from './ToolsMenuPlaceholder';
+import { VoiceTextButton } from '../shared/VoiceTextButton';
 import { useSmartCompose } from './useSmartCompose';
 import { useTextSelection } from './useTextSelection';
 import {
@@ -121,6 +122,11 @@ function detectSlashTrigger(value: string, caret: number): SlashState | null {
   return null;
 }
 
+// Draft persistence key prefix — shared with the legacy MessageInput composer
+// (`pulse_msg_draft_v1:`) so a draft survives a swap between the two on the
+// same conversation.
+const DRAFT_STORAGE_PREFIX = 'pulse_msg_draft_v1:';
+
 export const PulseComposer: React.FC<PulseComposerProps> = ({
   onSend,
   onTyping,
@@ -139,8 +145,46 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
   const isDarkMode = useIsDarkMode(isDarkModeProp);
 
   // Core textarea state.
-  const [value, setValue] = useState<string>(initialValue);
+  // Draft key for the active conversation; null when no thread is active.
+  const draftKey = useMemo(
+    () => (threadId ? `${DRAFT_STORAGE_PREFIX}${threadId}` : null),
+    [threadId],
+  );
+  const [value, setValue] = useState<string>(() => {
+    if (threadId && typeof window !== 'undefined') {
+      try {
+        const saved = window.localStorage.getItem(`${DRAFT_STORAGE_PREFIX}${threadId}`);
+        if (saved) return saved;
+      } catch { /* ignore */ }
+    }
+    return initialValue;
+  });
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
+
+  // Load the new conversation's draft when the thread changes (PulseComposer is
+  // not remounted on conversation switch). Skips the initial render — the lazy
+  // initializer above already seeded the first draft.
+  const prevDraftKey = useRef(draftKey);
+  useEffect(() => {
+    if (prevDraftKey.current === draftKey) return;
+    prevDraftKey.current = draftKey;
+    if (!draftKey || typeof window === 'undefined') { setValue(''); return; }
+    try {
+      setValue(window.localStorage.getItem(draftKey) || '');
+    } catch { setValue(''); }
+  }, [draftKey]);
+
+  // Persist the draft to localStorage (debounced); clear the key when empty.
+  useEffect(() => {
+    if (!draftKey || typeof window === 'undefined') return;
+    const id = setTimeout(() => {
+      try {
+        if (value) window.localStorage.setItem(draftKey, value);
+        else window.localStorage.removeItem(draftKey);
+      } catch { /* ignore */ }
+    }, 400);
+    return () => clearTimeout(id);
+  }, [value, draftKey]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const attachBtnRef = useRef<HTMLButtonElement>(null);
@@ -291,7 +335,22 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
     setValue('');
     setAttachments([]);
     smart.dismiss();
-  }, [disabled, value, attachments, onSend, smart]);
+    if (draftKey && typeof window !== 'undefined') {
+      try { window.localStorage.removeItem(draftKey); } catch { /* ignore */ }
+    }
+  }, [disabled, value, attachments, onSend, smart, draftKey]);
+
+  // Append voice-dictated text to the draft (real speech-to-text via the
+  // shared VoiceTextButton — Web Speech API / OpenAI fallback). Replaces the
+  // PR-1 disabled mic placeholder to reach parity with the legacy composer.
+  const handleVoiceTranscript = useCallback((text: string) => {
+    const t = text.trim();
+    if (!t) return;
+    setValue((prev) => {
+      const sep = prev && !/\s$/.test(prev) ? ' ' : '';
+      return (prev + sep + t).slice(0, maxLength);
+    });
+  }, [maxLength]);
 
   // --- Attach pickers ---------------------------------------------
   const handlePickAttachment = useCallback(
@@ -627,22 +686,17 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
             )}
 
             {showMic ? (
-              <button
-                type="button"
-                aria-label="Hold to record voice message (coming soon)"
-                aria-disabled={true}
-                title="Voice message - wired in a follow-up PR"
-                onClick={(e) => e.preventDefault()}
+              <VoiceTextButton
+                onTranscript={handleVoiceTranscript}
+                onError={(err) => console.error('[PulseComposer] voice error:', err)}
+                disabled={disabled}
+                size="md"
                 className={[
                   'flex items-center justify-center rounded-xl',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
-                  'opacity-50 cursor-not-allowed',
-                  isDarkMode ? 'text-zinc-300' : 'text-zinc-600',
+                  isDarkMode ? 'hover:bg-white/10 text-zinc-200' : 'hover:bg-black/5 text-zinc-700',
                 ].join(' ')}
-                style={{ minWidth: TOUCH_TARGET_PX, minHeight: TOUCH_TARGET_PX }}
-              >
-                <Mic size={18} aria-hidden="true" />
-              </button>
+              />
             ) : (
               <button
                 type="button"
