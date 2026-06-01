@@ -12,14 +12,15 @@
  */
 
 import React, { useRef, useEffect, useMemo } from 'react';
-import { AIMessage, ThinkingStep } from '../../../services/ragService';
+import { AIMessage, KnowledgeDoc, ThinkingStep } from '../../../services/ragService';
 import { parseMessageContent, hasLikelyArtifacts, MessageSegment } from '../artifactParser';
 import { InlineArtifact } from '../ArtifactRenderers';
 import { MarkdownContent } from '../MarkdownContent';
 import { ProvenanceTag } from '../ProvenanceTag';
+import { SourcesUsedPanel } from './SourcesUsedPanel';
 import type { NoteType } from '../useBoardNotes';
 
-import { Brain, Copy, FileText, Pin, Sparkles, User as UserIcon } from 'lucide-react';
+import { Brain, Copy, Pin, Sparkles, User as UserIcon } from 'lucide-react';
 
 export interface MessageListProps {
   messages: AIMessage[];
@@ -30,6 +31,10 @@ export interface MessageListProps {
   /** Display name of the active agent — used for provenance + artifact model. */
   agentName: string;
   onPinArtifact?: (content: string, type: NoteType) => void;
+  /** Source library — used to resolve citations to openable documents. */
+  documents?: KnowledgeDoc[];
+  /** Open a cited document with the passage highlighted. */
+  onOpenCitation?: (doc: KnowledgeDoc, passage?: string) => void;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
@@ -40,6 +45,8 @@ export const MessageList: React.FC<MessageListProps> = ({
   toggleThinking,
   agentName,
   onPinArtifact,
+  documents = [],
+  onOpenCitation,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const safeMessages = Array.isArray(messages) ? messages : [];
@@ -122,15 +129,15 @@ export const MessageList: React.FC<MessageListProps> = ({
               <MarkdownContent content={msg.content} />
             )}
 
-            {/* Citations (Phase 3 → CitationChip + SourcesUsedPanel) */}
-            {msg.citations && msg.citations.length > 0 && (
-              <div className="ps-message-citations">
-                {msg.citations.map((c: any, i: number) => (
-                  <span key={i} className="ps-citation">
-                    <FileText size={10} />
-                    {c.title || c}
-                  </span>
-                ))}
+            {/* Citations — grounded chip + sources-used panel (P0) */}
+            {!isUser && msg.citations && msg.citations.length > 0 && (
+              <div style={{ marginTop: 6 }}>
+                <ProvenanceTag model="GROUNDED" kind={`${msg.citations.length} SOURCE${msg.citations.length !== 1 ? 'S' : ''}`} />
+                <SourcesUsedPanel
+                  citations={msg.citations}
+                  documents={documents}
+                  onOpen={(doc, passage) => onOpenCitation?.(doc, passage)}
+                />
               </div>
             )}
           </div>

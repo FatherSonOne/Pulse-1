@@ -12,10 +12,12 @@
  * floating VoiceAgentPanel; Phase 6 docks the realtime agent into this pane.
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import '../PulseStudio.css';
 import { AGENTS } from '../AgentSelector';
 import type { PulseStudioProps } from '../PulseStudio';
+import { KnowledgeDoc } from '../../../services/ragService';
+import { useWarRoomStore } from '../../../store/warRoomStore';
 import { MessageList } from './MessageList';
 import { Composer } from './Composer';
 
@@ -59,6 +61,19 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
   const hasMessages = safeMessages.length > 0;
   const hasDocuments = documents.length > 0;
   const activeDocCount = activeContextDocs.size;
+
+  // ── Citation open → DocumentViewer w/ passage highlight ───────────────────
+  // Reuses the canonical store flow (already wired end-to-end via
+  // WarRoomModalStack: viewingDoc → DocumentViewer, viewerHighlightText → scroll).
+  const setViewingDoc = useWarRoomStore((s) => s.setViewingDoc);
+  const setViewerHighlightText = useWarRoomStore((s) => s.setViewerHighlightText);
+  const openCitation = useCallback(
+    (doc: KnowledgeDoc, passage?: string) => {
+      setViewingDoc(doc);
+      setViewerHighlightText(passage);
+    },
+    [setViewingDoc, setViewerHighlightText],
+  );
 
   // ── Welcome Screen (Phase 7 → EmptyState) ───────────────────────────────
   const renderWelcome = () => {
@@ -139,6 +154,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
           toggleThinking={toggleThinking}
           agentName={selectedAgent.name}
           onPinArtifact={onPinArtifact}
+          documents={documents}
+          onOpenCitation={openCitation}
         />
       )}
 
