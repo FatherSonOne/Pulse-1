@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Email Orphans — Hybrid Re-skin Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     CANONICAL PULSE TOKENS — copied verbatim from
+     src/styles/pulse-tokens.css (light theme) + --pulse-coral
+     base from src/App.css. This is a faithful preview, so the
+     real hex/rgba values are hardcoded here as CSS variables.
+     ============================================================ */
+  :root {
+    /* Brand — Rose Pulse */
+    --pulse-rose: #f43f5e;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-bright: #fb7185;
+    --pulse-rose-softer: rgba(244, 63, 94, 0.05);
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.25);
+    --pulse-rose-text: #e11d48;
+    --pulse-pink: #ec4899;
+
+    /* Status vocabulary */
+    --pulse-tone-positive: #22c55e;
+    --pulse-tone-positive-soft: rgba(34, 197, 94, 0.10);
+    --pulse-tone-warning: #f97316;
+    --pulse-tone-warning-soft: rgba(249, 115, 22, 0.10);
+    --pulse-tone-overdue: #ef4444;
+    --pulse-tone-overdue-soft: rgba(239, 68, 68, 0.10);
+    --pulse-tone-info: #3b82f6;
+    --pulse-tone-info-soft: rgba(59, 130, 246, 0.10);
+    --pulse-tone-neutral: #6b7280;
+    --pulse-tone-neutral-soft: rgba(107, 114, 128, 0.10);
+
+    /* Surfaces — light */
+    --pulse-canvas: #f8f8f8;
+    --pulse-canvas-soft: #f2f2f2;
+    --pulse-surface: #ffffff;
+    --pulse-surface-raised: #f2f2f2;
+    --pulse-border: rgba(0, 0, 0, 0.08);
+    --pulse-border-strong: rgba(0, 0, 0, 0.16);
+
+    /* Elevation — light */
+    --pulse-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --pulse-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --pulse-shadow-rose: 0 0 0 1px var(--pulse-rose), 0 4px 24px var(--pulse-rose-glow);
+
+    /* Ink — light */
+    --pulse-ink: #0f0f0f;
+    --pulse-ink-2: #52525b;
+    --pulse-ink-3: #6b7280;
+
+    /* Type */
+    --pulse-font: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    --pulse-font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    --pulse-font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+
+    /* Motion */
+    --pulse-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --pulse-duration: 220ms;
+
+    /* AI provenance chip — coral RESERVED for AI output only.
+       Base coral #fb7185 (App.css). fg = 35% coral + 65% black.
+       Hardcoded fallback first; modern color-mix override after. */
+    --pulse-coral: #fb7185;
+    --pulse-coral-fg: #5c2530;
+    --pulse-coral-bg-12: rgba(251, 113, 133, 0.12);
+    --pulse-coral-bg-08: rgba(251, 113, 133, 0.08);
+  }
+  @supports (color: color-mix(in oklab, red, blue)) {
+    :root {
+      --pulse-coral-fg: color-mix(in oklab, var(--pulse-coral) 35%, black 65%);
+      --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-coral) 12%, transparent);
+      --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-coral) 8%, transparent);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--pulse-font);
+    color: var(--pulse-ink);
+    background: var(--pulse-canvas);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.4;
+  }
+
+  /* ── Shared hybrid utility register ── */
+  .mono {
+    font-family: var(--pulse-font-mono);
+    font-feature-settings: 'tnum' 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .serif { font-family: var(--pulse-font-serif); }
+  .eyebrow {
+    font-family: var(--pulse-font-mono);
+    font-size: 10px; font-weight: 500;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--pulse-ink-3); line-height: 1;
+  }
+  .editorial-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--pulse-border-strong), transparent);
+    border: none; margin: 0;
+  }
+
+  /* ── Page chrome ── */
+  .page { max-width: 1180px; margin: 0 auto; padding: 28px 24px 80px; }
+
+  .banner {
+    background: var(--pulse-surface);
+    border: 1px solid var(--pulse-border);
+    border-radius: 16px;
+    padding: 18px 22px;
+    box-shadow: var(--pulse-shadow-sm);
+    margin-bottom: 22px;
+  }
+  .banner h1 {
+    font-family: var(--pulse-font-serif);
+    font-weight: 500; letter-spacing: -0.01em;
+    font-size: 22px; margin: 0 0 6px;
+  }
+  .banner p { margin: 0; font-size: 13px; color: var(--pulse-ink-2); }
+  .banner .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; }
+  .legend-item { display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--pulse-ink-2); }
+  .swatch { width: 12px; height: 12px; border-radius: 4px; flex: none; }
+
+  /* ── Tabs ── */
+  .tabs { display: inline-flex; align-items: center; padding: 3px; border-radius: 12px;
+    background: var(--pulse-surface-raised); border: 1px solid var(--pulse-border); margin-bottom: 22px; }
+  .tab {
+    appearance: none; border: none; cursor: pointer; background: transparent;
+    padding: 8px 16px; border-radius: 9px; font-size: 12.5px; font-weight: 500;
+    color: var(--pulse-ink-2); font-family: var(--pulse-font);
+    transition: background var(--pulse-duration) var(--pulse-ease), color var(--pulse-duration) var(--pulse-ease), box-shadow var(--pulse-duration) var(--pulse-ease);
+  }
+  .tab:hover { color: var(--pulse-ink); }
+  .tab[aria-selected="true"] {
+    background: var(--pulse-surface); color: var(--pulse-ink);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 0 0 1px var(--pulse-border);
+  }
+  .tab .count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px; margin-left: 7px; border-radius: 5px;
+    background: var(--pulse-rose-soft); color: var(--pulse-rose-text);
+    font-family: var(--pulse-font-mono); font-size: 10px; font-weight: 600;
+  }
+
+  .panel { display: none; animation: fadeUp 280ms var(--pulse-ease); }
+  .panel.active { display: block; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .section-head { margin-bottom: 14px; }
+  .section-head .eyebrow { margin-bottom: 7px; display: block; }
+  .section-head h2 { font-family: var(--pulse-font-serif); font-weight: 500; letter-spacing: -0.01em; font-size: 19px; margin: 0; }
+  .section-head .note { font-size: 12.5px; color: var(--pulse-ink-2); margin: 5px 0 0; }
+
+  /* ── Generic card / surface ── */
+  .card {
+    background: var(--pulse-surface);
+    border: 1px solid var(--pulse-border);
+    border-radius: 18px;
+    box-shadow: var(--pulse-shadow-sm);
+    overflow: hidden;
+  }
+  .card-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--pulse-border);
+  }
+  .card-head .icon-tile {
+    width: 38px; height: 38px; border-radius: 11px; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
+    border: 1px solid var(--pulse-border);
+  }
+  .card-head h3 { margin: 0; font-size: 15px; font-weight: 600; color: var(--pulse-ink); }
+  .card-head .sub { margin: 2px 0 0; font-size: 12px; color: var(--pulse-ink-3); }
+  .card-body { padding: 16px 18px; }
+
+  /* ── Buttons ── */
+  .btn {
+    appearance: none; cursor: pointer; font-family: var(--pulse-font);
+    font-size: 12.5px; font-weight: 500; border-radius: 10px;
+    padding: 8px 14px; display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--pulse-border); background: var(--pulse-surface); color: var(--pulse-ink);
+    transition: background var(--pulse-duration) var(--pulse-ease), border-color var(--pulse-duration) var(--pulse-ease), transform var(--pulse-duration) var(--pulse-ease), box-shadow var(--pulse-duration) var(--pulse-ease);
+  }
+  .btn:hover { background: var(--pulse-surface-raised); border-color: var(--pulse-border-strong); }
+  .btn-primary {
+    background: var(--pulse-rose); color: #fff; border-color: transparent;
+  }
+  .btn-primary:hover { background: var(--pulse-rose-deep); box-shadow: var(--pulse-shadow-rose); transform: translateY(-1px); }
+  .btn-ghost { background: transparent; border-color: transparent; color: var(--pulse-ink-2); }
+  .btn-ghost:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
+  .btn-block { width: 100%; justify-content: center; }
+  .btn svg { width: 14px; height: 14px; }
+
+  .icon-btn {
+    appearance: none; cursor: pointer; width: 30px; height: 30px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: none; color: var(--pulse-ink-3);
+    transition: background 160ms ease, color 160ms ease;
+  }
+  .icon-btn:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
+  .icon-btn.danger:hover { background: var(--pulse-tone-overdue-soft); color: var(--pulse-tone-overdue); }
+  .icon-btn svg { width: 15px; height: 15px; }
+
+  /* ── Inputs ── */
+  .input, .textarea {
+    width: 100%; font-family: var(--pulse-font); font-size: 13px; color: var(--pulse-ink);
+    background: var(--pulse-surface); border: 1px solid var(--pulse-border);
+    border-radius: 10px; padding: 9px 12px;
+    transition: border-color var(--pulse-duration) var(--pulse-ease), box-shadow var(--pulse-duration) var(--pulse-ease);
+  }
+  .input::placeholder, .textarea::placeholder { color: var(--pulse-ink-3); }
+  .input:focus, .textarea:focus {
+    outline: none; border-color: var(--pulse-rose);
+    box-shadow: 0 0 0 3px var(--pulse-rose-soft);
+  }
+  .textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+  .field-label {
+    display: block; font-family: var(--pulse-font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--pulse-ink-3); margin-bottom: 7px;
+  }
+
+  /* ============================================================
+     SECTION 1 — LABELS MANAGER
+     ============================================================ */
+  .label-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 12px; border-radius: 12px; border: 1px solid transparent;
+    transition: background 160ms ease, border-color 160ms ease;
+  }
+  .label-row:hover { background: var(--pulse-surface-raised); border-color: var(--pulse-border); }
+  .label-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; box-shadow: 0 0 0 3px rgba(0,0,0,0.03); }
+  .label-name { flex: 1; font-size: 14px; font-weight: 500; color: var(--pulse-ink); }
+  .label-count {
+    font-family: var(--pulse-font-mono); font-size: 11px; color: var(--pulse-ink-3);
+    background: var(--pulse-surface-raised); border-radius: 999px; padding: 2px 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .label-row:hover .row-actions { opacity: 1; }
+  .row-actions { display: inline-flex; gap: 2px; opacity: 0; transition: opacity 160ms ease; }
+
+  .create-box {
+    margin-top: 14px; padding: 16px; border-radius: 14px;
+    background: var(--pulse-canvas-soft); border: 1px solid var(--pulse-border);
+  }
+  .color-picker { display: flex; flex-wrap: wrap; gap: 9px; margin: 12px 0 16px; }
+  .color-chip {
+    width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: none;
+    position: relative; transition: transform 160ms ease;
+  }
+  .color-chip:hover { transform: scale(1.12); }
+  .color-chip[aria-pressed="true"]::after {
+    content: ''; position: absolute; inset: -4px; border-radius: 50%;
+    border: 2px solid var(--pulse-rose);
+  }
+  .create-actions { display: flex; gap: 10px; }
+
+  /* ============================================================
+     SECTION 2 — RELATIONSHIP PANEL (in reader)
+     ============================================================ */
+  .reader-layout {
+    display: flex; align-items: stretch;
+    border-radius: 18px; overflow: hidden;
+    border: 1px solid var(--pulse-border); box-shadow: var(--pulse-shadow-md);
+    background: var(--pulse-canvas);
+    min-height: 580px;
+  }
+  /* faux reader column */
+  .reader-col { flex: 1; min-width: 0; background: var(--pulse-canvas); padding: 24px 28px; overflow: hidden; }
+  .reader-topline { display: flex; align-items: center; gap: 9px; margin-bottom: 16px; flex-wrap: wrap; }
+  .reader-subject { font-family: var(--pulse-font-serif); font-weight: 500; font-size: 22px; letter-spacing: -0.01em; margin: 0 0 6px; color: var(--pulse-ink); }
+  .reader-meta { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--pulse-ink-3); margin-bottom: 20px; }
+  .reader-meta .mono { letter-spacing: 0.04em; }
+  .from-avatar {
+    width: 38px; height: 38px; border-radius: 50%; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 600; font-size: 13px;
+  }
+  .ai-summary-card {
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 18px;
+    background: var(--pulse-rose-soft); border: 1px solid var(--pulse-rose);
+  }
+  .ai-eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--pulse-font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.16em; text-transform: uppercase; color: var(--pulse-coral-fg);
+    margin-bottom: 9px;
+  }
+  .ai-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pulse-rose); }
+  .ai-summary-card p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--pulse-ink); }
+  .prose p { font-size: 14px; line-height: 1.68; color: var(--pulse-ink-2); margin: 0 0 13px; }
+  .prose p strong { color: var(--pulse-ink); font-weight: 600; }
+
+  /* the relationship sidebar — 288px, the real RelationshipPanel width (w-72) */
+  .rel-panel {
+    width: 288px; flex: none;
+    border-left: 1px solid var(--pulse-border);
+    background: var(--pulse-surface);
+    display: flex; flex-direction: column;
+  }
+  .rel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-bottom: 1px solid var(--pulse-border);
+  }
+  .rel-head .eyebrow { margin: 0; }
+  .rel-body { padding: 18px 16px; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
+
+  .rel-profile { text-align: center; }
+  .rel-avatar {
+    width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 22px; font-weight: 700;
+    background: linear-gradient(135deg, var(--pulse-rose), var(--pulse-pink));
+  }
+  .rel-name { font-size: 15px; font-weight: 600; color: var(--pulse-ink); margin: 0; }
+  .rel-sub { font-size: 12.5px; color: var(--pulse-ink-2); margin: 2px 0 0; }
+  .rel-email { font-size: 11.5px; color: var(--pulse-ink-3); margin: 6px 0 0; }
+
+  .rel-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .rel-stat {
+    background: var(--pulse-canvas-soft); border: 1px solid var(--pulse-border);
+    border-radius: 12px; padding: 12px 8px; text-align: center;
+  }
+  .rel-stat .big { font-size: 19px; font-weight: 700; color: var(--pulse-ink); font-variant-numeric: tabular-nums; }
+  .rel-stat .lbl { font-size: 11px; color: var(--pulse-ink-3); margin-top: 2px; }
+  .strength-strong { color: var(--pulse-tone-positive) !important; }
+  .strength-mid { color: var(--pulse-tone-warning) !important; }
+  .strength-weak { color: var(--pulse-ink-3) !important; }
+
+  .rel-meterbar { height: 5px; border-radius: 999px; background: var(--pulse-surface-raised); overflow: hidden; margin-top: 8px; }
+  .rel-meterbar > span { display: block; height: 100%; border-radius: 999px; background: var(--pulse-tone-positive); }
+
+  .rel-kv {
+    background: var(--pulse-canvas-soft); border: 1px solid var(--pulse-border);
+    border-radius: 12px; padding: 12px;
+  }
+  .rel-kv .row { display: flex; align-items: center; justify-content: space-between; }
+  .rel-kv .row + .row { margin-top: 9px; }
+  .rel-kv .k { font-size: 11.5px; color: var(--pulse-ink-3); }
+  .rel-kv .v { font-size: 12px; font-weight: 500; color: var(--pulse-ink); font-variant-numeric: tabular-nums; }
+
+  .rel-threads .eyebrow { margin-bottom: 9px; display: block; }
+  .thread-item {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    background: var(--pulse-canvas-soft); border: 1px solid var(--pulse-border);
+    border-radius: 10px; padding: 9px 11px; margin-bottom: 7px;
+    transition: background 160ms ease, border-color 160ms ease;
+  }
+  .thread-item:hover { background: var(--pulse-surface-raised); border-color: var(--pulse-border-strong); }
+  .thread-subj { font-size: 12.5px; color: var(--pulse-ink); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .thread-date { font-size: 11px; color: var(--pulse-ink-3); margin: 3px 0 0; }
+
+  /* AI notes — the ONE coral-permitted block (ai_notes is AI output) */
+  .ai-notes {
+    border-radius: 12px; padding: 11px 13px;
+    background: var(--pulse-coral-bg-08); border: 1px solid var(--pulse-coral-bg-12);
+  }
+  .ai-notes .ai-eyebrow { margin-bottom: 7px; }
+  .ai-notes p { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--pulse-ink-2); }
+
+  .notes-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .notes-head .eyebrow { margin: 0; }
+  .notes-display {
+    background: var(--pulse-canvas-soft); border: 1px solid var(--pulse-border);
+    border-radius: 12px; padding: 11px 13px; font-size: 12.5px; color: var(--pulse-ink-2); line-height: 1.5;
+  }
+  .notes-edit { display: flex; flex-direction: column; gap: 9px; }
+  .notes-edit .btn-row { display: flex; gap: 8px; }
+  .link-btn { appearance: none; background: transparent; border: none; cursor: pointer;
+    font-family: var(--pulse-font); font-size: 11.5px; font-weight: 500; color: var(--pulse-rose-text); }
+  .link-btn:hover { color: var(--pulse-rose-deep); text-decoration: underline; }
+
+  /* ============================================================
+     SECTION 3 — FILTERS MANAGER
+     ============================================================ */
+  .filter-row {
+    padding: 15px 16px; border-radius: 14px; border: 1px solid var(--pulse-border);
+    background: var(--pulse-surface); margin-bottom: 12px;
+    transition: box-shadow 200ms ease, border-color 200ms ease;
+  }
+  .filter-row:hover { border-color: var(--pulse-border-strong); box-shadow: var(--pulse-shadow-sm); }
+  .filter-row.disabled { opacity: 0.55; background: var(--pulse-canvas-soft); }
+  .filter-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .filter-name { font-size: 14px; font-weight: 600; color: var(--pulse-ink); margin: 0; display: flex; align-items: center; gap: 8px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--pulse-font-mono); font-size: 10.5px; font-weight: 500;
+    padding: 3px 8px; border-radius: 6px; line-height: 1.4;
+  }
+  .pill.cond { background: var(--pulse-surface-raised); color: var(--pulse-ink-2); }
+  .pill.disabled-tag { background: var(--pulse-tone-neutral-soft); color: var(--pulse-ink-3); }
+  .pill.act-label { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
+  .pill.act-label .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .pill.act-info { background: var(--pulse-tone-info-soft); color: var(--pulse-tone-info); }
+  .pill.act-warn { background: var(--pulse-tone-warning-soft); color: #b45309; }
+  .pill.act-pos { background: var(--pulse-tone-positive-soft); color: #047857; }
+  .pill.act-danger { background: var(--pulse-tone-overdue-soft); color: var(--pulse-tone-overdue); }
+
+  .filter-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 11px; }
+  .flow-arrow { color: var(--pulse-ink-3); font-size: 13px; padding: 0 1px; }
+  .flow-label { font-family: var(--pulse-font-mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--pulse-ink-3); margin-right: 2px; }
+  .filter-stat { font-family: var(--pulse-font-mono); font-size: 11px; color: var(--pulse-ink-3); margin-top: 11px; font-variant-numeric: tabular-nums; }
+
+  /* toggle switch */
+  .switch { position: relative; width: 38px; height: 22px; border-radius: 999px; border: none; cursor: pointer; flex: none;
+    background: var(--pulse-surface-raised); border: 1px solid var(--pulse-border); transition: background 200ms ease; }
+  .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: transform 200ms var(--pulse-ease); }
+  .switch[aria-checked="true"] { background: var(--pulse-tone-positive); border-color: transparent; }
+  .switch[aria-checked="true"]::after { transform: translateX(16px); }
+
+  .filter-actions { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* rule builder */
+  .builder { border: 1px solid var(--pulse-border); border-radius: 16px; background: var(--pulse-canvas-soft); padding: 18px; margin-top: 6px; }
+  .builder-section + .builder-section { margin-top: 20px; }
+  .builder-sub-head { font-family: var(--pulse-font-serif); font-size: 14px; font-weight: 500; color: var(--pulse-ink); margin: 0 0 11px; }
+  .cond-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .cond-row .cond-key { width: 78px; font-size: 12.5px; color: var(--pulse-ink-2); font-weight: 500; flex: none; }
+  .check-row { display: flex; align-items: center; gap: 9px; cursor: pointer; font-size: 13px; color: var(--pulse-ink); }
+  .chk {
+    width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--pulse-border-strong); flex: none;
+    display: inline-flex; align-items: center; justify-content: center; background: var(--pulse-surface);
+    transition: background 160ms ease, border-color 160ms ease;
+  }
+  .chk[aria-checked="true"] { background: var(--pulse-rose); border-color: var(--pulse-rose); }
+  .chk[aria-checked="true"] svg { color: #fff; }
+  .chk svg { width: 12px; height: 12px; opacity: 0; }
+  .chk[aria-checked="true"] svg { opacity: 1; }
+  .action-grid { display: flex; flex-wrap: wrap; gap: 22px 28px; margin-top: 4px; }
+  .label-toggle-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 16px; }
+  .label-toggle {
+    appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--pulse-font); font-size: 12.5px; padding: 6px 12px; border-radius: 999px;
+    background: var(--pulse-surface); border: 1px solid var(--pulse-border); color: var(--pulse-ink-2);
+    transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+  }
+  .label-toggle:hover { background: var(--pulse-surface-raised); }
+  .label-toggle[aria-pressed="true"] { background: var(--pulse-rose-soft); border-color: var(--pulse-rose); color: var(--pulse-rose-text); }
+  .label-toggle .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .builder-foot { display: flex; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--pulse-border); }
+
+  .helper { font-size: 11.5px; color: var(--pulse-ink-3); margin: 8px 0 0; }
+
+  footer.tip { margin-top: 26px; font-size: 11.5px; color: var(--pulse-ink-3); text-align: center; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- BANNER -->
+  <div class="banner">
+    <h1>Email Orphans — Hybrid Re-skin Preview</h1>
+    <p>
+      Design preview only — these three orphaned Email components redrawn in the <strong>current Pulse hybrid look</strong>.
+      No legacy <code>stone-*</code> / <code>zinc-*</code> / <code>rose-500</code> Tailwind styling. Neutral ink/surface/border chrome,
+      Pulse rose for primary actions only. <strong>Coral is used only for AI output</strong> (the AI-notes block in the Relationship Panel).
+      Nothing here is wired — it is a visual approval surface before any live re-mount.
+    </p>
+    <div class="legend">
+      <span class="legend-item"><span class="swatch" style="background:var(--pulse-rose)"></span>Rose — primary actions / active</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--pulse-coral)"></span>Coral — AI output ONLY</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--pulse-surface-raised);border:1px solid var(--pulse-border)"></span>Neutral chrome</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--pulse-tone-positive)"></span>Status — positive</span>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" role="tablist" aria-label="Re-skinned components">
+    <button class="tab" role="tab" aria-selected="true" data-tab="labels">Labels Manager</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="relationship">Relationship Panel <span class="count">in reader</span></button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="filters">Filters Manager</button>
+  </div>
+
+  <!-- ============================================================
+       PANEL 1 — LABELS MANAGER
+       ============================================================ -->
+  <section class="panel active" id="panel-labels" role="tabpanel">
+    <div class="section-head">
+      <span class="eyebrow">email_labels · CRUD</span>
+      <h2>Labels Manager — re-skinned</h2>
+      <p class="note">Real fields: <span class="mono">name</span>, <span class="mono">color</span>, <span class="mono">email_count</span>. Create / rename / delete + color picker (10 canonical colors). Shown as the standalone "Labels" management modal (no email selected).</p>
+    </div>
+
+    <div class="card" style="max-width: 460px;">
+      <div class="card-head">
+        <div class="icon-tile">
+          <!-- Tags icon -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z"/><path d="M6 9.01V9"/><path d="m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"/></svg>
+        </div>
+        <div>
+          <h3>Labels</h3>
+          <p class="sub">Create and manage labels</p>
+        </div>
+        <button class="icon-btn" style="margin-left:auto" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="card-body">
+        <div id="label-list">
+          <div class="label-row"><span class="label-dot" style="background:#3b82f6"></span><span class="label-name">Clients</span><span class="label-count">48</span><span class="row-actions"><button class="icon-btn" aria-label="Rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn danger" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></span></div>
+          <div class="label-row"><span class="label-dot" style="background:#10b981"></span><span class="label-name">Invoices</span><span class="label-count">23</span><span class="row-actions"><button class="icon-btn" aria-label="Rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn danger" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></span></div>
+          <div class="label-row"><span class="label-dot" style="background:#f59e0b"></span><span class="label-name">Follow-up</span><span class="label-count">12</span><span class="row-actions"><button class="icon-btn" aria-label="Rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn danger" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></span></div>
+          <div class="label-row"><span class="label-dot" style="background:#8b5cf6"></span><span class="label-name">Newsletters</span><span class="label-count">7</span><span class="row-actions"><button class="icon-btn" aria-label="Rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn danger" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></span></div>
+          <div class="label-row"><span class="label-dot" style="background:#ec4899"></span><span class="label-name">Personal</span><span class="label-count">31</span><span class="row-actions"><button class="icon-btn" aria-label="Rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn danger" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></span></div>
+        </div>
+
+        <!-- create box (shown open to preview the affordance) -->
+        <div class="create-box">
+          <span class="field-label">New label</span>
+          <input class="input" type="text" placeholder="Label name…" value="Receipts" />
+          <div class="color-picker" role="group" aria-label="Pick a color">
+            <button class="color-chip" style="background:#f43f5e" title="Rose" aria-pressed="false"></button>
+            <button class="color-chip" style="background:#f97316" title="Orange" aria-pressed="false"></button>
+            <button class="color-chip" style="background:#f59e0b" title="Amber" aria-pressed="false"></button>
+            <button class="color-chip" style="background:#84cc16" title="Lime" aria-pressed="false"></button>
+            <button class="color-chip" style="background:#10b981" title="Emerald" aria-pressed="true"></button>
+            <button class="color-chip" style="background:#06b6d4" title="Cyan" aria-pressed="false"></button>
+            <button class="color-chip" style="background:#3b82f6" title="Blue" aria-pressed="false"></button>
+            <button class="color-chip" style="background:#8b5cf6" title="Violet" aria-pressed="false"></button>
+            <button class="color-chip" style="background:#d946ef" title="Fuchsia" aria-pressed="false"></button>
+            <button class="color-chip" style="background:#ec4899" title="Pink" aria-pressed="false"></button>
+          </div>
+          <div class="create-actions">
+            <button class="btn" style="flex:1;justify-content:center">Cancel</button>
+            <button class="btn btn-primary" style="flex:1;justify-content:center">Create</button>
+          </div>
+        </div>
+
+        <button class="btn btn-block" style="margin-top:14px;border-style:dashed;color:var(--pulse-ink-2)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Create New Label
+        </button>
+        <p class="helper">Rename = inline edit (pencil); the original had delete-only — rename affordance added per the re-skin so the editorial register matches the rest of Pulse. See note (a) below.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       PANEL 2 — RELATIONSHIP PANEL (in reader)
+       ============================================================ -->
+  <section class="panel" id="panel-relationship" role="tabpanel">
+    <div class="section-head">
+      <span class="eyebrow">email_contacts · 288px reader sidebar</span>
+      <h2>Relationship Panel — re-skinned (inside the reader)</h2>
+      <p class="note">Shown as the real <span class="mono">w-72 (288px)</span> sidebar next to a faux reader column so you can see how it reflows the reader. Real fields: name, company, title, avatar, last_contacted_at, email_count, avg_response_time_hours, relationship_strength, ai_notes (coral), custom_notes (editable + Save).</p>
+    </div>
+
+    <div class="reader-layout">
+      <!-- faux reader column -->
+      <div class="reader-col">
+        <div class="reader-topline">
+          <span class="from-avatar" style="background:#0ea5e9">MR</span>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--pulse-ink)">Maya Rosen</div>
+            <div class="mono" style="font-size:11px;color:var(--pulse-ink-3)">maya@northwind.co</div>
+          </div>
+        </div>
+        <h2 class="reader-subject">Q3 retainer — proposal &amp; next steps</h2>
+        <div class="reader-meta">
+          <span class="mono">TODAY · 9:14 AM</span><span>·</span><span>3 in thread</span>
+        </div>
+
+        <!-- AI summary card (rose-bordered, coral fg eyebrow) — same as cockpit GeminiSummaryCard -->
+        <div class="ai-summary-card">
+          <span class="ai-eyebrow"><span class="dot"></span>Summary</span>
+          <p>Maya is ready to move forward on the Q3 retainer at the proposed scope. She asks for a kickoff date in the first week of July and wants the SOW to include the analytics add-on you discussed.</p>
+        </div>
+
+        <div class="prose">
+          <p>Hi — thanks for the detailed proposal. <strong>We're good to proceed</strong> on the retainer as scoped. A couple of small things before we sign:</p>
+          <p>Can we lock a kickoff for the week of July 7th? And please fold the analytics add-on into the SOW so it's all in one agreement. I'll loop in finance once the SOW lands.</p>
+          <p>Appreciate how quickly you turned this around. Talk soon — Maya</p>
+        </div>
+      </div>
+
+      <!-- the 288px relationship sidebar -->
+      <aside class="rel-panel">
+        <div class="rel-head">
+          <span class="eyebrow">Contact Info</span>
+          <button class="icon-btn" aria-label="Close panel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="rel-body">
+          <!-- profile -->
+          <div class="rel-profile">
+            <div class="rel-avatar">MR</div>
+            <p class="rel-name">Maya Rosen</p>
+            <p class="rel-sub">VP, Partnerships</p>
+            <p class="rel-sub">Northwind Co.</p>
+            <p class="rel-email">maya@northwind.co</p>
+          </div>
+
+          <!-- stats -->
+          <div class="rel-stats">
+            <div class="rel-stat"><div class="big">86</div><div class="lbl">emails</div></div>
+            <div class="rel-stat"><div class="big strength-strong">78%</div><div class="lbl">strength</div></div>
+          </div>
+          <div class="rel-meterbar" aria-label="Relationship strength 78%"><span style="width:78%"></span></div>
+
+          <!-- last contact / avg response -->
+          <div class="rel-kv">
+            <div class="row"><span class="k">Last contact</span><span class="v">Today</span></div>
+            <div class="row"><span class="k">Avg response</span><span class="v">3 hrs</span></div>
+          </div>
+
+          <!-- recent threads -->
+          <div class="rel-threads">
+            <span class="eyebrow">Recent Threads</span>
+            <button class="thread-item"><p class="thread-subj">Q3 retainer — proposal &amp; next steps</p><p class="thread-date">Today</p></button>
+            <button class="thread-item"><p class="thread-subj">Re: analytics add-on scoping</p><p class="thread-date">3 days ago</p></button>
+            <button class="thread-item"><p class="thread-subj">Intro — Northwind &times; Pulse</p><p class="thread-date">2 weeks ago</p></button>
+          </div>
+
+          <!-- AI notes — THE coral-permitted block (ai_notes is AI output) -->
+          <div class="ai-notes">
+            <span class="ai-eyebrow"><span class="dot"></span>AI Notes</span>
+            <p>Warm, decisive contact — typically replies same-day. Decision-maker on budget. Responds best to concise proposals with a clear next step.</p>
+          </div>
+
+          <!-- custom notes — editable + Save -->
+          <div>
+            <div class="notes-head">
+              <span class="eyebrow">Your Notes</span>
+              <button class="link-btn" id="notes-edit-toggle">Edit</button>
+            </div>
+            <div class="notes-display" id="notes-display">Met at SaaStr '25. Prefers Tuesday calls. Cc finance@northwind on contracts.</div>
+            <div class="notes-edit" id="notes-edit" style="display:none">
+              <textarea class="textarea" rows="3">Met at SaaStr '25. Prefers Tuesday calls. Cc finance@northwind on contracts.</textarea>
+              <div class="btn-row">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" id="notes-save">Save</button>
+                <button class="btn" style="flex:1;justify-content:center" id="notes-cancel">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+    <p class="helper" style="margin-top:12px">Strength indicator: the original showed a single colored % number (green ≥70 / yellow ≥40 / grey). The re-skin keeps that color logic and adds a thin neutral meter bar beneath the stats for legibility — see note (b).</p>
+  </section>
+
+  <!-- ============================================================
+       PANEL 3 — FILTERS MANAGER
+       ============================================================ -->
+  <section class="panel" id="panel-filters" role="tabpanel">
+    <div class="section-head">
+      <span class="eyebrow">email_filters · rule engine</span>
+      <h2>Filters Manager — re-skinned</h2>
+      <p class="note">Real shape: conditions (<span class="mono">from_contains</span>, <span class="mono">subject_contains</span>, <span class="mono">body_contains</span>, <span class="mono">has_attachment</span>) → actions (<span class="mono">apply_labels</span>, <span class="mono">mark_as_read</span>, <span class="mono">archive</span>, <span class="mono">star</span>, <span class="mono">delete</span>) with <span class="mono">enabled</span> toggle + <span class="mono">match_count</span>. Condition→action rows, then the rule builder.</p>
+    </div>
+
+    <div class="card" style="max-width:760px">
+      <div class="card-head">
+        <div class="icon-tile">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        </div>
+        <div>
+          <h3>Email Filters</h3>
+          <p class="sub">Automatically organize incoming email</p>
+        </div>
+      </div>
+      <div class="card-body">
+
+        <!-- RULE 1 -->
+        <div class="filter-row">
+          <div class="filter-top">
+            <div style="min-width:0;flex:1">
+              <p class="filter-name">Newsletters → folder</p>
+              <div class="filter-flow">
+                <span class="flow-label">When</span>
+                <span class="pill cond">from: newsletters@*</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label">Then</span>
+                <span class="pill act-label"><span class="dot" style="background:#8b5cf6"></span>Newsletters</span>
+                <span class="pill act-warn">archive</span>
+              </div>
+              <p class="filter-stat">Matched 214 emails · last 2 days ago</p>
+            </div>
+            <div class="filter-actions">
+              <button class="switch" role="switch" aria-checked="true" aria-label="Enabled"></button>
+              <button class="icon-btn" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+              <button class="icon-btn danger" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RULE 2 -->
+        <div class="filter-row">
+          <div class="filter-top">
+            <div style="min-width:0;flex:1">
+              <p class="filter-name">Invoices &amp; receipts</p>
+              <div class="filter-flow">
+                <span class="flow-label">When</span>
+                <span class="pill cond">subject: "invoice"</span>
+                <span class="pill cond">has: attachment</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label">Then</span>
+                <span class="pill act-label"><span class="dot" style="background:#10b981"></span>Invoices</span>
+                <span class="pill act-info">star</span>
+              </div>
+              <p class="filter-stat">Matched 41 emails · last today</p>
+            </div>
+            <div class="filter-actions">
+              <button class="switch" role="switch" aria-checked="true" aria-label="Enabled"></button>
+              <button class="icon-btn" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+              <button class="icon-btn danger" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RULE 3 — disabled -->
+        <div class="filter-row disabled">
+          <div class="filter-top">
+            <div style="min-width:0;flex:1">
+              <p class="filter-name">Boss — never spam <span class="pill disabled-tag">disabled</span></p>
+              <div class="filter-flow">
+                <span class="flow-label">When</span>
+                <span class="pill cond">from: boss@company.com</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label">Then</span>
+                <span class="pill act-label"><span class="dot" style="background:#3b82f6"></span>Clients</span>
+                <span class="pill act-pos">mark read</span>
+              </div>
+              <p class="filter-stat">Matched 0 emails</p>
+            </div>
+            <div class="filter-actions">
+              <button class="switch" role="switch" aria-checked="false" aria-label="Disabled"></button>
+              <button class="icon-btn" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+              <button class="icon-btn danger" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RULE BUILDER (shown open) -->
+        <div class="builder">
+          <div class="builder-section">
+            <h4 class="builder-sub-head">When emails match…</h4>
+            <div class="cond-row">
+              <span class="cond-key">From</span>
+              <input class="input" type="text" placeholder="Sender email or name" value="receipts@" />
+            </div>
+            <div class="cond-row">
+              <span class="cond-key">Subject</span>
+              <input class="input" type="text" placeholder="Words in subject" />
+            </div>
+            <div class="cond-row">
+              <span class="cond-key">Body</span>
+              <input class="input" type="text" placeholder="Words in body" />
+            </div>
+            <label class="check-row">
+              <span class="chk" role="checkbox" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+              Has attachment
+            </label>
+          </div>
+
+          <div class="builder-section">
+            <h4 class="builder-sub-head">Do this…</h4>
+            <span class="field-label">Apply labels</span>
+            <div class="label-toggle-row">
+              <button class="label-toggle" aria-pressed="false"><span class="dot" style="background:#3b82f6"></span>Clients</button>
+              <button class="label-toggle" aria-pressed="true"><span class="dot" style="background:#10b981"></span>Invoices</button>
+              <button class="label-toggle" aria-pressed="false"><span class="dot" style="background:#f59e0b"></span>Follow-up</button>
+              <button class="label-toggle" aria-pressed="false"><span class="dot" style="background:#8b5cf6"></span>Newsletters</button>
+              <button class="label-toggle" aria-pressed="false"><span class="dot" style="background:#ec4899"></span>Personal</button>
+            </div>
+            <div class="action-grid">
+              <label class="check-row"><span class="chk" role="checkbox" aria-checked="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Mark as read</label>
+              <label class="check-row"><span class="chk" role="checkbox" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Skip inbox (archive)</label>
+              <label class="check-row"><span class="chk" role="checkbox" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Star it</label>
+              <label class="check-row" style="color:var(--pulse-tone-overdue)"><span class="chk" role="checkbox" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Delete it</label>
+            </div>
+          </div>
+
+          <div class="builder-foot">
+            <button class="btn" style="flex:1;justify-content:center">Cancel</button>
+            <button class="btn btn-primary" style="flex:1;justify-content:center">Create Filter</button>
+          </div>
+        </div>
+
+        <button class="btn btn-block btn-primary" style="margin-top:14px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Create New Filter
+        </button>
+        <p class="helper">The original delete-action used a red checkbox + red "Delete it" label. Re-skin keeps red via the status-overdue token (status-stays-status), not coral — see note (c). Toggle uses the positive-status green when on.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="tip">Tabs switch sections · all data is sample · tokens copied verbatim from <code>pulse-tokens.css</code> + <code>App.css</code> · light mode preview</footer>
+</div>
+
+<script>
+  // tab switching
+  const tabs = document.querySelectorAll('.tab');
+  const panels = { labels:'panel-labels', relationship:'panel-relationship', filters:'panel-filters' };
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(x => x.setAttribute('aria-selected', String(x === t)));
+    Object.values(panels).forEach(id => document.getElementById(id).classList.remove('active'));
+    document.getElementById(panels[t.dataset.tab]).classList.add('active');
+  }));
+
+  // labels color picker
+  document.querySelectorAll('.color-chip').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('.color-chip').forEach(x => x.setAttribute('aria-pressed','false'));
+    c.setAttribute('aria-pressed','true');
+  }));
+
+  // notes edit/cancel toggle
+  const nDisplay = document.getElementById('notes-display');
+  const nEdit = document.getElementById('notes-edit');
+  const toggle = document.getElementById('notes-edit-toggle');
+  function showEdit(on){ if(!nEdit) return; nEdit.style.display = on ? 'flex' : 'none'; nDisplay.style.display = on ? 'none':'block'; toggle.style.display = on ? 'none':'inline'; }
+  toggle && toggle.addEventListener('click', () => showEdit(true));
+  document.getElementById('notes-cancel') && document.getElementById('notes-cancel').addEventListener('click', () => showEdit(false));
+  document.getElementById('notes-save') && document.getElementById('notes-save').addEventListener('click', () => showEdit(false));
+
+  // generic toggles in filters
+  document.querySelectorAll('.switch').forEach(s => s.addEventListener('click', () => {
+    const on = s.getAttribute('aria-checked') === 'true';
+    s.setAttribute('aria-checked', String(!on));
+    s.closest('.filter-row').classList.toggle('disabled', on);
+  }));
+  document.querySelectorAll('.chk').forEach(c => c.addEventListener('click', e => {
+    e.preventDefault();
+    c.setAttribute('aria-checked', String(c.getAttribute('aria-checked') !== 'true'));
+  }));
+  document.querySelectorAll('.label-toggle').forEach(b => b.addEventListener('click', () => {
+    b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+  }));
+</script>
+</body>
+</html>
