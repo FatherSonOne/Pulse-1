@@ -37,6 +37,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
   const [notificationBundling, setNotificationBundling] = useState(true);
   const [autoArchiveDays, setAutoArchiveDays] = useState(0);
   const [driveQuickAttach, setDriveQuickAttach] = useState(true);
+  const [emailNotificationsOn, setEmailNotificationsOn] = useState(true);
 
   // Accounts
   const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([]);
@@ -164,6 +165,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
         bundlingValue,
         autoArchiveValue,
         driveAttachValue,
+        emailNotificationsValue,
       ] = await Promise.all([
         settingsService.get('aiSuggestionsEnabled'),
         settingsService.get('theme'),
@@ -172,6 +174,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
         settingsService.get('emailNotificationBundling'),
         settingsService.get('emailAutoArchiveDays'),
         settingsService.get('emailDriveQuickAttach'),
+        settingsService.get('emailNotifications'),
       ]);
       setAiSuggestionsEnabled(aiEnabled);
       setTheme(themeValue);
@@ -180,6 +183,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
       setNotificationBundling(bundlingValue);
       setAutoArchiveDays(autoArchiveValue);
       setDriveQuickAttach(driveAttachValue);
+      setEmailNotificationsOn(emailNotificationsValue);
     } catch (error) {
       console.error('Error loading settings:', error);
     }
@@ -565,7 +569,12 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                       <div className="text-sm text-stone-500 dark:text-zinc-400">Get notified of new emails</div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" defaultChecked className="sr-only peer" />
+                      <input
+                        type="checkbox"
+                        checked={emailNotificationsOn}
+                        onChange={(e) => handleSettingUpdate(e.target.checked, setEmailNotificationsOn, 'emailNotifications')}
+                        className="sr-only peer"
+                      />
                       <div className="w-11 h-6 bg-stone-300 dark:bg-zinc-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-rose-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
                     </label>
                   </div>
