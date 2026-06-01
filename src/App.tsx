@@ -30,11 +30,13 @@ const Contacts = lazy(() => import('./components/Contacts'));
 const PulseMapView = lazy(() => import('./components/map/PulseMapView'));
 const Archives = lazy(() => import('./components/Archives'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
-const MessageAnalytics = lazy(() => import('./components/MessageAnalytics'));
 // Search "Workbench" — the only Search surface (legacy UnifiedSearchRedesign
 // removed in Phase 11). See docs/SEARCH_WORKBENCH_REDESIGN_HANDOFF_2026-05-30.md
 const SearchWorkbench = lazy(() => import('./components/search/SearchWorkbench'));
-const AnalyticsDashboard = lazy(() => import('./components/Analytics').then(module => ({ default: module.AnalyticsDashboard })));
+// Analytics + Message Analytics now live under one Intelligence > Analytics
+// surface (tabbed). MESSAGE_ANALYTICS still routes here (deep-selects the
+// Message Analytics tab) so voice/assistant nav keeps working.
+const AnalyticsHome = lazy(() => import('./components/Analytics/AnalyticsHome'));
 const UsersGuide = lazy(() => import('./components/UsersGuide/UsersGuide'));
 
 import { SocialHealthMonitor } from './components/health/SocialHealthMonitor';
@@ -928,11 +930,18 @@ const App: React.FC = () => {
                 onClose={() => setView(AppView.DASHBOARD)}
               />;
             case AppView.MESSAGE_ANALYTICS:
-              return <MessageAnalytics />;
+              return <AnalyticsHome
+                initialTab="messages"
+                onClose={() => setView(AppView.DASHBOARD)}
+                onOpenContact={() => setView(AppView.CONTACTS)}
+                onOpenMessages={() => setView(AppView.MESSAGES)}
+                onOpenCalendar={() => setView(AppView.CALENDAR)}
+              />;
             case AppView.MULTI_MODAL:
               return <SearchWorkbench isDarkMode={isDarkMode} />;
             case AppView.ANALYTICS:
-              return <AnalyticsDashboard
+              return <AnalyticsHome
+                initialTab="briefing"
                 onClose={() => setView(AppView.DASHBOARD)}
                 onOpenContact={() => setView(AppView.CONTACTS)}
                 onOpenMessages={() => setView(AppView.MESSAGES)}

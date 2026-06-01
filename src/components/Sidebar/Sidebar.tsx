@@ -14,7 +14,6 @@ import {
   HelpCircle,
   Layers,
   Mail,
-  MailOpen,
   MapPin,
   MessageCircle,
   MessageSquare,
@@ -108,7 +107,6 @@ const getNavSections = (): NavSection[] => {
       items: [
         { icon: Search, label: 'Search', view: AppView.MULTI_MODAL },
         { icon: BarChart3, label: 'Analytics', view: AppView.ANALYTICS },
-        { icon: MailOpen, label: 'Message Analytics', view: AppView.MESSAGE_ANALYTICS },
         { icon: Archive, label: 'Archives', view: AppView.ARCHIVES },
         { icon: HelpCircle, label: 'User Guide', view: AppView.USERS_GUIDE },
       ],
