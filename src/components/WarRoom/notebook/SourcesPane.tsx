@@ -13,6 +13,7 @@
 
 import React, { useMemo, useRef, useState } from 'react';
 import { KnowledgeDoc } from '../../../services/ragService';
+import { ProjectSwitcher, ProjectNav } from './ProjectSwitcher';
 import { Check, Eye, FolderOpen, Loader2, Search, Trash2, Upload } from 'lucide-react';
 
 export interface SourcesPaneProps {
@@ -26,6 +27,8 @@ export interface SourcesPaneProps {
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAddAllDocs: () => void;
   onClearAllDocs: () => void;
+  /** Project/session nav, folded into the Sources pane (replaces WarRoomSidebar). */
+  nav?: ProjectNav;
 }
 
 function typeLabel(fileType: string | undefined): string {
@@ -51,6 +54,7 @@ export const SourcesPane: React.FC<SourcesPaneProps> = ({
   onUpload,
   onAddAllDocs,
   onClearAllDocs,
+  nav,
 }) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState('');
@@ -88,6 +92,9 @@ export const SourcesPane: React.FC<SourcesPaneProps> = ({
 
   return (
     <>
+      {/* Project / session switcher (folded in from the old sidebar column) */}
+      {nav && <ProjectSwitcher nav={nav} />}
+
       {/* Header + active-context + search + tags */}
       <div style={{ padding: '14px 14px 8px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>

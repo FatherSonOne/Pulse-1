@@ -1476,9 +1476,29 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
     createSession();
   }, [userId, selectedProjectId]);
 
+  // Project/session nav folded into the Notebook's Sources pane (replaces the
+  // standalone WarRoomSidebar column on the flag-ON path).
+  const notebookNav = useNotebookShell
+    ? {
+        projects: sidebarProjects,
+        sessions: sidebarSessions,
+        selectedProjectId,
+        selectedSessionId,
+        onSelectProject: setSelectedProjectId,
+        onSelectSession: handleSidebarSelectSession,
+        onCreateProject: handleSidebarCreateProject,
+        onCreateSession: handleSidebarCreateSession,
+        onDeleteProject: handleDeleteProject,
+        onDeleteSession: handleDeleteSession,
+      }
+    : undefined;
+
   return (
     <div className="pulse-studio-container h-screen flex overflow-hidden relative">
-      {/* New War Room Sidebar Component */}
+      {/* War Room project/session sidebar. On the Notebook path this column is
+          folded into the Sources pane (see `notebookNav` → SourcesPane), so the
+          standalone sidebar is suppressed there. */}
+      {!useNotebookShell && (
       <WarRoomSidebar
         isOpen={isSidebarOpen}
         onToggle={handleSidebarToggle}
@@ -1496,6 +1516,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
         onExportSession={handleExportSingleSession}
         getSessionMessages={getSessionMessagesForExport}
       />
+      )}
 
       {/* Main Content — War Room unified interface.
           The Notebook supplies its own per-pane headers + chat masthead, so the
@@ -1529,6 +1550,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
 
         <StudioShell
           className="flex-1 min-h-0"
+          {...(useNotebookShell ? ({ nav: notebookNav } as any) : {})}
           apiKey={apiKey}
           onVoiceSend={(text) => sendMessageDirect(text)}
           sourceOpen={contextPanelOpen}

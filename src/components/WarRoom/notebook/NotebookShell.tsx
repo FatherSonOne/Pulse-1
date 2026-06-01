@@ -14,6 +14,7 @@ import React, { useState, useEffect } from 'react';
 import './notebook.css';
 import { SourcesPane } from './SourcesPane';
 import { StudioPane } from './StudioPane';
+import { ProjectNav } from './ProjectSwitcher';
 import { ActionPalette, PaletteAction } from '../ActionPalette';
 import { useSwipeGesture } from '../useSwipeGesture';
 import { useWarRoomStore } from '../../../store/warRoomStore';
@@ -21,7 +22,10 @@ import type { StudioLayoutProps } from '../StudioLayout';
 
 import { FolderOpen, Sparkles } from 'lucide-react';
 
-export type NotebookShellProps = StudioLayoutProps;
+export interface NotebookShellProps extends StudioLayoutProps {
+  /** Project/session nav, folded into the Sources pane (Notebook path only). */
+  nav?: ProjectNav;
+}
 
 export const NotebookShell: React.FC<NotebookShellProps> = ({
   children,
@@ -45,6 +49,7 @@ export const NotebookShell: React.FC<NotebookShellProps> = ({
   artifactsOpen: propArtifactsOpen,
   onArtifactsChange,
   onKnowledgeBank,
+  nav,
 }) => {
   const setShowStudyGuide = useWarRoomStore((s) => s.setShowStudyGuide);
   const setShowFAQ = useWarRoomStore((s) => s.setShowFAQ);
@@ -135,6 +140,7 @@ export const NotebookShell: React.FC<NotebookShellProps> = ({
         {sourceOpen && hasDocProps && (
           <aside className="wr-nb-sources" aria-label="Sources">
             <SourcesPane
+              nav={nav}
               documents={documents!}
               activeContextDocs={activeContextDocs ?? new Set()}
               uploadingFiles={uploadingFiles ?? new Set()}
