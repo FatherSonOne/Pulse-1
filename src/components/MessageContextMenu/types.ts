@@ -34,16 +34,12 @@ export type ContextMenuActionId =
   | 'copy'
   | 'edit'
   | 'forward'
-  | 'pin'
-  | 'translate'
-  | 'show-original'
   | 'save'
-  | 'select'
   | 'mention'
-  | 'info'
-  | 'delete'
-  | 'block'
-  | 'report';
+  | 'create-task' // Pulse: create a task linked to this message
+  | 'propose-decision' // Pulse: propose a decision linked to this message
+  | 'share'
+  | 'delete';
 
 /**
  * Per-message viewpoint passed into the menu so it can render the
@@ -73,12 +69,11 @@ export interface MessageViewpoint {
    * Permissions the menu uses to hide actions. Each is optional — if
    * undefined, the menu assumes the safest (most-restrictive) default.
    */
-  canPin?: boolean;
   canDelete?: boolean;
-  canReport?: boolean;
-  canBlock?: boolean;
   canMention?: boolean;
-  canViewInfo?: boolean;
+  /** True when the user is in a workspace, so Pulse task/decision
+   *  creation from a message is available. */
+  canCreateTask?: boolean;
 }
 
 export interface ContextMenuItemDescriptor {

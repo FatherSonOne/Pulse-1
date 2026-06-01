@@ -194,11 +194,6 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
           e.preventDefault();
           dispatchActionRef.current?.('forward');
         }
-      } else if (!meta && (e.key === 't' || e.key === 'T')) {
-        if (has('translate')) {
-          e.preventDefault();
-          dispatchActionRef.current?.('translate');
-        }
       }
     };
     document.addEventListener('keydown', onKey);

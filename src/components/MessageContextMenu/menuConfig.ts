@@ -1,14 +1,15 @@
 // src/components/MessageContextMenu/menuConfig.ts
-// PR 2 — Surface 2 · top-5 + overflow menu shape per message state.
+// Surface 2 · top-5 + overflow menu shape per message state.
 //
-// Spec § 2.x tables — Own / Received / 1:1 / Group / edit-window:
-//   * Own, <15min:           Reply · React · Copy · Edit · Forward
-//   * Own, edit expired:     Reply · React · Copy · Forward · Pin
-//   * Received in 1:1:       Reply · React · Copy · Forward · Translate
-//   * Received in group:     Reply · React · Copy · @Mention · Forward
+// The menu only exposes actions that are REAL and wired on the Pulse
+// surface. Stub/fake-success items from the original generic-messenger
+// spec (pin-to-thread, translate-this-message, show-original, message
+// info, multi-select, block, report) were removed 2026-05-31 — showing a
+// "Message reported" toast with no backend is a trust bug, not a feature.
 //
-// Overflow grows by viewpoint: Pin / Translate / Save / Select / Info /
-// Delete / Block / Report — each entry rendered only when applicable.
+// Pulse-specific additions: Create task / Propose decision (linked to the
+// message via origin_message_id / message_id, surfaced in the relationship
+// rail) and Share. These are workspace-scoped (see `canCreateTask`).
 
 import {
   Reply,
@@ -16,16 +17,12 @@ import {
   Copy,
   Pencil,
   CornerUpRight,
-  Pin,
-  Languages,
-  RotateCcw,
   Star,
-  CheckSquare,
   AtSign,
-  Info,
+  ListChecks,
+  Scale,
+  Share2,
   Trash2,
-  ShieldOff,
-  Flag,
 } from 'lucide-react';
 import type {
   ContextMenuItemDescriptor,
@@ -68,36 +65,25 @@ const ITEM_MENTION: ContextMenuItemDescriptor = {
   label: 'Mention this person',
   icon: AtSign,
 };
-const ITEM_TRANSLATE: ContextMenuItemDescriptor = {
-  id: 'translate',
-  label: 'Translate this message',
-  icon: Languages,
-  shortcut: 'T',
-};
-const ITEM_SHOW_ORIGINAL: ContextMenuItemDescriptor = {
-  id: 'show-original',
-  label: 'Show original',
-  icon: RotateCcw,
-};
-const ITEM_PIN: ContextMenuItemDescriptor = {
-  id: 'pin',
-  label: 'Pin',
-  icon: Pin,
-};
 const ITEM_SAVE: ContextMenuItemDescriptor = {
   id: 'save',
   label: 'Save',
   icon: Star,
 };
-const ITEM_SELECT: ContextMenuItemDescriptor = {
-  id: 'select',
-  label: 'Select',
-  icon: CheckSquare,
+const ITEM_SHARE: ContextMenuItemDescriptor = {
+  id: 'share',
+  label: 'Share',
+  icon: Share2,
 };
-const ITEM_INFO: ContextMenuItemDescriptor = {
-  id: 'info',
-  label: 'Message info',
-  icon: Info,
+const ITEM_CREATE_TASK: ContextMenuItemDescriptor = {
+  id: 'create-task',
+  label: 'Create task',
+  icon: ListChecks,
+};
+const ITEM_PROPOSE_DECISION: ContextMenuItemDescriptor = {
+  id: 'propose-decision',
+  label: 'Propose decision',
+  icon: Scale,
 };
 const ITEM_DELETE: ContextMenuItemDescriptor = {
   id: 'delete',
@@ -105,89 +91,51 @@ const ITEM_DELETE: ContextMenuItemDescriptor = {
   icon: Trash2,
   destructive: true,
 };
-const ITEM_BLOCK: ContextMenuItemDescriptor = {
-  id: 'block',
-  label: 'Block sender',
-  icon: ShieldOff,
-  destructive: true,
-};
-const ITEM_REPORT: ContextMenuItemDescriptor = {
-  id: 'report',
-  label: 'Report',
-  icon: Flag,
-  destructive: true,
-};
 
 /**
  * Build the Top-5 action list for the given message viewpoint.
- *
- * The order here is **load-bearing** — the spec mocks rely on it.
- * Always returns exactly 5 items.
+ * Always returns at most 5 items, all wired to real handlers.
  */
 export function buildTop5(viewpoint: MessageViewpoint): ContextMenuItemDescriptor[] {
-  // Own, within edit window — Edit replaces Pin in slot 4.
+  const items: ContextMenuItemDescriptor[] = [ITEM_REPLY, ITEM_REACT];
+  if (viewpoint.hasText) items.push(ITEM_COPY);
+
+  // Own + still in the edit window — Edit takes slot 4.
   if (viewpoint.isOwn && viewpoint.isEditable) {
-    const items: ContextMenuItemDescriptor[] = [ITEM_REPLY, ITEM_REACT];
-    if (viewpoint.hasText) items.push(ITEM_COPY);
     items.push(ITEM_EDIT, ITEM_FORWARD);
     return items.slice(0, 5);
   }
 
-  // Own, edit expired — Pin fills the slot. Edit is HIDDEN (not greyed).
-  if (viewpoint.isOwn && !viewpoint.isEditable) {
-    const items: ContextMenuItemDescriptor[] = [ITEM_REPLY, ITEM_REACT];
-    if (viewpoint.hasText) items.push(ITEM_COPY);
-    items.push(ITEM_FORWARD, ITEM_PIN);
-    return items.slice(0, 5);
-  }
-
-  // Received in group — @Mention promoted to top-5.
+  // Received in a group — @Mention promoted (Pulse is 1:1 today; future-proofed).
   if (!viewpoint.isOwn && viewpoint.isGroup) {
-    const items: ContextMenuItemDescriptor[] = [ITEM_REPLY, ITEM_REACT];
-    if (viewpoint.hasText) items.push(ITEM_COPY);
     items.push(ITEM_MENTION, ITEM_FORWARD);
     return items.slice(0, 5);
   }
 
-  // Received in 1:1 — Translate-this-message in slot 5.
-  const items: ContextMenuItemDescriptor[] = [ITEM_REPLY, ITEM_REACT];
-  if (viewpoint.hasText) items.push(ITEM_COPY);
-  items.push(ITEM_FORWARD);
-  if (viewpoint.isAutoTranslated) {
-    items.push(ITEM_SHOW_ORIGINAL);
-  } else if (viewpoint.isTranslatable) {
-    items.push(ITEM_TRANSLATE);
-  } else {
-    items.push(ITEM_PIN);
-  }
+  // Default (own-expired / received 1:1) — Forward + Share fill the slots.
+  items.push(ITEM_FORWARD, ITEM_SHARE);
   return items.slice(0, 5);
 }
 
 /**
  * Build the overflow ("More…") list. Items are appended only when
- * applicable to the current viewpoint. Destructive items always sink
- * to the end so the visual divider stays meaningful.
+ * applicable to the viewpoint. The destructive item always sinks to the
+ * end so the visual divider stays meaningful.
  */
 export function buildOverflow(viewpoint: MessageViewpoint): ContextMenuItemDescriptor[] {
   const out: ContextMenuItemDescriptor[] = [];
-
-  // Pin (if not already in top-5).
   const inTop5: ReadonlyArray<string> = buildTop5(viewpoint).map((i) => i.id);
-  if (!inTop5.includes('pin') && viewpoint.canPin !== false) out.push(ITEM_PIN);
 
-  // Translate / Show original (if not already in top-5).
-  if (
-    !inTop5.includes('translate') &&
-    !inTop5.includes('show-original') &&
-    !viewpoint.isOwn
-  ) {
-    if (viewpoint.isAutoTranslated) out.push(ITEM_SHOW_ORIGINAL);
-    else if (viewpoint.isTranslatable) out.push(ITEM_TRANSLATE);
+  out.push(ITEM_SAVE);
+
+  if (!inTop5.includes('share')) out.push(ITEM_SHARE);
+
+  // Pulse: create artifacts FROM this message — workspace-scoped, text only.
+  if (viewpoint.hasText && viewpoint.canCreateTask !== false) {
+    out.push(ITEM_CREATE_TASK, ITEM_PROPOSE_DECISION);
   }
 
-  out.push(ITEM_SAVE, ITEM_SELECT);
-
-  // Group-only: @mention in overflow when not in top-5.
+  // Group-only: @mention in overflow when not already in top-5.
   if (
     !inTop5.includes('mention') &&
     !viewpoint.isOwn &&
@@ -197,21 +145,8 @@ export function buildOverflow(viewpoint: MessageViewpoint): ContextMenuItemDescr
     out.push(ITEM_MENTION);
   }
 
-  // Message info (own messages in group only, per spec).
-  if (viewpoint.isOwn && viewpoint.isGroup && viewpoint.canViewInfo !== false) {
-    out.push(ITEM_INFO);
-  }
-
-  // Destructive cluster.
+  // Destructive cluster — own messages only.
   if (viewpoint.isOwn && viewpoint.canDelete !== false) out.push(ITEM_DELETE);
-  if (
-    !viewpoint.isOwn &&
-    !viewpoint.isGroup &&
-    viewpoint.canBlock !== false
-  ) {
-    out.push(ITEM_BLOCK);
-  }
-  if (!viewpoint.isOwn && viewpoint.canReport !== false) out.push(ITEM_REPORT);
 
   return out;
 }

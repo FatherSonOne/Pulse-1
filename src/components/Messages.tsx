@@ -3142,14 +3142,29 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         setReplyingToPulseMessage(msg);
         return;
       case 'react': {
-        // Open the existing radial picker at the bubble's center as a
-        // fallback for the "full picker" — PR 2 doesn't ship a new one.
+        // Open the full emoji picker anchored beside the bubble (same
+        // placement as the quick-bar "+"). Replaces the legacy radial menu.
         try {
           const el = document.querySelector(`[data-message-id="${msg.id}"]`) as HTMLElement | null;
-          if (el) {
-            const rect = el.getBoundingClientRect();
-            radialMenu.open(rect.left + rect.width / 2, rect.top + rect.height / 2);
-            setRadialMenuMessageId(msg.id);
+          const rect = el?.getBoundingClientRect();
+          const PICKER_W = 360;
+          const GAP = 8;
+          if (rect) {
+            const center = rect.left + rect.width / 2;
+            const isRightHalf = center > window.innerWidth / 2;
+            setFullEmojiPicker({
+              open: true,
+              messageId: msg.id,
+              x: isRightHalf ? rect.left - PICKER_W - GAP : rect.right + GAP,
+              y: rect.top,
+            });
+          } else {
+            setFullEmojiPicker({
+              open: true,
+              messageId: msg.id,
+              x: window.innerWidth / 2 - PICKER_W / 2,
+              y: window.innerHeight / 2 - 220,
+            });
           }
         } catch {/* no-op */}
         return;
@@ -3186,13 +3201,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         setShowForwardModal(true);
         return;
       case 'save':
-      case 'pin':
-        // PR 2: pin and save share the existing star plumbing. Real
-        // pin-to-thread server flow is out of scope per spec.
+        // Star plumbing (real). The "Save" label maps to star.
         toggleStarPulseMessage(msg.id);
-        return;
-      case 'select':
-        // PR 2 stub — multi-select mode is owned by another work stream.
         return;
       case 'mention': {
         // Insert a leading mention token into the composer. Pulse is
@@ -3201,16 +3211,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         setInputText((prev) => (prev ? `@${handle} ${prev}` : `@${handle} `));
         return;
       }
-      case 'translate':
-        // PR 2: placeholder — translate-this-message backend call lives
-        // in another work stream (see spec OUT-of-scope list).
-        setPulseEditToast(`Translating "${msg.content.slice(0, 24)}…"`);
+      case 'create-task':
+        // Path D 5b — create a task linked to this message (workspace-scoped;
+        // the handler no-ops if there's no workspace). Surfaces in the rail.
+        void handleCreateTaskFromMessage(msg);
         return;
-      case 'show-original':
-        setPulseEditToast('Showing original message');
+      case 'propose-decision':
+        void handleProposeDecisionFromMessage(msg);
         return;
-      case 'info':
-        setPulseEditToast('Message info (coming soon)');
+      case 'share':
+        sharePulseMessage(msg);
         return;
       case 'delete':
         if (typeof window !== 'undefined' && window.confirm('Delete this message?')) {
@@ -3237,24 +3247,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           });
         }
         return;
-      case 'block':
-        if (typeof window !== 'undefined' && window.confirm('Block this sender?')) {
-          setPulseEditToast('Sender blocked');
-        }
-        return;
-      case 'report':
-        if (typeof window !== 'undefined' && window.confirm('Report this message?')) {
-          setPulseEditToast('Message reported');
-        }
-        return;
     }
   }, [
     copyPulseMessage,
     currentUser.id,
     pulseMessageReactions,
-    radialMenu,
     startEditPulseMessage,
     toggleStarPulseMessage,
+    handleCreateTaskFromMessage,
+    handleProposeDecisionFromMessage,
+    sharePulseMessage,
   ]);
 
   // Message forwarding (legacy threads)
@@ -4880,6 +4882,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               hasText: !!targetMsg.content && targetMsg.content.trim().length > 0,
               isAutoTranslated: !!targetMsg.metadata?.auto_translated,
               isTranslatable: !!targetMsg.metadata?.translatable,
+              // Pulse task/decision creation is workspace-scoped.
+              canCreateTask: !!currentWorkspace,
             };
             const my = (pulseMessageReactions[targetMsg.id] || [])
               .filter((r) => r.me)
