@@ -4677,7 +4677,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     sendPulseMessage(text);
                   }}
                   onTyping={(isTyping) => {
-                    // Typing indicator for Pulse conversations
+                    // Broadcast typing to the other Pulse user (the legacy
+                    // composer is the default when pulseComposerV2 is off, so
+                    // without this the default path never emitted typing).
+                    // Mirrors the V2 composer path; broadcastPulseTyping
+                    // self-clears after 3s.
+                    if (isTyping && activePulseConversation) broadcastPulseTyping();
                   }}
                   placeholder={`Message ${activePulseConv?.other_user?.display_name || 'user'}...`}
                   aiEnabled={true}
@@ -4905,7 +4910,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
         {/* Typing Indicator */}
         {typingUsers.length > 0 && (
-          <TypingIndicator users={typingUsers} />
+          <TypingIndicator userName={typingUsers.join(', ')} />
         )}
 
         {/* Chat Area */}
