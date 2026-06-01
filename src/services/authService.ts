@@ -199,11 +199,16 @@ export const loginWithGoogle = async (): Promise<User> => {
     options: {
       redirectTo: getRedirectUrl('/'),
       queryParams: {
-        // 'offline' access type gives us a refresh token that lasts much longer
+        // 'offline' access type asks Google for a refresh token.
         access_type: 'offline',
-        // Only prompt for consent on first login or when scopes change
-        // This prevents annoying re-auth dialogs on every login
-        prompt: 'select_account',
+        // CRITICAL: Google only RETURNS the refresh token when the consent
+        // screen is actually shown. With 'select_account' alone, Google skips
+        // consent for already-authorized users and returns NO refresh token —
+        // so provider_token can't be refreshed and Calendar/Gmail/Contacts all
+        // break after ~1h (the "No provider_refresh_token in session" error).
+        // 'consent select_account' forces consent (→ refresh token every time)
+        // while still letting the user pick which Google account to use.
+        prompt: 'consent select_account',
         // Include granted scopes in token response
         include_granted_scopes: 'true',
       },
@@ -706,11 +711,31 @@ export const connectProvider = async (provider: 'google' | 'microsoft' | 'icloud
 
   const supabaseProvider = provider === 'microsoft' ? 'azure' : provider;
 
+  // Provider-specific options. The bare linkIdentity call (no scopes, no
+  // offline query params) only links basic identity — it does NOT obtain the
+  // Google API scopes or the refresh token, so the "reconnect via Settings"
+  // recovery path that our error toasts point users to would silently fail to
+  // restore Calendar/Gmail/Contacts access. Mirror loginWithGoogle here.
+  const options =
+    provider === 'google'
+      ? {
+          redirectTo: getRedirectUrl('/settings'),
+          scopes: GOOGLE_SCOPES,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent select_account',
+            include_granted_scopes: 'true',
+          },
+        }
+      : {
+          // Microsoft/Azure — offline_access is included in MICROSOFT_SCOPES.
+          redirectTo: getRedirectUrl('/settings'),
+          scopes: MICROSOFT_SCOPES,
+        };
+
   const { error } = await supabase.auth.linkIdentity({
     provider: supabaseProvider,
-    options: {
-      redirectTo: getRedirectUrl('/settings')
-    }
+    options,
   });
 
   if (error) {
