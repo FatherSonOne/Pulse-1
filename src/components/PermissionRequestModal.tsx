@@ -1,6 +1,9 @@
-// Permission Request Modal — P0 Redesign
-// Per-permission accent system, glassmorphism, ARIA + focus trap,
-// denied-state recovery, Location step, Lucide icons, step animations.
+// Permission Request Modal — Coral Cockpit pass
+// DESIGN.md-faithful: tinted-neutral surfaces (no glassmorphism, no zinc),
+// JetBrains Mono labels, coral reserved as the single signal (primary CTA,
+// active progress, required badge, focus ring). Per-permission rainbow
+// removed — the icon glyph carries differentiation, not color.
+// Retains: ARIA + focus trap, denied-state recovery, array-driven steps.
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { usePermissions, PermissionName } from '../hooks/usePermissions';
 import {
@@ -17,94 +20,28 @@ interface PermissionItem {
   required: boolean;
 }
 
-interface AccentConfig {
-  /** Full gradient class string for header strip and CTA button */
-  gradient: string;
-  /** Icon container background */
-  iconBg: string;
-  /** Icon container border */
-  iconBorder: string;
-  /** Icon / text color */
-  iconText: string;
-  /** Granted chip background */
-  chipBg: string;
-  /** Granted chip text */
-  chipText: string;
-  /** Active progress segment color */
-  progressActive: string;
-  /** "Required" badge classes */
-  requiredBadge: string;
-}
+// ─── Token style objects (consume --pulse-* per DESIGN.md, theme-aware) ─────────
 
-// ─── Per-Permission Accent Map ────────────────────────────────────────────────
-// Full Tailwind class strings are kept as literals so the content scanner
-// includes them — no dynamic class construction that could be purged.
-
-const ACCENT_MAP: Record<string, AccentConfig> = {
-  microphone: {
-    gradient:      'bg-gradient-to-r from-rose-500 to-pink-600',
-    iconBg:        'bg-rose-500/15',
-    iconBorder:    'border-rose-500/30',
-    iconText:      'text-rose-400',
-    chipBg:        'bg-rose-500/15',
-    chipText:      'text-rose-400',
-    progressActive:'bg-rose-400',
-    requiredBadge: 'bg-rose-500/15 text-rose-400 border border-rose-500/30',
-  },
-  camera: {
-    gradient:      'bg-gradient-to-r from-violet-500 to-purple-600',
-    iconBg:        'bg-violet-500/15',
-    iconBorder:    'border-violet-500/30',
-    iconText:      'text-violet-400',
-    chipBg:        'bg-violet-500/15',
-    chipText:      'text-violet-400',
-    progressActive:'bg-violet-400',
-    requiredBadge: 'bg-rose-500/15 text-rose-400 border border-rose-500/30',
-  },
-  notifications: {
-    gradient:      'bg-gradient-to-r from-amber-500 to-orange-500',
-    iconBg:        'bg-amber-500/15',
-    iconBorder:    'border-amber-500/30',
-    iconText:      'text-amber-400',
-    chipBg:        'bg-amber-500/15',
-    chipText:      'text-amber-400',
-    progressActive:'bg-amber-400',
-    requiredBadge: 'bg-rose-500/15 text-rose-400 border border-rose-500/30',
-  },
-  contacts: {
-    gradient:      'bg-gradient-to-r from-sky-500 to-blue-600',
-    iconBg:        'bg-sky-500/15',
-    iconBorder:    'border-sky-500/30',
-    iconText:      'text-sky-400',
-    chipBg:        'bg-sky-500/15',
-    chipText:      'text-sky-400',
-    progressActive:'bg-sky-400',
-    requiredBadge: 'bg-rose-500/15 text-rose-400 border border-rose-500/30',
-  },
-  location: {
-    gradient:      'bg-gradient-to-r from-teal-500 to-emerald-600',
-    iconBg:        'bg-teal-500/15',
-    iconBorder:    'border-teal-500/30',
-    iconText:      'text-teal-400',
-    chipBg:        'bg-teal-500/15',
-    chipText:      'text-teal-400',
-    progressActive:'bg-teal-400',
-    requiredBadge: 'bg-rose-500/15 text-rose-400 border border-rose-500/30',
-  },
+const cardStyle: React.CSSProperties = {
+  background: 'var(--pulse-surface)',
+  border: '1px solid var(--pulse-border)',
+  // Modal-grade elevation (DESIGN.md §4). Glass only reads in dark, where
+  // --pulse-surface is translucent; light surface is opaque paper.
+  boxShadow: '0 24px 48px -12px rgba(0,0,0,0.22)',
+  backdropFilter: 'blur(24px)',
+  WebkitBackdropFilter: 'blur(24px)',
 };
 
-const DEFAULT_ACCENT: AccentConfig = {
-  gradient:      'bg-gradient-to-r from-zinc-600 to-zinc-700',
-  iconBg:        'bg-zinc-500/15',
-  iconBorder:    'border-zinc-500/30',
-  iconText:      'text-zinc-400',
-  chipBg:        'bg-zinc-500/15',
-  chipText:      'text-zinc-400',
-  progressActive:'bg-zinc-400',
-  requiredBadge: 'bg-rose-500/15 text-rose-400 border border-rose-500/30',
+const monoLabel: React.CSSProperties = {
+  fontFamily: 'var(--pulse-font-mono)',
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
 };
 
-const getAccent = (name: string): AccentConfig => ACCENT_MAP[name] ?? DEFAULT_ACCENT;
+const iconTileStyle: React.CSSProperties = {
+  background: 'var(--pulse-canvas-soft)',
+  border: '1px solid var(--pulse-border)',
+};
 
 // ─── Icon Registry ────────────────────────────────────────────────────────────
 
@@ -154,6 +91,34 @@ const ALL_PERMISSIONS: PermissionItem[] = [
     required: false,
   },
 ];
+
+// ─── Status chip (granted / skipped) — status vocabulary, never coral ──────────
+
+const StatusChip: React.FC<{ name: string; title: string; granted: boolean; size?: 'sm' | 'md' }> = ({
+  name, title, granted, size = 'sm',
+}) => {
+  const dims = size === 'md' ? 'px-3 py-1.5 text-sm gap-2' : 'px-2 py-1 text-xs gap-1.5';
+  const iconSize = size === 'md' ? 12 : 10;
+  const style: React.CSSProperties = granted
+    ? {
+        background: 'var(--pulse-tone-positive-soft)',
+        color: 'var(--pulse-tone-positive)',
+        border: '1px solid transparent',
+      }
+    : {
+        background: 'var(--pulse-canvas-soft)',
+        color: 'var(--pulse-ink-3)',
+        border: '1px solid var(--pulse-border)',
+        textDecoration: 'line-through',
+      };
+  return (
+    <div className={`flex items-center rounded-full ${dims}`} style={style}>
+      <span className="flex items-center">{permIcon(name, iconSize)}</span>
+      <span>{title}</span>
+      {granted ? <Check size={iconSize} /> : <Minus size={iconSize} />}
+    </div>
+  );
+};
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -235,7 +200,7 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
     advance();
   };
 
-  // ── Skip handler (P0.6 fix — no OS dialog) ──────────────────────────────
+  // ── Skip handler (no OS dialog) ──────────────────────────────────────────
   const handleSkip = async () => {
     if (!currentPermission) return;
     await markPermissionCompleted(currentPermission.name);
@@ -264,15 +229,8 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
 
   if (permissionsToShow.length === 0) return null;
 
-  // ── Glass card class shared across both render paths ─────────────────────
-  const cardCls = [
-    'bg-white/90 dark:bg-zinc-900/85',
-    'backdrop-blur-xl',
-    'border border-black/[0.06] dark:border-white/[0.07]',
-    'shadow-2xl shadow-black/20 dark:shadow-black/50',
-    'rounded-2xl w-full max-w-md',
-    'max-h-[90dvh] overflow-y-auto',
-  ].join(' ');
+  // Shared surface card — solid paper (light) / translucent (dark), no glass tells.
+  const cardCls = 'w-full max-w-md rounded-[20px] max-h-[90dvh] overflow-y-auto';
 
   const overlayClickHandler = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onSkip?.();
@@ -282,49 +240,41 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
   if (allComplete) {
     return (
       <div
-        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+        className="pulse-modal-scrim fixed inset-0 z-[100] flex items-center justify-center p-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby="perm-complete-title"
       >
-        <div className={`${cardCls} p-8 text-center animate-perm-enter`}>
-          <div className="w-20 h-20 bg-rose-500/15 border border-rose-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShieldCheck size={40} className="text-rose-400" />
+        <div className={`${cardCls} p-8 text-center animate-perm-enter`} style={cardStyle}>
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ background: 'var(--pulse-rose-soft)', border: '1px solid var(--pulse-rose-soft)' }}
+          >
+            <ShieldCheck size={40} style={{ color: 'var(--pulse-rose)' }} />
           </div>
 
           <h2
             id="perm-complete-title"
-            className="text-2xl font-bold text-zinc-900 dark:text-white mb-3"
+            className="text-2xl font-semibold mb-3"
+            style={{ color: 'var(--pulse-ink)', letterSpacing: '-0.025em' }}
           >
-            You're All Set!
+            You're all set
           </h2>
-          <p className="text-zinc-500 dark:text-zinc-400 mb-6">
-            Pulse is ready to use. You can always change permissions in Settings.
+          <p className="mb-6 text-sm leading-relaxed" style={{ color: 'var(--pulse-ink-2)' }}>
+            Pulse is ready. You can change permissions anytime in Settings.
           </p>
 
-          {/* Staggered chip reveal — chips are from permissionsToShow not ALL_PERMISSIONS */}
+          {/* Granted / skipped status recap */}
           <div className="flex flex-wrap justify-center gap-3">
-            {permissionsToShow.map((perm, i) => {
-              const a       = getAccent(perm.name);
-              const granted = permissions[perm.name]?.granted;
-              return (
-                <div
-                  key={perm.name}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border transition-all ${
-                    granted
-                      ? `${a.chipBg} ${a.chipText} ${a.iconBorder}`
-                      : 'bg-zinc-100 dark:bg-zinc-800/60 text-zinc-400 dark:text-zinc-500 border-zinc-200 dark:border-zinc-700/50 line-through'
-                  }`}
-
-                >
-                  <span className={granted ? a.iconText : 'text-zinc-400 dark:text-zinc-600'}>
-                    {permIcon(perm.name, 12)}
-                  </span>
-                  <span>{perm.title}</span>
-                  {granted && <Check size={12} />}
-                </div>
-              );
-            })}
+            {permissionsToShow.map((perm) => (
+              <StatusChip
+                key={perm.name}
+                name={perm.name}
+                title={perm.title}
+                granted={!!permissions[perm.name]?.granted}
+                size="md"
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -332,12 +282,11 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
   }
 
   // ─── Step wizard ─────────────────────────────────────────────────────────
-  const accent     = getAccent(currentPermission?.name ?? '');
   const totalSteps = permissionsToShow.length;
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+      className="pulse-modal-scrim fixed inset-0 z-[100] flex items-center justify-center p-4"
       onClick={overlayClickHandler}
     >
       <div
@@ -346,36 +295,45 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
         aria-modal="true"
         aria-labelledby="perm-modal-title"
         className={`${cardCls} overflow-hidden animate-perm-enter`}
+        style={cardStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Per-permission accent strip */}
-        <div className={`h-1 w-full ${accent.gradient}`} />
-
-        {/* Top bar: title + step counter */}
-        <div className="px-6 pt-5 flex items-center justify-between">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+        {/* Top bar: mono title + step counter */}
+        <div className="px-6 pt-6 flex items-center justify-between">
+          <span className="text-[11px] font-medium" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>
             Set Up Pulse
           </span>
-          <span className="text-xs text-zinc-500 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/50 px-2 py-0.5 rounded-full tabular-nums">
+          <span
+            className="text-[11px] px-2 py-0.5 rounded-full"
+            style={{
+              fontFamily: 'var(--pulse-font-mono)',
+              fontVariantNumeric: 'tabular-nums',
+              color: 'var(--pulse-ink-2)',
+              background: 'var(--pulse-canvas-soft)',
+              border: '1px solid var(--pulse-border)',
+            }}
+          >
             {currentStep + 1} / {totalSteps}
           </span>
         </div>
 
-        {/* Segmented progress dots */}
-        <div className="px-6 pt-3">
+        {/* Segmented progress — coral is the only fill (signal) */}
+        <div className="px-6 pt-4">
           <div className="flex gap-1.5">
-            {permissionsToShow.map((_, i) => (
-              <div
-                key={i}
-                className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                  i < currentStep
-                    ? 'bg-gradient-to-r from-rose-500 to-pink-500'
-                    : i === currentStep
-                    ? `${accent.progressActive} animate-pulse`
-                    : 'bg-zinc-200 dark:bg-zinc-700/60'
-                }`}
-              />
-            ))}
+            {permissionsToShow.map((_, i) => {
+              const done   = i < currentStep;
+              const active = i === currentStep;
+              return (
+                <div
+                  key={i}
+                  className={`h-1 flex-1 rounded-full transition-all duration-300 ${active ? 'animate-pulse' : ''}`}
+                  style={{
+                    background: done || active ? 'var(--pulse-rose)' : 'var(--pulse-border)',
+                    opacity: active ? 0.7 : 1,
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -383,12 +341,13 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
         {currentPermission && (
           <div key={stepKey} className="p-6 perm-step-enter">
 
-            {/* Hero icon — 72×72 with per-permission accent gradient bg */}
+            {/* Hero icon — neutral tile, glyph carries the differentiation */}
             <div className="flex justify-center mb-5">
               <div
-                className={`w-[72px] h-[72px] rounded-2xl flex items-center justify-center border ${accent.iconBg} ${accent.iconBorder}`}
+                className="w-[72px] h-[72px] rounded-2xl flex items-center justify-center"
+                style={iconTileStyle}
               >
-                <span className={accent.iconText}>
+                <span style={{ color: 'var(--pulse-ink-2)' }}>
                   {permIcon(currentPermission.name, 30)}
                 </span>
               </div>
@@ -398,26 +357,45 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
             <div className="flex items-center justify-center gap-2 mb-2">
               <h3
                 id="perm-modal-title"
-                className="text-xl font-bold text-zinc-900 dark:text-white"
+                className="text-xl font-semibold"
+                style={{ color: 'var(--pulse-ink)', letterSpacing: '-0.02em' }}
               >
                 {currentPermission.title}
               </h3>
               {currentPermission.required && (
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${accent.requiredBadge}`}>
+                <span
+                  className="px-2 py-0.5 rounded text-[10px] font-medium"
+                  style={{
+                    ...monoLabel,
+                    color: 'var(--pulse-rose-text)',
+                    background: 'var(--pulse-rose-soft)',
+                  }}
+                >
                   Required
                 </span>
               )}
             </div>
 
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center leading-relaxed mb-6">
+            <p
+              className="text-sm text-center leading-relaxed mb-6 mx-auto"
+              style={{ color: 'var(--pulse-ink-2)', maxWidth: '34ch' }}
+            >
               {currentPermission.description}
             </p>
 
-            {/* Denied recovery block */}
+            {/* Denied recovery block — overdue status vocabulary */}
             {deniedInStep && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-5">
-                <p className="text-red-400 text-sm font-semibold mb-1">Permission blocked</p>
-                <p className="text-zinc-500 dark:text-zinc-400 text-xs mb-3">
+              <div
+                className="rounded-xl p-3 mb-5"
+                style={{
+                  background: 'var(--pulse-tone-overdue-soft)',
+                  border: '1px solid var(--pulse-tone-overdue-soft)',
+                }}
+              >
+                <p className="text-sm font-semibold mb-1" style={{ color: 'var(--pulse-tone-overdue)' }}>
+                  Permission blocked
+                </p>
+                <p className="text-xs mb-3" style={{ color: 'var(--pulse-ink-2)' }}>
                   {currentPermission.title} was denied. Open your device Settings to enable it.
                 </p>
                 <div className="flex gap-2 flex-wrap">
@@ -425,7 +403,8 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
                     <button
                       type="button"
                       onClick={handleOpenSettings}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 text-xs font-medium transition-colors"
+                      className="perm-focus flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                      style={{ background: 'var(--pulse-tone-overdue-soft)', color: 'var(--pulse-tone-overdue)' }}
                     >
                       <Settings size={12} />
                       Open Settings
@@ -434,7 +413,8 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
                   <button
                     type="button"
                     onClick={advance}
-                    className="px-3 py-1.5 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 text-xs transition-colors"
+                    className="perm-focus px-3 py-1.5 rounded-lg text-xs transition-colors"
+                    style={{ color: 'var(--pulse-ink-3)' }}
                   >
                     Continue anyway
                   </button>
@@ -442,29 +422,17 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
               </div>
             )}
 
-            {/* Previous permissions status chips */}
+            {/* Previously handled permissions */}
             {currentStep > 0 && (
               <div className="flex flex-wrap gap-2 mb-5">
-                {permissionsToShow.slice(0, currentStep).map(perm => {
-                  const a       = getAccent(perm.name);
-                  const granted = permissions[perm.name]?.granted;
-                  return (
-                    <div
-                      key={perm.name}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs border ${
-                        granted
-                          ? `${a.chipBg} ${a.chipText} ${a.iconBorder}`
-                          : 'bg-zinc-100 dark:bg-zinc-800/60 text-zinc-400 dark:text-zinc-500 border-zinc-200 dark:border-zinc-700/50 line-through'
-                      }`}
-                    >
-                      <span className={granted ? a.iconText : 'text-zinc-400 dark:text-zinc-600'}>
-                        {permIcon(perm.name, 10)}
-                      </span>
-                      <span>{perm.title}</span>
-                      {granted ? <Check size={10} /> : <Minus size={10} />}
-                    </div>
-                  );
-                })}
+                {permissionsToShow.slice(0, currentStep).map(perm => (
+                  <StatusChip
+                    key={perm.name}
+                    name={perm.name}
+                    title={perm.title}
+                    granted={!!permissions[perm.name]?.granted}
+                  />
+                ))}
               </div>
             )}
 
@@ -475,7 +443,12 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
                   type="button"
                   onClick={handleSkip}
                   disabled={isRequesting}
-                  className="flex-1 py-3 px-4 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-600 font-medium transition-all duration-150 disabled:opacity-50"
+                  className="perm-focus flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-150 disabled:opacity-50"
+                  style={{
+                    background: 'transparent',
+                    color: 'var(--pulse-ink-2)',
+                    border: '1px solid var(--pulse-border)',
+                  }}
                 >
                   Skip
                 </button>
@@ -485,7 +458,8 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
                   type="button"
                   onClick={handleRequestPermission}
                   disabled={isRequesting}
-                  className={`flex-1 py-3 px-4 rounded-xl text-white font-medium transition-all duration-150 disabled:opacity-50 flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] shadow-md ${accent.gradient}`}
+                  className="perm-focus flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-150 disabled:opacity-50 flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98]"
+                  style={{ background: 'var(--pulse-rose)', color: '#ffffff' }}
                 >
                   {isRequesting ? (
                     <>
@@ -510,9 +484,10 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
             <button
               type="button"
               onClick={onSkip}
-              className="w-full text-center text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+              className="perm-focus w-full text-center text-xs rounded-lg py-1 transition-colors"
+              style={{ color: 'var(--pulse-ink-3)' }}
             >
-              Skip for now — set these later in Settings
+              Skip for now. Set these later in Settings.
             </button>
           </div>
         )}
