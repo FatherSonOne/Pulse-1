@@ -233,15 +233,12 @@ export const FEATURE_CATEGORIES = {
       'scheduledMessages',
       'draftManager'
     ] as (keyof FeatureFlags)[]
-  },
-  messagesRedesign: {
-    name: 'Messages Tools Redesign (Beta)',
-    description: 'New compose bar and slim Tools menu. Toggle independently to A/B against legacy.',
-    features: [
-      'pulseComposerV2',
-      'toolsMenuV2'
-    ] as (keyof FeatureFlags)[]
   }
+  // 'Messages Tools Redesign (Beta)' category removed from the Features Labs UI
+  // 2026-06-01: PulseComposer is now the unconditional Pulse-DM composer and the
+  // tools menu is removed from the UX (MESSAGES_TOOLS_ENABLED gate), so the
+  // `pulseComposerV2` / `toolsMenuV2` toggles no longer do anything user-visible.
+  // The flag keys are retained (still referenced in code) but no longer surfaced.
 };
 
 /**
