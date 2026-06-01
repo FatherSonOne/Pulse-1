@@ -14,7 +14,7 @@ interface TriageDoneProps {
 export const TriageDone: React.FC<TriageDoneProps> = ({
   onReset,
   onDismiss,
-  summary = 'Your fastest session this week. ~14s per email. 22% quicker than last week.',
+  summary = 'Queue cleared — your inbox is quiet for now.',
 }) => (
   <div className="text-center max-w-[480px] fade-up">
     <div className="relative inline-flex items-center justify-center w-16 h-16 mb-5">
