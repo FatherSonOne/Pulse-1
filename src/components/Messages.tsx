@@ -110,7 +110,7 @@ import { AnalyticsExport } from './MessageEnhancements/AnalyticsExport';
 import { AttachmentManager } from './MessageEnhancements/AttachmentManager';
 import { BackupSync } from './MessageEnhancements/BackupSync';
 import { SmartSuggestions } from './MessageEnhancements/SmartSuggestions';
-import { useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
+import { useRegisterCommands, useCommandPalette, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
 import { getAllToolActions, fuzzySearchTools, saveRecentTool, suggestToolsFromContext, getRecentTools, getToolOverlayType } from '../services/toolRegistry';
 import type { ToolAction } from '../services/toolRegistry';
 import { messageEnhancementsService } from '../services/messageEnhancementsService';
@@ -406,6 +406,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   }, [loadThreads]);
 
   const [inputText, setInputText] = useState('');
+  // Secondary draft string consumed by the legacy-branch feature panels
+  // (smart-compose suggestions write here; ConversationSummary/AICoach read it).
+  // Declared at component scope to back the props passed to <MessagesFeaturePanels>
+  // — previously referenced there but never declared, a latent ReferenceError when
+  // the legacy thread branch mounts. (Repair plan W1 / triage S1.)
+  const [newMessage, setNewMessage] = useState('');
+  // Programmatic opener for the global command palette, wired to the header
+  // Command Palette button (its old local `setShowCommandPalette` setter was
+  // removed when the local Cmd+K palette was retired). (Repair plan W1 / triage S1.)
+  const { open: openCommandPalette } = useCommandPalette();
   const [loadingAI, setLoadingAI] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
@@ -4793,7 +4803,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
             {/* Command Palette - Always visible */}
             <button
-              onClick={() => setShowCommandPalette(true)}
+              onClick={() => openCommandPalette()}
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
               title="Quick Actions (Ctrl+K)"
               aria-label="Open command palette"
