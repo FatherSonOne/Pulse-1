@@ -4676,44 +4676,26 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               isActive={true}
               usePortal={false}
             >
-              {features.isFeatureEnabled('pulseComposerV2') ? (
-                <PulseComposer
-                  onSend={({ text }) => {
-                    sendPulseMessage(text);
-                  }}
-                  onTyping={(isTyping) => {
-                    if (isTyping && activePulseConversation) broadcastPulseTyping();
-                  }}
-                  placeholder={`Message ${activePulseConv?.other_user?.display_name || 'user'}...`}
-                  maxLength={2000}
-                  disabled={false}
-                  threadId={activePulseConv?.id}
-                  messageCount={pulseMessages.length}
-                  toolsEnabled={MESSAGES_TOOLS_ENABLED}
-                />
-              ) : (
-                <MessageInput
-                  onSend={(text) => {
-                    sendPulseMessage(text);
-                  }}
-                  onTyping={(isTyping) => {
-                    // Broadcast typing to the other Pulse user (the legacy
-                    // composer is the default when pulseComposerV2 is off, so
-                    // without this the default path never emitted typing).
-                    // Mirrors the V2 composer path; broadcastPulseTyping
-                    // self-clears after 3s.
-                    if (isTyping && activePulseConversation) broadcastPulseTyping();
-                  }}
-                  placeholder={`Message ${activePulseConv?.other_user?.display_name || 'user'}...`}
-                  aiEnabled={true}
-                  voiceEnabled={true}
-                  maxLength={2000}
-                  channelId={activePulseConv?.id}
-                  apiKey={apiKey}
-                  disabled={false}
-                  setActiveToolOverlay={MESSAGES_TOOLS_ENABLED ? setActiveToolOverlay : undefined}
-                />
-              )}
+              {/* PulseComposer is THE Pulse-DM composer for everyone. The legacy
+                  <MessageInput> was retired on this path once PulseComposer reached
+                  parity (voice / drafts / typing — commit c5e1bbe). The
+                  `pulseComposerV2` flag no longer gates this path; MessageInput is
+                  still used by the legacy-thread branch below, so the component is
+                  preserved. Restore the ternary from git history to revert. */}
+              <PulseComposer
+                onSend={({ text }) => {
+                  sendPulseMessage(text);
+                }}
+                onTyping={(isTyping) => {
+                  if (isTyping && activePulseConversation) broadcastPulseTyping();
+                }}
+                placeholder={`Message ${activePulseConv?.other_user?.display_name || 'user'}...`}
+                maxLength={2000}
+                disabled={false}
+                threadId={activePulseConv?.id}
+                messageCount={pulseMessages.length}
+                toolsEnabled={MESSAGES_TOOLS_ENABLED}
+              />
             </MessageInputPortal>
           )}
         </div>
