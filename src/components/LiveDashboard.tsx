@@ -1608,8 +1608,9 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
         )}
       </div>
 
-      {/* Onboarding overlay — first visit only */}
-      {showOnboarding && (
+      {/* Onboarding overlay — first visit only. Superseded by the Notebook's
+          teaching EmptyState, so it's suppressed on the flag-ON path (Phase 7). */}
+      {showOnboarding && !useNotebookShell && (
         <StudioOnboarding onComplete={() => setShowOnboarding(false)} />
       )}
 

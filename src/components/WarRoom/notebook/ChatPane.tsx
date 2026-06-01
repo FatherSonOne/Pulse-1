@@ -21,8 +21,7 @@ import { useWarRoomStore } from '../../../store/warRoomStore';
 import { MessageList } from './MessageList';
 import { Composer } from './Composer';
 import { DockedVoice } from './DockedVoice';
-
-import { ArrowRight, BookOpen } from 'lucide-react';
+import { EmptyState } from './EmptyState';
 
 export interface ChatPaneProps extends PulseStudioProps {
   /** Threaded from LiveDashboard for the docked realtime voice agent. */
@@ -89,76 +88,18 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
   const setVoiceAgentExpanded = useWarRoomStore((s) => s.setVoiceAgentExpanded);
   const selectedProjectId = useWarRoomStore((s) => s.selectedProjectId);
 
-  // ── Welcome Screen (Phase 7 → EmptyState) ───────────────────────────────
-  const renderWelcome = () => {
-    const previewNames = documents.slice(0, 3).map((d) => d.title);
-    const overflow = documents.length - previewNames.length;
-
-    return (
-      <div className="ps-welcome">
-        <div className="ps-welcome-logo">
-          <BookOpen size={20} />
-        </div>
-
-        <h2>War Room</h2>
-
-        {hasDocuments ? (
-          <>
-            <div className="ps-welcome-label">
-              {documents.length} source{documents.length !== 1 ? 's' : ''} ready
-              {activeDocCount > 0 && ` · ${activeDocCount} active`}
-            </div>
-            <div className="ps-welcome-list">
-              {previewNames.join(' · ')}
-              {overflow > 0 && ` · +${overflow} more`}
-            </div>
-            <button
-              className="ps-welcome-cta"
-              onClick={() => onSendDirect('/summarize Summarize the key points from my sources')}
-            >
-              {documents.length === 1 ? 'Summarize this source' : 'Summarize all sources'}
-              <ArrowRight size={14} />
-            </button>
-            <div className="ps-welcome-hint">
-              <span>/summarize</span>
-              <span aria-hidden>·</span>
-              <span>/analyze</span>
-              <span aria-hidden>·</span>
-              <span>/brainstorm</span>
-              <span aria-hidden>·</span>
-              <kbd>⌘K</kbd>
-              <span>for more</span>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="ps-welcome-label">No sources yet</div>
-            <div className="ps-welcome-list">Add a document, or start a conversation on any topic.</div>
-            {onUploadClick && (
-              <button className="ps-welcome-cta" onClick={onUploadClick}>
-                Add a source
-                <ArrowRight size={14} />
-              </button>
-            )}
-            <div className="ps-welcome-hint">
-              <span>type</span>
-              <kbd>/</kbd>
-              <span>for commands</span>
-              <span aria-hidden>·</span>
-              <kbd>⌘K</kbd>
-              <span>for the palette</span>
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
-
   return (
     <>
-      {/* Transcript or welcome */}
+      {/* Transcript or teaching cold-start */}
       {!hasMessages && !isLoading ? (
-        renderWelcome()
+        <EmptyState
+          documents={documents}
+          activeDocCount={activeDocCount}
+          onUploadClick={onUploadClick}
+          onSendDirect={onSendDirect}
+          suggestions={suggestions}
+          handleUseSuggestion={handleUseSuggestion}
+        />
       ) : (
         <MessageList
           messages={safeMessages}
