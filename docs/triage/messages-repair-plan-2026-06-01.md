@@ -62,7 +62,7 @@ will be spot-verified against the live file immediately before it is edited**
 | # | Fork | Options offered | **User's choice** | Consequence for the plan |
 |---|---|---|---|---|
 | D1 | Scope of this pass | launch-blocker only / quick-wins+honest / **full restoration** | **Full restoration** | Everything below is in scope, incl. the two COMPLEX builds; longest timeline, largest blast radius; destructive items still gated per-item |
-| D2 | Tools surface (G1) | wire real / make-honest-hide / leave | **Wire real data in** | W4 threads `pulseMessages`/conversation/contact into ToolOverlay and removes mock fallbacks; FeaturePanels kept as reference (its deletion is a later orphan call, not part of W4) |
+| D2 | Tools surface (G1) | wire real / make-honest-hide / leave / **remove** | **REVERSED → Remove (hide + dormant)** | Original "wire real data in" was superseded 2026-06-01: the user chose to remove the tools menu from the UX via a `MESSAGES_TOOLS_ENABLED` gate, keep `ToolsMenuV2/` as the future basis, and queue the legacy ToolOverlay+drawer for W10. See revised W4. |
 | D3 | Orphans (§7) | case-by-case Rule-A / leave-all / delete-dead-set | **Case-by-case w/ Rule-A** | W10 handles each orphan individually: re-grep importers → Rule-A pros/cons → explicit user sign-off. No batch deletes. Lands last. |
 | D4 | SMS + live stubs | defer-SMS+clean-stubs / defer-all / **build-SMS-real** | **Build SMS real now** | W7 wires a server-side Twilio send through the deployed Render backend using existing Twilio integration infra; W8 cleans the in-component stubs |
 
@@ -117,45 +117,42 @@ errors in changed scope**, never zero.
 - **Dependencies:** light coupling to W9 (legacy revival). Can ship independently as a clean-up now; revisit `onTyping` semantics in W9.
 - **Verification:** tsc shows no prop-type error on `TypingIndicator`; manual in legacy branch: typing bubble shows a name.
 
-### W4 — Wire real data into ToolOverlay (the tools surface goes fake → real)  ·  CONFIRMED · COMPLEX · (G1, C8, §5 mock-data components)
-**This is the headline user-value item.** Per D2.
-- **Render site:** `Messages.tsx:3905` `<ToolOverlay …>` (no `messages` passed today).
-- **Live data available at that scope:** `pulseMessages` (`:789`, `PulseMessage[]`),
-  `activePulseConv` (id, `other_user`), plus `contacts` props.
-- **Panels to feed (they already accept real props; propless → empty/mock):**
-  `EngagementScoring` (`messages` default `[]`, returns null `<5`),
-  `ResponseTimeTracker` (`messages` default `[]`), `ConversationFlowViz`,
-  `ProactiveInsightsEnhanced`, `ConversationSummary` (`messages`),
-  `ContactInsights` (`contactId`/`contact`), and the §5 mock list
-  (`ReactionsAnalytics`, `SentimentTimeline`, `ConversationInsights`, etc.).
-- **Approach (additive, panel-by-panel — each its own commit):**
-  1. Add a `messages` prop to `ToolOverlay` and pass `messages={pulseMessages}`
-     from `:3905`, plus `contact`/`contactId` from `activePulseConv.other_user`.
-  2. Build a small **shape adapter** (`PulseMessage` → each panel's expected
-     `{ sender/senderId, timestamp, text, … }`) once, reuse across panels. Mirror
-     the exact mapping `MessagesFeaturePanels` already uses (it is the working
-     reference for the real-data shape — read it before writing the adapter).
-  3. Thread the adapted data into each panel at `ToolOverlay.tsx:180-352`,
-     replacing bare `<Panel />` with `<Panel messages={…} … />`.
-  4. Per panel, **remove the `generateMock*()`/`Math.random` fallback** only after
-     its real data path renders correctly (don't delete the mock generator until
-     the real wire is proven — additive then subtractive).
-- **`togglePanel` dual-set (`:898-919`):** once ToolOverlay is the real surface,
-  the legacy `setShow*Panel(true)` sets feed only the dead-branch FeaturePanels.
-  **Do not delete them in W4** (that touches the FeaturePanels orphan question →
-  W10). W4 leaves them inert; W10 decides FeaturePanels' fate with a Rule-A block.
-- **Dependencies:** none upstream. **Unblocks:** W5/C4 (tool-suggestion launcher).
-- **Blast radius:** ToolOverlay + its ~38 children; the live Pulse-DM stream is
-  untouched (read-only consumption of `pulseMessages`).
-- **Verification:** tsc on `MessageEnhancements/` scope; manual/e2e: open each tool
-  tab on a real conversation and confirm non-zero, conversation-specific numbers
-  (not the `score:0` / `generateMock` defaults). Screenshot before/after per panel.
+### W4 — Remove the Messages tools surface from the UX (hide + keep dormant)  ·  SHIPPED 2026-06-01 · (supersedes the original "wire real data" W4)
+> **DIRECTION REVERSED (D2 updated).** After seeing the live 4-tile menu, the user
+> chose to **remove** the tools surface rather than wire it real. The original
+> "feed `pulseMessages` into ToolOverlay" plan (preserved in git history of this
+> doc) is abandoned. Rationale: three clashing tools layers (legacy drawer →
+> 38-panel mock ToolOverlay; the `toolsMenuV2` 4-tile redesign), the 4 surviving
+> tools are 3/4 stub, and **none are consumed anywhere outside the tools menu** —
+> so removal sacrifices no working user-facing functionality. A tools menu is
+> "extra baggage" pre-launch.
+- **Approach (reversible gate, additive):** a single `const MESSAGES_TOOLS_ENABLED
+  = false;` in `Messages.tsx` gates every entry point. Flip to `true` to restore.
+  - Header Tools button (`Messages.tsx` ~4804) wrapped in `{MESSAGES_TOOLS_ENABLED && …}`.
+  - Composer launcher gated: `setActiveToolOverlay={MESSAGES_TOOLS_ENABLED ? setActiveToolOverlay : undefined}`
+    at the 3 pass-sites (PulseComposer/MessageInputSection, IntentComposer, legacy
+    FeaturePanels). With the setter absent, the inline tools buttons auto-hide
+    (`IntentComposer` already guards on the prop; `MessageInput` tools-menu-button
+    now guarded the same way; `MessageInputSection.setActiveToolOverlay` widened to
+    optional + internal call optional-chained).
+  - Command palette: `messages:tools` registers `[]` when gated off.
+- **Kept dormant, NOT deleted:** ToolOverlay, legacy drawer, `ToolsMenuV2/`,
+  `toolConfig`, `togglePanel`/`closeAllPanels`, all `show*Panel`/tab states, the
+  `toolRegistry`/`InlineToolsMenu` source. `showStatsPanel` (ConversationStats) is
+  **not** a tool — preserved and untouched.
+- **Source fate (D-source):** `ToolsMenuV2/` preserved as the future basis; the
+  legacy 38-panel ToolOverlay + drawer move to the **W10 orphan-triage** list.
+- **Verification (ran):** `tsc` — Messages.tsx 16 errors (unchanged Wave-1 baseline,
+  0 new), MessageInput 0, IntentComposer 0; MessageInputSection's 5 are pre-existing
+  Bundle-lazy quirks. No `setActiveToolOverlay` undefined errors. Manual UI eyeball
+  recommended (headless can't load the composer reliably).
+- **Files:** `Messages.tsx`, `Messages/MessageInputSection.tsx`,
+  `MessageInput/MessageInput.tsx`. See "Future Additions: Messages Tools" in §4.
 
 ### W5 — Cracked moderate repairs  ·  CONFIRMED-per-report (spot-verify) · MODERATE · (C4, C5, C6)
-- **C4** `Messages.tsx:1166-1169` — tool-suggestion no-op launcher
-  (`// TODO: Implement actual tool launch logic via ToolOverlay`). **Depends on W4.**
-  Wire it to the same `togglePanel`/`setActiveToolOverlay` path the real palette
-  site (`:1192`) uses. Verify: a suggested tool actually opens.
+- **C4** `Messages.tsx:1166-1169` — tool-suggestion no-op launcher. **MOOT / DEFERRED**
+  after the W4 reversal: with the tools surface gated off there is nothing to launch.
+  The suggestion effect stays dormant; revisit only if tools are ever restored.
 - **C5** `messageEnhancementsService.ts:604` `generateProactiveInsights` — signature
   takes `apiKey` but body is pure keyword heuristics, never calls AI. Full
   restoration → route through `ai-router` edge fn (server-side per Pulse Gemini
@@ -250,10 +247,14 @@ is pre-approved by this plan.
   `SearchPanel`+`QuickSearchButton`, `AchievementSystemEnhanced`).
 - Dead methods: `generateFocusDigest`, `summarizeSingleMessage`, `parseJSONResponse`,
   `calculateAchievements`.
-- **FeaturePanels** real-data path: once W4 makes ToolOverlay real, decide whether
-  the dead-branch `MessagesFeaturePanels` is now redundant (Rule-A) — but only after
-  W4 is stable and proven.
-- **Dependencies:** W4 + W9 (so "truly unused" is accurate). **Lands last** — most
+- **FeaturePanels** real-data path: the dead-branch `MessagesFeaturePanels` —
+  decide redundancy (Rule-A) now that tools are gated off.
+- **Legacy tools surface (added by the W4 reversal):** the 38-panel
+  `MessageEnhancements/ToolOverlay.tsx` and the legacy 11-tile drawer
+  (`Messages.tsx` ~3698) are now dormant/unreachable behind `MESSAGES_TOOLS_ENABLED`.
+  Candidates for deletion here, case-by-case Rule-A. **`ToolsMenuV2/` is explicitly
+  PRESERVED** (future basis) — not an orphan.
+- **Dependencies:** W9 (so "truly unused" is accurate). **Lands last** — most
   destructive, after all dependents are stable.
 
 ---
@@ -317,6 +318,22 @@ Per CLAUDE.md: commit each unit independently; never batch unrelated changes;
   solid foundation everything else hangs on.
 - **Feature flags** `pulseComposerV2`/`toolsMenuV2` — remain OFF; their V2 shells are
   separate deferred work (per MEMORY), not part of this restoration.
+
+### Future Additions: Messages Tools (parked, not built)
+Removed from the UX 2026-06-01 (W4) but kept dormant. To revive, flip
+`MESSAGES_TOOLS_ENABLED` (`Messages.tsx`) back to `true` — every entry point returns.
+The 4 distilled tools (`src/components/ToolsMenuV2/`, the preferred future surface):
+- **Thread Summary** — "Recap long threads". Backing: `ToolsMenuV2/ThreadSummary/`
+  + `useThreadSummary.ts` **stub provider** (ready to wire to a Supabase edge fn;
+  the real `messageSummarizationService.summarizeThread` exists but has no live caller).
+- **Insights** — "Patterns and highlights". Backing: `ToolsMenuV2/Insights/` +
+  `useInsights.ts` **stub provider**.
+- **Thread Audit** — "Pace · Sentiment · Flow". Pace = deterministic stub
+  (`PaceTab.tsx`, TODO to wire the message store); Sentiment/Flow = placeholders.
+- **Translate Settings** — "Per-thread auto-translate". **Real** (localStorage,
+  `useTranslateSettings.ts`); no translation pipeline wired yet.
+The legacy 38-panel `MessageEnhancements/ToolOverlay.tsx` + 11-tile drawer are the
+*old* surface — queued for W10 orphan triage, not the future basis.
 
 ---
 

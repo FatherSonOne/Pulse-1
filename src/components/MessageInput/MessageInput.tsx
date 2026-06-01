@@ -801,6 +801,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
                   </button>
                 )}
 
+                {/* Tools menu trigger renders only when a launcher is supplied;
+                    gated off from Messages pre-launch (MESSAGES_TOOLS_ENABLED). */}
+                {setActiveToolOverlay && (
                 <button
                   type="button"
                   ref={toolsButtonRef}
@@ -813,6 +816,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                   <LayoutGrid size={14} />
                   <span className="tools-menu-label">{tr('messages.input.tools', 'Tools')}</span>
                 </button>
+                )}
               </>
             )}
           </div>

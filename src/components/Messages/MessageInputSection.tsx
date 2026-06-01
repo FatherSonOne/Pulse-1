@@ -69,7 +69,7 @@ interface MessageInputSectionProps {
   sendPulseMessage: (text: string) => void;
   handleSendSms: (text: string) => void;
   handleSend: (text?: string) => void;
-  setActiveToolOverlay: (v: any) => void;
+  setActiveToolOverlay?: (v: any) => void;
   showAttachmentMenu: boolean;
   setShowAttachmentMenu: (v: boolean) => void;
   attachmentMenuRef: React.RefObject<HTMLDivElement>;
@@ -175,7 +175,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
       return;
     }
     const overlay = getToolOverlayType(toolId);
-    if (overlay) setActiveToolOverlay(overlay);
+    if (overlay) setActiveToolOverlay?.(overlay);
   }, [
     stripSlashPrefix, setShowSmartCompose, setShowQuickPhrases,
     setShowAICoach, setShowAIMediator, setShowVoiceExtractor,

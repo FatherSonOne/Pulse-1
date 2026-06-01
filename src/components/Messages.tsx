@@ -416,6 +416,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // Command Palette button (its old local `setShowCommandPalette` setter was
   // removed when the local Cmd+K palette was retired). (Repair plan W1 / triage S1.)
   const { open: openCommandPalette } = useCommandPalette();
+  // Messages tools surface gate. The tools menu (legacy drawer + 38-panel
+  // ToolOverlay + the ToolsMenuV2 4-tile redesign) is removed from the UX
+  // pre-launch as "extra baggage" — the 4 surviving tools are 3/4 stub and
+  // have zero external callers. All scaffolding is kept dormant; flip this to
+  // `true` to fully restore every tools entry point. (Repair plan W4 / supersede;
+  // see docs/triage/messages-repair-plan-2026-06-01.md → Future Additions.)
+  const MESSAGES_TOOLS_ENABLED = false;
   const [loadingAI, setLoadingAI] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
@@ -1223,7 +1230,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     }));
   }, [setActiveToolOverlay]);
 
-  useRegisterCommands('messages:tools', { commands: messagesToolCommands });
+  // Register an empty command set while tools are gated off so the command
+  // palette stops surfacing Messages tool launches. The hook itself must run
+  // unconditionally.
+  useRegisterCommands('messages:tools', { commands: MESSAGES_TOOLS_ENABLED ? messagesToolCommands : [] });
 
   // Tool shortcuts (Ctrl+Shift+R/V/C/I/S/M/A) are now fired by the global
   // CommandPaletteContext runner — each tool command registers its `shortcut`
@@ -4691,7 +4701,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   channelId={activePulseConv?.id}
                   apiKey={apiKey}
                   disabled={false}
-                  setActiveToolOverlay={setActiveToolOverlay}
+                  setActiveToolOverlay={MESSAGES_TOOLS_ENABLED ? setActiveToolOverlay : undefined}
                 />
               )}
             </MessageInputPortal>
@@ -4788,9 +4798,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 </span>
               )}
             </button>
-            {/* Tools Drawer Button - Always visible.
-                Routes to new ToolsMenuV2 dialog when toolsMenuV2 flag is on,
-                else opens the legacy 11-tile drawer. */}
+            {/* Tools Drawer Button — gated off pre-launch (MESSAGES_TOOLS_ENABLED).
+                When restored, routes to ToolsMenuV2 when the flag is on, else the
+                legacy 11-tile drawer. */}
+            {MESSAGES_TOOLS_ENABLED && (
             <button
               onClick={() => {
                 if (features.isFeatureEnabled('toolsMenuV2')) {
@@ -4805,6 +4816,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             >
               <LayoutGrid className="text-xs sm:text-sm" />
             </button>
+            )}
 
             {/* Command Palette - Always visible */}
             <button
@@ -4890,7 +4902,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           conversationTagAssignments={conversationTagAssignments}
           setConversationTagAssignments={setConversationTagAssignments}
           activeToolOverlay={activeToolOverlay}
-          setActiveToolOverlay={setActiveToolOverlay}
+          setActiveToolOverlay={MESSAGES_TOOLS_ENABLED ? setActiveToolOverlay : undefined}
           showProactivePanel={showProactivePanel}
           proactiveTab={proactiveTab}
           setProactiveTab={setProactiveTab}
@@ -5467,7 +5479,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         sendPulseMessage={sendPulseMessage}
         handleSendSms={handleSendSms}
         handleSend={handleSend}
-        setActiveToolOverlay={setActiveToolOverlay}
+        setActiveToolOverlay={MESSAGES_TOOLS_ENABLED ? setActiveToolOverlay : undefined}
         showAttachmentMenu={showAttachmentMenu}
         setShowAttachmentMenu={setShowAttachmentMenu}
         attachmentMenuRef={attachmentMenuRef}
