@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
 import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, MapPin, Mic, Network, Play, Rocket, Search, ShieldHalf, Signal, Smartphone, Users, Video, Wand2, Wifi, X } from 'lucide-react';
-import { RELAY_PEERS, FAQ_DATA, SHORTCUT_GROUPS, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING } from './LandingPage/landingData';
+import { RELAY_PEERS, FAQ_DATA, SHORTCUT_GROUPS, PULSE_SOLO_FEATURES, PULSE_SOLO_PRICING, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING } from './LandingPage/landingData';
 
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
 const UsersGuide = lazy(() => import('./UsersGuide/UsersGuide'));
@@ -1477,7 +1477,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
             </span>
-            The Central Nervous System for High-Performance Teams
+            The AI command surface for people drowning in channels
           </div>
 
           {/* Headline — hard stop at "Every Decision." */}
@@ -3836,9 +3836,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/50 text-rose-400 text-xs font-bold uppercase tracking-widest mb-4">
               <i className="fa-solid fa-tag" aria-hidden="true"></i> Pricing
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">One plan. Everything included.</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Pricing that starts with you.</h2>
             <p className="text-zinc-400 text-base max-w-xl mx-auto">
-              Simple pricing for the whole team — all features, no tiers, no per-seat add-ons.
+              Start solo. Add your team when you're ready — $15 per seat, nothing wasted.
             </p>
           </div>
 
@@ -3900,28 +3900,80 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </button>
           </div>
 
-          {/* Two-tier pricing — Team and Growth side-by-side */}
-          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+          {/* Three-tier pricing — Solo (entry/highlighted) · Team (per-seat) · Growth */}
+          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
 
-            {/* ─── Pulse Team ─── */}
+            {/* ─── Pulse Solo — Lane-A entry tier, highlighted ─── */}
             <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-rose-500/10 flex flex-col">
               <div className="h-1 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500" aria-hidden="true" />
               <div className="bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-rose-400 mb-1">Pulse Team</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-xs font-bold uppercase tracking-widest text-rose-400">Pulse Solo</p>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                        Start here
+                      </span>
+                    </div>
                     <h3 className="text-2xl sm:text-3xl font-bold text-white">
-                      ${pricingCycle === 'monthly' ? PULSE_TEAM_PRICING.monthly : PULSE_TEAM_PRICING.yearlyMonthlyEquiv}
+                      ${pricingCycle === 'monthly' ? PULSE_SOLO_PRICING.monthly : PULSE_SOLO_PRICING.yearlyMonthlyEquiv}
                       <span className="text-base font-normal text-zinc-400">/mo</span>
                     </h3>
                     <p className="text-xs text-zinc-500 mt-1.5">
                       {pricingCycle === 'monthly'
-                        ? `Billed monthly · ${PULSE_TEAM_PRICING.trialDays} days free`
-                        : `$${PULSE_TEAM_PRICING.yearly.toLocaleString()}/yr · 2 months free · ${PULSE_TEAM_PRICING.trialDays} days free`}
+                        ? `1 seat · Billed monthly · ${PULSE_SOLO_PRICING.trialDays} days free`
+                        : `1 seat · $${PULSE_SOLO_PRICING.yearly.toLocaleString()}/yr · 2 months free · ${PULSE_SOLO_PRICING.trialDays} days free`}
                     </p>
                   </div>
                   <div className="hidden sm:flex w-14 h-14 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 items-center justify-center flex-shrink-0 shadow-lg shadow-rose-500/30">
                     <HeartPulse size={26} className="text-white" />
+                  </div>
+                </div>
+
+                <ul className="space-y-3 pt-2 flex-1">
+                  {PULSE_SOLO_FEATURES.map((feat) => (
+                    <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
+                      <Check size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  onClick={onGetStarted}
+                  className="lp-cta-primary w-full py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 hover:from-fuchsia-500 hover:via-pink-500 hover:to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2"
+                >
+                  <Rocket size={16} aria-hidden="true" />
+                  Launch Pulse
+                </button>
+              </div>
+            </div>
+
+            {/* ─── Pulse Team — per-seat scale-up tier ─── */}
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/40 flex flex-col">
+              <div className="h-1 bg-rose-700" aria-hidden="true" />
+              <div className="bg-zinc-950 border-x border-b border-zinc-800 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-xs font-bold uppercase tracking-widest text-rose-400">Pulse Team</p>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
+                        Min 2 seats
+                      </span>
+                    </div>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-zinc-50">
+                      ${pricingCycle === 'monthly' ? PULSE_TEAM_PRICING.monthly : PULSE_TEAM_PRICING.yearlyMonthlyEquiv}
+                      <span className="text-base font-normal text-zinc-400">/seat/mo</span>
+                    </h3>
+                    <p className="text-xs text-zinc-500 mt-1.5">
+                      {pricingCycle === 'monthly'
+                        ? `Per seat · Billed monthly · ${PULSE_TEAM_PRICING.trialDays} days free`
+                        : `$${PULSE_TEAM_PRICING.yearly.toLocaleString()}/seat/yr · 2 months free · ${PULSE_TEAM_PRICING.trialDays} days free`}
+                    </p>
+                  </div>
+                  <div className="hidden sm:flex w-14 h-14 rounded-xl bg-zinc-900 border border-zinc-800 items-center justify-center flex-shrink-0">
+                    <Users size={26} className="text-rose-500" />
                   </div>
                 </div>
 
@@ -3937,10 +3989,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <button
                   type="button"
                   onClick={onGetStarted}
-                  className="lp-cta-primary w-full py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 hover:from-fuchsia-500 hover:via-pink-500 hover:to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-xl bg-transparent border border-rose-500/40 hover:border-rose-500 hover:bg-rose-500/10 text-rose-300 hover:text-rose-200 font-semibold text-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
                 >
                   <Rocket size={16} aria-hidden="true" />
-                  Start free trial
+                  Start with Team
                 </button>
               </div>
             </div>
@@ -4129,7 +4181,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <span className="text-xl font-bold text-white">Pulse</span>
               </div>
               <p className="text-zinc-400 max-w-sm mb-6">
-                AI-powered messaging, email, Relay voice, Glimpse video, calendar, maps, CRM intelligence, research studio, and predictive analytics. One interface for high-performance teams.
+                AI-powered messaging, email, Relay voice, Glimpse video, calendar, maps, CRM intelligence, research studio, and predictive analytics. One screen for the overloaded solo operator and the team they pull in.
               </p>
               <div className="flex gap-4 mb-8">
                 <SocialIcon icon="fa-brands fa-github" label="Pulse on GitHub" href="https://github.com/FatherSonOne/Pulse-1" />

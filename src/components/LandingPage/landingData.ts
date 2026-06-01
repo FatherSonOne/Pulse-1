@@ -39,7 +39,7 @@ export const RELAY_PEERS = [
 ];
 
 export const FAQ_DATA = [
-  { q: "What is Pulse?", a: "Pulse is the AI-powered command surface for high-performance teams. It pulls messaging, email, voice (Relay's 5 peers + Triage stream), async video (Glimpse), calendar with meetings, contacts with CRM intelligence, maps and ETA sharing, an AI research studio (War Room), and analytics into one interface, organised by workspace. One operator, one screen, every signal." },
+  { q: "What is Pulse?", a: "Pulse is one screen for every work conversation — messaging, email, voice (Relay), async video (Glimpse), calendar, contacts, and decisions — with one cross-surface AI that reads across all of them, summarizes, drafts, and triages, and labels every word it writes so you always know what's yours. Built for the overloaded solo operator (and the team they pull in)." },
   { q: "What AI models does Pulse support?", a: "Pulse integrates Google Gemini (primary, with built-in web search grounding), Anthropic Claude, and OpenAI. You can switch between models in Settings → AI & Intelligence." },
   { q: "What is the War Room?", a: "The War Room is your AI command center — a research and strategy workspace with 8 slash commands (/brainstorm, /decide, /analyze, /summarize, /plan, /debrief, /risks, /compare), 4 specialized AI agents, RAG document intelligence, voice agent, and session management. Upload your docs and get context-aware AI responses." },
   { q: "What are the Relay peers?", a: "Triage (your unified voice-message stream — the default landing view), Direct (one-to-one voice with AI transcription), Channel (voice threads with @mentions), Broadcast (push-to-air for the whole team), Notes (personal voice journaling), and Live (persistent voice rooms, Discord-style). Glimpse — async video messaging with face-cam and screen recording — is a separate top-level section. AI transcription runs on every voice and video message." },
@@ -96,10 +96,31 @@ export const SHORTCUT_GROUPS = [
   ]},
 ];
 
+// ── Pricing — Pulse Solo tier ───────────────────────────────────────────────
+// The Lane-A entry tier (#119/#126): the overloaded solo operator. One seat,
+// the full cross-surface AI moat. TrialExpiredBlock.tsx + the landing pricing
+// section consume these as the single source of truth.
+export const PULSE_SOLO_FEATURES = [
+  'Just you — 1 seat',
+  'Cross-surface AI: summaries, drafts, triage',
+  'Relay voice + Glimpse video',
+  'Decisions & tasks, contacts, calendar',
+  '1,500 AI messages / 25 GB / mo',
+];
+
+export const PULSE_SOLO_PRICING = {
+  monthly: 20,       // $/mo billed monthly
+  yearly: 200,       // $/yr billed annually (2 months free vs. monthly)
+  yearlyMonthlyEquiv: Math.round(200 / 12), // ≈ $17/mo display value
+  trialDays: 30,
+};
+
 // ── Pricing — Pulse Team tier ───────────────────────────────────────────────
-// TrialExpiredBlock.tsx imports this list directly — single source of truth.
+// Per-seat (#119/#126): $15/user/mo, minimum 2 seats. The yearly figure is the
+// per-seat annual price. TrialExpiredBlock.tsx imports this list directly —
+// single source of truth.
 export const PULSE_TEAM_FEATURES = [
-  'Unlimited team seats and workspaces',
+  'Per-seat — $15/user/mo, min 2 seats',
   'All 5 Relay peers + Triage stream',
   'Glimpse async video + Studio RAG',
   'Email, calendar, messaging, meetings',
@@ -109,16 +130,18 @@ export const PULSE_TEAM_FEATURES = [
 ];
 
 export const PULSE_TEAM_PRICING = {
-  monthly: 100,      // $/mo billed monthly
-  yearly: 1000,      // $/yr billed annually (2 months free vs. monthly)
-  yearlyMonthlyEquiv: Math.round(1000 / 12), // ≈ $83/mo display value
+  monthly: 15,       // $/user/mo billed monthly (per-seat, min 2 seats)
+  yearly: 150,       // $/user/yr billed annually (2 months free vs. monthly)
+  yearlyMonthlyEquiv: Math.round(150 / 12), // ≈ $13/seat/mo display value
   trialDays: 30,
+  perSeat: true,
 };
 
 // ── Pricing — Pulse Growth tier ─────────────────────────────────────────────
-// 5× Team caps for AI/Relay, 10× storage, plus premium-only unlocks.
-// Prices wired to Stripe test-mode product (price_1TWqj0Gb3AGXe9w8QMGNRIek monthly,
-// price_1TWqj1Gb3AGXe9w8oCk374f5 yearly). Keep in sync with the plans table.
+// Flat-rate org tier with 5× Team caps for AI/Relay, 10× storage, plus
+// premium-only unlocks. Prices wired to Stripe test-mode product
+// (price_1TYGWNGb3AGXe9w8PjNHmR8L monthly, price_1TYGWOGb3AGXe9w8rfCzjg4k
+// yearly). Keep in sync with the plans table.
 export const PULSE_GROWTH_FEATURES = [
   'Everything in Team, plus:',
   '10,000 AI messages / 500 GB / 2,500 Relay min / mo',
@@ -131,8 +154,8 @@ export const PULSE_GROWTH_FEATURES = [
 ];
 
 export const PULSE_GROWTH_PRICING = {
-  monthly: 249,      // $/mo billed monthly (Stripe price_1TWqj0Gb3AGXe9w8QMGNRIek)
-  yearly: 2490,      // $/yr billed annually, 2 months free vs. monthly (price_1TWqj1Gb3AGXe9w8oCk374f5)
-  yearlyMonthlyEquiv: Math.round(2490 / 12), // ≈ $208/mo display value
+  monthly: 300,      // $/mo billed monthly (Stripe price_1TYGWNGb3AGXe9w8PjNHmR8L)
+  yearly: 3000,      // $/yr billed annually, 2 months free vs. monthly (price_1TYGWOGb3AGXe9w8rfCzjg4k)
+  yearlyMonthlyEquiv: Math.round(3000 / 12), // ≈ $250/mo display value
   trialDays: 30,
 };
