@@ -487,11 +487,11 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-      <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[85vh] rounded-2xl shadow-2xl flex flex-col animate-scaleIn border border-stone-200 dark:border-zinc-800 overflow-hidden">
+      <div className="bg-[var(--pulse-surface)] w-full max-w-2xl max-h-[85vh] rounded-2xl shadow-2xl flex flex-col animate-scaleIn border border-[color:var(--pulse-border)] overflow-hidden">
         {/* Header — Cockpit-style editorial: meta strip eyebrow + serif headline
             + small user-email caption. No gradient, no logo tile. */}
         <div
-          className="flex items-start justify-between px-7 pt-6 pb-5 border-b border-stone-200 dark:border-zinc-800"
+          className="flex items-start justify-between px-7 pt-6 pb-5 border-b border-[color:var(--pulse-border)]"
           style={{ background: 'var(--pulse-canvas-soft, #f2f2f2)' }}
         >
           <div className="min-w-0">
@@ -506,16 +506,16 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
               PULSE EMAIL · SETTINGS
             </div>
             <h2
-              className="text-[26px] text-stone-900 dark:text-white leading-[1.1] tracking-tight mb-1"
+              className="text-[26px] text-[var(--pulse-ink)] leading-[1.1] tracking-tight mb-1"
               style={{ fontFamily: 'var(--pulse-font-serif, Georgia, serif)', fontWeight: 500 }}
             >
               Email Settings
             </h2>
-            <p className="text-[12.5px] text-stone-500 dark:text-zinc-400 truncate">{userEmail}</p>
+            <p className="text-[12.5px] text-[var(--pulse-ink-2)] truncate">{userEmail}</p>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-white transition shrink-0"
+            className="w-9 h-9 rounded-full hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition shrink-0"
             title="Close"
             aria-label="Close email settings"
           >
@@ -526,7 +526,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
         {/* Tabs — seg-toggle-style pill row. Active pill = surface bg + ink
             text + subtle ring; inactive = transparent + ink-2 text. */}
         <div
-          className="flex items-center gap-1 px-7 py-2.5 border-b border-stone-200 dark:border-zinc-800 overflow-x-auto"
+          className="flex items-center gap-1 px-7 py-2.5 border-b border-[color:var(--pulse-border)] overflow-x-auto"
           style={{ background: 'var(--pulse-canvas, #f8f8f8)' }}
           role="tablist"
           aria-label="Settings sections"
@@ -561,13 +561,13 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
           {activeTab === 'general' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">General Settings</h3>
+                <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-4">General Settings</h3>
                 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                  <div className="flex items-center justify-between p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
                     <div>
-                      <div className="font-medium text-stone-900 dark:text-white">Auto-sync</div>
-                      <div className="text-sm text-stone-500 dark:text-zinc-400">Automatically sync emails in the background while Email is open</div>
+                      <div className="font-medium text-[var(--pulse-ink)]">Auto-sync</div>
+                      <div className="text-sm text-[var(--pulse-ink-2)]">Automatically sync emails in the background while Email is open</div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -576,14 +576,14 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                         onChange={(e) => handleSettingUpdate(e.target.checked, setAutoSyncOn, 'emailAutoSync')}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-stone-300 dark:bg-zinc-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-rose-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                      <div className="w-11 h-6 bg-[var(--pulse-surface-raised)] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[color:var(--pulse-rose-soft)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[color:var(--pulse-border)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--pulse-rose)]"></div>
                     </label>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                  <div className="flex items-center justify-between p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
                     <div>
-                      <div className="font-medium text-stone-900 dark:text-white">Email Notifications</div>
-                      <div className="text-sm text-stone-500 dark:text-zinc-400">Get notified of new emails</div>
+                      <div className="font-medium text-[var(--pulse-ink)]">Email Notifications</div>
+                      <div className="text-sm text-[var(--pulse-ink-2)]">Get notified of new emails</div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -592,16 +592,16 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                         onChange={(e) => handleSettingUpdate(e.target.checked, setEmailNotificationsOn, 'emailNotifications')}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-stone-300 dark:bg-zinc-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-rose-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                      <div className="w-11 h-6 bg-[var(--pulse-surface-raised)] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[color:var(--pulse-rose-soft)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[color:var(--pulse-border)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--pulse-rose)]"></div>
                     </label>
                   </div>
 
-                  <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
-                    <div className="font-medium text-stone-900 dark:text-white mb-2">Sync Frequency</div>
+                  <div className="p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
+                    <div className="font-medium text-[var(--pulse-ink)] mb-2">Sync Frequency</div>
                     <select
                       value={syncFrequency}
                       onChange={(e) => handleSettingUpdate(Number(e.target.value), setSyncFrequency, 'emailSyncFrequencyMinutes')}
-                      className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-stone-900 dark:text-white text-sm focus:outline-none focus:border-rose-500"
+                      className="w-full px-4 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-[var(--pulse-ink)] text-sm focus:outline-none focus:border-[color:var(--pulse-rose)]"
                     >
                       <option value={5}>Every 5 minutes</option>
                       <option value={15}>Every 15 minutes</option>
@@ -613,28 +613,28 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                 </div>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">Appearance</h3>
+                <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-4">Appearance</h3>
                 <div className="space-y-4">
-                  <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
-                    <div className="font-medium text-stone-900 dark:text-white mb-2">Theme</div>
+                  <div className="p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
+                    <div className="font-medium text-[var(--pulse-ink)] mb-2">Theme</div>
                     <select
                       value={theme}
                       onChange={(e) => handleSettingUpdate(e.target.value as typeof theme, setTheme, 'theme')}
                       disabled={savingSettings}
-                      className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-stone-900 dark:text-white text-sm focus:outline-none focus:border-rose-500"
+                      className="w-full px-4 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-[var(--pulse-ink)] text-sm focus:outline-none focus:border-[color:var(--pulse-rose)]"
                     >
                       <option value="light">Light</option>
                       <option value="dark">Dark</option>
                       <option value="system">System</option>
                     </select>
                   </div>
-                  <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
-                    <div className="font-medium text-stone-900 dark:text-white mb-2">Accent Color</div>
+                  <div className="p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
+                    <div className="font-medium text-[var(--pulse-ink)] mb-2">Accent Color</div>
                     <select
                       value={accentColor}
                       onChange={(e) => handleSettingUpdate(e.target.value, setAccentColor, 'accentColor')}
                       disabled={savingSettings}
-                      className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-stone-900 dark:text-white text-sm focus:outline-none focus:border-rose-500"
+                      className="w-full px-4 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-[var(--pulse-ink)] text-sm focus:outline-none focus:border-[color:var(--pulse-rose)]"
                     >
                       <option value="rose">Rose</option>
                       <option value="indigo">Indigo</option>
@@ -643,35 +643,35 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                       <option value="sky">Sky</option>
                     </select>
                   </div>
-                  <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
-                    <div className="font-medium text-stone-900 dark:text-white mb-2">Custom Accent</div>
+                  <div className="p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
+                    <div className="font-medium text-[var(--pulse-ink)] mb-2">Custom Accent</div>
                     <div className="flex items-center gap-3">
                       <input
                         type="color"
                         value={customColor || '#f43f5e'}
                         onChange={(e) => handleSettingUpdate(e.target.value, (value) => setCustomColor(value), 'customColor')}
-                        className="h-10 w-14 rounded border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                        className="h-10 w-14 rounded border border-[color:var(--pulse-border)] bg-[var(--pulse-surface)]"
                       />
                       <button
                         onClick={() => handleSettingUpdate(null, setCustomColor, 'customColor')}
                         disabled={savingSettings}
-                        className="px-3 py-2 rounded-lg text-sm bg-stone-200 dark:bg-zinc-800 text-stone-700 dark:text-zinc-200 hover:bg-stone-300 dark:hover:bg-zinc-700 transition"
+                        className="px-3 py-2 rounded-lg text-sm bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink)] hover:opacity-80 transition"
                       >
                         Reset
                       </button>
                     </div>
-                    <p className="text-xs text-stone-500 dark:text-zinc-500 mt-2">Overrides the default accent color.</p>
+                    <p className="text-xs text-[var(--pulse-ink-3)] mt-2">Overrides the default accent color.</p>
                   </div>
-                  <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                  <div className="p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="font-medium text-stone-900 dark:text-white">Zoom</div>
-                      <span className="font-mono text-[11px] tabular-nums tracking-wider text-stone-500 dark:text-zinc-500">{zoomLevel}%</span>
+                      <div className="font-medium text-[var(--pulse-ink)]">Zoom</div>
+                      <span className="font-mono text-[11px] tabular-nums tracking-wider text-[var(--pulse-ink-3)]">{zoomLevel}%</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <button
                         onClick={zoomOut}
                         disabled={zoomLevel <= 50}
-                        className="w-8 h-8 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-40"
+                        className="w-8 h-8 rounded-lg hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition disabled:opacity-40"
                         aria-label="Zoom out"
                       >
                         <Minus className="w-3.5 h-3.5" />
@@ -683,40 +683,40 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                         step="5"
                         value={zoomLevel}
                         onChange={(e) => setZoomLevel(parseInt(e.target.value))}
-                        className="flex-1 h-1 bg-stone-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-rose-500"
+                        className="flex-1 h-1 bg-[var(--pulse-surface-raised)] rounded-lg appearance-none cursor-pointer accent-[var(--pulse-rose)]"
                         aria-label="Zoom level"
                       />
                       <button
                         onClick={zoomIn}
                         disabled={zoomLevel >= 100}
-                        className="w-8 h-8 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-40"
+                        className="w-8 h-8 rounded-lg hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition disabled:opacity-40"
                         aria-label="Zoom in"
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={zoomReset}
-                        className="font-mono text-[10px] uppercase tracking-[0.12em] text-stone-500 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition"
+                        className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--pulse-ink-3)] hover:text-[color:var(--pulse-rose)] transition"
                       >
                         Reset
                       </button>
                     </div>
-                    <p className="text-xs text-stone-500 dark:text-zinc-500 mt-2">Scale the email pane between 50% and 100%.</p>
+                    <p className="text-xs text-[var(--pulse-ink-3)] mt-2">Scale the email pane between 50% and 100%.</p>
                   </div>
                 </div>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">AI Writing</h3>
-                <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-4">AI Writing</h3>
+                <div className="flex items-center justify-between p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
                   <div>
-                    <div className="font-medium text-stone-900 dark:text-white">Smart Compose</div>
-                    <div className="text-sm text-stone-500 dark:text-zinc-400">AI inline suggestions while typing</div>
+                    <div className="font-medium text-[var(--pulse-ink)]">Smart Compose</div>
+                    <div className="text-sm text-[var(--pulse-ink-2)]">AI inline suggestions while typing</div>
                   </div>
                   <button
                     onClick={handleToggleAiSuggestions}
                     disabled={savingSettings}
                     className={`relative inline-flex items-center h-6 w-11 rounded-full transition ${
-                      aiSuggestionsEnabled ? 'bg-rose-500' : 'bg-stone-300 dark:bg-zinc-700'
+                      aiSuggestionsEnabled ? 'bg-[var(--pulse-rose)]' : 'bg-[var(--pulse-surface-raised)]'
                     }`}
                     aria-label="Toggle smart compose"
                   >
@@ -729,18 +729,18 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                 </div>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">Inbox Optimization</h3>
+                <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-4">Inbox Optimization</h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                  <div className="flex items-center justify-between p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
                     <div>
-                      <div className="font-medium text-stone-900 dark:text-white">Notification Bundling</div>
-                      <div className="text-sm text-stone-500 dark:text-zinc-400">Group multiple notifications into a single digest</div>
+                      <div className="font-medium text-[var(--pulse-ink)]">Notification Bundling</div>
+                      <div className="text-sm text-[var(--pulse-ink-2)]">Group multiple notifications into a single digest</div>
                     </div>
                     <button
                       onClick={() => handleSettingUpdate(!notificationBundling, setNotificationBundling, 'emailNotificationBundling')}
                       disabled={savingSettings}
                       className={`relative inline-flex items-center h-6 w-11 rounded-full transition ${
-                        notificationBundling ? 'bg-rose-500' : 'bg-stone-300 dark:bg-zinc-700'
+                        notificationBundling ? 'bg-[var(--pulse-rose)]' : 'bg-[var(--pulse-surface-raised)]'
                       }`}
                       aria-label="Toggle notification bundling"
                     >
@@ -749,31 +749,31 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                       }`} />
                     </button>
                   </div>
-                  <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
-                    <div className="font-medium text-stone-900 dark:text-white mb-2">Auto-Archive</div>
+                  <div className="p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
+                    <div className="font-medium text-[var(--pulse-ink)] mb-2">Auto-Archive</div>
                     <select
                       value={autoArchiveDays}
                       onChange={(e) => handleSettingUpdate(Number(e.target.value), setAutoArchiveDays, 'emailAutoArchiveDays')}
                       disabled={savingSettings}
-                      className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-stone-900 dark:text-white text-sm focus:outline-none focus:border-rose-500"
+                      className="w-full px-4 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-[var(--pulse-ink)] text-sm focus:outline-none focus:border-[color:var(--pulse-rose)]"
                     >
                       <option value={0}>Disabled</option>
                       <option value={7}>After 7 days</option>
                       <option value={14}>After 14 days</option>
                       <option value={30}>After 30 days</option>
                     </select>
-                    <p className="text-xs text-stone-500 dark:text-zinc-500 mt-2">Applies to emails you’ve already read.</p>
+                    <p className="text-xs text-[var(--pulse-ink-3)] mt-2">Applies to emails you’ve already read.</p>
                   </div>
-                  <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                  <div className="flex items-center justify-between p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
                     <div>
-                      <div className="font-medium text-stone-900 dark:text-white">Drive Quick Attach</div>
-                      <div className="text-sm text-stone-500 dark:text-zinc-400">Show Drive shortcuts inside the composer</div>
+                      <div className="font-medium text-[var(--pulse-ink)]">Drive Quick Attach</div>
+                      <div className="text-sm text-[var(--pulse-ink-2)]">Show Drive shortcuts inside the composer</div>
                     </div>
                     <button
                       onClick={() => handleSettingUpdate(!driveQuickAttach, setDriveQuickAttach, 'emailDriveQuickAttach')}
                       disabled={savingSettings}
                       className={`relative inline-flex items-center h-6 w-11 rounded-full transition ${
-                        driveQuickAttach ? 'bg-rose-500' : 'bg-stone-300 dark:bg-zinc-700'
+                        driveQuickAttach ? 'bg-[var(--pulse-rose)]' : 'bg-[var(--pulse-surface-raised)]'
                       }`}
                       aria-label="Toggle Drive quick attach"
                     >
@@ -790,104 +790,104 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
           {activeTab === 'gmail' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">Gmail Settings</h3>
-                <p className="text-sm text-stone-500 dark:text-zinc-400 mb-6">
+                <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-4">Gmail Settings</h3>
+                <p className="text-sm text-[var(--pulse-ink-2)] mb-6">
                   Manage your Gmail settings directly from Gmail. Click any option below to open it in a new tab.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button
                     onClick={openGmailSettings}
-                    className="flex items-start gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800 hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition group"
+                    className="flex items-start gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)] hover:border-[color:var(--pulse-rose)] hover:bg-[var(--pulse-rose-soft)] transition group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
                       <Settings className="text-white" />
                     </div>
                     <div className="text-left">
-                      <div className="font-medium text-stone-900 dark:text-white mb-1">General Settings</div>
-                      <div className="text-xs text-stone-500 dark:text-zinc-400">Account, signature, and preferences</div>
+                      <div className="font-medium text-[var(--pulse-ink)] mb-1">General Settings</div>
+                      <div className="text-xs text-[var(--pulse-ink-2)]">Account, signature, and preferences</div>
                     </div>
-                    <ExternalLink className="text-stone-400 ml-auto mt-1" />
+                    <ExternalLink className="text-[var(--pulse-ink-3)] ml-auto mt-1" />
                   </button>
 
                   <button
                     onClick={openGmailFilters}
-                    className="flex items-start gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800 hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition group"
+                    className="flex items-start gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)] hover:border-[color:var(--pulse-rose)] hover:bg-[var(--pulse-rose-soft)] transition group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
                       <Filter className="text-white" />
                     </div>
                     <div className="text-left">
-                      <div className="font-medium text-stone-900 dark:text-white mb-1">Filters & Blocked Addresses</div>
-                      <div className="text-xs text-stone-500 dark:text-zinc-400">Manage email filters and blocked senders</div>
+                      <div className="font-medium text-[var(--pulse-ink)] mb-1">Filters & Blocked Addresses</div>
+                      <div className="text-xs text-[var(--pulse-ink-2)]">Manage email filters and blocked senders</div>
                     </div>
-                    <ExternalLink className="text-stone-400 ml-auto mt-1" />
+                    <ExternalLink className="text-[var(--pulse-ink-3)] ml-auto mt-1" />
                   </button>
 
                   <button
                     onClick={openGmailForwarding}
-                    className="flex items-start gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800 hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition group"
+                    className="flex items-start gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)] hover:border-[color:var(--pulse-rose)] hover:bg-[var(--pulse-rose-soft)] transition group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
                       <FastForward className="text-white" />
                     </div>
                     <div className="text-left">
-                      <div className="font-medium text-stone-900 dark:text-white mb-1">Forwarding & POP/IMAP</div>
-                      <div className="text-xs text-stone-500 dark:text-zinc-400">Email forwarding and access settings</div>
+                      <div className="font-medium text-[var(--pulse-ink)] mb-1">Forwarding & POP/IMAP</div>
+                      <div className="text-xs text-[var(--pulse-ink-2)]">Email forwarding and access settings</div>
                     </div>
-                    <ExternalLink className="text-stone-400 ml-auto mt-1" />
+                    <ExternalLink className="text-[var(--pulse-ink-3)] ml-auto mt-1" />
                   </button>
 
                   <button
                     onClick={openGmailLabels}
-                    className="flex items-start gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800 hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition group"
+                    className="flex items-start gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)] hover:border-[color:var(--pulse-rose)] hover:bg-[var(--pulse-rose-soft)] transition group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
                       <Tags className="text-white" />
                     </div>
                     <div className="text-left">
-                      <div className="font-medium text-stone-900 dark:text-white mb-1">Labels</div>
-                      <div className="text-xs text-stone-500 dark:text-zinc-400">Create and manage email labels</div>
+                      <div className="font-medium text-[var(--pulse-ink)] mb-1">Labels</div>
+                      <div className="text-xs text-[var(--pulse-ink-2)]">Create and manage email labels</div>
                     </div>
-                    <ExternalLink className="text-stone-400 ml-auto mt-1" />
+                    <ExternalLink className="text-[var(--pulse-ink-3)] ml-auto mt-1" />
                   </button>
 
                   <button
                     onClick={openGmailSignature}
-                    className="flex items-start gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800 hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition group"
+                    className="flex items-start gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)] hover:border-[color:var(--pulse-rose)] hover:bg-[var(--pulse-rose-soft)] transition group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
                       <Pen className="text-white" />
                     </div>
                     <div className="text-left">
-                      <div className="font-medium text-stone-900 dark:text-white mb-1">Signature</div>
-                      <div className="text-xs text-stone-500 dark:text-zinc-400">Edit your email signature</div>
+                      <div className="font-medium text-[var(--pulse-ink)] mb-1">Signature</div>
+                      <div className="text-xs text-[var(--pulse-ink-2)]">Edit your email signature</div>
                     </div>
-                    <ExternalLink className="text-stone-400 ml-auto mt-1" />
+                    <ExternalLink className="text-[var(--pulse-ink-3)] ml-auto mt-1" />
                   </button>
 
                   <button
                     onClick={openGmailSettings}
-                    className="flex items-start gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800 hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition group"
+                    className="flex items-start gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)] hover:border-[color:var(--pulse-rose)] hover:bg-[var(--pulse-rose-soft)] transition group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
                       <List className="text-white" />
                     </div>
                     <div className="text-left">
-                      <div className="font-medium text-stone-900 dark:text-white mb-1">All Settings</div>
-                      <div className="text-xs text-stone-500 dark:text-zinc-400">View all Gmail settings</div>
+                      <div className="font-medium text-[var(--pulse-ink)] mb-1">All Settings</div>
+                      <div className="text-xs text-[var(--pulse-ink-2)]">View all Gmail settings</div>
                     </div>
-                    <ExternalLink className="text-stone-400 ml-auto mt-1" />
+                    <ExternalLink className="text-[var(--pulse-ink-3)] ml-auto mt-1" />
                   </button>
                 </div>
 
                 {gmailProfile && (
-                  <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <div className="mt-6 p-4 bg-[var(--pulse-tone-info-soft)] rounded-xl border border-[color:var(--pulse-border)]">
                     <div className="flex items-center gap-3 mb-2">
-                      <Info className="text-blue-500" />
-                      <span className="font-medium text-blue-900 dark:text-blue-100">Gmail Account Info</span>
+                      <Info className="text-[color:var(--pulse-tone-info)]" />
+                      <span className="font-medium text-[var(--pulse-ink)]">Gmail Account Info</span>
                     </div>
-                    <div className="text-sm text-blue-800 dark:text-blue-200">
+                    <div className="text-sm text-[var(--pulse-ink-2)]">
                       <div>Email Address: {gmailProfile.emailAddress}</div>
                       {gmailProfile.messagesTotal && (
                         <div>Total Messages: {gmailProfile.messagesTotal.toLocaleString()}</div>
@@ -905,27 +905,27 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
           {activeTab === 'sync' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">Sync Settings</h3>
+                <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-4">Sync Settings</h3>
 
                 <div className="space-y-4">
-                  <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
-                    <div className="font-medium text-stone-900 dark:text-white mb-2">Last Sync</div>
-                    <div className="text-sm text-stone-500 dark:text-zinc-400">
+                  <div className="p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
+                    <div className="font-medium text-[var(--pulse-ink)] mb-2">Last Sync</div>
+                    <div className="text-sm text-[var(--pulse-ink-2)]">
                       {syncState?.last_full_sync_at
                         ? new Date(syncState.last_full_sync_at).toLocaleString()
                         : 'Never synced'}
                     </div>
                   </div>
 
-                  <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
-                    <div className="font-medium text-stone-900 dark:text-white mb-2">Sync Status</div>
+                  <div className="p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
+                    <div className="font-medium text-[var(--pulse-ink)] mb-2">Sync Status</div>
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${
-                        syncing ? 'bg-yellow-500 animate-pulse' :
-                        syncState?.sync_status === 'error' ? 'bg-red-500' :
-                        'bg-green-500'
+                        syncing ? 'bg-[var(--pulse-tone-warning)] animate-pulse' :
+                        syncState?.sync_status === 'error' ? 'bg-[var(--pulse-tone-overdue)]' :
+                        'bg-[var(--pulse-tone-positive)]'
                       }`}></div>
-                      <span className="text-sm text-stone-600 dark:text-zinc-400">
+                      <span className="text-sm text-[var(--pulse-ink-2)]">
                         {syncing ? 'Syncing...' :
                          syncState?.sync_status === 'error' ? `Error: ${syncState.last_error}` :
                          'Connected to Gmail'}
@@ -934,9 +934,9 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                   </div>
 
                   {syncState?.total_emails_cached !== undefined && (
-                    <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
-                      <div className="font-medium text-stone-900 dark:text-white mb-2">Cached Emails</div>
-                      <div className="text-sm text-stone-500 dark:text-zinc-400">
+                    <div className="p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
+                      <div className="font-medium text-[var(--pulse-ink)] mb-2">Cached Emails</div>
+                      <div className="text-sm text-[var(--pulse-ink-2)]">
                         {syncState.total_emails_cached.toLocaleString()} emails cached locally
                       </div>
                     </div>
@@ -945,7 +945,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                   <button
                     onClick={handleSync}
                     disabled={syncing}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <i className={`fa-solid fa-arrows-rotate mr-2 ${syncing ? 'fa-spin' : ''}`}></i>
                     {syncing ? 'Syncing...' : 'Sync Now'}
@@ -958,31 +958,31 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
           {activeTab === 'accounts' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">Connected Accounts</h3>
+                <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-4">Connected Accounts</h3>
                 {accountError && (
-                  <div className="mb-3 text-sm text-red-600 dark:text-red-400">{accountError}</div>
+                  <div className="mb-3 text-sm text-[color:var(--pulse-tone-overdue)]">{accountError}</div>
                 )}
                 {accountsLoading ? (
-                  <div className="text-sm text-stone-500 dark:text-zinc-400">Loading accounts...</div>
+                  <div className="text-sm text-[var(--pulse-ink-2)]">Loading accounts...</div>
                 ) : (
                   <div className="space-y-3">
                     {emailAccounts.length === 0 && (
-                      <div className="text-sm text-stone-500 dark:text-zinc-400">No accounts connected yet.</div>
+                      <div className="text-sm text-[var(--pulse-ink-2)]">No accounts connected yet.</div>
                     )}
                     {emailAccounts.map((account) => (
                       <div
                         key={account.id}
-                        className="flex flex-wrap items-center justify-between gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800"
+                        className="flex flex-wrap items-center justify-between gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]"
                       >
                         <div>
-                          <div className="font-medium text-stone-900 dark:text-white">
+                          <div className="font-medium text-[var(--pulse-ink)]">
                             {account.display_name || account.email_address}
                           </div>
-                          <div className="text-sm text-stone-500 dark:text-zinc-400">
+                          <div className="text-sm text-[var(--pulse-ink-2)]">
                             {account.provider.toUpperCase()} • {account.email_address}
                           </div>
                           {account.is_primary && (
-                            <span className="inline-flex items-center text-xs text-rose-600 dark:text-rose-400 mt-1">
+                            <span className="inline-flex items-center text-xs text-[color:var(--pulse-rose)] mt-1">
                               <Star className="mr-1" />
                               Primary
                             </span>
@@ -993,12 +993,12 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                             <button
                               onClick={() => handleSetPrimary(account.id)}
                               disabled={accountsLoading}
-                              className="px-3 py-2 rounded-lg text-xs bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 text-stone-700 dark:text-zinc-200 hover:border-rose-300 transition"
+                              className="px-3 py-2 rounded-lg text-xs bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] text-[var(--pulse-ink)] hover:border-[color:var(--pulse-rose)] transition"
                             >
                               Set primary
                             </button>
                           )}
-                          <label className="flex items-center gap-2 text-xs text-stone-600 dark:text-zinc-400">
+                          <label className="flex items-center gap-2 text-xs text-[var(--pulse-ink-2)]">
                             <input
                               type="checkbox"
                               checked={account.sync_enabled}
@@ -1009,7 +1009,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                           <button
                             onClick={() => handleDeleteAccount(account.id)}
                             disabled={accountsLoading}
-                            className="px-3 py-2 rounded-lg text-xs bg-red-500/10 text-red-600 hover:bg-red-500/20 transition"
+                            className="px-3 py-2 rounded-lg text-xs bg-[var(--pulse-tone-overdue-soft)] text-[color:var(--pulse-tone-overdue)] hover:opacity-80 transition"
                           >
                             Remove
                           </button>
@@ -1021,17 +1021,17 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">Add Account</h3>
-                <div className="space-y-3 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-4">Add Account</h3>
+                <div className="space-y-3 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <div className="text-xs text-stone-500 dark:text-zinc-400 mb-1">Provider</div>
+                      <div className="text-xs text-[var(--pulse-ink-2)] mb-1">Provider</div>
                       <select
                         value={newAccount.provider}
                         onChange={(e) =>
                           setNewAccount((prev) => ({ ...prev, provider: e.target.value as EmailAccountInput['provider'] }))
                         }
-                        className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm"
+                        className="w-full px-3 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-sm"
                       >
                         <option value="google">Google</option>
                         <option value="microsoft">Microsoft</option>
@@ -1039,25 +1039,25 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                       </select>
                     </div>
                     <div>
-                      <div className="text-xs text-stone-500 dark:text-zinc-400 mb-1">Display name</div>
+                      <div className="text-xs text-[var(--pulse-ink-2)] mb-1">Display name</div>
                       <input
                         type="text"
                         value={newAccount.display_name || ''}
                         onChange={(e) => setNewAccount((prev) => ({ ...prev, display_name: e.target.value }))}
-                        className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm"
+                        className="w-full px-3 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-sm"
                       />
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-stone-500 dark:text-zinc-400 mb-1">Email address</div>
+                    <div className="text-xs text-[var(--pulse-ink-2)] mb-1">Email address</div>
                     <input
                       type="email"
                       value={newAccount.email_address}
                       onChange={(e) => setNewAccount((prev) => ({ ...prev, email_address: e.target.value }))}
-                      className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm"
+                      className="w-full px-3 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-sm"
                     />
                   </div>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-stone-600 dark:text-zinc-400">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--pulse-ink-2)]">
                     <label className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1078,7 +1078,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                   <button
                     onClick={handleCreateAccount}
                     disabled={accountsLoading}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white font-medium rounded-lg transition"
+                    className="w-full px-4 py-3 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white font-medium rounded-lg transition"
                   >
                     <Plus className="mr-2" />
                     Add account
@@ -1091,28 +1091,28 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
           {activeTab === 'automation' && (
             <div className="space-y-8">
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">Organization</h3>
+                <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-4">Organization</h3>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                  <div className="flex items-center justify-between p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
                     <div>
-                      <div className="font-medium text-stone-900 dark:text-white">Labels</div>
-                      <div className="text-sm text-stone-500 dark:text-zinc-400">Create, rename, and color-code labels to organize mail</div>
+                      <div className="font-medium text-[var(--pulse-ink)]">Labels</div>
+                      <div className="text-sm text-[var(--pulse-ink-2)]">Create, rename, and color-code labels to organize mail</div>
                     </div>
                     <button
                       onClick={() => setShowLabelManager(true)}
-                      className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition"
+                      className="px-4 py-2 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white rounded-lg text-sm font-medium transition"
                     >
                       Manage Labels
                     </button>
                   </div>
-                  <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                  <div className="flex items-center justify-between p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
                     <div>
-                      <div className="font-medium text-stone-900 dark:text-white">Filters &amp; Rules</div>
-                      <div className="text-sm text-stone-500 dark:text-zinc-400">Define condition → action rules. Saved here; automatic application to incoming mail is coming soon.</div>
+                      <div className="font-medium text-[var(--pulse-ink)]">Filters &amp; Rules</div>
+                      <div className="text-sm text-[var(--pulse-ink-2)]">Define condition → action rules. Saved here; automatic application to incoming mail is coming soon.</div>
                     </div>
                     <button
                       onClick={() => setShowFilterManager(true)}
-                      className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition"
+                      className="px-4 py-2 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white rounded-lg text-sm font-medium transition"
                     >
                       Manage Filters
                     </button>
@@ -1121,17 +1121,17 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">Vacation Responder</h3>
-                <div className="space-y-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-4">Vacation Responder</h3>
+                <div className="space-y-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-stone-900 dark:text-white">Enable auto-replies</div>
-                      <div className="text-sm text-stone-500 dark:text-zinc-400">Send out-of-office responses</div>
+                      <div className="font-medium text-[var(--pulse-ink)]">Enable auto-replies</div>
+                      <div className="text-sm text-[var(--pulse-ink-2)]">Send out-of-office responses</div>
                     </div>
                     <button
                       onClick={() => setVacationEnabled(!vacationEnabled)}
                       className={`relative inline-flex items-center h-6 w-11 rounded-full transition ${
-                        vacationEnabled ? 'bg-rose-500' : 'bg-stone-300 dark:bg-zinc-700'
+                        vacationEnabled ? 'bg-[var(--pulse-rose)]' : 'bg-[var(--pulse-surface-raised)]'
                       }`}
                     >
                       <span
@@ -1143,44 +1143,44 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <div className="text-xs text-stone-500 dark:text-zinc-400 mb-1">Start date</div>
+                      <div className="text-xs text-[var(--pulse-ink-2)] mb-1">Start date</div>
                       <input
                         type="date"
                         value={vacationStart}
                         onChange={(e) => setVacationStart(e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm"
+                        className="w-full px-3 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-sm"
                       />
                     </div>
                     <div>
-                      <div className="text-xs text-stone-500 dark:text-zinc-400 mb-1">End date</div>
+                      <div className="text-xs text-[var(--pulse-ink-2)] mb-1">End date</div>
                       <input
                         type="date"
                         value={vacationEnd}
                         onChange={(e) => setVacationEnd(e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm"
+                        className="w-full px-3 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-sm"
                       />
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-stone-500 dark:text-zinc-400 mb-1">Subject</div>
+                    <div className="text-xs text-[var(--pulse-ink-2)] mb-1">Subject</div>
                     <input
                       type="text"
                       value={vacationSubject}
                       onChange={(e) => setVacationSubject(e.target.value)}
-                      className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm"
+                      className="w-full px-3 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-sm"
                     />
                   </div>
                   <div>
-                    <div className="text-xs text-stone-500 dark:text-zinc-400 mb-1">Message</div>
+                    <div className="text-xs text-[var(--pulse-ink-2)] mb-1">Message</div>
                     <textarea
                       value={vacationMessage}
                       onChange={(e) => setVacationMessage(e.target.value)}
                       rows={4}
-                      className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm"
+                      className="w-full px-3 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-sm"
                     />
                   </div>
                   <div className="flex flex-wrap gap-4">
-                    <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-zinc-400">
+                    <label className="flex items-center gap-2 text-sm text-[var(--pulse-ink-2)]">
                       <input
                         type="checkbox"
                         checked={vacationOnlyContacts}
@@ -1188,7 +1188,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                       />
                       Only send to contacts
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-zinc-400">
+                    <label className="flex items-center gap-2 text-sm text-[var(--pulse-ink-2)]">
                       <input
                         type="checkbox"
                         checked={vacationOnlyFirst}
@@ -1200,7 +1200,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                   <button
                     onClick={handleSaveVacation}
                     disabled={vacationSaving}
-                    className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium"
+                    className="px-4 py-2 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white rounded-lg text-sm font-medium"
                   >
                     {vacationSaving ? 'Saving...' : 'Save Vacation Responder'}
                   </button>
@@ -1208,20 +1208,20 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">Blocked Senders</h3>
-                <div className="space-y-3 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-4">Blocked Senders</h3>
+                <div className="space-y-3 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={blockedInput}
                       onChange={(e) => setBlockedInput(e.target.value)}
                       placeholder="email@example.com or domain.com"
-                      className="flex-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm"
+                      className="flex-1 px-3 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-sm"
                     />
                     <button
                       onClick={handleBlockSender}
                       disabled={blockedSaving}
-                      className="px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg text-sm"
+                      className="px-4 py-2 bg-[var(--pulse-ink)] text-[var(--pulse-canvas)] rounded-lg text-sm"
                     >
                       Block
                     </button>
@@ -1231,9 +1231,9 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     value={blockedReason}
                     onChange={(e) => setBlockedReason(e.target.value)}
                     placeholder="Reason (optional)"
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm"
+                    className="w-full px-3 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-sm"
                   />
-                  <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-zinc-400">
+                  <label className="flex items-center gap-2 text-sm text-[var(--pulse-ink-2)]">
                     <input
                       type="checkbox"
                       checked={blockedAutoDelete}
@@ -1241,19 +1241,19 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     />
                     Auto-delete emails from this sender
                   </label>
-                  <div className="divide-y divide-stone-200 dark:divide-zinc-800">
+                  <div className="divide-y divide-[color:var(--pulse-border)]">
                     {blockedSenders.length === 0 && (
-                      <div className="py-3 text-sm text-stone-500 dark:text-zinc-500">No blocked senders yet.</div>
+                      <div className="py-3 text-sm text-[var(--pulse-ink-3)]">No blocked senders yet.</div>
                     )}
                     {blockedSenders.map((sender) => (
                       <div key={sender.id} className="py-2 flex items-center justify-between">
-                        <div className="text-sm text-stone-700 dark:text-zinc-300">
+                        <div className="text-sm text-[var(--pulse-ink)]">
                           {sender.email_address || sender.domain}
-                          {sender.auto_delete && <span className="ml-2 text-xs text-red-500">auto-delete</span>}
+                          {sender.auto_delete && <span className="ml-2 text-xs text-[color:var(--pulse-tone-overdue)]">auto-delete</span>}
                         </div>
                         <button
                           onClick={() => handleUnblockSender(sender.id)}
-                          className="text-xs text-stone-500 hover:text-red-500"
+                          className="text-xs text-[var(--pulse-ink-3)] hover:text-[color:var(--pulse-tone-overdue)]"
                         >
                           Unblock
                         </button>
@@ -1264,12 +1264,12 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">Notification Rules</h3>
-                <div className="space-y-3 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-4">Notification Rules</h3>
+                <div className="space-y-3 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)]">
                   {notificationRule ? (
                     <>
                       <div className="flex items-center justify-between">
-                        <div className="text-sm font-medium text-stone-900 dark:text-white">Enable rule</div>
+                        <div className="text-sm font-medium text-[var(--pulse-ink)]">Enable rule</div>
                         <input
                           type="checkbox"
                           checked={notificationRule.enabled}
@@ -1277,7 +1277,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                         />
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-zinc-400">
+                        <label className="flex items-center gap-2 text-sm text-[var(--pulse-ink-2)]">
                           <input
                             type="checkbox"
                             checked={notificationRule.notify_desktop}
@@ -1285,7 +1285,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                           />
                           Desktop
                         </label>
-                        <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-zinc-400">
+                        <label className="flex items-center gap-2 text-sm text-[var(--pulse-ink-2)]">
                           <input
                             type="checkbox"
                             checked={notificationRule.notify_mobile}
@@ -1293,7 +1293,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                           />
                           Mobile
                         </label>
-                        <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-zinc-400">
+                        <label className="flex items-center gap-2 text-sm text-[var(--pulse-ink-2)]">
                           <input
                             type="checkbox"
                             checked={notificationRule.notify_email}
@@ -1308,7 +1308,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                           checked={notificationRule.respect_quiet_hours}
                           onChange={(e) => setNotificationRule({ ...notificationRule, respect_quiet_hours: e.target.checked })}
                         />
-                        <span className="text-sm text-stone-600 dark:text-zinc-400">Respect quiet hours</span>
+                        <span className="text-sm text-[var(--pulse-ink-2)]">Respect quiet hours</span>
                       </div>
                       {notificationRule.respect_quiet_hours && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1316,22 +1316,22 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                             type="time"
                             value={notificationRule.quiet_hours_start || ''}
                             onChange={(e) => setNotificationRule({ ...notificationRule, quiet_hours_start: e.target.value })}
-                            className="px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm"
+                            className="px-3 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-sm"
                           />
                           <input
                             type="time"
                             value={notificationRule.quiet_hours_end || ''}
                             onChange={(e) => setNotificationRule({ ...notificationRule, quiet_hours_end: e.target.value })}
-                            className="px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm"
+                            className="px-3 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-sm"
                           />
                         </div>
                       )}
                       <div>
-                        <div className="text-xs text-stone-500 dark:text-zinc-400 mb-1">Priority</div>
+                        <div className="text-xs text-[var(--pulse-ink-2)] mb-1">Priority</div>
                         <select
                           value={notificationRule.priority}
                           onChange={(e) => setNotificationRule({ ...notificationRule, priority: e.target.value as NotificationRule['priority'] })}
-                          className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg text-sm"
+                          className="w-full px-3 py-2 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg text-sm"
                         >
                           <option value="low">Low</option>
                           <option value="normal">Normal</option>
@@ -1341,14 +1341,14 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                       </div>
                     </>
                   ) : (
-                    <div className="text-sm text-stone-500 dark:text-zinc-500">
+                    <div className="text-sm text-[var(--pulse-ink-3)]">
                       No rules found. Create one to control email alerts.
                     </div>
                   )}
                   <button
                     onClick={handleSaveNotificationRule}
                     disabled={notificationSaving || !notificationRule}
-                    className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium"
+                    className="px-4 py-2 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white rounded-lg text-sm font-medium"
                   >
                     {notificationSaving ? 'Saving...' : 'Save Notification Rule'}
                   </button>
@@ -1359,14 +1359,14 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-stone-200 dark:border-zinc-800 bg-stone-50 dark:bg-zinc-950 flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-[color:var(--pulse-border)] bg-[var(--pulse-canvas)] flex items-center justify-between">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition"
+            className="px-4 py-2 text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition"
           >
             Close
           </button>
-          <div className="text-xs text-stone-500 dark:text-zinc-500">
+          <div className="text-xs text-[var(--pulse-ink-3)]">
             Some settings are managed through Gmail
           </div>
         </div>
