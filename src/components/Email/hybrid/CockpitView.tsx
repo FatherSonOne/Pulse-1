@@ -6,6 +6,8 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { useEmailUIStore } from '../../../store/emailUIStore';
+import { useEmailStore } from '../../../store/emailStore';
+import { useEmailComposeStore } from '../../../store/emailComposeStore';
 import { BriefingHeader } from './cockpit/BriefingHeader';
 import { SignalSection } from './cockpit/SignalSection';
 import { LaneSection } from './cockpit/LaneSection';
@@ -40,7 +42,23 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
 }) => {
   const compact = density === 'compact';
   const nudgeFocused = useEmailUIStore((s) => s.nudgeFocused);
+  const emails = useEmailStore((s) => s.emails);
+  const openFollowUp = useEmailComposeStore((s) => s.openFollowUp);
   const { briefingMeta, signalEmails, laneBuckets, awaitingReplies, loading, isEmpty } = useCockpitData();
+
+  // Follow-up compose for an awaiting-reply row (folded in from FollowUpNudge,
+  // WI-8). Resolve the sent email, compose a Re: to its primary recipient.
+  const handleFollowUp = (emailId: string) => {
+    const email = emails.find((e) => e.id === emailId);
+    if (!email) return;
+    const recipient = email.to_emails?.[0];
+    const to = typeof recipient === 'string' ? recipient : recipient?.email;
+    if (!to) return;
+    const subject = email.subject?.startsWith('Re:')
+      ? email.subject
+      : `Re: ${email.subject || '(no subject)'}`;
+    openFollowUp(to, subject, email);
+  };
 
   return (
     <div className="h-full w-full overflow-y-auto relative">
@@ -112,7 +130,7 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
                 <div className="editorial-rule" />
                 <div className="grid gap-6 md:gap-8 md:grid-cols-2">
                   <DraftedForYouRail drafts={[]} />
-                  <AwaitingRepliesRail rows={awaitingReplies} />
+                  <AwaitingRepliesRail rows={awaitingReplies} onFollowUp={handleFollowUp} />
                   <CalendarPeekRail />
                 </div>
               </>
