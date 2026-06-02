@@ -20,7 +20,7 @@ import { settingsService } from '../../services/settingsService';
 import { emailMeetService } from '../../services/emailMeetService';
 import { confidentialEmailService } from '../../services/confidentialEmailService';
 import ScheduleSendModal from './ScheduleSendModal';
-import TemplatesModal from './TemplatesModal';
+import EmailTemplatesModalEnhanced from './EmailTemplatesModalEnhanced';
 import TemplateVariablesModal from './TemplateVariablesModal';
 import { VoiceTextButton } from '../shared/VoiceTextButton';
 import { useAIErrorHandler } from '../../hooks/useAIErrorHandler';
@@ -1715,10 +1715,17 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
 
       </div>
 
-      {/* Templates Modal */}
+      {/* Templates Modal — upgraded to the enhanced modal (favorites,
+          categories, search, CRUD). Identical onSelectTemplate contract;
+          TemplatesModal kept on disk as a dormant fallback (WI-11). */}
       {showTemplatesModal && (
-        <TemplatesModal
-          onSelectTemplate={handleSelectTemplate}
+        <EmailTemplatesModalEnhanced
+          onSelectTemplate={(t) =>
+            // Enhanced emits emailTemplateService.EmailTemplate (body optional,
+            // adds body_html); the composer's handler expects the emailSyncService
+            // shape (body required). Bridge by coercing body — no logic change.
+            handleSelectTemplate({ ...t, body: t.body ?? t.body_html ?? '' } as EmailTemplate)
+          }
           onClose={() => setShowTemplatesModal(false)}
         />
       )}

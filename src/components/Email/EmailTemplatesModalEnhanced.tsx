@@ -228,28 +228,28 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 pulse-modal-scrim" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+      <div className="relative pulse-surface border pulse-border-color rounded-2xl shadow-2xl w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b pulse-border-color">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-              <FileText className="text-white" />
+            <div className="w-10 h-10 rounded-xl pulse-surface-raised border pulse-border-color flex items-center justify-center pulse-ink-2-color">
+              <FileText className="w-[18px] h-[18px]" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">
+              <h2 className="text-lg font-semibold pulse-ink-color">
                 {view === 'list' ? 'Email Templates' : view === 'edit' ? 'Edit Template' : 'Create Template'}
               </h2>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs pulse-ink-3-color font-mono-pulse tracking-wide-mono tnum">
                 {view === 'list' ? `${filteredTemplates.length} template${filteredTemplates.length !== 1 ? 's' : ''}` : 'Manage your email templates'}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
+            className="w-8 h-8 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color transition"
           >
             <X />
           </button>
@@ -259,16 +259,16 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
         {view === 'list' ? (
           <>
             {/* Toolbar */}
-            <div className="px-6 py-4 border-b border-zinc-800 space-y-3">
+            <div className="px-6 py-4 border-b pulse-border-color space-y-3">
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 pulse-ink-3-color text-sm" />
                 <input
                   type="text"
                   placeholder="Search templates..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500"
+                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg pl-10 pr-4 py-2.5 text-sm pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
                 />
               </div>
 
@@ -276,10 +276,10 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition border ${
                     showFavoritesOnly
-                      ? 'bg-amber-500 text-black'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                      ? 'pulse-rose-bg-soft-color pulse-rose-border pulse-rose-color'
+                      : 'pulse-surface-raised border-transparent pulse-ink-2-color hover:pulse-border-color'
                   }`}
                 >
                   <Star className="mr-1.5" />
@@ -290,10 +290,10 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategory(selectedCategory === cat.name ? null : cat.name)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition border ${
                       selectedCategory === cat.name
-                        ? `bg-[${cat.color}] text-black`
-                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                        ? 'pulse-rose-bg-soft-color pulse-rose-border pulse-rose-color'
+                        : 'pulse-surface-raised border-transparent pulse-ink-2-color hover:pulse-border-color'
                     }`}
                   >
                     {cat.icon && <span className="mr-1.5">{cat.icon}</span>}
@@ -303,7 +303,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
 
                 <button
                   onClick={handleCreate}
-                  className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-500 hover:bg-purple-600 text-white transition"
+                  className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium pulse-rose-bg-color hover:opacity-90 text-white transition"
                 >
                   <Plus className="mr-1.5" />
                   New Template
@@ -315,15 +315,15 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
             <div className="flex-1 overflow-y-auto p-6">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-8 h-8 border-2 pulse-rose-border border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : filteredTemplates.length === 0 ? (
                 <div className="text-center py-12">
-                  <FileText className="text-4xl text-zinc-700 mb-3" />
-                  <p className="text-zinc-500">No templates found</p>
+                  <FileText className="text-4xl pulse-ink-3-color opacity-50 mb-3 mx-auto" />
+                  <p className="pulse-ink-3-color">No templates found</p>
                   <button
                     onClick={handleCreate}
-                    className="mt-4 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-medium transition"
+                    className="mt-4 px-4 py-2 pulse-rose-bg-color hover:opacity-90 text-white rounded-lg text-sm font-medium transition"
                   >
                     Create your first template
                   </button>
@@ -334,15 +334,15 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                     <div
                       key={template.id}
                       onClick={() => handleSelect(template)}
-                      className="bg-zinc-800/30 border border-zinc-700/50 rounded-xl p-4 hover:bg-zinc-800/50 hover:border-purple-500/30 transition cursor-pointer group"
+                      className="pulse-surface-raised border pulse-border-color rounded-xl p-4 hover:pulse-border-strong-color transition cursor-pointer group"
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <h3 className="font-medium text-white group-hover:text-purple-400 transition mb-1">
+                          <h3 className="font-medium pulse-ink-color group-hover:pulse-rose-color transition mb-1">
                             {template.name}
                           </h3>
                           {template.description && (
-                            <p className="text-xs text-zinc-500 line-clamp-1">{template.description}</p>
+                            <p className="text-xs pulse-ink-3-color line-clamp-1">{template.description}</p>
                           )}
                         </div>
                         <button
@@ -350,31 +350,31 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                           className={`w-7 h-7 rounded-lg flex items-center justify-center transition ${
                             template.is_favorite
                               ? 'text-amber-400 hover:text-amber-300'
-                              : 'text-zinc-600 hover:text-amber-400 hover:bg-zinc-700'
+                              : 'pulse-ink-3-color hover:text-amber-400 hover:pulse-surface'
                           }`}
                         >
                           <i className={`fa-${template.is_favorite ? 'solid' : 'regular'} fa-star text-sm`}></i>
                         </button>
                       </div>
 
-                      <div className="text-xs text-zinc-400 line-clamp-2 mb-3 font-mono">
+                      <div className="text-xs pulse-ink-2-color line-clamp-2 mb-3 font-mono-pulse">
                         {template.body}
                       </div>
 
                       <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2 text-zinc-500">
+                        <div className="flex items-center gap-2 pulse-ink-3-color">
                           {template.category && (
-                            <span className="px-2 py-1 bg-zinc-700/50 rounded-md">
+                            <span className="px-2 py-1 pulse-surface border pulse-border-color rounded-md font-mono-pulse tracking-wide-mono">
                               {template.category}
                             </span>
                           )}
                           {template.variables.length > 0 && (
-                            <span className="flex items-center gap-1">
+                            <span className="flex items-center gap-1 font-mono-pulse tnum">
                               <Code />
                               {template.variables.length} var{template.variables.length !== 1 ? 's' : ''}
                             </span>
                           )}
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 font-mono-pulse tnum">
                             <BarChart2 />
                             {template.use_count} use{template.use_count !== 1 ? 's' : ''}
                           </span>
@@ -382,13 +382,13 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                         <div className="flex items-center gap-1">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleEdit(template); }}
-                            className="w-6 h-6 rounded hover:bg-zinc-700 flex items-center justify-center text-zinc-500 hover:text-white transition"
+                            className="w-6 h-6 rounded hover:pulse-surface flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color transition"
                           >
                             <Pen className="text-xs" />
                           </button>
                           <button
                             onClick={(e) => handleDelete(template, e)}
-                            className="w-6 h-6 rounded hover:bg-zinc-700 flex items-center justify-center text-zinc-500 hover:text-red-400 transition"
+                            className="w-6 h-6 rounded hover:pulse-surface flex items-center justify-center pulse-ink-3-color transition hover:text-[#ef4444]"
                           >
                             <Trash2 className="text-xs" />
                           </button>
@@ -406,74 +406,74 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
             <div className="max-w-3xl mx-auto space-y-4">
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">Template Name *</label>
+                <label className="block font-mono-pulse tracking-wide-mono text-[10px] uppercase pulse-ink-3-color mb-2">Template Name *</label>
                 <input
                   type="text"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="e.g., Sales Follow-up"
-                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500"
+                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-2.5 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">Description (optional)</label>
+                <label className="block font-mono-pulse tracking-wide-mono text-[10px] uppercase pulse-ink-3-color mb-2">Description (optional)</label>
                 <input
                   type="text"
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="Brief description of template usage"
-                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500"
+                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-2.5 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
                 />
               </div>
 
               {/* Category */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">Category</label>
+                <label className="block font-mono-pulse tracking-wide-mono text-[10px] uppercase pulse-ink-3-color mb-2">Category</label>
                 <input
                   type="text"
                   value={formCategory}
                   onChange={(e) => setFormCategory(e.target.value)}
                   placeholder="e.g., Sales, Support, Marketing"
-                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500"
+                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-2.5 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
                 />
               </div>
 
               {/* Subject */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">Subject (optional)</label>
+                <label className="block font-mono-pulse tracking-wide-mono text-[10px] uppercase pulse-ink-3-color mb-2">Subject (optional)</label>
                 <input
                   type="text"
                   value={formSubject}
                   onChange={(e) => setFormSubject(e.target.value)}
                   placeholder="Email subject line"
-                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500"
+                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-2.5 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
                 />
               </div>
 
               {/* Body */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">Body *</label>
+                <label className="block font-mono-pulse tracking-wide-mono text-[10px] uppercase pulse-ink-3-color mb-2">Body *</label>
                 <textarea
                   id="template-body"
                   value={formBody}
                   onChange={(e) => setFormBody(e.target.value)}
                   placeholder="Email body content... Use {{variableName}} for dynamic content"
                   rows={12}
-                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 font-mono text-sm resize-none"
+                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-3 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border font-mono-pulse text-sm resize-none"
                 />
               </div>
 
               {/* Variables Helper */}
-              <div className="bg-zinc-800/30 border border-zinc-700/50 rounded-lg p-4">
-                <div className="text-sm font-medium text-zinc-300 mb-3">Available Variables (click to insert):</div>
+              <div className="pulse-surface-raised border pulse-border-color rounded-lg p-4">
+                <div className="font-mono-pulse tracking-wide-mono text-[10px] uppercase pulse-ink-3-color mb-3">Available Variables (click to insert):</div>
                 <div className="flex flex-wrap gap-2">
                   {TEMPLATE_VARIABLES.slice(0, 12).map(v => (
                     <button
                       key={v.name}
                       onClick={() => insertVariable(v.name)}
-                      className="px-3 py-1.5 bg-zinc-700 hover:bg-purple-500 text-zinc-300 hover:text-white rounded-lg text-xs font-mono transition"
+                      className="px-3 py-1.5 pulse-surface border pulse-border-color hover:pulse-rose-bg-color hover:text-white pulse-ink-2-color rounded-lg text-xs font-mono-pulse transition"
                       title={v.description}
                     >
                       {`{{${v.name}}}`}
@@ -487,13 +487,13 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 px-4 py-2.5 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-500/50 text-white rounded-lg font-medium transition"
+                  className="flex-1 px-4 py-2.5 pulse-rose-bg-color hover:opacity-90 disabled:opacity-50 text-white rounded-lg font-medium transition"
                 >
                   {saving ? 'Saving...' : editingTemplate ? 'Update Template' : 'Create Template'}
                 </button>
                 <button
                   onClick={() => setView('list')}
-                  className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition"
+                  className="px-4 py-2.5 pulse-surface-raised border pulse-border-color hover:pulse-border-strong-color pulse-ink-color rounded-lg font-medium transition"
                 >
                   Cancel
                 </button>
