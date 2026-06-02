@@ -10,6 +10,7 @@ import { OrganizationSidebar } from './Organization';
 import { ShareModal } from './Collaboration';
 import { AdvancedAIPanel } from './AdvancedAI';
 import { recordDocumentView } from '../../services/organizationService';
+import { useWarRoomStore } from '../../store/warRoomStore';
 import {
   AlertTriangle,
   BookOpen,
@@ -185,6 +186,10 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
     handleDeleteDoc,
     toggleDocInContext,
   } = props;
+
+  // Single store read in an otherwise prop-driven component: which AdvancedAI
+  // tab to open on (set by the GeneratorRail card). WI-10.
+  const advancedAIView = useWarRoomStore((s) => s.advancedAIView);
 
   return (
     <>
@@ -411,6 +416,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                 d => activeContextDocs.has(d.id) || activeContextDocs.size === 0
               )}
               apiKey={apiKey}
+              initialView={advancedAIView}
               onClose={() => setShowAdvancedAI(false)}
             />
           </div>

@@ -77,6 +77,8 @@ interface WarRoomState {
   showOrganize: boolean;
   organizingDocId: string | undefined;
   showAdvancedAI: boolean;
+  /** Which AdvancedAI tab to open on (compare vs knowledge graph). */
+  advancedAIView: 'compare' | 'graph';
 
   // ── Voice slice ────────────────────────────────────────────────────────
   voiceEnabled: boolean;
@@ -160,6 +162,7 @@ interface WarRoomState {
   setShowOrganize: (show: boolean) => void;
   setOrganizingDocId: (id: string | undefined) => void;
   setShowAdvancedAI: (show: boolean) => void;
+  setAdvancedAIView: (view: 'compare' | 'graph') => void;
 
   // Voice actions
   setVoiceEnabled: (enabled: boolean) => void;
@@ -275,6 +278,7 @@ export const useWarRoomStore = create<WarRoomState>()(
     showOrganize: false,
     organizingDocId: undefined,
     showAdvancedAI: false,
+    advancedAIView: 'compare',
 
     // Voice
     voiceEnabled: false,
@@ -366,6 +370,7 @@ export const useWarRoomStore = create<WarRoomState>()(
     setShowOrganize: (show) => set({ showOrganize: show }),
     setOrganizingDocId: (id) => set({ organizingDocId: id }),
     setShowAdvancedAI: (show) => set({ showAdvancedAI: show }),
+    setAdvancedAIView: (view) => set({ advancedAIView: view }),
 
     // Voice
     setVoiceEnabled: (enabled) => set({ voiceEnabled: enabled }),

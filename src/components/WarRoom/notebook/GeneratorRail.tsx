@@ -34,14 +34,15 @@ export const GeneratorRail: React.FC<GeneratorRailProps> = () => {
   const setShowTimeline = useWarRoomStore((s) => s.setShowTimeline);
   const setShowPodcast = useWarRoomStore((s) => s.setShowPodcast);
   const setShowAdvancedAI = useWarRoomStore((s) => s.setShowAdvancedAI);
+  const setAdvancedAIView = useWarRoomStore((s) => s.setAdvancedAIView);
 
   const cards: GenCard[] = [
     { id: 'study-guide', label: 'Study Guide', desc: 'Structured notes & flashcards', icon: <BookOpen size={16} />, open: () => setShowStudyGuide(true) },
     { id: 'faq', label: 'FAQ', desc: 'Questions from your sources', icon: <HelpCircle size={16} />, open: () => setShowFAQ(true) },
     { id: 'timeline', label: 'Timeline', desc: 'Chronological events', icon: <Clock size={16} />, open: () => setShowTimeline(true) },
     { id: 'podcast', label: 'Podcast', desc: 'Two-host dialogue script', icon: <Mic size={16} />, open: () => setShowPodcast(true) },
-    { id: 'comparative', label: 'Comparative Analysis', desc: 'Compare across sources', icon: <Scale size={16} />, advanced: true, open: () => setShowAdvancedAI(true) },
-    { id: 'knowledge-graph', label: 'Knowledge Graph', desc: 'Entities & relationships', icon: <Share2 size={16} />, advanced: true, open: () => setShowAdvancedAI(true) },
+    { id: 'comparative', label: 'Comparative Analysis', desc: 'Compare across sources', icon: <Scale size={16} />, advanced: true, open: () => { setAdvancedAIView('compare'); setShowAdvancedAI(true); } },
+    { id: 'knowledge-graph', label: 'Knowledge Graph', desc: 'Entities & relationships', icon: <Share2 size={16} />, advanced: true, open: () => { setAdvancedAIView('graph'); setShowAdvancedAI(true); } },
   ];
 
   return (

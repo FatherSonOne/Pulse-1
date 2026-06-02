@@ -306,10 +306,6 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
               <option value="marin">Marin (Female)</option>
               <option value="cedar">Cedar (Male)</option>
               <option value="onyx">Onyx (Male)</option>
-              <option value="shimmer">Shimmer (Female)</option>
-              <option value="sage">Sage (Neutral)</option>
-              <option value="coral">Coral (Female)</option>
-              <option value="verse">Verse (Neutral)</option>
             </select>
           </div>
 
