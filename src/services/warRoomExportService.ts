@@ -134,8 +134,8 @@ function exportToMarkdown(data: WarRoomExportData, options: ExportFormat): strin
     const role = msg.role === 'user' ? 'You' : 'AI';
     const icon = msg.role === 'user' ? '**You:**' : '**AI:**';
 
-    if (options.includeTimestamps && msg.timestamp) {
-      lines.push(`### ${icon} _${formatTimestamp(new Date(msg.timestamp))}_`);
+    if (options.includeTimestamps && msg.created_at) {
+      lines.push(`### ${icon} _${formatTimestamp(new Date(msg.created_at))}_`);
     } else {
       lines.push(`### ${icon}`);
     }
@@ -256,8 +256,8 @@ function exportToHTML(data: WarRoomExportData, options: ExportFormat): string {
   data.messages.forEach(msg => {
     const roleClass = msg.role === 'user' ? 'user' : 'ai';
     const roleLabel = msg.role === 'user' ? 'You' : 'AI';
-    const timestamp = options.includeTimestamps && msg.timestamp
-      ? `<span class="timestamp">${formatTimestamp(new Date(msg.timestamp))}</span>`
+    const timestamp = options.includeTimestamps && msg.created_at
+      ? `<span class="timestamp">${formatTimestamp(new Date(msg.created_at))}</span>`
       : '';
 
     html += `
@@ -299,7 +299,7 @@ function exportToJSON(data: WarRoomExportData): string {
     messages: data.messages.map(m => ({
       role: m.role,
       content: m.content,
-      timestamp: m.timestamp,
+      timestamp: m.created_at,
     })),
     exportedAt: data.exportedAt.toISOString(),
     duration: data.duration || null,
