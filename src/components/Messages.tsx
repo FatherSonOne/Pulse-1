@@ -84,18 +84,12 @@ import { EmojiPicker as FullEmojiPicker } from './MessageEnhancements/EmojiReact
 import { useMessageEnhancements } from '../hooks/useMessageEnhancements';
 import { FeatureSkeleton } from './MessageEnhancements/FeatureSkeleton';
 
-// Lazy load MessageEnhancements bundles for optimal bundle size
-// These are loaded on-demand when features are accessed, reducing initial bundle by ~875KB
-const BundleAI = React.lazy(() => import('./MessageEnhancements/BundleAI'));
-const BundleAnalytics = React.lazy(() => import('./MessageEnhancements/BundleAnalytics'));
-const BundleCollaboration = React.lazy(() => import('./MessageEnhancements/BundleCollaboration'));
-const BundleProductivity = React.lazy(() => import('./MessageEnhancements/BundleProductivity'));
-const BundleIntelligence = React.lazy(() => import('./MessageEnhancements/BundleIntelligence'));
-const BundleProactive = React.lazy(() => import('./MessageEnhancements/BundleProactive'));
-const BundleCommunication = React.lazy(() => import('./MessageEnhancements/BundleCommunication'));
-const BundleAutomation = React.lazy(() => import('./MessageEnhancements/BundleAutomation'));
-const BundleSecurity = React.lazy(() => import('./MessageEnhancements/BundleSecurity'));
-const BundleMultimedia = React.lazy(() => import('./MessageEnhancements/BundleMultimedia'));
+// W10 (2026-06-01): removed 10 unused MessageEnhancements "Bundle*" lazy
+// declarations that were duplicated here but never rendered in Messages.tsx (no
+// <Bundle*> JSX in this file) — they were 10 stale tsc errors. The Bundle files
+// themselves are NOT dead: MessageInputSection (BundleAI) and the legacy
+// MessagesFeaturePanels (the rest) render them via their own lazy decls, so the
+// modules are preserved.
 
 // Error Boundary for protecting lazy-loaded Bundle components
 import { MessageEnhancementErrorBoundary } from './MessageEnhancements/MessageEnhancementErrorBoundary';
