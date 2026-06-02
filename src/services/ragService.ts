@@ -333,7 +333,6 @@ export const ragService = {
     const context = `Recent conversation:\n${recentMessages.join('\n')}\n\nAvailable documents: ${documents.map(d => d.title).join(', ')}`;
     
     const suggestionsText = await processWithModel(
-      apiKey, 
       withFormattedOutput(
         `Based on this conversation and available documents, suggest 3 follow-up questions or prompts the user might want to explore. Return as JSON array of strings.\n\n${context}`,
         'research'

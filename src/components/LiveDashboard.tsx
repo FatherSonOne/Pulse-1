@@ -1263,7 +1263,6 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
       .join('\n\n');
     
     const summary = await processWithModel(
-      apiKey,
       `Create a concise summary of this War Room session. Include key points, decisions, and action items:\n\n${conversationText}`
     );
     
