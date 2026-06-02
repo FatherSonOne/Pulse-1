@@ -158,6 +158,18 @@ export interface PulseComposerProps {
    * from the UX while the scaffolding stays dormant.
    */
   toolsEnabled?: boolean;
+  /**
+   * When true, plain Enter sends and Shift+Enter inserts a newline. When false
+   * (default), Cmd/Ctrl+Enter sends and Enter inserts a newline. Wired from
+   * Message Settings (`useMessageSettings().settings.enterToSend`).
+   */
+  enterToSend?: boolean;
+  /**
+   * When false, the composer suppresses typing-indicator broadcasts (the
+   * `onTyping` callback is not invoked). Defaults to true. Wired from Message
+   * Settings (`sendTypingIndicators`).
+   */
+  sendTypingIndicators?: boolean;
 }
 
 /** Touch-target floor per WCAG 2.2 AA + spec. */

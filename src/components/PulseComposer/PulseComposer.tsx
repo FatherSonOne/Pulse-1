@@ -140,6 +140,8 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
   threadId,
   messageCount,
   toolsEnabled = true,
+  enterToSend = false,
+  sendTypingIndicators = true,
 }) => {
   const isMobile = useIsMobile(forceMobile);
   const isDarkMode = useIsDarkMode(isDarkModeProp);
@@ -237,8 +239,13 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
   }, [value, isMobile]);
 
   // --- Typing indicator -------------------------------------------
+  // Suppressed when the user disables typing indicators in Message Settings.
   useEffect(() => {
     if (!onTyping) return;
+    if (!sendTypingIndicators) {
+      onTyping(false);
+      return;
+    }
     if (!value) {
       onTyping(false);
       return;
@@ -246,7 +253,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
     onTyping(true);
     const t = setTimeout(() => onTyping(false), 1500);
     return () => clearTimeout(t);
-  }, [value, onTyping]);
+  }, [value, onTyping, sendTypingIndicators]);
 
   // --- Slash detection on every value/caret change ----------------
   const refreshSlash = useCallback((nextValue: string, caret: number) => {
@@ -438,8 +445,17 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
         }
       }
 
-      // Send: Cmd/Ctrl + Enter.
+      // Send: Cmd/Ctrl + Enter (always available).
       if (meta && e.key === 'Enter') {
+        e.preventDefault();
+        handleSend();
+        return;
+      }
+
+      // Enter-to-send mode (Message Settings): plain Enter sends, Shift+Enter
+      // inserts a newline. Slash/smart-compose handlers above already consumed
+      // Enter when their surfaces are active, so this only fires for normal text.
+      if (enterToSend && e.key === 'Enter' && !e.shiftKey && !meta) {
         e.preventDefault();
         handleSend();
         return;
@@ -509,6 +525,8 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
       value,
       handleSend,
       applyFormatAction,
+      enterToSend,
+      toolsEnabled,
     ],
   );
 

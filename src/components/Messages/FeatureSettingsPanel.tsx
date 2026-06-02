@@ -24,6 +24,7 @@ import {
   type FeatureFlags,
 } from '../../contexts/FeatureContext';
 import { useAudioInputDevice } from '../../hooks/useAudioInputDevice';
+import { useMessageSettings } from '../../hooks/useMessageSettings';
 
 interface FeatureSettingsPanelProps {
   isOpen: boolean;
@@ -86,6 +87,8 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
   } = useFeatures();
 
   const isDark = useIsDark(isOpen);
+
+  const { settings: msgSettings, setSetting: setMsgSetting } = useMessageSettings();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
@@ -240,6 +243,91 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
       searchQuery.toLowerCase(),
     );
   }, [searchQuery]);
+
+  // --- Composing / behavior prefs (real, wired via useMessageSettings) ---
+  const prefRows = useMemo<SettingRowSpec[]>(
+    () => [
+      {
+        id: 'enterToSend',
+        name: tr('messages.messageSettings.enterToSend', 'Press Enter to send'),
+        description: tr(
+          'messages.messageSettings.enterToSendDesc',
+          'Enter sends; Shift+Enter starts a new line. Off: Cmd/Ctrl+Enter sends.',
+        ),
+        enabled: msgSettings.enterToSend,
+        onToggle: () => setMsgSetting('enterToSend', !msgSettings.enterToSend),
+      },
+      {
+        id: 'sendTypingIndicators',
+        name: tr('messages.messageSettings.typingIndicators', 'Send typing indicators'),
+        description: tr(
+          'messages.messageSettings.typingIndicatorsDesc',
+          'Let the other person see when you are typing.',
+        ),
+        enabled: msgSettings.sendTypingIndicators,
+        onToggle: () =>
+          setMsgSetting('sendTypingIndicators', !msgSettings.sendTypingIndicators),
+      },
+    ],
+    [tr, msgSettings, setMsgSetting],
+  );
+
+  // --- Not-yet-wired (shown disabled with a "Soon" badge, never persisted) ---
+  const comingSoonRows = useMemo<SettingRowSpec[]>(
+    () => [
+      {
+        id: 'readReceipts',
+        name: tr('messages.messageSettings.readReceipts', 'Read receipts'),
+        description: tr(
+          'messages.messageSettings.readReceiptsDesc',
+          "Control whether others see when you've read their messages.",
+        ),
+        enabled: false,
+        comingSoon: true,
+      },
+      {
+        id: 'notifSound',
+        name: tr('messages.messageSettings.notifSound', 'Notification sound'),
+        description: tr(
+          'messages.messageSettings.notifSoundDesc',
+          'Play a sound when a new message arrives.',
+        ),
+        enabled: false,
+        comingSoon: true,
+      },
+      {
+        id: 'notifPreview',
+        name: tr('messages.messageSettings.notifPreview', 'Message preview in notifications'),
+        description: tr(
+          'messages.messageSettings.notifPreviewDesc',
+          'Show message text in notifications instead of just the sender.',
+        ),
+        enabled: false,
+        comingSoon: true,
+      },
+    ],
+    [tr],
+  );
+
+  const rowMatchesQuery = useCallback(
+    (row: SettingRowSpec) => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        row.name.toLowerCase().includes(q) || row.description.toLowerCase().includes(q)
+      );
+    },
+    [searchQuery],
+  );
+
+  const visiblePrefRows = useMemo(
+    () => prefRows.filter(rowMatchesQuery),
+    [prefRows, rowMatchesQuery],
+  );
+  const visibleComingSoonRows = useMemo(
+    () => comingSoonRows.filter(rowMatchesQuery),
+    [comingSoonRows, rowMatchesQuery],
+  );
 
   // Close on Escape
   useEffect(() => {
@@ -501,22 +589,38 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
             >
               {audioMatchesSearch && <AudioSection theme={t} />}
 
-              {totalMatches === 0 && !audioMatchesSearch && (
-                <div
-                  role="status"
-                  style={{
-                    padding: '32px 16px',
-                    textAlign: 'center',
-                    fontSize: '14px',
-                    color: t.emptyText,
-                  }}
-                >
-                  {tr('messages.featureSettings.noResults', {
-                    query: searchQuery,
-                    defaultValue: 'No settings match “{{query}}”.',
-                  })}
+              {/* Composing / behavior preferences (wired) */}
+              {visiblePrefRows.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <SectionHeading
+                    label={tr('messages.messageSettings.composingHeading', 'Composing')}
+                    color={t.textMuted}
+                  />
+                  {visiblePrefRows.map((row) => (
+                    <SettingRow key={row.id} row={row} isDark={isDark} theme={t} />
+                  ))}
                 </div>
               )}
+
+              {totalMatches === 0 &&
+                !audioMatchesSearch &&
+                visiblePrefRows.length === 0 &&
+                visibleComingSoonRows.length === 0 && (
+                  <div
+                    role="status"
+                    style={{
+                      padding: '32px 16px',
+                      textAlign: 'center',
+                      fontSize: '14px',
+                      color: t.emptyText,
+                    }}
+                  >
+                    {tr('messages.featureSettings.noResults', {
+                      query: searchQuery,
+                      defaultValue: 'No settings match “{{query}}”.',
+                    })}
+                  </div>
+                )}
 
               {(Object.entries(MESSAGE_SETTINGS_CATEGORIES) as [string, typeof MESSAGE_SETTINGS_CATEGORIES[CategoryId]][]).map(
                 ([categoryId, category]) => {
@@ -545,6 +649,19 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                     />
                   );
                 },
+              )}
+
+              {/* Not-yet-wired settings — visible but disabled with a "Soon" badge */}
+              {visibleComingSoonRows.length > 0 && (
+                <div style={{ marginBottom: '8px' }}>
+                  <SectionHeading
+                    label={tr('messages.messageSettings.comingSoonHeading', 'Coming soon')}
+                    color={t.textMuted}
+                  />
+                  {visibleComingSoonRows.map((row) => (
+                    <SettingRow key={row.id} row={row} isDark={isDark} theme={t} />
+                  ))}
+                </div>
               )}
             </div>
 
@@ -807,6 +924,106 @@ const AudioSection: React.FC<{ theme: AudioThemeShape }> = ({ theme: t }) => {
           )}
         </div>
       </div>
+    </div>
+  );
+};
+
+/* ── Message-settings rows (prefs + coming-soon) ── */
+
+interface SettingRowSpec {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  /** Toggle handler. Omitted for coming-soon rows. */
+  onToggle?: () => void;
+  /** Render disabled with a "Soon" badge (not yet wired to a real behavior). */
+  comingSoon?: boolean;
+}
+
+const SectionHeading: React.FC<{ label: string; color: string }> = ({ label, color }) => (
+  <div
+    style={{
+      fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+      fontSize: '11px',
+      fontWeight: 500,
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      color,
+      marginBottom: '10px',
+    }}
+  >
+    {label}
+  </div>
+);
+
+const SettingRow: React.FC<{
+  row: SettingRowSpec;
+  isDark: boolean;
+  theme: ThemeShape;
+}> = ({ row, isDark, theme: t }) => {
+  const { t: tr } = useTranslation();
+  return (
+    <div
+      style={{
+        padding: '12px 14px',
+        background: t.featureBg,
+        border: `1px solid ${t.featureBorder}`,
+        borderRadius: '10px',
+        marginBottom: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '12px',
+        opacity: row.comingSoon ? 0.65 : 1,
+      }}
+    >
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: '14px',
+            fontWeight: 600,
+            color: t.featureText,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          {row.name}
+          {row.comingSoon && (
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+                fontSize: '9px',
+                letterSpacing: '0.1em',
+                padding: '2px 6px',
+                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                color: t.textMuted,
+                borderRadius: '4px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+              }}
+            >
+              {tr('messages.messageSettings.soonBadge', 'Soon')}
+            </span>
+          )}
+        </div>
+        <div style={{ fontSize: '12px', color: t.textMuted, marginTop: '2px' }}>
+          {row.description}
+        </div>
+      </div>
+      <ToggleSwitch
+        checked={row.enabled}
+        onChange={row.onToggle ?? (() => {})}
+        disabled={row.comingSoon || !row.onToggle}
+        ariaLabel={tr('messages.featureSettings.toggleFeature', {
+          name: row.name,
+          defaultValue: 'Toggle {{name}}',
+        })}
+        isDark={isDark}
+        toggleOff={t.toggleOff}
+        toggleKnob={t.toggleKnob}
+      />
     </div>
   );
 };

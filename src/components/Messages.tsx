@@ -162,6 +162,7 @@ const FocusMode = lazy(() => import('./Messages/FocusMode').then(m => ({ default
 import { MessagesFeaturePanels } from './Messages/MessagesFeaturePanels';
 import { MessageLinkPreviews } from './Messages/LinkPreviewCard';
 import { useMessagesKeyboardShortcuts } from '../hooks/useMessagesKeyboardShortcuts';
+import { useMessageSettings } from '../hooks/useMessageSettings';
 import { SnoozeMenu } from './Messages/SnoozeMenu';
 import { TagPicker, TagPills } from './Messages/TagPills';
 import { tagsService, type TagDefinition } from '../services/tagsService';
@@ -861,6 +862,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   }, [pulseEditToast]);
 
   const features = useFeatures();
+  const { settings: messageSettings } = useMessageSettings();
   const [showFeatureSettings, setShowFeatureSettings] = useState(false);
 
   // Phase 7b — tags (Pulse DM scope for now). Pulled from
@@ -4695,6 +4697,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 threadId={activePulseConv?.id}
                 messageCount={pulseMessages.length}
                 toolsEnabled={MESSAGES_TOOLS_ENABLED}
+                enterToSend={messageSettings.enterToSend}
+                sendTypingIndicators={messageSettings.sendTypingIndicators}
               />
             </MessageInputPortal>
           )}
