@@ -14,6 +14,7 @@ import { useWarRoomStore } from '../../store/warRoomStore';
 import {
   AlertTriangle,
   BookOpen,
+  Check,
   Clipboard,
   Code,
   Download,
@@ -26,6 +27,7 @@ import {
   MessageSquare,
   MicOff,
   Plus,
+  ScrollText,
   Share2,
   Sparkles,
   Tags,
@@ -195,85 +197,90 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
     <>
       {/* Export Modal */}
       {showExportModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="w-full max-w-2xl war-room-modal rounded-3xl shadow-2xl p-6">
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-2xl rounded-2xl p-6" style={{ background: 'var(--pulse-surface-modal)', border: '1px solid var(--pulse-border)' }}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">
-                <Share2 size={14} className="inline mr-2" />
+              <h3 className="text-xl font-bold inline-flex items-center" style={{ color: 'var(--pulse-ink)' }}>
+                <Share2 size={16} className="mr-2" style={{ color: 'var(--pulse-ink-3)' }} />
                 Export Session
               </h3>
               <button
                 onClick={() => setShowExportModal(false)}
-                className="px-3 py-2 hover:bg-gray-200 dark:hover:bg-gray-800/50 rounded-full transition-colors text-gray-600 dark:text-gray-400"
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: 'var(--pulse-ink-3)' }}
+                aria-label="Close"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
             <div className="space-y-3">
-              {/* Markdown Export */}
+              {/* Markdown Export — neutral (a format, not AI output) */}
               <button
                 onClick={() => {
                   handleExport('markdown');
                   setShowExportModal(false);
                 }}
-                className="w-full p-4 bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-600/20 dark:to-cyan-600/20 border border-blue-200 dark:border-blue-500/30 rounded-2xl hover:border-blue-400 text-left group transition-all"
+                className="w-full p-4 rounded-xl text-left transition-all"
+                style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition text-blue-600 dark:text-white">
-                    <FileText size={16} />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--pulse-surface)', color: 'var(--pulse-ink-2)' }}>
+                    <FileText size={18} />
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-lg text-gray-900 dark:text-white">Export as Markdown</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Download full conversation as .md file</div>
+                    <div className="font-medium text-base" style={{ color: 'var(--pulse-ink)' }}>Export as Markdown</div>
+                    <div className="text-sm" style={{ color: 'var(--pulse-ink-3)' }}>Download full conversation as .md file</div>
                   </div>
-                  <Download size={16} className="text-blue-400" />
+                  <Download size={16} style={{ color: 'var(--pulse-ink-3)' }} />
                 </div>
               </button>
 
-              {/* JSON Export */}
+              {/* JSON Export — neutral */}
               <button
                 onClick={() => {
                   handleExport('json');
                   setShowExportModal(false);
                 }}
-                className="w-full p-4 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-600/20 dark:to-pink-600/20 border border-purple-200 dark:border-purple-500/30 rounded-2xl hover:border-purple-400 text-left group transition-all"
+                className="w-full p-4 rounded-xl text-left transition-all"
+                style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition text-purple-600 dark:text-white">
-                    <Code size={16} />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--pulse-surface)', color: 'var(--pulse-ink-2)' }}>
+                    <Code size={18} />
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-lg text-gray-900 dark:text-white">Export as JSON</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Structured data for integrations</div>
+                    <div className="font-medium text-base" style={{ color: 'var(--pulse-ink)' }}>Export as JSON</div>
+                    <div className="text-sm" style={{ color: 'var(--pulse-ink-3)' }}>Structured data for integrations</div>
                   </div>
-                  <Download size={16} className="text-purple-400" />
+                  <Download size={16} style={{ color: 'var(--pulse-ink-3)' }} />
                 </div>
               </button>
 
-              {/* AI Summary */}
+              {/* AI Summary — the one genuinely AI-output export earns the coral tile */}
               <button
                 onClick={() => {
                   handleExport('summary');
                   setShowExportModal(false);
                 }}
-                className="w-full p-4 bg-gradient-to-br from-rose-50/50 to-pink-50/50 dark:from-rose-600/20 dark:to-pink-600/20 border border-rose-200 dark:border-rose-500/30 rounded-2xl hover:border-rose-400 text-left group transition-all"
+                className="w-full p-4 rounded-xl text-left transition-all"
+                style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-rose-100 dark:bg-rose-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition text-rose-600 dark:text-white">
-                    <Sparkles size={16} />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }}>
+                    <ScrollText size={18} />
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-lg text-gray-900 dark:text-white">Generate AI Summary</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Key points & action items (copies to clipboard)</div>
+                    <div className="font-medium text-base" style={{ color: 'var(--pulse-ink)' }}>Generate AI Summary</div>
+                    <div className="text-sm" style={{ color: 'var(--pulse-ink-3)' }}>Key points &amp; action items (copies to clipboard)</div>
                   </div>
-                  <Clipboard size={16} className="text-rose-400" />
+                  <Clipboard size={16} style={{ color: 'var(--pulse-ink-3)' }} />
                 </div>
               </button>
 
               {/* Share Options */}
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
-                <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">Share to:</div>
+              <div className="pt-4" style={{ borderTop: '1px solid var(--pulse-border)' }}>
+                <div className="mb-3" style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pulse-ink-3)' }}>Share to</div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => {
@@ -282,9 +289,10 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                       toast.success('Copied to clipboard! Paste in Messages app');
                       setShowExportModal(false);
                     }}
-                    className="px-4 py-3 bg-green-50 dark:bg-green-600/20 border border-green-200 dark:border-green-500/30 rounded-xl hover:bg-green-100 dark:hover:bg-green-600/30 text-sm flex items-center justify-center text-gray-700 dark:text-white transition-colors"
+                    className="px-4 py-3 rounded-xl text-sm flex items-center justify-center transition-colors"
+                    style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)', color: 'var(--pulse-ink)' }}
                   >
-                    <MessageSquare size={14} className="inline mr-2 text-green-600 dark:text-green-400" />
+                    <MessageSquare size={14} className="mr-2" style={{ color: 'var(--pulse-ink-3)' }} />
                     Messages
                   </button>
 
@@ -295,9 +303,10 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                       window.location.href = mailtoLink;
                       setShowExportModal(false);
                     }}
-                    className="px-4 py-3 bg-blue-50 dark:bg-blue-600/20 border border-blue-200 dark:border-blue-500/30 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-600/30 text-sm flex items-center justify-center text-gray-700 dark:text-white transition-colors"
+                    className="px-4 py-3 rounded-xl text-sm flex items-center justify-center transition-colors"
+                    style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)', color: 'var(--pulse-ink)' }}
                   >
-                    <Mail size={14} className="inline mr-2 text-blue-600 dark:text-blue-400" />
+                    <Mail size={14} className="mr-2" style={{ color: 'var(--pulse-ink-3)' }} />
                     Email
                   </button>
                 </div>
@@ -578,13 +587,13 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                           ) : (
                             <button
                               onClick={() => toggleDocInContext(doc.id)}
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                                isInContext
-                                  ? 'bg-emerald-500 text-white'
-                                  : 'bg-zinc-700 text-zinc-400 hover:bg-rose-500 hover:text-white'
-                              }`}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                              style={isInContext
+                                ? { background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }
+                                : { background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-3)' }}
+                              aria-label={isInContext ? 'Remove from AI context' : 'Add to AI context'}
                             >
-                              <i className={`fa ${isInContext ? 'fa-check' : 'fa-plus'}`}></i>
+                              {isInContext ? <Check size={14} /> : <Plus size={14} />}
                             </button>
                           )}
                         </div>

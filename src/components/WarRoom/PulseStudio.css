@@ -906,6 +906,9 @@ html.dark .pulse-studio,
   font-size: 14px;
   line-height: 1.65;
   color: var(--ps-text-primary);
+  /* Cap AI answer prose at the 65-75ch readability ceiling (DESIGN.md). The
+     answer is the hero text; uncapped it ran ~95-105ch on wide screens. */
+  max-width: 68ch;
 }
 
 .ps-md-p {
