@@ -507,6 +507,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   }, [proposalModeEnabled, isProposalMode]);
   const [showOutcomeSetup, setShowOutcomeSetup] = useState(false);
   const [outcomeGoal, setOutcomeGoal] = useState('');
+  // W8: the active Pulse conversation's persisted goal (outcomes table), read
+  // back for display. Replaces a dead localStorage write that was never read.
+  const [activeConvGoal, setActiveConvGoal] = useState<{ id: string; title: string } | null>(null);
   const [creatingTaskForMsgId, setCreatingTaskForMsgId] = useState<string | null>(null);
 
   // --- NEW: Artifact Export State ---
@@ -1490,6 +1493,49 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       setStarredPulseMessages(stars);
     }
   }, []);
+
+  // W8: load the active Pulse conversation's persisted goal (outcomes table,
+  // keyed by thread_id = conversation id) so it can be displayed + read back.
+  useEffect(() => {
+    if (!activePulseConversation) { setActiveConvGoal(null); return; }
+    let cancelled = false;
+    dataService.getOutcomes(currentWorkspace?.id)
+      .then(outcomes => {
+        if (cancelled) return;
+        const match = outcomes.find(
+          o => o.thread_id === activePulseConversation && o.status !== 'cancelled' && o.status !== 'achieved',
+        );
+        setActiveConvGoal(match ? { id: match.id, title: match.title } : null);
+      })
+      .catch(() => { /* non-critical */ });
+    return () => { cancelled = true; };
+  }, [activePulseConversation, currentWorkspace?.id]);
+
+  // W8: persist a conversation goal to the real outcomes table (was a dead
+  // localStorage write that was never read back).
+  const handleSetConversationGoal = useCallback(async (goal: string) => {
+    const trimmed = goal.trim();
+    const convId = activePulseConv?.id;
+    if (!trimmed || !convId) { setShowOutcomeSetup(false); return; }
+    try {
+      const created = await dataService.createOutcome({
+        workspace_id: currentWorkspace?.id ?? '',
+        thread_id: convId,
+        title: trimmed,
+        status: 'active',
+        progress: 0,
+      });
+      if (created) {
+        setActiveConvGoal({ id: created.id, title: created.title });
+      } else {
+        setPulseEditToast('Could not save goal');
+      }
+    } catch (err) {
+      console.error('[Messages] save conversation goal failed:', err);
+      setPulseEditToast('Could not save goal');
+    }
+    setShowOutcomeSetup(false);
+  }, [activePulseConv?.id, currentWorkspace?.id]);
 
   // Toggle bookmark for a Pulse message — persists to message_bookmarks.
   // Optimistic update on the userBookmarks state mirror.
@@ -3593,6 +3639,15 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   {activePulseConv.other_user?.id && (
                     <OnlineIndicator userId={activePulseConv.other_user.id} showText={true} />
                   )}
+                  {activeConvGoal && (
+                    <span
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 normal-case tracking-normal max-w-[180px] truncate"
+                      title={`Goal: ${activeConvGoal.title}`}
+                    >
+                      <Target className="w-2.5 h-2.5 flex-shrink-0" />
+                      <span className="truncate">{activeConvGoal.title}</span>
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -4487,11 +4542,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       {['Close Deal', 'Schedule Meeting', 'Get Approval', 'Resolve Issue'].map(goal => (
                         <button
                           key={goal}
-                          onClick={() => {
-                            // Store goal in localStorage for now
-                            localStorage.setItem(`pulse-goal-${activePulseConv?.id}`, goal);
-                            setShowOutcomeSetup(false);
-                          }}
+                          onClick={() => { void handleSetConversationGoal(goal); }}
                           className="p-3 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-transparent hover:border-rose-500/40 hover:bg-rose-500/5 dark:hover:bg-rose-500/[0.06] text-sm text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-bright transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                         >
                           {goal}
@@ -4507,8 +4558,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 outline-none transition-colors"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
-                          localStorage.setItem(`pulse-goal-${activePulseConv?.id}`, (e.target as HTMLInputElement).value);
-                          setShowOutcomeSetup(false);
+                          void handleSetConversationGoal((e.target as HTMLInputElement).value);
                         }
                       }}
                     />
