@@ -354,6 +354,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
       {viewingDoc && (
         <DocumentViewer
           doc={viewingDoc}
+          userId={userId}
           onClose={() => {
             setViewingDoc(null);
             setViewerHighlightText(undefined);
