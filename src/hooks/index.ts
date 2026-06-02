@@ -40,9 +40,8 @@ export { useMotionPreset, PULSE_EASE, PULSE_DURATION } from './useMotionPreset';
 export type { MotionPreset } from './useMotionPreset';
 
 // Messaging (extracted from Messages.tsx)
-export { usePulseMessaging } from './usePulseMessaging';
-export type { UsePulseMessagingReturn } from './usePulseMessaging';
-// useMessageScheduling deleted — superseded by pulseService.scheduleMessage
+// usePulseMessaging + hooks/useMessageContextMenu deleted 2026-06-01 (W10 batch 1)
+// — both orphaned: usePulseMessaging had no caller; the live message menu uses
+// components/MessageContextMenu's own useMessageContextMenu, not this hooks one.
+// useMessageScheduling deleted earlier — superseded by pulseService.scheduleMessage
 // (writes to pulse_scheduled_messages; pg_cron handles delivery).
-export { useMessageContextMenu } from './useMessageContextMenu';
-export type { UseMessageContextMenuReturn, ContextMenuPosition } from './useMessageContextMenu';
