@@ -395,10 +395,10 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                         type="checkbox"
                         checked={editingFilter?.delete || false}
                         onChange={(e) => setEditingFilter({ ...editingFilter, delete: e.target.checked })}
-                        className="w-4 h-4 rounded accent-[#ef4444]"
-                        style={{ borderColor: '#ef4444' }}
+                        className="w-4 h-4 rounded accent-[var(--pulse-tone-overdue)]"
+                        style={{ borderColor: 'var(--pulse-tone-overdue)' }}
                       />
-                      <span className="text-sm" style={{ color: '#ef4444' }}>Delete it</span>
+                      <span className="text-sm" style={{ color: 'var(--pulse-tone-overdue)' }}>Delete it</span>
                     </label>
                   </div>
                 </div>
@@ -486,12 +486,12 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                               </span>
                             ))}
                             {filter.mark_as_read && (
-                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-positive-soft)', color: '#047857' }}>
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-positive-soft)', color: 'var(--pulse-tone-positive)' }}>
                                 mark read
                               </span>
                             )}
                             {filter.archive && (
-                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-warning-soft)', color: '#b45309' }}>
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-warning-soft)', color: 'var(--pulse-tone-warning)' }}>
                                 archive
                               </span>
                             )}
@@ -501,7 +501,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                               </span>
                             )}
                             {filter.delete && (
-                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-overdue-soft)', color: '#ef4444' }}>
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-overdue-soft)', color: 'var(--pulse-tone-overdue)' }}>
                                 delete
                               </span>
                             )}
@@ -546,7 +546,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                           </button>
                           <button
                             onClick={() => handleDeleteFilter(filter.id)}
-                            className="w-8 h-8 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color transition hover:text-[#ef4444]"
+                            className="w-8 h-8 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color transition hover:text-[color:var(--pulse-tone-overdue)]"
                             title="Delete filter"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

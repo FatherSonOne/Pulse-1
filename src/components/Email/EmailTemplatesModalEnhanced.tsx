@@ -388,7 +388,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                           </button>
                           <button
                             onClick={(e) => handleDelete(template, e)}
-                            className="w-6 h-6 rounded hover:pulse-surface flex items-center justify-center pulse-ink-3-color transition hover:text-[#ef4444]"
+                            className="w-6 h-6 rounded hover:pulse-surface flex items-center justify-center pulse-ink-3-color transition hover:text-[color:var(--pulse-tone-overdue)]"
                           >
                             <Trash2 className="text-xs" />
                           </button>

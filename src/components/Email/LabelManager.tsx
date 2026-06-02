@@ -355,7 +355,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                               e.stopPropagation();
                               handleDeleteLabel(label.id);
                             }}
-                            className="w-7 h-7 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color transition hover:text-[#ef4444]"
+                            className="w-7 h-7 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color transition hover:text-[color:var(--pulse-tone-overdue)]"
                             aria-label={`Delete ${label.name} label`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
