@@ -13,6 +13,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useVoiceToText, VoiceToTextProvider } from '../../hooks/useVoiceToText';
+import { useStoredAudioInputDeviceId } from '../../hooks/useAudioInputDevice';
 
 import { Quote } from 'lucide-react';
 
@@ -35,6 +36,12 @@ export interface VoiceTextButtonProps {
   provider?: 'web-speech' | 'openai' | 'auto';
   /** OpenAI API key (optional, falls back to localStorage) */
   openaiApiKey?: string;
+  /**
+   * Preferred microphone deviceId. Defaults to the user's Message Settings →
+   * Audio selection (persisted in localStorage). Only honored on the OpenAI
+   * capture path; Web Speech always uses the OS-default mic.
+   */
+  inputDeviceId?: string;
   /** Language for speech recognition */
   language?: string;
   /** Show provider indicator in tooltip */
@@ -55,6 +62,7 @@ export const VoiceTextButton: React.FC<VoiceTextButtonProps> = ({
   className = '',
   provider = 'auto',
   openaiApiKey,
+  inputDeviceId,
   language = 'en-US',
   showProvider = true,
   enableKeyboardShortcut = false,
@@ -64,6 +72,10 @@ export const VoiceTextButton: React.FC<VoiceTextButtonProps> = ({
 
   // Get API key from props or localStorage
   const apiKey = openaiApiKey || localStorage.getItem('openai_api_key') || '';
+
+  // Fall back to the user's persisted Message Settings → Audio mic selection.
+  const storedDeviceId = useStoredAudioInputDeviceId();
+  const effectiveDeviceId = inputDeviceId ?? storedDeviceId;
 
   const {
     isListening,
@@ -76,6 +88,7 @@ export const VoiceTextButton: React.FC<VoiceTextButtonProps> = ({
   } = useVoiceToText({
     provider: provider === 'auto' ? undefined : provider,
     openaiApiKey: apiKey,
+    inputDeviceId: effectiveDeviceId,
     language,
     onFinalResult: onTranscript,
     onInterimResult: (text) => {

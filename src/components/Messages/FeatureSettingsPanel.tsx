@@ -23,6 +23,7 @@ import {
   FEATURE_NAMES,
   type FeatureFlags,
 } from '../../contexts/FeatureContext';
+import { useAudioInputDevice } from '../../hooks/useAudioInputDevice';
 
 interface FeatureSettingsPanelProps {
   isOpen: boolean;
@@ -230,6 +231,15 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
     }
     return count;
   }, [matchesSearch, searchQuery]);
+
+  // The Audio section is matched by its own keywords so search hides it when
+  // irrelevant but still surfaces it for "mic"/"audio"/"device" queries.
+  const audioMatchesSearch = useMemo(() => {
+    if (!searchQuery) return true;
+    return 'audio microphone mic input device speaker sound voice'.includes(
+      searchQuery.toLowerCase(),
+    );
+  }, [searchQuery]);
 
   // Close on Escape
   useEffect(() => {
@@ -489,7 +499,9 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
               className="feature-settings-scroll"
               style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}
             >
-              {totalMatches === 0 && (
+              {audioMatchesSearch && <AudioSection theme={t} />}
+
+              {totalMatches === 0 && !audioMatchesSearch && (
                 <div
                   role="status"
                   style={{
@@ -501,7 +513,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                 >
                   {tr('messages.featureSettings.noResults', {
                     query: searchQuery,
-                    defaultValue: 'No features match “{{query}}”.',
+                    defaultValue: 'No settings match “{{query}}”.',
                   })}
                 </div>
               )}
@@ -630,6 +642,172 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
         </>
       )}
     </AnimatePresence>
+  );
+};
+
+/* ── Audio section (input device picker) ── */
+
+interface AudioThemeShape {
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  surface: string;
+  surfaceBorder: string;
+  inputBg: string;
+  inputBorder: string;
+  inputText: string;
+  featureBg: string;
+  featureBorder: string;
+}
+
+const AudioSection: React.FC<{ theme: AudioThemeShape }> = ({ theme: t }) => {
+  const { t: tr } = useTranslation();
+  const {
+    supported,
+    devices,
+    selectedDeviceId,
+    selectDevice,
+    permissionState,
+    requestPermission,
+  } = useAudioInputDevice(true);
+
+  // Before a permission grant the browser hides device labels, so we only
+  // have generic "Microphone N" fallbacks — prompt the user to grant access.
+  const labelsHidden =
+    permissionState !== 'granted' &&
+    devices.length > 0 &&
+    devices.every((d) => /^Microphone \d+$/.test(d.label));
+
+  return (
+    <div style={{ marginBottom: '20px' }}>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+          fontSize: '11px',
+          fontWeight: 500,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          color: t.textMuted,
+          marginBottom: '10px',
+        }}
+      >
+        {tr('messages.messageSettings.audioHeading', 'Audio')}
+      </div>
+
+      <div
+        style={{
+          padding: '14px',
+          background: t.surface,
+          border: `1px solid ${t.surfaceBorder}`,
+          borderRadius: '12px',
+        }}
+      >
+        <label
+          htmlFor="msg-audio-input"
+          style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: 600,
+            color: t.textPrimary,
+            marginBottom: '2px',
+          }}
+        >
+          {tr('messages.messageSettings.microphone', 'Microphone')}
+        </label>
+        <div style={{ fontSize: '12px', color: t.textMuted, marginBottom: '10px' }}>
+          {tr(
+            'messages.messageSettings.microphoneDesc',
+            'Choose which input device records your voice messages.',
+          )}
+        </div>
+
+        {supported ? (
+          <select
+            id="msg-audio-input"
+            value={selectedDeviceId}
+            onChange={(e) => selectDevice(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: `1px solid ${t.inputBorder}`,
+              borderRadius: '10px',
+              fontSize: '14px',
+              background: t.inputBg,
+              color: t.inputText,
+              outline: 'none',
+              cursor: 'pointer',
+              boxSizing: 'border-box',
+            }}
+          >
+            <option value="">
+              {tr('messages.messageSettings.systemDefault', 'System default')}
+            </option>
+            {devices.map((d) => (
+              <option key={d.deviceId} value={d.deviceId}>
+                {d.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div style={{ fontSize: '13px', color: t.textMuted }}>
+            {tr(
+              'messages.messageSettings.deviceUnsupported',
+              "This browser doesn't support microphone selection.",
+            )}
+          </div>
+        )}
+
+        {supported && labelsHidden && (
+          <button
+            type="button"
+            onClick={() => void requestPermission()}
+            style={{
+              marginTop: '10px',
+              width: '100%',
+              padding: '9px',
+              background: t.featureBg,
+              border: `1px solid ${t.featureBorder}`,
+              borderRadius: '10px',
+              color: t.textSecondary,
+              fontSize: '13px',
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            {tr(
+              'messages.messageSettings.grantMic',
+              'Allow microphone access to see device names',
+            )}
+          </button>
+        )}
+
+        {permissionState === 'denied' && (
+          <div style={{ marginTop: '8px', fontSize: '12px', color: '#f59e0b' }}>
+            {tr(
+              'messages.messageSettings.micDenied',
+              'Microphone access was blocked. Enable it in your browser settings to pick a device.',
+            )}
+          </div>
+        )}
+
+        {/* Hard limitation, surfaced per handoff §4.1 */}
+        <div
+          style={{
+            marginTop: '12px',
+            paddingTop: '12px',
+            borderTop: `1px solid ${t.surfaceBorder}`,
+            fontSize: '11px',
+            lineHeight: 1.5,
+            color: t.textMuted,
+          }}
+        >
+          {tr(
+            'messages.messageSettings.webSpeechNote',
+            'Device selection applies to AI (OpenAI) transcription. Browser-native voice input always uses your system default microphone.',
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

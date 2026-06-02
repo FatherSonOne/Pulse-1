@@ -27,6 +27,12 @@ export interface UseVoiceToTextOptions {
   provider?: VoiceToTextProvider;
   /** OpenAI API key (required for 'openai' provider) */
   openaiApiKey?: string;
+  /**
+   * Preferred microphone deviceId. Only honored by the OpenAI/getUserMedia
+   * capture path — the Web Speech API always uses the OS-default mic and
+   * ignores this. '' / undefined = OS default.
+   */
+  inputDeviceId?: string;
   /** Called with partial transcript while speaking */
   onInterimResult?: (text: string) => void;
   /** Called with final transcript when speech ends */
@@ -129,6 +135,7 @@ export function useVoiceToText(options: UseVoiceToTextOptions = {}): UseVoiceToT
     continuous = false,
     provider: preferredProvider,
     openaiApiKey,
+    inputDeviceId,
     onInterimResult,
     onFinalResult,
     onError,
@@ -279,14 +286,21 @@ export function useVoiceToText(options: UseVoiceToTextOptions = {}): UseVoiceToT
     try {
       console.log('🎤 Starting Whisper API recording...');
       
-      // Request microphone access with optimal settings for Whisper
+      // Request microphone access with optimal settings for Whisper.
+      // Honor a user-selected input device (Message Settings → Audio); falls
+      // back to the OS default when unset. Web Speech cannot do this — only
+      // this getUserMedia path can target a specific deviceId.
+      const audioConstraints: MediaTrackConstraints = {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleRate: 16000, // Whisper prefers 16kHz
+      };
+      if (inputDeviceId) {
+        audioConstraints.deviceId = { exact: inputDeviceId };
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 16000, // Whisper prefers 16kHz
-        },
+        audio: audioConstraints,
       });
 
       streamRef.current = stream;
@@ -370,7 +384,7 @@ export function useVoiceToText(options: UseVoiceToTextOptions = {}): UseVoiceToT
       setError(errorMsg);
       onError?.(errorMsg);
     }
-  }, [openaiApiKey, language, onFinalResult, onError]);
+  }, [openaiApiKey, inputDeviceId, language, onFinalResult, onError]);
 
   // Keep ref in sync for web-speech fallback
   startOpenAIRef.current = startOpenAI;
