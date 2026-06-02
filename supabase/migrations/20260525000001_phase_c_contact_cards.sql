@@ -54,7 +54,7 @@ SET LOCAL statement_timeout = '30s';
 
 CREATE TABLE IF NOT EXISTS public.contact_cards (
   id                      uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  sender_user_id          text        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  sender_user_id          text        NOT NULL,
   recipient_hint          text                 CHECK (recipient_hint IS NULL OR length(recipient_hint) BETWEEN 1 AND 320),
   recipient_user_id       uuid                 REFERENCES auth.users(id) ON DELETE SET NULL,
   card_snapshot           jsonb       NOT NULL,
@@ -81,8 +81,10 @@ COMMENT ON TABLE public.contact_cards IS
 
 COMMENT ON COLUMN public.contact_cards.sender_user_id IS
   'auth.users.id stored as TEXT to match contacts.user_id convention. '
-  'RLS cast: auth.uid()::text. ON DELETE CASCADE — purged user takes '
-  'their outbound cards with them.';
+  'RLS cast: auth.uid()::text. No FK — a TEXT column cannot reference '
+  'auth.users.uuid; like card_send_blocks.sender_user_id, cleanup of a '
+  'purged user''s outbound cards is handled by delete_user_account, not '
+  'an FK cascade.';
 
 COMMENT ON COLUMN public.contact_cards.recipient_user_id IS
   'Eager-resolved Pulse user (open Q#1: eager). Set at create time if '
