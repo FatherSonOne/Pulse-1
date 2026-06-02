@@ -26,7 +26,7 @@ export interface SourcesUsedPanelProps {
 }
 
 /** Resolve a citation to a known document by title (case-insensitive). */
-function matchDoc(citation: AICitation, documents: KnowledgeDoc[]): KnowledgeDoc | undefined {
+export function matchDoc(citation: AICitation, documents: KnowledgeDoc[]): KnowledgeDoc | undefined {
   const t = (citation.title || '').trim().toLowerCase();
   if (!t) return undefined;
   return (

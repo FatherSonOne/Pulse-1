@@ -3,7 +3,7 @@ import { useWarRoomStore } from '../store/warRoomStore';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { settingsService } from '../services/settingsService';
 import { Capacitor } from '@capacitor/core';
-import { ragService, AISession, KnowledgeDoc, AIMessage, AIProject, PromptSuggestion, ThinkingStep } from '../services/ragService';
+import { ragService, AISession, KnowledgeDoc, AIMessage, AIProject, PromptSuggestion, ThinkingStep, AICitation } from '../services/ragService';
 import { processWithModel, generateSpeech } from '../services/geminiService';
 import toast from 'react-hot-toast';
 import './WarRoomStyles.css';
@@ -550,6 +550,10 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
       // Step 2: Search for relevant documents
       let context = '';
       const citations: string[] = [];
+      // Rich citation records for the message (Sources-Used panel + inline
+      // chips). Parallel to `citations` (titles), which the prompt text still
+      // uses. WI-5, repair plan 2026-06-02.
+      const citationSources: AICitation[] = [];
 
       // Determine which documents to search (active context or all)
       const docsToSearch = activeContextDocs.size > 0
@@ -597,6 +601,12 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
           // Build comprehensive context
           const contextParts = filteredDocs.map((d: any, i: number) => {
             citations.push(d.doc_title);
+            citationSources.push({
+              title: d.doc_title,
+              source: d.doc_url || undefined,
+              excerpt: d.content,
+              similarity: d.similarity,
+            });
             return `### SOURCE ${i + 1}: ${d.doc_title} (Similarity: ${(d.similarity * 100).toFixed(1)}%)\n\n${d.content}\n\n`;
           }).join('---\n\n');
 
@@ -732,7 +742,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
         null,
         'assistant',
         response || 'I encountered an issue processing your request.',
-        citations.map(c => ({ title: c }))
+        citationSources
       );
 
       if (aiMsg) {

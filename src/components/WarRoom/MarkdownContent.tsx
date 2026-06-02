@@ -20,6 +20,8 @@ import React from 'react';
 interface MarkdownContentProps {
   content: string;
   className?: string;
+  /** Render an inline [n] citation marker. Defaults to a static styled span. */
+  renderCitation?: (n: number) => React.ReactNode;
 }
 
 /** Escape HTML entities to prevent injection */
@@ -28,7 +30,7 @@ function esc(s: string): string {
 }
 
 /** Convert inline markdown (on already-escaped text) to styled spans */
-function renderInline(text: string): React.ReactNode[] {
+function renderInline(text: string, renderCitation?: (n: number) => React.ReactNode): React.ReactNode[] {
   const escaped = esc(text);
   // Split by patterns and build React nodes instead of raw HTML
   const parts: React.ReactNode[] = [];
@@ -41,7 +43,9 @@ function renderInline(text: string): React.ReactNode[] {
     [/\*\*\*(.+?)\*\*\*/, (m) => <strong key={key++}><em>{m[1]}</em></strong>],
     [/\*\*(.+?)\*\*/, (m) => <strong key={key++}>{m[1]}</strong>],
     [/\*(.+?)\*/, (m) => <em key={key++}>{m[1]}</em>],
-    [/\[(\d+)\]/, (m) => <span key={key++} className="ps-md-cite">[{m[1]}]</span>],
+    [/\[(\d+)\]/, (m) => renderCitation
+      ? <React.Fragment key={key++}>{renderCitation(parseInt(m[1], 10))}</React.Fragment>
+      : <span key={key++} className="ps-md-cite">[{m[1]}]</span>],
   ];
 
   function processText(input: string): React.ReactNode[] {
@@ -78,7 +82,7 @@ function renderInline(text: string): React.ReactNode[] {
   return processText(remaining);
 }
 
-export const MarkdownContent: React.FC<MarkdownContentProps> = ({ content, className }) => {
+export const MarkdownContent: React.FC<MarkdownContentProps> = ({ content, className, renderCitation }) => {
   if (!content) return null;
 
   const lines = content.split('\n');
@@ -108,13 +112,13 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({ content, class
 
     // Headings
     const h4 = line.match(/^####\s+(.+)/);
-    if (h4) { elements.push(<h4 key={elKey++} className="ps-md-h4">{renderInline(h4[1])}</h4>); i++; continue; }
+    if (h4) { elements.push(<h4 key={elKey++} className="ps-md-h4">{renderInline(h4[1], renderCitation)}</h4>); i++; continue; }
 
     const h3 = line.match(/^###\s+(.+)/);
-    if (h3) { elements.push(<h3 key={elKey++} className="ps-md-h3">{renderInline(h3[1])}</h3>); i++; continue; }
+    if (h3) { elements.push(<h3 key={elKey++} className="ps-md-h3">{renderInline(h3[1], renderCitation)}</h3>); i++; continue; }
 
     const h2 = line.match(/^##\s+(.+)/);
-    if (h2) { elements.push(<h2 key={elKey++} className="ps-md-h2">{renderInline(h2[1])}</h2>); i++; continue; }
+    if (h2) { elements.push(<h2 key={elKey++} className="ps-md-h2">{renderInline(h2[1], renderCitation)}</h2>); i++; continue; }
 
     // Horizontal rule
     if (/^---+$/.test(line.trim()) || /^\*\*\*+$/.test(line.trim())) {
@@ -132,7 +136,7 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({ content, class
       }
       elements.push(
         <ul key={elKey++} className="ps-md-ul">
-          {items.map((item, j) => <li key={j}>{renderInline(item)}</li>)}
+          {items.map((item, j) => <li key={j}>{renderInline(item, renderCitation)}</li>)}
         </ul>
       );
       continue;
@@ -147,7 +151,7 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({ content, class
       }
       elements.push(
         <ol key={elKey++} className="ps-md-ol">
-          {items.map((item, j) => <li key={j}>{renderInline(item)}</li>)}
+          {items.map((item, j) => <li key={j}>{renderInline(item, renderCitation)}</li>)}
         </ol>
       );
       continue;
@@ -172,7 +176,7 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({ content, class
     }
     if (paraLines.length > 0) {
       elements.push(
-        <p key={elKey++} className="ps-md-p">{renderInline(paraLines.join(' '))}</p>
+        <p key={elKey++} className="ps-md-p">{renderInline(paraLines.join(' '), renderCitation)}</p>
       );
     }
   }

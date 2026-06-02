@@ -17,7 +17,8 @@ import { parseMessageContent, hasLikelyArtifacts, MessageSegment } from '../arti
 import { InlineArtifact } from '../ArtifactRenderers';
 import { MarkdownContent } from '../MarkdownContent';
 import { ProvenanceTag } from '../ProvenanceTag';
-import { SourcesUsedPanel } from './SourcesUsedPanel';
+import { SourcesUsedPanel, matchDoc } from './SourcesUsedPanel';
+import { CitationChip } from './CitationChip';
 import { ReasoningTrace } from './ReasoningTrace';
 import type { NoteType } from '../useBoardNotes';
 
@@ -79,6 +80,17 @@ export const MessageList: React.FC<MessageListProps> = ({
     const segments = parsedMessages.get(msg.id);
     const hasArtifacts = segments && segments.some((s) => s.kind === 'artifact');
 
+    // Inline [n] markers → interactive CitationChip that opens the cited doc
+    // with its passage highlighted. Non-interactive when the marker has no
+    // matching citation/document. WI-5, repair plan 2026-06-02.
+    const renderCitation = (n: number): React.ReactNode => {
+      const citation = msg.citations?.[n - 1];
+      if (!citation) return <CitationChip n={n} />;
+      const doc = matchDoc(citation, documents);
+      const onClick = doc && onOpenCitation ? () => onOpenCitation(doc, citation.excerpt) : undefined;
+      return <CitationChip n={n} onClick={onClick} title={doc ? 'Open source' : undefined} />;
+    };
+
     return (
       <div key={msg.id || idx} className={`ps-message ps-message--${msg.role}`}>
         <div className="ps-message-avatar">
@@ -108,7 +120,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             {hasArtifacts ? (
               segments!.map((seg, si) =>
                 seg.kind === 'text' ? (
-                  <MarkdownContent key={si} content={seg.content} />
+                  <MarkdownContent key={si} content={seg.content} renderCitation={renderCitation} />
                 ) : (
                   <InlineArtifact key={si} artifact={seg.artifact} model={agentName} onPin={onPinArtifact} />
                 ),
@@ -116,7 +128,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             ) : isUser ? (
               <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
             ) : (
-              <MarkdownContent content={msg.content} />
+              <MarkdownContent content={msg.content} renderCitation={renderCitation} />
             )}
 
             {/* Citations — grounded chip + sources-used panel (P0) */}
