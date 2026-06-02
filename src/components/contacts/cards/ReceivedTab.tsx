@@ -4,10 +4,14 @@ import toast from 'react-hot-toast';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import type { ContactCard, BulkAcceptResult } from '../../../types/contactCard';
 import contactCardService from '../../../services/contactCardService';
+import type { Contact } from '../../../types';
+import { dataService } from '../../../services/dataService';
+import { supabase } from '../../../services/supabase';
 import { ReceivedCardListItem } from './ReceivedCardListItem';
 import { ReceivedCardDetail } from './ReceivedCardDetail';
 import { AcceptCardConfirmation } from './AcceptCardConfirmation';
 import { ForwardCardModal } from './ForwardCardModal';
+import { ReviewDuplicatesScreen, type DuplicatePair } from './ReviewDuplicatesScreen';
 
 export interface ReceivedTabProps {
   /**
@@ -67,6 +71,11 @@ export const ReceivedTab: React.FC<ReceivedTabProps> = ({
   const [focusedCard, setFocusedCard] = useState<ContactCard | null>(null);
   const [acceptConfirm, setAcceptConfirm] = useState<ContactCard | null>(null);
   const [forwardSource, setForwardSource] = useState<ContactCard | null>(null);
+  // Post-accept duplicate review (WI-10d pt.2).
+  const [reviewData, setReviewData] = useState<
+    Array<{ card: ContactCard; existing: Contact; newContactId?: string }>
+  >([]);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const resolveSenderName = useCallback(
     (senderUserId: string): string => {
@@ -136,6 +145,7 @@ export const ReceivedTab: React.FC<ReceivedTabProps> = ({
       // backend's edge function handles bulk shape internally — see
       // service contract). Aggregate the results for the summary.
       const ids = Array.from(selected);
+      const acceptedCards = cards.filter(c => ids.includes(c.id));
       const results = await Promise.all(
         ids.map(id => contactCardService.acceptCard(id, { connectWithSender: true })),
       );
@@ -152,6 +162,36 @@ export const ReceivedTab: React.FC<ReceivedTabProps> = ({
       setSelected(new Set());
       // Remove accepted rows from the list (they no longer belong in Received).
       setCards(prev => prev.filter(c => !ids.includes(c.id)));
+
+      // Build the duplicate-review set from "linked" outcomes (card matched an
+      // existing contact via possible_duplicate_of). Resolve the existing
+      // contacts so ReviewDuplicatesScreen can show the field-by-field diff.
+      const linked = aggregated.per_card.filter(
+        p => p.outcome === 'linked' && p.possible_duplicate_of,
+      );
+      if (linked.length > 0) {
+        try {
+          const allContacts = await dataService.getContacts();
+          const byId = new Map(allContacts.map(c => [c.id, c]));
+          const cardById = new Map(acceptedCards.map(c => [c.id, c]));
+          const pairs: Array<{ card: ContactCard; existing: Contact; newContactId?: string }> = [];
+          for (const p of linked) {
+            const card = cardById.get(p.card_id);
+            const existing = p.possible_duplicate_of
+              ? byId.get(p.possible_duplicate_of)
+              : undefined;
+            if (card && existing) {
+              pairs.push({ card, existing, newContactId: p.new_contact_id });
+            }
+          }
+          setReviewData(pairs);
+        } catch (err) {
+          console.warn('[ReceivedTab] could not resolve duplicates for review:', err);
+          setReviewData([]);
+        }
+      } else {
+        setReviewData([]);
+      }
     } catch (err) {
       console.warn('[ReceivedTab] bulk accept failed:', err);
       toast.error(t('contacts.cards.acceptModal.error_generic'));
@@ -218,6 +258,48 @@ export const ReceivedTab: React.FC<ReceivedTabProps> = ({
     }
     return t('contacts.cards.receivedTab.header_summary_simple_format', { newCount });
   }, [cards.length, expiringSoonCount, t]);
+
+  // Post-accept duplicate review — replaces the list while open.
+  if (reviewOpen) {
+    return (
+      <ReviewDuplicatesScreen
+        pairs={reviewData.map((d): DuplicatePair => ({ card: d.card, existing: d.existing }))}
+        onMerge={async pair => {
+          // Merge = keep the pre-existing contact, discard the card-created
+          // duplicate (matches DuplicateDetectionModal's "merged into it").
+          const entry = reviewData.find(d => d.card.id === pair.card.id);
+          if (entry?.newContactId) {
+            try {
+              await dataService.deleteContact(entry.newContactId);
+            } catch (err) {
+              console.warn('[ReceivedTab] merge (delete duplicate) failed:', err);
+              toast.error(t('contacts.cards.acceptModal.error_generic'));
+              return;
+            }
+          }
+          setReviewData(prev => prev.filter(d => d.card.id !== pair.card.id));
+        }}
+        onKeepBoth={async pair => {
+          // Keep both = different people; clear the soft possible_duplicate_of
+          // flag on the new contact so it stops being surfaced as a dup.
+          const entry = reviewData.find(d => d.card.id === pair.card.id);
+          if (entry?.newContactId) {
+            try {
+              await supabase
+                .from('contacts')
+                .update({ possible_duplicate_of: null })
+                .eq('id', entry.newContactId);
+            } catch (err) {
+              console.warn('[ReceivedTab] keep-both (clear flag) failed:', err);
+            }
+          }
+          setReviewData(prev => prev.filter(d => d.card.id !== pair.card.id));
+        }}
+        onBack={() => setReviewOpen(false)}
+        onDone={() => setReviewOpen(false)}
+      />
+    );
+  }
 
   // Single-card detail view — replaces the list while a card is focused.
   if (focusedCard) {
@@ -332,16 +414,7 @@ export const ReceivedTab: React.FC<ReceivedTabProps> = ({
           {acceptSummary.linked > 0 && (
             <button
               type="button"
-              onClick={() => {
-                // TODO(phase-6-review): wire to ReviewDuplicatesScreen route
-                // when the orchestrator picks the routing approach. For now
-                // this CTA is a no-op signal.
-                toast(
-                  t('contacts.cards.reviewDuplicates.title_format', {
-                    count: acceptSummary.linked,
-                  }),
-                );
-              }}
+              onClick={() => setReviewOpen(true)}
               className="text-sm font-semibold underline"
               style={{ color: 'var(--pulse-rose)', minHeight: 44 }}
             >
