@@ -167,6 +167,38 @@ export const ReceivedTab: React.FC<ReceivedTabProps> = ({
     }
   };
 
+  const handleSnoozeSelected = async () => {
+    if (selected.size === 0 || accepting) return;
+    const ids = Array.from(selected);
+    try {
+      await Promise.all(ids.map(id => contactCardService.snoozeCard(id)));
+      setCards(prev => prev.filter(c => !ids.includes(c.id)));
+      setSelected(new Set());
+      toast(t('contacts.cards.receivedDetail.maybe_toast'));
+    } catch (err) {
+      console.warn('[ReceivedTab] snooze failed:', err);
+      toast.error(t('contacts.cards.acceptModal.error_generic'));
+    }
+  };
+
+  const handleBlockSelected = async () => {
+    if (selected.size === 0 || accepting) return;
+    const ids = Array.from(selected);
+    const senderIds = Array.from(
+      new Set(cards.filter(c => ids.includes(c.id)).map(c => c.sender_user_id)),
+    );
+    try {
+      await Promise.all(senderIds.map(s => contactCardService.blockSender(s)));
+      // Hide every card from the blocked sender(s), not just the selected ones.
+      setCards(prev => prev.filter(c => !senderIds.includes(c.sender_user_id)));
+      setSelected(new Set());
+      toast(t('contacts.cards.receivedTab.block_sender_action'));
+    } catch (err) {
+      console.warn('[ReceivedTab] block sender failed:', err);
+      toast.error(t('contacts.cards.acceptModal.error_generic'));
+    }
+  };
+
   // Render header summary line
   const headerSummary = useMemo(() => {
     const newCount = cards.length;
@@ -332,10 +364,7 @@ export const ReceivedTab: React.FC<ReceivedTabProps> = ({
                       role="menuitem"
                       onClick={() => {
                         setMoreOpen(false);
-                        // TODO(phase-6-review): wire snooze when the snooze
-                        // service is defined. Vision spec mentions the 7-day
-                        // snooze but no service method exists yet.
-                        toast(t('contacts.cards.receivedDetail.maybe_toast'));
+                        void handleSnoozeSelected();
                       }}
                       className="w-full px-3 text-left text-sm"
                       style={{ minHeight: 44, color: 'var(--pulse-ink)' }}
@@ -347,9 +376,7 @@ export const ReceivedTab: React.FC<ReceivedTabProps> = ({
                       role="menuitem"
                       onClick={() => {
                         setMoreOpen(false);
-                        // TODO(phase-6-review): wire to card_send_blocks
-                        // insert via service when block-sender method exists.
-                        toast(t('contacts.cards.receivedTab.block_sender_action'));
+                        void handleBlockSelected();
                       }}
                       className="w-full px-3 text-left text-sm"
                       style={{ minHeight: 44, color: 'var(--pulse-tone-overdue)' }}

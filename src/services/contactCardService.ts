@@ -177,7 +177,18 @@ export async function fetchReceived(): Promise<ContactCard[]> {
     .limit(50);
 
   if (error) throw error;
-  return (data ?? []) as ContactCard[];
+  const cards = (data ?? []) as ContactCard[];
+
+  // Hide cards the recipient has declined or snoozed. Revoked/expired are
+  // already filtered by RLS (contact_cards_recipient_select); declined/snoozed
+  // live in card_recipient_state, so we NOT-EXISTS them out here.
+  const { data: stateRows, error: stateError } = await supabase
+    .from('card_recipient_state')
+    .select('card_id')
+    .eq('recipient_user_id', user.id);
+  if (stateError) throw stateError;
+  const hidden = new Set((stateRows ?? []).map(r => (r as { card_id: string }).card_id));
+  return cards.filter(c => !hidden.has(c.id));
 }
 
 /**
@@ -246,6 +257,54 @@ export async function declineCard(cardId: string): Promise<{ ok: true }> {
   return invokeEdgeFunction<{ ok: true }>('decline-contact-card', {
     card_id: cardId,
   });
+}
+
+/**
+ * Snooze a card — recipient-side "Maybe later". Writes state='snoozed' to
+ * card_recipient_state so fetchReceived hides it. RLS gates the insert by
+ * recipient_user_id = auth.uid(); ON CONFLICT DO NOTHING keeps it idempotent
+ * (the table has no UPDATE policy by design — state changes are DELETE+INSERT).
+ */
+export async function snoozeCard(cardId: string): Promise<{ ok: true }> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase
+    .from('card_recipient_state')
+    .upsert(
+      { card_id: cardId, recipient_user_id: user.id, state: 'snoozed' },
+      { onConflict: 'card_id,recipient_user_id', ignoreDuplicates: true },
+    );
+  if (error) throw error;
+  return { ok: true };
+}
+
+/**
+ * Block a sender — recipient-driven. Inserts into card_send_blocks so the
+ * create/bundle edge functions reject future sends from this sender. RLS gates
+ * the insert by blocked_by_user_id = auth.uid(); idempotent (ON CONFLICT DO
+ * NOTHING — blocks are immutable, re-block is a no-op).
+ */
+export async function blockSender(senderUserId: string): Promise<{ ok: true }> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase
+    .from('card_send_blocks')
+    .upsert(
+      { blocked_by_user_id: user.id, sender_user_id: senderUserId },
+      { onConflict: 'blocked_by_user_id,sender_user_id', ignoreDuplicates: true },
+    );
+  if (error) throw error;
+  return { ok: true };
 }
 
 /**
@@ -339,6 +398,8 @@ const contactCardService = {
   fetchSent,
   acceptCard,
   declineCard,
+  snoozeCard,
+  blockSender,
   revokeCard,
   forwardCard,
   resolveCardDeeplink,
