@@ -14,7 +14,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { KnowledgeDoc } from '../../../services/ragService';
 import { ProjectSwitcher, ProjectNav } from './ProjectSwitcher';
-import { Check, Eye, FolderOpen, Loader2, Search, Trash2, Upload } from 'lucide-react';
+import { Check, Eye, FolderOpen, Loader2, Search, Share2, Trash2, Upload } from 'lucide-react';
 
 export interface SourcesPaneProps {
   documents: KnowledgeDoc[];
@@ -24,6 +24,8 @@ export interface SourcesPaneProps {
   onToggleDoc: (id: string) => void;
   onDeleteDoc: (id: string) => void;
   onViewDoc: (id: string) => void;
+  /** Open the share dialog for a document. Notebook path only. */
+  onShareDoc?: (id: string) => void;
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAddAllDocs: () => void;
   onClearAllDocs: () => void;
@@ -51,6 +53,7 @@ export const SourcesPane: React.FC<SourcesPaneProps> = ({
   onToggleDoc,
   onDeleteDoc,
   onViewDoc,
+  onShareDoc,
   onUpload,
   onAddAllDocs,
   onClearAllDocs,
@@ -355,6 +358,15 @@ export const SourcesPane: React.FC<SourcesPaneProps> = ({
                       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 3, color: 'var(--pulse-ink-3)' }}
                     >
                       <Eye size={13} />
+                    </button>
+                  )}
+                  {isReady && onShareDoc && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onShareDoc(d.id); }}
+                      title="Share source"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 3, color: 'var(--pulse-ink-3)' }}
+                    >
+                      <Share2 size={13} />
                     </button>
                   )}
                   <button

@@ -1613,7 +1613,18 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
 
         <StudioShell
           className="flex-1 min-h-0"
-          {...(useNotebookShell ? ({ nav: notebookNav } as any) : {})}
+          {...(useNotebookShell
+            ? ({
+                nav: notebookNav,
+                onShareDoc: (id: string) => {
+                  const doc = documents.find((d) => d.id === id);
+                  if (doc) {
+                    setSharingDoc(doc);
+                    setShowShareModal(true);
+                  }
+                },
+              } as any)
+            : {})}
           apiKey={apiKey}
           onVoiceSend={(text) => sendMessageDirect(text)}
           sourceOpen={contextPanelOpen}

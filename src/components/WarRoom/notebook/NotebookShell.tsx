@@ -25,6 +25,8 @@ import { FolderOpen, Sparkles } from 'lucide-react';
 export interface NotebookShellProps extends StudioLayoutProps {
   /** Project/session nav, folded into the Sources pane (Notebook path only). */
   nav?: ProjectNav;
+  /** Open the share dialog for a document (Notebook path only). */
+  onShareDoc?: (id: string) => void;
 }
 
 export const NotebookShell: React.FC<NotebookShellProps> = ({
@@ -50,6 +52,7 @@ export const NotebookShell: React.FC<NotebookShellProps> = ({
   onArtifactsChange,
   onKnowledgeBank,
   nav,
+  onShareDoc,
 }) => {
   const setShowStudyGuide = useWarRoomStore((s) => s.setShowStudyGuide);
   const setShowFAQ = useWarRoomStore((s) => s.setShowFAQ);
@@ -148,6 +151,7 @@ export const NotebookShell: React.FC<NotebookShellProps> = ({
               onToggleDoc={onToggleDoc!}
               onDeleteDoc={onDeleteDoc ?? (() => {})}
               onViewDoc={onViewDoc ?? (() => {})}
+              onShareDoc={onShareDoc}
               onUpload={onUploadDocs ?? (() => {})}
               onAddAllDocs={onAddAllDocs ?? (() => {})}
               onClearAllDocs={onClearAllDocs ?? (() => {})}
