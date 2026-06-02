@@ -2514,6 +2514,75 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       setCreatingTaskForMsgId(null);
   };
 
+  // W8: wire the rich-card "add-to-calendar" action to a real calendar event
+  // (was an empty TODO). Parses the matched natural-language time phrase
+  // (card.description, e.g. "tomorrow at 3pm") deterministically over the same
+  // vocabulary detectRichContent matches; falls back to tomorrow 9am. Persists
+  // via dataService.createEvent (calendar_events).
+  const handleAddToCalendar = useCallback(async (
+    card: { title?: string; description?: string },
+    msg: Message,
+  ) => {
+    const phrase = (card.description || '').toLowerCase();
+    const now = new Date();
+    const start = new Date(now);
+    start.setSeconds(0, 0);
+
+    const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const wdIdx = weekdays.findIndex(d => phrase.includes(d));
+    if (phrase.includes('tomorrow')) {
+      start.setDate(now.getDate() + 1);
+    } else if (phrase.includes('next week')) {
+      start.setDate(now.getDate() + 7);
+    } else if (wdIdx >= 0) {
+      const delta = ((wdIdx - now.getDay() + 7) % 7) || 7; // next occurrence of that weekday
+      start.setDate(now.getDate() + delta);
+    } else if (!phrase.includes('today')) {
+      start.setDate(now.getDate() + 1); // default: tomorrow
+    }
+
+    let hour = 9;
+    let minute = 0;
+    const hm = phrase.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/);
+    const ap = phrase.match(/(\d{1,2})\s*(am|pm)/);
+    if (hm) {
+      hour = parseInt(hm[1], 10);
+      minute = parseInt(hm[2], 10);
+      if (hm[3] === 'pm' && hour < 12) hour += 12;
+      if (hm[3] === 'am' && hour === 12) hour = 0;
+    } else if (ap) {
+      hour = parseInt(ap[1], 10);
+      if (ap[2] === 'pm' && hour < 12) hour += 12;
+      if (ap[2] === 'am' && hour === 12) hour = 0;
+    }
+    start.setHours(hour, minute, 0, 0);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+    const title = (card.title && card.title.toLowerCase() !== 'calendar event' ? card.title : '')
+      || (msg.text ? msg.text.slice(0, 60) : 'New event');
+
+    try {
+      const created = await dataService.createEvent({
+        title,
+        start,
+        end,
+        color: '#6366f1',
+        description: msg.text,
+        calendarId: 'primary',
+        allDay: false,
+        type: 'event',
+      });
+      setPulseEditToast(
+        created
+          ? `Added to calendar — ${start.toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}`
+          : 'Could not add to calendar',
+      );
+    } catch (err) {
+      console.error('[Messages] add to calendar failed:', err);
+      setPulseEditToast('Could not add to calendar');
+    }
+  }, []);
+
   // --- Reactions Handler ---
   const handleReaction = useCallback((messageId: string, emoji: string) => {
     setThreads(prev => prev.map(t => {
@@ -5191,7 +5260,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                                         if (action === 'create-task' && msg.text) {
                                                             handleExtractTask(msg);
                                                         } else if (action === 'add-to-calendar') {
-                                                            // TODO: Implement calendar integration
+                                                            void handleAddToCalendar(card, msg);
                                                         }
                                                     }}
                                                 />
