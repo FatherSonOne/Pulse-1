@@ -16,6 +16,9 @@
 import { z } from 'zod';
 import { RealtimeTool, RealtimeToolContext } from './realtimeAgentService';
 import { ragService } from './ragService';
+import { taskService } from './taskService';
+import { decisionService } from './decisionService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
 import { processWithModel, processWithModelViaProxy } from './geminiService';
 import { contextBankService, SearchResult } from './contextBankService';
 
@@ -278,22 +281,34 @@ export const createTaskTool: RealtimeTool = {
       return 'Error: User context not available';
     }
 
-    try {
-      // For now, we'll store tasks as messages with a special format
-      // In production, integrate with your task service
-      const taskData = {
-        type: 'task',
-        title,
-        description,
-        priority,
-        dueDate,
-        assignee,
-        createdAt: new Date().toISOString(),
-        status: 'pending',
-        projectId: context.projectId,
-      };
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) {
+      return "I couldn't create the task — no active workspace is selected. Open a workspace in Pulse and try again.";
+    }
 
-      // Store in session if available
+    try {
+      // assignee is a free-text name (not a user id), so it goes in the
+      // description rather than assignee_id. WI-7, repair plan 2026-06-02.
+      const taskDescription = [description, assignee ? `Assignee: ${assignee}` : null]
+        .filter(Boolean)
+        .join('\n') || undefined;
+
+      const task = await taskService.createTask({
+        workspace_id: workspaceId,
+        title,
+        description: taskDescription,
+        priority,
+        deadline: dueDate,
+        status: 'todo',
+        created_by: context.userId,
+        metadata: { source: 'war_room_voice', projectId: context.projectId },
+      });
+
+      if (!task) {
+        return `I hit an error creating the task "${title}". Please try again.`;
+      }
+
+      // Leave an in-transcript breadcrumb when a session is active
       if (context.sessionId) {
         await ragService.addMessage(
           context.sessionId,
@@ -337,18 +352,30 @@ export const createDecisionTool: RealtimeTool = {
       return 'Error: User context not available';
     }
 
-    try {
-      const decisionRecord = {
-        type: 'decision',
-        decision,
-        context: decisionContext,
-        stakeholders,
-        alternatives,
-        createdAt: new Date().toISOString(),
-        projectId: context.projectId,
-      };
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) {
+      return "I couldn't record the decision — no active workspace is selected. Open a workspace in Pulse and try again.";
+    }
 
-      // Store in session if available
+    try {
+      const decisionDescription = [
+        decisionContext,
+        stakeholders?.length ? `Stakeholders: ${stakeholders.join(', ')}` : null,
+        alternatives?.length ? `Alternatives considered: ${alternatives.join('; ')}` : null,
+      ].filter(Boolean).join('\n\n') || undefined;
+
+      const record = await decisionService.createDecision({
+        workspace_id: workspaceId,
+        title: decision,
+        description: decisionDescription,
+        proposed_by: context.userId,
+      });
+
+      if (!record) {
+        return `I hit an error recording the decision. Please try again.`;
+      }
+
+      // Leave an in-transcript breadcrumb when a session is active
       if (context.sessionId) {
         let message = `[DECISION RECORDED]\n\n📋 Decision: ${decision}`;
         if (decisionContext) message += `\n\n📝 Context: ${decisionContext}`;
@@ -539,9 +566,9 @@ export const setReminderTool: RealtimeTool = {
   execute: async (args, context) => {
     const { message, time } = args as { message: string; time: string };
 
-    // For now, we'll just acknowledge the reminder
-    // In production, integrate with a notification service
-    return `⏰ Reminder set!\n\nI'll remind you: "${message}"\nTime: ${time}\n\n(Note: In-app reminders coming soon. For now, please set a calendar reminder.)`;
+    // In-app reminders aren't wired to a notification service yet — be honest
+    // rather than claim a reminder was set. WI-7, repair plan 2026-06-02.
+    return `I can't set in-app reminders yet — that feature is coming soon. For now, add a calendar event so it isn't lost:\n\n"${message}"\nWhen: ${time}`;
   },
 };
 
