@@ -1406,6 +1406,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       setPulseMessages(prev => prev.filter(m => m.id !== tempId));
       // Restore the input text so user can retry
       setInputText(messageContent);
+      setPulseEditToast('Message failed to send — restored to composer');
     }
   }, [activePulseConversation, pulseConversations, currentUser?.id]);
 
@@ -1450,6 +1451,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       await pulseService.toggleReaction(messageId, emoji);
     } catch (error) {
       console.error('Failed to toggle reaction:', error);
+      setPulseEditToast('Reaction failed — reverted');
       // Reload from server to fix optimistic mismatch
       const messageIds = pulseMessages.filter(m => !m.id.startsWith('temp-')).map(m => m.id);
       if (messageIds.length > 0) {
@@ -1482,6 +1484,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       await pulseService.toggleStar(messageId);
     } catch (error) {
       console.error('Failed to toggle star:', error);
+      setPulseEditToast('Could not update star — reverted');
       // Reload from server
       const stars = await pulseService.getStarredMessageIds();
       setStarredPulseMessages(stars);
@@ -2785,6 +2788,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       await loadScheduledMessages();
     } catch (err) {
       console.error('[Messages] cancel scheduled failed:', err);
+      setPulseEditToast('Could not cancel scheduled message');
     }
   }, [loadScheduledMessages]);
 
