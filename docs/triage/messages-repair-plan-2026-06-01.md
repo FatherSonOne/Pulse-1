@@ -17,8 +17,8 @@ Orphans: **Case-by-case w/ Rule-A** · SMS + stubs: **Build SMS real now**
 |---|---|---|
 | **Wave 1 — Stop the bleeding** | W1 latent crash · W2 unread=0 · W3 typing wiring | ✅ **SHIPPED** — `3d828b3`, `00780d9`, `e6309d1` |
 | **Wave 2 — Tools surface** | W4 (remove tools menu, reversible gate) | ✅ **SHIPPED** — `ebde60b`, `c033cd5`. C4 launcher **moot** (gated off) |
-| **Wave 3 — Cracked moderates + honesty** | W5 (C5, C6) · W6 errors · W8 stubs | ⏭️ **NEXT** |
-| **Wave 4 — SMS real** | W7 | ⬜ pending |
+| **Wave 3 — Cracked moderates + honesty** | W5 (C5, C6) · W6 errors · W8 stubs | ✅ **SHIPPED** — `7851c95`, `b8bb2cd`, `e63ee66`, `3c36733`, `d9126b1`, `9f50463`, `e890d3a` |
+| **Wave 4 — SMS real** | W7 | ⏭️ **NEXT** |
 | **Wave 5 — Severed + orphans** | W9 → W10 | ⬜ pending (W10 is destructive, lands last) |
 
 **Adjacent track shipped (not a repair-plan wave):** the user-requested **Message
@@ -169,7 +169,12 @@ errors in changed scope**, never zero.
 - **Files:** `Messages.tsx`, `Messages/MessageInputSection.tsx`,
   `MessageInput/MessageInput.tsx`. See "Future Additions: Messages Tools" in §4.
 
-### W5 — Cracked moderate repairs  ·  CONFIRMED-per-report (spot-verify) · MODERATE · (C4, C5, C6)
+### W5 — Cracked moderate repairs  ·  ✅ SHIPPED 2026-06-01 (C5 `b8bb2cd`, C6 `7851c95`; C4 moot) · MODERATE · (C4, C5, C6)
+> C6: schema check (MCP) showed `channel_members.user_id` has NO FK — the
+> `users:user_id` embed could never resolve; replaced with a pulse_users
+> name-resolution join (canonical key `auth_user_id`). C5: routed through
+> ai-router (invokeAIJson), heuristics kept as fallback; dropped the unused
+> apiKey param + its legacy hook gate.
 - **C4** `Messages.tsx:1166-1169` — tool-suggestion no-op launcher. **MOOT / DEFERRED**
   after the W4 reversal: with the tools surface gated off there is nothing to launch.
   The suggestion effect stays dormant; revisit only if tools are ever restored.
@@ -186,7 +191,10 @@ errors in changed scope**, never zero.
 - **Dependencies:** C4 → W4. C5, C6 independent.
 - **Verification:** per-item above + tsc on changed scope.
 
-### W6 — User-visible error-feedback pass  ·  CONFIRMED-per-report · MODERATE · (report §9 #8)
+### W6 — User-visible error-feedback pass  ·  ✅ SHIPPED 2026-06-01 (`e63ee66`) · MODERATE · (report §9 #8)
+> Reused the pulseEditToast banner (no new toast system) on send/reaction/star/
+> cancel-scheduled failures. Delete already toasted; schedule already alerts
+> (left as-is, additive-only).
 - **What:** most failure paths in `Messages.tsx` are silent `console.error` (only
   `pulseEditToast` surfaces). Add toast feedback on the user-facing failure paths
   (send failure already rolls back optimistically `:1378-1380` — surface it; delete
@@ -215,7 +223,14 @@ errors in changed scope**, never zero.
 - **Verification:** real send to a test number from web; failure UX when Twilio
   unconfigured; tsc.
 
-### W8 — In-live-path stub cleanup / make-real  ·  CONFIRMED-per-report (spot-verify) · MODERATE · (report §5 in-component stubs)  — per D4
+### W8 — In-live-path stub cleanup / make-real  ·  ✅ SHIPPED 2026-06-01 · MODERATE · (report §5 in-component stubs)  — per D4
+> User dispositions (per item): fake proposal voter → **removed** (`3c36733`);
+> focus digest → **built real** from activity since focus-start (`d9126b1`);
+> outcome-goal → **persisted to the existing `outcomes` table** (thread_id-keyed)
+> + header read-back chip, replacing the dead localStorage write (`9f50463`);
+> add-to-calendar → **wired** to dataService.createEvent with a deterministic
+> time parser (`e890d3a`). Note: no new table was needed for outcome-goal — the
+> real `outcomes` table + createOutcome/getOutcomes already existed.
 - Proposal voting auto-approves on a 3s timer / fake second voter
   (`Messages.tsx:2334-2336`) — behind `proposalMode` flag (off). Remove the fake
   voter; gate the feature honestly until real multi-party voting exists.
