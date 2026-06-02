@@ -1715,9 +1715,8 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
 
       </div>
 
-      {/* Templates Modal — upgraded to the enhanced modal (favorites,
-          categories, search, CRUD). Identical onSelectTemplate contract;
-          TemplatesModal kept on disk as a dormant fallback (WI-11). */}
+      {/* Templates Modal — the enhanced modal (favorites, categories,
+          search, CRUD). */}
       {showTemplatesModal && (
         <EmailTemplatesModalEnhanced
           onSelectTemplate={(t) =>
