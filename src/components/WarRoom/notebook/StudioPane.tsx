@@ -12,7 +12,7 @@ import React from 'react';
 import { TheBoard } from '../TheBoard';
 import { GeneratorRail } from './GeneratorRail';
 import type { BoardNote, NoteType, BoardNoteMeta } from '../useBoardNotes';
-import { Sparkles } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 
 export interface StudioPaneProps {
   notes: BoardNote[];
@@ -42,8 +42,8 @@ export const StudioPane: React.FC<StudioPaneProps> = ({
     <>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 14px 6px', flexShrink: 0 }}>
-        <Sparkles size={16} style={{ color: 'var(--pulse-rose)' }} />
-        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--pulse-ink)' }}>Studio</span>
+        <LayoutGrid size={16} style={{ color: 'var(--pulse-ink-2)' }} />
+        <span style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pulse-ink)' }}>Studio</span>
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 12px 14px' }}>

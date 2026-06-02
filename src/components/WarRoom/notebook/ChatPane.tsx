@@ -124,14 +124,16 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <MessageSquare size={16} style={{ color: 'var(--pulse-rose)', flexShrink: 0 }} />
+          <MessageSquare size={16} style={{ color: 'var(--pulse-ink-2)', flexShrink: 0 }} />
           <div style={{ minWidth: 0, lineHeight: 1.25 }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--pulse-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {session?.title || 'War Room'}
             </div>
-            <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)' }}>
-              {selectedSessionId ? 'session' : 'Pick or start a session'}
-            </div>
+            {!selectedSessionId && (
+              <div style={{ fontSize: 10, color: 'var(--pulse-ink-3)' }}>
+                Pick or start a session
+              </div>
+            )}
           </div>
         </div>
 

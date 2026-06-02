@@ -103,7 +103,7 @@ export const SourcesPane: React.FC<SourcesPaneProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <FolderOpen size={16} style={{ color: 'var(--pulse-ink-2)' }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--pulse-ink)' }}>Sources</span>
+            <span style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pulse-ink)' }}>Sources</span>
             <span style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 11, color: 'var(--pulse-ink-3)' }}>
               {documents.length}
             </span>

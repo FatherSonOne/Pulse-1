@@ -22,7 +22,7 @@ import { CitationChip } from './CitationChip';
 import { ReasoningTrace } from './ReasoningTrace';
 import type { NoteType } from '../useBoardNotes';
 
-import { Copy, Pin, Sparkles, User as UserIcon } from 'lucide-react';
+import { Copy, Pin, User as UserIcon } from 'lucide-react';
 
 export interface MessageListProps {
   messages: AIMessage[];
@@ -94,7 +94,7 @@ export const MessageList: React.FC<MessageListProps> = ({
     return (
       <div key={msg.id || idx} className={`ps-message ps-message--${msg.role}`}>
         <div className="ps-message-avatar">
-          {isUser ? <UserIcon size={15} /> : <Sparkles size={15} />}
+          {isUser ? <UserIcon size={15} /> : <span aria-hidden style={{ width: 10, height: 10, borderRadius: '9999px', background: 'currentColor' }} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* AI provenance — Pulse signature */}
@@ -178,7 +178,7 @@ export const MessageList: React.FC<MessageListProps> = ({
       {isLoading && (
         <div className="ps-message ps-message--assistant">
           <div className="ps-message-avatar">
-            <Sparkles size={15} />
+            <span aria-hidden style={{ width: 10, height: 10, borderRadius: '9999px', background: 'currentColor' }} />
           </div>
           <div className="ps-message-content">
             <div className="ps-typing">
