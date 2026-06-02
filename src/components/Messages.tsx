@@ -2112,15 +2112,43 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     return () => { if (draftTimeoutRef.current) window.clearTimeout(draftTimeoutRef.current); }
   }, [inputText]);
 
+  // Timestamp captured when focus mode is entered, so the exit digest can
+  // report *real* activity that happened during the focus window (W8).
+  const focusStartRef = useRef<number | null>(null);
+
   const toggleFocusMode = () => {
       if (focusThreadId) {
           setFocusThreadId(null);
-          setFocusDigest("While you were focused:\n- Sarah sent 2 messages in 'Product'\n- New task assigned in Jira");
+          // Build a real "while you were focused" digest from conversations that
+          // saw new activity since focus began (was a hardcoded fake string).
+          const since = focusStartRef.current;
+          focusStartRef.current = null;
+          if (since) {
+              const active = pulseConversations.filter(
+                  c => c.last_message_at && new Date(c.last_message_at).getTime() > since,
+              );
+              if (active.length === 0) {
+                  setFocusDigest('While you were focused:\nNo new activity.');
+              } else {
+                  const lines = active.slice(0, 5).map(c => {
+                      const name = c.other_user?.display_name || 'A conversation';
+                      const unread = c.unread_count ?? 0;
+                      return unread > 0
+                          ? `- ${name}: ${unread} new message${unread === 1 ? '' : 's'}`
+                          : `- ${name}: new activity`;
+                  });
+                  const extra = active.length > 5 ? `\n- +${active.length - 5} more` : '';
+                  setFocusDigest(`While you were focused:\n${lines.join('\n')}${extra}`);
+              }
+          } else {
+              setFocusDigest(null);
+          }
           setTimeout(() => setFocusDigest(null), 8000);
       } else {
           // Use Pulse conversation ID if active, otherwise use thread ID
           const focusId = activePulseConv?.id || activeThreadId;
           if (focusId) {
+              focusStartRef.current = Date.now();
               setFocusThreadId(focusId);
           }
       }
