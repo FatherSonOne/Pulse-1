@@ -5,6 +5,9 @@ import { ChevronDown, Loader2 } from 'lucide-react';
 import type { ContactCard, BulkAcceptResult } from '../../../types/contactCard';
 import contactCardService from '../../../services/contactCardService';
 import { ReceivedCardListItem } from './ReceivedCardListItem';
+import { ReceivedCardDetail } from './ReceivedCardDetail';
+import { AcceptCardConfirmation } from './AcceptCardConfirmation';
+import { ForwardCardModal } from './ForwardCardModal';
 
 export interface ReceivedTabProps {
   /**
@@ -60,6 +63,10 @@ export const ReceivedTab: React.FC<ReceivedTabProps> = ({
   const [acceptSummary, setAcceptSummary] = useState<BulkAcceptResult | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  // Single-card detail + its action modals (WI-10c).
+  const [focusedCard, setFocusedCard] = useState<ContactCard | null>(null);
+  const [acceptConfirm, setAcceptConfirm] = useState<ContactCard | null>(null);
+  const [forwardSource, setForwardSource] = useState<ContactCard | null>(null);
 
   const resolveSenderName = useCallback(
     (senderUserId: string): string => {
@@ -211,6 +218,70 @@ export const ReceivedTab: React.FC<ReceivedTabProps> = ({
     }
     return t('contacts.cards.receivedTab.header_summary_simple_format', { newCount });
   }, [cards.length, expiringSoonCount, t]);
+
+  // Single-card detail view — replaces the list while a card is focused.
+  if (focusedCard) {
+    return (
+      <>
+        <ReceivedCardDetail
+          card={focusedCard}
+          senderDisplayName={resolveSenderName(focusedCard.sender_user_id)}
+          onBack={() => setFocusedCard(null)}
+          onAccept={() => setAcceptConfirm(focusedCard)}
+          onDecline={async () => {
+            try {
+              await contactCardService.declineCard(focusedCard.id);
+              setCards(prev => prev.filter(c => c.id !== focusedCard.id));
+              setFocusedCard(null);
+            } catch (err) {
+              console.warn('[ReceivedTab] decline failed:', err);
+              toast.error(t('contacts.cards.acceptModal.error_generic'));
+            }
+          }}
+          onMaybe={async () => {
+            try {
+              await contactCardService.snoozeCard(focusedCard.id);
+              setCards(prev => prev.filter(c => c.id !== focusedCard.id));
+              setFocusedCard(null);
+              toast(t('contacts.cards.receivedDetail.maybe_toast'));
+            } catch (err) {
+              console.warn('[ReceivedTab] snooze failed:', err);
+              toast.error(t('contacts.cards.acceptModal.error_generic'));
+            }
+          }}
+          onForward={focusedCard.is_forwardable ? () => setForwardSource(focusedCard) : undefined}
+        />
+        <AcceptCardConfirmation
+          open={Boolean(acceptConfirm)}
+          card={acceptConfirm}
+          senderDisplayName={acceptConfirm ? resolveSenderName(acceptConfirm.sender_user_id) : ''}
+          onCancel={() => setAcceptConfirm(null)}
+          onConfirm={async ({ connectWithSender }) => {
+            if (!acceptConfirm) return;
+            const acceptedId = acceptConfirm.id;
+            try {
+              await contactCardService.acceptCard(acceptedId, { connectWithSender });
+              setCards(prev => prev.filter(c => c.id !== acceptedId));
+              setAcceptConfirm(null);
+              setFocusedCard(null);
+              toast.success(t('contacts.cards.receivedTab.accept_selected_cta'));
+            } catch (err) {
+              console.warn('[ReceivedTab] accept failed:', err);
+              toast.error(t('contacts.cards.acceptModal.error_generic'));
+            }
+          }}
+        />
+        <ForwardCardModal
+          open={Boolean(forwardSource)}
+          sourceCard={forwardSource}
+          forwarderDisplayName="You"
+          originalSenderName={forwardSource ? resolveSenderName(forwardSource.sender_user_id) : ''}
+          onCancel={() => setForwardSource(null)}
+          onSent={() => setForwardSource(null)}
+        />
+      </>
+    );
+  }
 
   return (
     <div role="region" aria-label={t('contacts.cards.receivedTab.tab_label')}>
@@ -447,7 +518,10 @@ export const ReceivedTab: React.FC<ReceivedTabProps> = ({
               unread={true /* Phase 6: real read-marker comes from backend. */}
               isForwarded={Boolean(card.forwarded_from_card_id)}
               onToggleSelect={toggleOne}
-              onOpen={cid => onOpenCard?.(cid)}
+              onOpen={() => {
+                setFocusedCard(card);
+                onOpenCard?.(card.id);
+              }}
             />
           ))}
         </div>
