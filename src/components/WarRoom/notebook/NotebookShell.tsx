@@ -105,13 +105,13 @@ export const NotebookShell: React.FC<NotebookShellProps> = ({
   }, []);
 
   const paletteActions: PaletteAction[] = [
-    { id: 'gen-study-guide', label: 'Generate Study Guide', description: 'Structured notes & flashcards from sources', icon: 'fa-book-open', category: 'generate', accent: '#f59e0b', execute: () => setShowStudyGuide(true) },
-    { id: 'gen-faq', label: 'Generate FAQ', description: 'Questions derived from your sources', icon: 'fa-circle-question', category: 'generate', accent: '#f59e0b', execute: () => setShowFAQ(true) },
-    { id: 'gen-timeline', label: 'Generate Timeline', description: 'Chronological events from sources', icon: 'fa-timeline', category: 'generate', accent: '#f59e0b', execute: () => setShowTimeline(true) },
-    { id: 'gen-podcast', label: 'Generate Podcast Script', description: 'Two-host dialogue from sources', icon: 'fa-microphone', category: 'generate', accent: '#f59e0b', execute: () => setShowPodcast(true) },
-    { id: 'source-toggle', label: sourceOpen ? 'Hide Sources' : 'Show Sources', description: 'Toggle the Sources panel', icon: 'fa-database', category: 'board', accent: '#f43f5e', execute: () => setSourceOpen(!sourceOpen) },
-    { id: 'studio-toggle', label: studioOpen ? 'Hide Studio' : 'Show Studio', description: 'Toggle the Studio panel', icon: 'fa-wand-magic-sparkles', category: 'board', accent: '#8b5cf6', execute: () => setStudioOpen(!studioOpen) },
-    ...(onKnowledgeBank ? [{ id: 'knowledge-bank', label: 'Open Knowledge Bank', description: 'Browse your full document library', icon: 'fa-book-bookmark', category: 'board' as const, accent: '#a855f7', execute: onKnowledgeBank }] : []),
+    { id: 'gen-study-guide', label: 'Generate Study Guide', description: 'Structured notes & flashcards from sources', icon: 'fa-book-open', category: 'generate', accent: '#f43f5e', execute: () => setShowStudyGuide(true) },
+    { id: 'gen-faq', label: 'Generate FAQ', description: 'Questions derived from your sources', icon: 'fa-circle-question', category: 'generate', accent: '#f43f5e', execute: () => setShowFAQ(true) },
+    { id: 'gen-timeline', label: 'Generate Timeline', description: 'Chronological events from sources', icon: 'fa-timeline', category: 'generate', accent: '#f43f5e', execute: () => setShowTimeline(true) },
+    { id: 'gen-podcast', label: 'Generate Podcast Script', description: 'Two-host dialogue from sources', icon: 'fa-microphone', category: 'generate', accent: '#f43f5e', execute: () => setShowPodcast(true) },
+    { id: 'source-toggle', label: sourceOpen ? 'Hide Sources' : 'Show Sources', description: 'Toggle the Sources panel', icon: 'fa-database', category: 'board', accent: '#71717a', execute: () => setSourceOpen(!sourceOpen) },
+    { id: 'studio-toggle', label: studioOpen ? 'Hide Studio' : 'Show Studio', description: 'Toggle the Studio panel', icon: 'fa-wand-magic-sparkles', category: 'board', accent: '#71717a', execute: () => setStudioOpen(!studioOpen) },
+    ...(onKnowledgeBank ? [{ id: 'knowledge-bank', label: 'Open Knowledge Bank', description: 'Browse your full document library', icon: 'fa-book-bookmark', category: 'board' as const, accent: '#71717a', execute: onKnowledgeBank }] : []),
     ...(onAddAllDocs ? [{ id: 'add-all-sources', label: 'Add All Sources to Context', description: 'Activate all documents for AI context', icon: 'fa-layer-group', category: 'board' as const, accent: '#f43f5e', execute: onAddAllDocs }] : []),
     ...(onClearAllDocs ? [{ id: 'clear-sources', label: 'Clear Source Context', description: 'Remove all documents from context', icon: 'fa-eraser', category: 'board' as const, accent: '#ef4444', execute: onClearAllDocs }] : []),
   ];

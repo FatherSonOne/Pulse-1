@@ -9,7 +9,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AGENTS } from '../AgentSelector';
+import { AGENTS, AGENT_ICONS } from '../AgentSelector';
 import { settingsService } from '../../../services/settingsService';
 import type { PulseStudioProps } from '../PulseStudio';
 import { KnowledgeDoc } from '../../../services/ragService';
@@ -65,6 +65,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
 }) => {
   const safeMessages = Array.isArray(messages) ? messages : [];
   const selectedAgent = AGENTS.find((a) => a.id === activeAgent) || AGENTS[0];
+  const SelectedAgentIcon = AGENT_ICONS[selectedAgent.id];
   const hasMessages = safeMessages.length > 0;
   const activeDocCount = activeContextDocs.size;
 
@@ -158,7 +159,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
               }}
               title={`Agent: ${selectedAgent.name}`}
             >
-              <i className={`fa ${selectedAgent.icon}`} style={{ color: 'var(--pulse-coral-fg)', fontSize: 12 }} />
+              <SelectedAgentIcon size={13} style={{ color: 'var(--pulse-coral-fg)' }} />
               <span>{selectedAgent.name}</span>
               <ChevronDown size={12} style={{ opacity: 0.5 }} />
             </button>
@@ -179,7 +180,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
                   boxShadow: 'var(--pulse-shadow-modal, 0 8px 24px rgba(0,0,0,0.25))',
                 }}
               >
-                {AGENTS.map((agent) => (
+                {AGENTS.map((agent) => { const AgentIcon = AGENT_ICONS[agent.id]; return (
                   <button
                     key={agent.id}
                     onClick={() => {
@@ -202,14 +203,14 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
                       textAlign: 'left',
                     }}
                   >
-                    <i className={`fa ${agent.icon}`} style={{ width: 16, textAlign: 'center', color: 'var(--pulse-ink-3)' }} />
+                    <AgentIcon size={14} style={{ color: 'var(--pulse-ink-3)' }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 500 }}>{agent.name}</div>
                       <div style={{ fontSize: 11, color: 'var(--pulse-ink-3)', marginTop: 1 }}>{agent.description}</div>
                     </div>
                     {activeAgent === agent.id && <Check size={14} style={{ color: 'var(--pulse-coral-fg)' }} />}
                   </button>
-                ))}
+                ); })}
               </div>
             )}
           </div>
