@@ -172,18 +172,42 @@ export const messageChannelService = {
   async getChannelMembers(channelId: string): Promise<ChannelMember[]> {
     const { data, error } = await supabase
       .from('channel_members')
-      .select(`
-        *,
-        users:user_id (
-          id,
-          name,
-          avatar_url
-        )
-      `)
+      .select('*')
       .eq('channel_id', channelId);
 
     if (error) throw error;
-    return data as ChannelMember[];
+
+    const members = (data ?? []) as ChannelMember[];
+    if (members.length === 0) return members;
+
+    // Resolve each member's display name + avatar. `channel_members.user_id`
+    // carries no FK (verified via schema), so a PostgREST embed (`users:user_id`)
+    // can't resolve — the previous `users:user_id (id, name, avatar_url)` embed
+    // was doubly wrong (no `users` relationship + the ChannelMember type is flat
+    // `user_name`/`user_avatar`, not a nested object). Join in app code against
+    // the canonical `pulse_users` table on its canonical key `auth_user_id`.
+    const userIds = Array.from(new Set(members.map((m) => m.user_id)));
+    const { data: profiles } = await supabase
+      .from('pulse_users')
+      .select('auth_user_id, display_name, avatar_url')
+      .in('auth_user_id', userIds);
+
+    const byAuthId = new Map(
+      (profiles ?? []).map((p: { auth_user_id: string; display_name: string | null; avatar_url: string | null }) => [
+        p.auth_user_id,
+        p,
+      ]),
+    );
+
+    return members.map((m) => {
+      const profile = byAuthId.get(m.user_id);
+      if (!profile) return m;
+      return {
+        ...m,
+        user_name: profile.display_name ?? m.user_name,
+        user_avatar: profile.avatar_url ?? m.user_avatar,
+      };
+    });
   },
 
   async addChannelMember(
