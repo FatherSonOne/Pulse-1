@@ -194,13 +194,12 @@ export const useMessageEnhancements = ({
   
   // ===== PROACTIVE INSIGHTS =====
   const generateProactiveInsights = useCallback(async (thread: Thread) => {
-    if (!apiKey) return;
-    
+    // No longer gated on a client apiKey — insights run through the server-side
+    // ai-router (workspace-scoped) with a heuristic fallback (W5·C5).
     try {
       const insights = await messageEnhancementsService.generateProactiveInsights(
         thread,
-        thread.messages,
-        apiKey
+        thread.messages
       );
       setProactiveInsights(prev => {
         const newMap = new Map(prev);
@@ -210,7 +209,7 @@ export const useMessageEnhancements = ({
     } catch (error) {
       console.error('Failed to generate insights:', error);
     }
-  }, [apiKey]);
+  }, []);
   
   const getProactiveInsights = useCallback((threadId: string): ProactiveInsight[] => {
     return proactiveInsights.get(threadId) || [];

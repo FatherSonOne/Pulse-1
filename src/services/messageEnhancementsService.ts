@@ -1,7 +1,7 @@
 // Message Enhancements Service
 // Central service for all message enhancement features
 
-import { invokeAIPrompt } from './ai/aiService';
+import { invokeAIPrompt, invokeAIJson } from './ai/aiService';
 import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
 import type {
   MessageMood,
@@ -601,17 +601,87 @@ Return 1-2 distinct completions, one per line. No numbering, no quotes, no pream
   
   // ============= PROACTIVE INSIGHTS =============
   
+  /**
+   * Proactive insights for a thread. Routes through the central `ai-router`
+   * edge function (server-side auth/metering per Pulse convention — no client
+   * API key, no direct provider SDK). The deterministic keyword heuristics are
+   * kept as a graceful fallback when there is no workspace context or the
+   * router call fails/returns nothing. (W5·C5 — was a pure-heuristic stub that
+   * took an unused `apiKey`.)
+   */
   async generateProactiveInsights(
     thread: Thread,
-    messages: Message[],
-    apiKey: string
+    messages: Message[]
   ): Promise<ProactiveInsight[]> {
+    const heuristic = this.heuristicProactiveInsights(messages);
+
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return heuristic;
+
+    const transcript = messages
+      .slice(-20)
+      .map((m) => `${m.sender === 'me' ? 'Me' : thread.contactName || 'Them'}: ${m.text ?? ''}`)
+      .filter((line) => line.trim().length > line.indexOf(':') + 2)
+      .join('\n');
+
+    if (!transcript.trim()) return heuristic;
+
+    try {
+      const parsed = await invokeAIJson<{ insights?: Array<Partial<ProactiveInsight>> }>(
+        'pulse_assistant_chat',
+        `You are a proactive communication assistant. Analyze this conversation with ${
+          thread.contactName || 'a contact'
+        } and surface up to 3 forward-looking insights (predictions, prep suggestions, useful connections, or blockers).
+
+Conversation (most recent last):
+"""
+${transcript}
+"""
+
+Return ONLY a JSON object: { "insights": [ { ... } ] } where each insight has:
+- type: one of "prediction" | "preparation" | "connection" | "blocker"
+- title: short headline (<= 8 words)
+- description: one sentence of why it matters
+- suggestedActions: array of 2-3 concrete next actions
+- confidence: number 0-1
+
+Return an empty array if nothing actionable. No prose outside the JSON.`,
+        { workspaceId, temperature: 0.4 }
+      );
+
+      const allowed: ProactiveInsight['type'][] = ['prediction', 'preparation', 'connection', 'blocker'];
+      const aiInsights: ProactiveInsight[] = (parsed.insights ?? [])
+        .filter((i) => i && typeof i.title === 'string' && i.title.trim())
+        .slice(0, 3)
+        .map((i) => ({
+          type: allowed.includes(i.type as ProactiveInsight['type'])
+            ? (i.type as ProactiveInsight['type'])
+            : 'prediction',
+          title: String(i.title).trim(),
+          description: typeof i.description === 'string' ? i.description.trim() : '',
+          suggestedActions: Array.isArray(i.suggestedActions)
+            ? i.suggestedActions.filter((a): a is string => typeof a === 'string').slice(0, 3)
+            : [],
+          relevantDocs: [],
+          relatedPeople: [],
+          confidence:
+            typeof i.confidence === 'number' ? Math.max(0, Math.min(1, i.confidence)) : 0.6,
+        }));
+
+      return aiInsights.length > 0 ? aiInsights : heuristic;
+    } catch (err) {
+      // Non-critical, advisory feature — degrade to heuristics on any router
+      // failure (mirrors translateMessage's fallback behavior).
+      console.error('[messageEnhancements] proactive insights AI failed, using heuristics:', err);
+      return heuristic;
+    }
+  }
+
+  /** Deterministic keyword-based insights — baseline + AI fallback. */
+  private heuristicProactiveInsights(messages: Message[]): ProactiveInsight[] {
     const insights: ProactiveInsight[] = [];
-    
-    // Pattern detection
+
     const recentTopics = this.extractTopics(messages.slice(-10));
-    
-    // Predict next discussion
     if (recentTopics.includes('budget') && recentTopics.includes('timeline')) {
       insights.push({
         type: 'prediction',
@@ -627,14 +697,12 @@ Return 1-2 distinct completions, one per line. No numbering, no quotes, no pream
         confidence: 0.75
       });
     }
-    
-    // Blocker detection
-    const blockerMentions = messages.filter(m => 
-      m.text?.toLowerCase().includes('blocker') || 
+
+    const blockerMentions = messages.filter(m =>
+      m.text?.toLowerCase().includes('blocker') ||
       m.text?.toLowerCase().includes('blocked') ||
       m.text?.toLowerCase().includes('waiting for')
     );
-    
     if (blockerMentions.length > 0) {
       insights.push({
         type: 'blocker',
@@ -650,7 +718,7 @@ Return 1-2 distinct completions, one per line. No numbering, no quotes, no pream
         confidence: 0.85
       });
     }
-    
+
     return insights;
   }
   
