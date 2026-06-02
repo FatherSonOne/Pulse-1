@@ -72,14 +72,11 @@ import { RichMessageCardComponent } from './MessageEnhancements/RichMessageCard'
 import { AnimatedReactions } from './MessageEnhancements/AnimatedReactions';
 import { LiveCollaborators } from './MessageEnhancements/LiveCollaborators';
 import { StandaloneThemePicker, COLOR_PAIR_THEMES, ColorPairTheme } from './MessageEnhancements/MessageThemeProvider';
-import { ConversationHealthWidget } from './MessageEnhancements/ConversationHealthWidget';
-import { AchievementToast, AchievementProgress } from './MessageEnhancements/AchievementToast';
 import { MessageAnalyticsDashboard } from './MessageEnhancements/MessageAnalyticsDashboard';
 import { NetworkGraph } from './MessageEnhancements/NetworkGraph';
 import { SmartCompose } from './MessageEnhancements/SmartCompose';
 import { QuickActions } from './MessageEnhancements/QuickActions';
 import { ThreadActionsMenu, ThreadBadges } from './MessageEnhancements/ThreadActions';
-import { TranslationWidget } from './MessageEnhancements/TranslationWidget';
 // TypingIndicator moved to Phase 4 component (Messages/TypingIndicator.tsx)
 // Hover-triggered reactions - shows reaction bar on 300ms hover (desktop) or long-press (mobile)
 import { HoverReactionTrigger } from './MessageEnhancements/HoverReactionTrigger';
