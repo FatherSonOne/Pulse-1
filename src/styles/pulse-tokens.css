@@ -48,6 +48,10 @@
   --pulse-canvas-soft: #f2f2f2;
   --pulse-surface: #ffffff;          /* card */
   --pulse-surface-raised: #f2f2f2;   /* hover/raised card layer */
+  /* Opaque surface for floating modals/overlays. --pulse-surface is
+     translucent on dark (3% white) which is correct on the canvas but lets
+     the app bleed through a modal panel; modals use this solid token instead. */
+  --pulse-surface-modal: #ffffff;
   --pulse-border: rgba(0, 0, 0, 0.08);
   --pulse-border-strong: rgba(0, 0, 0, 0.16);
 
@@ -131,6 +135,9 @@
   --pulse-canvas-soft: #080808;
   --pulse-surface: rgba(255, 255, 255, 0.03);
   --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+  /* Solid, lifted modal surface (opaque so floating panels don't show the
+     app through them); distinct from the #000 canvas. */
+  --pulse-surface-modal: #18181b;
   --pulse-border: rgba(255, 255, 255, 0.06);
   --pulse-border-strong: rgba(255, 255, 255, 0.10);
 
