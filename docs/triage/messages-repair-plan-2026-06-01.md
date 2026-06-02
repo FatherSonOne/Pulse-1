@@ -18,8 +18,8 @@ Orphans: **Case-by-case w/ Rule-A** · SMS + stubs: **Build SMS real now**
 | **Wave 1 — Stop the bleeding** | W1 latent crash · W2 unread=0 · W3 typing wiring | ✅ **SHIPPED** — `3d828b3`, `00780d9`, `e6309d1` |
 | **Wave 2 — Tools surface** | W4 (remove tools menu, reversible gate) | ✅ **SHIPPED** — `ebde60b`, `c033cd5`. C4 launcher **moot** (gated off) |
 | **Wave 3 — Cracked moderates + honesty** | W5 (C5, C6) · W6 errors · W8 stubs | ✅ **SHIPPED** — `7851c95`, `b8bb2cd`, `e63ee66`, `3c36733`, `d9126b1`, `9f50463`, `e890d3a` |
-| **Wave 4 — SMS real** | W7 | ⏭️ **NEXT** |
-| **Wave 5 — Severed + orphans** | W9 → W10 | ⬜ pending (W10 is destructive, lands last) |
+| **Wave 4 — SMS real** | W7 | ⚠️ **BLOCKED → honest-gated** (`6d07c2e`). Twilio creds are NOT persisted; full real send deferred. See W7. |
+| **Wave 5 — Severed + orphans** | W9 → W10 | ⏭️ **NEXT** (W10 is destructive, lands last) |
 
 **Adjacent track shipped (not a repair-plan wave):** the user-requested **Message
 Settings** repurpose of `FeatureSettingsPanel` — relabel, audio mic-input device
@@ -204,7 +204,30 @@ errors in changed scope**, never zero.
 - **Dependencies:** none. **Verification:** manual: force a failure (offline), see a
   toast; tsc.
 
-### W7 — Build real SMS send  ·  CONFIRMED · COMPLEX · (report §10, SMS)  — per D4
+### W7 — Build real SMS send  ·  ⚠️ BLOCKED → honest-gated 2026-06-01 · COMPLEX · (report §10, SMS)  — per D4
+> **Premise failed (verified against live code).** This item assumed a real
+> Twilio integration storing usable creds. It does NOT:
+> - `TwilioIntegration.tsx` holds Account SID + Auth Token in ephemeral React
+>   state only — never persisted to any table/vault/env.
+> - `TwilioService` has no send method (getMessages/testConnection/getMessageCount only).
+> - `server.js:187` `/api/twilio/proxy` issues a read-only GET (params in the
+>   query string); a Twilio send is a POST to Messages.json with a form body —
+>   the proxy can't send without modification + a Render redeploy.
+> - `handleSendSms` had no access to creds (they only lived in the Settings
+>   component's local state).
+>
+> **Decision (user, 2026-06-01): honest-gate now, defer the full real build.**
+> `handleSendSms` now keeps the native `sms:` hand-off on mobile and, on web,
+> shows a clear "SMS sending isn't set up on web yet" toast instead of opening a
+> dead `sms:` URL — preserving the user's text. No fake send.
+>
+> **To build for real later (full scope):** persist Twilio creds to the existing
+> `integrations` table (account_sid + from_number in `config`, auth_token in
+> `access_token` — mirrors `crm_integrations`); add Save UI to TwilioIntegration;
+> add `TwilioService.sendMessage`; extend `/api/twilio/proxy` to forward a POST
+> (or add a dedicated send endpoint) + redeploy Render; wire `handleSendSms` to
+> it with a clear "not configured" state. Security: prefer reading the token
+> server-side so it doesn't round-trip through the client per send.
 - **Current:** `Messages.tsx:1984` `handleSendSms` → `openSmsApp(activeContact.phone, message)`
   (`permissionService`) — native-only `sms:` URL, dead on web.
 - **Existing infra to build on (investigate first, don't assume):**
