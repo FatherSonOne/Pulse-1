@@ -19,7 +19,7 @@ Orphans: **Case-by-case w/ Rule-A** · SMS + stubs: **Build SMS real now**
 | **Wave 2 — Tools surface** | W4 (remove tools menu, reversible gate) | ✅ **SHIPPED** — `ebde60b`, `c033cd5`. C4 launcher **moot** (gated off) |
 | **Wave 3 — Cracked moderates + honesty** | W5 (C5, C6) · W6 errors · W8 stubs | ✅ **SHIPPED** — `7851c95`, `b8bb2cd`, `e63ee66`, `3c36733`, `d9126b1`, `9f50463`, `e890d3a` |
 | **Wave 4 — SMS real** | W7 | ⚠️ **BLOCKED → honest-gated** (`6d07c2e`). Twilio creds are NOT persisted; full real send deferred. See W7. |
-| **Wave 5 — Severed + orphans** | W9 → W10 | W9 ✅ **DONE** (S4 `7f18623`; S2/S3/S5 dispositioned). W10 ⏭️ **NEXT** (destructive, case-by-case Rule-A) |
+| **Wave 5 — Severed + orphans** | W9 → W10 | W9 ✅ **DONE**. W10 🔶 **IN PROGRESS** — Batch 1 done (`e528cc5`, 8 orphans) + Messages.tsx dup Bundle decls (`06d5286`); Batch 2 re-scoped (Bundle subsystem is LIVE, not dead — see W10 note) |
 
 **Adjacent track shipped (not a repair-plan wave):** the user-requested **Message
 Settings** repurpose of `FeatureSettingsPanel` — relabel, audio mic-input device
@@ -299,10 +299,33 @@ errors in changed scope**, never zero.
   router-wired, self-documented "Not used internally". Wire a caller **or** leave.
 - **Dependencies:** W1 (legacy branch crash-free before reviving it). **Verification:** per item; tsc.
 
-### W10 — Orphan triage (case-by-case, Rule-A, lands LAST)  ·  per D3 · VARIES · (§7)
+### W10 — Orphan triage (case-by-case, Rule-A, lands LAST)  ·  per D3 · 🔶 IN PROGRESS · (§7)
 For **each** orphan below: (1) re-grep all importers against live code, (2) write a
 Rule-A pros/cons, (3) get explicit user sign-off before any deletion. Nothing here
 is pre-approved by this plan.
+
+> **Progress (2026-06-01/02):**
+> - **Batch 1 ✅ DONE (`e528cc5`)** — 8 verified orphans removed (+2 tests):
+>   Phase3Examples, Messages/ContextMenu (+test), Messages/RadialMenu (+test),
+>   Messages/ChannelList, Messages/MessageContainer (dead layout twin),
+>   hooks/useMessagesState, hooks/usePulseMessaging, hooks/useMessageContextMenu
+>   (dead duplicate — live menu uses components/MessageContextMenu's hook). Repo
+>   tsc 1130→933.
+> - **Messages.tsx duplicate Bundle decls ✅ removed (`06d5286`)** — 10 unused
+>   `const BundleX = lazy(...)` never rendered in Messages.tsx (16→6 errors).
+> - **⚠️ CORRECTION — the MessageEnhancements "Bundle" subsystem is NOT dead.**
+>   An initial pass assumed it was (Messages.tsx never renders `<Bundle*>`) and
+>   deleted the 10 Bundle files; tsc immediately flagged live render sites and
+>   the files were **restored before any commit**. The bundles ARE rendered:
+>   `MessageInputSection` renders `BundleAI.*`; the (dormant-legacy)
+>   `MessagesFeaturePanels` renders BundleAnalytics/Collaboration/Productivity/
+>   Intelligence/Proactive/Communication/Automation/Security. **Therefore the
+>   §7 "MessageEnhancements orphans" list below is NOT a clean orphan set** —
+>   most of those components are reachable through the bundles. Batch 2 must be
+>   re-scoped per-component (only true "orig superseded by *Enhanced*" files that
+>   re-grep proves unbundled are deletable). MessagesFeaturePanels' own
+>   live-vs-dead status (legacy branch) gates whether its bundles are truly
+>   reachable — verify before treating anything it renders as orphaned.
 - Phase-3 cluster: `Messages/ContextMenu.tsx`, `Messages/RadialMenu.tsx`,
   `examples/Phase3Examples.tsx` (the importer of the first two, itself
   zero-importer). MEMORY wrongly believed these were deleted on GA — they exist.
