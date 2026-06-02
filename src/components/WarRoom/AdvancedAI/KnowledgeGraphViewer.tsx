@@ -1,6 +1,20 @@
 /**
  * Knowledge Graph Viewer Component
- * Interactive visualization of entities and relationships extracted from documents
+ * Interactive visualization of entities and relationships extracted from documents.
+ *
+ * Chrome reskinned onto the Coral Cockpit --pulse-* tokens (WA-3 of
+ * docs/WAR_ROOM_STUDIO_RESKIN_HANDOFF_2026-06-02.md): tinted-neutral surfaces,
+ * coral-as-signal for active state, Lucide icons, GEMINI provenance tag. The
+ * force-directed CANVAS (node/edge render + the ENTITY_COLORS categorical
+ * palette) is a data-viz surface and is preserved as-is; only the surrounding
+ * chrome (header, legend, search, zoom, sidebar, NodeDetails) was reskinned.
+ * (Canvas dark bg / theme-awareness is a deferred polish item.)
+ *
+ * UX: graph build is now gated behind an explicit "Generate" CTA instead of
+ * auto-running on mount. The old auto-run guarded on `apiKey` (the deprecated
+ * no-op '' — buildKnowledgeGraph ignores it and routes via ai-router), so it
+ * never fired; the panel sat on a misleading static "Analyzing documents..."
+ * subtitle with an empty body. The CTA fixes both.
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -11,11 +25,11 @@ import {
   GraphFilter,
   EntityType,
   ENTITY_COLORS,
-  ENTITY_ICONS,
 } from '../../../types/advancedAI';
 import { buildKnowledgeGraph } from '../../../services/advancedAIService';
 import { KnowledgeDoc } from '../../../services/ragService';
 import { VoiceTextButton } from '../../shared/VoiceTextButton';
+import { ProvenanceTag } from '../ProvenanceTag';
 
 import { AlertTriangle, Columns, FileText, GitFork, List, Minus, MousePointer, Plus, Search, X } from 'lucide-react';
 
@@ -51,12 +65,6 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
   // Animation state
   const animationRef = useRef<number>();
   const nodesRef = useRef<Map<string, { x: number; y: number; vx: number; vy: number }>>(new Map());
-
-  useEffect(() => {
-    if (documents.length > 0 && apiKey) {
-      buildGraph();
-    }
-  }, [documents, apiKey]);
 
   const buildGraph = async () => {
     setLoading(true);
@@ -217,7 +225,7 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
     const width = canvas.width;
     const height = canvas.height;
 
-    // Clear
+    // Clear (data-viz canvas — intentionally dark; see file header)
     ctx.fillStyle = '#0f1115';
     ctx.fillRect(0, 0, width, height);
 
@@ -401,109 +409,114 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
 
   if (documents.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-        <GitFork className="fas text-4xl mb-4 opacity-50" />
+      <div className="flex flex-col items-center justify-center h-64" style={{ color: 'var(--pulse-ink-3)' }}>
+        <GitFork size={40} className="mb-4 opacity-50" />
         <p>Select documents to build a knowledge graph</p>
       </div>
     );
   }
 
+  const headerBtn = (active: boolean): React.CSSProperties =>
+    active
+      ? { background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }
+      : { color: 'var(--pulse-ink-3)' };
+
   return (
-    <div className="h-full flex flex-col bg-gray-900 rounded-lg overflow-hidden">
+    <div className="h-full flex flex-col rounded-lg overflow-hidden" style={{ background: 'var(--pulse-surface)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+      <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--pulse-border)' }}>
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg">
-            <GitFork className="fas text-purple-400" />
+          <div className="p-2 rounded-lg flex items-center justify-center" style={{ background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }}>
+            <GitFork size={16} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white">Knowledge Graph</h2>
-            <p className="text-sm text-gray-400">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--pulse-ink)' }}>Knowledge Graph</h2>
+              {graph && <ProvenanceTag model="GEMINI" kind="KNOWLEDGE GRAPH" />}
+            </div>
+            <p className="text-sm" style={{ color: 'var(--pulse-ink-3)' }}>
               {graph
                 ? `${filteredNodes.length} entities, ${filteredEdges.length} relationships`
-                : 'Analyzing documents...'}
+                : `${documents.length} document${documents.length !== 1 ? 's' : ''} selected`}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowLegend(!showLegend)}
-            className={`p-2 rounded-lg transition-colors ${
-              showLegend ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white'
-            }`}
+            className="p-2 rounded-lg transition-colors"
+            style={headerBtn(showLegend)}
             title="Toggle legend"
           >
-            <List className="fas" />
+            <List size={16} />
           </button>
           <button
             onClick={() => setShowSidebar(!showSidebar)}
-            className={`p-2 rounded-lg transition-colors ${
-              showSidebar ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white'
-            }`}
+            className="p-2 rounded-lg transition-colors"
+            style={headerBtn(showSidebar)}
             title="Toggle sidebar"
           >
-            <Columns className="fas" />
+            <Columns size={16} />
           </button>
           {onClose && (
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: 'var(--pulse-ink-3)' }}
+              aria-label="Close Knowledge Graph"
             >
-              <X className="fas" />
+              <X size={16} />
             </button>
           )}
         </div>
       </div>
+
+      {/* Intro / CTA — explicit generate (no auto-run) */}
+      {!loading && !error && !graph && (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+          <div className="p-3 rounded-lg mb-4 flex items-center justify-center" style={{ background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }}>
+            <GitFork size={24} />
+          </div>
+          <p className="mb-1" style={{ color: 'var(--pulse-ink)' }}>Map entities &amp; relationships</p>
+          <p className="text-sm mb-5" style={{ color: 'var(--pulse-ink-3)' }}>Extract a graph of people, places, concepts, and how they connect across your {documents.length} document{documents.length !== 1 ? 's' : ''}.</p>
+          <button onClick={buildGraph} className="war-room-btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+            Generate Graph
+          </button>
+        </div>
+      )}
 
       {/* Loading State */}
       {loading && (
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           <div className="relative w-24 h-24 mb-6">
             <svg className="w-full h-full transform -rotate-90">
+              <circle cx="48" cy="48" r="44" fill="none" stroke="var(--pulse-border-strong)" strokeWidth="8" />
               <circle
-                cx="48"
-                cy="48"
-                r="44"
-                fill="none"
-                stroke="#374151"
-                strokeWidth="8"
-              />
-              <circle
-                cx="48"
-                cy="48"
-                r="44"
-                fill="none"
-                stroke="url(#graph-progress)"
-                strokeWidth="8"
-                strokeLinecap="round"
+                cx="48" cy="48" r="44" fill="none"
+                stroke="var(--pulse-rose)" strokeWidth="8" strokeLinecap="round"
                 strokeDasharray={`${progress * 2.76} 276`}
                 className="transition-all duration-300"
               />
-              <defs>
-                <linearGradient id="graph-progress" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#8b5cf6" />
-                  <stop offset="100%" stopColor="#ec4899" />
-                </linearGradient>
-              </defs>
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-2xl font-bold text-white">{Math.round(progress)}%</span>
+              <span className="text-2xl font-bold" style={{ color: 'var(--pulse-ink)' }}>{Math.round(progress)}%</span>
             </div>
           </div>
-          <p className="text-gray-400">{status}</p>
+          <p style={{ color: 'var(--pulse-ink-3)' }}>{status}</p>
         </div>
       )}
 
       {/* Error State */}
       {error && (
         <div className="flex-1 flex flex-col items-center justify-center p-8">
-          <div className="p-4 bg-red-500/10 rounded-full mb-4">
-            <AlertTriangle className="fas text-3xl text-red-400" />
+          <div className="p-4 rounded-full mb-4" style={{ background: 'rgba(239,68,68,0.12)' }}>
+            <AlertTriangle size={28} style={{ color: '#ef4444' }} />
           </div>
-          <p className="text-red-400 mb-4">{error}</p>
+          <p className="mb-4" style={{ color: '#ef4444' }}>{error}</p>
           <button
             onClick={buildGraph}
-            className="px-4 py-2 bg-red-500/20 text-red-300 rounded-lg hover:bg-red-500/30 transition-colors"
+            className="px-4 py-2 rounded-lg transition-colors"
+            style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink)' }}
           >
             Try Again
           </button>
@@ -526,43 +539,42 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
             <div className="absolute bottom-4 left-4 flex flex-col gap-2">
               <button
                 onClick={() => setZoom(z => Math.min(3, z + 0.2))}
-                className="p-2 bg-gray-800/80 text-gray-300 hover:text-white rounded-lg"
+                className="p-2 rounded-lg"
+                style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}
               >
-                <Plus className="fas" />
+                <Plus size={16} />
               </button>
               <button
                 onClick={() => setZoom(1)}
-                className="p-2 bg-gray-800/80 text-gray-300 hover:text-white rounded-lg text-xs"
+                className="p-2 rounded-lg text-xs"
+                style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}
               >
                 {Math.round(zoom * 100)}%
               </button>
               <button
                 onClick={() => setZoom(z => Math.max(0.3, z - 0.2))}
-                className="p-2 bg-gray-800/80 text-gray-300 hover:text-white rounded-lg"
+                className="p-2 rounded-lg"
+                style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}
               >
-                <Minus className="fas" />
+                <Minus size={16} />
               </button>
             </div>
 
             {/* Legend */}
             {showLegend && (
-              <div className="absolute top-4 left-4 p-3 bg-gray-800/90 rounded-lg backdrop-blur-sm animate-fadeIn">
-                <h4 className="text-xs font-medium text-gray-400 mb-2">Entity Types</h4>
+              <div className="absolute top-4 left-4 p-3 rounded-lg backdrop-blur-sm animate-fadeIn" style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}>
+                <h4 className="mb-2" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>Entity Types</h4>
                 <div className="grid grid-cols-2 gap-1">
                   {entityTypes.map(type => (
                     <button
                       key={type}
                       onClick={() => toggleEntityType(type)}
-                      className={`flex items-center gap-2 px-2 py-1 rounded text-xs transition-colors ${
-                        activeTypes.includes(type)
-                          ? 'bg-gray-700/50 text-white'
-                          : 'text-gray-500 hover:text-gray-300'
-                      }`}
+                      className="flex items-center gap-2 px-2 py-1 rounded text-xs transition-colors"
+                      style={activeTypes.includes(type)
+                        ? { color: 'var(--pulse-ink)' }
+                        : { color: 'var(--pulse-ink-3)', opacity: 0.6 }}
                     >
-                      <span
-                        className="w-2.5 h-2.5 rounded-full"
-                        style={{ backgroundColor: ENTITY_COLORS[type] }}
-                      />
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ENTITY_COLORS[type] }} />
                       {type}
                     </button>
                   ))}
@@ -574,19 +586,20 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
             <div className="absolute top-4 right-4 w-72">
               <div className="relative flex items-center gap-2">
                 <div className="relative flex-1">
-                  <Search className="fas absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <Search size={14} style={{ color: 'var(--pulse-ink-3)', position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
                   <input
                     type="text"
                     placeholder="Search entities..."
                     value={filter.searchQuery || ''}
                     onChange={e => setFilter(f => ({ ...f, searchQuery: e.target.value }))}
-                    className="w-full pl-9 pr-4 py-2 bg-gray-800/90 text-white rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none text-sm backdrop-blur-sm"
+                    className="w-full pl-9 pr-4 py-2 rounded-lg focus:outline-none text-sm backdrop-blur-sm"
+                    style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink)', border: '1px solid var(--pulse-border)' }}
                   />
                 </div>
                 <VoiceTextButton
                   onTranscript={(text) => setFilter(f => ({ ...f, searchQuery: (f.searchQuery || '') + text }))}
                   size="sm"
-                  className="bg-gray-800/90 backdrop-blur-sm"
+                  className="backdrop-blur-sm"
                 />
               </div>
             </div>
@@ -594,7 +607,7 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
 
           {/* Sidebar */}
           {showSidebar && (
-            <div className="w-80 border-l border-gray-800 bg-gray-900/50 overflow-hidden animate-slideLeft">
+            <div className="w-80 overflow-hidden animate-slideLeft" style={{ borderLeft: '1px solid var(--pulse-border)', background: 'var(--pulse-surface)' }}>
               <div className="h-full overflow-auto p-4">
                 {selectedNode ? (
                   <NodeDetails
@@ -605,8 +618,8 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
                     onNodeSelect={setSelectedNode}
                   />
                 ) : (
-                  <div className="text-center text-gray-400 py-8">
-                    <MousePointer className="fas text-2xl mb-2 opacity-50" />
+                  <div className="text-center py-8" style={{ color: 'var(--pulse-ink-3)' }}>
+                    <MousePointer size={22} className="mb-2 opacity-50 mx-auto" />
                     <p className="text-sm">Click a node to see details</p>
                   </div>
                 )}
@@ -617,6 +630,14 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
       )}
     </div>
   );
+};
+
+const monoLabel: React.CSSProperties = {
+  fontFamily: 'var(--pulse-font-mono)',
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
 };
 
 // Node Details Panel
@@ -648,16 +669,14 @@ const NodeDetails: React.FC<NodeDetailsProps> = ({
       {/* Header */}
       <div className="flex items-start gap-3">
         <div
-          className="p-3 rounded-lg"
+          className="p-3 rounded-lg flex items-center justify-center"
           style={{ backgroundColor: node.color + '20' }}
         >
-          <i
-            className={`fas ${ENTITY_ICONS[node.type]} text-xl`}
-            style={{ color: node.color }}
-          />
+          {/* Entity type signalled by its categorical color (FA glyph removed). */}
+          <span className="w-4 h-4 rounded-full" style={{ backgroundColor: node.color }} />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-white truncate">{node.label}</h3>
+          <h3 className="font-semibold truncate" style={{ color: 'var(--pulse-ink)' }}>{node.label}</h3>
           <div className="flex items-center gap-2 mt-1">
             <span
               className="px-2 py-0.5 rounded text-xs capitalize"
@@ -665,7 +684,7 @@ const NodeDetails: React.FC<NodeDetailsProps> = ({
             >
               {node.type}
             </span>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
               {Math.round(node.importance * 100)}% importance
             </span>
           </div>
@@ -674,29 +693,30 @@ const NodeDetails: React.FC<NodeDetailsProps> = ({
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="p-3 bg-gray-800/50 rounded-lg text-center">
-          <div className="text-lg font-bold text-white">{node.mention_count}</div>
-          <div className="text-xs text-gray-400">Mentions</div>
+        <div className="p-3 rounded-lg text-center" style={{ background: 'var(--pulse-surface-raised)' }}>
+          <div className="text-lg font-bold" style={{ color: 'var(--pulse-ink)' }}>{node.mention_count}</div>
+          <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>Mentions</div>
         </div>
-        <div className="p-3 bg-gray-800/50 rounded-lg text-center">
-          <div className="text-lg font-bold text-white">{connectedNodes.length}</div>
-          <div className="text-xs text-gray-400">Connections</div>
+        <div className="p-3 rounded-lg text-center" style={{ background: 'var(--pulse-surface-raised)' }}>
+          <div className="text-lg font-bold" style={{ color: 'var(--pulse-ink)' }}>{connectedNodes.length}</div>
+          <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>Connections</div>
         </div>
       </div>
 
       {/* Source Documents */}
       <div>
-        <h4 className="text-sm font-medium text-gray-400 mb-2">Source Documents</h4>
+        <h4 className="mb-2" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>Source Documents</h4>
         <div className="space-y-1">
           {node.doc_sources.map(docId => {
             const doc = documents.find(d => d.id === docId);
             return (
               <div
                 key={docId}
-                className="flex items-center gap-2 p-2 bg-gray-800/30 rounded text-sm"
+                className="flex items-center gap-2 p-2 rounded text-sm"
+                style={{ background: 'var(--pulse-surface-raised)' }}
               >
-                <FileText className="fas text-gray-500" />
-                <span className="text-gray-300 truncate">{doc?.title || docId}</span>
+                <FileText size={14} style={{ color: 'var(--pulse-ink-3)' }} />
+                <span className="truncate" style={{ color: 'var(--pulse-ink-2)' }}>{doc?.title || docId}</span>
               </div>
             );
           })}
@@ -706,25 +726,26 @@ const NodeDetails: React.FC<NodeDetailsProps> = ({
       {/* Connections */}
       {connectedNodes.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium text-gray-400 mb-2">Relationships</h4>
+          <h4 className="mb-2" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>Relationships</h4>
           <div className="space-y-2">
             {connectedNodes.map(({ edge, node: connNode }) => (
               <button
                 key={edge.id}
                 onClick={() => onNodeSelect(connNode)}
-                className="w-full flex items-center gap-3 p-2 bg-gray-800/30 rounded hover:bg-gray-800/50 transition-colors text-left"
+                className="w-full flex items-center gap-3 p-2 rounded transition-colors text-left"
+                style={{ background: 'var(--pulse-surface-raised)' }}
               >
                 <span
                   className="w-3 h-3 rounded-full flex-shrink-0"
                   style={{ backgroundColor: connNode.color }}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-white truncate">{connNode.label}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-sm truncate" style={{ color: 'var(--pulse-ink)' }}>{connNode.label}</div>
+                  <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
                     {edge.source === node.id ? '→' : '←'} {edge.relationship}
                   </div>
                 </div>
-                <span className="text-xs text-gray-600">
+                <span className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
                   {Math.round(edge.weight * 100)}%
                 </span>
               </button>
