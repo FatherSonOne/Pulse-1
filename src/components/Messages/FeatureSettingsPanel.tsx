@@ -117,6 +117,10 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
         inputBorder: 'rgba(255, 255, 255, 0.08)',
         inputText: '#fafafa',
         inputPlaceholder: '#71717a',
+        // Solid colors for the native <option> popup (translucent bg renders
+        // illegibly in the dark dropdown list).
+        optionBg: '#18181b',
+        optionText: '#fafafa',
         categoryBg: 'rgba(255, 255, 255, 0.03)',
         categoryBorder: 'rgba(255, 255, 255, 0.06)',
         categoryText: '#fafafa',
@@ -158,6 +162,8 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
       inputBorder: 'rgba(0, 0, 0, 0.08)',
       inputText: '#18181b',
       inputPlaceholder: '#a1a1aa',
+      optionBg: '#ffffff',
+      optionText: '#18181b',
       categoryBg: 'rgba(0, 0, 0, 0.02)',
       categoryBorder: 'rgba(0, 0, 0, 0.06)',
       categoryText: '#18181b',
@@ -775,6 +781,8 @@ interface AudioThemeShape {
   inputBg: string;
   inputBorder: string;
   inputText: string;
+  optionBg: string;
+  optionText: string;
   featureBg: string;
   featureBorder: string;
   colorScheme: string;
@@ -862,11 +870,15 @@ const AudioSection: React.FC<{ theme: AudioThemeShape }> = ({ theme: t }) => {
               colorScheme: t.colorScheme as React.CSSProperties['colorScheme'],
             }}
           >
-            <option value="">
+            <option value="" style={{ background: t.optionBg, color: t.optionText }}>
               {tr('messages.messageSettings.systemDefault', 'System default')}
             </option>
             {devices.map((d) => (
-              <option key={d.deviceId} value={d.deviceId}>
+              <option
+                key={d.deviceId}
+                value={d.deviceId}
+                style={{ background: t.optionBg, color: t.optionText }}
+              >
                 {d.label}
               </option>
             ))}
