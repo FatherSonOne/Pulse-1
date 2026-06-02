@@ -22,7 +22,6 @@ export interface FeatureFlags {
   smartReplies: boolean;
   toneAnalysis: boolean;
   scheduledMessages: boolean;
-  draftManager: boolean;
 
   // Surface 2 (message context-menu) shipped GA 2026-05-31 — the
   // MessageContextMenu is now unconditional; flag removed.
@@ -71,7 +70,6 @@ const DEFAULT_FEATURES: FeatureFlags = {
   smartReplies: false,
   toneAnalysis: false,
   scheduledMessages: false,
-  draftManager: false,
 
   // PR 1 — default off until rollout
   pulseComposerV2: false,
@@ -230,8 +228,7 @@ export const FEATURE_CATEGORIES = {
       'aiComposer',
       'smartReplies',
       'toneAnalysis',
-      'scheduledMessages',
-      'draftManager'
+      'scheduledMessages'
     ] as (keyof FeatureFlags)[]
   }
   // 'Messages Tools Redesign (Beta)' category removed from the Features Labs UI
@@ -251,7 +248,6 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   smartReplies: 'Smart Replies',
   toneAnalysis: 'Tone Analysis',
   scheduledMessages: 'Scheduled Messages',
-  draftManager: 'Draft Manager',
   pulseComposerV2: 'New Compose Bar (Beta)',
   toolsMenuV2: 'New Tools Menu (Beta)',
 };
