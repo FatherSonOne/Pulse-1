@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense, lazy } from 'react';
 import { useWarRoomStore } from '../store/warRoomStore';
+import { useWorkspace } from '../contexts/WorkspaceContext';
 import { settingsService } from '../services/settingsService';
 import { Capacitor } from '@capacitor/core';
 import { ragService, AISession, KnowledgeDoc, AIMessage, AIProject, PromptSuggestion, ThinkingStep } from '../services/ragService';
@@ -135,11 +136,17 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
   // Fetched on-demand when the Voice Agent panel is opened so we don't pay the
   // round-trip cost on every dashboard mount.
   const [openaiApiKey, setOpenaiApiKey] = useState<string>('');
+  // Workspace id is required by the openai-realtime-token edge function for
+  // hosted-mode tier-gating (mirrors Summit). Without it the mint 400s with
+  // NOT_MEMBER and voice never connects.
+  const { currentWorkspace } = useWorkspace();
+  const workspaceId = currentWorkspace?.id ?? '';
   const [isResolvingOpenaiToken, setIsResolvingOpenaiToken] = useState<boolean>(false);
 
   useEffect(() => {
-    // Only fetch when the voice agent panel is actually opened
-    if (!showVoiceAgentPanel || openaiApiKey || isResolvingOpenaiToken) return;
+    // Only fetch when the voice agent panel is actually opened, and only once
+    // the workspace is loaded (the edge function requires workspace_id).
+    if (!showVoiceAgentPanel || openaiApiKey || isResolvingOpenaiToken || !workspaceId) return;
 
     let cancelled = false;
     const resolveToken = async () => {
@@ -147,7 +154,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
       try {
         const { supabase } = await import('../services/supabase');
         const { data, error } = await supabase.functions.invoke('openai-realtime-token', {
-          body: { model: 'gpt-4o-realtime-preview', voice: 'alloy' },
+          body: { model: 'gpt-4o-realtime-preview', voice: 'alloy', workspace_id: workspaceId },
         });
 
         if (cancelled) return;
@@ -172,7 +179,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
 
     resolveToken();
     return () => { cancelled = true; };
-  }, [showVoiceAgentPanel, openaiApiKey, isResolvingOpenaiToken]);
+  }, [showVoiceAgentPanel, openaiApiKey, isResolvingOpenaiToken, workspaceId]);
 
   const [showOnboarding, setShowOnboarding] = useState(() => !hasCompletedOnboarding());
 
@@ -1656,7 +1663,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
               });
             }}
             isMobile={isMobile}
-            {...(useNotebookShell ? ({ voiceUserId: userId, openaiApiKey } as any) : {})}
+            {...(useNotebookShell ? ({ voiceUserId: userId, openaiApiKey, workspaceId } as any) : {})}
           />
         </StudioShell>
 
@@ -1696,6 +1703,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
         activeContextDocs={activeContextDocs}
         apiKey={apiKey}
         openaiApiKey={openaiApiKey}
+        workspaceId={workspaceId}
         userId={userId}
         selectedProjectId={selectedProjectId}
         selectedSessionId={selectedSessionId}

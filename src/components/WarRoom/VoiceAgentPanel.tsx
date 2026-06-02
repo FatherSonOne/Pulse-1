@@ -31,6 +31,8 @@ interface VoiceAgentPanelProps {
   projectId?: string;
   sessionId?: string;
   openaiApiKey?: string;
+  /** Workspace id forwarded to the token mint for hosted-mode tier-gating. */
+  workspaceId?: string;
   onClose?: () => void;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
@@ -46,6 +48,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
   projectId,
   sessionId,
   openaiApiKey,
+  workspaceId,
   onClose,
   isExpanded = false,
   onToggleExpand,
@@ -347,6 +350,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
             projectId={projectId}
             sessionId={sessionId}
             openaiApiKey={openaiApiKey}
+            workspaceId={workspaceId}
             contextFiles={contextFiles}
             voiceSettings={voiceSettings}
             onTranscript={handleTranscript}

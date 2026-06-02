@@ -104,6 +104,8 @@ export interface WarRoomModalStackProps {
   activeContextDocs: Set<string>;
   apiKey: string;
   openaiApiKey: string;
+  /** Workspace id forwarded to the realtime voice token mint (hosted tier-gating). */
+  workspaceId?: string;
   userId: string;
   selectedProjectId: string | null;
   selectedSessionId: string | null;
@@ -157,6 +159,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
     activeContextDocs,
     apiKey,
     openaiApiKey,
+    workspaceId,
     userId,
     selectedProjectId,
     selectedSessionId,
@@ -335,6 +338,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                 projectId={selectedProjectId || undefined}
                 sessionId={selectedSessionId || undefined}
                 openaiApiKey={openaiApiKey}
+                workspaceId={workspaceId}
                 onClose={() => setShowVoiceAgentPanel(false)}
                 isExpanded={voiceAgentExpanded}
                 onToggleExpand={() => setVoiceAgentExpanded(!voiceAgentExpanded)}

@@ -25,6 +25,8 @@ export interface ChatPaneProps extends PulseStudioProps {
   /** Threaded from LiveDashboard for the docked realtime voice agent. */
   voiceUserId?: string;
   openaiApiKey?: string;
+  /** Workspace id for the realtime voice token mint (hosted tier-gating). */
+  workspaceId?: string;
 }
 
 export const ChatPane: React.FC<ChatPaneProps> = ({
@@ -59,6 +61,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
   onPinArtifact,
   voiceUserId,
   openaiApiKey = '',
+  workspaceId,
 }) => {
   const safeMessages = Array.isArray(messages) ? messages : [];
   const selectedAgent = AGENTS.find((a) => a.id === activeAgent) || AGENTS[0];
@@ -284,6 +287,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
           projectId={selectedProjectId || undefined}
           sessionId={selectedSessionId || undefined}
           openaiApiKey={openaiApiKey}
+          workspaceId={workspaceId}
           documents={documents}
           activeContextIds={activeContextDocs}
           expanded={voiceAgentExpanded}

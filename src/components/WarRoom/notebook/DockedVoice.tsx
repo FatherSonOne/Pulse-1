@@ -29,6 +29,8 @@ export interface DockedVoiceProps {
   projectId?: string;
   sessionId?: string;
   openaiApiKey: string;
+  /** Workspace id forwarded to the realtime voice token mint (hosted tier-gating). */
+  workspaceId?: string;
   documents: KnowledgeDoc[];
   activeContextIds: Set<string>;
   expanded: boolean;
@@ -41,6 +43,7 @@ export const DockedVoice: React.FC<DockedVoiceProps> = ({
   projectId,
   sessionId,
   openaiApiKey,
+  workspaceId,
   documents,
   activeContextIds,
   expanded,
@@ -104,6 +107,7 @@ export const DockedVoice: React.FC<DockedVoiceProps> = ({
             projectId={projectId}
             sessionId={sessionId}
             openaiApiKey={openaiApiKey}
+            workspaceId={workspaceId}
             onClose={onClose}
             isExpanded={expanded}
             onToggleExpand={onToggleExpand}
