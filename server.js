@@ -17,10 +17,29 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
 
-// Google OAuth configuration
+// Google OAuth configuration.
+//
+// IMPORTANT: there are TWO distinct Google OAuth clients in play.
+//  - GOOGLE_CLIENT_ID/SECRET below is the *logos-vision* integration client
+//    (server-side Contacts sync, redirect …/logos-vision/auth/callback). It
+//    mints the tokens stored in public.google_oauth_tokens (keyed by
+//    workspace_id). Leave this as-is.
+//  - The interactive Pulse LOGIN goes through Supabase's Google provider, which
+//    uses a DIFFERENT client (matches VITE_GOOGLE_CLIENT_ID, 35770…). A Google
+//    refresh token can only be refreshed by the client that minted it, so the
+//    /api/google/refresh-token endpoint MUST use the login client's
+//    credentials below — not the logos-vision client.
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
+
+// Login client (the one configured in the Supabase dashboard Google provider).
+// GOOGLE_LOGIN_CLIENT_ID falls back to VITE_GOOGLE_CLIENT_ID since that is the
+// same value; GOOGLE_LOGIN_CLIENT_SECRET must be set server-side (copy it from
+// Supabase → Auth → Providers → Google → Client Secret). NEVER VITE_-prefix it.
+const GOOGLE_LOGIN_CLIENT_ID =
+  process.env.GOOGLE_LOGIN_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+const GOOGLE_LOGIN_CLIENT_SECRET = process.env.GOOGLE_LOGIN_CLIENT_SECRET;
 
 // Create OAuth2 client
 const oauth2Client = new google.auth.OAuth2(
@@ -232,40 +251,133 @@ app.post('/api/twilio/proxy', async (req, res) => {
 // ==========================
 // This endpoint securely refreshes Google OAuth tokens using the client secret
 // The client secret MUST be kept on the backend and never exposed to the frontend
+// ── Per-user Google LOGIN token store (public.user_google_tokens) ───────────
+// Distinct from storeGoogleTokens/getGoogleTokens (google_oauth_tokens, the
+// logos-vision integration keyed by workspace_id). Uses the service-role client
+// so RLS (deny-all to clients) is bypassed; the refresh_token never leaves the
+// server.
+function tokenStoreClient() {
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+}
+
+async function getUserGoogleToken(userId) {
+  const { data, error } = await tokenStoreClient()
+    .from('user_google_tokens')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) {
+    console.error('[Google Token] getUserGoogleToken error:', error);
+    return null;
+  }
+  return data;
+}
+
+async function upsertUserGoogleToken(userId, fields) {
+  const { error } = await tokenStoreClient()
+    .from('user_google_tokens')
+    .upsert(
+      { user_id: userId, ...fields, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+  if (error) console.error('[Google Token] upsertUserGoogleToken error:', error);
+}
+
+async function deleteUserGoogleToken(userId) {
+  const { error } = await tokenStoreClient()
+    .from('user_google_tokens')
+    .delete()
+    .eq('user_id', userId);
+  if (error) console.error('[Google Token] deleteUserGoogleToken error:', error);
+}
+
+// Resolve the authenticated Supabase user id from the request's Bearer token,
+// or null if it is missing/invalid.
+async function resolveUserId(req) {
+  try {
+    return await getUserId(getSupabaseClient(req));
+  } catch {
+    return null;
+  }
+}
+
+// POST /api/google/store-refresh-token
+// Called by the client on SIGNED_IN to persist the Google provider_refresh_token
+// so it survives Supabase dropping it from the session after its JWT refresh.
+app.post('/api/google/store-refresh-token', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    }
+
+    const { refresh_token, scope } = req.body || {};
+    if (!refresh_token) {
+      return res.status(400).json({ error: 'Missing refresh_token', code: 'MISSING_REFRESH_TOKEN' });
+    }
+
+    await upsertUserGoogleToken(userId, {
+      refresh_token,
+      ...(scope ? { scope } : {}),
+    });
+
+    res.json({ stored: true });
+  } catch (error) {
+    console.error('[Google Token Store] Server error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error', code: 'SERVER_ERROR' });
+  }
+});
+
+// POST /api/google/refresh-token
+// Refreshes the Google LOGIN provider access token. MUST use the login client's
+// credentials (the client configured in Supabase's Google provider, 35770…) —
+// a refresh token can only be refreshed by the client that minted it, so the
+// logos-vision client (GOOGLE_CLIENT_ID, 234234…) would 401 here. The refresh
+// token comes from the request body when the session still has it, otherwise
+// from the per-user stored token (user_google_tokens), so refresh keeps working
+// after Supabase drops provider_refresh_token from the session.
 app.post('/api/google/refresh-token', async (req, res) => {
   try {
-    const { refresh_token } = req.body;
+    const userId = await resolveUserId(req);
 
-    if (!refresh_token) {
+    // Effective refresh token: prefer the one the client sent (freshest),
+    // otherwise fall back to the stored per-user token.
+    let refreshToken = req.body?.refresh_token || null;
+    if (!refreshToken && userId) {
+      const stored = await getUserGoogleToken(userId);
+      refreshToken = stored?.refresh_token || null;
+    }
+
+    if (!refreshToken) {
       return res.status(400).json({
-        error: 'Missing refresh_token',
-        code: 'MISSING_REFRESH_TOKEN'
+        error: 'No refresh token available (none sent and none stored). Please reconnect Google.',
+        code: 'MISSING_REFRESH_TOKEN',
+        requiresReauth: true,
       });
     }
 
-    // Get Google OAuth credentials from environment
-    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const clientId = GOOGLE_LOGIN_CLIENT_ID;
+    const clientSecret = GOOGLE_LOGIN_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      console.error('[Google Token Refresh] Missing credentials - clientId:', !!clientId, 'clientSecret:', !!clientSecret);
+      console.error('[Google Token Refresh] Missing LOGIN credentials - clientId:', !!clientId, 'clientSecret:', !!clientSecret);
       return res.status(500).json({
-        error: 'Server configuration error: Google OAuth credentials not configured',
-        code: 'MISSING_CREDENTIALS'
+        error: 'Server configuration error: GOOGLE_LOGIN_CLIENT_ID / GOOGLE_LOGIN_CLIENT_SECRET not set',
+        code: 'MISSING_CREDENTIALS',
       });
     }
 
-    console.log('[Google Token Refresh] Attempting to refresh token...');
+    console.log('[Google Token Refresh] Attempting refresh (login client)…');
 
-    // Call Google OAuth2 token endpoint with client secret
+    // Call Google's OAuth2 token endpoint with the login client's secret.
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         client_id: clientId,
-        client_secret: clientSecret,  // ✅ Backend has the secret
+        client_secret: clientSecret,
         grant_type: 'refresh_token',
-        refresh_token: refresh_token,
+        refresh_token: refreshToken,
       }),
     });
 
@@ -273,31 +385,44 @@ app.post('/api/google/refresh-token', async (req, res) => {
       const errorData = await response.json().catch(() => ({}));
       console.error('[Google Token Refresh] Failed:', errorData);
 
-      // Handle specific Google OAuth errors
       if (errorData.error === 'invalid_grant') {
+        // The grant is dead (revoked / expired). Clear the stored token so we
+        // stop retrying it; the user must reconnect.
+        if (userId) await deleteUserGoogleToken(userId);
         return res.status(401).json({
           error: 'Refresh token expired or revoked. Please re-authenticate.',
           code: 'INVALID_GRANT',
-          requiresReauth: true
+          requiresReauth: true,
         });
       }
 
       return res.status(response.status).json({
         error: errorData.error_description || 'Token refresh failed',
-        code: errorData.error || 'REFRESH_FAILED'
+        code: errorData.error || 'REFRESH_FAILED',
       });
     }
 
     const data = await response.json();
     console.log('[Google Token Refresh] Success - token expires in', data.expires_in, 'seconds');
 
+    // Persist the freshest material so a later call works even when the client
+    // no longer carries a refresh token. (Google omits refresh_token on a
+    // refresh grant, so keep the one we just used.)
+    if (userId) {
+      await upsertUserGoogleToken(userId, {
+        refresh_token: refreshToken,
+        access_token: data.access_token,
+        expiry_date: data.expires_in ? Date.now() + data.expires_in * 1000 : null,
+        ...(data.scope ? { scope: data.scope } : {}),
+      });
+    }
+
     res.json({
       access_token: data.access_token,
       expires_in: data.expires_in,
       token_type: data.token_type,
-      scope: data.scope
+      scope: data.scope,
     });
-
   } catch (error) {
     console.error('[Google Token Refresh] Server error:', error);
     res.status(500).json({

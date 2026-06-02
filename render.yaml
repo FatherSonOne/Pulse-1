@@ -35,12 +35,20 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY   # sb_secret_* format; used by auth'd routes + auto-sync
         sync: false
 
-      # --- Google OAuth (required for Gmail token refresh + Contacts import) ---
+      # --- Google OAuth: logos-vision integration client (Contacts import) ---
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
       - key: GOOGLE_REDIRECT_URI         # set to <BACKEND_URL>/... after first deploy
+        sync: false
+      # --- Google OAuth: LOGIN client (Supabase Google provider, 35770…) ---
+      # Refreshes the login provider_token for Gmail/Calendar/Contacts/Drive.
+      # MUST match the client in Supabase → Auth → Providers → Google. The
+      # secret is the same value as that provider's "Client Secret".
+      - key: GOOGLE_LOGIN_CLIENT_ID
+        sync: false
+      - key: GOOGLE_LOGIN_CLIENT_SECRET
         sync: false
 
       # --- CORS: the deployed frontend origin ---

@@ -629,6 +629,18 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
       import('./googleCalendarService')
         .then(m => m.resetGoogleCalendarTokenCache?.())
         .catch(() => {});
+      // Persist the Google provider_refresh_token to the backend now, while it
+      // is guaranteed present (Pulse forces consent + offline access on login).
+      // Supabase drops it from the session after its first JWT refresh, so the
+      // stored copy is what lets the backend keep refreshing provider tokens
+      // past the ~1h mark without forcing a re-login (Tier 3b).
+      const providerRefreshToken = (session as { provider_refresh_token?: string } | null)
+        ?.provider_refresh_token;
+      if (providerRefreshToken) {
+        import('./google/googleTokenRefresh')
+          .then(m => m.storeGoogleRefreshToken(providerRefreshToken))
+          .catch(() => {});
+      }
       dispatchContactsScopeMissingIfNeeded(session);
     }
 
