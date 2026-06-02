@@ -556,39 +556,6 @@ export async function suggestTags(userId: string, profileId: string): Promise<st
   return [...new Set(suggestedTags)];
 }
 
-/**
- * Auto-tag all contacts for a user
- */
-export async function autoTagAllContacts(userId: string): Promise<number> {
-  const { data: profiles } = await supabase
-    .from('relationship_profiles')
-    .select('id, custom_tags')
-    .eq('user_id', userId)
-    .eq('is_merged', false);
-
-  if (!profiles) return 0;
-
-  let updated = 0;
-
-  for (const profile of profiles) {
-    const suggestions = await suggestTags(userId, profile.id);
-    const existingTags = profile.custom_tags || [];
-    const newTags = suggestions.filter(t => !existingTags.includes(t));
-
-    if (newTags.length > 0) {
-      await supabase
-        .from('relationship_profiles')
-        .update({
-          custom_tags: [...existingTags, ...newTags]
-        })
-        .eq('id', profile.id);
-      updated++;
-    }
-  }
-
-  return updated;
-}
-
 // ==================== FILL PROFILE FROM EMAIL SIGNATURE ====================
 
 /**
@@ -649,6 +616,5 @@ export const contactEnrichmentService = {
   findDuplicates,
   mergeProfiles,
   suggestTags,
-  autoTagAllContacts,
   enrichFromEmail,
 };

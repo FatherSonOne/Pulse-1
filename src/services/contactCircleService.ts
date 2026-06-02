@@ -294,38 +294,6 @@ export async function removeMember(
   }
 }
 
-/**
- * Get contacts not assigned to any circle.
- */
-export async function getOrphanContacts(
-  userId: string,
-  allContacts: Contact[]
-): Promise<Contact[]> {
-  const circles = await getCircles(userId);
-  const assignedIds = new Set(circles.flatMap(c => c.memberContactIds));
-  return allContacts.filter(c => !assignedIds.has(c.id));
-}
-
-/**
- * Calculate the aggregate health score for a circle based on its members' relationship scores.
- */
-export async function calculateCircleHealth(
-  userId: string,
-  memberContactIds: string[]
-): Promise<number> {
-  if (memberContactIds.length === 0) return 0;
-  try {
-    const profiles = await relationshipIntelligenceService.getProfiles({ userId });
-    const memberScores = profiles
-      .filter(p => memberContactIds.includes(p.contactEmail))
-      .map(p => p.relationshipScore);
-    if (memberScores.length === 0) return 50; // default when no profiles
-    return Math.round(memberScores.reduce((a, b) => a + b, 0) / memberScores.length);
-  } catch {
-    return 50;
-  }
-}
-
 // ==================== AI AUTO-DETECTION ====================
 
 const FREE_EMAIL_PROVIDERS = new Set([

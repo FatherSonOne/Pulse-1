@@ -6,77 +6,6 @@
 import React from 'react';
 import { LeadGrade, LeadStatus, getLeadGradeColor } from '../../types/relationshipTypes';
 
-import { Zap } from 'lucide-react';
-
-interface LeadScoreIndicatorProps {
-  score: number;
-  grade: LeadGrade;
-  status?: LeadStatus;
-  showScore?: boolean;
-  showStatus?: boolean;
-  size?: 'sm' | 'md' | 'lg';
-  className?: string;
-}
-
-export const LeadScoreIndicator: React.FC<LeadScoreIndicatorProps> = ({
-  score,
-  grade,
-  status,
-  showScore = true,
-  showStatus = false,
-  size = 'md',
-  className = '',
-}) => {
-  const gradeColor = getLeadGradeColor(grade);
-
-  const sizeConfig = {
-    sm: {
-      badge: 'w-5 h-5 text-[10px]',
-      score: 'text-[9px]',
-      container: 'gap-1',
-    },
-    md: {
-      badge: 'w-7 h-7 text-xs',
-      score: 'text-[10px]',
-      container: 'gap-1.5',
-    },
-    lg: {
-      badge: 'w-9 h-9 text-sm',
-      score: 'text-xs',
-      container: 'gap-2',
-    },
-  };
-
-  const config = sizeConfig[size];
-
-  return (
-    <div className={`flex items-center ${config.container} ${className}`}>
-      {/* Grade Badge */}
-      <div
-        className={`${config.badge} rounded-md flex items-center justify-center font-bold text-white shadow-sm`}
-        style={{ backgroundColor: gradeColor }}
-        title={`Lead Grade: ${grade}`}
-      >
-        {grade}
-      </div>
-
-      {/* Score */}
-      {showScore && (
-        <span
-          className={`${config.score} font-medium text-zinc-500 dark:text-zinc-400`}
-        >
-          {score}
-        </span>
-      )}
-
-      {/* Status */}
-      {showStatus && status && (
-        <LeadStatusBadge status={status} size={size} />
-      )}
-    </div>
-  );
-};
-
 // Status badge component
 interface LeadStatusBadgeProps {
   status: LeadStatus;
@@ -146,34 +75,6 @@ export const LeadStatusBadge: React.FC<LeadStatusBadgeProps> = ({
     >
       <i className={`${config.icon} text-[8px]`}></i>
       <span>{config.label}</span>
-    </span>
-  );
-};
-
-// Buying signal indicator
-interface BuyingSignalBadgeProps {
-  count: number;
-  size?: 'sm' | 'md';
-}
-
-export const BuyingSignalBadge: React.FC<BuyingSignalBadgeProps> = ({
-  count,
-  size = 'sm',
-}) => {
-  if (count === 0) return null;
-
-  const sizeClasses = {
-    sm: 'text-[9px] px-1.5 py-0.5',
-    md: 'text-[10px] px-2 py-0.5',
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full font-medium ${sizeClasses[size]} bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400`}
-      title={`${count} buying signal${count > 1 ? 's' : ''} detected`}
-    >
-      <Zap className="text-[8px]" />
-      <span>{count}</span>
     </span>
   );
 };
@@ -298,5 +199,3 @@ export const LeadScoreCard: React.FC<LeadScoreCardProps> = ({
     </div>
   );
 };
-
-export default LeadScoreIndicator;

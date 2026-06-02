@@ -275,29 +275,4 @@ const AlertCard: React.FC<AlertCardProps> = ({
   );
 };
 
-// Alert count badge
-interface AlertCountBadgeProps {
-  count: number;
-  onClick?: () => void;
-}
-
-export const AlertCountBadge: React.FC<AlertCountBadgeProps> = ({
-  count,
-  onClick,
-}) => {
-  if (count === 0) return null;
-
-  return (
-    <button
-      onClick={onClick}
-      className="relative inline-flex items-center justify-center p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition"
-    >
-      <Bell className="text-zinc-500" />
-      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-        {count > 9 ? '9+' : count}
-      </span>
-    </button>
-  );
-};
-
 export default RelationshipAlertsFeed;

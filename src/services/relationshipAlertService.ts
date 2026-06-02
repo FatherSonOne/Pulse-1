@@ -112,25 +112,6 @@ export class RelationshipAlertService {
     return (data || []).map(rowToAlert);
   }
 
-  async getAlertsByProfile(profileId: string): Promise<RelationshipAlert[]> {
-    const userId = this.getUserId();
-
-    const { data, error } = await supabase
-      .from('relationship_alerts')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('profile_id', profileId)
-      .in('status', ['active', 'snoozed'])
-      .order('priority', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching profile alerts:', error);
-      return [];
-    }
-
-    return (data || []).map(rowToAlert);
-  }
-
   async dismissAlert(alertId: string, reason?: string): Promise<boolean> {
     const userId = this.getUserId();
 
@@ -470,39 +451,6 @@ export class RelationshipAlertService {
     return allAlerts.sort((a, b) => b.priority - a.priority);
   }
 
-  async cleanupExpiredAlerts(): Promise<number> {
-    const userId = this.getUserId();
-
-    const { data } = await supabase
-      .from('relationship_alerts')
-      .update({
-        status: 'expired',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .lt('expires_at', new Date().toISOString())
-      .select('id');
-
-    return data?.length || 0;
-  }
-
-  async getAlertCounts(): Promise<Record<AlertType, number>> {
-    const userId = this.getUserId();
-
-    const { data } = await supabase
-      .from('relationship_alerts')
-      .select('alert_type')
-      .eq('user_id', userId)
-      .eq('status', 'active');
-
-    const counts: Record<string, number> = {};
-    for (const row of data || []) {
-      counts[row.alert_type] = (counts[row.alert_type] || 0) + 1;
-    }
-
-    return counts as Record<AlertType, number>;
-  }
 }
 
 // Export singleton instance

@@ -148,48 +148,4 @@ export const RelationshipHealthCard: React.FC<RelationshipHealthCardProps> = ({
   );
 };
 
-// Mini version for list items
-interface RelationshipScoreBadgeProps {
-  score: number;
-  trend?: RelationshipTrend;
-  size?: 'sm' | 'md' | 'lg';
-}
-
-export const RelationshipScoreBadge: React.FC<RelationshipScoreBadgeProps> = ({
-  score,
-  trend,
-  size = 'sm',
-}) => {
-  const healthColor = getRelationshipHealthColor(score);
-  const trendColor = trend ? getTrendColor(trend) : undefined;
-
-  const sizeClasses = {
-    sm: 'w-6 h-6 text-[10px]',
-    md: 'w-8 h-8 text-xs',
-    lg: 'w-10 h-10 text-sm',
-  };
-
-  return (
-    <div className="relative inline-flex">
-      <div
-        className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-bold text-white shadow-sm`}
-        style={{ backgroundColor: healthColor }}
-        title={`Relationship score: ${score}%`}
-      >
-        {score}
-      </div>
-      {trend && trend !== 'stable' && (
-        <div
-          className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full flex items-center justify-center bg-white dark:bg-zinc-900 shadow-sm"
-        >
-          <i
-            className={`${getTrendIcon(trend)} text-[8px]`}
-            style={{ color: trendColor }}
-          />
-        </div>
-      )}
-    </div>
-  );
-};
-
 export default RelationshipHealthCard;

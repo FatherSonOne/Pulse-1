@@ -102,33 +102,6 @@ export class UserContactService {
   }
   
   /**
-   * Get all favorite contacts
-   */
-  async getFavorites(): Promise<EnrichedUserProfile[]> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      
-      const { data, error } = await supabase
-        .from('user_contact_annotations')
-        .select(`
-          *,
-          target:user_profiles!target_user_id(*)
-        `)
-        .eq('user_id', user.id)
-        .eq('is_favorite', true)
-        .order('updated_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      return data?.map(item => this.mapEnrichedProfileFromDb(item)) || [];
-    } catch (error) {
-      console.error('Error fetching favorites:', error);
-      return [];
-    }
-  }
-  
-  /**
    * Get enriched user profile with annotations
    * Includes fallback queries and retry logic for robustness
    */
