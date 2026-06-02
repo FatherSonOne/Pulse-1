@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { KnowledgeDoc } from '../../../services/ragService';
 import { processWithModel } from '../../../services/geminiService';
+import { ProvenanceTag } from '../ProvenanceTag';
 import toast from 'react-hot-toast';
 
 import { BookOpen, Check, Copy, Download, HelpCircle, List, Loader2, RefreshCcw, RefreshCw, Sparkles, X } from 'lucide-react';
@@ -39,6 +40,16 @@ interface StudyGuideGeneratorProps {
   apiKey: string;
   onClose: () => void;
 }
+
+// Coral Cockpit tokens (theme-aware via vars). WB-1 of
+// docs/WAR_ROOM_STUDIO_RESKIN_HANDOFF_2026-06-02.md.
+const monoLabel: React.CSSProperties = {
+  fontFamily: 'var(--pulse-font-mono)',
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+};
 
 export const StudyGuideGenerator: React.FC<StudyGuideGeneratorProps> = ({
   documents,
@@ -223,53 +234,62 @@ Requirements:
     toast.success('Study guide exported!');
   }, [studyGuide]);
 
-  const getDifficultyColor = (difficulty: string) => {
+  // Difficulty is a semantic scale (easy/medium/hard); keep status tints, tidy.
+  const getDifficultyStyle = (difficulty: string): React.CSSProperties => {
     switch (difficulty) {
-      case 'easy': return 'text-emerald-400 bg-emerald-500/20';
-      case 'medium': return 'text-yellow-400 bg-yellow-500/20';
-      case 'hard': return 'text-red-400 bg-red-500/20';
-      default: return 'text-gray-400 bg-gray-500/20';
+      case 'easy': return { color: '#10b981', background: 'rgba(16,185,129,0.15)' };
+      case 'hard': return { color: '#ef4444', background: 'rgba(239,68,68,0.12)' };
+      case 'medium':
+      default: return { color: 'var(--pulse-ink-2)', background: 'var(--pulse-surface-raised)' };
     }
   };
 
+  const tabStyle = (active: boolean): React.CSSProperties =>
+    active
+      ? { background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }
+      : { color: 'var(--pulse-ink-3)' };
+
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="war-room-modal w-full max-w-4xl mx-4 rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+      <div
+        className="w-full max-w-4xl mx-4 rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        style={{ background: 'var(--pulse-surface)', border: '1px solid var(--pulse-border)' }}
+      >
         {/* Header */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
+        <div className="p-4 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid var(--pulse-border)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-              <BookOpen className="fa text-emerald-400" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }}>
+              <BookOpen size={18} />
             </div>
             <div>
-              <h3 className="text-lg font-bold">Study Guide Generator</h3>
-              <p className="text-xs war-room-text-secondary">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold" style={{ color: 'var(--pulse-ink)' }}>Study Guide Generator</h3>
+                {studyGuide && <ProvenanceTag model="GEMINI" kind="STUDY GUIDE" />}
+              </div>
+              <p className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
                 {docsToUse.length} document{docsToUse.length !== 1 ? 's' : ''} selected
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="war-room-btn war-room-btn-icon-sm">
-            <X className="fa" />
+          <button onClick={onClose} className="p-2 rounded-lg transition-colors" style={{ color: 'var(--pulse-ink-3)' }} aria-label="Close">
+            <X size={16} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 war-room-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4">
           {!studyGuide ? (
             <div className="text-center py-8">
               {isGenerating ? (
                 <div>
-                  <Loader2 className="fa text-4xl text-emerald-400 mb-4 animate-spin" />
-                  <p className="text-sm war-room-text-secondary mb-4">
+                  <Loader2 size={36} className="animate-spin mb-4 mx-auto" style={{ color: 'var(--pulse-coral-fg)' }} />
+                  <p className="text-sm mb-4" style={{ color: 'var(--pulse-ink-3)' }}>
                     Generating study guide...
                   </p>
-                  <div className="w-48 mx-auto war-room-progress">
-                    <div
-                      className="war-room-progress-bar bg-gradient-to-r from-emerald-500 to-teal-500"
-                      style={{ width: `${progress}%` }}
-                    ></div>
+                  <div className="w-48 h-1.5 mx-auto rounded-full overflow-hidden" style={{ background: 'var(--pulse-surface-raised)' }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'var(--pulse-rose)' }} />
                   </div>
-                  <p className="text-xs war-room-text-muted mt-2">
+                  <p className="text-xs mt-2" style={{ color: 'var(--pulse-ink-3)' }}>
                     {progress < 30 && 'Analyzing documents...'}
                     {progress >= 30 && progress < 80 && 'Creating study materials...'}
                     {progress >= 80 && 'Finalizing...'}
@@ -277,21 +297,21 @@ Requirements:
                 </div>
               ) : (
                 <div>
-                  <BookOpen className="fa text-4xl text-emerald-400 mb-4" />
-                  <p className="text-lg font-medium mb-2">Generate Study Guide</p>
-                  <p className="text-sm war-room-text-secondary mb-6 max-w-md mx-auto">
+                  <BookOpen size={36} className="mb-4 mx-auto" style={{ color: 'var(--pulse-coral-fg)' }} />
+                  <p className="text-lg font-medium mb-2" style={{ color: 'var(--pulse-ink)' }}>Generate Study Guide</p>
+                  <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: 'var(--pulse-ink-3)' }}>
                     Create a comprehensive study guide with key topics, practice questions, and flashcards from your documents.
                   </p>
                   <div className="mb-6">
-                    <p className="text-xs war-room-text-secondary mb-2">Documents to include:</p>
+                    <p className="text-xs mb-2" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>Documents to include</p>
                     <div className="flex flex-wrap gap-2 justify-center max-w-lg mx-auto">
                       {docsToUse.slice(0, 5).map(doc => (
-                        <span key={doc.id} className="war-room-badge text-xs">
+                        <span key={doc.id} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           {doc.title}
                         </span>
                       ))}
                       {docsToUse.length > 5 && (
-                        <span className="war-room-badge text-xs">
+                        <span className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           +{docsToUse.length - 5} more
                         </span>
                       )}
@@ -300,9 +320,9 @@ Requirements:
                   <button
                     onClick={generateStudyGuide}
                     disabled={docsToUse.length === 0}
-                    className="war-room-btn war-room-btn-primary"
+                    className="war-room-btn-primary px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center"
                   >
-                    <Sparkles className="fa mr-2" />
+                    <Sparkles size={14} className="mr-2" />
                     Generate Study Guide
                   </button>
                 </div>
@@ -311,38 +331,29 @@ Requirements:
           ) : (
             <div>
               {/* Tabs */}
-              <div className="flex gap-2 mb-4 border-b border-white/10 pb-2">
+              <div className="flex gap-2 mb-4 pb-2" style={{ borderBottom: '1px solid var(--pulse-border)' }}>
                 <button
                   onClick={() => setActiveTab('overview')}
-                  className={`px-4 py-2 rounded-lg text-sm transition-all ${
-                    activeTab === 'overview'
-                      ? 'bg-emerald-500/20 text-emerald-400'
-                      : 'war-room-text-secondary hover:text-emerald-400'
-                  }`}
+                  className="px-4 py-2 rounded-lg text-sm transition-all inline-flex items-center"
+                  style={tabStyle(activeTab === 'overview')}
                 >
-                  <List className="fa mr-2" />
+                  <List size={14} className="mr-2" />
                   Overview ({studyGuide.sections.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('questions')}
-                  className={`px-4 py-2 rounded-lg text-sm transition-all ${
-                    activeTab === 'questions'
-                      ? 'bg-emerald-500/20 text-emerald-400'
-                      : 'war-room-text-secondary hover:text-emerald-400'
-                  }`}
+                  className="px-4 py-2 rounded-lg text-sm transition-all inline-flex items-center"
+                  style={tabStyle(activeTab === 'questions')}
                 >
-                  <HelpCircle className="fa mr-2" />
+                  <HelpCircle size={14} className="mr-2" />
                   Questions ({studyGuide.questions.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('flashcards')}
-                  className={`px-4 py-2 rounded-lg text-sm transition-all ${
-                    activeTab === 'flashcards'
-                      ? 'bg-emerald-500/20 text-emerald-400'
-                      : 'war-room-text-secondary hover:text-emerald-400'
-                  }`}
+                  className="px-4 py-2 rounded-lg text-sm transition-all inline-flex items-center"
+                  style={tabStyle(activeTab === 'flashcards')}
                 >
-                  <Copy className="fa mr-2" />
+                  <Copy size={14} className="mr-2" />
                   Flashcards ({studyGuide.flashcards.length})
                 </button>
               </div>
@@ -350,23 +361,23 @@ Requirements:
               {/* Tab Content */}
               {activeTab === 'overview' && (
                 <div className="space-y-4">
-                  <div className="war-room-panel p-4">
-                    <h4 className="font-bold text-lg mb-2">{studyGuide.title}</h4>
-                    <p className="text-sm war-room-text-secondary">{studyGuide.summary}</p>
+                  <div className="p-4 rounded-lg" style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}>
+                    <h4 className="font-bold text-lg mb-2" style={{ color: 'var(--pulse-ink)' }}>{studyGuide.title}</h4>
+                    <p className="text-sm" style={{ color: 'var(--pulse-ink-2)' }}>{studyGuide.summary}</p>
                   </div>
 
                   {studyGuide.sections.map((section, i) => (
-                    <div key={i} className="war-room-panel-inset p-4">
-                      <h5 className="font-semibold text-emerald-400 mb-2">
+                    <div key={i} className="p-4 rounded-lg" style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}>
+                      <h5 className="font-semibold mb-2" style={{ color: 'var(--pulse-coral-fg)' }}>
                         {i + 1}. {section.title}
                       </h5>
-                      <p className="text-sm war-room-text-secondary mb-3">{section.content}</p>
+                      <p className="text-sm mb-3" style={{ color: 'var(--pulse-ink-2)' }}>{section.content}</p>
                       <div>
-                        <p className="text-xs font-semibold war-room-text-primary mb-1">Key Points:</p>
+                        <p className="text-xs font-semibold mb-1" style={{ color: 'var(--pulse-ink)' }}>Key Points:</p>
                         <ul className="space-y-1">
                           {section.keyPoints.map((point, j) => (
-                            <li key={j} className="text-xs war-room-text-secondary flex items-start gap-2">
-                              <Check className="fa text-emerald-400 mt-0.5" />
+                            <li key={j} className="text-xs flex items-start gap-2" style={{ color: 'var(--pulse-ink-2)' }}>
+                              <Check size={12} style={{ color: 'var(--pulse-coral-fg)', marginTop: 2 }} />
                               {point}
                             </li>
                           ))}
@@ -380,29 +391,29 @@ Requirements:
               {activeTab === 'questions' && (
                 <div className="space-y-3">
                   {studyGuide.questions.map((q, i) => (
-                    <div key={i} className="war-room-panel-inset p-4">
+                    <div key={i} className="p-4 rounded-lg" style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}>
                       <div className="flex items-start justify-between gap-4 mb-2">
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium" style={{ color: 'var(--pulse-ink)' }}>
                           {i + 1}. {q.question}
                         </p>
-                        <span className={`text-xs px-2 py-0.5 rounded ${getDifficultyColor(q.difficulty)}`}>
+                        <span className="text-xs px-2 py-0.5 rounded" style={getDifficultyStyle(q.difficulty)}>
                           {q.difficulty}
                         </span>
                       </div>
                       {q.type === 'multiple-choice' && q.options && (
                         <div className="ml-4 space-y-1 mb-3">
                           {q.options.map((opt, j) => (
-                            <p key={j} className="text-xs war-room-text-secondary">
+                            <p key={j} className="text-xs" style={{ color: 'var(--pulse-ink-2)' }}>
                               {String.fromCharCode(65 + j)}. {opt}
                             </p>
                           ))}
                         </div>
                       )}
                       <details className="mt-2">
-                        <summary className="text-xs text-emerald-400 cursor-pointer hover:text-emerald-300">
+                        <summary className="text-xs cursor-pointer" style={{ color: 'var(--pulse-coral-fg)' }}>
                           Show Answer
                         </summary>
-                        <p className="text-sm mt-2 p-2 bg-emerald-500/10 rounded border border-emerald-500/20">
+                        <p className="text-sm mt-2 p-2 rounded" style={{ background: 'var(--pulse-coral-bg-08)', color: 'var(--pulse-ink-2)' }}>
                           {q.answer}
                         </p>
                       </details>
@@ -417,22 +428,23 @@ Requirements:
                     <div
                       key={i}
                       onClick={() => toggleCard(i)}
-                      className="war-room-panel-inset p-4 cursor-pointer hover:border-emerald-500/50 transition-all min-h-[120px] flex items-center justify-center"
+                      className="p-4 rounded-lg cursor-pointer transition-all min-h-[120px] flex items-center justify-center"
+                      style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}
                     >
                       <div className="text-center">
                         {flippedCards.has(i) ? (
                           <>
-                            <p className="text-xs text-emerald-400 mb-1">Answer</p>
-                            <p className="text-sm">{card.back}</p>
+                            <p className="text-xs mb-1" style={{ ...monoLabel, color: 'var(--pulse-coral-fg)' }}>Answer</p>
+                            <p className="text-sm" style={{ color: 'var(--pulse-ink-2)' }}>{card.back}</p>
                           </>
                         ) : (
                           <>
-                            <p className="text-xs war-room-text-secondary mb-1">Question</p>
-                            <p className="text-sm font-medium">{card.front}</p>
+                            <p className="text-xs mb-1" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>Question</p>
+                            <p className="text-sm font-medium" style={{ color: 'var(--pulse-ink)' }}>{card.front}</p>
                           </>
                         )}
-                        <p className="text-xs war-room-text-muted mt-3">
-                          <RefreshCcw className="fa mr-1" />
+                        <p className="text-xs mt-3 inline-flex items-center" style={{ color: 'var(--pulse-ink-3)' }}>
+                          <RefreshCcw size={11} className="mr-1" />
                           Click to flip
                         </p>
                       </div>
@@ -445,8 +457,8 @@ Requirements:
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 flex items-center justify-between shrink-0">
-          <div className="text-xs war-room-text-secondary">
+        <div className="p-4 flex items-center justify-between shrink-0" style={{ borderTop: '1px solid var(--pulse-border)' }}>
+          <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
             {studyGuide && (
               <span>Generated {studyGuide.generatedAt.toLocaleTimeString()}</span>
             )}
@@ -456,16 +468,17 @@ Requirements:
               <>
                 <button
                   onClick={() => setStudyGuide(null)}
-                  className="war-room-btn text-sm"
+                  className="px-3 py-2 rounded-lg text-sm inline-flex items-center transition-colors"
+                  style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink)' }}
                 >
-                  <RefreshCw className="fa mr-2" />
+                  <RefreshCw size={14} className="mr-2" />
                   Regenerate
                 </button>
                 <button
                   onClick={exportStudyGuide}
-                  className="war-room-btn war-room-btn-primary text-sm"
+                  className="war-room-btn-primary px-3 py-2 rounded-lg text-sm inline-flex items-center"
                 >
-                  <Download className="fa mr-2" />
+                  <Download size={14} className="mr-2" />
                   Export
                 </button>
               </>
