@@ -208,11 +208,25 @@ export const ragService = {
     
     console.log('✅ Query embedding generated:', embedding.length, 'dimensions');
 
+    // Scope to the selected project's docs *inside* the RPC so the filter is
+    // applied before the similarity LIMIT (project docs aren't crowded out of
+    // the global top-N). WI-2, repair plan 2026-06-02.
+    let filterDocIds: string[] | null = null;
+    if (projectId) {
+      const { data: projectDocs } = await supabase
+        .from('project_docs')
+        .select('doc_id')
+        .eq('project_id', projectId);
+      filterDocIds = projectDocs?.map(pd => pd.doc_id) || [];
+      console.log('🔍 Project scope:', projectId, '→', filterDocIds.length, 'doc(s)');
+    }
+
     const { data, error } = await supabase.rpc('match_documents', {
       query_embedding: embedding,
-      match_threshold: 0.5, 
+      match_threshold: 0.5,
       match_count: 5,
-      filter_user_id: userId || null
+      filter_user_id: userId || null,
+      filter_doc_ids: filterDocIds
     });
 
     console.log('📊 Database RPC result:');
@@ -225,25 +239,8 @@ export const ragService = {
       return [];
     }
 
-    // Filter by project if specified
-    if (projectId && data) {
-      console.log('🔍 Filtering by project:', projectId);
-      
-      const { data: projectDocs } = await supabase
-        .from('project_docs')
-        .select('doc_id')
-        .eq('project_id', projectId);
-      
-      console.log('   Project docs:', projectDocs);
-      
-      const projectDocIds = new Set(projectDocs?.map(pd => pd.doc_id) || []);
-      const filtered = data.filter((d: any) => projectDocIds.has(d.doc_id));
-      
-      console.log('   Filtered results:', filtered.length);
-      
-      return filtered;
-    }
-
+    // Project scoping now happens inside the RPC via filter_doc_ids (applied
+    // before the similarity LIMIT) — no client-side post-filter needed. WI-2.
     return data || [];
   },
 
