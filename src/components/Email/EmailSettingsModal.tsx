@@ -9,6 +9,7 @@ import { notificationRuleService, NotificationRule } from '../../services/notifi
 import { emailAccountsService, EmailAccount, EmailAccountInput } from '../../services/emailAccountsService';
 import { emailSyncService, SyncState } from '../../services/emailSyncService';
 import { LabelManager } from './LabelManager';
+import { FilterManager } from './FilterManager';
 import toast from 'react-hot-toast';
 
 import { ExternalLink, FastForward, Filter, Info, List, Minus, Pen, Plus, RefreshCw, Settings, SlidersHorizontal, Star, Tags, UserCircle, X, Zap } from 'lucide-react';
@@ -42,6 +43,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
   const [autoSyncOn, setAutoSyncOn] = useState(false);
   const [syncFrequency, setSyncFrequency] = useState(5);
   const [showLabelManager, setShowLabelManager] = useState(false);
+  const [showFilterManager, setShowFilterManager] = useState(false);
 
   // Accounts
   const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([]);
@@ -1090,17 +1092,31 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
             <div className="space-y-8">
               <div>
                 <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">Organization</h3>
-                <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
-                  <div>
-                    <div className="font-medium text-stone-900 dark:text-white">Labels</div>
-                    <div className="text-sm text-stone-500 dark:text-zinc-400">Create, rename, and color-code labels to organize mail</div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                    <div>
+                      <div className="font-medium text-stone-900 dark:text-white">Labels</div>
+                      <div className="text-sm text-stone-500 dark:text-zinc-400">Create, rename, and color-code labels to organize mail</div>
+                    </div>
+                    <button
+                      onClick={() => setShowLabelManager(true)}
+                      className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition"
+                    >
+                      Manage Labels
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setShowLabelManager(true)}
-                    className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition"
-                  >
-                    Manage Labels
-                  </button>
+                  <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                    <div>
+                      <div className="font-medium text-stone-900 dark:text-white">Filters &amp; Rules</div>
+                      <div className="text-sm text-stone-500 dark:text-zinc-400">Define condition → action rules. Saved here; automatic application to incoming mail is coming soon.</div>
+                    </div>
+                    <button
+                      onClick={() => setShowFilterManager(true)}
+                      className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition"
+                    >
+                      Manage Filters
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1358,6 +1374,10 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
 
       {showLabelManager && (
         <LabelManager onClose={() => setShowLabelManager(false)} />
+      )}
+
+      {showFilterManager && (
+        <FilterManager onClose={() => setShowFilterManager(false)} />
       )}
     </div>
   );

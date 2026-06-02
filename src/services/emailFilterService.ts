@@ -210,8 +210,11 @@ class EmailFilterService {
         fieldValue = email.is_important;
         break;
       case 'label':
-        // This requires async call to check labels - will handle separately
-        return false; // TODO: Implement label checking
+        // Labels are denormalized onto cached_emails.labels, so this is a
+        // synchronous check (no async lookup needed). Join like the `to`
+        // field so contains/starts_with/etc. operate over the label set.
+        fieldValue = (email.labels || []).map((l) => String(l).toLowerCase()).join(' ');
+        break;
       default:
         return false;
     }
@@ -344,9 +347,12 @@ class EmailFilterService {
         break;
       
       case 'forward':
-        // TODO: Implement forward action
-        console.log('[EmailFilterService] Forward action not yet implemented');
-        break;
+        // Auto-forward is an irreversible outbound send with no loop/rate
+        // protection. Intentionally gated until a safe (server-side, dedup'd)
+        // forward path exists. Throw so a forward rule fails loudly and is
+        // recorded in filter_execution_log.error_message — never faked or
+        // silently dropped.
+        throw new Error('Forward action is not supported yet');
       
       case 'categorize':
         if (action.params.category) {
