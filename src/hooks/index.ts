@@ -21,7 +21,6 @@ export { useVoiceCommands, VOICE_COMMAND_TEMPLATES } from './useVoiceCommands';
 // Communication
 export { useMessageTrigger } from './useMessageTrigger';
 export { useMessageEnhancements } from './useMessageEnhancements';
-export { useEmailKeyboardShortcuts } from './useEmailKeyboardShortcuts';
 
 // AI/Intelligence
 export { useMultiModalIntelligence } from './useMultiModalIntelligence';
