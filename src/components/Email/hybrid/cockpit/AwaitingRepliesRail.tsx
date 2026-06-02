@@ -11,8 +11,8 @@ import type { AwaitingReplyRow } from '../data/useCockpitData';
 
 interface AwaitingRepliesRailProps {
   rows: AwaitingReplyRow[];
-  /** Open a follow-up composer for the given awaiting-reply email. */
-  onFollowUp?: (emailId: string) => void;
+  /** Open a follow-up composer for the given awaiting-reply row. */
+  onFollowUp?: (row: AwaitingReplyRow) => void;
 }
 
 // Urgency tier → day-badge color. Neutral < 7d, warning 7-9d, overdue >= 10d.
@@ -42,7 +42,7 @@ export const AwaitingRepliesRail: React.FC<AwaitingRepliesRailProps> = ({ rows, 
               {onFollowUp && (
                 <button
                   type="button"
-                  onClick={() => onFollowUp(row.emailId)}
+                  onClick={() => onFollowUp(row)}
                   className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shrink-0 inline-flex items-center justify-center w-6 h-6 rounded pulse-surface-raised pulse-ink-2-color hover:pulse-ink-color"
                   title={`Follow up with ${row.name}`}
                   aria-label={`Follow up with ${row.name}`}

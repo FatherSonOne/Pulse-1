@@ -6,13 +6,13 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { useEmailUIStore } from '../../../store/emailUIStore';
-import { useEmailStore } from '../../../store/emailStore';
 import { useEmailComposeStore } from '../../../store/emailComposeStore';
 import { BriefingHeader } from './cockpit/BriefingHeader';
 import { SignalSection } from './cockpit/SignalSection';
 import { LaneSection } from './cockpit/LaneSection';
 import { DraftedForYouRail } from './cockpit/DraftedForYouRail';
 import { AwaitingRepliesRail } from './cockpit/AwaitingRepliesRail';
+import type { AwaitingReplyRow } from './data/useCockpitData';
 import { CalendarPeekRail } from './cockpit/CalendarPeekRail';
 import { LanesHelpTip } from './cockpit/LanesHelpTip';
 import { ActiveFiltersStrip } from './chrome/ActiveFiltersStrip';
@@ -42,14 +42,15 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
 }) => {
   const compact = density === 'compact';
   const nudgeFocused = useEmailUIStore((s) => s.nudgeFocused);
-  const emails = useEmailStore((s) => s.emails);
   const openFollowUp = useEmailComposeStore((s) => s.openFollowUp);
   const { briefingMeta, signalEmails, laneBuckets, awaitingReplies, loading, isEmpty } = useCockpitData();
 
   // Follow-up compose for an awaiting-reply row (folded in from FollowUpNudge,
-  // WI-8). Resolve the sent email, compose a Re: to its primary recipient.
-  const handleFollowUp = (emailId: string) => {
-    const email = emails.find((e) => e.id === emailId);
+  // WI-8). The row carries its own sent email — resolving it from emailStore
+  // would fail, that store only holds the current folder (inbox) on the
+  // Cockpit, never the sent emails these rows are built from.
+  const handleFollowUp = (row: AwaitingReplyRow) => {
+    const email = row.email;
     if (!email) return;
     const recipient = email.to_emails?.[0];
     const to = typeof recipient === 'string' ? recipient : recipient?.email;

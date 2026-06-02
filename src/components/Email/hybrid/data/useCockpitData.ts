@@ -33,6 +33,10 @@ export interface AwaitingReplyRow {
   subject: string;
   days: number;
   cold: boolean;
+  /** The sent email itself, so a follow-up composer can be opened without
+   *  re-resolving the id against the inbox-scoped emailStore (which never
+   *  holds sent emails on the Cockpit). */
+  email: CachedEmail;
 }
 
 export interface CockpitData {
@@ -178,6 +182,7 @@ async function computeAwaitingReplies(inboxEmails: CachedEmail[]): Promise<Await
         subject: s.subject || '(no subject)',
         days: daysAgo,
         cold: daysAgo >= COLD_THREAD_THRESHOLD_DAYS,
+        email: s,
       });
 
       if (rows.length >= 4) break;
