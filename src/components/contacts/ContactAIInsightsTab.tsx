@@ -18,8 +18,9 @@ import {
 import { RelationshipHealthCard } from './RelationshipHealthCard';
 import { LeadScoreCard } from './LeadScoreIndicator';
 import { BriefingChip, InsightTone } from '../Briefing/inline/InlineInsight';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 
-import { ArrowRight, BarChart2, Globe, PieChart, RefreshCw, Wand2, Zap } from 'lucide-react';
+import { ArrowRight, BarChart2, ChevronDown, ChevronUp, Clock, Globe, MessageSquare, PieChart, RefreshCw, Wand2, Zap } from 'lucide-react';
 
 function profileTransitionInsight(profile: RelationshipProfile):
   | { tone: InsightTone; label: string; title: string }
@@ -39,12 +40,14 @@ function profileTransitionInsight(profile: RelationshipProfile):
 }
 
 interface ContactAIInsightsTabProps {
-  profile: RelationshipProfile;
+  profile: RelationshipProfile | null;
   insights: RelationshipInsights | null;
   leadScore: LeadScore | null;
   isLoading?: boolean;
   onRefreshInsights: () => void;
   onSuggestedAction?: (suggestion: RelationshipSuggestion) => void;
+  /** Profile-level next-action "Act" trigger (e.g. open Messages). */
+  onAct?: () => void;
 }
 
 export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
@@ -54,8 +57,10 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
   isLoading = false,
   onRefreshInsights,
   onSuggestedAction,
+  onAct,
 }) => {
   const [activeSection, setActiveSection] = useState<'overview' | 'factors' | 'leads'>('overview');
+  const [summaryExpanded, setSummaryExpanded] = useState(true);
 
   if (isLoading) {
     return (
@@ -68,7 +73,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
     );
   }
 
-  const transitionChip = profileTransitionInsight(profile);
+  const transitionChip = profile ? profileTransitionInsight(profile) : null;
 
   return (
     <div className="space-y-6">
@@ -107,31 +112,114 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
       {activeSection === 'overview' && (
         <div className="space-y-6">
           {/* Relationship Health Card */}
-          <RelationshipHealthCard
-            profile={profile}
-            showTrend={true}
-            showLastInteraction={true}
-          />
+          {profile && (
+            <RelationshipHealthCard
+              profile={profile}
+              showTrend={true}
+              showLastInteraction={true}
+            />
+          )}
 
-          {/* AI Summary */}
-          {insights?.profile.aiRelationshipSummary && (
-            <div className="bg-rose-50/60 dark:bg-rose-900/20 rounded-xl p-4 border border-rose-100 dark:border-rose-900/30">
-              <h3 className="font-semibold text-rose-900 dark:text-rose-300 mb-2 flex items-center gap-2">
-                <Wand2 />
-                AI Summary
-              </h3>
-              <p className="text-sm text-rose-800 dark:text-rose-200">
-                {insights.profile.aiRelationshipSummary}
+          {/* AI Summary (collapsible) with provenance */}
+          {profile?.aiRelationshipSummary && (
+            <div
+              className="rounded-xl p-3.5 border"
+              style={{ background: 'var(--pulse-coral-bg-08)', borderColor: 'var(--pulse-coral-bg-12)' }}
+            >
+              <button
+                onClick={() => setSummaryExpanded(v => !v)}
+                className="w-full flex items-center justify-between text-left mb-1.5"
+              >
+                <AIProvenanceChip vendor="PULSE AI" type="SUMMARY" />
+                {summaryExpanded
+                  ? <ChevronUp className="w-3.5 h-3.5" style={{ color: 'var(--pulse-coral-fg)' }} />
+                  : <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--pulse-coral-fg)' }} />}
+              </button>
+              {summaryExpanded && (
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--pulse-coral-fg)' }}>
+                  {profile.aiRelationshipSummary}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Suggested next action + Act (profile-level) */}
+          {profile?.aiNextActionSuggestion && (
+            <div
+              className="p-3 rounded-xl border"
+              style={{ background: 'var(--pulse-coral-bg-08)', borderColor: 'var(--pulse-coral-bg-12)' }}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <AIProvenanceChip vendor="PULSE AI" type="SUGGESTION" />
+                {onAct && (
+                  <button
+                    onClick={onAct}
+                    className="flex-shrink-0 px-2.5 py-1 text-white text-xs font-medium rounded-lg transition"
+                    style={{ background: 'var(--pulse-rose)' }}
+                  >
+                    Act
+                  </button>
+                )}
+              </div>
+              <p className="text-sm" style={{ color: 'var(--pulse-coral-fg)' }}>
+                {profile.aiNextActionSuggestion}
               </p>
+            </div>
+          )}
+
+          {/* Communication style + avg reply */}
+          {profile && (profile.aiCommunicationStyle || profile.avgResponseTimeHours !== undefined) && (
+            <div className="flex gap-2">
+              {profile.aiCommunicationStyle && (
+                <div className="flex-1 flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                  <MessageSquare className="w-3.5 h-3.5 text-zinc-400" />
+                  <div>
+                    <div className="text-xs text-zinc-400">Style</div>
+                    <div className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 capitalize">{profile.aiCommunicationStyle}</div>
+                  </div>
+                </div>
+              )}
+              {profile.avgResponseTimeHours !== undefined && (
+                <div className="flex-1 flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                  <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                  <div>
+                    <div className="text-xs text-zinc-400">Avg reply</div>
+                    <div className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                      {profile.avgResponseTimeHours < 1
+                        ? '< 1hr'
+                        : profile.avgResponseTimeHours < 24
+                        ? `${Math.round(profile.avgResponseTimeHours)}hr`
+                        : `${Math.round(profile.avgResponseTimeHours / 24)}d`}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Topics */}
+          {profile?.aiTopics && profile.aiTopics.length > 0 && (
+            <div>
+              <p className="text-xs text-zinc-400 mb-1.5">Topics</p>
+              <div className="flex flex-wrap gap-1.5">
+                {profile.aiTopics.slice(0, 6).map(topic => (
+                  <span
+                    key={topic}
+                    className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs rounded-full"
+                  >
+                    {topic}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Talking Points */}
           {insights && insights.talkingPoints.length > 0 && (
             <div>
-              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">
-                Talking Points
-              </h3>
+              <div className="mb-3">
+                <AIProvenanceChip vendor="PULSE AI" type="TALKING POINTS" />
+              </div>
               <ul className="space-y-2">
                 {insights.talkingPoints.map((point, idx) => (
                   <li
@@ -153,9 +241,9 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
           {/* Suggested Actions */}
           {insights && insights.suggestions.length > 0 && (
             <div>
-              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">
-                Suggested Actions
-              </h3>
+              <div className="mb-3">
+                <AIProvenanceChip vendor="PULSE AI" type="INSIGHTS" />
+              </div>
               <div className="space-y-2">
                 {insights.suggestions.map((suggestion, idx) => (
                   <button

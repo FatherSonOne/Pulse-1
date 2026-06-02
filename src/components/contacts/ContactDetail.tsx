@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Contact } from '../../types';
 import { LeadGradeBadge, LeadStatusBadge } from './LeadScoreIndicator';
-import { LeadScoreCard } from './LeadScoreIndicator';
+import { ContactAIInsightsTab } from './ContactAIInsightsTab';
 import {
   RelationshipProfile,
   RelationshipInsights,
@@ -21,11 +21,10 @@ import { supabase } from '../../services/supabase';
 import { useWorkspaceData } from '../../contexts/WorkspaceContext';
 import { listWorkspaceContacts, type WorkspaceSharedContact } from '../../services/workspaceContactsService';
 import { ProvenanceChip, type ContactProvenanceSource } from './ProvenanceChip';
-import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import { CardSourceChip } from './cards/CardSourceChip';
 
 import toast from 'react-hot-toast';
-import { ArrowRight, Cake, Check, Clock, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Send, Sparkles, Target, Trash2, Video, X } from 'lucide-react';
+import { Cake, Check, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Send, Sparkles, Target, Trash2, Video, X } from 'lucide-react';
 import MapPreview from '../map/MapPreview';
 
 // ==================== TYPES ====================
@@ -69,12 +68,7 @@ const CHANNEL_ICON: Record<string, string> = {
   mixed:    'fa-solid fa-shuffle',
 };
 
-const STYLE_ICON: Record<string, string> = {
-  formal:   'fa-solid fa-briefcase',
-  casual:   'fa-solid fa-face-smile',
-  brief:    'fa-solid fa-bolt',
-  detailed: 'fa-solid fa-bars-staggered',
-};
+// STYLE_ICON removed — communication style now renders in ContactAIInsightsTab (lucide).
 
 // ==================== SECTION HEADER ====================
 
@@ -119,7 +113,6 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
 }) => {
   const { t } = useTranslation();
   const { currentWorkspace } = useWorkspaceData();
-  const [summaryExpanded, setSummaryExpanded] = useState(true);
   const [notesEditing, setNotesEditing] = useState(false);
   const [goal, setGoal] = useState<ContactGoal | null>(null);
   const [goalModalOpen, setGoalModalOpen] = useState(false);
@@ -371,169 +364,22 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
           </div>
         </div>
 
-        {/* ── AI Intelligence Card ── */}
-        {profile && (
+        {/* ── AI Intelligence (consolidated into ContactAIInsightsTab) ──
+            Replaces the former inline AI-Intelligence + Lead-Score blocks. The
+            tab is now the canonical insights surface: it absorbed the inline
+            provenance chips, next-action Act, comm-style/avg-reply and topics,
+            and adds Health Factors + Buying Signals + AI Predictions. */}
+        {(profile || leadScore) && (
           <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/60">
-            <SectionHeader icon="fa-solid fa-wand-magic-sparkles" label="AI Intelligence" />
-
-            {isLoadingInsights ? (
-              <div className="flex items-center gap-3 py-4">
-                <div className="animate-spin w-5 h-5 border-2 border-rose-500 border-t-transparent rounded-full" />
-                <span className="text-sm text-zinc-500">Analyzing relationship...</span>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {/* AI Summary (collapsible) */}
-                {profile.aiRelationshipSummary && (
-                  <div
-                    className="rounded-xl p-3.5 border"
-                    style={{ background: 'var(--pulse-coral-bg-08)', borderColor: 'var(--pulse-coral-bg-12)' }}
-                  >
-                    <button
-                      onClick={() => setSummaryExpanded(v => !v)}
-                      className="w-full flex items-center justify-between text-left mb-1.5"
-                    >
-                      <AIProvenanceChip vendor="PULSE AI" type="SUMMARY" />
-                      <i
-                        className={`fa-solid fa-chevron-${summaryExpanded ? 'up' : 'down'} text-xs`}
-                        style={{ color: 'var(--pulse-coral-fg)' }}
-                      />
-                    </button>
-                    {summaryExpanded && (
-                      <p className="text-sm leading-relaxed" style={{ color: 'var(--pulse-coral-fg)' }}>
-                        {profile.aiRelationshipSummary}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Suggested next action */}
-                {profile.aiNextActionSuggestion && (
-                  <div
-                    className="p-3 rounded-xl border"
-                    style={{ background: 'var(--pulse-coral-bg-08)', borderColor: 'var(--pulse-coral-bg-12)' }}
-                  >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <AIProvenanceChip vendor="PULSE AI" type="SUGGESTION" />
-                      <button
-                        onClick={() => onAction('message', contact.id)}
-                        className="flex-shrink-0 px-2.5 py-1 text-white text-xs font-medium rounded-lg transition"
-                        style={{ background: 'var(--pulse-rose)' }}
-                      >
-                        Act
-                      </button>
-                    </div>
-                    <p className="text-sm" style={{ color: 'var(--pulse-coral-fg)' }}>{profile.aiNextActionSuggestion}</p>
-                  </div>
-                )}
-
-                {/* Communication style + avg reply */}
-                <div className="flex gap-2">
-                  {profile.aiCommunicationStyle && (
-                    <div className="flex-1 flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800">
-                      <i className={`${STYLE_ICON[profile.aiCommunicationStyle] ?? 'fa-solid fa-comment'} text-xs text-zinc-400`} />
-                      <div>
-                        <div className="text-xs text-zinc-400">Style</div>
-                        <div className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 capitalize">{profile.aiCommunicationStyle}</div>
-                      </div>
-                    </div>
-                  )}
-                  {profile.avgResponseTimeHours !== undefined && (
-                    <div className="flex-1 flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800">
-                      <Clock className="text-xs text-zinc-400" />
-                      <div>
-                        <div className="text-xs text-zinc-400">Avg reply</div>
-                        <div className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                          {profile.avgResponseTimeHours < 1
-                            ? '< 1hr'
-                            : profile.avgResponseTimeHours < 24
-                            ? `${Math.round(profile.avgResponseTimeHours)}hr`
-                            : `${Math.round(profile.avgResponseTimeHours / 24)}d`}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Topics */}
-                {profile.aiTopics && profile.aiTopics.length > 0 && (
-                  <div>
-                    <p className="text-xs text-zinc-400 mb-1.5">Topics</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {profile.aiTopics.slice(0, 6).map(topic => (
-                        <span
-                          key={topic}
-                          className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs rounded-full"
-                        >
-                          {topic}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Talking points */}
-                {insights && insights.talkingPoints.length > 0 && (
-                  <div>
-                    <div className="mb-1.5">
-                      <AIProvenanceChip vendor="PULSE AI" type="TALKING POINTS" />
-                    </div>
-                    <ul className="space-y-1.5">
-                      {insights.talkingPoints.slice(0, 3).map((point, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                          <span className="w-4 h-4 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
-                            {idx + 1}
-                          </span>
-                          {point}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Suggested actions from insights */}
-                {insights && insights.suggestions.length > 0 && (
-                  <div>
-                    <div className="mb-1.5">
-                      <AIProvenanceChip vendor="PULSE AI" type="INSIGHTS" />
-                    </div>
-                    <div className="space-y-1.5">
-                    {insights.suggestions.slice(0, 2).map((suggestion, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => onSuggestedAction?.(suggestion)}
-                        className={`w-full p-3 text-left rounded-xl border transition group hover:shadow-sm text-sm ${
-                          suggestion.type === 'warning'
-                            ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30'
-                            : suggestion.type === 'insight'
-                            ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-900/30'
-                            : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-rose-400'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className={`font-medium text-sm ${
-                            suggestion.type === 'warning' ? 'text-red-800 dark:text-red-300'
-                            : suggestion.type === 'insight' ? 'text-blue-800 dark:text-blue-300'
-                            : 'text-zinc-800 dark:text-zinc-200'
-                          }`}>
-                            {suggestion.title}
-                          </span>
-                          <ArrowRight className="text-zinc-300 group-hover:text-rose-500 transition text-xs" />
-                        </div>
-                        <p className={`text-xs mt-0.5 ${
-                          suggestion.type === 'warning' ? 'text-red-600 dark:text-red-400'
-                          : suggestion.type === 'insight' ? 'text-blue-600 dark:text-blue-400'
-                          : 'text-zinc-500'
-                        }`}>
-                          {suggestion.description}
-                        </p>
-                      </button>
-                    ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            <ContactAIInsightsTab
+              profile={profile ?? null}
+              insights={insights ?? null}
+              leadScore={leadScore ?? null}
+              isLoading={isLoadingInsights}
+              onRefreshInsights={onRefreshInsights ?? (() => {})}
+              onSuggestedAction={onSuggestedAction}
+              onAct={() => { if (contact) onAction('message', contact.id); }}
+            />
           </div>
         )}
 
@@ -613,20 +459,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
           )}
         </div>
 
-        {/* ── Lead Score (if applicable) ── */}
-        {leadScore && (
-          <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/60">
-            <SectionHeader icon="fa-solid fa-chart-line" label="Lead Score" />
-            <LeadScoreCard
-              score={leadScore.leadScore}
-              grade={leadScore.leadGrade}
-              status={leadScore.leadStatus}
-              buyingSignals={leadScore.buyingSignalCount}
-              conversionProbability={leadScore.aiConversionProbability}
-              churnRisk={leadScore.aiChurnRisk}
-            />
-          </div>
-        )}
+        {/* Lead Score moved into ContactAIInsightsTab (Leads sub-tab). */}
 
         {/* ── Contact Info ── */}
         <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/60">
