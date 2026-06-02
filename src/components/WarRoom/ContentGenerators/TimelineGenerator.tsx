@@ -1,9 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { KnowledgeDoc } from '../../../services/ragService';
 import { processWithModel } from '../../../services/geminiService';
+import { ProvenanceTag } from '../ProvenanceTag';
 import toast from 'react-hot-toast';
 
-import { Activity, Download, FileText, Filter, GripHorizontal, GripVertical, Loader2, RefreshCw, Sparkles, X } from 'lucide-react';
+import { Activity, CalendarDays, CircleDot, Download, FileText, Filter, GripHorizontal, GripVertical, Loader2, RefreshCw, Sparkles, Trophy, X } from 'lucide-react';
 
 interface TimelineEvent {
   date: string;
@@ -27,6 +28,28 @@ interface TimelineGeneratorProps {
   apiKey: string;
   onClose: () => void;
 }
+
+// Coral Cockpit tokens. WB-3 of docs/WAR_ROOM_STUDIO_RESKIN_HANDOFF_2026-06-02.md.
+const monoLabel: React.CSSProperties = {
+  fontFamily: 'var(--pulse-font-mono)',
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+};
+
+const fieldStyle: React.CSSProperties = {
+  background: 'var(--pulse-surface-raised)',
+  color: 'var(--pulse-ink)',
+  border: '1px solid var(--pulse-border)',
+};
+
+// Event type → Lucide (replaces the broken FontAwesome `<i>` glyphs).
+const TypeIcon: React.FC<{ type: string; size?: number }> = ({ type, size = 14 }) => {
+  if (type === 'milestone') return <Trophy size={size} />;
+  if (type === 'period') return <CalendarDays size={size} />;
+  return <CircleDot size={size} />;
+};
 
 export const TimelineGenerator: React.FC<TimelineGeneratorProps> = ({
   documents,
@@ -164,12 +187,7 @@ Requirements:
     markdown += `---\n\n`;
 
     timeline.events.forEach(event => {
-      const importanceEmoji = event.importance === 'high' ? '🔴' :
-                              event.importance === 'medium' ? '🟡' : '🟢';
-      const typeEmoji = event.type === 'milestone' ? '🏆' :
-                        event.type === 'period' ? '📅' : '📌';
-
-      markdown += `## ${event.date} - ${event.title} ${importanceEmoji}${typeEmoji}\n\n`;
+      markdown += `## ${event.date} - ${event.title} [${event.importance.toUpperCase()} · ${event.type.toUpperCase()}]\n\n`;
       markdown += `${event.description}\n\n`;
       if (event.sources.length > 0) {
         markdown += `*Sources: ${event.sources.join(', ')}*\n\n`;
@@ -186,75 +204,64 @@ Requirements:
     toast.success('Timeline exported!');
   }, [timeline]);
 
-  const getImportanceStyle = (importance: string) => {
+  // Importance is a semantic scale; keep status tints (high red / med amber / low green).
+  const getImportanceStyle = (importance: string): { dot: string; badge: React.CSSProperties } => {
     switch (importance) {
       case 'high':
-        return {
-          dot: 'bg-red-500',
-          line: 'border-red-500/50',
-          badge: 'bg-red-500/20 text-red-400 border-red-500/30'
-        };
+        return { dot: '#ef4444', badge: { background: 'rgba(239,68,68,0.12)', color: '#ef4444' } };
       case 'medium':
-        return {
-          dot: 'bg-yellow-500',
-          line: 'border-yellow-500/50',
-          badge: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-        };
+        return { dot: '#f59e0b', badge: { background: 'rgba(245,158,11,0.15)', color: '#f59e0b' } };
       default:
-        return {
-          dot: 'bg-emerald-500',
-          line: 'border-emerald-500/50',
-          badge: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-        };
+        return { dot: '#10b981', badge: { background: 'rgba(16,185,129,0.15)', color: '#10b981' } };
     }
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'milestone': return 'fa-trophy';
-      case 'period': return 'fa-calendar-days';
-      default: return 'fa-circle-dot';
-    }
-  };
+  const viewToggle = (active: boolean): React.CSSProperties =>
+    active
+      ? { background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }
+      : { color: 'var(--pulse-ink-3)' };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="war-room-modal w-full max-w-4xl mx-4 rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+      <div
+        className="w-full max-w-4xl mx-4 rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        style={{ background: 'var(--pulse-surface)', border: '1px solid var(--pulse-border)' }}
+      >
         {/* Header */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
+        <div className="p-4 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid var(--pulse-border)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-              <Activity className="fa text-purple-400" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }}>
+              <Activity size={18} />
             </div>
             <div>
-              <h3 className="text-lg font-bold">Timeline Generator</h3>
-              <p className="text-xs war-room-text-secondary">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold" style={{ color: 'var(--pulse-ink)' }}>Timeline Generator</h3>
+                {timeline && <ProvenanceTag model="GEMINI" kind="TIMELINE" />}
+              </div>
+              <p className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
                 {docsToUse.length} document{docsToUse.length !== 1 ? 's' : ''} selected
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="war-room-btn war-room-btn-icon-sm">
-            <X className="fa" />
+          <button onClick={onClose} className="p-2 rounded-lg transition-colors" style={{ color: 'var(--pulse-ink-3)' }} aria-label="Close">
+            <X size={16} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 war-room-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4">
           {!timeline ? (
             <div className="text-center py-8">
               {isGenerating ? (
                 <div>
-                  <Loader2 className="fa text-4xl text-purple-400 mb-4 animate-spin" />
-                  <p className="text-sm war-room-text-secondary mb-4">
+                  <Loader2 size={36} className="animate-spin mb-4 mx-auto" style={{ color: 'var(--pulse-coral-fg)' }} />
+                  <p className="text-sm mb-4" style={{ color: 'var(--pulse-ink-3)' }}>
                     Generating timeline...
                   </p>
-                  <div className="w-48 mx-auto war-room-progress">
-                    <div
-                      className="war-room-progress-bar bg-gradient-to-r from-purple-500 to-pink-500"
-                      style={{ width: `${progress}%` }}
-                    ></div>
+                  <div className="w-48 h-1.5 mx-auto rounded-full overflow-hidden" style={{ background: 'var(--pulse-surface-raised)' }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'var(--pulse-rose)' }} />
                   </div>
-                  <p className="text-xs war-room-text-muted mt-2">
+                  <p className="text-xs mt-2" style={{ color: 'var(--pulse-ink-3)' }}>
                     {progress < 30 && 'Scanning documents for dates...'}
                     {progress >= 30 && progress < 80 && 'Extracting chronological events...'}
                     {progress >= 80 && 'Organizing timeline...'}
@@ -262,21 +269,21 @@ Requirements:
                 </div>
               ) : (
                 <div>
-                  <Activity className="fa text-4xl text-purple-400 mb-4" />
-                  <p className="text-lg font-medium mb-2">Generate Timeline</p>
-                  <p className="text-sm war-room-text-secondary mb-6 max-w-md mx-auto">
+                  <Activity size={36} className="mb-4 mx-auto" style={{ color: 'var(--pulse-coral-fg)' }} />
+                  <p className="text-lg font-medium mb-2" style={{ color: 'var(--pulse-ink)' }}>Generate Timeline</p>
+                  <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: 'var(--pulse-ink-3)' }}>
                     Extract dates and events from your documents to create a visual chronological timeline.
                   </p>
                   <div className="mb-6">
-                    <p className="text-xs war-room-text-secondary mb-2">Documents to analyze:</p>
+                    <p className="text-xs mb-2" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>Documents to analyze</p>
                     <div className="flex flex-wrap gap-2 justify-center max-w-lg mx-auto">
                       {docsToUse.slice(0, 5).map(doc => (
-                        <span key={doc.id} className="war-room-badge text-xs">
+                        <span key={doc.id} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           {doc.title}
                         </span>
                       ))}
                       {docsToUse.length > 5 && (
-                        <span className="war-room-badge text-xs">
+                        <span className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           +{docsToUse.length - 5} more
                         </span>
                       )}
@@ -285,9 +292,9 @@ Requirements:
                   <button
                     onClick={generateTimeline}
                     disabled={docsToUse.length === 0}
-                    className="war-room-btn war-room-btn-primary"
+                    className="war-room-btn-primary px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center"
                   >
-                    <Sparkles className="fa mr-2" />
+                    <Sparkles size={14} className="mr-2" />
                     Generate Timeline
                   </button>
                 </div>
@@ -296,10 +303,10 @@ Requirements:
           ) : (
             <div>
               {/* Header info */}
-              <div className="war-room-panel p-4 mb-4">
-                <h4 className="font-bold text-lg mb-1">{timeline.title}</h4>
-                <p className="text-sm war-room-text-secondary">{timeline.description}</p>
-                <p className="text-xs war-room-text-muted mt-2">
+              <div className="p-4 mb-4 rounded-lg" style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}>
+                <h4 className="font-bold text-lg mb-1" style={{ color: 'var(--pulse-ink)' }}>{timeline.title}</h4>
+                <p className="text-sm" style={{ color: 'var(--pulse-ink-2)' }}>{timeline.description}</p>
+                <p className="text-xs mt-2" style={{ color: 'var(--pulse-ink-3)' }}>
                   {timeline.events.length} events extracted
                 </p>
               </div>
@@ -307,27 +314,21 @@ Requirements:
               {/* Filters */}
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 {/* View mode */}
-                <div className="flex gap-1 war-room-panel-inset p-1 rounded-lg">
+                <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--pulse-surface-raised)' }}>
                   <button
                     onClick={() => setViewMode('vertical')}
-                    className={`px-3 py-1 rounded text-xs transition-all ${
-                      viewMode === 'vertical'
-                        ? 'bg-purple-500/20 text-purple-400'
-                        : 'war-room-text-secondary hover:text-purple-400'
-                    }`}
+                    className="px-3 py-1 rounded text-xs transition-all inline-flex items-center"
+                    style={viewToggle(viewMode === 'vertical')}
                   >
-                    <GripVertical className="fa mr-1" />
+                    <GripVertical size={12} className="mr-1" />
                     Vertical
                   </button>
                   <button
                     onClick={() => setViewMode('horizontal')}
-                    className={`px-3 py-1 rounded text-xs transition-all ${
-                      viewMode === 'horizontal'
-                        ? 'bg-purple-500/20 text-purple-400'
-                        : 'war-room-text-secondary hover:text-purple-400'
-                    }`}
+                    className="px-3 py-1 rounded text-xs transition-all inline-flex items-center"
+                    style={viewToggle(viewMode === 'horizontal')}
                   >
-                    <GripHorizontal className="fa mr-1" />
+                    <GripHorizontal size={12} className="mr-1" />
                     Horizontal
                   </button>
                 </div>
@@ -336,7 +337,8 @@ Requirements:
                 <select
                   value={filterImportance}
                   onChange={(e) => setFilterImportance(e.target.value)}
-                  className="war-room-select text-sm"
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-none"
+                  style={fieldStyle}
                 >
                   <option value="all">All Importance</option>
                   <option value="high">High</option>
@@ -348,7 +350,8 @@ Requirements:
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="war-room-select text-sm"
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-none"
+                  style={fieldStyle}
                 >
                   <option value="all">All Types</option>
                   <option value="event">Events</option>
@@ -361,7 +364,7 @@ Requirements:
               {viewMode === 'vertical' ? (
                 <div className="relative">
                   {/* Vertical line */}
-                  <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-500/50 via-pink-500/50 to-purple-500/50"></div>
+                  <div className="absolute left-4 top-0 bottom-0 w-0.5" style={{ background: 'var(--pulse-border-strong)' }}></div>
 
                   <div className="space-y-4">
                     {filteredEvents.map((event, i) => {
@@ -369,25 +372,25 @@ Requirements:
                       return (
                         <div key={i} className="relative pl-10">
                           {/* Dot */}
-                          <div className={`absolute left-2.5 top-2 w-3 h-3 rounded-full ${style.dot} ring-4 ring-gray-900`}></div>
+                          <div className="absolute left-2.5 top-2 w-3 h-3 rounded-full" style={{ background: style.dot, boxShadow: '0 0 0 4px var(--pulse-surface)' }}></div>
 
-                          <div className="war-room-panel-inset p-4">
+                          <div className="p-4 rounded-lg" style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}>
                             <div className="flex items-start justify-between gap-4 mb-2">
                               <div>
-                                <p className="text-xs text-purple-400 font-mono mb-1">{event.date}</p>
-                                <p className="font-medium flex items-center gap-2">
-                                  <i className={`fa ${getTypeIcon(event.type)} text-sm war-room-text-secondary`}></i>
+                                <p className="text-xs mb-1" style={{ ...monoLabel, color: 'var(--pulse-coral-fg)' }}>{event.date}</p>
+                                <p className="font-medium flex items-center gap-2" style={{ color: 'var(--pulse-ink)' }}>
+                                  <span style={{ color: 'var(--pulse-ink-3)' }}><TypeIcon type={event.type} /></span>
                                   {event.title}
                                 </p>
                               </div>
-                              <span className={`text-xs px-2 py-0.5 rounded border ${style.badge}`}>
+                              <span className="text-xs px-2 py-0.5 rounded" style={style.badge}>
                                 {event.importance}
                               </span>
                             </div>
-                            <p className="text-sm war-room-text-secondary">{event.description}</p>
+                            <p className="text-sm" style={{ color: 'var(--pulse-ink-2)' }}>{event.description}</p>
                             {event.sources.length > 0 && (
-                              <p className="text-xs war-room-text-muted mt-2">
-                                <FileText className="fa mr-1" />
+                              <p className="text-xs mt-2 inline-flex items-center" style={{ color: 'var(--pulse-ink-3)' }}>
+                                <FileText size={11} className="mr-1" />
                                 {event.sources.join(', ')}
                               </p>
                             )}
@@ -406,23 +409,23 @@ Requirements:
                         <div key={i} className="relative">
                           {/* Connecting line */}
                           {i < filteredEvents.length - 1 && (
-                            <div className="absolute top-5 left-full w-4 h-0.5 bg-gradient-to-r from-purple-500/50 to-pink-500/50"></div>
+                            <div className="absolute top-5 left-full w-4 h-0.5" style={{ background: 'var(--pulse-border-strong)' }}></div>
                           )}
 
-                          <div className="war-room-panel-inset p-4 w-64">
+                          <div className="p-4 w-64 rounded-lg" style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}>
                             {/* Dot */}
-                            <div className={`w-3 h-3 rounded-full ${style.dot} mx-auto mb-3`}></div>
+                            <div className="w-3 h-3 rounded-full mx-auto mb-3" style={{ background: style.dot }}></div>
 
-                            <p className="text-xs text-purple-400 font-mono text-center mb-1">{event.date}</p>
-                            <p className="font-medium text-center text-sm mb-2 flex items-center justify-center gap-2">
-                              <i className={`fa ${getTypeIcon(event.type)} text-xs war-room-text-secondary`}></i>
+                            <p className="text-xs text-center mb-1" style={{ ...monoLabel, color: 'var(--pulse-coral-fg)' }}>{event.date}</p>
+                            <p className="font-medium text-center text-sm mb-2 flex items-center justify-center gap-2" style={{ color: 'var(--pulse-ink)' }}>
+                              <span style={{ color: 'var(--pulse-ink-3)' }}><TypeIcon type={event.type} size={12} /></span>
                               {event.title}
                             </p>
-                            <p className="text-xs war-room-text-secondary text-center line-clamp-3">
+                            <p className="text-xs text-center line-clamp-3" style={{ color: 'var(--pulse-ink-2)' }}>
                               {event.description}
                             </p>
                             <div className="flex justify-center mt-2">
-                              <span className={`text-xs px-2 py-0.5 rounded border ${style.badge}`}>
+                              <span className="text-xs px-2 py-0.5 rounded" style={style.badge}>
                                 {event.importance}
                               </span>
                             </div>
@@ -435,8 +438,8 @@ Requirements:
               )}
 
               {filteredEvents.length === 0 && (
-                <div className="text-center py-8 war-room-text-secondary">
-                  <Filter className="fa text-2xl mb-2" />
+                <div className="text-center py-8" style={{ color: 'var(--pulse-ink-3)' }}>
+                  <Filter size={22} className="mb-2 mx-auto" />
                   <p>No events match your filters</p>
                 </div>
               )}
@@ -445,8 +448,8 @@ Requirements:
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 flex items-center justify-between shrink-0">
-          <div className="text-xs war-room-text-secondary">
+        <div className="p-4 flex items-center justify-between shrink-0" style={{ borderTop: '1px solid var(--pulse-border)' }}>
+          <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
             {timeline && (
               <span>
                 Showing {filteredEvents.length} of {timeline.events.length} events
@@ -458,16 +461,17 @@ Requirements:
               <>
                 <button
                   onClick={() => setTimeline(null)}
-                  className="war-room-btn text-sm"
+                  className="px-3 py-2 rounded-lg text-sm inline-flex items-center transition-colors"
+                  style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink)' }}
                 >
-                  <RefreshCw className="fa mr-2" />
+                  <RefreshCw size={14} className="mr-2" />
                   Regenerate
                 </button>
                 <button
                   onClick={exportTimeline}
-                  className="war-room-btn war-room-btn-primary text-sm"
+                  className="war-room-btn-primary px-3 py-2 rounded-lg text-sm inline-flex items-center"
                 >
-                  <Download className="fa mr-2" />
+                  <Download size={14} className="mr-2" />
                   Export
                 </button>
               </>
