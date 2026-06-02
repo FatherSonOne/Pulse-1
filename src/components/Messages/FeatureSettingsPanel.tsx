@@ -140,6 +140,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
         disableBtnBorder: 'rgba(255, 255, 255, 0.08)',
         disableBtnText: '#a1a1aa',
         emptyText: '#a1a1aa',
+        colorScheme: 'dark',
       };
     }
     return {
@@ -180,6 +181,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
       disableBtnBorder: 'rgba(0, 0, 0, 0.08)',
       disableBtnText: '#71717a',
       emptyText: '#71717a',
+      colorScheme: 'light',
     };
   }, [isDark]);
 
@@ -775,6 +777,7 @@ interface AudioThemeShape {
   inputText: string;
   featureBg: string;
   featureBorder: string;
+  colorScheme: string;
 }
 
 const AudioSection: React.FC<{ theme: AudioThemeShape }> = ({ theme: t }) => {
@@ -854,6 +857,9 @@ const AudioSection: React.FC<{ theme: AudioThemeShape }> = ({ theme: t }) => {
               outline: 'none',
               cursor: 'pointer',
               boxSizing: 'border-box',
+              // Make the native dropdown popup honor the theme — otherwise the
+              // <option> list renders white-on-white in dark mode.
+              colorScheme: t.colorScheme as React.CSSProperties['colorScheme'],
             }}
           >
             <option value="">
