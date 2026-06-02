@@ -19,6 +19,8 @@ import {
   Code,
   Download,
   Eye,
+  FileImage,
+  FileSpreadsheet,
   FileText,
   FolderOpen,
   Info,
@@ -40,6 +42,13 @@ import {
  * markers, code spans, and link wrappers collapse to plain text so a
  * line-clamp doesn't show literal `**` and `#` characters.
  */
+/** File-type glyph as a Lucide icon (replaces the broken fa-file-* glyphs). */
+function FileTypeIcon({ fileType, size = 16 }: { fileType?: string; size?: number }) {
+  if (fileType?.startsWith('image')) return <FileImage size={size} />;
+  if (fileType === 'xlsx') return <FileSpreadsheet size={size} />;
+  return <FileText size={size} />;
+}
+
 function stripMarkdownForPreview(input: string): string {
   return input
     .replace(/```[\s\S]*?```/g, '')
@@ -467,26 +476,26 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
 
       {/* Knowledge Bank Modal - Full Document Browser */}
       {showKnowledgeBank && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-700 w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+          <div className="rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-in" style={{ background: 'var(--pulse-surface-modal)', border: '1px solid var(--pulse-border)' }}>
             {/* Header */}
-            <div className="p-4 border-b border-zinc-700 flex items-center justify-between shrink-0">
+            <div className="p-4 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid var(--pulse-border)' }}>
               <div className="flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' }}
+                  style={{ background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }}
                 >
                   <BookOpen size={20} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">Knowledge Bank</h2>
-                  <p className="text-xs text-zinc-400">
+                  <h2 className="text-lg font-bold" style={{ color: 'var(--pulse-ink)' }}>Knowledge Bank</h2>
+                  <p className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
                     {documents.length} documents &bull; {activeContextDocs.size} active
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg cursor-pointer transition-colors">
+                <label className="war-room-btn-primary flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer">
                   <Plus size={16} />
                   <span>Upload</span>
                   <input
@@ -499,7 +508,9 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                 </label>
                 <button
                   onClick={() => setShowKnowledgeBank(false)}
-                  className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ color: 'var(--pulse-ink-3)' }}
+                  aria-label="Close"
                 >
                   <X size={18} />
                 </button>
@@ -507,7 +518,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
             </div>
 
             {/* Search */}
-            <div className="p-4 border-b border-zinc-800 shrink-0">
+            <div className="p-4 shrink-0" style={{ borderBottom: '1px solid var(--pulse-border)' }}>
               <DocumentSearch
                 documents={documents}
                 activeContextIds={activeContextDocs}
@@ -522,9 +533,9 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
             {/* Document Grid */}
             <div className="flex-1 overflow-y-auto p-4">
               {documents.length === 0 ? (
-                <div className="text-center py-16 text-zinc-500">
+                <div className="text-center py-16" style={{ color: 'var(--pulse-ink-3)' }}>
                   <FolderOpen size={48} className="mb-4 mx-auto" />
-                  <h3 className="text-lg font-medium text-white mb-2">No documents yet</h3>
+                  <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--pulse-ink)' }}>No documents yet</h3>
                   <p className="text-sm">
                     Upload PDFs, Word docs, images, or text files to build your knowledge base.
                   </p>
@@ -536,46 +547,24 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                     return (
                       <div
                         key={doc.id}
-                        className={`rounded-xl border p-4 transition-all hover:shadow-lg ${
-                          isInContext
-                            ? 'bg-emerald-500/10 border-emerald-500/30 shadow-emerald-500/10'
-                            : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600'
-                        }`}
+                        className="rounded-xl p-4 transition-all"
+                        style={isInContext
+                          ? { background: 'var(--pulse-coral-bg-08)', border: '1px solid var(--pulse-rose-soft)' }
+                          : { background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <div
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                                doc.file_type === 'pdf'
-                                  ? 'bg-red-500/20 text-red-400'
-                                  : doc.file_type === 'docx'
-                                  ? 'bg-blue-500/20 text-blue-400'
-                                  : doc.file_type === 'xlsx'
-                                  ? 'bg-green-500/20 text-green-400'
-                                  : doc.file_type?.startsWith('image')
-                                  ? 'bg-purple-500/20 text-purple-400'
-                                  : 'bg-zinc-700 text-zinc-400'
-                              }`}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center"
+                              style={{ background: 'var(--pulse-surface)', color: 'var(--pulse-ink-2)' }}
                             >
-                              <i
-                                className={`fa ${
-                                  doc.file_type === 'pdf'
-                                    ? 'fa-file-pdf'
-                                    : doc.file_type === 'docx'
-                                    ? 'fa-file-word'
-                                    : doc.file_type === 'xlsx'
-                                    ? 'fa-file-excel'
-                                    : doc.file_type?.startsWith('image')
-                                    ? 'fa-file-image'
-                                    : 'fa-file-alt'
-                                } text-sm`}
-                              ></i>
+                              <FileTypeIcon fileType={doc.file_type} size={15} />
                             </div>
                             <div>
-                              <h4 className="font-medium text-white text-sm truncate max-w-[150px]">
+                              <h4 className="font-medium text-sm truncate max-w-[150px]" style={{ color: 'var(--pulse-ink)' }}>
                                 {doc.title}
                               </h4>
-                              <p className="text-[10px] text-zinc-500 uppercase">
+                              <p className="text-[10px] uppercase" style={{ fontFamily: 'var(--pulse-font-mono)', letterSpacing: '0.08em', color: 'var(--pulse-ink-3)' }}>
                                 {doc.file_type || 'Document'}
                               </p>
                             </div>
@@ -599,7 +588,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                         </div>
 
                         {doc.ai_summary && (
-                          <p className="text-xs text-zinc-400 line-clamp-2 mb-3">
+                          <p className="text-xs line-clamp-2 mb-3" style={{ color: 'var(--pulse-ink-3)' }}>
                             {stripMarkdownForPreview(doc.ai_summary)}
                           </p>
                         )}
@@ -617,7 +606,8 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                               {cleaned.map((keyword, i) => (
                                 <span
                                   key={i}
-                                  className="text-[10px] px-2 py-0.5 bg-zinc-700/50 text-zinc-400 rounded-full"
+                                  className="text-[10px] px-2 py-0.5 rounded-full"
+                                  style={{ background: 'var(--pulse-surface)', color: 'var(--pulse-ink-3)' }}
                                 >
                                   {keyword}
                                 </span>
@@ -626,29 +616,33 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                           );
                         })()}
 
-                        <div className="flex items-center gap-2 pt-2 border-t border-zinc-700/50">
+                        <div className="flex items-center gap-2 pt-2" style={{ borderTop: '1px solid var(--pulse-border)' }}>
                           <button
                             onClick={() => {
                               setViewingDoc(doc);
                               setViewerHighlightText(undefined);
                               setViewerScrollOffset(undefined);
                             }}
-                            className="flex-1 text-xs py-1.5 text-zinc-400 hover:text-white hover:bg-white/5 rounded transition-colors"
+                            className="flex-1 text-xs py-1.5 rounded transition-colors inline-flex items-center justify-center"
+                            style={{ color: 'var(--pulse-ink-3)' }}
                           >
-                            <Eye size={12} className="inline mr-1" /> View
+                            <Eye size={12} className="mr-1" /> View
                           </button>
                           <button
                             onClick={() => {
                               setOrganizingDocId(doc.id);
                               setShowOrganize(true);
                             }}
-                            className="flex-1 text-xs py-1.5 text-zinc-400 hover:text-white hover:bg-white/5 rounded transition-colors"
+                            className="flex-1 text-xs py-1.5 rounded transition-colors inline-flex items-center justify-center"
+                            style={{ color: 'var(--pulse-ink-3)' }}
                           >
-                            <Tags size={12} className="inline mr-1" /> Organize
+                            <Tags size={12} className="mr-1" /> Organize
                           </button>
                           <button
                             onClick={() => handleDeleteDoc(doc.id)}
-                            className="text-xs py-1.5 px-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+                            className="text-xs py-1.5 px-2 rounded transition-colors"
+                            style={{ color: '#ef4444' }}
+                            aria-label="Delete document"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -661,8 +655,8 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-zinc-700 flex items-center justify-between shrink-0">
-              <div className="text-sm text-zinc-400 inline-flex items-center gap-1.5">
+            <div className="p-4 flex items-center justify-between shrink-0" style={{ borderTop: '1px solid var(--pulse-border)' }}>
+              <div className="text-sm inline-flex items-center gap-1.5" style={{ color: 'var(--pulse-ink-3)' }}>
                 <Info size={14} />
                 <span>Click</span>
                 <Plus size={14} className="inline-block" />
@@ -670,7 +664,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
               </div>
               <button
                 onClick={() => setShowKnowledgeBank(false)}
-                className="px-6 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-rose-500/30 transition-all"
+                className="war-room-btn-primary px-6 py-2 rounded-lg font-medium"
               >
                 Done
               </button>
