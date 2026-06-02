@@ -172,19 +172,15 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
     return email.substring(0, 2).toUpperCase();
   };
 
-  // Get relationship strength color
-  const getStrengthColor = (strength: number) => {
-    if (strength >= 70) return 'text-green-500';
-    if (strength >= 40) return 'text-yellow-500';
-    return 'pulse-ink-3-color';
-  };
-
-  // Get relationship strength bar fill (same thresholds as the number color)
-  const getStrengthBarColor = (strength: number) => {
-    if (strength >= 70) return '#22c55e';
-    if (strength >= 40) return '#eab308';
-    return 'var(--pulse-ink-3)';
-  };
+  // Relationship-strength tone — Pulse status tokens, theme-aware, shared by
+  // the number and the meter so they never drift. Strong = positive (green),
+  // mid = warning (amber), weak = neutral ink. No raw Tailwind / hex.
+  const strengthTone = (strength: number): string =>
+    strength >= 70
+      ? 'var(--pulse-tone-positive)'
+      : strength >= 40
+        ? 'var(--pulse-tone-warning)'
+        : 'var(--pulse-ink-3)';
 
   // Format relative time
   const formatRelativeTime = (dateStr: string | null) => {
@@ -259,45 +255,44 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
           <p className="text-xs pulse-ink-3-color mt-1">{contact.email}</p>
         </div>
 
-        {/* Stats */}
-        <div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="pulse-surface-raised border pulse-border-color rounded-lg p-3 text-center">
-              <div className="text-lg font-bold pulse-ink-color tnum">{contact.email_count}</div>
-              <div className="text-xs pulse-ink-3-color">emails</div>
-            </div>
-            <div className="pulse-surface-raised border pulse-border-color rounded-lg p-3 text-center">
-              <div className={`text-lg font-bold tnum ${getStrengthColor(contact.relationship_strength)}`}>
+        {/* Signal metrics — quiet labeled rows, not hero-metric cards.
+            Strength keeps a meter (the one place a visual gauge earns its
+            keep); everything else is a mono-label + value line. */}
+        <div className="space-y-3">
+          <div className="flex items-baseline justify-between">
+            <span className="font-mono-pulse tracking-wide-mono text-[11px] uppercase pulse-ink-3-color">Emails</span>
+            <span className="text-sm font-medium pulse-ink-color tnum">{contact.email_count}</span>
+          </div>
+
+          <div>
+            <div className="flex items-baseline justify-between mb-1.5">
+              <span className="font-mono-pulse tracking-wide-mono text-[11px] uppercase pulse-ink-3-color">Strength</span>
+              <span className="text-sm font-medium tnum" style={{ color: strengthTone(contact.relationship_strength) }}>
                 {contact.relationship_strength}%
-              </div>
-              <div className="text-xs pulse-ink-3-color">strength</div>
+              </span>
+            </div>
+            <div className="h-[5px] rounded-full pulse-surface-raised overflow-hidden" aria-label={`Relationship strength ${contact.relationship_strength}%`}>
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${Math.max(0, Math.min(100, contact.relationship_strength))}%`,
+                  backgroundColor: strengthTone(contact.relationship_strength),
+                }}
+              ></div>
             </div>
           </div>
 
-          {/* Strength meter bar (additive) — fill width = strength %, keeps the same color logic */}
-          <div className="h-[5px] rounded-full pulse-surface-raised overflow-hidden mt-2" aria-label={`Relationship strength ${contact.relationship_strength}%`}>
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${Math.max(0, Math.min(100, contact.relationship_strength))}%`,
-                backgroundColor: getStrengthBarColor(contact.relationship_strength),
-              }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Last contact */}
-        <div className="pulse-surface-raised border pulse-border-color rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs pulse-ink-3-color">Last contact</span>
-            <span className="text-xs font-medium pulse-ink-color">
+          <div className="flex items-baseline justify-between">
+            <span className="font-mono-pulse tracking-wide-mono text-[11px] uppercase pulse-ink-3-color">Last contact</span>
+            <span className="text-sm font-medium pulse-ink-color">
               {formatRelativeTime(contact.last_contacted_at)}
             </span>
           </div>
+
           {contact.avg_response_time_hours && (
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-xs pulse-ink-3-color">Avg response</span>
-              <span className="text-xs font-medium pulse-ink-color">
+            <div className="flex items-baseline justify-between">
+              <span className="font-mono-pulse tracking-wide-mono text-[11px] uppercase pulse-ink-3-color">Avg response</span>
+              <span className="text-sm font-medium pulse-ink-color">
                 {contact.avg_response_time_hours < 1
                   ? `${Math.round(contact.avg_response_time_hours * 60)} min`
                   : `${Math.round(contact.avg_response_time_hours)} hrs`}
@@ -316,12 +311,12 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
               {recentThreads.map((thread) => (
                 <button
                   key={thread.id}
-                  className="w-full text-left p-2 pulse-surface-raised border pulse-border-color hover:pulse-border-strong-color rounded-lg transition"
+                  className="w-full text-left px-2 py-1.5 -mx-2 rounded-md hover:pulse-surface-raised transition"
                 >
                   <div className="text-sm pulse-ink-color truncate">
                     {thread.subject}
                   </div>
-                  <div className="text-xs pulse-ink-3-color">
+                  <div className="text-[11px] pulse-ink-3-color">
                     {formatRelativeTime(thread.date)}
                   </div>
                 </button>
@@ -339,7 +334,7 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
             {!editingNotes && (
               <button
                 onClick={() => setEditingNotes(true)}
-                className="text-xs pulse-rose-color hover:opacity-80 font-medium"
+                className="text-xs pulse-ink-3-color hover:pulse-ink-color font-medium transition"
               >
                 Edit
               </button>
