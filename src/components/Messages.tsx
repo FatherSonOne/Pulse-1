@@ -2057,12 +2057,21 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const canSendNativeSms = canSendSms();
   const isViewOnlyMode = isNonPulseThread && !canSendNativeSms;
 
-  // Handle sending SMS for non-Pulse users
+  // Handle sending SMS for non-Pulse users.
+  // W7 (deferred): real web SMS send needs a persisted Twilio integration +
+  // server send endpoint, which don't exist yet (creds are ephemeral, the proxy
+  // is read-only). Until then: on native, hand off to the device SMS app (a real
+  // path); on web, surface that honestly instead of opening a dead `sms:` URL
+  // that silently does nothing — and keep the user's text so it isn't lost.
   const handleSendSms = useCallback((message: string) => {
     if (!activeContact?.phone || !message.trim()) return;
-    openSmsApp(activeContact.phone, message);
-    setInputText('');
-  }, [activeContact?.phone]);
+    if (canSendNativeSms) {
+      openSmsApp(activeContact.phone, message);
+      setInputText('');
+      return;
+    }
+    setPulseEditToast('SMS sending isn’t set up on web yet — open Pulse on your phone to text this contact.');
+  }, [activeContact?.phone, canSendNativeSms]);
 
   const filteredMessages = activeThread?.messages.filter(msg => {
     if (!searchQuery) return true;
