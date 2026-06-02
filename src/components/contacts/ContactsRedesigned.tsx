@@ -9,6 +9,7 @@ import { RelationshipAlertsFeed } from './RelationshipAlertsFeed';
 import { DuplicateDetectionModal } from './DuplicateDetectionModal';
 import { SmartListType, RelationshipProfile, LeadScore, getRelationshipHealthColor } from '../../types/relationshipTypes';
 import { ContactDetail } from './ContactDetail';
+import { AIContactSearch } from './AIContactSearch';
 import { supabase } from '../../services/supabase';
 import { dataService } from '../../services/dataService';
 import { getCircles } from '../../services/contactCircleService';
@@ -726,6 +727,8 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [viewStyle, setViewStyle] = useState<ViewStyle>('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  // AI / NL search result override (null = inactive). Narrows filteredContacts.
+  const [aiResultIds, setAiResultIds] = useState<Set<string> | null>(null);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [activeSmartList, setActiveSmartList] = useState<SmartListType | null>(null);
@@ -899,6 +902,9 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   // Filtering
   const filteredContacts = useMemo(() => {
     let result = baseContacts.filter(c => {
+      // AI / NL search override — when active, restrict to its result set.
+      if (aiResultIds && !aiResultIds.has(c.id)) return false;
+
       // Search
       const matchesSearch = searchQuery === '' ||
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -963,7 +969,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
     }
 
     return result;
-  }, [baseContacts, searchQuery, filterStatus, filterTag, activeSmartList, profiles, savedFilters, activeSavedFilterId, circles, activeCircleId]);
+  }, [baseContacts, searchQuery, aiResultIds, filterStatus, filterTag, activeSmartList, profiles, savedFilters, activeSavedFilterId, circles, activeCircleId]);
 
   useEffect(() => {
     const knownCircleIds = new Set(circles.map(circle => circle.id));
@@ -1096,12 +1102,17 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
 
   const handleSaveCurrentFilter = async (draft?: { name: string; scope: 'personal' | 'workspace' }) => {
     if (draft?.name) {
-      await createSavedFilter({
-        name: draft.name,
-        predicate: buildCurrentPredicate(),
-        workspaceId: draft.scope === 'workspace' ? currentWorkspace?.id : undefined,
-      });
-      await reloadSavedFilters();
+      try {
+        await createSavedFilter({
+          name: draft.name,
+          predicate: buildCurrentPredicate(),
+          workspaceId: draft.scope === 'workspace' ? currentWorkspace?.id : undefined,
+        });
+        await reloadSavedFilters();
+      } catch (error) {
+        console.error('[ContactsRedesigned] save filter failed:', error);
+        toast.error("Couldn't save filter");
+      }
       return;
     }
     setNamePromptState({
@@ -1110,12 +1121,17 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
       cta: t('contacts.savedFilters.save_dialog_cta'),
       onSubmit: async (name) => {
         setNamePromptState(null);
-        await createSavedFilter({
-          name,
-          predicate: buildCurrentPredicate(),
-          workspaceId: undefined,
-        });
-        await reloadSavedFilters();
+        try {
+          await createSavedFilter({
+            name,
+            predicate: buildCurrentPredicate(),
+            workspaceId: undefined,
+          });
+          await reloadSavedFilters();
+        } catch (error) {
+          console.error('[ContactsRedesigned] save filter failed:', error);
+          toast.error("Couldn't save filter");
+        }
       },
     });
   };
@@ -1131,16 +1147,26 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
       onSubmit: async (name) => {
         setNamePromptState(null);
         if (!name || name === filter.name) return;
-        await updateSavedFilter(id, { name });
-        await reloadSavedFilters();
+        try {
+          await updateSavedFilter(id, { name });
+          await reloadSavedFilters();
+        } catch (error) {
+          console.error('[ContactsRedesigned] rename filter failed:', error);
+          toast.error("Couldn't rename filter");
+        }
       },
     });
   };
 
   const handleDeleteSavedFilter = async (id: string) => {
-    await deleteSavedFilter(id);
-    if (activeSavedFilterId === id) setActiveSavedFilterId(null);
-    await reloadSavedFilters();
+    try {
+      await deleteSavedFilter(id);
+      if (activeSavedFilterId === id) setActiveSavedFilterId(null);
+      await reloadSavedFilters();
+    } catch (error) {
+      console.error('[ContactsRedesigned] delete filter failed:', error);
+      toast.error("Couldn't delete filter");
+    }
   };
 
   const handleShareToWorkspace = async (workspaceId: string) => {
@@ -1408,6 +1434,17 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
           </div>
         </div>
 
+        {/* Natural-language / AI contact search. Additive layer over the
+            sidebar search; its results narrow the list via aiResultIds and
+            it renders its own AI badge + explanation chip. */}
+        <div style={{ padding: '12px 24px', borderBottom: '1px solid var(--pulse-border)' }}>
+          <AIContactSearch
+            contacts={baseContacts}
+            onResults={(results) => setAiResultIds(new Set(results.map(c => c.id)))}
+            onClear={() => setAiResultIds(null)}
+          />
+        </div>
+
         {/* Duplicates Alert — informational, not urgent. Neutral
             surface with ink text reads as "FYI" instead of "fix this
             now". The previous yellow rgba(234, 179, 8, ...) was
@@ -1590,6 +1627,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
             const ok = await onDeleteContact(selectedContact.id);
             if (ok) setSelectedContact(null);
           } : undefined}
+          onUpdateContact={handleSaveContact}
         />
       )}
 

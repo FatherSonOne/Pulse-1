@@ -49,6 +49,8 @@ interface ContactDetailProps {
   isLoadingInsights?: boolean;
   onRefreshInsights?: () => void;
   onSuggestedAction?: (suggestion: RelationshipSuggestion) => void;
+  /** Propagate a contact mutation (e.g. notes edit) up to parent state. */
+  onUpdateContact?: (updatedContact: Contact) => void;
 }
 
 // ==================== HELPERS ====================
@@ -113,6 +115,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   isLoadingInsights = false,
   onRefreshInsights,
   onSuggestedAction,
+  onUpdateContact,
 }) => {
   const { t } = useTranslation();
   const { currentWorkspace } = useWorkspaceData();
@@ -713,7 +716,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                   if (newNotes !== (contact.notes ?? '').trim()) {
                     try {
                       await supabase.from('contacts').update({ notes: newNotes || null }).eq('id', contact.id);
-                      contact.notes = newNotes || undefined;
+                      onUpdateContact?.({ ...contact, notes: newNotes || undefined });
                       toast.success('Notes saved');
                     } catch {
                       toast.error('Failed to save notes');
