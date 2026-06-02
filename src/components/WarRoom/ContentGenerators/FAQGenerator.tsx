@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { KnowledgeDoc } from '../../../services/ragService';
 import { processWithModel } from '../../../services/geminiService';
+import { ProvenanceTag } from '../ProvenanceTag';
 import toast from 'react-hot-toast';
 
-import { Copy, Download, FileText, HelpCircle, Loader2, Maximize2, Minimize2, RefreshCw, Search, Sparkles, X } from 'lucide-react';
+import { ChevronRight, Copy, Download, FileText, HelpCircle, Loader2, Maximize2, Minimize2, RefreshCw, Search, Sparkles, X } from 'lucide-react';
 
 interface FAQItem {
   question: string;
@@ -26,6 +27,21 @@ interface FAQGeneratorProps {
   apiKey: string;
   onClose: () => void;
 }
+
+// Coral Cockpit tokens. WB-2 of docs/WAR_ROOM_STUDIO_RESKIN_HANDOFF_2026-06-02.md.
+const monoLabel: React.CSSProperties = {
+  fontFamily: 'var(--pulse-font-mono)',
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+};
+
+const fieldStyle: React.CSSProperties = {
+  background: 'var(--pulse-surface-raised)',
+  color: 'var(--pulse-ink)',
+  border: '1px solid var(--pulse-border)',
+};
 
 export const FAQGenerator: React.FC<FAQGeneratorProps> = ({
   documents,
@@ -214,56 +230,47 @@ Requirements:
     toast.success('FAQ copied to clipboard!');
   }, [faq]);
 
-  const getCategoryColor = (category: string) => {
-    const colors = [
-      'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      'bg-purple-500/20 text-purple-400 border-purple-500/30',
-      'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      'bg-rose-500/20 text-rose-400 border-rose-500/30',
-    ];
-    const index = faq?.categories.indexOf(category) || 0;
-    return colors[index % colors.length];
-  };
-
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="war-room-modal w-full max-w-4xl mx-4 rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+      <div
+        className="w-full max-w-4xl mx-4 rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        style={{ background: 'var(--pulse-surface)', border: '1px solid var(--pulse-border)' }}
+      >
         {/* Header */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
+        <div className="p-4 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid var(--pulse-border)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-              <HelpCircle className="fa text-blue-400" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }}>
+              <HelpCircle size={18} />
             </div>
             <div>
-              <h3 className="text-lg font-bold">FAQ Generator</h3>
-              <p className="text-xs war-room-text-secondary">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold" style={{ color: 'var(--pulse-ink)' }}>FAQ Generator</h3>
+                {faq && <ProvenanceTag model="GEMINI" kind="FAQ" />}
+              </div>
+              <p className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
                 {docsToUse.length} document{docsToUse.length !== 1 ? 's' : ''} selected
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="war-room-btn war-room-btn-icon-sm">
-            <X className="fa" />
+          <button onClick={onClose} className="p-2 rounded-lg transition-colors" style={{ color: 'var(--pulse-ink-3)' }} aria-label="Close">
+            <X size={16} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 war-room-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4">
           {!faq ? (
             <div className="text-center py-8">
               {isGenerating ? (
                 <div>
-                  <Loader2 className="fa text-4xl text-blue-400 mb-4 animate-spin" />
-                  <p className="text-sm war-room-text-secondary mb-4">
+                  <Loader2 size={36} className="animate-spin mb-4 mx-auto" style={{ color: 'var(--pulse-coral-fg)' }} />
+                  <p className="text-sm mb-4" style={{ color: 'var(--pulse-ink-3)' }}>
                     Generating FAQ...
                   </p>
-                  <div className="w-48 mx-auto war-room-progress">
-                    <div
-                      className="war-room-progress-bar bg-gradient-to-r from-rose-500 to-pink-500"
-                      style={{ width: `${progress}%` }}
-                    ></div>
+                  <div className="w-48 h-1.5 mx-auto rounded-full overflow-hidden" style={{ background: 'var(--pulse-surface-raised)' }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'var(--pulse-rose)' }} />
                   </div>
-                  <p className="text-xs war-room-text-muted mt-2">
+                  <p className="text-xs mt-2" style={{ color: 'var(--pulse-ink-3)' }}>
                     {progress < 30 && 'Analyzing documents...'}
                     {progress >= 30 && progress < 80 && 'Extracting questions and answers...'}
                     {progress >= 80 && 'Finalizing...'}
@@ -271,21 +278,21 @@ Requirements:
                 </div>
               ) : (
                 <div>
-                  <HelpCircle className="fa text-4xl text-blue-400 mb-4" />
-                  <p className="text-lg font-medium mb-2">Generate FAQ</p>
-                  <p className="text-sm war-room-text-secondary mb-6 max-w-md mx-auto">
+                  <HelpCircle size={36} className="mb-4 mx-auto" style={{ color: 'var(--pulse-coral-fg)' }} />
+                  <p className="text-lg font-medium mb-2" style={{ color: 'var(--pulse-ink)' }}>Generate FAQ</p>
+                  <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: 'var(--pulse-ink-3)' }}>
                     Automatically extract frequently asked questions and answers from your documents.
                   </p>
                   <div className="mb-6">
-                    <p className="text-xs war-room-text-secondary mb-2">Documents to analyze:</p>
+                    <p className="text-xs mb-2" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>Documents to analyze</p>
                     <div className="flex flex-wrap gap-2 justify-center max-w-lg mx-auto">
                       {docsToUse.slice(0, 5).map(doc => (
-                        <span key={doc.id} className="war-room-badge text-xs">
+                        <span key={doc.id} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           {doc.title}
                         </span>
                       ))}
                       {docsToUse.length > 5 && (
-                        <span className="war-room-badge text-xs">
+                        <span className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           +{docsToUse.length - 5} more
                         </span>
                       )}
@@ -294,9 +301,9 @@ Requirements:
                   <button
                     onClick={generateFAQ}
                     disabled={docsToUse.length === 0}
-                    className="war-room-btn war-room-btn-primary"
+                    className="war-room-btn-primary px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center"
                   >
-                    <Sparkles className="fa mr-2" />
+                    <Sparkles size={14} className="mr-2" />
                     Generate FAQ
                   </button>
                 </div>
@@ -305,10 +312,10 @@ Requirements:
           ) : (
             <div>
               {/* Header info */}
-              <div className="war-room-panel p-4 mb-4">
-                <h4 className="font-bold text-lg mb-1">{faq.title}</h4>
-                <p className="text-sm war-room-text-secondary">{faq.description}</p>
-                <p className="text-xs war-room-text-muted mt-2">
+              <div className="p-4 mb-4 rounded-lg" style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}>
+                <h4 className="font-bold text-lg mb-1" style={{ color: 'var(--pulse-ink)' }}>{faq.title}</h4>
+                <p className="text-sm" style={{ color: 'var(--pulse-ink-2)' }}>{faq.description}</p>
+                <p className="text-xs mt-2" style={{ color: 'var(--pulse-ink-3)' }}>
                   {faq.items.length} questions across {faq.categories.length} categories
                 </p>
               </div>
@@ -317,13 +324,14 @@ Requirements:
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 {/* Search */}
                 <div className="relative flex-1 min-w-[200px]">
-                  <Search className="fa absolute left-3 top-1/2 -translate-y-1/2 war-room-text-secondary text-sm" />
+                  <Search size={14} style={{ color: 'var(--pulse-ink-3)', position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search questions..."
-                    className="war-room-input pl-10 text-sm"
+                    className="w-full pl-10 pr-4 py-2 rounded-lg text-sm focus:outline-none"
+                    style={fieldStyle}
                   />
                 </div>
 
@@ -331,7 +339,8 @@ Requirements:
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="war-room-select text-sm"
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-none"
+                  style={fieldStyle}
                 >
                   <option value="all">All Categories</option>
                   {faq.categories.map(cat => (
@@ -343,17 +352,19 @@ Requirements:
                 <div className="flex gap-1">
                   <button
                     onClick={expandAll}
-                    className="war-room-btn war-room-btn-icon-sm"
+                    className="p-2 rounded-lg transition-colors"
+                    style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-3)' }}
                     title="Expand all"
                   >
-                    <Maximize2 className="fa text-xs" />
+                    <Maximize2 size={14} />
                   </button>
                   <button
                     onClick={collapseAll}
-                    className="war-room-btn war-room-btn-icon-sm"
+                    className="p-2 rounded-lg transition-colors"
+                    style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-3)' }}
                     title="Collapse all"
                   >
-                    <Minimize2 className="fa text-xs" />
+                    <Minimize2 size={14} />
                   </button>
                 </div>
               </div>
@@ -361,8 +372,8 @@ Requirements:
               {/* FAQ Items */}
               <div className="space-y-2">
                 {filteredItems.length === 0 ? (
-                  <div className="text-center py-8 war-room-text-secondary">
-                    <Search className="fa text-2xl mb-2" />
+                  <div className="text-center py-8" style={{ color: 'var(--pulse-ink-3)' }}>
+                    <Search size={22} className="mb-2 mx-auto" />
                     <p>No questions match your search</p>
                   </div>
                 ) : (
@@ -373,16 +384,21 @@ Requirements:
                     return (
                       <div
                         key={originalIndex}
-                        className="war-room-panel-inset overflow-hidden"
+                        className="overflow-hidden rounded-lg"
+                        style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}
                       >
                         <button
                           onClick={() => toggleItem(originalIndex)}
-                          className="w-full p-4 text-left flex items-start gap-3 hover:bg-white/5 transition-colors"
+                          className="w-full p-4 text-left flex items-start gap-3 transition-colors"
                         >
-                          <i className={`fa fa-chevron-right text-xs war-room-text-secondary mt-1 transition-transform ${isExpanded ? 'rotate-90' : ''}`}></i>
+                          <ChevronRight
+                            size={14}
+                            className="mt-1 transition-transform"
+                            style={{ color: 'var(--pulse-ink-3)', transform: isExpanded ? 'rotate(90deg)' : 'none' }}
+                          />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium pr-4">{item.question}</p>
-                            <span className={`inline-block text-xs px-2 py-0.5 rounded border mt-2 ${getCategoryColor(item.category)}`}>
+                            <p className="text-sm font-medium pr-4" style={{ color: 'var(--pulse-ink)' }}>{item.question}</p>
+                            <span className="inline-block text-xs px-2 py-0.5 rounded mt-2" style={{ background: 'var(--pulse-surface)', color: 'var(--pulse-ink-3)', border: '1px solid var(--pulse-border)' }}>
                               {item.category}
                             </span>
                           </div>
@@ -390,12 +406,12 @@ Requirements:
 
                         {isExpanded && (
                           <div className="px-4 pb-4 pl-11">
-                            <p className="text-sm war-room-text-secondary mb-2">
+                            <p className="text-sm mb-2" style={{ color: 'var(--pulse-ink-2)' }}>
                               {item.answer}
                             </p>
                             {item.sources.length > 0 && (
-                              <p className="text-xs war-room-text-muted">
-                                <FileText className="fa mr-1" />
+                              <p className="text-xs inline-flex items-center" style={{ color: 'var(--pulse-ink-3)' }}>
+                                <FileText size={11} className="mr-1" />
                                 Sources: {item.sources.join(', ')}
                               </p>
                             )}
@@ -411,8 +427,8 @@ Requirements:
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 flex items-center justify-between shrink-0">
-          <div className="text-xs war-room-text-secondary">
+        <div className="p-4 flex items-center justify-between shrink-0" style={{ borderTop: '1px solid var(--pulse-border)' }}>
+          <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
             {faq && (
               <span>
                 Showing {filteredItems.length} of {faq.items.length} questions
@@ -424,23 +440,25 @@ Requirements:
               <>
                 <button
                   onClick={() => setFaq(null)}
-                  className="war-room-btn text-sm"
+                  className="px-3 py-2 rounded-lg text-sm inline-flex items-center transition-colors"
+                  style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink)' }}
                 >
-                  <RefreshCw className="fa mr-2" />
+                  <RefreshCw size={14} className="mr-2" />
                   Regenerate
                 </button>
                 <button
                   onClick={copyToClipboard}
-                  className="war-room-btn text-sm"
+                  className="px-3 py-2 rounded-lg text-sm inline-flex items-center transition-colors"
+                  style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink)' }}
                 >
-                  <Copy className="fa mr-2" />
+                  <Copy size={14} className="mr-2" />
                   Copy
                 </button>
                 <button
                   onClick={exportFAQ}
-                  className="war-room-btn war-room-btn-primary text-sm"
+                  className="war-room-btn-primary px-3 py-2 rounded-lg text-sm inline-flex items-center"
                 >
-                  <Download className="fa mr-2" />
+                  <Download size={14} className="mr-2" />
                   Export
                 </button>
               </>
