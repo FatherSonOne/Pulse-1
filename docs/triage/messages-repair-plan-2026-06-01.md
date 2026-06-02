@@ -11,6 +11,25 @@ Orphans: **Case-by-case w/ Rule-A** · SMS + stubs: **Build SMS real now**
 
 ---
 
+## Progress (updated 2026-06-01 PM)
+
+| Wave | Items | Status |
+|---|---|---|
+| **Wave 1 — Stop the bleeding** | W1 latent crash · W2 unread=0 · W3 typing wiring | ✅ **SHIPPED** — `3d828b3`, `00780d9`, `e6309d1` |
+| **Wave 2 — Tools surface** | W4 (remove tools menu, reversible gate) | ✅ **SHIPPED** — `ebde60b`, `c033cd5`. C4 launcher **moot** (gated off) |
+| **Wave 3 — Cracked moderates + honesty** | W5 (C5, C6) · W6 errors · W8 stubs | ⏭️ **NEXT** |
+| **Wave 4 — SMS real** | W7 | ⬜ pending |
+| **Wave 5 — Severed + orphans** | W9 → W10 | ⬜ pending (W10 is destructive, lands last) |
+
+**Adjacent track shipped (not a repair-plan wave):** the user-requested **Message
+Settings** repurpose of `FeatureSettingsPanel` — relabel, audio mic-input device
+picker, enter-to-send + typing toggles, dark-dropdown fix
+(`b9b8c2f`/`e200120`/`3d89698`/`14fefae`/`d8d5f44`; handoff
+`docs/MESSAGE_SETTINGS_HANDOFF_2026-06-01.md`). This **un-orphans
+`FeatureSettingsPanel.tsx`** — see the W10 correction below.
+
+---
+
 ## 0. Verification Delta (what changed between the report and now)
 
 The triage report was committed at `bf742df` earlier today. Two commits landed
@@ -76,7 +95,7 @@ TS errors and `tsc` OOMs at default heap — run
 `NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit` and gate on **no NEW
 errors in changed scope**, never zero.
 
-### W1 — Eliminate the S1 latent crash  ·  CONFIRMED · TRIVIAL · (S1)
+### W1 — Eliminate the S1 latent crash  ·  ✅ SHIPPED 2026-06-01 (`3d828b3`) · TRIVIAL · (S1)
 - **Files/lines:** `Messages.tsx:4796` (dead Command-Palette button →
   `setShowCommandPalette`), `:4843-4844` (`newMessage`/`setNewMessage` passed to
   `<MessagesFeaturePanels>`). All inside the legacy `{activeThread && …}` branch.
@@ -103,7 +122,7 @@ errors in changed scope**, never zero.
   - *Preserved vs sacrificed:* preserves every working path; sacrifices only a non-functional button.
   - *Completeness proof:* `grep setShowCommandPalette` → 1 hit (this button), 0 declarations; the button has no reachable success path. Removal is strictly safer than the status quo.
 
-### W2 — Fix `getUnreadCount` always returning 0  ·  CONFIRMED · TRIVIAL · (C1)
+### W2 — Fix `getUnreadCount` always returning 0  ·  ✅ SHIPPED 2026-06-01 (`00780d9`) · TRIVIAL · (C1)
 - **File/line:** `pulseService.ts:609-626`.
 - **Break:** `.select('id', { count:'exact', head:true })` returns `data = null`;
   code does `return data?.length || 0` → always 0.
@@ -111,7 +130,8 @@ errors in changed scope**, never zero.
 - **Dependencies:** none. **Cascade:** low — store derives unread elsewhere, badge mostly works anyway, but the public method is wrong and may be relied on later.
 - **Verification:** tsc on services scope; manual: a conversation with unread messages returns the true count, not 0.
 
-### W3 — Clean the legacy typing wiring  ·  CONFIRMED-per-report (spot-verify) · TRIVIAL · (C2, C3)
+### W3 — Clean the legacy typing wiring  ·  ✅ SHIPPED 2026-06-01 (`e6309d1`) · TRIVIAL · (C2, C3)
+> Note: `onTyping` semantics may still be revisited when W9 revives the legacy branch.
 - **Files/lines:** `Messages.tsx:4898` (`<TypingIndicator users={typingUsers}/>` — interface only has `userName`/`size`/`className`), `:4669-4671` (`onTyping={(isTyping)=>{}}` empty on the legacy `MessageInput`; real typing is wired separately at `:5426-5429`).
 - **Fix:** pass the correct `userName` prop (or derive a name string) to `TypingIndicator`; for `onTyping`, wire it to the real typing broadcast or remove the dead callback — decide once the legacy path is being revived in W9 (it may want real typing then).
 - **Dependencies:** light coupling to W9 (legacy revival). Can ship independently as a clean-up now; revisit `onTyping` semantics in W9.
@@ -230,9 +250,14 @@ For **each** orphan below: (1) re-grep all importers against live code, (2) writ
 Rule-A pros/cons, (3) get explicit user sign-off before any deletion. Nothing here
 is pre-approved by this plan.
 - Phase-3 cluster: `Messages/ContextMenu.tsx`, `Messages/RadialMenu.tsx`,
-  `Messages/FeatureSettingsPanel.tsx`, `examples/Phase3Examples.tsx` (the only
-  importer of the first three, itself zero-importer). MEMORY wrongly believed these
-  were deleted on GA — they exist.
+  `examples/Phase3Examples.tsx` (the importer of the first two, itself
+  zero-importer). MEMORY wrongly believed these were deleted on GA — they exist.
+  - **CORRECTION 2026-06-01: `Messages/FeatureSettingsPanel.tsx` is NOT an orphan
+    and must NOT be deleted.** It was repurposed into the live **Message Settings**
+    panel (`b9b8c2f`/`e200120`/`3d89698`), is rendered by
+    `MessagesEndModals.tsx` (lazy), and is reachable from the Messages header
+    button (`Messages.tsx` ~3631). It was never truly orphaned — the triage's
+    "only Phase3Examples" claim was wrong (handoff §2.1).
 - `Messages/ChannelList.tsx` (complete CRUD, no render site — may have a planned consumer).
 - `Messages/MessageContainer.tsx` (dead twin of `src/components/MessageContainer.tsx`).
 - `hooks/useMessagesState.ts` (~430 LoC, only self-reference).
