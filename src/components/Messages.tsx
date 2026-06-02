@@ -3627,12 +3627,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   }
                 />
               )}
-              {/* Feature Settings Button */}
+              {/* Message Settings Button */}
               <button
                 onClick={() => setShowFeatureSettings(true)}
                 className="w-12 h-12 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors"
-                title="Feature Settings"
-                aria-label="Open feature settings"
+                title="Message Settings"
+                aria-label="Open message settings"
               >
                 <SlidersHorizontal className="fa text-zinc-600 dark:text-zinc-400" />
               </button>

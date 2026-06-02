@@ -1,7 +1,15 @@
 /**
- * FeatureSettingsPanel — Slide-out panel for per-Messages feature toggles.
+ * FeatureSettingsPanel — Slide-out "Message Settings" panel.
  *
- * Features: categorized toggles, search/filter, bulk enable/disable per category,
+ * Repurposed 2026-06-01 from a generic feature-flag panel into a message-scoped
+ * settings surface (see docs/MESSAGE_SETTINGS_HANDOFF_2026-06-01.md). It now
+ * surfaces only the genuinely message-scoped, still-LIVE flags (curated locally,
+ * NOT the global FEATURE_CATEGORIES — see MESSAGE_SETTINGS_CATEGORIES below).
+ * Audio device selection and additional message toggles land in follow-up steps.
+ * The component/export name is kept so the MessagesEndModals render site and the
+ * header button wiring stay intact.
+ *
+ * Shell features (preserved): search/filter, bulk enable/disable per category,
  * reset-to-defaults with in-panel confirmation, advanced-mode master toggle,
  * focus trap, scroll lock, full keyboard a11y.
  */
@@ -12,7 +20,6 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, RotateCcw, Search, Sliders, X } from 'lucide-react';
 import {
   useFeatures,
-  FEATURE_CATEGORIES,
   FEATURE_NAMES,
   type FeatureFlags,
 } from '../../contexts/FeatureContext';
@@ -22,12 +29,32 @@ interface FeatureSettingsPanelProps {
   onClose: () => void;
 }
 
-type CategoryId = keyof typeof FEATURE_CATEGORIES;
+/**
+ * Panel-local curation (2026-06-01 — Message Settings repurpose).
+ *
+ * This panel deliberately does NOT iterate the global `FEATURE_CATEGORIES`
+ * any more. That list is shared with the global Features Labs surface
+ * (`FeaturesLabsSettings.tsx`) and still carries flags that are vestigial on
+ * the Pulse-DM path (`voiceInput`/`aiComposer`/`toneAnalysis` gate the retired
+ * legacy composer; `draftManager` has no consumer; `smartReplies` is Relay-only).
+ * Surfacing those here would be dead/confusing toggles in a "Message Settings"
+ * context. Instead we curate the genuinely message-scoped, still-LIVE flags.
+ * The flag *definitions* are untouched — they remain in Features Labs.
+ */
+const MESSAGE_SETTINGS_CATEGORIES = {
+  message: {
+    name: 'Message Features',
+    description: 'Toggle features that show up in the message stream.',
+    features: ['moodBadges', 'scheduledMessages'] as (keyof FeatureFlags)[],
+  },
+} as const;
+
+type CategoryId = keyof typeof MESSAGE_SETTINGS_CATEGORIES;
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const DEFAULT_EXPANDED: ReadonlySet<string> = new Set(['priority', 'advanced']);
+const DEFAULT_EXPANDED: ReadonlySet<string> = new Set(['message']);
 
 function useIsDark(active: boolean) {
   const [dark, setDark] = useState(() =>
@@ -163,7 +190,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
 
   const enableCategory = useCallback(
     (categoryId: string) => {
-      const category = FEATURE_CATEGORIES[categoryId as CategoryId];
+      const category = MESSAGE_SETTINGS_CATEGORIES[categoryId as CategoryId];
       if (!category) return;
       category.features.forEach((featureId) => {
         toggleFeature(featureId as keyof FeatureFlags, true);
@@ -174,7 +201,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
 
   const disableCategory = useCallback(
     (categoryId: string) => {
-      const category = FEATURE_CATEGORIES[categoryId as CategoryId];
+      const category = MESSAGE_SETTINGS_CATEGORIES[categoryId as CategoryId];
       if (!category) return;
       category.features.forEach((featureId) => {
         toggleFeature(featureId as keyof FeatureFlags, false);
@@ -196,7 +223,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
   const totalMatches = useMemo(() => {
     if (!searchQuery) return null;
     let count = 0;
-    for (const category of Object.values(FEATURE_CATEGORIES)) {
+    for (const category of Object.values(MESSAGE_SETTINGS_CATEGORIES)) {
       for (const featureId of category.features) {
         if (matchesSearch(featureId as keyof FeatureFlags)) count++;
       }
@@ -355,7 +382,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                   }}
                 >
                   <Sliders size={12} style={{ color: t.textMuted }} aria-hidden="true" />
-                  {tr('messages.featureSettings.title', 'Feature Settings')}
+                  {tr('messages.messageSettings.title', 'Message Settings')}
                 </h2>
                 <button
                   type="button"
@@ -479,7 +506,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                 </div>
               )}
 
-              {(Object.entries(FEATURE_CATEGORIES) as [string, typeof FEATURE_CATEGORIES[CategoryId]][]).map(
+              {(Object.entries(MESSAGE_SETTINGS_CATEGORIES) as [string, typeof MESSAGE_SETTINGS_CATEGORIES[CategoryId]][]).map(
                 ([categoryId, category]) => {
                   const filteredFeatures = category.features.filter((f) =>
                     matchesSearch(f as keyof FeatureFlags),
