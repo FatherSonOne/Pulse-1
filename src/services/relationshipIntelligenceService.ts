@@ -1073,12 +1073,6 @@ Return JSON with:
         .eq('id', list.id);
     }
   }
-
-  async syncEmailInteractions(): Promise<void> {
-    // This would hook into emailSyncService to populate contact_interactions
-    // Called after email sync completes
-    console.log('Email interaction sync - implement integration with emailSyncService');
-  }
 }
 
 // Export singleton instance
