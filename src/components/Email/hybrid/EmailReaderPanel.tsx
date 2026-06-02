@@ -7,12 +7,13 @@
 // Mounted at EmailHybridClient's view-shell container level so it overlays
 // the active view. Reads readerPanelEmailId + readerPanelMaximized from
 // emailUIStore; Esc / backdrop click / X button → clears the slot.
-import React from 'react';
-import { X, Maximize2, Minimize2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Maximize2, Minimize2, UserRound } from 'lucide-react';
 import { useEmailStore } from '../../../store/emailStore';
 import { useEmailUIStore } from '../../../store/emailUIStore';
 import { Avatar } from './primitives';
 import { InlineReader } from './cockpit/InlineReader';
+import { RelationshipPanel } from '../RelationshipPanel';
 import { cachedEmailToRow } from './data/emailRow';
 
 export const EmailReaderPanel: React.FC = () => {
@@ -21,6 +22,11 @@ export const EmailReaderPanel: React.FC = () => {
   const setReaderPanelEmailId = useEmailUIStore((s) => s.setReaderPanelEmailId);
   const maximized = useEmailUIStore((s) => s.readerPanelMaximized);
   const setMaximized = useEmailUIStore((s) => s.setReaderPanelMaximized);
+
+  // Contact-context sidebar (WI-7). Only shown in maximized/full-page mode
+  // where there's room; the slide-out reader is left unchanged. Default-on
+  // in maximized; the Contact toggle hides/shows it.
+  const [showRelationship, setShowRelationship] = useState(true);
 
   if (!readerPanelEmailId) return null;
 
@@ -52,6 +58,19 @@ export const EmailReaderPanel: React.FC = () => {
         aria-label={`Email from ${row.from}: ${row.subject}`}
       >
         <div className="absolute top-3 right-3 z-[2] flex items-center gap-1.5">
+          {maximized && (
+            <button
+              type="button"
+              onClick={() => setShowRelationship((v) => !v)}
+              className="reader-panel-close"
+              title={showRelationship ? 'Hide contact panel' : 'Show contact panel'}
+              aria-label={showRelationship ? 'Hide contact panel' : 'Show contact panel'}
+              aria-pressed={showRelationship}
+              style={{ position: 'static' }}
+            >
+              <UserRound className="w-4 h-4" />
+            </button>
+          )}
           <button
             type="button"
             onClick={toggleMaximize}
@@ -96,7 +115,17 @@ export const EmailReaderPanel: React.FC = () => {
           </div>
         </div>
 
-        <InlineReader email={row} />
+        {maximized && showRelationship ? (
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+            <InlineReader email={row} />
+            <RelationshipPanel
+              email={email}
+              onClose={() => setShowRelationship(false)}
+            />
+          </div>
+        ) : (
+          <InlineReader email={row} />
+        )}
       </aside>
     </>
   );

@@ -212,7 +212,7 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
   if (!contact) return null;
 
   return (
-    <div className="w-72 border-l pulse-border-color pulse-surface flex flex-col overflow-hidden">
+    <div className="w-72 shrink-0 border-l pulse-border-color pulse-surface flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b pulse-border-color">
         <span className="font-mono-pulse tracking-wide-mono text-[11px] uppercase pulse-ink-3-color">Contact Info</span>
