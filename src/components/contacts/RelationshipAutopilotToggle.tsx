@@ -65,7 +65,7 @@ export const RelationshipAutopilotToggle: React.FC<RelationshipAutopilotTogglePr
           <p className={`text-[10px] truncate ${
             localEnabled ? 'text-rose-500 dark:text-rose-400' : 'text-zinc-400 dark:text-zinc-500'
           }`}>
-            {localEnabled ? `Next: ${nextDue}` : 'Drafts when it\'s time'}
+            {localEnabled ? `Next: ${nextDue}` : 'Nudges you in Today when due'}
           </p>
         </div>
       </div>
