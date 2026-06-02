@@ -800,8 +800,8 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     onClick={openGmailSettings}
                     className="flex items-start gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)] hover:border-[color:var(--pulse-rose)] hover:bg-[var(--pulse-rose-soft)] transition group"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
-                      <Settings className="text-white" />
+                    <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
+                      <Settings className="text-[var(--pulse-ink-2)]" />
                     </div>
                     <div className="text-left">
                       <div className="font-medium text-[var(--pulse-ink)] mb-1">General Settings</div>
@@ -814,8 +814,8 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     onClick={openGmailFilters}
                     className="flex items-start gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)] hover:border-[color:var(--pulse-rose)] hover:bg-[var(--pulse-rose-soft)] transition group"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
-                      <Filter className="text-white" />
+                    <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
+                      <Filter className="text-[var(--pulse-ink-2)]" />
                     </div>
                     <div className="text-left">
                       <div className="font-medium text-[var(--pulse-ink)] mb-1">Filters & Blocked Addresses</div>
@@ -828,8 +828,8 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     onClick={openGmailForwarding}
                     className="flex items-start gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)] hover:border-[color:var(--pulse-rose)] hover:bg-[var(--pulse-rose-soft)] transition group"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
-                      <FastForward className="text-white" />
+                    <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
+                      <FastForward className="text-[var(--pulse-ink-2)]" />
                     </div>
                     <div className="text-left">
                       <div className="font-medium text-[var(--pulse-ink)] mb-1">Forwarding & POP/IMAP</div>
@@ -842,8 +842,8 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     onClick={openGmailLabels}
                     className="flex items-start gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)] hover:border-[color:var(--pulse-rose)] hover:bg-[var(--pulse-rose-soft)] transition group"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
-                      <Tags className="text-white" />
+                    <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
+                      <Tags className="text-[var(--pulse-ink-2)]" />
                     </div>
                     <div className="text-left">
                       <div className="font-medium text-[var(--pulse-ink)] mb-1">Labels</div>
@@ -856,8 +856,8 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     onClick={openGmailSignature}
                     className="flex items-start gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)] hover:border-[color:var(--pulse-rose)] hover:bg-[var(--pulse-rose-soft)] transition group"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
-                      <Pen className="text-white" />
+                    <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
+                      <Pen className="text-[var(--pulse-ink-2)]" />
                     </div>
                     <div className="text-left">
                       <div className="font-medium text-[var(--pulse-ink)] mb-1">Signature</div>
@@ -870,8 +870,8 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     onClick={openGmailSettings}
                     className="flex items-start gap-4 p-4 bg-[var(--pulse-surface-raised)] rounded-xl border border-[color:var(--pulse-border)] hover:border-[color:var(--pulse-rose)] hover:bg-[var(--pulse-rose-soft)] transition group"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
-                      <List className="text-white" />
+                    <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
+                      <List className="text-[var(--pulse-ink-2)]" />
                     </div>
                     <div className="text-left">
                       <div className="font-medium text-[var(--pulse-ink)] mb-1">All Settings</div>
