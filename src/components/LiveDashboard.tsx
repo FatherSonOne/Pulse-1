@@ -22,6 +22,7 @@ import { StudioOnboarding, hasCompletedOnboarding } from './WarRoom/StudioOnboar
 // Document processing (used by file upload handler)
 import { processDocument } from '../services/documentProcessors';
 import { warRoomExportService, WarRoomExportData } from '../services/warRoomExportService';
+import { warRoomAudit } from '../services/warRoomAuditService';
 
 // War Room sidebar, modals & services
 import { WarRoomSidebar, WarRoomProject, WarRoomSession, AIMessage as SidebarAIMessage } from './WarRoom/WarRoomSidebar';
@@ -469,6 +470,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
         toast.success("Session created!");
         setSessions([data, ...sessions]);
         setSelectedSessionId(data.id);
+        warRoomAudit.sessionCreated(data.id, selectedProjectId || undefined);
         setNewSessionTitle('');
         setIsCreatingSession(false);
       } else {
@@ -503,6 +505,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
       }
       setSessions(prev => [data, ...prev]);
       setSelectedSessionId(data.id);
+      warRoomAudit.sessionCreated(data.id, selectedProjectId || undefined);
       return data.id;
     } catch (e) {
       console.error('[War Room] ensureSession exception:', e);
@@ -536,6 +539,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
       setMissionMessagesForCurrent(updatedMessagesWithUser);
       // Also update global messages for backward compatibility
       if (userMsg) setMessages(prev => [...prev, userMsg]);
+      warRoomAudit.messageSent(sessionId, activeAgent);
 
       // Step 1: Analyze query
       if (enableExtendedThinking) {
@@ -894,6 +898,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
 
         console.log('✅ Ingestion complete:', result);
         console.log('   Document ID:', result.id);
+        warRoomAudit.docUploaded(file.name, fileType);
         console.log('   Summary:', result.ai_summary);
         console.log('   Keywords:', result.ai_keywords);
 
@@ -1000,6 +1005,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
         toast.error(`Failed to delete: ${result.error.message || 'Permission denied'}`);
       } else {
         console.log('[War Room] ✅ DELETE SUCCESS - Database confirmed deletion');
+        warRoomAudit.docDeleted(id);
         
         // Wait for DB transaction to fully commit
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1050,6 +1056,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
   const handleDeleteSession = async (id: string) => {
     try {
       await ragService.deleteSession(id);
+      warRoomAudit.sessionDeleted(id);
       setSessions(sessions.filter(s => s.id !== id));
       if (selectedSessionId === id) setSelectedSessionId(null);
       toast.success('Session deleted');
