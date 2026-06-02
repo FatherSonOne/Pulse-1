@@ -2360,12 +2360,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         setTimeout(() => {
           setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, messages: t.messages.map(m => m.id === newMessageId ? { ...m, status: 'delivered' } : m) } : t));
         }, 1000);
-        // Simulate other user vote if it was a proposal
-        if (decisionData) {
-            setTimeout(() => {
-                handleVote(newMessageId, 'other', 'approve');
-            }, 3000);
-        }
+        // W8: removed the fake "other user" auto-approve vote (3s timer) — it
+        // fabricated a second voter so any proposal self-approved. A real
+        // proposal now stays 'open' on the author's own vote until a genuine
+        // second participant votes. (proposalMode is gated off pre-launch.)
     }
   };
 
