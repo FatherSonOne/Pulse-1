@@ -280,6 +280,30 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     await loadEmails();
   }, [setSearchQuery, loadEmails]);
 
+  // ── handleReAuthenticate ──────────────────────────────────────────────
+  // Defined ahead of handleSync so the sync-failure toast can route its
+  // action button straight into the Google OAuth reconnect flow.
+  const handleReAuthenticate = useCallback(async () => {
+    setReAuthenticating(true);
+    try {
+      resetGmailService();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          scopes:
+            'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify',
+          redirectTo: window.location.origin,
+          queryParams: { access_type: 'offline', prompt: 'consent' },
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('[EmailHybridClient] Re-auth error:', error);
+      toast.error('Failed to re-authenticate. Please try signing out and back in.');
+      setReAuthenticating(false);
+    }
+  }, [setReAuthenticating]);
+
   // ── handleSync: ports legacy custom-toast pattern ─────────────────────
   const handleSync = useCallback(async () => {
     setSyncing(true);
@@ -319,6 +343,20 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     } catch (error) {
       console.error('[EmailHybridClient] Sync error:', error);
       const msg = error instanceof Error ? error.message : 'Failed to sync emails';
+      // An expired/invalid Google session can't be fixed by re-running the
+      // same sync — a plain "Retry" just reproduces the failure (the bug the
+      // user hit). Detect the reauth case using the same signals gmailService
+      // attaches, raise the persistent reconnect banner, and swap the toast
+      // action to "Reconnect" so the button actually starts the OAuth flow.
+      const requiresReauth =
+        (error as any)?.isSessionExpired === true ||
+        (error as any)?.requiresReauth === true ||
+        (error as any)?.code === 'GOOGLE_SESSION_EXPIRED' ||
+        /session|expired|sign in|sign back in|reconnect/i.test(msg);
+      if (requiresReauth) {
+        setAuthError(true);
+        resetGmailService();
+      }
       toast.custom((t) => (
         <div
           className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full pointer-events-auto flex shadow-lg ring-1`}
@@ -332,18 +370,21 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 pulse-rose-color" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">Sync failed</p>
+                <p className="text-sm font-medium">{requiresReauth ? 'Reconnect Google' : 'Sync failed'}</p>
                 <p className="text-xs pulse-ink-3-color mt-0.5 truncate">{msg}</p>
               </div>
             </div>
           </div>
           <div className="flex border-l pulse-border-color">
             <button
-              onClick={() => { toast.dismiss(t.id); void handleSync(); }}
+              onClick={() => {
+                toast.dismiss(t.id);
+                if (requiresReauth) { void handleReAuthenticate(); } else { void handleSync(); }
+              }}
               className="px-4 text-sm font-medium pulse-rose-color hover:pulse-rose-bg-soft-color transition"
               type="button"
             >
-              Retry
+              {requiresReauth ? 'Reconnect' : 'Retry'}
             </button>
           </div>
         </div>
@@ -351,7 +392,7 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     } finally {
       setSyncing(false);
     }
-  }, [loadEmails, setSyncing]);
+  }, [loadEmails, setSyncing, setAuthError, handleReAuthenticate]);
 
   // ── Background auto-sync (WI-3) ───────────────────────────────────────
   // User-controlled periodic fullSync while the Email surface is open.
@@ -384,28 +425,6 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     const id = setInterval(() => { void handleSync(); }, syncFrequencyMin * 60 * 1000);
     return () => clearInterval(id);
   }, [autoSyncEnabled, syncFrequencyMin, handleSync]);
-
-  // ── handleReAuthenticate ──────────────────────────────────────────────
-  const handleReAuthenticate = useCallback(async () => {
-    setReAuthenticating(true);
-    try {
-      resetGmailService();
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          scopes:
-            'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify',
-          redirectTo: window.location.origin,
-          queryParams: { access_type: 'offline', prompt: 'consent' },
-        },
-      });
-      if (error) throw error;
-    } catch (error) {
-      console.error('[EmailHybridClient] Re-auth error:', error);
-      toast.error('Failed to re-authenticate. Please try signing out and back in.');
-      setReAuthenticating(false);
-    }
-  }, [setReAuthenticating]);
 
   // ── handleSendEmail: 30-sec undo flow ─────────────────────────────────
   const handleSendEmail = useCallback(async (params: SendEmailParams) => {
