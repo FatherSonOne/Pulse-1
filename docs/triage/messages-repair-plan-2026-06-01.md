@@ -19,7 +19,7 @@ Orphans: **Case-by-case w/ Rule-A** · SMS + stubs: **Build SMS real now**
 | **Wave 2 — Tools surface** | W4 (remove tools menu, reversible gate) | ✅ **SHIPPED** — `ebde60b`, `c033cd5`. C4 launcher **moot** (gated off) |
 | **Wave 3 — Cracked moderates + honesty** | W5 (C5, C6) · W6 errors · W8 stubs | ✅ **SHIPPED** — `7851c95`, `b8bb2cd`, `e63ee66`, `3c36733`, `d9126b1`, `9f50463`, `e890d3a` |
 | **Wave 4 — SMS real** | W7 | ⚠️ **BLOCKED → honest-gated** (`6d07c2e`). Twilio creds are NOT persisted; full real send deferred. See W7. |
-| **Wave 5 — Severed + orphans** | W9 → W10 | ⏭️ **NEXT** (W10 is destructive, lands last) |
+| **Wave 5 — Severed + orphans** | W9 → W10 | W9 ✅ **DONE** (S4 `7f18623`; S2/S3/S5 dispositioned). W10 ⏭️ **NEXT** (destructive, case-by-case Rule-A) |
 
 **Adjacent track shipped (not a repair-plan wave):** the user-requested **Message
 Settings** repurpose of `FeatureSettingsPanel` — relabel, audio mic-input device
@@ -266,7 +266,23 @@ errors in changed scope**, never zero.
   calendar integration.
 - **Dependencies:** none hard. **Verification:** per item; tsc.
 
-### W9 — Severed reconnects  ·  CONFIRMED-per-report (spot-verify) · VARIES · (S2, S3, S4, S5)
+### W9 — Severed reconnects  ·  ✅ DONE 2026-06-01 (S4 `7f18623`; S2/S3/S5 dispositioned) · VARIES · (S2, S3, S4, S5)
+> Spot-verified each against live code:
+> - **S4 — removed** (`7f18623`): ConversationHealthWidget, AchievementToast +
+>   AchievementProgress, TranslationWidget were imported in Messages.tsx but
+>   referenced nowhere else (AchievementToast renders via MessagesEndModals' own
+>   import). Dead imports removed; component files left for W10.
+> - **S2 — defer to W10**: `contexts/MessagesContext.tsx` (354 LoC) is genuinely
+>   orphaned. The live `useMessageTrigger` consumer imports a *different*
+>   `useMessages` from `components/MessageContainer` — so the contexts version
+>   has zero consumers. No latent crash. Orphan → W10 Rule-A.
+> - **S3 — leave dormant** (→ W10 cluster): `BotMessage` has no render site AND
+>   no backing data — `channel_messages` has **no `bot_message_type` column**, so
+>   bot channel messages don't exist in the schema. A front door needs a schema +
+>   ingestion build (a feature), not a reconnect.
+> - **S5 — leave as-is**: `classifyMessage` (messageAutoResponseService:320) is
+>   complete + router-wired but uncalled. Wiring an auto-responder is a feature,
+>   not a reconnect; harmless to keep dormant.
 - **S4** (TRIVIAL) `Messages.tsx` — `ConversationHealthWidget` (`:75`),
   `TranslationWidget` (`:82`), `AchievementProgress` (`:76`) imported, never
   rendered. Render them in an appropriate surface **or** remove the dead imports —
