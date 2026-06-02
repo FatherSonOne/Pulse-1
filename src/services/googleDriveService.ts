@@ -4,6 +4,7 @@
  */
 
 import { supabase } from './supabase';
+import { refreshGoogleProviderToken } from './google/googleTokenRefresh';
 import type { ArchiveItem, ArchiveType, DriveFolder, DriveExportSettings } from '../types';
 
 // Default folder structure for Pulse Archives
@@ -42,19 +43,46 @@ class GoogleDriveService {
   private folderCache: Map<string, DriveFolder> = new Map();
 
   /**
+   * Resolve a usable Google access token: the session's provider_token if it is
+   * still present, otherwise a fresh one minted by the backend (which holds the
+   * client_secret). Supabase drops provider_token on its JWT refresh and never
+   * re-mints it, so without this fallback Drive broke ~1h after sign-in.
+   * Returns null when the user simply has no Google connection.
+   */
+  private async getAccessToken(): Promise<string | null> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+
+    // Only meaningful for Google sign-ins.
+    const provider = session.user?.app_metadata?.provider;
+    if (provider && provider !== 'google') return null;
+
+    if (session.provider_token) return session.provider_token;
+
+    try {
+      // refreshToken may be undefined → backend falls back to the stored token.
+      return await refreshGoogleProviderToken((session as any)?.provider_refresh_token);
+    } catch (error) {
+      // Drive surfaces "not connected" rather than throwing — the user
+      // reconnects via Settings > Google Services.
+      console.debug('[Google Drive] Token refresh requires reconnect:', (error as any)?.message);
+      return null;
+    }
+  }
+
+  /**
    * Initialize the service and load settings
    */
   async initialize(): Promise<boolean> {
     try {
-      // Get access token from Supabase session
-      const { data: { session } } = await supabase.auth.getSession();
+      const token = await this.getAccessToken();
 
-      if (!session?.provider_token) {
+      if (!token) {
         console.warn('No Google access token available. User may need to re-authenticate.');
         return false;
       }
 
-      this.accessToken = session.provider_token;
+      this.accessToken = token;
       await this.loadSettings();
       return true;
     } catch (error) {
@@ -68,8 +96,7 @@ class GoogleDriveService {
    */
   async isConnected(): Promise<boolean> {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      return !!session?.provider_token;
+      return !!(await this.getAccessToken());
     } catch {
       return false;
     }

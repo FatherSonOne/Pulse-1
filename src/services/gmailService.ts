@@ -70,12 +70,11 @@ export class GmailService {
    * Refresh Google access token using the refresh token
    * This is needed because Supabase doesn't automatically refresh Google's provider_token
    */
-  private async refreshGoogleToken(refreshToken: string): Promise<string | null> {
-    if (!refreshToken) {
-      console.warn('[GmailService] Missing refresh token for Google token refresh');
-      return null;
-    }
-
+  private async refreshGoogleToken(refreshToken?: string | null): Promise<string | null> {
+    // refreshToken may be absent — Supabase drops provider_refresh_token from the
+    // session after its JWT refresh. We still call the backend, which falls back
+    // to the user's stored refresh token (Tier 3b). JSON.stringify omits an
+    // undefined refresh_token, so the body is `{}` in that case.
     try {
       // Get Supabase session for authentication with backend
       const { data: { session } } = await supabase.auth.getSession();
@@ -161,13 +160,12 @@ export class GmailService {
       return this.accessToken;
     }
 
-    // Try to refresh using Google's refresh token
+    // Try to refresh via the backend. Pass the session's refresh token when
+    // present; otherwise the backend uses the user's stored token (Tier 3b).
     const refreshToken = (session as any)?.provider_refresh_token;
-    if (refreshToken) {
-      const newToken = await this.refreshGoogleToken(refreshToken);
-      if (newToken) {
-        return newToken;
-      }
+    const newToken = await this.refreshGoogleToken(refreshToken);
+    if (newToken) {
+      return newToken;
     }
 
     // No fallback to supabase.auth.refreshSession() — refreshing the Supabase

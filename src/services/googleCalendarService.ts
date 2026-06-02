@@ -5,6 +5,7 @@
 
 import { supabase } from './supabase';
 import { CalendarEvent } from '../types';
+import { refreshGoogleProviderToken } from './google/googleTokenRefresh';
 
 const GOOGLE_CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
 
@@ -68,7 +69,6 @@ export interface GoogleCalendar {
 
 // One-shot warnings — these conditions don't change within a session so
 // logging them on every API call just spams the console.
-let warnedMissingClientId = false;
 let warnedNoProviderToken = false;
 // Negative-cache: once we've confirmed there's no Google token, suppress
 // further attempts (and the supabase.auth.refreshSession fallback that
@@ -76,46 +76,24 @@ let warnedNoProviderToken = false;
 let noTokenUntil = 0;
 const NO_TOKEN_TTL_MS = 60_000;
 
-// Refresh Google access token using the refresh token
-const refreshGoogleAccessToken = async (refreshToken: string): Promise<string | null> => {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-  if (!clientId || !refreshToken) {
-    if (!warnedMissingClientId) {
-      console.warn('[Google Calendar] Missing client ID or refresh token for Google token refresh');
-      warnedMissingClientId = true;
-    }
-    return null;
-  }
-
+// Refresh the Google access token via the Pulse backend (which holds the
+// client_secret). The previous implementation POSTed to Google's token endpoint
+// with only `client_id` and no `client_secret` — Google rejects that for a Web
+// OAuth client, so it could never succeed. `refreshToken` may be undefined; the
+// backend then falls back to the user's stored refresh token (Tier 3b).
+//
+// Calendar surfaces "not connected" silently (returns null, no throw) — the user
+// reconnects via the Connect Calendar affordance — so a reauth-required result
+// is swallowed here rather than propagated.
+const refreshGoogleAccessToken = async (refreshToken?: string | null): Promise<string | null> => {
   try {
-    const response = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        client_id: clientId,
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('[Google Calendar] Google token refresh failed:', errorData);
-      return null;
-    }
-
-    const data = await response.json();
-    if (data.access_token) {
+    const token = await refreshGoogleProviderToken(refreshToken);
+    if (token) {
       console.log('[Google Calendar] Successfully refreshed Google access token');
-      return data.access_token;
     }
-
-    return null;
+    return token;
   } catch (error) {
-    console.error('[Google Calendar] Error refreshing Google token:', error);
+    console.debug('[Google Calendar] Token refresh requires reconnect:', (error as any)?.message);
     return null;
   }
 };
@@ -152,13 +130,13 @@ const getGoogleAccessToken = async (): Promise<string | null> => {
     return session.provider_token;
   }
 
-  // Try refreshing using Google's refresh token (Supabase doesn't refresh provider_token automatically)
+  // Supabase doesn't refresh provider_token automatically. Try the backend
+  // refresh — pass the session's refresh token when present, otherwise let the
+  // backend use the user's stored token (Tier 3b).
   const refreshToken = (session as any)?.provider_refresh_token;
-  if (refreshToken) {
-    const refreshed = await refreshGoogleAccessToken(refreshToken);
-    if (refreshed) {
-      return refreshed;
-    }
+  const refreshed = await refreshGoogleAccessToken(refreshToken);
+  if (refreshed) {
+    return refreshed;
   }
 
   if (!warnedNoProviderToken) {
@@ -185,10 +163,8 @@ const refreshTokenIfNeeded = async (): Promise<string | null> => {
   if (session.provider_token) return session.provider_token;
 
   const refreshToken = (session as any)?.provider_refresh_token;
-  if (refreshToken) {
-    const refreshed = await refreshGoogleAccessToken(refreshToken);
-    if (refreshed) return refreshed;
-  }
+  const refreshed = await refreshGoogleAccessToken(refreshToken);
+  if (refreshed) return refreshed;
 
   noTokenUntil = Date.now() + NO_TOKEN_TTL_MS;
   return null;
@@ -199,7 +175,6 @@ const refreshTokenIfNeeded = async (): Promise<string | null> => {
 export const resetGoogleCalendarTokenCache = (): void => {
   noTokenUntil = 0;
   warnedNoProviderToken = false;
-  warnedMissingClientId = false;
 };
 
 // Convert Google Calendar event to app CalendarEvent format

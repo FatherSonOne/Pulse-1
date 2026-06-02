@@ -111,12 +111,11 @@ const AVATAR_COLORS = [
 ];
 
 // Refresh Google access token using the backend endpoint (secure with client_secret)
-const refreshGoogleAccessToken = async (refreshToken: string): Promise<string | null> => {
-  if (!refreshToken) {
-    console.warn('[Google Contacts] Missing refresh token for Google token refresh');
-    return null;
-  }
-
+const refreshGoogleAccessToken = async (refreshToken?: string | null): Promise<string | null> => {
+  // refreshToken may be absent — Supabase drops provider_refresh_token from the
+  // session after its JWT refresh. We still call the backend, which falls back
+  // to the user's stored refresh token (Tier 3b). JSON.stringify omits an
+  // undefined refresh_token, so the body is `{}` in that case.
   try {
     // Get Supabase session for authentication with backend
     const { data: { session } } = await supabase.auth.getSession();
@@ -182,12 +181,12 @@ const getGoogleAccessToken = async (): Promise<string | null> => {
     return session.provider_token;
   }
 
+  // Pass the session's refresh token when present; otherwise the backend uses
+  // the user's stored token (Tier 3b).
   const refreshToken = (session as any)?.provider_refresh_token;
-  if (refreshToken) {
-    const refreshed = await refreshGoogleAccessToken(refreshToken);
-    if (refreshed) {
-      return refreshed;
-    }
+  const refreshed = await refreshGoogleAccessToken(refreshToken);
+  if (refreshed) {
+    return refreshed;
   }
 
   // Use debug-level - this is expected when user hasn't connected Google
@@ -242,23 +241,17 @@ const refreshTokenIfNeeded = async (): Promise<string | null> => {
     console.warn('[Google Contacts] Supabase refreshSession() threw:', e);
   }
 
-  // Stage 3: Pulse backend refresh. Only attempt when VITE_BACKEND_URL
-  // is explicitly configured -- otherwise the default localhost:3003
-  // hammers a port that's typically unreachable.
-  const backendConfigured = !!import.meta.env.VITE_BACKEND_URL;
+  // Stage 3: Pulse backend refresh. The backend holds the client_secret and
+  // can mint a fresh access token. Pass the session's refresh token when
+  // present; otherwise the backend falls back to the user's stored token
+  // (Tier 3b). BACKEND_URL defaults to localhost:3003 for dev (run
+  // `npm run server` / `npm run dev:full`) and is set to the deployed origin
+  // in prod, so we no longer gate on VITE_BACKEND_URL being explicitly set.
   const refreshToken = (session as any)?.provider_refresh_token;
-  if (backendConfigured && refreshToken) {
-    const refreshed = await refreshGoogleAccessToken(refreshToken);
-    if (refreshed) {
-      console.debug('[Google Contacts] Refreshed via Pulse backend endpoint');
-      return refreshed;
-    }
-  } else if (!refreshToken) {
-    console.warn(
-      '[Google Contacts] No provider_refresh_token in session. ' +
-      'Original sign-in did not request offline access, or Google revoked ' +
-      'the grant. User must reconnect via Settings > Google Services.'
-    );
+  const refreshed = await refreshGoogleAccessToken(refreshToken);
+  if (refreshed) {
+    console.debug('[Google Contacts] Refreshed via Pulse backend endpoint');
+    return refreshed;
   }
 
   return null;
