@@ -68,65 +68,64 @@ export class GmailService {
   }
 
   /**
-   * Refresh Google access token using the refresh token
-   * This is needed because Supabase doesn't automatically refresh Google's provider_token
+   * Mint a fresh Gmail access token from the owner's Gmail GRANT — the separate
+   * Gmail OAuth client (scope split), NOT the login provider_token (which no
+   * longer carries Gmail scope). The backend holds the Gmail client secret + the
+   * stored refresh token (public.user_gmail_tokens), so nothing is sent from the
+   * client. Returns null when Gmail isn't connected yet; throws (with
+   * requiresConnect) when the grant is dead so the UI prompts a reconnect.
    */
-  private async refreshGoogleToken(refreshToken?: string | null): Promise<string | null> {
-    // refreshToken may be absent — Supabase drops provider_refresh_token from the
-    // session after its JWT refresh. We still call the backend, which falls back
-    // to the user's stored refresh token (Tier 3b). JSON.stringify omits an
-    // undefined refresh_token, so the body is `{}` in that case.
+  private async refreshGmailGrant(): Promise<string | null> {
     try {
-      // Get Supabase session for authentication with backend
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        console.warn('[GmailService] No Supabase session available for backend authentication');
+        console.warn('[GmailService] No Supabase session available for Gmail backend auth');
         return null;
       }
 
-      // ✅ Call backend endpoint with client secret (secure)
-      const backendUrl = BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/google/refresh-token`, {
+      const response = await fetch(`${BACKEND_URL}/api/gmail/refresh-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ refresh_token: refreshToken }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('[GmailService] Backend token refresh failed:', errorData);
 
-        // Check if re-authentication is required
+        // Not connected yet — caller surfaces a "Connect Gmail" prompt.
+        if (response.status === 404 || errorData.code === 'GMAIL_NOT_CONNECTED') {
+          return null;
+        }
+
+        // Grant dead (revoked / Testing 7-day expiry) — needs a reconnect.
         if (errorData.requiresReauth || errorData.code === 'INVALID_GRANT') {
-          const error = new Error('Your Google session has expired. Please reconnect your Google account.');
-          (error as any).code = 'GOOGLE_SESSION_EXPIRED';
+          const error = new Error('Your Gmail connection expired. Please reconnect Gmail.');
+          (error as any).code = 'GMAIL_NOT_CONNECTED';
           (error as any).requiresReauth = true;
+          (error as any).requiresConnect = true;
           throw error;
         }
 
+        console.error('[GmailService] Gmail token refresh failed:', errorData);
         return null;
       }
 
       const data = await response.json();
-
       if (data.access_token) {
-        console.log('[GmailService] Successfully refreshed Google access token via backend');
         this.accessToken = data.access_token;
-        // Set expiry (Google tokens typically last 3600 seconds/1 hour)
-        this.tokenExpiresAt = Date.now() + ((data.expires_in || 3600) * 1000) - 60000; // Refresh 1 min early
+        // Google access tokens last ~3600s; refresh 1 min early.
+        this.tokenExpiresAt = Date.now() + ((data.expires_in || 3600) * 1000) - 60000;
         return data.access_token;
       }
 
       return null;
     } catch (error) {
-      // Re-throw auth errors so they can be caught by UI
-      if ((error as any).requiresReauth) {
+      if ((error as any).requiresReauth || (error as any).requiresConnect) {
         throw error;
       }
-      console.error('[GmailService] Error refreshing Google token:', error);
+      console.error('[GmailService] Error refreshing Gmail token:', error);
       return null;
     }
   }
@@ -155,34 +154,20 @@ export class GmailService {
       return this.accessToken;
     }
 
-    // Try to get a fresh session
-    const { data: { session }, error } = await supabase.auth.getSession();
-
-    if (error) {
-      throw new Error('Your Google session has expired. Please sign out and sign back in with Google.');
+    // Scope split: Gmail no longer comes from the login provider_token (that
+    // OAuth client doesn't carry Gmail scope). The token comes from the SEPARATE
+    // Gmail grant, refreshed server-side via the Gmail OAuth client.
+    const token = await this.refreshGmailGrant();
+    if (token) {
+      return token;
     }
 
-    // If we have a provider_token and it hasn't expired (or we don't know), use it
-    if (session?.provider_token && !forceRefresh) {
-      this.accessToken = session.provider_token;
-      return this.accessToken;
-    }
-
-    // Try to refresh via the backend. Pass the session's refresh token when
-    // present; otherwise the backend uses the user's stored token (Tier 3b).
-    const refreshToken = (session as any)?.provider_refresh_token;
-    const newToken = await this.refreshGoogleToken(refreshToken);
-    if (newToken) {
-      return newToken;
-    }
-
-    // No fallback to supabase.auth.refreshSession() — refreshing the Supabase
-    // session does NOT produce a Google provider_token, and calling it on every
-    // request fires TOKEN_REFRESHED storms that rate-limit the auth endpoint.
-    const expiredError = new Error('Your Google session has expired. Please sign out and sign back in with Google.');
-    (expiredError as any).isSessionExpired = true;
-    (expiredError as any).code = 'GOOGLE_SESSION_EXPIRED';
-    throw expiredError;
+    // No grant stored → the user must connect Gmail (Email → Connect Gmail).
+    const notConnected = new Error('Gmail is not connected. Connect Gmail in Email settings to use email.');
+    (notConnected as any).code = 'GMAIL_NOT_CONNECTED';
+    (notConnected as any).requiresConnect = true;
+    (notConnected as any).isSessionExpired = true; // existing reconnect UIs key on this
+    throw notConnected;
   }
 
   /**
