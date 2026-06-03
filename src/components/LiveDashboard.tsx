@@ -514,13 +514,22 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
     }
   };
 
-  // Direct send message function that accepts message as parameter
-  const sendMessageDirect = async (messageText: string) => {
+  // Transcript error state — when an AI turn fails, surface it inline with a
+  // Retry instead of a vanished typing indicator. (P1b, /impeccable critique.)
+  const [sendError, setSendError] = useState<string | null>(null);
+  const lastUserMessageRef = useRef<string>('');
+
+  // Direct send message function that accepts message as parameter.
+  // opts.skipUserMessage re-runs only the AI portion (used by Retry — the user
+  // turn is already in the transcript, so it isn't re-added).
+  const sendMessageDirect = async (messageText: string, opts?: { skipUserMessage?: boolean }) => {
     if (!messageText.trim() || isLoading) return;
     const sessionId = await ensureSession();
     if (!sessionId) return;
 
     const userMessage = messageText.trim();
+    lastUserMessageRef.current = userMessage;
+    setSendError(null);
     setInput('');
     setIsLoading(true);
     setVisualizerType('thinking');
@@ -533,13 +542,16 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
       // Get current mission messages
       const currentMessages = getMissionMessages();
 
-      // Add user message
-      const { data: userMsg } = await ragService.addMessage(sessionId, userId, 'user', userMessage);
-      const updatedMessagesWithUser = userMsg ? [...currentMessages, userMsg] : currentMessages;
-      setMissionMessagesForCurrent(updatedMessagesWithUser);
-      // Also update global messages for backward compatibility
-      if (userMsg) setMessages(prev => [...prev, userMsg]);
-      warRoomAudit.messageSent(sessionId, activeAgent);
+      // Add user message (skipped on Retry — the user turn is already shown)
+      let updatedMessagesWithUser = currentMessages;
+      if (!opts?.skipUserMessage) {
+        const { data: userMsg } = await ragService.addMessage(sessionId, userId, 'user', userMessage);
+        updatedMessagesWithUser = userMsg ? [...currentMessages, userMsg] : currentMessages;
+        setMissionMessagesForCurrent(updatedMessagesWithUser);
+        // Also update global messages for backward compatibility
+        if (userMsg) setMessages(prev => [...prev, userMsg]);
+        warRoomAudit.messageSent(sessionId, activeAgent);
+      }
 
       // Step 1: Analyze query
       if (enableExtendedThinking) {
@@ -780,7 +792,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
 
     } catch (error) {
       console.error('AI processing failed:', error);
-      toast.error('Failed to get AI response');
+      setSendError(error instanceof Error ? error.message : 'Failed to get AI response');
     } finally {
       setIsLoading(false);
       setIsAIStreaming(false);
@@ -1690,7 +1702,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
               });
             }}
             isMobile={isMobile}
-            {...(useNotebookShell ? ({ voiceUserId: userId, openaiApiKey, workspaceId } as any) : {})}
+            {...(useNotebookShell ? ({ voiceUserId: userId, openaiApiKey, workspaceId, sendError, onRetrySend: () => sendMessageDirect(lastUserMessageRef.current, { skipUserMessage: true }) } as any) : {})}
           />
         </StudioShell>
 

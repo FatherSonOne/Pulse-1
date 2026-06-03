@@ -22,7 +22,7 @@ import { CitationChip } from './CitationChip';
 import { ReasoningTrace } from './ReasoningTrace';
 import type { NoteType } from '../useBoardNotes';
 
-import { Copy, Pin, User as UserIcon } from 'lucide-react';
+import { AlertTriangle, Copy, Pin, RefreshCw, User as UserIcon } from 'lucide-react';
 
 export interface MessageListProps {
   messages: AIMessage[];
@@ -37,6 +37,9 @@ export interface MessageListProps {
   documents?: KnowledgeDoc[];
   /** Open a cited document with the passage highlighted. */
   onOpenCitation?: (doc: KnowledgeDoc, passage?: string) => void;
+  /** When the last AI turn failed: the error message + a retry handler. */
+  sendError?: string | null;
+  onRetry?: () => void;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
@@ -49,6 +52,8 @@ export const MessageList: React.FC<MessageListProps> = ({
   onPinArtifact,
   documents = [],
   onOpenCitation,
+  sendError,
+  onRetry,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const safeMessages = Array.isArray(messages) ? messages : [];
@@ -185,6 +190,29 @@ export const MessageList: React.FC<MessageListProps> = ({
               <div className="ps-typing-dot" />
               <div className="ps-typing-dot" />
               <div className="ps-typing-dot" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Failed AI turn — inline error + retry (P1b, /impeccable critique) */}
+      {sendError && !isLoading && (
+        <div className="ps-message ps-message--assistant">
+          <div className="ps-message-avatar" style={{ color: '#ef4444' }}>
+            <AlertTriangle size={15} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#ef4444' }}>Error</span>
+            <div className="ps-message-content" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', marginTop: 4 }}>
+              <p style={{ fontSize: 13, color: 'var(--pulse-ink-2)', margin: 0 }}>Couldn't get a response. {sendError}</p>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 8, fontSize: 12, fontWeight: 500, background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink)', border: '1px solid var(--pulse-border)', cursor: 'pointer' }}
+                >
+                  <RefreshCw size={12} /> Retry
+                </button>
+              )}
             </div>
           </div>
         </div>

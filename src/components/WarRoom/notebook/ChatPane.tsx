@@ -27,6 +27,9 @@ export interface ChatPaneProps extends PulseStudioProps {
   openaiApiKey?: string;
   /** Workspace id for the realtime voice token mint (hosted tier-gating). */
   workspaceId?: string;
+  /** Inline transcript error + retry for a failed AI turn. */
+  sendError?: string | null;
+  onRetrySend?: () => void;
 }
 
 export const ChatPane: React.FC<ChatPaneProps> = ({
@@ -62,6 +65,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
   voiceUserId,
   openaiApiKey = '',
   workspaceId,
+  sendError,
+  onRetrySend,
 }) => {
   const safeMessages = Array.isArray(messages) ? messages : [];
   const selectedAgent = AGENTS.find((a) => a.id === activeAgent) || AGENTS[0];
@@ -280,6 +285,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
           onPinArtifact={onPinArtifact}
           documents={documents}
           onOpenCitation={openCitation}
+          sendError={sendError}
+          onRetry={onRetrySend}
         />
       )}
 
