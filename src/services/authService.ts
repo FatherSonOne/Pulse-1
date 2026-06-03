@@ -201,14 +201,17 @@ export const loginWithGoogle = async (): Promise<User> => {
       queryParams: {
         // 'offline' access type asks Google for a refresh token.
         access_type: 'offline',
-        // CRITICAL: Google only RETURNS the refresh token when the consent
-        // screen is actually shown. With 'select_account' alone, Google skips
-        // consent for already-authorized users and returns NO refresh token —
-        // so provider_token can't be refreshed and Calendar/Gmail/Contacts all
-        // break after ~1h (the "No provider_refresh_token in session" error).
-        // 'consent select_account' forces consent (→ refresh token every time)
-        // while still letting the user pick which Google account to use.
-        prompt: 'consent select_account',
+        // Account chooser only — NOT forced consent. Google returns a refresh
+        // token on the FIRST consent (when the user has no prior grant); we
+        // persist it server-side on SIGNED_IN (Tier 3b → user_google_tokens)
+        // and the backend refreshes provider tokens from that stored copy. So
+        // forcing 'consent' on every login is no longer needed — it only
+        // re-showed the full permission screen each time, which users hated.
+        // If the stored grant is ever lost/expired (e.g. the 7-day refresh-
+        // token expiry on an unverified/Testing OAuth app, or a revoke), the
+        // Settings "reconnect" path (connectProvider) still forces consent to
+        // re-seed the stored token.
+        prompt: 'select_account',
         // Include granted scopes in token response
         include_granted_scopes: 'true',
       },
