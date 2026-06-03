@@ -147,6 +147,8 @@ interface NavItemProps {
   isActive: boolean;
   isCollapsed: boolean;
   onClick: () => void;
+  /** Greyed-out + non-clickable (e.g. Experimental section turned off). */
+  disabled?: boolean;
 }
 
 const NavItem: React.FC<NavItemProps> = ({
@@ -155,12 +157,16 @@ const NavItem: React.FC<NavItemProps> = ({
   isActive,
   isCollapsed,
   onClick,
+  disabled = false,
 }) => {
   return (
     <button
       className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      aria-disabled={disabled}
       title={isCollapsed ? label : undefined}
+      style={disabled ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
     >
       <div className="sidebar-nav-icon">
         <Icon size={16} />
@@ -372,6 +378,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ? expandedSections[section.label] === true
               : true;
 
+            // Experimental section master switch (Settings → Features & Labs).
+            // When off, the note reads "features disabled" (red) and the items
+            // are greyed out + non-clickable.
+            const sectionDisabled =
+              section.label === 'Experimental' && !features.experimentalEnabled;
+
             return (
               <React.Fragment key={section.label}>
                 <SectionHeader
@@ -390,10 +402,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       fontSize: 10,
                       lineHeight: 1.35,
                       fontStyle: 'italic',
-                      color: 'var(--pulse-ink-3, #8a8a8a)',
+                      color: sectionDisabled
+                        ? 'var(--pulse-tone-overdue)'
+                        : 'var(--pulse-ink-3, #8a8a8a)',
                     }}
                   >
-                    {section.note}
+                    {sectionDisabled ? 'features disabled' : section.note}
                   </div>
                 )}
                 {isSectionExpanded && section.items.map((item) => {
@@ -410,6 +424,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         isActive={currentView === item.view}
                         isCollapsed={isCollapsed}
                         onClick={() => handleNavClick(item.view)}
+                        disabled={sectionDisabled}
                       />
                       {/* Caption — mirrors the Experimental section note's font
                           style (10px italic), indented to sit under the nav

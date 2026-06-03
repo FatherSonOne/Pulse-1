@@ -46,6 +46,12 @@ export interface FeatureFlags {
   // + EmailClientWrapper). Turn ON in Settings → Features & Labs to develop/test
   // the Email surface. Read by non-React code via isEmailEnabled().
   emailEnabled: boolean;
+
+  // Experimental section master switch (sidebar: Summit / Map / War Room). OFF
+  // by default → the section header note reads "features disabled" in red and
+  // the items are greyed out + non-clickable. Turn ON in Settings → Features &
+  // Labs to use them. Gated in Sidebar.tsx.
+  experimentalEnabled: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -86,6 +92,9 @@ const DEFAULT_FEATURES: FeatureFlags = {
 
   // Email section OFF by default ("feature not available"); flip on for dev/test.
   emailEnabled: false,
+
+  // Experimental section OFF by default ("features disabled"); flip on for dev/test.
+  experimentalEnabled: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -261,4 +270,5 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   pulseComposerV2: 'New Compose Bar (Beta)',
   toolsMenuV2: 'New Tools Menu (Beta)',
   emailEnabled: 'Email Section',
+  experimentalEnabled: 'Experimental Features',
 };

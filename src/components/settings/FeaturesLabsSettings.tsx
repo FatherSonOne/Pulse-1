@@ -6,7 +6,7 @@ import { SettingsCard } from './shared/SettingsCard';
 import { MonoLabel } from './shared/MonoLabel';
 
 export const FeaturesLabsSettings: React.FC = () => {
-  const { features, toggleFeature, advancedMode, setAdvancedMode } = useFeatures();
+  const { features, toggleFeature } = useFeatures();
 
   return (
     <div className="space-y-8 animate-slide-up">
@@ -15,13 +15,15 @@ export const FeaturesLabsSettings: React.FC = () => {
         <p>Enable or disable individual features. Changes apply immediately.</p>
       </div>
 
-      {/* Advanced Mode Master Toggle */}
+      {/* Experimental section on/off (sidebar: Summit / Map / War Room). When
+          off, the section shows a red "features disabled" note and its items are
+          greyed out + non-clickable. */}
       <SettingsCard>
         <ToggleItem
-          label="Advanced Mode"
-          desc="Unlock all advanced and experimental features at once"
-          active={advancedMode}
-          onToggle={() => setAdvancedMode(!advancedMode)}
+          label="Experimental Features"
+          desc="When off, the Experimental section in the sidebar shows “features disabled” and its items (Summit, Map, War Room) are greyed out. Turn on for testing & development."
+          active={features.experimentalEnabled}
+          onToggle={() => toggleFeature('experimentalEnabled')}
         />
       </SettingsCard>
 
