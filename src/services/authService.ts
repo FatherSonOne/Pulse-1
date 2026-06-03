@@ -126,18 +126,33 @@ const mapSupabaseUser = (supabaseUser: SupabaseUser): User => {
   };
 };
 
-// Google OAuth scopes for Calendar, Gmail, Contacts, and Drive access
+// Google OAuth scopes for the SHARED LOGIN flow — Calendar, Contacts, and Drive.
+//
+// Gmail is deliberately EXCLUDED here. The gmail.readonly/compose/modify scopes
+// are RESTRICTED, which makes Google's verification require a paid CASA security
+// assessment. Keeping Gmail out of login means the only sensitive scopes left
+// (calendar.*, contacts.readonly) are free to verify, so the app can publish to
+// Production for ALL users with no CASA. Gmail is a separate, owner-only grant
+// via a dedicated OAuth client kept in Testing — see GMAIL_SCOPES below and the
+// Gmail connect flow. (Scope split, 2026-06.)
 const GOOGLE_SCOPES = [
   'email',
   'profile',
   'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/contacts.readonly', // Google People API for contacts
+  'https://www.googleapis.com/auth/drive.file', // Google Drive API for archive export (only files created by app)
+].join(' ');
+
+// Gmail scopes — RESTRICTED (gmail.readonly/compose/modify) + sensitive
+// (gmail.send). NOT part of login; requested only via the private Gmail grant
+// (separate Testing OAuth client) when the owner enables the Email feature, so
+// the production login flow stays CASA-free. Exported for the Gmail connect flow.
+export const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.send',
   'https://www.googleapis.com/auth/gmail.compose',
   'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/contacts.readonly', // Google People API for contacts
-  'https://www.googleapis.com/auth/drive.file', // Google Drive API for archive export (only files created by app)
 ].join(' ');
 
 const scopeValueToString = (value: unknown): string => {
