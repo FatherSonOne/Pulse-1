@@ -41,6 +41,20 @@ const GOOGLE_LOGIN_CLIENT_ID =
   process.env.GOOGLE_LOGIN_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
 const GOOGLE_LOGIN_CLIENT_SECRET = process.env.GOOGLE_LOGIN_CLIENT_SECRET;
 
+// Gmail private client — a THIRD OAuth client in its OWN GCP project kept in
+// "Testing" so the restricted Gmail scopes work for the owner (test user) with
+// no CASA. Used only by the owner-only Gmail connect flow (/api/gmail/auth/*);
+// the production login client (35770) stays CASA-free. Never VITE_-prefix.
+const GMAIL_OAUTH_CLIENT_ID = process.env.GMAIL_OAUTH_CLIENT_ID;
+const GMAIL_OAUTH_CLIENT_SECRET = process.env.GMAIL_OAUTH_CLIENT_SECRET;
+const GMAIL_OAUTH_REDIRECT_URI = process.env.GMAIL_OAUTH_REDIRECT_URI;
+const GMAIL_OAUTH_SCOPES = [
+  'https://www.googleapis.com/auth/gmail.readonly',
+  'https://www.googleapis.com/auth/gmail.send',
+  'https://www.googleapis.com/auth/gmail.compose',
+  'https://www.googleapis.com/auth/gmail.modify',
+];
+
 // Create OAuth2 client
 const oauth2Client = new google.auth.OAuth2(
   GOOGLE_CLIENT_ID,
@@ -429,6 +443,196 @@ app.post('/api/google/refresh-token', async (req, res) => {
       error: error.message || 'Internal server error',
       code: 'SERVER_ERROR'
     });
+  }
+});
+
+// ============================================
+// GMAIL PRIVATE GRANT (scope split — owner-only Gmail)
+// Separate Gmail OAuth client (own GCP project, Testing status). Restricted
+// Gmail scopes live here, NOT on the login client, so production login is
+// CASA-free. Tokens stored in public.user_gmail_tokens, keyed by auth uid.
+// ============================================
+
+function getGmailOauthClient() {
+  return new google.auth.OAuth2(
+    GMAIL_OAUTH_CLIENT_ID,
+    GMAIL_OAUTH_CLIENT_SECRET,
+    GMAIL_OAUTH_REDIRECT_URI
+  );
+}
+
+function gmailConfigured() {
+  return !!(GMAIL_OAUTH_CLIENT_ID && GMAIL_OAUTH_CLIENT_SECRET && GMAIL_OAUTH_REDIRECT_URI);
+}
+
+// Sign/verify the OAuth `state` so the PUBLIC callback (no Bearer token — it is a
+// redirect from Google) can attribute the grant to a user without trusting the
+// client. HMAC over {uid, exp}; 10-minute validity.
+const GMAIL_STATE_SECRET =
+  process.env.JWT_SECRET || process.env.LOGOS_VISION_API_KEY || SUPABASE_SERVICE_KEY || 'pulse-gmail-state';
+
+function signGmailState(userId) {
+  const payload = Buffer.from(JSON.stringify({ uid: userId, exp: Date.now() + 10 * 60 * 1000 })).toString('base64url');
+  const sig = crypto.createHmac('sha256', GMAIL_STATE_SECRET).update(payload).digest('base64url');
+  return `${payload}.${sig}`;
+}
+
+function verifyGmailState(state) {
+  const [payload, sig] = String(state || '').split('.');
+  if (!payload || !sig) throw new Error('malformed state');
+  const expected = crypto.createHmac('sha256', GMAIL_STATE_SECRET).update(payload).digest('base64url');
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) throw new Error('state signature mismatch');
+  const data = JSON.parse(Buffer.from(payload, 'base64url').toString());
+  if (!data.exp || Date.now() > data.exp) throw new Error('state expired');
+  return data.uid;
+}
+
+async function getUserGmailToken(userId) {
+  const { data, error } = await tokenStoreClient()
+    .from('user_gmail_tokens').select('*').eq('user_id', userId).maybeSingle();
+  if (error) { console.error('[Gmail Token] get error:', error); return null; }
+  return data;
+}
+
+async function upsertUserGmailToken(userId, fields) {
+  const { error } = await tokenStoreClient()
+    .from('user_gmail_tokens')
+    .upsert({ user_id: userId, ...fields, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  if (error) console.error('[Gmail Token] upsert error:', error);
+}
+
+async function deleteUserGmailToken(userId) {
+  const { error } = await tokenStoreClient().from('user_gmail_tokens').delete().eq('user_id', userId);
+  if (error) console.error('[Gmail Token] delete error:', error);
+}
+
+// GET /api/gmail/status — is the owner's Gmail grant connected?
+app.get('/api/gmail/status', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    const row = await getUserGmailToken(userId);
+    res.json({ connected: !!row, configured: gmailConfigured() });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// GET /api/gmail/auth/url — authorize URL for the separate Gmail client
+app.get('/api/gmail/auth/url', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    if (!gmailConfigured()) {
+      return res.status(500).json({ error: 'Gmail OAuth client not configured on the server', code: 'MISSING_CONFIG' });
+    }
+    const url = getGmailOauthClient().generateAuthUrl({
+      access_type: 'offline',
+      prompt: 'consent',        // force consent → always returns a refresh token
+      scope: GMAIL_OAUTH_SCOPES,
+      state: signGmailState(userId),
+    });
+    res.json({ url });
+  } catch (error) {
+    console.error('[Gmail Auth URL] error:', error);
+    res.status(500).json({ error: error.message || 'Failed to build auth URL' });
+  }
+});
+
+// GET /api/gmail/auth/callback — Google redirects here; store the grant, bounce to app
+app.get('/api/gmail/auth/callback', async (req, res) => {
+  const appUrl = process.env.VITE_APP_URL || process.env.PRODUCTION_URL || 'http://localhost:5173';
+  try {
+    const { code, state, error: oauthError } = req.query;
+    if (oauthError) return res.redirect(`${appUrl}/?gmail_error=${encodeURIComponent(oauthError)}`);
+    if (!code || !state) return res.redirect(`${appUrl}/?gmail_error=missing_code`);
+
+    let userId;
+    try { userId = verifyGmailState(state); }
+    catch { return res.redirect(`${appUrl}/?gmail_error=bad_state`); }
+
+    const { tokens } = await getGmailOauthClient().getToken(code);
+    if (!tokens.refresh_token) {
+      // No refresh token returned (consent skipped). With prompt:consent this is rare.
+      return res.redirect(`${appUrl}/?gmail_error=no_refresh_token`);
+    }
+    await upsertUserGmailToken(userId, {
+      refresh_token: tokens.refresh_token,
+      access_token: tokens.access_token || null,
+      expiry_date: tokens.expiry_date || null,
+      scope: tokens.scope || null,
+    });
+    console.log('✅ Gmail grant stored for user:', userId);
+    res.redirect(`${appUrl}/?gmail=connected`);
+  } catch (error) {
+    console.error('[Gmail Callback] error:', error);
+    res.redirect(`${appUrl}/?gmail_error=${encodeURIComponent(error.message || 'callback_failed')}`);
+  }
+});
+
+// POST /api/gmail/refresh-token — mint a fresh Gmail access token from the grant
+app.post('/api/gmail/refresh-token', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    if (!gmailConfigured()) {
+      return res.status(500).json({ error: 'Gmail OAuth client not configured on the server', code: 'MISSING_CONFIG' });
+    }
+    const row = await getUserGmailToken(userId);
+    if (!row?.refresh_token) {
+      return res.status(404).json({ error: 'Gmail not connected', code: 'GMAIL_NOT_CONNECTED', requiresConnect: true });
+    }
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: GMAIL_OAUTH_CLIENT_ID,
+        client_secret: GMAIL_OAUTH_CLIENT_SECRET,
+        grant_type: 'refresh_token',
+        refresh_token: row.refresh_token,
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      if (err.error === 'invalid_grant') {
+        // Grant dead (revoked, or the Testing 7-day refresh-token expiry). Clear
+        // it so we stop retrying; the user must reconnect Gmail.
+        await deleteUserGmailToken(userId);
+        return res.status(401).json({
+          error: 'Gmail grant expired or revoked. Please reconnect Gmail.',
+          code: 'INVALID_GRANT', requiresReauth: true, requiresConnect: true,
+        });
+      }
+      return res.status(response.status).json({
+        error: err.error_description || 'Gmail token refresh failed',
+        code: err.error || 'REFRESH_FAILED',
+      });
+    }
+    const data = await response.json();
+    await upsertUserGmailToken(userId, {
+      refresh_token: row.refresh_token,
+      access_token: data.access_token,
+      expiry_date: data.expires_in ? Date.now() + data.expires_in * 1000 : null,
+      ...(data.scope ? { scope: data.scope } : {}),
+    });
+    res.json({ access_token: data.access_token, expires_in: data.expires_in, token_type: data.token_type, scope: data.scope });
+  } catch (error) {
+    console.error('[Gmail Refresh] error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error', code: 'SERVER_ERROR' });
+  }
+});
+
+// DELETE /api/gmail/disconnect — drop the stored grant
+app.delete('/api/gmail/disconnect', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    await deleteUserGmailToken(userId);
+    res.json({ disconnected: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });
 

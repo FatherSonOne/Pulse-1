@@ -50,6 +50,15 @@ services:
         sync: false
       - key: GOOGLE_LOGIN_CLIENT_SECRET
         sync: false
+      # --- Google OAuth: GMAIL client (separate GCP project, Testing) ---
+      # Owner-only Gmail grant (restricted scopes) — keeps the login client
+      # CASA-free. REDIRECT_URI must be <BACKEND_URL>/api/gmail/auth/callback.
+      - key: GMAIL_OAUTH_CLIENT_ID
+        sync: false
+      - key: GMAIL_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GMAIL_OAUTH_REDIRECT_URI
+        sync: false
 
       # --- CORS: the deployed frontend origin ---
       # https://pulse.logosvision.org is already hardcoded in server.js's allow-list.
