@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 import { getGmailService, GmailMessage } from './gmailService';
 import { settingsService } from './settingsService';
 import { emailAIService } from './emailAIService';
+import { isEmailEnabled } from '../lib/emailFeature';
 
 // ========================================
 // TYPES
@@ -177,6 +178,12 @@ class EmailSyncService {
    * Perform full email sync from Gmail
    */
   async fullSync(maxResults: number = 100): Promise<{ synced: number; errors: number; categories: Record<string, number> }> {
+    // Email section disabled (Settings → Features & Labs): skip the Gmail fetch
+    // entirely so no background sync hits the Gmail API / token.
+    if (!isEmailEnabled()) {
+      return { synced: 0, errors: 0, categories: {} };
+    }
+
     if (this.syncInProgress) {
       console.log('Sync already in progress');
       return { synced: 0, errors: 0, categories: {} };

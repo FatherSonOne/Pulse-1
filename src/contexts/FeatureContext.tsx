@@ -39,6 +39,13 @@ export interface FeatureFlags {
   // and Insights tiles ship in PR 3b — not visible in PR 3a even when on.
   // Carries ZERO coral; coral budget is reserved for PR 3b.
   toolsMenuV2: boolean;
+
+  // Email section master switch. OFF by default → the Email nav item shows a
+  // red "feature not available" caption and ALL Gmail fetch / token use is gated
+  // off (src/lib/emailFeature.ts → gmailService.getAccessToken + emailSyncService
+  // + EmailClientWrapper). Turn ON in Settings → Features & Labs to develop/test
+  // the Email surface. Read by non-React code via isEmailEnabled().
+  emailEnabled: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -76,6 +83,9 @@ const DEFAULT_FEATURES: FeatureFlags = {
 
   // PR 3a — default off until rollout
   toolsMenuV2: false,
+
+  // Email section OFF by default ("feature not available"); flip on for dev/test.
+  emailEnabled: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -250,4 +260,5 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   scheduledMessages: 'Scheduled Messages',
   pulseComposerV2: 'New Compose Bar (Beta)',
   toolsMenuV2: 'New Tools Menu (Beta)',
+  emailEnabled: 'Email Section',
 };

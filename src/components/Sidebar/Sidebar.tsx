@@ -26,6 +26,7 @@ import {
   Video,
 } from 'lucide-react';
 import { useEntitlements } from '../../hooks/useEntitlements';
+import { useFeatures } from '../../contexts/FeatureContext';
 
 // ============================================
 // TYPES
@@ -37,6 +38,8 @@ interface NavItemConfig {
   icon: LucideIcon;
   label: string;
   view: AppView;
+  /** Small muted caption under the item label (e.g. "feature not available"). */
+  note?: string;
 }
 
 interface NavSection {
@@ -237,6 +240,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const navSections = getNavSections();
   const { isTrialing, trialDaysLeft, entitlements, isLoading: entLoading } = useEntitlements();
+  // Email section master switch (Settings → Features & Labs). When off, the
+  // Email item shows a red "feature not available" caption and Gmail is gated.
+  const { features } = useFeatures();
 
   // Determine if we need to show a billing alert
   const subStatus = entitlements?.is_trialing ? 'trialing' : null;
@@ -390,16 +396,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {section.note}
                   </div>
                 )}
-                {isSectionExpanded && section.items.map((item, itemIdx) => (
-                  <NavItem
-                    key={item.view}
-                    icon={item.icon}
-                    label={item.label}
-                    isActive={currentView === item.view}
-                    isCollapsed={isCollapsed}
-                    onClick={() => handleNavClick(item.view)}
-                  />
-                ))}
+                {isSectionExpanded && section.items.map((item) => {
+                  // Email shows a red "feature not available" caption when the
+                  // section is toggled off (Settings → Features & Labs). Any
+                  // other item with a static `note` renders it muted.
+                  const emailDisabled = item.view === AppView.EMAIL && !features.emailEnabled;
+                  const caption = emailDisabled ? 'feature not available' : item.note;
+                  return (
+                    <React.Fragment key={item.view}>
+                      <NavItem
+                        icon={item.icon}
+                        label={item.label}
+                        isActive={currentView === item.view}
+                        isCollapsed={isCollapsed}
+                        onClick={() => handleNavClick(item.view)}
+                      />
+                      {/* Caption — mirrors the Experimental section note's font
+                          style (10px italic), indented to sit under the nav
+                          label (10px pad + 28px icon + 10px gap = 48px). Red when
+                          the Email section is off, muted otherwise. */}
+                      {caption && !isCollapsed && (
+                        <div
+                          style={{
+                            padding: '0 12px 6px 48px',
+                            marginTop: -2,
+                            fontSize: 10,
+                            lineHeight: 1.35,
+                            fontStyle: 'italic',
+                            color: emailDisabled
+                              ? 'var(--pulse-tone-overdue)'
+                              : 'var(--pulse-ink-3, #8a8a8a)',
+                          }}
+                        >
+                          {caption}
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </React.Fragment>
             );
           })}

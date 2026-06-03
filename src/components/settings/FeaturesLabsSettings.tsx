@@ -25,6 +25,18 @@ export const FeaturesLabsSettings: React.FC = () => {
         />
       </SettingsCard>
 
+      {/* Email section on/off. OFF (default) shows a red "feature not available"
+          caption under Email in the sidebar and disables all Gmail fetch/token
+          use. Turn ON for testing/development. */}
+      <SettingsCard>
+        <ToggleItem
+          label="Email Section"
+          desc="When off, the Email tab shows “feature not available” and Gmail syncing/token access is disabled. Turn on for testing & development."
+          active={features.emailEnabled}
+          onToggle={() => toggleFeature('emailEnabled')}
+        />
+      </SettingsCard>
+
       {/* Feature categories */}
       {Object.entries(FEATURE_CATEGORIES).map(([catKey, cat]) => (
         <SettingsCard key={catKey} className="space-y-4">

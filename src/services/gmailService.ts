@@ -1,6 +1,7 @@
 import { UnifiedMessage } from '../types';
 import { supabase } from './supabase';
 import { BACKEND_URL } from '../config/backend';
+import { isEmailEnabled, EmailDisabledError } from '../lib/emailFeature';
 
 /**
  * Gmail Service
@@ -142,6 +143,13 @@ export class GmailService {
    * Get the access token from Supabase session
    */
   private async getAccessToken(forceRefresh = false): Promise<string> {
+    // Email section disabled (Settings → Features & Labs): never reach for the
+    // Gmail token. This is the universal backstop — every Gmail API call funnels
+    // through here, so this hard-stops all Gmail fetch/token use when off.
+    if (!isEmailEnabled()) {
+      throw new EmailDisabledError();
+    }
+
     // Return cached token if valid and not forcing refresh
     if (this.accessToken && !forceRefresh && !this.isTokenExpired()) {
       return this.accessToken;
