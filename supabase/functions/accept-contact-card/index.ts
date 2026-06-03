@@ -385,7 +385,7 @@ async function processCard(
     };
     if (snap.phone) updates.phone = snap.phone;
     if (snap.company) updates.company = snap.company;
-    if (snap.title) updates.title = snap.title;
+    if (snap.title) updates.role = snap.title;
     if (snap.address) updates.address = snap.address;
     if (snap.avatar_color) updates.avatar_color = snap.avatar_color;
     const { error: mergeErr } = await ctx.admin

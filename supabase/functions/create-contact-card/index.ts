@@ -264,7 +264,7 @@ serve(async (req) => {
 
       if (parentErr) {
         console.error('[create-contact-card] parent fetch error:', parentErr);
-        return json({ error: 'internal' }, 500);
+        return json({ error: 'internal', details: 'parent_fetch: ' + (parentErr?.message ?? 'unknown') }, 500);
       }
       if (!parent) {
         return json({ error: 'card_not_forwardable', forwarded_from_card_id }, 403);
@@ -285,14 +285,14 @@ serve(async (req) => {
       // contacts.user_id is TEXT — compare via senderUserId string.
       const { data: contact, error: contactErr } = await admin
         .from('contacts')
-        .select('id, user_id, name, email, phone, company, title, address, avatar_color')
+        .select('id, user_id, name, email, phone, company, title:role, address, avatar_color')
         .eq('id', contact_id as string)
         .eq('user_id', senderUserId)
         .maybeSingle();
 
       if (contactErr) {
         console.error('[create-contact-card] contact fetch error:', contactErr);
-        return json({ error: 'internal' }, 500);
+        return json({ error: 'internal', details: 'contact_fetch: ' + (contactErr?.message ?? 'unknown') }, 500);
       }
       if (!contact) {
         return json({ error: 'contact_not_found' }, 404);
@@ -349,7 +349,7 @@ serve(async (req) => {
 
       if (blockErr) {
         console.error('[create-contact-card] block lookup error:', blockErr);
-        return json({ error: 'internal' }, 500);
+        return json({ error: 'internal', details: 'block_lookup: ' + (blockErr?.message ?? 'unknown') }, 500);
       }
       if (block) {
         return json({ error: 'sender_blocked_by_recipient' }, 403);
@@ -368,7 +368,7 @@ serve(async (req) => {
 
     if (countErr) {
       console.error('[create-contact-card] rate-limit count error:', countErr);
-      return json({ error: 'internal' }, 500);
+      return json({ error: 'internal', details: 'rate_limit_count: ' + (countErr?.message ?? 'unknown') }, 500);
     }
     if ((countToday ?? 0) >= dailyLimit) {
       return json(
@@ -402,7 +402,7 @@ serve(async (req) => {
 
     if (insertErr || !inserted) {
       console.error('[create-contact-card] insert error:', insertErr);
-      return json({ error: 'internal' }, 500);
+      return json({ error: 'internal', details: 'insert: ' + (insertErr?.message ?? 'no_row_returned') }, 500);
     }
 
     const cardId = inserted.id;

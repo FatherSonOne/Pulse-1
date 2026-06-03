@@ -240,7 +240,7 @@ serve(async (req) => {
     // ── Fetch + validate all contacts owned by sender ────────────────
     const { data: contacts, error: contactsErr } = await admin
       .from('contacts')
-      .select('id, user_id, name, email, phone, company, title, address, avatar_color')
+      .select('id, user_id, name, email, phone, company, title:role, address, avatar_color')
       .in('id', contact_ids as string[])
       .eq('user_id', senderUserId);
 
