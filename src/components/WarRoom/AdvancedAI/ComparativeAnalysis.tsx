@@ -105,7 +105,7 @@ export const ComparativeAnalysis: React.FC<ComparativeAnalysisProps> = ({
   ];
 
   return (
-    <div className="h-full flex flex-col rounded-lg overflow-hidden" style={{ background: 'var(--pulse-surface-modal)' }}>
+    <div className="h-full flex flex-col rounded-lg overflow-hidden" style={{ background: 'var(--pulse-surface-modal, var(--pulse-canvas))' }}>
       {/* Header */}
       <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--pulse-border)' }}>
         <div className="flex items-center gap-3">

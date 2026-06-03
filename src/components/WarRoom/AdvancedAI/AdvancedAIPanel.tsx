@@ -60,7 +60,7 @@ export const AdvancedAIPanel: React.FC<AdvancedAIPanelProps> = ({
   return (
     <div
       className="h-full flex flex-col rounded-xl overflow-hidden"
-      style={{ background: 'var(--pulse-surface-modal)', border: '1px solid var(--pulse-border)' }}
+      style={{ background: 'var(--pulse-surface-modal, var(--pulse-canvas))', border: '1px solid var(--pulse-border)' }}
     >
       {/* Header */}
       <div

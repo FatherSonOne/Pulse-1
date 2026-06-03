@@ -234,7 +234,7 @@ Requirements:
     <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
       <div
         className="w-full max-w-4xl mx-4 rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        style={{ background: 'var(--pulse-surface-modal)', border: '1px solid var(--pulse-border)' }}
+        style={{ background: 'var(--pulse-surface-modal, var(--pulse-canvas))', border: '1px solid var(--pulse-border)' }}
       >
         {/* Header */}
         <div className="p-4 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid var(--pulse-border)' }}>

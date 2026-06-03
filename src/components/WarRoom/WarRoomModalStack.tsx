@@ -207,7 +207,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
       {/* Export Modal */}
       {showExportModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
-          <div className="w-full max-w-2xl rounded-2xl p-6" style={{ background: 'var(--pulse-surface-modal)', border: '1px solid var(--pulse-border)' }}>
+          <div className="w-full max-w-2xl rounded-2xl p-6" style={{ background: 'var(--pulse-surface-modal, var(--pulse-canvas))', border: '1px solid var(--pulse-border)' }}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold inline-flex items-center" style={{ color: 'var(--pulse-ink)' }}>
                 <Share2 size={16} className="mr-2" style={{ color: 'var(--pulse-ink-3)' }} />
@@ -477,7 +477,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
       {/* Knowledge Bank Modal - Full Document Browser */}
       {showKnowledgeBank && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
-          <div className="rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-in" style={{ background: 'var(--pulse-surface-modal)', border: '1px solid var(--pulse-border)' }}>
+          <div className="rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-in" style={{ background: 'var(--pulse-surface-modal, var(--pulse-canvas))', border: '1px solid var(--pulse-border)' }}>
             {/* Header */}
             <div className="p-4 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid var(--pulse-border)' }}>
               <div className="flex items-center gap-3">
