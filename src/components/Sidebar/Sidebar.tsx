@@ -118,7 +118,7 @@ const getNavSections = (): NavSection[] => {
       label: 'Experimental',
       color: 'amber',
       collapsible: true,
-      note: 'Not part of the core app — likely to be cut',
+      note: 'features coming in v2.0',
       items: [
         { icon: MessageSquare, label: 'Summit', view: AppView.LIVE },
         // Map stack still drives cross-section features (calendar travel
