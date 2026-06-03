@@ -21,7 +21,6 @@ export interface WorkspaceSharedContact {
   email: string | null;
   avatar_color: string | null;
   role: string | null;
-  vip: boolean | null;
   // Share metadata:
   shared_by: string | null;
   shared_at: string;
@@ -33,7 +32,6 @@ interface WorkspaceContactSafeColumns {
   email: string | null;
   avatar_color: string | null;
   role: string | null;
-  vip: boolean | null;
 }
 
 interface WorkspaceContactRow {
@@ -105,8 +103,7 @@ export async function listWorkspaceContacts(
         name,
         email,
         avatar_color,
-        role,
-        vip
+        role
       )
     `)
     .eq('workspace_id', workspaceId)
@@ -123,7 +120,6 @@ export async function listWorkspaceContacts(
       email: contact.email,
       avatar_color: contact.avatar_color,
       role: contact.role,
-      vip: contact.vip,
       shared_by: row.shared_by,
       shared_at: row.shared_at,
     }];
