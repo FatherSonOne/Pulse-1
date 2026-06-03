@@ -198,7 +198,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({
       {open && (
         <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4"
-          style={{ background: 'color-mix(in srgb, var(--pulse-ink) 70%, transparent)' }}
+          style={{ background: 'rgba(0, 0, 0, 0.6)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -211,7 +211,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({
             aria-labelledby={titleId}
             aria-describedby={subtitleId}
             className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
-            style={{ background: 'var(--pulse-surface)' }}
+            style={{ background: 'var(--pulse-surface-modal)' }}
             initial={{ opacity: 0, scale: 0.96, y: 18 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 18 }}
@@ -438,7 +438,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({
                 style={{
                   minHeight: 44,
                   background: 'var(--pulse-rose)',
-                  color: 'var(--pulse-surface)',
+                  color: '#ffffff',
                 }}
               >
                 {submitting && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
