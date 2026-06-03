@@ -194,8 +194,8 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
       }}
       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200 ${
         activeSection === section.id
-          ? 'bg-rose-500/10 text-rose-500 dark:text-rose-400 font-semibold'
-          : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60'
+          ? 'bg-[var(--pulse-rose-soft)] text-[var(--pulse-rose-text)] font-semibold'
+          : 'text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] hover:bg-[var(--pulse-surface-raised)]'
       }`}
     >
       <i className={`fa-solid ${section.icon} w-5 text-center text-xs`}></i>
@@ -224,17 +224,17 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
       case 'about':            return <AboutSettings />;
       case 'billing':          return <BillingSettings />;
       case 'developer':        return <DeveloperSettings />;
-      default:                 return <div className="text-zinc-500">Section under construction.</div>;
+      default:                 return <div className="text-[var(--pulse-ink-3)]">Section under construction.</div>;
     }
   };
 
   // Mobile Header
   const MobileHeader = () => (
-    <div className="md:hidden flex items-center justify-between p-4 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
+    <div className="md:hidden flex items-center justify-between p-4 bg-[var(--pulse-canvas)] border-b border-[var(--pulse-border)]">
       {!isMobileMenuOpen && (
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+          className="flex items-center gap-2 text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition"
           aria-label="Open settings menu"
         >
           <Menu className="text-lg" />
@@ -245,7 +245,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
       )}
       <button
         onClick={onClose}
-        className="ml-auto w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+        className="ml-auto w-10 h-10 rounded-lg bg-[var(--pulse-surface)] flex items-center justify-center text-[var(--pulse-ink-2)] hover:bg-[var(--pulse-surface-raised)] transition"
         aria-label="Close settings"
       >
         <X className="text-lg" />
@@ -254,7 +254,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
   );
 
   return (
-    <div data-settings className="h-full bg-white dark:bg-zinc-950 flex flex-col">
+    <div data-settings className="h-full bg-[var(--pulse-canvas)] flex flex-col">
       <MobileHeader />
 
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
@@ -271,20 +271,20 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
         <div className={`
           fixed md:relative z-50 md:z-auto
           w-full md:w-64 h-full
-          bg-zinc-50 dark:bg-zinc-900
-          border-r border-zinc-200 dark:border-zinc-800
+          bg-[var(--pulse-canvas)]
+          border-r border-[var(--pulse-border)]
           p-4 flex flex-col
           transform transition-transform duration-300 ease-out
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           shadow-2xl md:shadow-none
         `}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold tracking-tight dark:text-white text-zinc-900 px-2">
+            <h2 className="text-lg font-semibold tracking-tight text-[var(--pulse-ink)] px-2">
               Settings
             </h2>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="md:hidden w-8 h-8 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 transition"
+              className="md:hidden w-8 h-8 rounded-lg hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center text-[var(--pulse-ink-3)] transition"
               aria-label="Close menu"
             >
               <X />
@@ -293,20 +293,20 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
 
           {/* Search bar */}
           <div className="mb-4 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--pulse-ink-3)] pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search settings"
-              className="w-full pl-8 pr-12 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
+              className="w-full pl-8 pr-12 py-2 rounded-lg border border-[var(--pulse-border)] bg-[var(--pulse-surface)] text-sm text-[var(--pulse-ink)] placeholder-[var(--pulse-ink-3)] focus:outline-none focus:ring-2 focus:ring-[var(--pulse-rose)]"
               aria-label="Search settings"
             />
             {searchQuery ? (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--pulse-ink-3)] hover:text-[var(--pulse-ink)]"
                 aria-label="Clear search"
               >
                 <X className="w-3.5 h-3.5" />
@@ -314,7 +314,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             ) : (
               <kbd
                 aria-hidden="true"
-                className="hidden md:inline-flex items-center absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 text-[10px] text-zinc-400 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-900/50"
+                className="hidden md:inline-flex items-center absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-[var(--pulse-border)] text-[10px] text-[var(--pulse-ink-3)] bg-[var(--pulse-surface)]"
                 style={{ fontFamily: 'var(--pulse-font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)' }}
               >
                 /
@@ -328,7 +328,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                 {groupedSections.map((group) => (
                   <div key={group.label}>
                     <div
-                      className="px-3 mb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-500"
+                      className="px-3 mb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--pulse-ink-3)]"
                       style={{ fontFamily: 'var(--pulse-font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)' }}
                     >
                       {group.label}
@@ -340,7 +340,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                 ))}
               </div>
             ) : filteredSections.length === 0 ? (
-              <div className="px-3 py-6 text-center text-sm text-zinc-400">
+              <div className="px-3 py-6 text-center text-sm text-[var(--pulse-ink-3)]">
                 No settings matching <em>"{searchQuery}"</em>
               </div>
             ) : (
@@ -352,7 +352,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
         </div>
 
         {/* Main Settings Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative bg-white dark:bg-zinc-950">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative bg-[var(--pulse-canvas)]">
           <div className="max-w-2xl mx-auto">
             {renderContent()}
           </div>
