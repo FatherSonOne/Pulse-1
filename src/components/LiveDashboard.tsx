@@ -197,7 +197,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
   const { speak, isSpeaking } = useVoiceSynthesis(voiceSynthesisEnabled, voiceGender);
 
   // The Board — persistent notes across all modes
-  const { notes: boardNotes, addNote: addBoardNote, deleteNote: deleteBoardNote, clearNotes: clearBoardNotes } = useBoardNotes();
+  const { notes: boardNotes, addNote: addBoardNote, deleteNote: deleteBoardNote, clearNotes: clearBoardNotes, restoreNotes: restoreBoardNotes } = useBoardNotes();
 
   // Load persisted agent selection
   useEffect(() => {
@@ -983,6 +983,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
 
   const handleDeleteDoc = async (id: string) => {
     const docToDelete = documents.find(d => d.id === id);
+    if (!window.confirm(`Delete "${docToDelete?.title || 'this source'}"? This removes the document and its embeddings and can't be undone.`)) return;
     console.log('[War Room] DELETE CLICKED - Document:', docToDelete?.title, 'ID:', id);
     
     // Block all reloads during deletion
@@ -1066,6 +1067,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
   };
 
   const handleDeleteSession = async (id: string) => {
+    if (!window.confirm("Delete this session? This can't be undone.")) return;
     try {
       await ragService.deleteSession(id);
       warRoomAudit.sessionDeleted(id);
@@ -1078,6 +1080,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
   };
 
   const handleDeleteProject = async (id: string) => {
+    if (!window.confirm("Delete this project and all its sessions? This can't be undone.")) return;
     try {
       await ragService.deleteProject(id);
       setProjects(projects.filter(p => p.id !== id));
@@ -1210,9 +1213,38 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
     toast.success(`Added ${allDocIds.length} documents to context`);
   };
 
+  // Reversible local clears fire immediately with a 5s Undo (no friction),
+  // per the destructive-action-safety pass. (P1a, /impeccable critique.)
+  const undoToast = (message: string, onUndo: () => void) => {
+    toast(
+      (t) => (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+          {message}
+          <button
+            onClick={() => { onUndo(); toast.dismiss(t.id); }}
+            style={{ fontWeight: 600, color: 'var(--pulse-coral-fg, #e11d48)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 13 }}
+          >
+            Undo
+          </button>
+        </span>
+      ),
+      { duration: 5000 },
+    );
+  };
+
   const clearActiveContext = () => {
+    const prev = activeContextDocs;
+    if (prev.size === 0) return;
     setActiveContextDocs(new Set());
-    toast.success('Cleared active context');
+    undoToast(`Cleared ${prev.size} source${prev.size !== 1 ? 's' : ''} from context`, () => setActiveContextDocs(prev));
+  };
+
+  // Clear the board with Undo (the board is local/localStorage, so fully reversible).
+  const clearBoardWithUndo = () => {
+    const prev = boardNotes;
+    if (prev.length === 0) return;
+    clearBoardNotes();
+    undoToast(`Cleared ${prev.length} board item${prev.length !== 1 ? 's' : ''}`, () => restoreBoardNotes(prev));
   };
 
   // Get active context documents
@@ -1660,7 +1692,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
           notes={boardNotes}
           onAddNote={addBoardNote}
           onDeleteNote={deleteBoardNote}
-          onClearNotes={clearBoardNotes}
+          onClearNotes={clearBoardWithUndo}
         >
           <ChatComponent
             selectedSessionId={selectedSessionId}

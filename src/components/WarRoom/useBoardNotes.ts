@@ -67,6 +67,8 @@ export interface UseBoardNotesReturn {
   addNote: (content: string, type?: NoteType, meta?: BoardNoteMeta) => BoardNote;
   deleteNote: (id: string) => void;
   clearNotes: () => void;
+  /** Restore a prior snapshot (used by the clear-board Undo). */
+  restoreNotes: (notes: BoardNote[]) => void;
 }
 
 export function useBoardNotes(): UseBoardNotesReturn {
@@ -104,5 +106,10 @@ export function useBoardNotes(): UseBoardNotesReturn {
     persistNotes([]);
   }, []);
 
-  return { notes, addNote, deleteNote, clearNotes };
+  const restoreNotes = useCallback((restored: BoardNote[]) => {
+    setNotes(restored);
+    persistNotes(restored);
+  }, []);
+
+  return { notes, addNote, deleteNote, clearNotes, restoreNotes };
 }
