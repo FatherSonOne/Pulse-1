@@ -1406,19 +1406,19 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
   const applyLayoutMode = useCallback((mode: LayoutMode) => {
     setLayoutModeState(mode);
     try { localStorage.setItem('pulse-war-room-layout-v1', mode); } catch { /* ignore */ }
-    const railsOpen = mode === 'command-center';
-    setContextPanelOpen(railsOpen);
-    setArtifactsPanelOpen(railsOpen);
-  }, [setContextPanelOpen, setArtifactsPanelOpen]);
+    // Command Center = both rails; Focus = conversation + On-the-Board (right
+    // rail) so findings can be pinned while focused; Live = collapse to the
+    // voice stage, shown immediately on entry (no separate CTA step).
+    setContextPanelOpen(mode === 'command-center');
+    setArtifactsPanelOpen(mode === 'command-center' || mode === 'focus');
+    setShowVoiceAgentPanel(mode === 'live');
+  }, [setContextPanelOpen, setArtifactsPanelOpen, setShowVoiceAgentPanel]);
 
-  // Apply the saved mode's panel preset once the shell flag resolves. Only
-  // collapse for focus/live — command-center matches the desktop default.
+  // Apply the saved mode's full preset (rails + voice) once the shell flag
+  // resolves — so re-opening War Room in Live lands straight on the stage.
   useEffect(() => {
     if (!useNotebookShell) return;
-    if (layoutMode !== 'command-center') {
-      setContextPanelOpen(false);
-      setArtifactsPanelOpen(false);
-    }
+    applyLayoutMode(layoutMode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useNotebookShell]);
 

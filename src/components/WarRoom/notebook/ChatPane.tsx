@@ -299,21 +299,6 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
         </div>
       </div>
 
-      {/* Live mode — surface a Start-Voice CTA (no auto-mic) */}
-      {layoutMode === 'live' && !showVoiceAgentPanel && (
-        <button
-          onClick={() => setShowVoiceAgentPanel(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, margin: '10px 16px 0', padding: '9px 12px',
-            borderRadius: 10, border: '1px solid var(--pulse-rose-soft)', background: 'var(--pulse-coral-bg-08)',
-            color: 'var(--pulse-coral-fg)', cursor: 'pointer', fontSize: 13, fontWeight: 500, flexShrink: 0,
-          }}
-        >
-          <Mic size={14} />
-          Start voice — talk to the realtime agent
-        </button>
-      )}
-
       {/* ── Transcript or teaching cold-start (hidden during the voice stage) ─ */}
       {!showVoiceAgentPanel && (!hasMessages && !isLoading ? (
         <EmptyState
@@ -353,7 +338,12 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
           activeContextIds={activeContextDocs}
           expanded={voiceAgentExpanded}
           onToggleExpand={() => setVoiceAgentExpanded(!voiceAgentExpanded)}
-          onClose={() => setShowVoiceAgentPanel(false)}
+          onClose={() => {
+            // Leaving the voice stage returns to text chat. In Live that means
+            // dropping to Focus (Live has no text surface of its own).
+            if (layoutMode === 'live') onLayoutModeChange?.('focus');
+            else setShowVoiceAgentPanel(false);
+          }}
         />
       )}
 
