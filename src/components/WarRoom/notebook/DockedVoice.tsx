@@ -36,6 +36,8 @@ export interface DockedVoiceProps {
   expanded: boolean;
   onToggleExpand: () => void;
   onClose: () => void;
+  /** 'stage' = render the radial voice centerpiece instead of the inline strip. */
+  chrome?: 'full' | 'stage';
 }
 
 export const DockedVoice: React.FC<DockedVoiceProps> = ({
@@ -49,15 +51,13 @@ export const DockedVoice: React.FC<DockedVoiceProps> = ({
   expanded,
   onToggleExpand,
   onClose,
+  chrome = 'full',
 }) => {
   return (
     <div
-      style={{
-        padding: '8px 12px',
-        borderTop: '1px solid var(--pulse-border)',
-        background: 'var(--pulse-surface)',
-        flexShrink: 0,
-      }}
+      style={chrome === 'stage'
+        ? { flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, background: 'var(--pulse-surface)' }
+        : { padding: '8px 12px', borderTop: '1px solid var(--pulse-border)', background: 'var(--pulse-surface)', flexShrink: 0 }}
     >
       <ErrorBoundary
         componentName="Voice Agent"
@@ -109,6 +109,8 @@ export const DockedVoice: React.FC<DockedVoiceProps> = ({
             openaiApiKey={openaiApiKey}
             workspaceId={workspaceId}
             onClose={onClose}
+            onRequestClose={onClose}
+            chrome={chrome}
             isExpanded={expanded}
             onToggleExpand={onToggleExpand}
             documents={documents}

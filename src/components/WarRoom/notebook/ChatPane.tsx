@@ -314,8 +314,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
         </button>
       )}
 
-      {/* ── Transcript or teaching cold-start ─────────────────────────────── */}
-      {!hasMessages && !isLoading ? (
+      {/* ── Transcript or teaching cold-start (hidden during the voice stage) ─ */}
+      {!showVoiceAgentPanel && (!hasMessages && !isLoading ? (
         <EmptyState
           documents={documents}
           activeDocCount={activeDocCount}
@@ -338,11 +338,12 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
           sendError={sendError}
           onRetry={onRetrySend}
         />
-      )}
+      ))}
 
-      {/* ── Docked realtime voice agent ───────────────────────────────────── */}
+      {/* ── Voice stage — radial centerpiece; replaces transcript + composer ── */}
       {showVoiceAgentPanel && (
         <DockedVoice
+          chrome="stage"
           userId={voiceUserId || ''}
           projectId={selectedProjectId || undefined}
           sessionId={selectedSessionId || undefined}
@@ -356,8 +357,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
         />
       )}
 
-      {/* ── Composer — always visible; first send lazily creates a session ──── */}
-      {
+      {/* ── Composer — hidden during the voice stage (one input at a time) ──── */}
+      {!showVoiceAgentPanel && (
         <Composer
           input={input}
           setInput={setInput}
@@ -376,7 +377,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
           voiceDockOpen={showVoiceAgentPanel}
           onToggleVoiceDock={() => setShowVoiceAgentPanel(!showVoiceAgentPanel)}
         />
-      }
+      )}
     </>
   );
 };

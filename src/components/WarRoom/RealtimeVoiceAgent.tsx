@@ -23,6 +23,7 @@ import {
   generateEphemeralToken,
 } from '../../services/realtimeAgentService';
 import { registerWarRoomTools } from '../../services/warRoomToolsService';
+import { RadialVoiceVisual } from './RadialVoiceVisual';
 import { contextBankService } from '../../services/contextBankService';
 import { MarkdownRenderer } from '../shared';
 import { VoiceTextButton } from '../shared/VoiceTextButton';
@@ -78,6 +79,11 @@ interface RealtimeVoiceAgentProps {
   onAudioLevel?: (level: number, isListening: boolean, isSpeaking: boolean) => void;
   onAutoplayBlocked?: () => void;
   className?: string;
+  /** 'stage' = render the War Room radial voice centerpiece instead of the
+   *  built-in status-bar/bar-viz/controls (Summit uses the default 'full'). */
+  chrome?: 'full' | 'stage';
+  /** Stage-mode: bubble up "Type instead" / End to the host (close voice). */
+  onRequestClose?: () => void;
 }
 
 export interface RealtimeVoiceAgentRef {
@@ -119,6 +125,8 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
   onAudioLevel,
   onAutoplayBlocked,
   className = '',
+  chrome = 'full',
+  onRequestClose,
 }, ref) => {
   // Default settings
   const effectiveSettings: VoiceSettings = voiceSettings || {
@@ -640,6 +648,26 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
   };
 
   // ============= RENDER =============
+
+  if (chrome === 'stage') {
+    return (
+      <div className={`realtime-voice-agent ${className}`} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <RadialVoiceVisual
+          audioLevel={audioLevel}
+          isListening={isListening}
+          isSpeaking={isSpeaking}
+          isConnected={isConnected}
+          isConnecting={isConnecting}
+          isMuted={isMuted}
+          onConnect={connect}
+          onToggleMute={handleMuteToggle}
+          onInterrupt={handleInterrupt}
+          onEnd={() => { disconnect(); onRequestClose?.(); }}
+          onTypeInstead={() => { disconnect(); onRequestClose?.(); }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`realtime-voice-agent ${className}`}>

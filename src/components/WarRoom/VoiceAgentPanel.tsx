@@ -41,6 +41,9 @@ interface VoiceAgentPanelProps {
   documents?: ContextDocument[];
   /** Active document IDs from the War Room context */
   activeContextIds?: Set<string>;
+  /** 'stage' = render the radial voice centerpiece (no panel chrome). */
+  chrome?: 'full' | 'stage';
+  onRequestClose?: () => void;
 }
 
 export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
@@ -55,6 +58,8 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
   className = '',
   documents = [],
   activeContextIds,
+  chrome = 'full',
+  onRequestClose,
 }) => {
   const [history, setHistory] = useState<RealtimeHistoryItem[]>([]);
   const [currentAgent, setCurrentAgent] = useState('general');
@@ -183,6 +188,27 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
       >
         <Mic className="fa text-xl" />
       </button>
+    );
+  }
+
+  if (chrome === 'stage') {
+    return (
+      <RealtimeVoiceAgent
+        userId={userId}
+        projectId={projectId}
+        sessionId={sessionId}
+        openaiApiKey={openaiApiKey}
+        workspaceId={workspaceId}
+        contextFiles={contextFiles}
+        voiceSettings={voiceSettings}
+        onTranscript={handleTranscript}
+        onHistoryUpdate={handleHistoryUpdate}
+        onAgentSwitch={handleAgentSwitch}
+        onAutoplayBlocked={() => setAutoplayBlocked(true)}
+        chrome="stage"
+        onRequestClose={onRequestClose || onClose}
+        className="flex-1 flex"
+      />
     );
   }
 
