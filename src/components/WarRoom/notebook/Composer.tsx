@@ -20,20 +20,24 @@ import { PromptSuggestion } from '../../../services/ragService';
 
 import { Mic, Paperclip, Send, Square, Wand2, X } from 'lucide-react';
 import { useVoiceToText } from '../../../hooks/useVoiceToText';
+import { useMicLevel } from '../../../hooks/useMicLevel';
 
-/** Small flowing waveform shown inline while dictating (Comet-style). */
-const MiniWaveform: React.FC = () => {
+/** Small waveform shown inline while dictating — reacts to the mic level
+ *  (Comet-style), with a gentle idle shimmer when you're quiet. */
+const MiniWaveform: React.FC<{ level: number }> = ({ level }) => {
   const [phase, setPhase] = useState(0);
   useEffect(() => {
     let raf = 0;
-    const tick = () => { setPhase((p) => p + 0.22); raf = requestAnimationFrame(tick); };
+    const tick = () => { setPhase((p) => p + 0.18); raf = requestAnimationFrame(tick); };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, []);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 3, height: 18 }} aria-hidden>
       {Array.from({ length: 9 }).map((_, i) => {
-        const h = 4 + Math.abs(Math.sin(phase + i * 0.7)) * 12;
+        const idle = 3 + Math.abs(Math.sin(phase + i * 0.7)) * 3;
+        const reactive = level * 15 * (0.55 + 0.45 * Math.abs(Math.sin(i * 1.3 + phase * 0.5)));
+        const h = Math.max(3, Math.min(18, idle + reactive));
         return <span key={i} style={{ width: 3, height: h, borderRadius: 2, background: 'var(--pulse-rose)' }} />;
       })}
     </div>
@@ -94,6 +98,8 @@ export const Composer: React.FC<ComposerProps> = ({
       setInput(voiceBaseRef.current);
     },
   });
+  const micLevel = useMicLevel(voice.isListening);
+
   const toggleDictation = useCallback(() => {
     if (voice.isListening) {
       voice.stopListening();
@@ -270,7 +276,7 @@ export const Composer: React.FC<ComposerProps> = ({
 
           {voice.isListening ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              <MiniWaveform />
+              <MiniWaveform level={micLevel} />
               <span style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 10, letterSpacing: '0.1em', color: 'var(--pulse-rose)' }}>LISTENING</span>
             </div>
           ) : (
