@@ -58,6 +58,7 @@ import { ApiDocumentation } from './components/ApiKeys';
 import EtaSharePage from './components/EtaSharePage';
 import PulseVoiceLogo from './components/PulseVoiceLogo';
 import { voiceCommandService } from './services/voiceCommandService';
+import { subscribeRealtimeIngest } from './services/memoryIngestService';
 import PermissionRequestModal from './components/PermissionRequestModal';
 import { usePermissions } from './hooks/usePermissions';
 import { settingsService } from './services/settingsService';
@@ -370,6 +371,17 @@ const App: React.FC = () => {
   // Presence tracking - only start heartbeat when user is authenticated
   // This prevents AbortError when app loads before authentication completes
   usePresence(!!user && !isAuthLoading);
+
+  // Memory auto-ingest: archive new conversations (email, Pulse messages,
+  // meetings, decisions, voice notes/messages, glimpses) into the Memory
+  // store as they happen, once authenticated. Mirrors the presence gating
+  // above. The subscription is best-effort and idempotent (DB unique index
+  // on user_id+source_table+source_id), and tears down on logout/unmount.
+  useEffect(() => {
+    if (!user || isAuthLoading) return;
+    const unsubscribe = subscribeRealtimeIngest();
+    return () => unsubscribe();
+  }, [user, isAuthLoading]);
 
   // Toggle theme function - defined early so it can be used in useEffect hooks
   const toggleTheme = useCallback(() => {
