@@ -56,7 +56,17 @@ export const DockedVoice: React.FC<DockedVoiceProps> = ({
   return (
     <div
       style={chrome === 'stage'
-        ? { flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, background: 'var(--pulse-surface)' }
+        ? {
+            // Thin coral frame so the Live view reads as a contained AI module,
+            // not a blank page. On-budget: the voice stage is an AI surface.
+            flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0,
+            background: 'var(--pulse-surface)',
+            border: '1px solid var(--pulse-rose-glow)',
+            borderRadius: 16,
+            margin: '8px 12px 12px',
+            boxShadow: '0 0 32px var(--pulse-rose-softer)',
+            overflow: 'hidden',
+          }
         : { padding: '8px 12px', borderTop: '1px solid var(--pulse-border)', background: 'var(--pulse-surface)', flexShrink: 0 }}
     >
       <ErrorBoundary
