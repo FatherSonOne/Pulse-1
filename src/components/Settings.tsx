@@ -13,7 +13,6 @@ import { TeamSettings } from './settings/TeamSettings';
 import { AccessibilitySettings } from './settings/AccessibilitySettings';
 import { PrivacyDataSettings } from './settings/PrivacyDataSettings';
 import { FeaturesLabsSettings } from './settings/FeaturesLabsSettings';
-import { StudioSettings } from './settings/StudioSettings';
 import { ActivityMonitorSettings } from './settings/ActivityMonitorSettings';
 import { DesktopAppSettings } from './settings/DesktopAppSettings';
 import { AboutSettings } from './settings/AboutSettings';
@@ -57,7 +56,6 @@ const SECTION_GROUPS: SectionGroup[] = [
     label: 'Intelligence',
     items: [
       { id: 'ai_intelligence', icon: 'fa-brain', label: 'AI & Intelligence' },
-      { id: 'war_room', icon: 'fa-shield', label: 'War Room' },
       { id: 'features_labs', icon: 'fa-flask', label: 'Features & Labs' },
     ],
   },
@@ -89,7 +87,6 @@ const SECTION_KEYWORDS: Record<string, string[]> = {
   ecosystem: ['ecosystem', 'bridge', 'entomate', 'logos vision', 'qntmecos', 'bot', 'webhook', 'token', 'connection'],
   notifications: ['bell', 'alert', 'push', 'email notification', 'sound', 'vibration', 'quiet hours', 'vip'],
   features_labs: ['feature', 'lab', 'beta', 'experimental', 'toggle', 'enable', 'disable', 'advanced mode'],
-  war_room: ['war room', 'mission', 'intel', 'focus', 'analyst', 'strategist', 'brainstorm', 'command', 'ai depth', 'reasoning'],
   activity_monitor: ['activity', 'presence', 'online', 'leaderboard', 'event feed', 'retention'],
   workspace: ['organization', 'org', 'workspace', 'legal name', 'logo', 'industry', 'size', 'domain', 'auto-join', 'archive', 'delete', 'danger zone', 'restore', 'transfer', 'audit'],
   team: ['team', 'invite', 'member', 'colleague', 'share'],
@@ -218,7 +215,6 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
       case 'accessibility':    return <AccessibilitySettings />;
       case 'privacy_data':     return <PrivacyDataSettings />;
       case 'features_labs':    return <FeaturesLabsSettings />;
-      case 'war_room':         return <StudioSettings />;
       case 'activity_monitor': return <ActivityMonitorSettings />;
       case 'desktop_app':      return <DesktopAppSettings />;
       case 'about':            return <AboutSettings />;

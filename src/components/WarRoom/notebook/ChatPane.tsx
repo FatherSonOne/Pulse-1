@@ -19,7 +19,7 @@ import { Composer } from './Composer';
 import { DockedVoice } from './DockedVoice';
 import { EmptyState } from './EmptyState';
 
-import { Brain, Check, ChevronDown, MessageSquare, Share2 } from 'lucide-react';
+import { Brain, Check, ChevronDown, LayoutGrid, MessageSquare, Mic, Minimize2, Share2 } from 'lucide-react';
 
 export interface ChatPaneProps extends PulseStudioProps {
   /** Threaded from LiveDashboard for the docked realtime voice agent. */
@@ -30,6 +30,9 @@ export interface ChatPaneProps extends PulseStudioProps {
   /** Inline transcript error + retry for a failed AI turn. */
   sendError?: string | null;
   onRetrySend?: () => void;
+  /** Layout mode (Command Center / Focus / Live) + setter — masthead switcher. */
+  layoutMode?: 'command-center' | 'focus' | 'live';
+  onLayoutModeChange?: (m: 'command-center' | 'focus' | 'live') => void;
 }
 
 export const ChatPane: React.FC<ChatPaneProps> = ({
@@ -67,6 +70,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
   workspaceId,
   sendError,
   onRetrySend,
+  layoutMode,
+  onLayoutModeChange,
 }) => {
   const safeMessages = Array.isArray(messages) ? messages : [];
   const selectedAgent = AGENTS.find((a) => a.id === activeAgent) || AGENTS[0];
@@ -144,6 +149,36 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {/* Layout mode switcher (Command Center / Focus / Live) */}
+          {onLayoutModeChange && (
+            <div style={{ display: 'inline-flex', background: 'var(--pulse-surface-raised)', borderRadius: 8, padding: 2, gap: 2 }} role="group" aria-label="Layout mode">
+              {([
+                { m: 'command-center' as const, Icon: LayoutGrid, label: 'Command Center' },
+                { m: 'focus' as const, Icon: Minimize2, label: 'Focus' },
+                { m: 'live' as const, Icon: Mic, label: 'Live' },
+              ]).map(({ m, Icon, label }) => {
+                const active = layoutMode === m;
+                return (
+                  <button
+                    key={m}
+                    onClick={() => onLayoutModeChange(m)}
+                    title={label}
+                    aria-label={label}
+                    aria-pressed={active}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      width: 28, height: 24, borderRadius: 6, border: 'none', cursor: 'pointer',
+                      background: active ? 'var(--pulse-coral-bg-12)' : 'transparent',
+                      color: active ? 'var(--pulse-coral-fg)' : 'var(--pulse-ink-3)',
+                    }}
+                  >
+                    <Icon size={13} />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Agent (Analyst) selector */}
           <div style={{ position: 'relative' }}>
             <button
@@ -263,6 +298,21 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
           )}
         </div>
       </div>
+
+      {/* Live mode — surface a Start-Voice CTA (no auto-mic) */}
+      {layoutMode === 'live' && !showVoiceAgentPanel && (
+        <button
+          onClick={() => setShowVoiceAgentPanel(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8, margin: '10px 16px 0', padding: '9px 12px',
+            borderRadius: 10, border: '1px solid var(--pulse-rose-soft)', background: 'var(--pulse-coral-bg-08)',
+            color: 'var(--pulse-coral-fg)', cursor: 'pointer', fontSize: 13, fontWeight: 500, flexShrink: 0,
+          }}
+        >
+          <Mic size={14} />
+          Start voice — talk to the realtime agent
+        </button>
+      )}
 
       {/* ── Transcript or teaching cold-start ─────────────────────────────── */}
       {!hasMessages && !isLoading ? (

@@ -56,6 +56,9 @@ const LoadingFallback: React.FC<{ message?: string }> = ({ message = 'Loading...
   );
 };
 
+/** War Room layout mode — a local, sticky preset over the panel state. */
+type LayoutMode = 'command-center' | 'focus' | 'live';
+
 interface LiveDashboardProps {
   /** @deprecated no-op — AI routing is server-side via edge functions. */
   apiKey?: string;
@@ -1388,6 +1391,37 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
     () => useNotebookShell && typeof window !== 'undefined' && window.innerWidth >= 1160,
   );
 
+  // ── War Room layout mode — local, sticky preset over the panel state ───────
+  // Replaces the old global "default mode" setting. Command Center = both
+  // rails; Focus = collapse rails to a single-agent chat; Live = collapse +
+  // surface a Start-Voice CTA (no auto-mic). Persisted as the default on open.
+  // Independent of `warRoomMode` (which keys the message cache — see :262).
+  const [layoutMode, setLayoutModeState] = useState<LayoutMode>(() => {
+    try {
+      const saved = localStorage.getItem('pulse-war-room-layout-v1');
+      return saved === 'focus' || saved === 'live' ? saved : 'command-center';
+    } catch { return 'command-center'; }
+  });
+
+  const applyLayoutMode = useCallback((mode: LayoutMode) => {
+    setLayoutModeState(mode);
+    try { localStorage.setItem('pulse-war-room-layout-v1', mode); } catch { /* ignore */ }
+    const railsOpen = mode === 'command-center';
+    setContextPanelOpen(railsOpen);
+    setArtifactsPanelOpen(railsOpen);
+  }, [setContextPanelOpen, setArtifactsPanelOpen]);
+
+  // Apply the saved mode's panel preset once the shell flag resolves. Only
+  // collapse for focus/live — command-center matches the desktop default.
+  useEffect(() => {
+    if (!useNotebookShell) return;
+    if (layoutMode !== 'command-center') {
+      setContextPanelOpen(false);
+      setArtifactsPanelOpen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useNotebookShell]);
+
   // File upload trigger for PulseStudio
   const handleUploadClick = () => {
     const fileInput = document.querySelector('input[type="file"][accept]') as HTMLInputElement;
@@ -1734,7 +1768,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
               });
             }}
             isMobile={isMobile}
-            {...(useNotebookShell ? ({ voiceUserId: userId, openaiApiKey, workspaceId, sendError, onRetrySend: () => sendMessageDirect(lastUserMessageRef.current, { skipUserMessage: true }) } as any) : {})}
+            {...(useNotebookShell ? ({ voiceUserId: userId, openaiApiKey, workspaceId, sendError, onRetrySend: () => sendMessageDirect(lastUserMessageRef.current, { skipUserMessage: true }), layoutMode, onLayoutModeChange: applyLayoutMode } as any) : {})}
           />
         </StudioShell>
 
