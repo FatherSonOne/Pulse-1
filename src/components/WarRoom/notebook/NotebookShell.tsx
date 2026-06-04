@@ -53,6 +53,7 @@ export const NotebookShell: React.FC<NotebookShellProps> = ({
   onKnowledgeBank,
   nav,
   onShareDoc,
+  boardOnly,
 }) => {
   const setShowStudyGuide = useWarRoomStore((s) => s.setShowStudyGuide);
   const setShowFAQ = useWarRoomStore((s) => s.setShowFAQ);
@@ -166,6 +167,7 @@ export const NotebookShell: React.FC<NotebookShellProps> = ({
         {studioOpen && hasBoardProps && (
           <aside className="wr-nb-studio" data-force-open={studioOpen} aria-label="Studio">
             <StudioPane
+              boardOnly={boardOnly}
               notes={notes!}
               onAddNote={onAddNote!}
               onDeleteNote={onDeleteNote ?? (() => {})}

@@ -44,6 +44,9 @@ export interface StudioLayoutProps {
   onClearAllDocs?: () => void;
 
   // ── Artifacts Panel (The Board) ─────────────────────────────────
+  /** Notebook Focus mode: render the Studio rail as a full On-the-Board pane
+   *  (hide the source hint + generators). Ignored by the legacy StudioLayout. */
+  boardOnly?: boolean;
   notes?: BoardNote[];
   onAddNote?: (content: string, type: NoteType, meta?: BoardNoteMeta) => void;
   onDeleteNote?: (id: string) => void;

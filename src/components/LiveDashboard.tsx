@@ -1709,6 +1709,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
           onSourceChange={setContextPanelOpen}
           artifactsOpen={artifactsPanelOpen}
           onArtifactsChange={setArtifactsPanelOpen}
+          boardOnly={layoutMode === 'focus'}
           onKnowledgeBank={() => setShowKnowledgeBank(true)}
           documents={documents}
           activeContextDocs={activeContextDocs}
