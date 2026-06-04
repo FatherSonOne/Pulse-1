@@ -365,8 +365,8 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
         {/* Filter chip row — top 5 by count, rest hidden behind "More" disclosure */}
         {sidebarMode === 'filters' && (
           <div className="space-y-1.5">
-            <div className="-mx-1 overflow-x-auto scrollbar-thin">
-              <div className="flex gap-1.5 px-1 min-w-max items-center">
+            <div className="-mx-1">
+              <div className="flex flex-wrap gap-1.5 px-1 items-center">
                 {primaryFilters.map(f => {
                   const active = activeFilter === f;
                   const count = f === 'all'
@@ -404,8 +404,8 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
               </div>
             </div>
             {filtersExpanded && secondaryFilters.length > 0 && (
-              <div className="-mx-1 overflow-x-auto scrollbar-thin">
-                <div className="flex gap-1.5 px-1 min-w-max">
+              <div className="-mx-1">
+                <div className="flex flex-wrap gap-1.5 px-1">
                   {secondaryFilters.map(f => {
                     const active = activeFilter === f;
                     const count = typeCounts.get(f) || 0;
