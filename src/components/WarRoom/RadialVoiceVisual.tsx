@@ -20,6 +20,9 @@ export interface RadialVoiceVisualProps {
   isConnected: boolean;
   isConnecting: boolean;
   isMuted: boolean;
+  /** When set (e.g. "Searching your sources"), overrides the ring state label
+   *  to reflect what the agent is doing — surfaced from the live tool call. */
+  activityLabel?: string;
   onConnect: () => void;
   onToggleMute: () => void;
   onInterrupt: () => void;
@@ -39,6 +42,7 @@ export const RadialVoiceVisual: React.FC<RadialVoiceVisualProps> = ({
   isConnected,
   isConnecting,
   isMuted,
+  activityLabel,
   onConnect,
   onToggleMute,
   onInterrupt,
@@ -70,7 +74,9 @@ export const RadialVoiceVisual: React.FC<RadialVoiceVisualProps> = ({
   const center = SIZE / 2;
   const level = levelRef.current;
 
-  const stateColor = isSpeaking
+  const stateColor = activityLabel
+    ? 'var(--pulse-coral-fg)'
+    : isSpeaking
     ? 'var(--pulse-coral-fg)'
     : isListening
     ? 'var(--pulse-rose)'
@@ -78,7 +84,9 @@ export const RadialVoiceVisual: React.FC<RadialVoiceVisualProps> = ({
     ? 'var(--pulse-rose)'
     : 'var(--pulse-ink-3)';
 
-  const stateLabel = isConnecting
+  const stateLabel = activityLabel
+    ? activityLabel
+    : isConnecting
     ? 'Connecting…'
     : isSpeaking
     ? 'Speaking'

@@ -154,6 +154,9 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
   // Transcript state
   const [transcripts, setTranscripts] = useState<TranscriptLine[]>([]);
   const [interimTranscript, setInterimTranscript] = useState<{ role: 'user' | 'assistant'; text: string } | null>(null);
+  // What the agent is doing right now (surfaced from live tool calls) — drives
+  // the stage ring's activity label, e.g. "Searching your sources".
+  const [activeTool, setActiveTool] = useState<string | null>(null);
 
   // Approval state
   const [pendingApproval, setPendingApproval] = useState<ToolApprovalRequest | null>(null);
@@ -430,11 +433,13 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
 
     session.on('tool_call_started', (event) => {
       if (event.type !== 'tool_call_started') return;
+      setActiveTool(event.toolName === 'rag_search' ? 'Searching your sources' : `Running ${event.toolName}`);
       toast.loading(`Running ${event.toolName}...`, { id: `tool-${event.toolName}` });
     });
 
     session.on('tool_call_completed', (event) => {
       if (event.type !== 'tool_call_completed') return;
+      setActiveTool(null);
       toast.success(`${event.toolName} completed`, { id: `tool-${event.toolName}` });
     });
 
@@ -650,12 +655,16 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
   // ============= RENDER =============
 
   if (chrome === 'stage') {
-    const showNotes = isConnected && (transcripts.length > 0 || !!interimTranscript);
+    const hasNotes = isConnected && transcripts.length > 0;
+    const stageAgentName = WAR_ROOM_AGENTS[currentAgent]?.name || 'AI';
+    const groundedCount = contextFiles.length;
+    const trySaying = ['Summarize the key points', 'What are the main risks?', 'Compare my sources'];
     return (
       <div className={`realtime-voice-agent ${className}`} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        {/* Radial centerpiece — fills the body when idle, sits up top once
-            the conversation starts so the notetaker has room. */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: showNotes ? '0 0 auto' : 1, paddingTop: showNotes ? 14 : 0 }}>
+        {/* Radial centerpiece — fills the body when idle, sits up top once the
+            conversation starts so the caption + notes have room. The ring's
+            label reflects live tool calls ("Searching your sources"). */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: hasNotes ? '0 0 auto' : 1, paddingTop: hasNotes ? 14 : 0 }}>
           <RadialVoiceVisual
             audioLevel={audioLevel}
             isListening={isListening}
@@ -663,6 +672,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
             isConnected={isConnected}
             isConnecting={isConnecting}
             isMuted={isMuted}
+            activityLabel={isConnected ? (activeTool ?? undefined) : undefined}
             onConnect={connect}
             onToggleMute={handleMuteToggle}
             onInterrupt={handleInterrupt}
@@ -671,8 +681,40 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
           />
         </div>
 
-        {/* Live notetaker — the spoken conversation, transcribed in real time. */}
-        {showNotes && (
+        {/* Live caption — the current utterance, karaoke-style (you / agent). */}
+        {isConnected && interimTranscript && (
+          <div style={{ flexShrink: 0, width: '100%', maxWidth: 680, margin: '0 auto', padding: '2px 24px 10px', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pulse-ink-3)', marginBottom: 4 }}>
+              {interimTranscript.role === 'user' ? 'You' : stageAgentName}
+            </div>
+            <div style={{ fontSize: 18, lineHeight: 1.4, color: 'var(--pulse-ink)', fontWeight: 500 }}>
+              {interimTranscript.text}
+            </div>
+          </div>
+        )}
+
+        {/* Idle teaching cold-start — what it's grounded on + what to say. */}
+        {!isConnected && !isConnecting && (
+          <div style={{ flexShrink: 0, width: '100%', maxWidth: 460, margin: '0 auto', padding: '0 24px 18px', textAlign: 'center' }}>
+            {groundedCount > 0 && (
+              <div style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 11, color: 'var(--pulse-ink-3)', marginBottom: 14 }}>
+                Grounded on {groundedCount} source{groundedCount !== 1 ? 's' : ''}
+                {contextFiles[0]?.name ? ` · ${contextFiles[0].name}` : ''}
+              </div>
+            )}
+            <div style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pulse-ink-3)', marginBottom: 8 }}>
+              Try saying
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {trySaying.map((s) => (
+                <div key={s} style={{ fontSize: 13, color: 'var(--pulse-ink-2)', fontStyle: 'italic' }}>“{s}”</div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Live notetaker — finalized turns, transcribed in real time. */}
+        {hasNotes && (
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, width: '100%', maxWidth: 720, margin: '0 auto', padding: '4px 20px 18px' }}>
             <div style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pulse-ink-3)', margin: '0 0 10px' }}>
               Live notes
@@ -680,21 +722,13 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
             {transcripts.map((line) => (
               <div key={line.id} style={{ marginBottom: 12 }}>
                 <div style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: line.role === 'user' ? 'var(--pulse-ink-3)' : 'var(--pulse-coral-fg)', marginBottom: 3 }}>
-                  {line.role === 'user' ? 'You' : (WAR_ROOM_AGENTS[currentAgent]?.name || 'AI')}
+                  {line.role === 'user' ? 'You' : stageAgentName}
                 </div>
                 {line.role === 'assistant'
                   ? <MarkdownRenderer content={line.text} className="text-sm" />
                   : <div style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--pulse-ink)' }}>{line.text}</div>}
               </div>
             ))}
-            {interimTranscript && (
-              <div style={{ marginBottom: 12, opacity: 0.6 }}>
-                <div style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pulse-ink-3)', marginBottom: 3 }}>
-                  {interimTranscript.role === 'user' ? 'You' : 'AI'} •••
-                </div>
-                <div style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--pulse-ink-2)' }}>{interimTranscript.text}</div>
-              </div>
-            )}
             <div ref={transcriptEndRef} />
           </div>
         )}
