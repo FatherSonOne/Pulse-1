@@ -39,6 +39,29 @@ const initialsOf = (name: string): string => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
+// Gmail system labels and per-channel/source markers are plumbing, not themes.
+// Left unfiltered they dominate "Themes · by frequency" (INBOX, UNREAD,
+// CATEGORY_UPDATES, plus the universal 'email'/'relay' channel tags) and bury
+// the real content tags. Excluded so the pivot shows what a conversation was
+// ABOUT, not how it was transported.
+const MACHINE_TAGS = new Set([
+  // Gmail system labels
+  'inbox', 'sent', 'draft', 'spam', 'trash', 'unread', 'read', 'starred',
+  'important', 'chat',
+  // Per-type channel / source markers (every item of a type carries these)
+  'email', 'pulse', 'received', 'relay', 'voice', 'note', 'meeting',
+  'decision', 'glimpse', 'transcript', 'journal',
+]);
+const isMachineTag = (tag: string): boolean => {
+  const t = tag.trim().toLowerCase();
+  if (!t) return true;
+  if (MACHINE_TAGS.has(t)) return true;
+  if (t.startsWith('category_')) return true; // Gmail CATEGORY_UPDATES, _PROMOTIONS, ...
+  if (t.startsWith('risk:')) return true;     // decision risk markers
+  if (/^\d+min$/.test(t)) return true;        // meeting duration markers e.g. 30min
+  return false;
+};
+
 export const MemoryOverviewPanel: React.FC = () => {
   const items = useArchiveStore(s => s.items);
   const contacts = useArchiveStore(s => s.contacts);
@@ -111,10 +134,10 @@ export const MemoryOverviewPanel: React.FC = () => {
         peopleMap.set(item.relatedContactId, entry);
       }
 
-      // Themes
+      // Themes — content tags only; channel/system plumbing is excluded.
       const allTags = [...(item.tags || []), ...(item.aiTags || [])];
       allTags.forEach(tag => {
-        if (tag) themeCounts.set(tag, (themeCounts.get(tag) || 0) + 1);
+        if (tag && !isMachineTag(tag)) themeCounts.set(tag, (themeCounts.get(tag) || 0) + 1);
       });
     });
 
