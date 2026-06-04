@@ -22,7 +22,7 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ user
   const [slackChannels, setSlackChannels] = useState<Array<{ id: string; name: string }>>([]);
 
   return (
-    <div className="space-y-8 animate-slide-up">
+    <div className="space-y-8 animate-slide-up" data-integrations-dense>
       <div className="section-header">
         <h3>
           <Plug /> Platform Integrations

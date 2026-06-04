@@ -559,3 +559,43 @@
 [data-settings] .py-12.text-center svg.w-20 {
   filter: drop-shadow(0 8px 24px rgba(244, 63, 94, 0.40));
 }
+
+/* ============================================================
+   INTEGRATIONS — dense variant (SCOPED · additive · reversible).
+   Tightens the shared .integration-card system to the canonical
+   information-dense look (AIProvidersCard et al.) WITHOUT touching
+   the same classes in other settings sections — they keep the
+   roomy defaults above.
+   Hook: IntegrationsSettings root carries [data-integrations-dense].
+   Revert: delete this block + remove the wrapper attribute.
+   ============================================================ */
+[data-integrations-dense] .section-header        { margin-bottom: 16px; }
+[data-integrations-dense] .section-header h3      { font-size: 17px; gap: 8px; }
+[data-integrations-dense] .section-header h3 svg,
+[data-integrations-dense] .section-header h3 i    { width: 16px; height: 16px; }
+[data-integrations-dense] .section-header p       { font-size: 12px; }
+
+[data-integrations-dense] .integration-card       { padding: 20px; border-radius: 14px; }
+[data-integrations-dense] .integration-header     { gap: 12px; margin-bottom: 14px; }
+[data-integrations-dense] .integration-icon       { width: 40px; height: 40px; border-radius: 11px; font-size: 20px; }
+/* !important is the one way a stylesheet beats the inline width/height
+   on the brand <svg> logos — keeps brand colors, only resizes. */
+[data-integrations-dense] .integration-icon svg   { width: 22px !important; height: 22px !important; }
+[data-integrations-dense] .integration-info h4    { font-size: 14px; margin-bottom: 2px; }
+[data-integrations-dense] .integration-info p     { font-size: 12px; }
+
+[data-integrations-dense] .nothing-info-box             { padding: 12px; margin-top: 12px; font-size: 12px; }
+[data-integrations-dense] .nothing-info-box .info-title { margin-bottom: 6px; }
+[data-integrations-dense] .nothing-info-box ul          { margin-top: 6px; }
+[data-integrations-dense] .nothing-info-box li          { padding: 3px 0; }
+
+[data-integrations-dense] .nothing-input-label          { font-size: 10px; margin-bottom: 6px; }
+[data-integrations-dense] .nothing-input                { padding: 10px 14px; font-size: 14px; border-radius: 10px; }
+[data-integrations-dense] .nothing-input::placeholder   { font-size: 14px; }
+
+[data-integrations-dense] .nothing-btn            { padding: 8px 14px; font-size: 13px; border-radius: 10px; }
+[data-integrations-dense] .nothing-btn svg        { width: 15px; height: 15px; }
+
+[data-integrations-dense] .connected-badge             { padding: 3px 8px; font-size: 10px; }
+[data-integrations-dense] .status-display              { padding: 12px; font-size: 13px; margin-top: 12px; }
+[data-integrations-dense] .status-display .status-icon { font-size: 16px; }
