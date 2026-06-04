@@ -205,7 +205,7 @@ export const SlackIntegration: React.FC<SlackIntegrationProps> = ({ user, slackC
             </h5>
             <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
               {slackChannels.slice(0, 10).map((channel) => (
-                <div key={channel.id} className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs">
+                <div key={channel.id} className="bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-xs">
                   <span className="text-zinc-500">#</span>
                   <span className="dark:text-white text-zinc-900">{channel.name}</span>
                 </div>

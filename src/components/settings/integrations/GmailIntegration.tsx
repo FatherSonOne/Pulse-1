@@ -51,7 +51,7 @@ export const GmailIntegration: React.FC<GmailIntegrationProps> = ({ user }) => {
             </p>
           </div>
         ) : (
-          <div className="bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 text-center">
+          <div className="bg-[var(--pulse-surface-raised)] border border-[var(--pulse-border)] rounded-xl p-4 text-center">
             <Lock className="text-zinc-400 text-2xl mb-2" />
             <p className="text-sm text-zinc-600 dark:text-zinc-400">Connect your Google account above to enable Gmail</p>
           </div>

@@ -39,7 +39,7 @@ export const WebhooksCard: React.FC = () => {
       <div className="integration-header">
         <div
           className="integration-icon"
-          style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
+          style={{ background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' }}
         >
           <Webhook />
         </div>
@@ -58,19 +58,19 @@ export const WebhooksCard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3">
+        <div className="bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg p-3">
           <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
             <Clock className="w-3.5 h-3.5" /> Received
           </div>
           <div className="text-2xl font-semibold text-zinc-900 dark:text-white tabular-nums">{stats.totalReceived}</div>
         </div>
-        <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3">
+        <div className="bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg p-3">
           <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Processed
           </div>
           <div className="text-2xl font-semibold text-zinc-900 dark:text-white tabular-nums">{stats.totalProcessed}</div>
         </div>
-        <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3">
+        <div className="bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg p-3">
           <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
             <AlertCircle className="w-3.5 h-3.5 text-red-500" /> Failed
           </div>
@@ -80,7 +80,7 @@ export const WebhooksCard: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
+      <div className="bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg overflow-hidden">
         {logs.length === 0 ? (
           <div className="text-center py-8 text-sm text-zinc-500">No webhook activity yet</div>
         ) : (

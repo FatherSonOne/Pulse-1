@@ -81,25 +81,25 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
                 </div>
               </div>
               <div className="grid grid-cols-4 gap-2 mt-4">
-                <div className="flex flex-col items-center p-2 bg-white/50 dark:bg-zinc-800/50 rounded-lg">
+                <div className="flex flex-col items-center p-2 bg-[var(--pulse-surface)] rounded-lg">
                   <svg viewBox="0 0 24 24" style={{ width: '20px', height: '20px', marginBottom: '4px' }}>
                     <path fill="#EA4335" d="M20 18h-2V9.25L12 13 6 9.25V18H4V6h1.2l6.8 4.25L18.8 6H20m0-2H4c-1.11 0-2 .89-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
                   </svg>
                   <span className="text-[10px] text-zinc-600 dark:text-zinc-400">Gmail</span>
                 </div>
-                <div className="flex flex-col items-center p-2 bg-white/50 dark:bg-zinc-800/50 rounded-lg">
+                <div className="flex flex-col items-center p-2 bg-[var(--pulse-surface)] rounded-lg">
                   <svg viewBox="0 0 24 24" style={{ width: '20px', height: '20px', marginBottom: '4px' }}>
                     <path fill="#4285F4" d="M19 19H5V8h14m-3-7v2H8V1H6v2H5c-1.11 0-2 .89-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-1V1m-1 11h-5v5h5v-5z"/>
                   </svg>
                   <span className="text-[10px] text-zinc-600 dark:text-zinc-400">Calendar</span>
                 </div>
-                <div className="flex flex-col items-center p-2 bg-white/50 dark:bg-zinc-800/50 rounded-lg">
+                <div className="flex flex-col items-center p-2 bg-[var(--pulse-surface)] rounded-lg">
                   <svg viewBox="0 0 24 24" style={{ width: '20px', height: '20px', marginBottom: '4px' }}>
                     <path fill="#1A73E8" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
                   </svg>
                   <span className="text-[10px] text-zinc-600 dark:text-zinc-400">Contacts</span>
                 </div>
-                <div className="flex flex-col items-center p-2 bg-white/50 dark:bg-zinc-800/50 rounded-lg">
+                <div className="flex flex-col items-center p-2 bg-[var(--pulse-surface)] rounded-lg">
                   <svg viewBox="0 0 24 24" style={{ width: '20px', height: '20px', marginBottom: '4px' }}>
                     <path fill="#EA4335" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>
                   </svg>
@@ -285,7 +285,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
                   </h5>
                   <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
                     {userCalendars.map((cal) => (
-                      <div key={cal.id} className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs flex items-center gap-2">
+                      <div key={cal.id} className="bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-xs flex items-center gap-2">
                         <i className={`fa-solid fa-calendar ${cal.primary ? 'text-rose-500' : 'text-zinc-400'}`}></i>
                         <span className="dark:text-white text-zinc-900 truncate">{cal.name}</span>
                         {cal.primary && <span className="text-[9px] bg-rose-500/10 text-rose-500 dark:text-rose-400 px-1.5 py-0.5 rounded">Primary</span>}
@@ -296,7 +296,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
               )}
             </>
           ) : (
-            <div className="bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 text-center">
+            <div className="bg-[var(--pulse-surface-raised)] border border-[var(--pulse-border)] rounded-xl p-4 text-center">
               <Lock className="text-zinc-400 text-2xl mb-2" />
               <p className="text-sm text-zinc-600 dark:text-zinc-400">Connect your Google account above to enable Calendar sync</p>
             </div>
@@ -447,7 +447,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
               </div>
             </>
           ) : (
-            <div className="bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 text-center">
+            <div className="bg-[var(--pulse-surface-raised)] border border-[var(--pulse-border)] rounded-xl p-4 text-center">
               <Lock className="text-zinc-400 text-2xl mb-2" />
               <p className="text-sm text-zinc-600 dark:text-zinc-400">Connect your Google account above to enable Contacts sync</p>
             </div>

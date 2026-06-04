@@ -138,7 +138,7 @@ export const DeveloperSettings: React.FC = () => {
           <div className="integration-header">
             <div
               className="integration-icon"
-              style={{ background: 'linear-gradient(135deg, #10B981, #06B6D4)' }}
+              style={{ background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' }}
             >
               <Key />
             </div>
@@ -152,7 +152,7 @@ export const DeveloperSettings: React.FC = () => {
             {/* AssemblyAI API Key */}
             <div className="space-y-2">
               <label className="text-sm font-medium dark:text-white text-zinc-900 flex items-center gap-2">
-                <Mic className="text-emerald-500" />
+                <Mic className="text-zinc-500 dark:text-zinc-400" />
                 AssemblyAI API Key
                 <span className="text-xs text-zinc-500 font-normal">(for transcription)</span>
               </label>
@@ -163,7 +163,7 @@ export const DeveloperSettings: React.FC = () => {
                     value={assemblyApiKey}
                     onChange={(e) => { setAssemblyApiKey(e.target.value); setAssemblyKeySaved(false); }}
                     placeholder="Enter AssemblyAI key..."
-                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30"
+                    className="w-full px-4 py-2.5 bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
                   />
                   <button
                     onClick={() => setShowAssemblyKey(!showAssemblyKey)}
@@ -181,7 +181,7 @@ export const DeveloperSettings: React.FC = () => {
                     setAssemblyKeySaved(true);
                     setTimeout(() => setAssemblyKeySaved(false), 3000);
                   }}
-                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  className="px-4 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                 >
                   {assemblyKeySaved ? <><Check /> Saved!</> : <><Save /> Save</>}
                 </button>
@@ -202,7 +202,7 @@ export const DeveloperSettings: React.FC = () => {
                     value={elevenLabsApiKey}
                     onChange={(e) => { setElevenLabsApiKey(e.target.value); setElevenLabsKeySaved(false); }}
                     placeholder="Enter ElevenLabs key..."
-                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
+                    className="w-full px-4 py-2.5 bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
                   />
                   <button
                     onClick={() => setShowElevenLabsKey(!showElevenLabsKey)}
@@ -241,7 +241,7 @@ export const DeveloperSettings: React.FC = () => {
                     value={mapboxApiKey}
                     onChange={(e) => { setMapboxApiKey(e.target.value); setMapboxKeySaved(false); }}
                     placeholder="pk.eyJ1..."
-                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
+                    className="w-full px-4 py-2.5 bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
                   />
                   <button
                     onClick={() => setShowMapboxKey(!showMapboxKey)}
@@ -273,7 +273,7 @@ export const DeveloperSettings: React.FC = () => {
           <div className="integration-header">
             <div
               className="integration-icon"
-              style={{ background: 'linear-gradient(135deg, #3ECF8E, #1E9E6B)' }}
+              style={{ background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' }}
             >
               <Server />
             </div>
@@ -284,7 +284,7 @@ export const DeveloperSettings: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
+            <div className="bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg p-4">
               <div className="flex items-center gap-3">
                 <div className={`w-3 h-3 rounded-full ${
                   supabaseStatus === 'connected' ? 'bg-emerald-500' :
@@ -310,7 +310,7 @@ export const DeveloperSettings: React.FC = () => {
           <div className="integration-header">
             <div
               className="integration-icon"
-              style={{ background: 'linear-gradient(135deg, #F59E0B, #F43F5E)' }}
+              style={{ background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' }}
             >
               <Database />
             </div>
@@ -392,7 +392,7 @@ export const DeveloperSettings: React.FC = () => {
           <div className="integration-header">
             <div
               className="integration-icon"
-              style={{ background: 'linear-gradient(135deg, #EC4899, #F43F5E)' }}
+              style={{ background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' }}
             >
               <Palette />
             </div>
@@ -428,7 +428,7 @@ export const DeveloperSettings: React.FC = () => {
           <div className="integration-header">
             <div
               className="integration-icon"
-              style={{ background: 'linear-gradient(135deg, #8B5CF6, #6366F1)' }}
+              style={{ background: 'var(--pulse-rose-soft)', color: 'var(--pulse-rose)' }}
             >
               <Key />
             </div>

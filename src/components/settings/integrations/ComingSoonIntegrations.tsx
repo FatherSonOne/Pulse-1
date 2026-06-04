@@ -28,7 +28,7 @@ export const ComingSoonIntegrations: React.FC = () => {
             </div>
           </div>
           <div className="text-center py-4">
-            <span className="text-xs bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 px-3 py-1 rounded-full">Coming Soon</span>
+            <span className="text-xs bg-[var(--pulse-surface-raised)] text-zinc-600 dark:text-zinc-400 px-3 py-1 rounded-full">Coming Soon</span>
           </div>
         </div>
 
@@ -45,7 +45,7 @@ export const ComingSoonIntegrations: React.FC = () => {
             </div>
           </div>
           <div className="text-center py-4">
-            <span className="text-xs bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 px-3 py-1 rounded-full">Coming Soon</span>
+            <span className="text-xs bg-[var(--pulse-surface-raised)] text-zinc-600 dark:text-zinc-400 px-3 py-1 rounded-full">Coming Soon</span>
           </div>
         </div>
       </div>
