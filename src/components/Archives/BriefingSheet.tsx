@@ -83,7 +83,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
 
   const handleEmail = () => {
     if (!briefing) return;
-    const subjectLine = encodeURIComponent(`Briefing: ${briefing.subject}`);
+    const subjectLine = encodeURIComponent(`Catch-up: ${briefing.subject}`);
     const body = encodeURIComponent(memoryBriefingToMarkdown(briefing));
     window.location.href = `mailto:?subject=${subjectLine}&body=${body}`;
   };
@@ -105,7 +105,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label={`Briefing for ${subject}`}
+      aria-label={`Catch-up for ${subject}`}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-zinc-950/40 backdrop-blur-md" />
@@ -125,7 +125,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
               <div className="inline-flex items-center gap-1.5 mb-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden />
                 <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-rose-600 dark:text-rose-400">
-                  Pulse AI · Briefing
+                  Pulse AI · Catch-up
                 </span>
               </div>
               <h2 className="text-xl font-light text-zinc-900 dark:text-zinc-50 leading-snug truncate">

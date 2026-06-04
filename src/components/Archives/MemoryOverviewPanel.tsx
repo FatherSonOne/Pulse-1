@@ -80,6 +80,7 @@ export const MemoryOverviewPanel: React.FC = () => {
     items: [],
     subject: '',
   });
+  const [showAllPeople, setShowAllPeople] = useState(false);
 
   const isFiltered = Boolean(query || (activeFilter && activeFilter !== 'all') || activeCollectionId || activeSmartFolderId);
   const briefingSubject = useMemo(() => {
@@ -141,14 +142,16 @@ export const MemoryOverviewPanel: React.FC = () => {
       });
     });
 
-    const topPeople = Array.from(peopleMap.entries())
-      .sort(([, a], [, b]) => b.count - a.count)
-      .slice(0, 5)
+    const dayMs = 24 * 60 * 60 * 1000;
+    const people = Array.from(peopleMap.entries())
       .map(([contactId, data]) => {
         const contact = (contacts || []).find((c: any) => c?.id === contactId);
         const name = contactNames[contactId] || contact?.displayName || contact?.fullName || `Contact ${contactId.slice(0, 8)}`;
-        return { contactId, name, ...data };
-      });
+        const daysSince = Math.max(0, Math.floor((now.getTime() - data.lastDate.getTime()) / dayMs));
+        return { contactId, name, daysSince, ...data };
+      })
+      // Recall index: most recently active first ("who was I just talking to").
+      .sort((a, b) => b.lastDate.getTime() - a.lastDate.getTime());
 
     const topThemes = Array.from(themeCounts.entries())
       .sort(([, a], [, b]) => b - a)
@@ -168,7 +171,7 @@ export const MemoryOverviewPanel: React.FC = () => {
       thisMonth,
       oldest: oldest as Date | null,
       buckets,
-      topPeople,
+      people,
       topThemes,
       recent,
     };
@@ -225,10 +228,10 @@ export const MemoryOverviewPanel: React.FC = () => {
               onClick={() => setBriefing({ open: true, items, subject: briefingSubject })}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/[0.10] hover:bg-rose-500/[0.16] border border-rose-500/30 text-[10px] font-mono uppercase tracking-[0.12em] text-rose-600 dark:text-rose-400 transition-colors flex-shrink-0"
               style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
-              title="Synthesize a briefing across these conversations"
+              title="Catch up across these conversations: what was said"
             >
               <Sparkles className="w-3 h-3" />
-              Build briefing
+              Catch up
             </button>
           )}
         </div>
@@ -236,7 +239,7 @@ export const MemoryOverviewPanel: React.FC = () => {
           <span className="font-mono text-[15px] text-rose-500">{memory.total.toLocaleString()}</span>
           <span className="text-zinc-600 dark:text-zinc-400"> conversations across </span>
           <span className="font-mono text-[15px] text-zinc-900 dark:text-zinc-50">{memory.contactCount}</span>
-          <span className="text-zinc-600 dark:text-zinc-400"> contacts</span>
+          <span className="text-zinc-600 dark:text-zinc-400"> people</span>
           {oldestLabel && (
             <>
               <span className="text-zinc-600 dark:text-zinc-400"> since </span>
@@ -247,41 +250,34 @@ export const MemoryOverviewPanel: React.FC = () => {
           <span className="font-mono text-[15px] text-zinc-900 dark:text-zinc-50">{memory.thisMonth}</span>
           <span className="text-zinc-600 dark:text-zinc-400"> this month.</span>
         </h2>
-
-        {/* Sparkline — 12 weeks */}
-        <div className="mt-3 flex items-end gap-3">
-          <svg viewBox="0 0 100 24" preserveAspectRatio="none" className="w-full max-w-[420px] h-7" aria-hidden>
-            <path d={sparkArea} fill="rgba(244,63,94,0.10)" />
-            <path d={sparkPath} fill="none" stroke="#f43f5e" strokeWidth="0.8" vectorEffect="non-scaling-stroke" />
-          </svg>
-          <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-400 dark:text-zinc-600 whitespace-nowrap">
-            12wk
-          </span>
-        </div>
       </div>
 
-      {/* Top People */}
+      {/* People — recall index: open everything from a person, recent first */}
       <section className="px-6 py-5 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Users className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-500" />
             <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-500">
-              Top People · by touchpoints
+              People · recent first
             </span>
           </div>
-          {memory.contactCount > 5 && (
-            <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-600">
-              + {memory.contactCount - 5} more
-            </span>
+          {memory.people.length > 5 && (
+            <button
+              onClick={() => setShowAllPeople(v => !v)}
+              className="text-[10px] font-mono uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-600 hover:text-rose-500 transition-colors"
+              aria-expanded={showAllPeople}
+            >
+              {showAllPeople ? 'show less' : `show all · ${memory.people.length}`}
+            </button>
           )}
         </div>
-        {memory.topPeople.length === 0 ? (
+        {memory.people.length === 0 ? (
           <p className="text-xs text-zinc-500 dark:text-zinc-600 py-3">
-            No contact links yet. Items archived from a conversation will pivot by person.
+            No contact links yet. Conversations linked to a person let you pull everything they ever said in one place.
           </p>
         ) : (
           <ul className="space-y-1">
-            {memory.topPeople.map(person => {
+            {memory.people.slice(0, showAllPeople ? 25 : 5).map(person => {
               const channelKeys = ['voice', 'meeting', 'text', 'media'] as const;
               const ranked = channelKeys
                 .map(k => ({ k, v: person.channels[k] || 0 }))
@@ -300,7 +296,8 @@ export const MemoryOverviewPanel: React.FC = () => {
                     <button
                       onClick={() => setQuery(person.name)}
                       className="absolute inset-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/40"
-                      aria-label={`Filter memory by ${person.name}`}
+                      aria-label={`Show all conversations with ${person.name}`}
+                      title={`Show everything from ${person.name}`}
                     />
                     <div className="relative w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] flex items-center justify-center text-[10px] font-mono font-medium text-zinc-600 dark:text-zinc-300 flex-shrink-0">
                       {initialsOf(person.name)}
@@ -308,8 +305,13 @@ export const MemoryOverviewPanel: React.FC = () => {
                     <div className="relative flex-1 min-w-0">
                       <div className="flex items-baseline justify-between gap-3">
                         <span className="text-sm text-zinc-900 dark:text-zinc-50 truncate">{person.name}</span>
-                        <span className="font-mono text-[11px] text-zinc-500 dark:text-zinc-500 whitespace-nowrap">
-                          {person.count} · {person.lastDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        <span className="font-mono text-[11px] text-zinc-500 dark:text-zinc-500 whitespace-nowrap flex items-baseline gap-1.5">
+                          <span>{person.count} conv · {person.lastDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                          {person.daysSince >= 21 && (
+                            <span className="text-[10px] text-zinc-400 dark:text-zinc-600" title={`No contact in ${person.daysSince} days`}>
+                              quiet {person.daysSince}d
+                            </span>
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 mt-1 overflow-hidden">
@@ -343,11 +345,11 @@ export const MemoryOverviewPanel: React.FC = () => {
                           setBriefing({ open: true, items: personItems, subject: person.name });
                         }}
                         className="relative inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono uppercase tracking-[0.12em] text-rose-600 dark:text-rose-400 bg-rose-500/[0.08] opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-rose-500/[0.16] transition flex-shrink-0"
-                        title={`Build briefing for ${person.name}`}
-                        aria-label={`Build briefing for ${person.name}`}
+                        title={`Catch up on ${person.name}: what was said`}
+                        aria-label={`Catch me up on ${person.name}`}
                       >
                         <Sparkles className="w-3 h-3" />
-                        Brief
+                        Catch me up
                       </button>
                     )}
                     <ChevronRight className="relative w-3.5 h-3.5 text-zinc-300 dark:text-zinc-700 group-hover:text-rose-500 transition-colors flex-shrink-0" />
@@ -364,7 +366,7 @@ export const MemoryOverviewPanel: React.FC = () => {
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-500" />
           <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-500">
-            Themes · by frequency
+            Topics · by frequency
           </span>
         </div>
         {memory.topThemes.length === 0 ? (
@@ -391,10 +393,10 @@ export const MemoryOverviewPanel: React.FC = () => {
       </section>
 
       {/* Recent */}
-      <section className="px-6 py-5 flex-1">
+      <section className="px-6 py-5 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center justify-between mb-3">
           <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-500">
-            Last {memory.recent.length}
+            Recently archived
           </span>
         </div>
         <ul className="space-y-1">
@@ -446,6 +448,25 @@ export const MemoryOverviewPanel: React.FC = () => {
             );
           })}
         </ul>
+      </section>
+
+      {/* Volume — ambient 12-week activity. Neutral: it is data, not a signal,
+          so it does not spend the coral budget. */}
+      <section className="px-6 py-5 flex-1">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-500">
+            Volume · 12 weeks
+          </span>
+        </div>
+        <div className="flex items-end gap-3">
+          <svg viewBox="0 0 100 24" preserveAspectRatio="none" className="w-full max-w-[420px] h-7" aria-hidden>
+            <path d={sparkArea} fill="rgba(113,113,122,0.08)" />
+            <path d={sparkPath} fill="none" stroke="rgba(113,113,122,0.7)" strokeWidth="0.8" vectorEffect="non-scaling-stroke" />
+          </svg>
+          <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-400 dark:text-zinc-600 whitespace-nowrap">
+            12wk
+          </span>
+        </div>
       </section>
     </div>
     <BriefingSheet
