@@ -15,6 +15,7 @@ const Archives: React.FC = () => {
   const items = useArchiveStore(s => s.items);
   const loadData = useArchiveStore(s => s.loadData);
   const checkDriveConnection = useArchiveStore(s => s.checkDriveConnection);
+  const backfillContactLinks = useArchiveStore(s => s.backfillContactLinks);
   const refreshData = useArchiveStore(s => s.refreshData);
   const loadTimelineEvents = useArchiveStore(s => s.loadTimelineEvents);
   const loadRelatedItems = useArchiveStore(s => s.loadRelatedItems);
@@ -51,6 +52,9 @@ const Archives: React.FC = () => {
   useEffect(() => {
     loadData();
     checkDriveConnection();
+    // One-time repair: link already-archived emails to CRM contacts by sender
+    // address so Top People populates. Idempotent + best-effort (no-op in demo).
+    backfillContactLinks();
   }, []);
 
   // Refresh items when filters/search change

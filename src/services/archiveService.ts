@@ -964,6 +964,35 @@ class ArchiveService {
     }
   }
 
+  /**
+   * Resolve CRM contact display names for a set of contact ids.
+   * Used by the Memory overview's Top People / Recent pivots so an
+   * archived item linked to a CRM contact (e.g. an email resolved by
+   * sender address) renders the real person name instead of a stub.
+   *
+   * Egress-safe: selects only `id, name` (never `*` — wide contact rows
+   * once caused a Supabase egress spike). RLS scopes to the user's own
+   * contacts. Names are returned verbatim — curly braces / `#` in a
+   * display name are legitimate and must NOT be stripped.
+   */
+  async getContactNames(contactIds: string[]): Promise<Record<string, string>> {
+    const ids = [...new Set((contactIds || []).filter(Boolean))];
+    if (ids.length === 0) return {};
+    const { data, error } = await supabase
+      .from('contacts')
+      .select('id, name')
+      .in('id', ids);
+    if (error) {
+      console.error('[archiveService] Error resolving contact names:', error);
+      return {};
+    }
+    const map: Record<string, string> = {};
+    (data || []).forEach((c: { id: string; name: string | null }) => {
+      if (c?.id && c.name) map[c.id] = c.name;
+    });
+    return map;
+  }
+
   // ============= TIMELINE VIEW =============
 
   async getTimelineEvents(options?: {

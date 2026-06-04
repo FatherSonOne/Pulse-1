@@ -7,6 +7,7 @@ import { archiveService } from '../services/archiveService';
 import { googleDriveService } from '../services/googleDriveService';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { userContactService } from '../services/userContactService';
+import { backfillEmailContactLinks } from '../services/memoryIngestService';
 import type { ArchiveItem, ArchiveType, ArchiveCollection, SmartFolder, ArchiveTimelineEvent, SmartFolderRule } from '../types';
 import toast from 'react-hot-toast';
 
@@ -45,6 +46,10 @@ interface ArchiveState {
   timelineEvents: ArchiveTimelineEvent[];
   relatedItems: ArchiveItem[];
   contacts: any[];
+  /** CRM contact id → display name, for archives linked to a CRM contact
+   *  (e.g. emails resolved by sender address). Powers Top People / Recent
+   *  names that aren't covered by the Pulse-users `contacts` array. */
+  contactNames: Record<string, string>;
   versionHistory: VersionHistoryItem[];
 
   // Demo mode (in-memory seed; never written to DB)
@@ -113,6 +118,8 @@ interface ArchiveState {
   loadTimelineEvents: () => Promise<void>;
   loadRelatedItems: (archiveId: string) => Promise<void>;
   loadContacts: () => Promise<void>;
+  resolveContactNames: () => Promise<void>;
+  backfillContactLinks: () => Promise<void>;
   checkDriveConnection: () => Promise<void>;
 
   // Simple setters
@@ -214,6 +221,7 @@ export const useArchiveStore = create<ArchiveState>()(
     timelineEvents: [],
     relatedItems: [],
     contacts: [],
+    contactNames: {},
     versionHistory: [],
     demoMode: false,
     demoItems: null,
@@ -326,6 +334,8 @@ export const useArchiveStore = create<ArchiveState>()(
       }
 
       set({ items: data, page: 0, hasMore: data.length >= PAGE_SIZE });
+      // Fire-and-forget: name any CRM-linked contacts in the new page.
+      get().resolveContactNames();
     },
 
     seedDemoData: async () => {
@@ -386,6 +396,7 @@ export const useArchiveStore = create<ArchiveState>()(
           page: nextPage,
           hasMore: data.length >= PAGE_SIZE,
         });
+        get().resolveContactNames();
       } finally {
         set({ loadingMore: false });
       }
@@ -412,6 +423,42 @@ export const useArchiveStore = create<ArchiveState>()(
         set({ contacts });
       } catch {
         set({ contacts: [] });
+      }
+    },
+
+    // Resolve CRM contact names for the related_contact_ids present in the
+    // current items that aren't already cached. Best-effort: failures and
+    // demo mode fall back to the Pulse-users `contacts` array / stub label.
+    resolveContactNames: async () => {
+      const { items, contactNames, demoMode } = get();
+      if (demoMode) return;
+      const ids = Array.from(
+        new Set(items.map(i => i.relatedContactId).filter(Boolean)),
+      ) as string[];
+      const missing = ids.filter(id => !(id in contactNames));
+      if (missing.length === 0) return;
+      try {
+        const names = await archiveService.getContactNames(missing);
+        if (Object.keys(names).length === 0) return;
+        set({ contactNames: { ...get().contactNames, ...names } });
+      } catch {
+        // best-effort; pivots fall back gracefully
+      }
+    },
+
+    // One-time repair: link already-archived emails to a CRM contact by
+    // sender address. Idempotent; refreshes + re-resolves names only if it
+    // actually linked anything.
+    backfillContactLinks: async () => {
+      if (get().demoMode) return;
+      try {
+        const { linked } = await backfillEmailContactLinks();
+        if (linked > 0) {
+          await get().refreshData();
+          await get().resolveContactNames();
+        }
+      } catch (err) {
+        console.warn('[archiveStore] contact-link backfill failed:', err);
       }
     },
 

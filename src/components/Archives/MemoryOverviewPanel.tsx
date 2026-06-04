@@ -42,6 +42,7 @@ const initialsOf = (name: string): string => {
 export const MemoryOverviewPanel: React.FC = () => {
   const items = useArchiveStore(s => s.items);
   const contacts = useArchiveStore(s => s.contacts);
+  const contactNames = useArchiveStore(s => s.contactNames);
   const query = useArchiveStore(s => s.query);
   const activeFilter = useArchiveStore(s => s.activeFilter);
   const activeCollectionId = useArchiveStore(s => s.activeCollectionId);
@@ -122,7 +123,7 @@ export const MemoryOverviewPanel: React.FC = () => {
       .slice(0, 5)
       .map(([contactId, data]) => {
         const contact = (contacts || []).find((c: any) => c?.id === contactId);
-        const name = contact?.displayName || contact?.fullName || `Contact ${contactId.slice(0, 8)}`;
+        const name = contactNames[contactId] || contact?.displayName || contact?.fullName || `Contact ${contactId.slice(0, 8)}`;
         return { contactId, name, ...data };
       });
 
@@ -148,7 +149,7 @@ export const MemoryOverviewPanel: React.FC = () => {
       topThemes,
       recent,
     };
-  }, [items, contacts]);
+  }, [items, contacts, contactNames]);
 
   const oldestLabel = memory.oldest
     ? memory.oldest.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
@@ -376,12 +377,12 @@ export const MemoryOverviewPanel: React.FC = () => {
         <ul className="space-y-1">
           {memory.recent.map((item: ArchiveItem) => {
             const d = item.date instanceof Date ? item.date : new Date(item.date);
+            const crmName = item.relatedContactId ? contactNames[item.relatedContactId] : undefined;
             const contact = item.relatedContactId
               ? (contacts || []).find((c: any) => c?.id === item.relatedContactId)
               : null;
-            const contactName: string | null = contact
-              ? (contact.displayName || contact.fullName || null)
-              : null;
+            const contactName: string | null = crmName
+              || (contact ? (contact.displayName || contact.fullName || null) : null);
             const contactFirst = contactName ? contactName.split(/\s+/)[0].toLowerCase() : null;
             return (
               <li key={item.id}>

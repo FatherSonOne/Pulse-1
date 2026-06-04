@@ -115,7 +115,7 @@ export interface CachedEmailRow {
   received_at: string;
 }
 
-const cachedEmailToArchive = (e: CachedEmailRow): ArchivePayload => {
+const cachedEmailToArchive = (e: CachedEmailRow, relatedContactId?: string): ArchivePayload => {
   const fromName = e.from_name || e.from_email.split('@')[0];
   const subject = e.subject?.trim() || `(no subject) · ${fromName}`;
   const bodyRaw = e.body_text || (e.body_html ? stripHtml(e.body_html) : '') || e.snippet || '';
@@ -131,6 +131,10 @@ const cachedEmailToArchive = (e: CachedEmailRow): ArchivePayload => {
     content: truncate(bodyRaw),
     date: new Date(e.received_at),
     tags,
+    // Best-effort link to an existing CRM contact by sender address. Null when
+    // the sender isn't already a contact (external/automated senders stay
+    // unlinked — we never auto-create contacts at ingest).
+    relatedContactId: relatedContactId || undefined,
     starred: !!e.is_starred,
     aiSummary: e.ai_summary || undefined,
     sentiment: e.ai_sentiment ? sentimentMap[e.ai_sentiment.toLowerCase()] : undefined,
@@ -197,6 +201,49 @@ async function buildProfileResolver(userIds: string[]): Promise<NameResolver> {
   }
 
   return (id: string) => cache.get(id) || `user-${id.slice(0, 8)}`;
+}
+
+/**
+ * Resolve a batch of email addresses to EXISTING CRM contact ids (contacts.id)
+ * for the given user. Best-effort: only addresses already present in the
+ * contacts table are returned; unmatched senders are simply absent (we never
+ * auto-create contacts here). Case-insensitive — queries both the original and
+ * lowercased forms and keys the result by lowercased address.
+ *
+ * Schema notes (verified against live DB):
+ *   - contacts.email is text NOT NULL with an index but NO unique constraint,
+ *     so an address may match multiple rows; first match wins (any valid id
+ *     for that address is fine for a touchpoint pivot). Never upsert-on-email.
+ *   - contacts.user_id is text holding the auth user id (matches the
+ *     vacationResponderService resolution pattern). RLS additionally scopes to
+ *     the caller's own contacts.
+ *   - Egress-safe: selects only `id, email`.
+ */
+async function resolveContactIdsByEmail(
+  userId: string,
+  emails: Array<string | null | undefined>,
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  const cleaned = Array.from(
+    new Set((emails || []).map(e => (e || '').trim()).filter(Boolean)),
+  );
+  if (cleaned.length === 0) return result;
+
+  const variants = Array.from(new Set([...cleaned, ...cleaned.map(e => e.toLowerCase())]));
+
+  const { data, error } = await supabase
+    .from('contacts')
+    .select('id, email')
+    .eq('user_id', userId)
+    .in('email', variants);
+
+  if (error || !data) return result;
+
+  for (const row of data as Array<{ id: string; email: string | null }>) {
+    const key = (row.email || '').toLowerCase();
+    if (key && row.id && !result.has(key)) result.set(key, row.id);
+  }
+  return result;
 }
 
 // decisions — formal decision logs
@@ -355,7 +402,8 @@ const videoVoxToArchive = (v: VideoVoxMessageRow): ArchivePayload => {
 
 // ─── Single-item ingest ─────────────────────────────────────────────
 
-export const ingestCachedEmail = (e: CachedEmailRow) => insertArchive(cachedEmailToArchive(e));
+export const ingestCachedEmail = (e: CachedEmailRow, relatedContactId?: string) =>
+  insertArchive(cachedEmailToArchive(e, relatedContactId));
 export const ingestPulseMessage = (m: PulseMessageRow, userId: string, resolveName?: NameResolver) =>
   insertArchive(pulseMessageToArchive(m, userId, resolveName ?? ((id) => `user-${id.slice(0, 8)}`)));
 export const ingestDecision = (d: DecisionRow) => insertArchive(decisionToArchive(d));
@@ -413,7 +461,13 @@ export async function importCachedEmails(days: number = 90): Promise<ImportResul
     .eq('is_trashed', false)
     .order('received_at', { ascending: false })
     .limit(500);
-  return runIngest(data as CachedEmailRow[] | null, ingestCachedEmail);
+  const rows = (data as CachedEmailRow[] | null) || [];
+  // Resolve every sender to an existing CRM contact in one round-trip, then
+  // link each archive as it's ingested (null when the sender isn't a contact).
+  const contactByEmail = await resolveContactIdsByEmail(userId, rows.map(r => r.from_email));
+  return runIngest(rows, (e) =>
+    ingestCachedEmail(e, contactByEmail.get((e.from_email || '').toLowerCase())),
+  );
 }
 
 export async function importPulseMessages(days: number = 90): Promise<ImportResult> {
@@ -533,6 +587,82 @@ export function totalsOf(results: Record<SourceKey, ImportResult>): ImportResult
   );
 }
 
+// ─── Backfill (one-time repair) ──────────────────────────────────────
+
+export interface BackfillResult {
+  scanned: number;
+  linked: number;
+}
+
+/**
+ * Link already-archived emails that have no related_contact_id to an existing
+ * CRM contact by sender address. Non-destructive and idempotent:
+ *   - Only rows whose sender already matches a contact are updated; unmatched
+ *     senders stay null (we never auto-create contacts).
+ *   - Once a row is linked it's excluded by the `related_contact_id IS NULL`
+ *     filter, so re-running is a no-op.
+ *
+ * Path: archives(email, null contact, source_table=cached_emails)
+ *   → cached_emails.from_email (by source_id)
+ *   → contacts.id (by email).
+ */
+export async function backfillEmailContactLinks(): Promise<BackfillResult> {
+  const { data: userResp } = await supabase.auth.getUser();
+  const userId = userResp?.user?.id;
+  if (!userId) return { scanned: 0, linked: 0 };
+
+  const { data: archiveRows } = await supabase
+    .from('archives')
+    .select('id, source_id')
+    .eq('user_id', userId)
+    .eq('archive_type', 'email')
+    .eq('source_table', 'cached_emails')
+    .is('related_contact_id', null)
+    .is('deleted_at', null)
+    .limit(1000);
+
+  const archives = (archiveRows as Array<{ id: string; source_id: string | null }> | null) || [];
+  const scanned = archives.length;
+  if (scanned === 0) return { scanned: 0, linked: 0 };
+
+  const sourceIds = Array.from(new Set(archives.map(a => a.source_id).filter(Boolean))) as string[];
+  if (sourceIds.length === 0) return { scanned, linked: 0 };
+
+  const { data: emailRows } = await supabase
+    .from('cached_emails')
+    .select('id, from_email')
+    .in('id', sourceIds);
+
+  const sourceEmail = new Map<string, string>();
+  ((emailRows as Array<{ id: string; from_email: string | null }> | null) || []).forEach(e => {
+    if (e.id && e.from_email) sourceEmail.set(e.id, e.from_email);
+  });
+
+  const contactByEmail = await resolveContactIdsByEmail(userId, Array.from(sourceEmail.values()));
+
+  // Group archive ids by resolved contact id → one update per distinct contact.
+  const idsByContact = new Map<string, string[]>();
+  for (const a of archives) {
+    const email = a.source_id ? sourceEmail.get(a.source_id) : undefined;
+    const contactId = email ? contactByEmail.get(email.toLowerCase()) : undefined;
+    if (!contactId) continue;
+    const arr = idsByContact.get(contactId) || [];
+    arr.push(a.id);
+    idsByContact.set(contactId, arr);
+  }
+
+  let linked = 0;
+  for (const [contactId, ids] of idsByContact) {
+    const { error } = await supabase
+      .from('archives')
+      .update({ related_contact_id: contactId, updated_at: new Date().toISOString() })
+      .in('id', ids);
+    if (!error) linked += ids.length;
+  }
+
+  return { scanned, linked };
+}
+
 // ─── Realtime auto-ingest (extension point) ─────────────────────────
 //
 // Wire by calling subscribeRealtimeIngest() once per session (e.g. in App.tsx).
@@ -547,7 +677,14 @@ export function subscribeRealtimeIngest(): () => void {
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cached_emails' }, async (payload) => {
       const row = payload.new as CachedEmailRow & { is_trashed?: boolean };
       if (!row?.id || row.is_trashed) return;
-      ingestCachedEmail(row).catch(() => {});
+      const { data: userResp } = await supabase.auth.getUser();
+      const userId = userResp?.user?.id;
+      let contactId: string | undefined;
+      if (userId && row.from_email) {
+        const m = await resolveContactIdsByEmail(userId, [row.from_email]);
+        contactId = m.get(row.from_email.toLowerCase());
+      }
+      ingestCachedEmail(row, contactId).catch(() => {});
     })
     .subscribe();
   channels.push({ unsubscribe: () => supabase.removeChannel(cachedEmailsChannel) });
