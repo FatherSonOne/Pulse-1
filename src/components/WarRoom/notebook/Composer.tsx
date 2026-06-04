@@ -18,7 +18,27 @@ import { AgentType } from '../AgentSelector';
 import { useStudioCommands, StudioCommand, AgentMention } from '../useStudioCommands';
 import { PromptSuggestion } from '../../../services/ragService';
 
-import { Mic, Paperclip, Send, Wand2, X } from 'lucide-react';
+import { Mic, Paperclip, Send, Square, Wand2, X } from 'lucide-react';
+import { useVoiceToText } from '../../../hooks/useVoiceToText';
+
+/** Small flowing waveform shown inline while dictating (Comet-style). */
+const MiniWaveform: React.FC = () => {
+  const [phase, setPhase] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => { setPhase((p) => p + 0.22); raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 3, height: 18 }} aria-hidden>
+      {Array.from({ length: 9 }).map((_, i) => {
+        const h = 4 + Math.abs(Math.sin(phase + i * 0.7)) * 12;
+        return <span key={i} style={{ width: 3, height: h, borderRadius: 2, background: 'var(--pulse-rose)' }} />;
+      })}
+    </div>
+  );
+};
 
 export interface ComposerProps {
   input: string;
@@ -38,10 +58,6 @@ export interface ComposerProps {
   onUploadClick?: () => void;
   activeDocCount: number;
   hasDocuments: boolean;
-
-  /** Realtime voice dock (mic toggles it). */
-  voiceDockOpen: boolean;
-  onToggleVoiceDock: () => void;
 }
 
 export const Composer: React.FC<ComposerProps> = ({
@@ -59,12 +75,34 @@ export const Composer: React.FC<ComposerProps> = ({
   onUploadClick,
   activeDocCount,
   hasDocuments,
-  voiceDockOpen,
-  onToggleVoiceDock,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { parseInput, getAutocompleteSuggestions, applyAutocomplete } = useStudioCommands();
+
+  // ── Inline voice dictation (Comet-style): the mic fills the composer with
+  // your speech + shows a waveform in the bar. Does NOT open the Live voice
+  // stage (that's reached via Live mode). Web Speech API, no key required.
+  const voiceBaseRef = useRef('');
+  const voice = useVoiceToText({
+    continuous: true,
+    onInterimResult: (t) => {
+      setInput((voiceBaseRef.current ? voiceBaseRef.current + ' ' : '') + t);
+    },
+    onFinalResult: (t) => {
+      voiceBaseRef.current = (voiceBaseRef.current ? voiceBaseRef.current + ' ' : '') + t.trim();
+      setInput(voiceBaseRef.current);
+    },
+  });
+  const toggleDictation = useCallback(() => {
+    if (voice.isListening) {
+      voice.stopListening();
+    } else {
+      voiceBaseRef.current = input.trim();
+      voice.startListening();
+      inputRef.current?.focus();
+    }
+  }, [voice, input, setInput]);
   const [autocompleteItems, setAutocompleteItems] = useState<(StudioCommand | AgentMention)[]>([]);
   const [autocompleteIdx, setAutocompleteIdx] = useState(0);
   const showAutocomplete = autocompleteItems.length > 0;
@@ -76,6 +114,7 @@ export const Composer: React.FC<ComposerProps> = ({
   }, [input, getAutocompleteSuggestions]);
 
   const handleCommandSend = useCallback(() => {
+    if (voice.isListening) voice.stopListening();
     if (!input.trim() || isLoading) return;
     const parsed = parseInput(input);
     if (parsed.agentOverride && parsed.agentOverride !== activeAgent) {
@@ -88,7 +127,7 @@ export const Composer: React.FC<ComposerProps> = ({
     } else {
       onSendMessage();
     }
-  }, [input, isLoading, parseInput, activeAgent, setActiveAgent, setInput, onSendDirect, onSendMessage]);
+  }, [voice, input, isLoading, parseInput, activeAgent, setActiveAgent, setInput, onSendDirect, onSendMessage]);
 
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -183,19 +222,22 @@ export const Composer: React.FC<ComposerProps> = ({
             padding: '8px 10px',
           }}
         >
-          {/* Voice dock toggle */}
+          {/* Inline voice dictation (Comet-style) — fills the bar, no Live view */}
           <button
-            onClick={onToggleVoiceDock}
-            title={voiceDockOpen ? 'Close voice' : 'Talk to the grounded voice agent'}
+            onClick={toggleDictation}
+            disabled={!voice.isSupported}
+            title={voice.isListening ? 'Stop dictation' : voice.isSupported ? 'Dictate with your voice' : 'Voice input not supported in this browser'}
+            aria-pressed={voice.isListening}
             style={{
               width: 32, height: 32, borderRadius: 9, flexShrink: 0,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              border: 'none', cursor: 'pointer',
-              background: voiceDockOpen ? 'var(--pulse-rose)' : 'var(--pulse-surface-raised)',
-              color: voiceDockOpen ? 'white' : 'var(--pulse-ink-2)',
+              border: 'none', cursor: voice.isSupported ? 'pointer' : 'default',
+              background: voice.isListening ? 'var(--pulse-rose)' : 'var(--pulse-surface-raised)',
+              color: voice.isListening ? 'white' : 'var(--pulse-ink-2)',
+              opacity: voice.isSupported ? 1 : 0.5,
             }}
           >
-            <Mic size={16} />
+            {voice.isListening ? <Square size={14} /> : <Mic size={16} />}
           </button>
 
           {/* Upload */}
@@ -226,10 +268,17 @@ export const Composer: React.FC<ComposerProps> = ({
             style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', fontSize: 13.5, color: 'var(--pulse-ink)' }}
           />
 
-          <div className="wr-nb-slash-hint" style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, fontFamily: 'var(--pulse-font-mono)', fontSize: 10, color: 'var(--pulse-ink-3)' }}>
-            <span>/summarize</span>
-            <span>/analyze</span>
-          </div>
+          {voice.isListening ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <MiniWaveform />
+              <span style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 10, letterSpacing: '0.1em', color: 'var(--pulse-rose)' }}>LISTENING</span>
+            </div>
+          ) : (
+            <div className="wr-nb-slash-hint" style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, fontFamily: 'var(--pulse-font-mono)', fontSize: 10, color: 'var(--pulse-ink-3)' }}>
+              <span>/summarize</span>
+              <span>/analyze</span>
+            </div>
+          )}
 
           <button
             onClick={handleCommandSend}

@@ -364,8 +364,6 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
           onUploadClick={onUploadClick}
           activeDocCount={activeDocCount}
           hasDocuments={documents.length > 0}
-          voiceDockOpen={showVoiceAgentPanel}
-          onToggleVoiceDock={() => setShowVoiceAgentPanel(!showVoiceAgentPanel)}
         />
       )}
     </>
