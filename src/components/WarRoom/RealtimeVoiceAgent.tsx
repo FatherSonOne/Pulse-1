@@ -650,21 +650,54 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
   // ============= RENDER =============
 
   if (chrome === 'stage') {
+    const showNotes = isConnected && (transcripts.length > 0 || !!interimTranscript);
     return (
-      <div className={`realtime-voice-agent ${className}`} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <RadialVoiceVisual
-          audioLevel={audioLevel}
-          isListening={isListening}
-          isSpeaking={isSpeaking}
-          isConnected={isConnected}
-          isConnecting={isConnecting}
-          isMuted={isMuted}
-          onConnect={connect}
-          onToggleMute={handleMuteToggle}
-          onInterrupt={handleInterrupt}
-          onEnd={() => { disconnect(); onRequestClose?.(); }}
-          onTypeInstead={() => { disconnect(); onRequestClose?.(); }}
-        />
+      <div className={`realtime-voice-agent ${className}`} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        {/* Radial centerpiece — fills the body when idle, sits up top once
+            the conversation starts so the notetaker has room. */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: showNotes ? '0 0 auto' : 1, paddingTop: showNotes ? 14 : 0 }}>
+          <RadialVoiceVisual
+            audioLevel={audioLevel}
+            isListening={isListening}
+            isSpeaking={isSpeaking}
+            isConnected={isConnected}
+            isConnecting={isConnecting}
+            isMuted={isMuted}
+            onConnect={connect}
+            onToggleMute={handleMuteToggle}
+            onInterrupt={handleInterrupt}
+            onEnd={() => { disconnect(); onRequestClose?.(); }}
+            onTypeInstead={() => { disconnect(); onRequestClose?.(); }}
+          />
+        </div>
+
+        {/* Live notetaker — the spoken conversation, transcribed in real time. */}
+        {showNotes && (
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, width: '100%', maxWidth: 720, margin: '0 auto', padding: '4px 20px 18px' }}>
+            <div style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pulse-ink-3)', margin: '0 0 10px' }}>
+              Live notes
+            </div>
+            {transcripts.map((line) => (
+              <div key={line.id} style={{ marginBottom: 12 }}>
+                <div style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: line.role === 'user' ? 'var(--pulse-ink-3)' : 'var(--pulse-coral-fg)', marginBottom: 3 }}>
+                  {line.role === 'user' ? 'You' : (WAR_ROOM_AGENTS[currentAgent]?.name || 'AI')}
+                </div>
+                {line.role === 'assistant'
+                  ? <MarkdownRenderer content={line.text} className="text-sm" />
+                  : <div style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--pulse-ink)' }}>{line.text}</div>}
+              </div>
+            ))}
+            {interimTranscript && (
+              <div style={{ marginBottom: 12, opacity: 0.6 }}>
+                <div style={{ fontFamily: 'var(--pulse-font-mono)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pulse-ink-3)', marginBottom: 3 }}>
+                  {interimTranscript.role === 'user' ? 'You' : 'AI'} •••
+                </div>
+                <div style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--pulse-ink-2)' }}>{interimTranscript.text}</div>
+              </div>
+            )}
+            <div ref={transcriptEndRef} />
+          </div>
+        )}
       </div>
     );
   }
