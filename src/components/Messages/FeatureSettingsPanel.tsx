@@ -1343,7 +1343,10 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         height: `${H}px`,
         borderRadius: `${H / 2}px`,
         border: 'none',
-        background: checked ? '#f43f5e' : toggleOff,
+        // Neutral on-state matches the shared settings ToggleItem (Coral-As-Signal:
+        // a panel full of "on" toggles must not read as a coral wall). Dark-on uses
+        // a light track (with the dark knob below); light-on uses an ink track.
+        background: checked ? (isDark ? '#e4e4e7' : '#27272a') : toggleOff,
         cursor: disabled ? 'not-allowed' : 'pointer',
         position: 'relative',
         transition: 'background 0.2s',
@@ -1358,7 +1361,9 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           width: `${KNOB}px`,
           height: `${KNOB}px`,
           borderRadius: '50%',
-          background: toggleKnob,
+          // Flip the knob dark when on in dark mode so it stays legible against
+          // the light on-track (mirrors ToggleItem's four-state contrast).
+          background: isDark && checked ? '#18181b' : toggleKnob,
           position: 'absolute',
           top: `${offset}px`,
           left: `${knobLeft}px`,
