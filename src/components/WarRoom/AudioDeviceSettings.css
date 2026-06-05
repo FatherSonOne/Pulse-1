@@ -1,0 +1,26 @@
+/* Native <select> popup theming for the audio device pickers.
+ *
+ * On Windows Chromium the <option> list renders white-on-white in a dark UI:
+ * `color-scheme` ALONE is unreliable there — explicit option colors are what
+ * actually fix it (same finding as WorkspaceSwitcher.css). Both are kept so the
+ * closed-state caret/scrollbar also follow the theme. Defaults to dark (the
+ * voice stage is a dark surface); the [data-theme="light"] overrides keep it
+ * correct if the surface is ever light. */
+
+.audio-device-select {
+  color-scheme: dark;
+}
+
+.audio-device-select option {
+  background-color: #1f1f23;
+  color: #f4f4f5;
+}
+
+[data-theme='light'] .audio-device-select {
+  color-scheme: light;
+}
+
+[data-theme='light'] .audio-device-select option {
+  background-color: #ffffff;
+  color: #18181b;
+}

@@ -25,6 +25,7 @@ import {
   setPreferredInputDevice,
   setPreferredOutputDevice,
 } from '../../services/audioDevicePrefs';
+import './AudioDeviceSettings.css';
 
 // setSinkId (output routing) is Chromium-only; hide the speaker picker elsewhere.
 const SUPPORTS_SINK_ID =
@@ -188,7 +189,7 @@ export const AudioDeviceSettings: React.FC<AudioDeviceSettingsProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 2px 2px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <label style={labelStyle}>Microphone</label>
-            <select value={selectedInput} onChange={(e) => handleInput(e.target.value)} style={selectStyle}>
+            <select className="audio-device-select" value={selectedInput} onChange={(e) => handleInput(e.target.value)} style={selectStyle}>
               <option value="">System default</option>
               {inputs.map((d) => (
                 <option key={d.deviceId} value={d.deviceId}>
@@ -230,7 +231,7 @@ export const AudioDeviceSettings: React.FC<AudioDeviceSettingsProps> = ({
           {SUPPORTS_SINK_ID && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={labelStyle}>Speaker</label>
-              <select value={selectedOutput} onChange={(e) => handleOutput(e.target.value)} style={selectStyle}>
+              <select className="audio-device-select" value={selectedOutput} onChange={(e) => handleOutput(e.target.value)} style={selectStyle}>
                 <option value="">System default</option>
                 {outputs.map((d) => (
                   <option key={d.deviceId} value={d.deviceId}>
