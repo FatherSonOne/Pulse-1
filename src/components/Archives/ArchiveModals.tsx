@@ -119,87 +119,32 @@ export const ArchiveModals: React.FC = () => {
               <p className="text-xs text-zinc-500 line-clamp-2 mt-1">{selectedItem.content.substring(0, 100)}...</p>
             </div>
 
-            {/* Share Options Grid */}
+            {/* Share targets — neutral chrome (no per-brand colors, no toy
+                scale-on-hover) so the sheet reads as a tool, not a sticker
+                sheet. After neutralization every tile is identical, so they
+                render from one source of truth. */}
             <div className="grid grid-cols-4 gap-3 mb-4">
-              <button
-                onClick={() => handleShareTo('email', selectedItem)}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition group"
-              >
-                <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center group-hover:scale-110 transition">
-                  <Mail className="text-amber-500" />
-                </div>
-                <span className="text-[10px] text-zinc-600 dark:text-zinc-400">Email</span>
-              </button>
-
-              <button
-                onClick={() => handleShareTo('twitter', selectedItem)}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition group"
-              >
-                <div className="w-10 h-10 rounded-full bg-sky-500/10 flex items-center justify-center group-hover:scale-110 transition">
-                  <Twitter className="text-sky-500" />
-                </div>
-                <span className="text-[10px] text-zinc-600 dark:text-zinc-400">X</span>
-              </button>
-
-              <button
-                onClick={() => handleShareTo('linkedin', selectedItem)}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition group"
-              >
-                <div className="w-10 h-10 rounded-full bg-blue-600/10 flex items-center justify-center group-hover:scale-110 transition">
-                  <Linkedin className="text-blue-600" />
-                </div>
-                <span className="text-[10px] text-zinc-600 dark:text-zinc-400">LinkedIn</span>
-              </button>
-
-              <button
-                onClick={() => handleShareTo('facebook', selectedItem)}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition group"
-              >
-                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition">
-                  <Facebook className="text-blue-500" />
-                </div>
-                <span className="text-[10px] text-zinc-600 dark:text-zinc-400">Facebook</span>
-              </button>
-
-              <button
-                onClick={() => handleShareTo('whatsapp', selectedItem)}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition group"
-              >
-                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center group-hover:scale-110 transition">
-                  <MessageCircle className="text-green-500" />
-                </div>
-                <span className="text-[10px] text-zinc-600 dark:text-zinc-400">WhatsApp</span>
-              </button>
-
-              <button
-                onClick={() => handleShareTo('telegram', selectedItem)}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition group"
-              >
-                <div className="w-10 h-10 rounded-full bg-sky-400/10 flex items-center justify-center group-hover:scale-110 transition">
-                  <Send className="text-sky-400" />
-                </div>
-                <span className="text-[10px] text-zinc-600 dark:text-zinc-400">Telegram</span>
-              </button>
-
-              <button
-                onClick={() => handleShareTo('sms', selectedItem)}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition group"
-              >
-                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition">
-                  <MessageSquare className="text-emerald-500" />
-                </div>
-                <span className="text-[10px] text-zinc-600 dark:text-zinc-400">SMS</span>
-              </button>
-
-              <button
-                onClick={() => handleShareTo('copy', selectedItem)}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition group"
-              >
-                <div className="w-10 h-10 rounded-full bg-zinc-500/10 flex items-center justify-center group-hover:scale-110 transition">
-                  <Copy className="text-zinc-500" />
-                </div>
-                <span className="text-[10px] text-zinc-600 dark:text-zinc-400">Copy</span>
-              </button>
+              {([
+                { id: 'email', label: 'Email', Icon: Mail },
+                { id: 'twitter', label: 'X', Icon: Twitter },
+                { id: 'linkedin', label: 'LinkedIn', Icon: Linkedin },
+                { id: 'facebook', label: 'Facebook', Icon: Facebook },
+                { id: 'whatsapp', label: 'WhatsApp', Icon: MessageCircle },
+                { id: 'telegram', label: 'Telegram', Icon: Send },
+                { id: 'sms', label: 'SMS', Icon: MessageSquare },
+                { id: 'copy', label: 'Copy', Icon: Copy },
+              ] as const).map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => handleShareTo(id, selectedItem)}
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:border-zinc-300 dark:hover:border-white/[0.10] transition-colors group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-white/[0.05] flex items-center justify-center text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] text-zinc-600 dark:text-zinc-400">{label}</span>
+                </button>
+              ))}
             </div>
 
             {/* Download Option */}
