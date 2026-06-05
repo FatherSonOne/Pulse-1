@@ -790,6 +790,23 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
     };
   }, []);
 
+  // Palette "Open <person>" → select that contact's card. ContactsShell switches
+  // to People and relays this event once the list is mounted (warm path = live
+  // event, cold path = sessionStorage drained on shell mount). Depends on
+  // `contacts` so the lookup always sees the current list.
+  useEffect(() => {
+    const selectHandler = (event: Event) => {
+      const detail = (event as CustomEvent<{ id: string }>).detail;
+      if (!detail?.id) return;
+      const match = contacts.find(c => c.id === detail.id);
+      if (match) setSelectedContact(match);
+    };
+    window.addEventListener('pulse:contacts:select-contact', selectHandler);
+    return () => {
+      window.removeEventListener('pulse:contacts:select-contact', selectHandler);
+    };
+  }, [contacts]);
+
   // Phase C: Capacitor Universal Link / App Link → Received tab handoff (R-6).
   // We coexist with main.tsx's existing OAuth deeplink listener — the
   // Capacitor App plugin supports multiple appUrlOpen handlers.

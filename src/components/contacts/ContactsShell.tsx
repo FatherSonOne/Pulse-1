@@ -141,18 +141,42 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
         window.dispatchEvent(new CustomEvent('pulse:contacts:open-check-in-goal-people'));
       }, 50);
     };
+    // Palette "Open <person>" → switch to People, then relay a child-targeted
+    // select once the list can mount (mirrors showSmartListHandler). Clears the
+    // sessionStorage handoff so a warm-path open never leaves a stale key for
+    // the next cold mount to mis-fire.
+    const relayOpenContact = (id: string) => {
+      if (!id) return;
+      sessionStorage.removeItem('pulse_focus_contact');
+      setActiveMode('people');
+      window.setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent('pulse:contacts:select-contact', { detail: { id } })
+        );
+      }, 50);
+    };
+    const openContactHandler = (event: Event) => {
+      const detail = (event as CustomEvent<{ id: string }>).detail;
+      if (detail?.id) relayOpenContact(detail.id);
+    };
 
     window.addEventListener('pulse:contacts:open-connect-modal', openHandler);
     window.addEventListener('pulse:contacts:scope-missing', scopeMissingHandler);
     window.addEventListener('pulse:contacts:open-reconnect-modal', openReconnectHandler);
     window.addEventListener('pulse:contacts:show-smart-list', showSmartListHandler);
     window.addEventListener('pulse:contacts:open-check-in-goal', openCheckInGoalHandler);
+    window.addEventListener('pulse:contacts:open-contact', openContactHandler);
+    // Cold path: a palette open dispatched before this shell mounted deposits
+    // the id in sessionStorage; drain it once on mount.
+    const pendingFocusContact = sessionStorage.getItem('pulse_focus_contact');
+    if (pendingFocusContact) relayOpenContact(pendingFocusContact);
     return () => {
       window.removeEventListener('pulse:contacts:open-connect-modal', openHandler);
       window.removeEventListener('pulse:contacts:scope-missing', scopeMissingHandler);
       window.removeEventListener('pulse:contacts:open-reconnect-modal', openReconnectHandler);
       window.removeEventListener('pulse:contacts:show-smart-list', showSmartListHandler);
       window.removeEventListener('pulse:contacts:open-check-in-goal', openCheckInGoalHandler);
+      window.removeEventListener('pulse:contacts:open-contact', openContactHandler);
     };
   }, []);
 

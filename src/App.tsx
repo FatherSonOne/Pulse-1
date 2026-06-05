@@ -180,6 +180,12 @@ interface AppCommandRegistrarProps {
   // Dashboard quick-actions and the AI action handler already use.
   onNewTask: () => void;
   onNewContact: () => void;
+  // People entity-jump. `contacts` (App state) feeds a dynamic provider so
+  // typing a name surfaces matching people from any view; the two handlers open
+  // the person's card (Contacts) or their conversation (Messages).
+  contacts: Contact[];
+  onOpenContact: (id: string) => void;
+  onMessageContact: (id: string) => void;
 }
 
 const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
@@ -188,6 +194,9 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   setSettingsSection,
   onNewTask,
   onNewContact,
+  contacts,
+  onOpenContact,
+  onMessageContact,
 }) => {
   const { open } = useCommandPalette();
 
@@ -341,11 +350,52 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
     },
   ], [onNewTask, onNewContact]);
 
+  // People entity-jump — typing a name (2+ chars) surfaces matching contacts,
+  // each as an "Open <name>" (their card) plus a "Message <name>" (their
+  // conversation). Dynamic provider so it reflects the live contacts array and
+  // doesn't bloat the empty-query browse. Mirrors the calendar:events provider.
+  const peopleProvider = useCallback((rawQuery: string): Command[] => {
+    const q = rawQuery.trim().toLowerCase();
+    if (q.length < 2) return [];
+    const matches = contacts
+      .filter(c =>
+        c.name?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.company?.toLowerCase().includes(q)
+      )
+      .slice(0, 5);
+    const cmds: Command[] = [];
+    for (const c of matches) {
+      const display = c.name || c.email || 'Unknown contact';
+      cmds.push({
+        id: `person-open-${c.id}`,
+        label: display,
+        desc: c.company ? `Open contact · ${c.company}` : 'Open contact',
+        icon: 'fa-user',
+        kind: 'navigate',
+        group: 'People',
+        keywords: c.email ? [c.email] : undefined,
+        run: () => onOpenContact(c.id),
+      });
+      cmds.push({
+        id: `person-msg-${c.id}`,
+        label: `Message ${display}`,
+        desc: 'Open conversation',
+        icon: 'fa-message',
+        kind: 'action',
+        group: 'People',
+        run: () => onMessageContact(c.id),
+      });
+    }
+    return cmds;
+  }, [contacts, onOpenContact, onMessageContact]);
+
   // Register navigation as a separate scope from help so registries are
   // organized by intent and easy to debug.
   useRegisterCommands('app:navigation', { commands: navCommands });
   useRegisterCommands('app:help',       { commands: helpCommands });
   useRegisterCommands('app:create',     { commands: createCommands });
+  useRegisterCommands('contacts:people', { provider: peopleProvider });
 
   return null;
 };
@@ -467,6 +517,22 @@ const App: React.FC = () => {
     setOpenAddContact(true);
     setView(AppView.CONTACTS);
     setTimeout(() => setOpenAddContact(false), 100);
+  }, []);
+
+  // Palette people-jump handlers. "Open" routes to the Contacts card via a
+  // two-path bridge: a live event (when Contacts is already mounted) plus a
+  // sessionStorage handoff drained on ContactsShell mount (cold navigation in
+  // from another section) — mirrors the pulse_focus_note pattern, so neither
+  // path leaves a stale key. "Message" reuses the proven selectedContactId →
+  // initialContactId path into Messages.
+  const handleOpenContact = useCallback((id: string) => {
+    sessionStorage.setItem('pulse_focus_contact', id);
+    window.dispatchEvent(new CustomEvent('pulse:contacts:open-contact', { detail: { id } }));
+    setView(AppView.CONTACTS);
+  }, []);
+  const handleMessageContact = useCallback((id: string) => {
+    setSelectedContactId(id);
+    setView(AppView.MESSAGES);
   }, []);
   const navRef = useRef<HTMLElement>(null);
   const preservedScrollTop = useRef<number | null>(null);
@@ -1147,7 +1213,7 @@ const App: React.FC = () => {
           Sections register their commands via useRegisterCommands so the
           palette aggregates Pulse-wide actions and section-specific ones. */}
       <GlobalCommandPalette />
-      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} />
+      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
           (g m → Map, g c → Contacts, …) plus a `?` overlay listing them
