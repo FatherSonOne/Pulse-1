@@ -50,6 +50,10 @@ interface MeetingsProps {
   contacts: Contact[];
   initialContactId?: string;
   initialMeetingCode?: string;
+  /** Palette "Start a meeting" intent — instant-creates a blank Pulse room. */
+  startIntent?: 'startPulse' | null;
+  /** Called once the startIntent has been consumed so the parent can clear it. */
+  onIntentConsumed?: () => void;
 }
 
 type MeetingView = 'dashboard' | 'active' | 'schedule' | 'summary';
@@ -62,7 +66,7 @@ const getMeetingBaseUrl = (): string => {
   return 'https://pulse.logosvision.org/meeting/';
 };
 
-const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialContactId, initialMeetingCode }) => {
+const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialContactId, initialMeetingCode, startIntent, onIntentConsumed }) => {
   // ============================================
   // STATE
   // ============================================
@@ -174,6 +178,18 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialConta
       window.history.replaceState({}, '', '/');
     }
   }, [initialMeetingCode]);
+
+  // Palette "Start a meeting" intent — instant-create a blank Pulse room. Fires
+  // once when startIntent flips to 'startPulse' (deps intentionally narrow,
+  // matching the other intent effects above), then notifies the parent to clear
+  // it. App clears selectedContactId before arming this, so the initialContactId
+  // effect above won't also fire and create a second room.
+  useEffect(() => {
+    if (startIntent === 'startPulse') {
+      createAndJoinPulseRoom('Instant Pulse Meeting');
+      onIntentConsumed?.();
+    }
+  }, [startIntent]);
 
   // ============================================
   // DASHBOARD LOGIC

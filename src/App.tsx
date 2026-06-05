@@ -190,6 +190,10 @@ interface AppCommandRegistrarProps {
   // Compose-email intent. Gated on emailEnabled inside the registrar (see
   // emailCommands) so it never surfaces when the Email surface is off.
   onComposeEmail: () => void;
+  // Start-instant-meeting intent. Always available — distinct from the
+  // Dashboard-scoped navigate-only "Schedule Meet"; this one instant-creates a
+  // Pulse room.
+  onStartMeeting: () => void;
 }
 
 const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
@@ -203,6 +207,7 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   onMessageContact,
   onMeetContact,
   onComposeEmail,
+  onStartMeeting,
 }) => {
   const { open } = useCommandPalette();
 
@@ -383,6 +388,23 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
       : []
   ), [features.emailEnabled, onComposeEmail]);
 
+  // Start a meeting — global instant-room command. Distinct from the
+  // Dashboard-scoped "Schedule Meet" (action-meeting), which only navigates to
+  // the Meetings landing; this one creates and joins a blank Pulse room via the
+  // same createAndJoinPulseRoom path the in-pane "Start Pulse meeting" button
+  // uses. Lives in its own app:meetings scope so it's reachable from any view.
+  const meetingCommands = useMemo<Command[]>(() => [
+    {
+      id: 'start-pulse-meeting',
+      label: 'Start a meeting',
+      desc: 'Start an instant Pulse video room',
+      icon: 'fa-video',
+      kind: 'action' as const,
+      keywords: ['meeting', 'video', 'call', 'instant', 'pulse room', 'start meeting'],
+      run: onStartMeeting,
+    },
+  ], [onStartMeeting]);
+
   // People entity-jump — typing a name (2+ chars) surfaces matching contacts,
   // each as an "Open <name>" (their card) plus a "Message <name>" (their
   // conversation). Dynamic provider so it reflects the live contacts array and
@@ -438,6 +460,7 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   useRegisterCommands('app:help',       { commands: helpCommands });
   useRegisterCommands('app:create',     { commands: createCommands });
   useRegisterCommands('app:email',       { commands: emailCommands });
+  useRegisterCommands('app:meetings',    { commands: meetingCommands });
   useRegisterCommands('contacts:people', { provider: peopleProvider });
 
   return null;
@@ -601,6 +624,17 @@ const App: React.FC = () => {
     window.dispatchEvent(new CustomEvent('pulse:compose-email', { detail: payload }));
     setView(AppView.EMAIL);
   }, []);
+  // "Start a meeting" palette command (Tier D / D3). Routes to Meetings and arms
+  // the instant-room intent, which Meetings consumes once on mount/transition.
+  // Clears selectedContactId first: a blank instant meeting has no contact
+  // context, and leaving a stale contact set would make Meetings' initialContactId
+  // effect ALSO fire createAndJoinPulseRoom('Meeting with <name>') on a cold
+  // navigation in — two rooms, two edge calls. Clearing it sidesteps that.
+  const handleStartMeeting = useCallback(() => {
+    setSelectedContactId(undefined);
+    setMeetingIntent('startPulse');
+    setView(AppView.MEETINGS);
+  }, []);
   const navRef = useRef<HTMLElement>(null);
   const preservedScrollTop = useRef<number | null>(null);
   // Guards the setup modal to auto-open at most once per app session. Without it
@@ -671,6 +705,10 @@ const App: React.FC = () => {
   }, [view]);
 
   const [selectedContactId, setSelectedContactId] = useState<string | undefined>(undefined);
+  // Instant-meeting intent (Tier D / D3). Set by the global "Start a meeting"
+  // palette command and consumed by Meetings on mount/transition to create a
+  // blank Pulse room. Cleared via onIntentConsumed so it fires exactly once.
+  const [meetingIntent, setMeetingIntent] = useState<'startPulse' | null>(null);
 
   // Initialize notification system
   const initializeNotifications = useNotificationStore((state) => state.initialize);
@@ -1156,7 +1194,7 @@ const App: React.FC = () => {
               if (!smsEnabled) return null;
               return <SMS contacts={contacts} />;
             case AppView.MEETINGS:
-              return <Meetings contacts={contacts} initialContactId={selectedContactId} initialMeetingCode={initialMeetingCode || undefined} />;
+              return <Meetings contacts={contacts} initialContactId={selectedContactId} initialMeetingCode={initialMeetingCode || undefined} startIntent={meetingIntent} onIntentConsumed={() => setMeetingIntent(null)} />;
             case AppView.CALENDAR:
               return <Calendar contacts={contacts} openTaskPanel={openTaskPanel} onNavigateToIntegrations={() => { setSettingsSection('integrations'); setView(AppView.SETTINGS); }} />;
             case AppView.CONTACTS:
@@ -1289,7 +1327,7 @@ const App: React.FC = () => {
           Sections register their commands via useRegisterCommands so the
           palette aggregates Pulse-wide actions and section-specific ones. */}
       <GlobalCommandPalette />
-      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onComposeEmail={handleComposeEmail} />
+      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
           (g m → Map, g c → Contacts, …) plus a `?` overlay listing them
