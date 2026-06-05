@@ -19,12 +19,12 @@ export const ToggleItem: React.FC<ToggleItemProps> = ({ label, desc, active, onT
       aria-checked={active}
       aria-label={`Toggle ${label}`}
       className={`shrink-0 w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${
-        active ? 'bg-rose-500' : 'bg-zinc-300 dark:bg-zinc-700'
+        active ? 'bg-zinc-800 dark:bg-zinc-200' : 'bg-zinc-300 dark:bg-zinc-700'
       }`}
     >
       <div
-        className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${
-          active ? 'translate-x-6' : 'translate-x-0'
+        className={`w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+          active ? 'translate-x-6 bg-white dark:bg-zinc-900' : 'translate-x-0 bg-white'
         }`}
       />
     </button>
