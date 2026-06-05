@@ -245,137 +245,146 @@ export const ArchiveDetailView: React.FC = () => {
           </div>
         )}
 
-        {/* Document Toolbar */}
-        <div className="flex items-center gap-1 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 flex-wrap">
+        {/* Document Toolbar — 4 labeled clusters so 16 actions read as
+            groups, not an undifferentiated wall. All actions stay visible;
+            icon sizes normalized to w-4 h-4 (some were `text-sm`, which does
+            not size a Lucide SVG). */}
+        <div className="flex flex-col gap-1.5 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
           {/* Edit & Organize */}
-          <button
-            onClick={handleStartEdit}
-            className={`p-2 rounded-lg transition-all ${isEditing ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
-            title="Edit"
-          >
-            <SquarePen className="text-sm" />
-          </button>
-          <button
-            onClick={handleTogglePin}
-            className={`p-2 rounded-lg transition-all ${selectedItem.pinned ? 'bg-amber-500/10 text-amber-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
-            title={selectedItem.pinned ? 'Unpin' : 'Pin'}
-          >
-            <Pin className={`w-4 h-4 ${selectedItem.pinned ? '' : 'rotate-45'}`} />
-          </button>
-          <button
-            onClick={() => openModal('collectionPicker')}
-            className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-            title="Add to Collection"
-          >
-            <FolderPlus className="text-sm" />
-          </button>
-          <button
-            onClick={() => openModal('tags')}
-            className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-            title="Add Tags"
-          >
-            <Tags className="text-sm" />
-          </button>
-
-          <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
+          <div className="flex items-center gap-1">
+            <span className="w-16 flex-shrink-0 text-[9px] font-mono uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-600 select-none">Organize</span>
+            <button
+              onClick={handleStartEdit}
+              className={`p-2 rounded-lg transition-all ${isEditing ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+              title="Edit"
+            >
+              <SquarePen className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleTogglePin}
+              className={`p-2 rounded-lg transition-all ${selectedItem.pinned ? 'bg-amber-500/10 text-amber-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+              title={selectedItem.pinned ? 'Unpin' : 'Pin'}
+            >
+              <Pin className={`w-4 h-4 ${selectedItem.pinned ? '' : 'rotate-45'}`} />
+            </button>
+            <button
+              onClick={() => openModal('collectionPicker')}
+              className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+              title="Add to Collection"
+            >
+              <FolderPlus className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => openModal('tags')}
+              className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+              title="Add Tags"
+            >
+              <Tags className="w-4 h-4" />
+            </button>
+          </div>
 
           {/* AI Tools */}
-          <button
-            onClick={handleSummarize}
-            disabled={aiProcessing !== null}
-            className={`p-2 rounded-lg transition-all ${aiProcessing === 'summarize' ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10'}`}
-            title="AI Summarize"
-          >
-            <Sparkles className={`w-4 h-4 ${aiProcessing === 'summarize' ? 'animate-pulse' : ''}`} />
-          </button>
-          <button
-            onClick={handleExtractActions}
-            disabled={aiProcessing !== null}
-            className={`p-2 rounded-lg transition-all ${aiProcessing === 'extract' ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10'}`}
-            title="Extract Action Items"
-          >
-            <ListChecks className={`w-4 h-4 ${aiProcessing === 'extract' ? 'animate-pulse' : ''}`} />
-          </button>
-          <button
-            onClick={handleFindRelated}
-            disabled={aiProcessing !== null}
-            className={`p-2 rounded-lg transition-all ${aiProcessing === 'related' ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10'}`}
-            title="Find Related"
-          >
-            <Link2 className={`w-4 h-4 ${aiProcessing === 'related' ? 'animate-pulse' : ''}`} />
-          </button>
-          <button
-            onClick={() => openModal('translate')}
-            className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all"
-            title="Translate"
-          >
-            <Languages className="w-4 h-4" />
-          </button>
-
-          <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
+          <div className="flex items-center gap-1">
+            <span className="w-16 flex-shrink-0 text-[9px] font-mono uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-600 select-none">AI</span>
+            <button
+              onClick={handleSummarize}
+              disabled={aiProcessing !== null}
+              className={`p-2 rounded-lg transition-all ${aiProcessing === 'summarize' ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10'}`}
+              title="AI Summarize"
+            >
+              <Sparkles className={`w-4 h-4 ${aiProcessing === 'summarize' ? 'animate-pulse' : ''}`} />
+            </button>
+            <button
+              onClick={handleExtractActions}
+              disabled={aiProcessing !== null}
+              className={`p-2 rounded-lg transition-all ${aiProcessing === 'extract' ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10'}`}
+              title="Extract Action Items"
+            >
+              <ListChecks className={`w-4 h-4 ${aiProcessing === 'extract' ? 'animate-pulse' : ''}`} />
+            </button>
+            <button
+              onClick={handleFindRelated}
+              disabled={aiProcessing !== null}
+              className={`p-2 rounded-lg transition-all ${aiProcessing === 'related' ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10'}`}
+              title="Find Related"
+            >
+              <Link2 className={`w-4 h-4 ${aiProcessing === 'related' ? 'animate-pulse' : ''}`} />
+            </button>
+            <button
+              onClick={() => openModal('translate')}
+              className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all"
+              title="Translate"
+            >
+              <Languages className="w-4 h-4" />
+            </button>
+          </div>
 
           {/* Export & Integration */}
-          <button
-            onClick={handleSendToEmail}
-            className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-            title="Send to Email"
-          >
-            <Mail className="text-sm" />
-          </button>
-          <button
-            onClick={handleCreateTask}
-            className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-            title="Create Task"
-          >
-            <CheckCircle2 className="text-sm" />
-          </button>
-          <button
-            onClick={handleAddToCalendar}
-            className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-            title="Add to Calendar"
-          >
-            <CalendarPlus className="text-sm" />
-          </button>
-          <button
-            onClick={() => openModal('contactPicker')}
-            className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-            title="Link to Contact"
-          >
-            <UserCog className="text-sm" />
-          </button>
-
-          <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
+          <div className="flex items-center gap-1">
+            <span className="w-16 flex-shrink-0 text-[9px] font-mono uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-600 select-none">Export</span>
+            <button
+              onClick={handleSendToEmail}
+              className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+              title="Send to Email"
+            >
+              <Mail className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleCreateTask}
+              className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+              title="Create Task"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleAddToCalendar}
+              className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+              title="Add to Calendar"
+            >
+              <CalendarPlus className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => openModal('contactPicker')}
+              className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+              title="Link to Contact"
+            >
+              <UserCog className="w-4 h-4" />
+            </button>
+          </div>
 
           {/* Utility */}
-          <button
-            onClick={handlePrint}
-            className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-            title="Print"
-          >
-            <Printer className="text-sm" />
-          </button>
-          <button
-            onClick={handleFullscreen}
-            className={`p-2 rounded-lg transition-all ${isFullscreen ? 'bg-zinc-800 text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
-            title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-          >
-            {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-          </button>
-          <button
-            onClick={handleTextToSpeech}
-            disabled={ttsLoading}
-            className={`p-2 rounded-lg transition-all ${ttsLoading ? 'bg-blue-500/10 text-blue-500' : isSpeaking ? 'bg-orange-500/10 text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'} disabled:opacity-50`}
-            title={ttsLoading ? 'Loading audio...' : isSpeaking ? 'Stop Speaking' : 'Read Aloud'}
-          >
-            {ttsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isSpeaking ? <Square className="w-4 h-4 fill-current" /> : <Volume2 className="w-4 h-4" />}
-          </button>
-          <button
-            onClick={handleShowHistory}
-            className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-            title="Version History"
-          >
-            <History className="text-sm" />
-          </button>
+          <div className="flex items-center gap-1">
+            <span className="w-16 flex-shrink-0 text-[9px] font-mono uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-600 select-none">Utility</span>
+            <button
+              onClick={handlePrint}
+              className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+              title="Print"
+            >
+              <Printer className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleFullscreen}
+              className={`p-2 rounded-lg transition-all ${isFullscreen ? 'bg-zinc-800 text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+              title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+            >
+              {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={handleTextToSpeech}
+              disabled={ttsLoading}
+              className={`p-2 rounded-lg transition-all ${ttsLoading ? 'bg-blue-500/10 text-blue-500' : isSpeaking ? 'bg-orange-500/10 text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'} disabled:opacity-50`}
+              title={ttsLoading ? 'Loading audio...' : isSpeaking ? 'Stop Speaking' : 'Read Aloud'}
+            >
+              {ttsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isSpeaking ? <Square className="w-4 h-4 fill-current" /> : <Volume2 className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={handleShowHistory}
+              className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+              title="Version History"
+            >
+              <History className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
