@@ -972,10 +972,21 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
         this.isSpeaking = false;
         break;
 
-      case 'error':
+      case 'error': {
+        const err = event.error as { code?: string; message?: string } | undefined;
+        // Benign barge-in race: a `response.cancel` (interrupt) can land just
+        // after the active response already finished server-side, so OpenAI
+        // replies `response_cancel_not_active`. Nothing is actually wrong —
+        // swallow it instead of surfacing a scary error toast. All other
+        // server errors still propagate.
+        if (err?.code === 'response_cancel_not_active') {
+          console.debug('[realtime] ignored benign cancel race:', err.message);
+          break;
+        }
         console.error('Server error:', event.error);
         this.emit({ type: 'error', error: new Error(JSON.stringify(event.error)) });
         break;
+      }
     }
   }
 
