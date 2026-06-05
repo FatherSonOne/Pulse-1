@@ -248,6 +248,64 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
       keywords: ['plan', 'subscription', 'invoice'],
       run: () => { setSettingsSection('billing'); setView(AppView.SETTINGS); },
     },
+    // Settings deep-links — mirror help-billing so the palette can jump to any
+    // major Settings section, not just Billing. Section ids match the real
+    // SECTION_GROUPS in Settings.tsx; setSettingsSection seeds Settings'
+    // initialSection on mount (same mechanism help-billing already relies on).
+    {
+      id: 'settings-notifications',
+      label: 'Notification settings',
+      desc: 'Alerts, push, quiet hours',
+      icon: 'fa-bell',
+      kind: 'navigate',
+      keywords: ['alerts', 'push', 'quiet hours', 'vip', 'sound'],
+      run: () => { setSettingsSection('notifications'); setView(AppView.SETTINGS); },
+    },
+    {
+      id: 'settings-integrations',
+      label: 'Integrations',
+      desc: 'Slack, Gmail, calendar, Twilio',
+      icon: 'fa-plug',
+      kind: 'navigate',
+      keywords: ['slack', 'gmail', 'connect', 'twilio', 'google', 'integration'],
+      run: () => { setSettingsSection('integrations'); setView(AppView.SETTINGS); },
+    },
+    {
+      id: 'settings-security',
+      label: 'Security settings',
+      desc: '2FA, sessions, access',
+      icon: 'fa-lock',
+      kind: 'navigate',
+      keywords: ['2fa', 'mfa', 'two factor', 'password', 'session', 'login'],
+      run: () => { setSettingsSection('security'); setView(AppView.SETTINGS); },
+    },
+    {
+      id: 'settings-privacy',
+      label: 'Privacy & data',
+      desc: 'Analytics, export, delete data',
+      icon: 'fa-shield-halved',
+      kind: 'navigate',
+      keywords: ['privacy', 'gdpr', 'export', 'delete', 'analytics', 'data'],
+      run: () => { setSettingsSection('privacy_data'); setView(AppView.SETTINGS); },
+    },
+    {
+      id: 'settings-ai',
+      label: 'AI & Intelligence settings',
+      desc: 'Models, voice agent, quotas',
+      icon: 'fa-brain',
+      kind: 'navigate',
+      keywords: ['ai', 'model', 'gemini', 'claude', 'gpt', 'quota', 'voice agent'],
+      run: () => { setSettingsSection('ai_intelligence'); setView(AppView.SETTINGS); },
+    },
+    {
+      id: 'settings-features',
+      label: 'Features & Labs',
+      desc: 'Beta toggles, experimental flags',
+      icon: 'fa-flask',
+      kind: 'navigate',
+      keywords: ['beta', 'experimental', 'flag', 'toggle', 'lab', 'advanced'],
+      run: () => { setSettingsSection('features_labs'); setView(AppView.SETTINGS); },
+    },
   ], [setSettingsSection, setView]);
 
   // Register navigation as a separate scope from help so registries are
