@@ -215,12 +215,12 @@
 
 /* Enhance focus indicators for keyboard navigation */
 *:focus-visible {
-  outline: 2px solid rgb(59, 130, 246) !important; /* blue-500 */
+  outline: 2px solid #f43f5e !important; /* rose-500 — brand focus ring */
   outline-offset: 2px !important;
 }
 
 .dark *:focus-visible {
-  outline: 2px solid rgb(96, 165, 250) !important; /* blue-400 */
+  outline: 2px solid #f43f5e !important; /* rose-500 — brand focus ring */
   outline-offset: 2px !important;
 }
 

@@ -15,6 +15,8 @@ export const ToggleItem: React.FC<ToggleItemProps> = ({ label, desc, active, onT
     </div>
     <button
       type="button"
+      role="switch"
+      aria-checked={active}
       aria-label={`Toggle ${label}`}
       className={`shrink-0 w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${
         active ? 'bg-rose-500' : 'bg-zinc-300 dark:bg-zinc-700'
