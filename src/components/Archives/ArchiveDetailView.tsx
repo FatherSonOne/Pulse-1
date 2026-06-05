@@ -249,10 +249,10 @@ export const ArchiveDetailView: React.FC = () => {
             groups, not an undifferentiated wall. All actions stay visible;
             icon sizes normalized to w-4 h-4 (some were `text-sm`, which does
             not size a Lucide SVG). */}
-        <div className="flex flex-col gap-1.5 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
           {/* Edit & Organize */}
           <div className="flex items-center gap-1">
-            <span className="w-16 flex-shrink-0 text-[9px] font-mono uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-600 select-none">Organize</span>
+            <span className="mr-0.5 text-[9px] font-mono uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-600 select-none">Organize</span>
             <button
               onClick={handleStartEdit}
               className={`p-2 rounded-lg transition-all ${isEditing ? 'bg-rose-500/10 text-rose-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
@@ -285,7 +285,7 @@ export const ArchiveDetailView: React.FC = () => {
 
           {/* AI Tools */}
           <div className="flex items-center gap-1">
-            <span className="w-16 flex-shrink-0 text-[9px] font-mono uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-600 select-none">AI</span>
+            <span className="mr-0.5 text-[9px] font-mono uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-600 select-none">AI</span>
             <button
               onClick={handleSummarize}
               disabled={aiProcessing !== null}
@@ -321,7 +321,7 @@ export const ArchiveDetailView: React.FC = () => {
 
           {/* Export & Integration */}
           <div className="flex items-center gap-1">
-            <span className="w-16 flex-shrink-0 text-[9px] font-mono uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-600 select-none">Export</span>
+            <span className="mr-0.5 text-[9px] font-mono uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-600 select-none">Export</span>
             <button
               onClick={handleSendToEmail}
               className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
@@ -354,7 +354,7 @@ export const ArchiveDetailView: React.FC = () => {
 
           {/* Utility */}
           <div className="flex items-center gap-1">
-            <span className="w-16 flex-shrink-0 text-[9px] font-mono uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-600 select-none">Utility</span>
+            <span className="mr-0.5 text-[9px] font-mono uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-600 select-none">Utility</span>
             <button
               onClick={handlePrint}
               className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
