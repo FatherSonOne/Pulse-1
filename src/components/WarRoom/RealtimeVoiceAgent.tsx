@@ -24,6 +24,8 @@ import {
 } from '../../services/realtimeAgentService';
 import { registerWarRoomTools } from '../../services/warRoomToolsService';
 import { RadialVoiceVisual } from './RadialVoiceVisual';
+import { AudioDeviceSettings } from './AudioDeviceSettings';
+import { getPreferredInputDevice, getPreferredOutputDevice } from '../../services/audioDevicePrefs';
 import { contextBankService } from '../../services/contextBankService';
 import { MarkdownRenderer } from '../shared';
 import { VoiceTextButton } from '../shared/VoiceTextButton';
@@ -215,6 +217,11 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
         },
         noiseReduction: effectiveSettings.noiseReduction,
         preferredLanguage: effectiveSettings.language || 'en',
+        // Honor the user's saved mic/speaker choice (AudioDeviceSettings). A
+        // wrong default mic is the usual cause of "voice connects but hears
+        // nothing"; undefined = system default.
+        inputDeviceId: getPreferredInputDevice(),
+        outputDeviceId: getPreferredOutputDevice(),
         onAutoplayBlocked,
       };
 
@@ -625,6 +632,14 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
     }
   };
 
+  // Pre-connect, the choice is just saved to localStorage (read at connect()).
+  // While connected, hot-swap the live session's mic/speaker on the fly.
+  const handleDeviceSelect = useCallback((kind: 'input' | 'output', deviceId: string) => {
+    if (!session) return;
+    if (kind === 'input') session.setInputDevice(deviceId);
+    else session.setOutputDevice(deviceId);
+  }, [session]);
+
   const handleAgentSwitch = (agentName: string) => {
     if (session) {
       session.switchAgent(agentName);
@@ -709,6 +724,13 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
               {trySaying.map((s) => (
                 <div key={s} style={{ fontSize: 13, color: 'var(--pulse-ink-2)', fontStyle: 'italic' }}>“{s}”</div>
               ))}
+            </div>
+
+            {/* Audio device picker + live mic meter — pick & verify your mic
+                before connecting (the in-session meter only lights up after the
+                server hears you, which is useless for testing the device). */}
+            <div style={{ marginTop: 18, textAlign: 'left' }}>
+              <AudioDeviceSettings defaultExpanded connected={false} onSelect={handleDeviceSelect} />
             </div>
           </div>
         )}
@@ -829,6 +851,17 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
             </button>
           )}
         </div>
+      </div>
+
+      {/* Audio device picker — choose + test mic/speaker. Expanded with a live
+          input meter before connecting; collapsible for live device switching
+          once a session is active. */}
+      <div className="px-3 py-2" style={{ borderBottom: '1px solid var(--pulse-border)' }}>
+        <AudioDeviceSettings
+          defaultExpanded={!isConnected}
+          connected={isConnected}
+          onSelect={handleDeviceSelect}
+        />
       </div>
 
       {/* Agent Picker Dropdown */}

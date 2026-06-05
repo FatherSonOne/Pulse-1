@@ -36,6 +36,12 @@ export interface RealtimeSessionConfig {
     prompt?: string;
   };
   noiseReduction?: 'near_field' | 'far_field' | null;
+  /** Preferred microphone deviceId (from enumerateDevices); omit for the
+   *  browser/system default. */
+  inputDeviceId?: string;
+  /** Preferred speaker deviceId for playback routing (Chromium setSinkId);
+   *  omit for the system default output. */
+  outputDeviceId?: string;
   /** Preferred language for the AI to speak (ISO 639-1 code) */
   preferredLanguage?: string;
   /** Called when browser blocks audio autoplay, so the UI can prompt user interaction */
@@ -488,6 +494,53 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
     }
   }
 
+  // ============= AUDIO DEVICE ROUTING =============
+
+  /** Route the playback element to a speaker deviceId (Chromium setSinkId). */
+  private applySinkId(deviceId: string): void {
+    const el = this.audioElement as
+      | (HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> })
+      | null;
+    if (el && typeof el.setSinkId === 'function') {
+      el.setSinkId(deviceId).catch((e) => console.warn('[realtime] setSinkId failed:', e));
+    }
+  }
+
+  /** Live-switch the output (speaker) device. Safe before or after connect. */
+  async setOutputDevice(deviceId: string): Promise<void> {
+    this.config.outputDeviceId = deviceId || undefined;
+    if (deviceId) this.applySinkId(deviceId);
+  }
+
+  /** Live-switch the input (microphone) device. If connected, re-acquires the
+   *  mic and hot-swaps the WebRTC sender's track (preserving mute state);
+   *  otherwise just records the choice for the next connect(). */
+  async setInputDevice(deviceId: string): Promise<void> {
+    this.config.inputDeviceId = deviceId || undefined;
+    if (!this.peerConnection) return; // not connected — applied at connect()
+    try {
+      const wasEnabled = this.mediaStream?.getAudioTracks()[0]?.enabled ?? true;
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+          echoCancellation: { ideal: true },
+          noiseSuppression: { ideal: true },
+          autoGainControl: { ideal: true },
+        },
+      });
+      const newTrack = newStream.getAudioTracks()[0];
+      const sender = this.peerConnection.getSenders().find((s) => s.track?.kind === 'audio');
+      if (sender && newTrack) {
+        await sender.replaceTrack(newTrack);
+        newTrack.enabled = wasEnabled; // preserve mute state across the swap
+      }
+      this.mediaStream?.getTracks().forEach((t) => t.stop());
+      this.mediaStream = newStream;
+    } catch (e) {
+      console.warn('[realtime] setInputDevice failed:', e);
+    }
+  }
+
   // ============= CONTEXT MANAGEMENT =============
 
   setContextDocuments(documents: ContextDocument[]): void {
@@ -600,6 +653,11 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
       this.audioElement.style.display = 'none';
       document.body.appendChild(this.audioElement);
 
+      // Route playback to the user's chosen speaker, if one is set + supported.
+      if (this.config.outputDeviceId) {
+        this.applySinkId(this.config.outputDeviceId);
+      }
+
       // Monitor audio playback with comprehensive event handlers
       this.audioElement.onplay = () => {
         console.log('🔊 Audio playback started');
@@ -642,6 +700,11 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
       try {
         this.mediaStream = await navigator.mediaDevices.getUserMedia({
           audio: {
+            // Honor the user's mic choice; omit for the system default. A wrong
+            // default device is the #1 cause of "my mic isn't picked up".
+            ...(this.config.inputDeviceId
+              ? { deviceId: { exact: this.config.inputDeviceId } }
+              : {}),
             echoCancellation: { ideal: true }, // Force echo cancellation
             noiseSuppression: { ideal: true }, // Suppress background noise
             autoGainControl: { ideal: true }, // Normalize volume
