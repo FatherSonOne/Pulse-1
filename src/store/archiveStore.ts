@@ -212,6 +212,88 @@ const flashSuccess = (set: (partial: Partial<ArchiveState>) => void, message: st
   setTimeout(() => set({ shareSuccess: null }), 2000);
 };
 
+/** Flash an error. Errors never route through `shareSuccess` (that toast is
+ *  styled success-green); use react-hot-toast's error channel instead so a
+ *  failed action never reads as a win. */
+const flashError = (message: string) => {
+  toast.error(message);
+};
+
+/** Apply an in-memory patch to a demo item across `demoItems` and the open
+ *  detail item. Demo mode has no DB (demo ids are not UUIDs, so the real
+ *  `archives` table rejects them with a 400), so toolbar mutations live here.
+ *  Callers still invoke refreshData() afterward to re-derive the filtered
+ *  `items` list from the patched seed. */
+const patchDemoItem = (
+  get: () => ArchiveState,
+  set: (partial: Partial<ArchiveState>) => void,
+  id: string,
+  patch: Partial<ArchiveItem>,
+) => {
+  const { demoItems, selectedItem } = get();
+  set({
+    demoItems: demoItems ? demoItems.map(i => (i.id === id ? { ...i, ...patch } : i)) : demoItems,
+    selectedItem: selectedItem && selectedItem.id === id ? { ...selectedItem, ...patch } : selectedItem,
+  });
+};
+
+/** Deterministic 2-3 sentence summary, no edge function. Mirrors the
+ *  archiveService fallback so demo summaries match real-mode fallbacks. */
+const localSummarize = (content: string): string => {
+  const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 10);
+  return sentences.slice(0, 3).join('. ').trim() + (sentences.length > 3 ? '...' : '.');
+};
+
+/** Regex action-item extraction, no DB / no edge function. Mirrors
+ *  archiveService.extractActionItems so demo extraction matches real mode. */
+const localExtractActions = (content: string): string[] => {
+  const patterns = [
+    /(?:need to|should|must|will|have to|going to)\s+([^.!?]+)/gi,
+    /(?:action item|todo|task):\s*([^.!?\n]+)/gi,
+    /(?:follow up|follow-up)\s+(?:on|with)\s+([^.!?]+)/gi,
+    /(?:schedule|plan|organize)\s+([^.!?]+)/gi,
+  ];
+  const actions: string[] = [];
+  patterns.forEach(pattern => {
+    for (const match of content.matchAll(pattern)) {
+      const action = (match[1] || '').trim();
+      if (action.length > 5 && action.length < 200) actions.push(action);
+    }
+  });
+  return [...new Set(actions)].slice(0, 10);
+};
+
+/** Tag-overlap related-item scan over the in-memory seed. Mirrors
+ *  archiveService.findRelatedItems + getRelatedItems for demo mode. */
+const localFindRelated = (item: ArchiveItem, pool: ArchiveItem[] | null): ArchiveItem[] => {
+  if (!pool) return [];
+  return pool
+    .filter(other => other.id !== item.id)
+    .map(other => ({
+      other,
+      score: (other.tags || []).filter(t => (item.tags || []).includes(t)).length,
+    }))
+    .filter(scored => scored.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+    .map(scored => scored.other);
+};
+
+/** Synthesize version history from item metadata (there is no
+ *  archive_versions row for demo items). Mirrors archiveService
+ *  .getVersionHistory's fallback so the History modal renders instead of
+ *  hanging on "Loading version history...". */
+const synthVersionHistory = (item: ArchiveItem): VersionHistoryItem[] => {
+  const history: VersionHistoryItem[] = [
+    { id: 'current', date: new Date(), action: 'Current version', user: 'You', content: item.content, title: item.title },
+  ];
+  if (item.updatedAt && item.date && item.updatedAt.getTime() !== item.date.getTime()) {
+    history.push({ id: 'updated', date: item.updatedAt, action: 'Last edited', user: 'You', content: item.content, title: item.title });
+  }
+  history.push({ id: 'created', date: item.date, action: 'Created', user: 'System', content: item.content, title: item.title });
+  return history;
+};
+
 export const useArchiveStore = create<ArchiveState>()(
   subscribeWithSelector((set, get) => ({
     // --- Initial state ---
@@ -544,12 +626,47 @@ export const useArchiveStore = create<ArchiveState>()(
     // --- Business logic handlers ---
 
     confirmDelete: async () => {
-      const { modals, selectedItem } = get();
+      const { modals, selectedItem, demoMode, demoItems } = get();
       const deleteId = modals.deleteConfirm;
       if (!deleteId) return;
 
+      // Demo mode: remove from the in-memory seed with a lightweight undo. No DB.
+      if (demoMode) {
+        const snapshot = (demoItems || []).find(i => i.id === deleteId) || null;
+        set({
+          demoItems: (demoItems || []).filter(i => i.id !== deleteId),
+          ...(selectedItem?.id === deleteId ? { selectedItem: null } : {}),
+          modals: { ...get().modals, deleteConfirm: null },
+        });
+        await get().refreshData();
+        if (snapshot) {
+          toast(
+            () => `Item deleted. Tap to undo.`,
+            {
+              duration: 5000,
+              style: { cursor: 'pointer' },
+              onClick: async () => {
+                toast.dismiss();
+                const cur = get().demoItems || [];
+                if (!cur.some(i => i.id === snapshot.id)) {
+                  set({ demoItems: [...cur, snapshot] });
+                  await get().refreshData();
+                }
+                toast.success('Item restored!', { duration: 2000 });
+              },
+            } as any
+          );
+        }
+        return;
+      }
+
       // Soft delete (sets deleted_at timestamp, item disappears from queries)
-      await archiveService.deleteArchive(deleteId);
+      const deleted = await archiveService.deleteArchive(deleteId);
+      if (!deleted) {
+        flashError('Couldn\'t delete this item. Please try again.');
+        set({ modals: { ...get().modals, deleteConfirm: null } });
+        return;
+      }
       await get().refreshData();
       if (selectedItem?.id === deleteId) {
         set({ selectedItem: null });
@@ -583,12 +700,27 @@ export const useArchiveStore = create<ArchiveState>()(
     },
 
     handleToggleStar: async (id: string) => {
-      await archiveService.toggleStar(id);
+      const { demoMode, demoItems } = get();
+      if (demoMode) {
+        const current = (demoItems || []).find(i => i.id === id);
+        patchDemoItem(get, set, id, { starred: !current?.starred });
+        await get().refreshData();
+        return;
+      }
+      const ok = await archiveService.toggleStar(id);
+      if (!ok) {
+        flashError('Couldn\'t update star. Please try again.');
+        return;
+      }
       await get().refreshData();
     },
 
     handleExportToDrive: async (item: ArchiveItem) => {
-      const { driveConnected, exporting } = get();
+      const { driveConnected, exporting, demoMode } = get();
+      if (demoMode) {
+        alert('Export to Drive isn\'t available for demo items.');
+        return;
+      }
       if (!driveConnected) {
         alert('Please connect your Google account first in Settings.');
         return;
@@ -695,136 +827,222 @@ export const useArchiveStore = create<ArchiveState>()(
     },
 
     handleSaveEdit: async () => {
-      const { selectedItem, editTitle, editContent } = get();
+      const { selectedItem, editTitle, editContent, demoMode } = get();
       if (!selectedItem) return;
+      if (demoMode) {
+        patchDemoItem(get, set, selectedItem.id, { title: editTitle, content: editContent, updatedAt: new Date() });
+        set({ isEditing: false });
+        flashSuccess(set, 'Changes saved!');
+        await get().refreshData();
+        return;
+      }
       try {
-        await archiveService.updateArchive(selectedItem.id, {
+        const updated = await archiveService.updateArchive(selectedItem.id, {
           title: editTitle,
           content: editContent,
         });
+        if (!updated) {
+          flashError('Couldn\'t save changes. Please try again.');
+          return;
+        }
         set({ isEditing: false });
         flashSuccess(set, 'Changes saved!');
         await get().refreshData();
         set({ selectedItem: { ...selectedItem, title: editTitle, content: editContent } });
       } catch (error) {
         console.error('Failed to save:', error);
-        alert('Failed to save changes');
+        flashError('Couldn\'t save changes. Please try again.');
       }
     },
 
     handleTogglePin: async () => {
-      const { selectedItem } = get();
+      const { selectedItem, demoMode } = get();
       if (!selectedItem) return;
+      const willPin = !selectedItem.pinned;
+      if (demoMode) {
+        patchDemoItem(get, set, selectedItem.id, { pinned: willPin, pinnedAt: willPin ? new Date() : undefined });
+        flashSuccess(set, willPin ? 'Pinned!' : 'Unpinned!');
+        await get().refreshData();
+        return;
+      }
       try {
-        await archiveService.togglePin(selectedItem.id);
+        const ok = await archiveService.togglePin(selectedItem.id);
+        if (!ok) {
+          flashError('Couldn\'t update pin. Please try again.');
+          return;
+        }
         flashSuccess(set, selectedItem.pinned ? 'Unpinned!' : 'Pinned!');
         await get().refreshData();
       } catch (error) {
         console.error('Failed to toggle pin:', error);
+        flashError('Couldn\'t update pin. Please try again.');
       }
     },
 
     handleAddToCollectionTool: async (collectionId: string) => {
-      const { selectedItem } = get();
+      const { selectedItem, demoMode } = get();
       if (!selectedItem) return;
+      if (demoMode) {
+        patchDemoItem(get, set, selectedItem.id, { collectionId });
+        set({ modals: { ...get().modals, collectionPicker: false } });
+        flashSuccess(set, 'Added to collection!');
+        await get().refreshData();
+        return;
+      }
       try {
-        await archiveService.addToCollection(selectedItem.id, collectionId);
+        const ok = await archiveService.addToCollection(selectedItem.id, collectionId);
+        if (!ok) {
+          flashError('Couldn\'t add to collection. Please try again.');
+          return;
+        }
         set({ modals: { ...get().modals, collectionPicker: false } });
         flashSuccess(set, 'Added to collection!');
         await get().refreshData();
       } catch (error) {
         console.error('Failed to add to collection:', error);
+        flashError('Couldn\'t add to collection. Please try again.');
       }
     },
 
     handleAddTag: async () => {
-      const { selectedItem, newTag } = get();
+      const { selectedItem, newTag, demoMode } = get();
       if (!selectedItem || !newTag.trim()) return;
+      const updatedTags = [...(selectedItem.tags || []), newTag.trim()];
+      if (demoMode) {
+        patchDemoItem(get, set, selectedItem.id, { tags: updatedTags });
+        set({ newTag: '' });
+        flashSuccess(set, 'Tag added!');
+        await get().refreshData();
+        return;
+      }
       try {
-        const updatedTags = [...(selectedItem.tags || []), newTag.trim()];
-        await archiveService.updateArchive(selectedItem.id, { tags: updatedTags });
+        const updated = await archiveService.updateArchive(selectedItem.id, { tags: updatedTags });
+        if (!updated) {
+          flashError('Couldn\'t add tag. Please try again.');
+          return;
+        }
         set({ newTag: '' });
         flashSuccess(set, 'Tag added!');
         await get().refreshData();
         set({ selectedItem: { ...selectedItem, tags: updatedTags } });
       } catch (error) {
         console.error('Failed to add tag:', error);
+        flashError('Couldn\'t add tag. Please try again.');
       }
     },
 
     handleRemoveTag: async (tagToRemove: string) => {
-      const { selectedItem } = get();
+      const { selectedItem, demoMode } = get();
       if (!selectedItem) return;
+      const updatedTags = (selectedItem.tags || []).filter(t => t !== tagToRemove);
+      if (demoMode) {
+        patchDemoItem(get, set, selectedItem.id, { tags: updatedTags });
+        flashSuccess(set, 'Tag removed!');
+        await get().refreshData();
+        return;
+      }
       try {
-        const updatedTags = (selectedItem.tags || []).filter(t => t !== tagToRemove);
-        await archiveService.updateArchive(selectedItem.id, { tags: updatedTags });
+        const updated = await archiveService.updateArchive(selectedItem.id, { tags: updatedTags });
+        if (!updated) {
+          flashError('Couldn\'t remove tag. Please try again.');
+          return;
+        }
         flashSuccess(set, 'Tag removed!');
         await get().refreshData();
         set({ selectedItem: { ...selectedItem, tags: updatedTags } });
       } catch (error) {
         console.error('Failed to remove tag:', error);
+        flashError('Couldn\'t remove tag. Please try again.');
       }
     },
 
     handleSummarize: async () => {
-      const { selectedItem } = get();
+      const { selectedItem, demoMode } = get();
       if (!selectedItem) return;
       set({ aiProcessing: 'summarize' });
       try {
+        if (demoMode) {
+          const summary = localSummarize(selectedItem.content);
+          patchDemoItem(get, set, selectedItem.id, { aiSummary: summary });
+          await get().refreshData();
+          flashSuccess(set, 'Summary generated!');
+          return;
+        }
         const summary = await archiveService.generateSummary(selectedItem.id);
+        if (!summary) {
+          flashError('Couldn\'t generate a summary. Please try again.');
+          return;
+        }
         await get().refreshData();
         set({ selectedItem: { ...selectedItem, aiSummary: summary } });
         flashSuccess(set, 'Summary generated!');
       } catch (error) {
         console.error('Failed to summarize:', error);
-        alert('Failed to generate summary');
+        flashError('Couldn\'t generate a summary. Please try again.');
       } finally {
         set({ aiProcessing: null });
       }
     },
 
     handleExtractActions: async () => {
-      const { selectedItem } = get();
+      const { selectedItem, demoMode } = get();
       if (!selectedItem) return;
-      set({ aiProcessing: 'actions' });
+      // 'extract' matches the toolbar button's active/pulse check in
+      // ArchiveDetailView; 'actions' (the prior value) never matched, so the
+      // button showed no progress feedback.
+      set({ aiProcessing: 'extract' });
       try {
-        const actions = await archiveService.extractActionItems(selectedItem.id);
+        const actions = demoMode
+          ? localExtractActions(selectedItem.content)
+          : await archiveService.extractActionItems(selectedItem.id);
         flashSuccess(set, `Extracted ${actions.length} action items!`);
         set({ modals: { ...get().modals, actionItemsResult: actions } });
       } catch (error) {
         console.error('Failed to extract actions:', error);
-        alert('Failed to extract action items');
+        flashError('Couldn\'t extract action items. Please try again.');
       } finally {
         set({ aiProcessing: null });
       }
     },
 
     handleFindRelated: async () => {
-      const { selectedItem } = get();
+      const { selectedItem, demoMode, demoItems } = get();
       if (!selectedItem) return;
       set({ aiProcessing: 'related' });
       try {
-        const related = await archiveService.getRelatedItems(selectedItem.id);
+        const related = demoMode
+          ? localFindRelated(selectedItem, demoItems)
+          : await archiveService.getRelatedItems(selectedItem.id);
         set({ relatedItems: related });
         flashSuccess(set, `Found ${related.length} related items!`);
       } catch (error) {
         console.error('Failed to find related:', error);
+        flashError('Couldn\'t find related items. Please try again.');
       } finally {
         set({ aiProcessing: null });
       }
     },
 
     handleTranslate: async (targetLanguage: string) => {
-      const { selectedItem } = get();
+      const { selectedItem, demoMode } = get();
       if (!selectedItem) return;
-      set({ aiProcessing: 'translate', modals: { ...get().modals, translate: false } });
+      set({ modals: { ...get().modals, translate: false } });
+      if (demoMode) {
+        toast('Translation runs on your saved notes, not demo content.');
+        return;
+      }
+      set({ aiProcessing: 'translate' });
       try {
         const translated = await archiveService.translateContent(selectedItem.id, targetLanguage);
+        if (!translated) {
+          flashError('Couldn\'t translate this note. Please try again.');
+          return;
+        }
         flashSuccess(set, 'Translation complete!');
         alert(`Translated content:\n\n${translated}`);
       } catch (error) {
         console.error('Failed to translate:', error);
-        alert('Failed to translate content');
+        flashError('Couldn\'t translate this note. Please try again.');
       } finally {
         set({ aiProcessing: null });
       }
@@ -839,16 +1057,29 @@ export const useArchiveStore = create<ArchiveState>()(
     },
 
     handleCreateTask: async () => {
-      const { selectedItem } = get();
+      const { selectedItem, demoMode } = get();
       if (!selectedItem) return;
-      try {
-        await archiveService.createTaskFromArchive(selectedItem.id);
-        flashSuccess(set, 'Task created!');
-      } catch (error) {
-        console.error('Failed to create task:', error);
+      const copyToClipboard = async (message: string) => {
         const taskText = `[ ] ${selectedItem.title}\n\nFrom archive: ${selectedItem.date.toLocaleDateString()}`;
         await navigator.clipboard.writeText(taskText);
-        flashSuccess(set, 'Task copied to clipboard!');
+        flashSuccess(set, message);
+      };
+      if (demoMode) {
+        await copyToClipboard('Task copied to clipboard!');
+        return;
+      }
+      try {
+        const result = await archiveService.createTaskFromArchive(selectedItem.id);
+        if (result.success && result.taskId && result.taskId !== 'external') {
+          flashSuccess(set, 'Task created!');
+        } else {
+          // Tasks table unavailable or the insert failed: honest clipboard
+          // fallback instead of a false "Task created!".
+          await copyToClipboard('Tasks unavailable here. Copied to clipboard instead.');
+        }
+      } catch (error) {
+        console.error('Failed to create task:', error);
+        await copyToClipboard('Task copied to clipboard!');
       }
     },
 
@@ -895,15 +1126,27 @@ export const useArchiveStore = create<ArchiveState>()(
     },
 
     handleLinkToContact: async (contactId: string) => {
-      const { selectedItem } = get();
+      const { selectedItem, demoMode } = get();
       if (!selectedItem) return;
+      if (demoMode) {
+        patchDemoItem(get, set, selectedItem.id, { relatedContactId: contactId });
+        set({ modals: { ...get().modals, contactPicker: false } });
+        flashSuccess(set, 'Linked to contact!');
+        await get().refreshData();
+        return;
+      }
       try {
-        await archiveService.linkToContact(selectedItem.id, contactId);
+        const ok = await archiveService.linkToContact(selectedItem.id, contactId);
+        if (!ok) {
+          flashError('Couldn\'t link to contact. Please try again.');
+          return;
+        }
         set({ modals: { ...get().modals, contactPicker: false } });
         flashSuccess(set, 'Linked to contact!');
         await get().refreshData();
       } catch (error) {
         console.error('Failed to link to contact:', error);
+        flashError('Couldn\'t link to contact. Please try again.');
       }
     },
 
@@ -922,48 +1165,51 @@ export const useArchiveStore = create<ArchiveState>()(
     },
 
     handleShowHistory: async () => {
-      const { selectedItem } = get();
+      const { selectedItem, demoMode } = get();
       if (!selectedItem) return;
+
+      // Demo mode: synthesize from the in-memory item (no archive_versions row).
+      if (demoMode) {
+        set({ versionHistory: synthVersionHistory(selectedItem) });
+        set({ modals: { ...get().modals, history: true } });
+        return;
+      }
 
       try {
         const history = await archiveService.getVersionHistory(selectedItem.id);
-        set({ versionHistory: history });
+        // Guard the perpetual "Loading..." state if the service returns empty.
+        set({ versionHistory: history.length > 0 ? history : synthVersionHistory(selectedItem) });
       } catch (error) {
         console.error('[Archives] Failed to load version history:', error);
-        set({
-          versionHistory: [
-            {
-              id: 'current',
-              date: new Date(),
-              action: 'Current version',
-              user: 'You',
-              content: selectedItem.content,
-              title: selectedItem.title,
-            },
-            {
-              id: 'created',
-              date: selectedItem.date,
-              action: 'Created',
-              user: 'System',
-              content: selectedItem.content,
-              title: selectedItem.title,
-            },
-          ],
-        });
+        set({ versionHistory: synthVersionHistory(selectedItem) });
       }
       set({ modals: { ...get().modals, history: true } });
     },
 
     handleRestoreVersion: async (version: VersionHistoryItem) => {
-      const { selectedItem } = get();
+      const { selectedItem, demoMode } = get();
       if (!selectedItem || !version.content) return;
 
       set({ restoringVersion: version.id });
       try {
-        await archiveService.updateArchive(selectedItem.id, {
+        if (demoMode) {
+          patchDemoItem(get, set, selectedItem.id, {
+            title: version.title || selectedItem.title,
+            content: version.content,
+          });
+          flashSuccess(set, 'Version restored!');
+          await get().refreshData();
+          set({ modals: { ...get().modals, history: false } });
+          return;
+        }
+        const updated = await archiveService.updateArchive(selectedItem.id, {
           title: version.title || selectedItem.title,
           content: version.content,
         });
+        if (!updated) {
+          flashError('Couldn\'t restore this version. Please try again.');
+          return;
+        }
 
         flashSuccess(set, 'Version restored!');
         await get().refreshData();
@@ -978,6 +1224,7 @@ export const useArchiveStore = create<ArchiveState>()(
         });
       } catch (error) {
         console.error('[Archives] Failed to restore version:', error);
+        flashError('Couldn\'t restore this version. Please try again.');
       } finally {
         set({ restoringVersion: null });
       }
