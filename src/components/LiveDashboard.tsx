@@ -145,24 +145,24 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
   // NOT_MEMBER and voice never connects.
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id ?? '';
-  const [isResolvingOpenaiToken, setIsResolvingOpenaiToken] = useState<boolean>(false);
-
   useEffect(() => {
-    // Only fetch when the voice agent panel is actually opened, and only once
-    // the workspace is loaded (the edge function requires workspace_id).
-    if (!showVoiceAgentPanel || openaiApiKey || isResolvingOpenaiToken || !workspaceId) return;
+    // Mint a hosted ephemeral token when the voice stage opens and a workspace
+    // is loaded. There is deliberately NO "resolving" state flag here: a state
+    // flag in this effect's own deps self-cancels the in-flight run and sticks
+    // at true, wedging the mint permanently shut (the bug that made the Live
+    // view show "OpenAI API key not configured" with no network call). Stale
+    // runs are ignored via `cancelled`; once a token lands, the openaiApiKey
+    // guard stops further mints.
+    if (!showVoiceAgentPanel || openaiApiKey || !workspaceId) return;
 
     let cancelled = false;
-    const resolveToken = async () => {
-      setIsResolvingOpenaiToken(true);
+    (async () => {
       try {
         const { supabase } = await import('../services/supabase');
         const { data, error } = await supabase.functions.invoke('openai-realtime-token', {
           body: { model: 'gpt-4o-realtime-preview', voice: 'alloy', workspace_id: workspaceId },
         });
-
         if (cancelled) return;
-
         if (error || !data?.token) {
           console.error('[LiveDashboard] Failed to fetch ephemeral OpenAI token:', error);
           toast.error('OpenAI Realtime unavailable. Please try again later.');
@@ -176,14 +176,10 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
           toast.error('OpenAI Realtime unavailable. Please try again later.');
           setOpenaiApiKey('');
         }
-      } finally {
-        if (!cancelled) setIsResolvingOpenaiToken(false);
       }
-    };
-
-    resolveToken();
+    })();
     return () => { cancelled = true; };
-  }, [showVoiceAgentPanel, openaiApiKey, isResolvingOpenaiToken, workspaceId]);
+  }, [showVoiceAgentPanel, openaiApiKey, workspaceId]);
 
   const [showOnboarding, setShowOnboarding] = useState(() => !hasCompletedOnboarding());
 
