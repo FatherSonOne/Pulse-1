@@ -149,6 +149,9 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
   const [deniedInStep, setDeniedInStep] = useState(false);
   const [stepKey,      setStepKey]      = useState(0); // key-change triggers enter animation
   const dialogRef = useRef<HTMLDivElement>(null);
+  const deniedBlockRef = useRef<HTMLDivElement>(null);
+  const completedRef = useRef(false);
+  const completeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // ── Focus trap ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -174,10 +177,33 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
   }, [currentStep]);
 
   // ── Filter permissions that still need handling ──────────────────────────
+  // Some steps can't surface an OS dialog on the current platform (e.g. the web
+  // Contact Picker is Chrome-Android only). Showing them renders a dead "Allow"
+  // button that does nothing, so we both hide them here AND auto-mark them
+  // completed below — otherwise the hook's getPermissionsToRequest keeps them
+  // pending and re-opens this modal on every launch.
+  const canRequestOnThisPlatform = useCallback((name: PermissionName): boolean => {
+    if (name === 'contacts') {
+      return isNativePlatform || 'contacts' in navigator;
+    }
+    return true;
+  }, [isNativePlatform]);
+
   const permissionsToShow = useMemo(
-    () => ALL_PERMISSIONS.filter(p => !completedPermissions.has(p.name)),
-    [completedPermissions],
+    () => ALL_PERMISSIONS.filter(
+      p => !completedPermissions.has(p.name) && canRequestOnThisPlatform(p.name),
+    ),
+    [completedPermissions, canRequestOnThisPlatform],
   );
+
+  // Auto-resolve platform-incapable steps so they don't keep the modal returning.
+  useEffect(() => {
+    ALL_PERMISSIONS.forEach((p) => {
+      if (!canRequestOnThisPlatform(p.name) && !completedPermissions.has(p.name)) {
+        markPermissionCompleted(p.name);
+      }
+    });
+  }, [canRequestOnThisPlatform, completedPermissions, markPermissionCompleted]);
 
   const currentPermission = permissionsToShow[currentStep];
   const allComplete       = currentStep >= permissionsToShow.length;
@@ -215,17 +241,31 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
   };
 
   // ── Completion ───────────────────────────────────────────────────────────
+  // Single guarded path so the two triggers (all steps done / nothing to ask)
+  // can't double-fire markSetupComplete + onComplete, and so a pending
+  // onComplete timer is cleared if the modal unmounts first.
   useEffect(() => {
-    if (allComplete) {
-      markSetupComplete().then(() => setTimeout(onComplete, 800));
-    }
-  }, [allComplete, onComplete, markSetupComplete]);
+    if (completedRef.current) return;
+    if (!allComplete && permissionsToShow.length !== 0) return;
+    completedRef.current = true;
+    const recapDelay = permissionsToShow.length === 0 ? 0 : 800;
+    markSetupComplete().then(() => {
+      completeTimerRef.current = setTimeout(onComplete, recapDelay);
+    });
+  }, [allComplete, permissionsToShow.length, markSetupComplete, onComplete]);
 
+  // Clear a pending completion timer only on unmount (not on benign re-renders).
+  useEffect(() => () => {
+    if (completeTimerRef.current) clearTimeout(completeTimerRef.current);
+  }, []);
+
+  // Move focus into the denied-recovery block when it appears, so keyboard / SR
+  // users land on the actionable controls instead of the now-hidden Allow button.
   useEffect(() => {
-    if (permissionsToShow.length === 0) {
-      markSetupComplete().then(onComplete);
+    if (deniedInStep) {
+      deniedBlockRef.current?.querySelector<HTMLElement>('button')?.focus();
     }
-  }, [permissionsToShow.length, markSetupComplete, onComplete]);
+  }, [deniedInStep]);
 
   if (permissionsToShow.length === 0) return null;
 
@@ -362,7 +402,7 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
               >
                 {currentPermission.title}
               </h3>
-              {currentPermission.required && (
+              {currentPermission.required ? (
                 <span
                   className="px-2 py-0.5 rounded text-[10px] font-medium"
                   style={{
@@ -372,6 +412,18 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
                   }}
                 >
                   Required
+                </span>
+              ) : (
+                <span
+                  className="px-2 py-0.5 rounded text-[10px] font-medium"
+                  style={{
+                    ...monoLabel,
+                    color: 'var(--pulse-ink-3)',
+                    background: 'var(--pulse-canvas-soft)',
+                    border: '1px solid var(--pulse-border)',
+                  }}
+                >
+                  Optional
                 </span>
               )}
             </div>
@@ -386,6 +438,7 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
             {/* Denied recovery block — overdue status vocabulary */}
             {deniedInStep && (
               <div
+                ref={deniedBlockRef}
                 className="rounded-xl p-3 mb-5"
                 style={{
                   background: 'var(--pulse-tone-overdue-soft)',
@@ -435,6 +488,15 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
                 ))}
               </div>
             )}
+
+            {/* Screen-reader status — announces the requesting / blocked states */}
+            <p className="sr-only" role="status" aria-live="polite">
+              {isRequesting
+                ? `Requesting ${currentPermission.title} permission…`
+                : deniedInStep
+                  ? `${currentPermission.title} permission was blocked. Open device settings to enable it.`
+                  : ''}
+            </p>
 
             {/* Action buttons — stacked on mobile, row on sm+ */}
             <div className="flex flex-col-reverse sm:flex-row gap-3">

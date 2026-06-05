@@ -173,17 +173,60 @@ export const requestLocationPermission = async (): Promise<PermissionState> => {
     return { granted: false, denied: true, prompt: false, checking: false };
   }
 
-  return new Promise((resolve) => {
+  // We care about the PERMISSION decision, not an actual position fix. On
+  // desktop (no GPS hardware) getCurrentPosition can sit for the full timeout
+  // and then error with POSITION_UNAVAILABLE/TIMEOUT *even when the user clicked
+  // Allow* — which previously mis-reported a granted permission as "not granted"
+  // and made the step feel slow. So: trigger the prompt with getCurrentPosition,
+  // but settle on the real permission state (via the Permissions API, which
+  // fires onchange the instant the user answers) rather than on whether a
+  // coordinate came back. A missing fix is NOT a denial.
+  return new Promise<PermissionState>((resolve) => {
+    let settled = false;
+    const finish = (state: PermissionState) => {
+      if (settled) return;
+      settled = true;
+      resolve(state);
+    };
+
+    // Permissions API path — settles immediately when the user answers, without
+    // waiting for a fix. Best-effort: Safari doesn't expose geolocation here, so
+    // it falls through to the getCurrentPosition / safety-net paths below.
+    if (navigator.permissions) {
+      navigator.permissions
+        .query({ name: 'geolocation' as PermissionDescriptor['name'] })
+        .then((status) => {
+          const apply = () => {
+            if (status.state === 'granted') {
+              finish({ granted: true, denied: false, prompt: false, checking: false });
+            } else if (status.state === 'denied') {
+              finish({ granted: false, denied: true, prompt: false, checking: false });
+            }
+          };
+          apply();                 // already-decided case (re-grant / prior denial)
+          status.onchange = apply; // fires the moment the user clicks Allow/Block
+        })
+        .catch(() => { /* geolocation not queryable here — rely on the fallbacks */ });
+    }
+
+    // Trigger the actual browser prompt.
     navigator.geolocation.getCurrentPosition(
-      () => resolve({ granted: true, denied: false, prompt: false, checking: false }),
+      () => finish({ granted: true, denied: false, prompt: false, checking: false }),
       (error) => {
         if (error.code === error.PERMISSION_DENIED) {
-          resolve({ granted: false, denied: true, prompt: false, checking: false });
-        } else {
-          resolve({ granted: false, denied: false, prompt: true, checking: false });
+          finish({ granted: false, denied: true, prompt: false, checking: false });
         }
+        // POSITION_UNAVAILABLE / TIMEOUT: leave it to the Permissions API watcher
+        // or the safety net — no fix is not a denial.
       },
-      { timeout: 10000 }
+      { timeout: 8000, maximumAge: 600000 }
+    );
+
+    // Safety net — never hang the wizard. If nothing settled (e.g. no Permissions
+    // API and no fix), report "prompt" so the step still advances.
+    setTimeout(
+      () => finish({ granted: false, denied: false, prompt: true, checking: false }),
+      9000,
     );
   });
 };
