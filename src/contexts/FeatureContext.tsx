@@ -238,18 +238,22 @@ export const FEATURE_CATEGORIES = {
   priority: {
     name: 'Priority Features',
     description: 'On by default. Turn one off to hide it.',
-    features: ['voiceInput', 'moodBadges'] as (keyof FeatureFlags)[]
+    features: ['moodBadges'] as (keyof FeatureFlags)[]
   },
   advanced: {
     name: 'Advanced Features',
     description: 'Opt-in productivity tools for the composer and Relay.',
     features: [
-      'aiComposer',
       'smartReplies',
-      'toneAnalysis',
       'scheduledMessages'
     ] as (keyof FeatureFlags)[]
   }
+  // voiceInput / aiComposer / toneAnalysis removed from this surface 2026-06-05:
+  // their only consumer is the *classic* MessageInput composer (lines 104-106),
+  // which is retired on the Pulse-DM path. The flag keys, defaults, FEATURE_NAMES,
+  // FEATURE_DESCRIPTIONS, and isFeatureEnabled() gates are intentionally retained
+  // so legacy-thread behavior is unchanged — only the inert toggles are hidden.
+  // Re-add a key to a `features` array to surface its control again.
   // 'Messages Tools Redesign (Beta)' category removed from the Features Labs UI
   // 2026-06-01: PulseComposer is now the unconditional Pulse-DM composer and the
   // tools menu is removed from the UX (MESSAGES_TOOLS_ENABLED gate), so the
