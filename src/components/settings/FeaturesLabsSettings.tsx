@@ -1,6 +1,6 @@
 import React from 'react';
 import { FlaskConical } from 'lucide-react';
-import { useFeatures, FEATURE_CATEGORIES, FEATURE_NAMES } from '../../contexts/FeatureContext';
+import { useFeatures, FEATURE_CATEGORIES, FEATURE_NAMES, FEATURE_DESCRIPTIONS } from '../../contexts/FeatureContext';
 import { ToggleItem } from './shared/ToggleItem';
 import { SettingsCard } from './shared/SettingsCard';
 import { MonoLabel } from './shared/MonoLabel';
@@ -51,7 +51,7 @@ export const FeaturesLabsSettings: React.FC = () => {
               <ToggleItem
                 key={featureId}
                 label={FEATURE_NAMES[featureId] || featureId}
-                desc=""
+                desc={FEATURE_DESCRIPTIONS[featureId] || ''}
                 active={features[featureId]}
                 onToggle={() => toggleFeature(featureId)}
               />

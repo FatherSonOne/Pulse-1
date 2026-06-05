@@ -237,12 +237,12 @@ export const useFeatures = () => {
 export const FEATURE_CATEGORIES = {
   priority: {
     name: 'Priority Features',
-    description: 'Always-on by default. Toggle off to hide the affordance.',
+    description: 'On by default. Turn one off to hide it.',
     features: ['voiceInput', 'moodBadges'] as (keyof FeatureFlags)[]
   },
   advanced: {
     name: 'Advanced Features',
-    description: 'Opt-in productivity tools across MessageInput and Relay.',
+    description: 'Opt-in productivity tools for the composer and Relay.',
     features: [
       'aiComposer',
       'smartReplies',
@@ -271,4 +271,24 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   toolsMenuV2: 'New Tools Menu (Beta)',
   emailEnabled: 'Email Section',
   experimentalEnabled: 'Experimental Features',
+};
+
+/**
+ * Per-feature descriptions for the settings surfaces. Grounded in each flag's
+ * verified consumer (checked 2026-06-05), so the copy never promises behavior
+ * the toggle doesn't deliver:
+ *  - moodBadges → MessageMoodBadge, smartReplies → Relay VoxSmartReplies,
+ *    scheduledMessages → MessageScheduling. These three are live.
+ *  - voiceInput / aiComposer / toneAnalysis only gate the *classic* MessageInput
+ *    composer (retired on the Pulse-DM path; still reachable on legacy threads),
+ *    so they're described as classic-composer features rather than implying they
+ *    affect the current composer.
+ */
+export const FEATURE_DESCRIPTIONS: Partial<Record<keyof FeatureFlags, string>> = {
+  voiceInput: 'Show the voice-to-text mic in the classic composer.',
+  moodBadges: 'Show an AI-inferred mood chip on incoming messages.',
+  aiComposer: 'Offer AI draft suggestions in the classic composer.',
+  smartReplies: 'Suggest one-tap AI replies in Relay voice threads.',
+  toneAnalysis: "Analyze your draft's tone in the classic composer (Advanced Mode).",
+  scheduledMessages: 'Schedule a message to send at a later time.',
 };
