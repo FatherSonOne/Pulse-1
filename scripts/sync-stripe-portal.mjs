@@ -9,6 +9,15 @@
  * couldn't downgrade to Solo or switch to per-seat Team. This sets it to the
  * canonical Solo + per-seat Team + Growth prices.
  *
+ * It also DISABLES the per-product quantity stepper (adjustable_quantity) on
+ * every tier. Pulse seats are entirely server-derived — Solo/Growth are flat
+ * plans pinned to quantity 1, and Team tracks the live workspace_members count
+ * (floored at 2) via billing-sync-seats / billing-reconcile-seats. A customer-
+ * editable stepper contradicts that model and is an overbilling hole: a manual
+ * 1→2 bump on a flat plan is a 50% drift, which the reconciler's 20% guardrail
+ * SKIPS — so the customer would stay double-billed. The portal lets customers
+ * SWITCH plans, never hand-edit seat counts.
+ *
  * Target config: the active/default portal config (override w/ PULSE_PORTAL_CONFIG_ID).
  * billing-checkout passes STRIPE_CUSTOMER_PORTAL_ID as the session `configuration`,
  * so update whichever id that env points at (default below is the account default).
@@ -44,10 +53,12 @@ console.log(APPLY ? '⚠️  APPLY=true — this WILL update the portal config.\
 if (APPLY && MODE === 'LIVE') { console.error('🛑 Refusing to auto-apply in LIVE. Review + run manually.'); process.exit(1); }
 
 // Canonical 2026 tiers — product → [monthly, yearly] price ids.
+// adjustableQuantity: false on every tier — seats are server-derived, the
+// portal must not expose a quantity stepper (see docblock above).
 const TIERS = [
-  { name: 'Pulse Solo',   product: 'prod_UcSvG40DOMl4Pb', prices: ['price_1TdDzjGb3AGXe9w86fBuX5Kh', 'price_1TdDzjGb3AGXe9w8KyIZBspq'] },
-  { name: 'Pulse Team',   product: 'prod_UVsT5yp61p6Vxo', prices: ['price_1TdEIxGb3AGXe9w8nL85q7mM', 'price_1TdEIxGb3AGXe9w8krIDmRiK'] },
-  { name: 'Pulse Growth', product: 'prod_UVsTwrfbcAt4xv', prices: ['price_1TYGWNGb3AGXe9w8PjNHmR8L', 'price_1TYGWOGb3AGXe9w8rfCzjg4k'] },
+  { name: 'Pulse Solo',   product: 'prod_UcSvG40DOMl4Pb', prices: ['price_1TdDzjGb3AGXe9w86fBuX5Kh', 'price_1TdDzjGb3AGXe9w8KyIZBspq'], adjustableQuantity: false },
+  { name: 'Pulse Team',   product: 'prod_UVsT5yp61p6Vxo', prices: ['price_1TdEIxGb3AGXe9w8nL85q7mM', 'price_1TdEIxGb3AGXe9w8krIDmRiK'], adjustableQuantity: false },
+  { name: 'Pulse Growth', product: 'prod_UVsTwrfbcAt4xv', prices: ['price_1TYGWNGb3AGXe9w8PjNHmR8L', 'price_1TYGWOGb3AGXe9w8rfCzjg4k'], adjustableQuantity: false },
 ];
 
 async function stripe(method, path, form) {
@@ -63,9 +74,9 @@ async function stripe(method, path, form) {
 try {
   const cfg = await stripe('GET', `/billing_portal/configurations/${CONFIG_ID}?expand[]=features.subscription_update.products`);
   console.log('Current allowlist:');
-  for (const p of cfg.features?.subscription_update?.products || []) console.log(`  ${p.product}: ${(p.prices || []).join(', ')}`);
+  for (const p of cfg.features?.subscription_update?.products || []) console.log(`  ${p.product}: ${(p.prices || []).join(', ')}  [stepper: ${p.adjustable_quantity?.enabled ? 'ON' : 'off'}]`);
   console.log('\nTarget allowlist:');
-  for (const t of TIERS) console.log(`  ${t.name} (${t.product}): ${t.prices.join(', ')}`);
+  for (const t of TIERS) console.log(`  ${t.name} (${t.product}): ${t.prices.join(', ')}  [stepper: ${t.adjustableQuantity ? 'ON' : 'off'}]`);
   console.log('');
 
   if (!APPLY) { console.log('🧪 DRY-RUN — re-run with APPLY=true to write the target allowlist.'); process.exit(0); }
@@ -76,6 +87,8 @@ try {
   TIERS.forEach((t, i) => {
     form.append(`features[subscription_update][products][${i}][product]`, t.product);
     t.prices.forEach((pr, j) => form.append(`features[subscription_update][products][${i}][prices][${j}]`, pr));
+    // Disable the customer-facing quantity stepper — seats are server-managed.
+    form.append(`features[subscription_update][products][${i}][adjustable_quantity][enabled]`, String(t.adjustableQuantity === true));
   });
   await stripe('POST', `/billing_portal/configurations/${CONFIG_ID}`, form);
   console.log('✅ Portal config updated — customers can now switch between Solo / Team (per-seat) / Growth.');
