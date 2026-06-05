@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const workspace_id = String(body.workspace_id ?? '');
-    const model = String(body.model ?? 'gpt-4o-realtime-preview');
+    const model = String(body.model ?? 'gpt-realtime');
     const voice = String(body.voice ?? 'alloy');
     // BYO bypass: when a personal OpenAI key is supplied, we use it for the
     // mint and skip every gate. OpenAI bills the user directly and nothing
@@ -173,13 +173,25 @@ Deno.serve(async (req) => {
     // mode + tier + meter.
     console.log(`[openai-realtime-token] user=${user.id} mode=${byoKey ? 'byo' : 'hosted'} ws=${byoKey ? '-' : workspace_id} tier=${pulseTier} trial=${isTrialing} used=${used}/${cap}`);
 
-    const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
+    // GA Realtime: mint an ephemeral client secret. OpenAI REMOVED the old beta
+    // endpoint `/v1/realtime/sessions` — it now 404s with body
+    // "Invalid URL (POST /v1/realtime/sessions)", which this function relays
+    // straight through (that was the wall). GA uses `/v1/realtime/client_secrets`
+    // with a nested `session` object (model + voice under `audio.output`) and NO
+    // `OpenAI-Beta` header.
+    const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${mintingKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ model, voice }),
+      body: JSON.stringify({
+        session: {
+          type: 'realtime',
+          model,
+          audio: { output: { voice } },
+        },
+      }),
     });
 
     if (!response.ok) {
@@ -196,14 +208,16 @@ Deno.serve(async (req) => {
     }
 
     const data = await response.json();
-    const token = data.client_secret?.value || data.value;
+    // GA returns the ephemeral key at top-level `value` (prefix `ek_`); keep the
+    // legacy `client_secret.value` shape as a fallback.
+    const token = data.value ?? data.client_secret?.value;
     if (!token) {
       return json({ error: 'No token in response', code: 'UPSTREAM_ERROR' }, 500);
     }
 
     return json({
       token,
-      expiresAt: data.client_secret?.expires_at,
+      expiresAt: data.expires_at ?? data.client_secret?.expires_at,
       max_session_sec,
       used_minutes: used,
       cap_minutes: cap,

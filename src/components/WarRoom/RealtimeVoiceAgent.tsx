@@ -192,7 +192,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
       // BYO and forwards `workspaceId` only for hosted-mode tier-gating.
       const ephemeralKey = await generateEphemeralToken(
         openaiApiKey,
-        { model: 'gpt-4o-realtime-preview', voice: effectiveSettings.voice },
+        { model: 'gpt-realtime', voice: effectiveSettings.voice },
         { workspaceId },
       );
 

@@ -160,7 +160,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
       try {
         const { supabase } = await import('../services/supabase');
         const { data, error } = await supabase.functions.invoke('openai-realtime-token', {
-          body: { model: 'gpt-4o-realtime-preview', voice: 'alloy', workspace_id: workspaceId },
+          body: { model: 'gpt-realtime', voice: 'alloy', workspace_id: workspaceId },
         });
         if (cancelled) return;
         if (error || !data?.token) {

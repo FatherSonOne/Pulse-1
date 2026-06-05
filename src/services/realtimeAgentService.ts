@@ -693,16 +693,15 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
       const offer = await this.peerConnection.createOffer();
       await this.peerConnection.setLocalDescription(offer);
 
-      // Exchange SDP with OpenAI
-      // Use gpt-4o-realtime-preview as the model name for WebRTC connection
-      const modelForConnection = this.config.model === 'gpt-realtime' 
-        ? 'gpt-4o-realtime-preview' 
-        : this.config.model;
-        
+      // Exchange SDP with OpenAI over the GA WebRTC endpoint. The old beta path
+      // `/v1/realtime?model=` is deprecated; GA uses `/v1/realtime/calls` and
+      // accepts the GA model id `gpt-realtime` directly (no preview remap).
+      const modelForConnection = this.config.model;
+
       console.log(`🎤 Connecting to OpenAI Realtime with model: ${modelForConnection}`);
-      
+
       const response = await fetch(
-        `https://api.openai.com/v1/realtime?model=${modelForConnection}`,
+        `https://api.openai.com/v1/realtime/calls?model=${modelForConnection}`,
         {
           method: 'POST',
           headers: {
@@ -1423,7 +1422,7 @@ export async function generateEphemeralToken(
     throw new Error('Sign in required. Sign in to Pulse to use voice.');
   }
 
-  const model = config.model || 'gpt-4o-realtime-preview';
+  const model = config.model || 'gpt-realtime';
   const voice = config.voice || 'alloy';
 
   // BYO sends the personal key in the body; the edge function uses it for the

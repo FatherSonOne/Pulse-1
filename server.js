@@ -639,7 +639,7 @@ app.delete('/api/gmail/disconnect', async (req, res) => {
 // OpenAI Realtime API - Ephemeral Token Generation
 // This endpoint generates a short-lived token for WebRTC connections
 app.post('/api/realtime/session-token', async (req, res) => {
-  const { model = 'gpt-4o-realtime-preview-2024-12-17', voice = 'nova' } = req.body;
+  const { model = 'gpt-realtime', voice = 'alloy' } = req.body;
 
   // Get API key from request header or environment
   const apiKey = req.headers['x-openai-api-key'] || process.env.OPENAI_API_KEY;
@@ -652,16 +652,21 @@ app.post('/api/realtime/session-token', async (req, res) => {
   }
 
   try {
-    // Request ephemeral token from OpenAI
-    const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
+    // Request ephemeral token from OpenAI (GA endpoint). The old beta
+    // `/v1/realtime/sessions` was removed and now 404s "Invalid URL"; GA mints
+    // via `/v1/realtime/client_secrets` with a nested `session` object.
+    const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model,
-        voice,
+        session: {
+          type: 'realtime',
+          model,
+          audio: { output: { voice } },
+        },
       }),
     });
 
@@ -676,9 +681,12 @@ app.post('/api/realtime/session-token', async (req, res) => {
 
     const data = await response.json();
 
-    // Return the ephemeral token (expires in ~60 seconds)
+    // Return the ephemeral token (expires in ~60 seconds). GA returns the key at
+    // top-level `value` (prefix `ek_`); expose it as `value` and keep the legacy
+    // `client_secret` shape as a fallback for any older consumer.
     res.json({
-      client_secret: data.client_secret,
+      value: data.value,
+      client_secret: data.client_secret ?? { value: data.value, expires_at: data.expires_at },
       expires_at: data.expires_at,
       model: data.model,
       voice: data.voice,
