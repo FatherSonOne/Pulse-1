@@ -174,12 +174,20 @@ interface AppCommandRegistrarProps {
   view: AppView;
   setView: React.Dispatch<React.SetStateAction<AppView>>;
   setSettingsSection: React.Dispatch<React.SetStateAction<string | undefined>>;
+  // Global create actions. Defined in App (they close over the openTaskPanel /
+  // openAddContact intent state) and passed in stably so the palette can create
+  // from any view, not just the Dashboard. Reuses the same intent bridge the
+  // Dashboard quick-actions and the AI action handler already use.
+  onNewTask: () => void;
+  onNewContact: () => void;
 }
 
 const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   view,
   setView,
   setSettingsSection,
+  onNewTask,
+  onNewContact,
 }) => {
   const { open } = useCommandPalette();
 
@@ -308,10 +316,36 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
     },
   ], [setSettingsSection, setView]);
 
+  // Global create actions — available from every view (the Dashboard-scoped
+  // quick actions only existed while the Dashboard was mounted). run() handlers
+  // are passed in stably from App so this useMemo and its registration don't
+  // re-fire each render.
+  const createCommands = useMemo<Command[]>(() => [
+    {
+      id: 'create-task',
+      label: 'New task',
+      desc: 'Open the task composer',
+      icon: 'fa-check',
+      kind: 'action',
+      keywords: ['add', 'todo', 'create task', 'new task'],
+      run: onNewTask,
+    },
+    {
+      id: 'create-contact',
+      label: 'New contact',
+      desc: 'Add a new contact',
+      icon: 'fa-user-plus',
+      kind: 'action',
+      keywords: ['add person', 'create contact', 'new person'],
+      run: onNewContact,
+    },
+  ], [onNewTask, onNewContact]);
+
   // Register navigation as a separate scope from help so registries are
   // organized by intent and easy to debug.
   useRegisterCommands('app:navigation', { commands: navCommands });
   useRegisterCommands('app:help',       { commands: helpCommands });
+  useRegisterCommands('app:create',     { commands: createCommands });
 
   return null;
 };
@@ -416,6 +450,24 @@ const App: React.FC = () => {
   const [showLogoPreview, setShowLogoPreview] = useState(false);
   const [settingsSection, setSettingsSection] = useState<string | undefined>(undefined);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
+
+  // Stable handlers backing the global "New task" / "New contact" palette
+  // commands (registered in AppCommandRegistrar). They reuse the exact
+  // openTaskPanel / openAddContact intent bridge the Dashboard quick-actions and
+  // the AI action handler already use: set the intent, switch view, then clear
+  // it after the destination consumes it (Calendar/Contacts seed from it on
+  // mount and via their false→true effect on the warm path). useCallback keeps
+  // their identity stable so the command registration doesn't re-fire per render.
+  const handleNewTask = useCallback(() => {
+    setOpenTaskPanel(true);
+    setView(AppView.CALENDAR);
+    setTimeout(() => setOpenTaskPanel(false), 100);
+  }, []);
+  const handleNewContact = useCallback(() => {
+    setOpenAddContact(true);
+    setView(AppView.CONTACTS);
+    setTimeout(() => setOpenAddContact(false), 100);
+  }, []);
   const navRef = useRef<HTMLElement>(null);
   const preservedScrollTop = useRef<number | null>(null);
 
@@ -1095,7 +1147,7 @@ const App: React.FC = () => {
           Sections register their commands via useRegisterCommands so the
           palette aggregates Pulse-wide actions and section-specific ones. */}
       <GlobalCommandPalette />
-      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} />
+      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
           (g m → Map, g c → Contacts, …) plus a `?` overlay listing them
