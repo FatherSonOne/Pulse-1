@@ -187,6 +187,7 @@ interface AppCommandRegistrarProps {
   onOpenContact: (id: string) => void;
   onMessageContact: (id: string) => void;
   onMeetContact: (id: string) => void;
+  onVoxContact: (id: string) => void;
   // Compose-email intent. Gated on emailEnabled inside the registrar (see
   // emailCommands) so it never surfaces when the Email surface is off.
   onComposeEmail: () => void;
@@ -206,6 +207,7 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   onOpenContact,
   onMessageContact,
   onMeetContact,
+  onVoxContact,
   onComposeEmail,
   onStartMeeting,
 }) => {
@@ -450,9 +452,18 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
         group: 'People',
         run: () => onMeetContact(c.id),
       });
+      cmds.push({
+        id: `person-vox-${c.id}`,
+        label: `Vox ${display}`,
+        desc: 'Send a voice message',
+        icon: 'fa-microphone',
+        kind: 'action',
+        group: 'People',
+        run: () => onVoxContact(c.id),
+      });
     }
     return cmds;
-  }, [contacts, onOpenContact, onMessageContact, onMeetContact]);
+  }, [contacts, onOpenContact, onMessageContact, onMeetContact, onVoxContact]);
 
   // Register navigation as a separate scope from help so registries are
   // organized by intent and easy to debug.
@@ -606,6 +617,16 @@ const App: React.FC = () => {
   const handleMeetContact = useCallback((id: string) => {
     setSelectedContactId(id);
     setView(AppView.MEETINGS);
+  }, []);
+  // "Vox <name>" palette command (Tier D / D2). Sets selectedContactId + routes
+  // to Relay, which lands on Direct with the contact selected. Direct's recorder
+  // arms itself once a contact is the send target (enabled: !!activeContactId),
+  // so the FloatingMic is ready and the user clicks to record. No auto-mic — the
+  // click is the consenting gesture. Same path Contacts' handleContactAction('vox')
+  // already uses.
+  const handleVoxContact = useCallback((id: string) => {
+    setSelectedContactId(id);
+    setView(AppView.RELAY);
   }, []);
   // "Compose email" palette command (Tier D / D1). Two-path bridge mirroring the
   // contacts open-card pattern: stash a pending intent in sessionStorage (drained
@@ -1327,7 +1348,7 @@ const App: React.FC = () => {
           Sections register their commands via useRegisterCommands so the
           palette aggregates Pulse-wide actions and section-specific ones. */}
       <GlobalCommandPalette />
-      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} />
+      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onVoxContact={handleVoxContact} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
           (g m → Map, g c → Contacts, …) plus a `?` overlay listing them
