@@ -12,6 +12,24 @@
 
 ---
 
+## STATUS — continuation session 2026-06-05 (later same day)
+
+The three follow-ups were worked in the doc's suggested order. Outcome:
+
+| # | Follow-up | Status | Commit |
+|---|---|---|---|
+| 3 | Curate vestigial flags out of global Features & Labs | **SHIPPED** (safe path; kept the priority/advanced two-card split) | `30423bd` |
+| 1 | Remove dead `isPriority` path in `FeatureSettingsPanel` | **SHIPPED** (all 9 touch-points; output byte-identical) | `20c7cc0` |
+| 2 | Unify on ONE shared `Switch` | **DEFERRED** by decision — see the banner in §2 | — |
+
+Both shipped commits type-checked at **918 total errors = baseline** (zero in any
+touched file) and passed gitleaks. Decisions taken this session: §3 → **safe
+curation, keep both cards**; §1 → **delete now**; §2 → **defer** (real refactor of
+9+ surfaces, two theming models, not pixel-identical, no headless visual
+verification — internal-DRY-only payoff didn't justify the cross-surface risk).
+
+---
+
 ## 0. Context — what shipped this session
 
 A `/impeccable critique` of the **global** Features & Labs settings surface
@@ -85,6 +103,35 @@ behavior — only dead code to (optionally) remove.
 ---
 
 ## 2. Follow-up — unify on ONE shared Switch component
+
+> **DEFERRED 2026-06-05 (continuation session).** After verifying ground truth,
+> the unification was deferred. Why: the two toggles are visually *matched on the
+> on-state* but **not pixel-identical**, and they use **two different theming
+> models**, so a literal "one shared Switch" would change pixels across up to 9
+> surfaces and the unified primitive would carry *both* theming models (more
+> complexity than the duplication it removes). The payoff is internal DRY only —
+> zero user-facing change — and it can't be visually verified headless.
+> Quantified deltas found this session (the real values, not the "visually
+> matched" summary in §2.1):
+>
+> | | `ToggleItem` | panel `md` | panel `lg` |
+> |---|---|---|---|
+> | track px | 48×24, knob **16**, travel 24 | 44×24, knob **18**, travel 20 | 52×28, knob 22 |
+> | off-track (light) | `zinc-300 #d4d4d8` | `#e4e4e7` (zinc-200, `t.toggleOff`) | same |
+> | off-track (dark) | `zinc-700 #3f3f46` | `#3f3f46` (`t.toggleOff`) — matches | same |
+> | knob off / on-light | `#ffffff` | `#fafafa` (`t.toggleKnob`) | `#fafafa` |
+> | knob on-dark | `#18181b` (zinc-900) — matches | `#18181b` | `#18181b` |
+> | on-track | `#27272a`/`#e4e4e7` — **matches** | `#27272a`/`#e4e4e7` | same |
+> | theming | Tailwind `dark:` (no `isDark`) | inline + `isDark` + `t` object | same |
+> | structure | **row IS the switch** (label+desc+pill) | **bare pill control** (no label) | same |
+>
+> **Revisit when:** the panel migrates off its inline `ThemeShape`/`isDark` model
+> onto Tailwind (then a single Tailwind `Switch` is clean), OR a third consumer
+> needs the bare pill. Until then the focused pair is the lower-risk state.
+> If picked up, the **additive** plan is: new `shared/Switch.tsx` with a size
+> matching `ToggleItem`'s 48×24/16 plus `md`/`lg`, parameterized to preserve every
+> call site's exact pixels, migrated one site at a time (commit each) — and a
+> required browser eyeball (light+dark) at the end.
 
 ### 2.1 Ground truth
 There are **two** toggle implementations, now visually matched but still
