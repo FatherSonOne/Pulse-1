@@ -87,8 +87,23 @@ class PushNotificationService {
     }
 
     try {
-      // Get service worker registration
-      const registration = await navigator.serviceWorker.ready;
+      // Get service worker registration. navigator.serviceWorker.ready ONLY
+      // resolves once a SW is active and controlling the page. SW registration
+      // is PROD-gated (main.tsx) and no live component mounts useServiceWorker,
+      // so in dev — and during the pre-activation window in prod — `.ready`
+      // never resolves. Awaiting it bare froze the onboarding "Requesting…"
+      // spinner forever and, because Notifications is a required step, blocked
+      // the whole permission wizard from ever reaching Contacts/Location. Bound
+      // it with a timeout so a missing/inactive SW degrades to "no subscription"
+      // instead of an indefinite hang.
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+      ]);
+      if (!registration) {
+        console.warn('[Push] No active service worker (ready timed out); skipping subscribe');
+        return null;
+      }
 
       // Check if already subscribed
       let subscription = await registration.pushManager.getSubscription();

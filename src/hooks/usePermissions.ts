@@ -109,13 +109,18 @@ export const requestNotificationPermission = async (): Promise<PermissionState> 
       // (supabase/functions/send-push, #101) has a row in push_subscriptions to
       // deliver to. Notification.requestPermission() only flips the browser
       // permission — without this, the onboarding "Allow Notifications" grant
-      // never produced a subscription and the table stayed empty. Best-effort:
-      // a subscribe failure must not change the reported permission state.
-      try {
-        await pushNotificationService.subscribe();
-      } catch (subErr) {
+      // never produced a subscription and the table stayed empty.
+      //
+      // Fire-and-forget: the permission grant must NEVER wait on (or hang on)
+      // the subscription. subscribe() awaits navigator.serviceWorker.ready,
+      // which never resolves when no SW is active — awaiting it here froze the
+      // "Requesting…" spinner on the required Notifications step and trapped the
+      // whole setup wizard. The grant is what the UI needs to advance; the
+      // subscription is best-effort and registers in the background once a SW is
+      // available (notificationStore re-fires it idempotently on next load).
+      void pushNotificationService.subscribe().catch((subErr) => {
         console.warn('[Permissions] Web Push subscribe failed:', subErr);
-      }
+      });
     }
     return {
       granted: result === 'granted',
