@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini API Key Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #0a0a0a;
+      color: #e5e5e5;
+    }
+    h1 {
+      color: #e11d48;
+      border-bottom: 2px solid #e11d48;
+      padding-bottom: 10px;
+    }
+    .test-card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+    .status.loading {
+      background: #fbbf24;
+      color: #000;
+    }
+    .status.success {
+      background: #10b981;
+      color: #fff;
+    }
+    .status.error {
+      background: #ef4444;
+      color: #fff;
+    }
+    .status.info {
+      background: #3b82f6;
+      color: #fff;
+    }
+    .result {
+      background: #0f0f0f;
+      border: 1px solid #2a2a2a;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    button {
+      background: linear-gradient(135deg, #e11d48, #db2777);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .key-info {
+      background: #1e293b;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .key-value {
+      font-family: 'Courier New', monospace;
+      color: #10b981;
+    }
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      background: #0f0f0f;
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #e5e5e5;
+      font-family: 'Courier New', monospace;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔑 Gemini API Key Diagnostic Tool</h1>
+
+  <div class="test-card">
+    <h2>📋 Instructions</h2>
+    <p>This tool tests your Gemini API key configuration. It checks:</p>
+    <ol>
+      <li>If API key is saved in browser localStorage</li>
+      <li>If the API key actually works by making a test API call</li>
+    </ol>
+    <p><strong>Note:</strong> Environment variables (VITE_GEMINI_API_KEY) can only be checked when running through the Pulse app itself.</p>
+  </div>
+
+  <div class="test-card">
+    <h2>LocalStorage Configuration</h2>
+    <div id="storage-check"></div>
+  </div>
+
+  <div class="test-card">
+    <h2>Manual API Key Entry (Optional)</h2>
+    <p>If localStorage doesn't have your key, you can paste it here to test:</p>
+    <input type="password" id="manual-key" placeholder="Paste your Gemini API key here (AIza...)">
+    <button onclick="saveToLocalStorage()">Save to LocalStorage</button>
+  </div>
+
+  <div class="test-card">
+    <h2>API Key Test
+      <span id="test-status" class="status info">Not Started</span>
+    </h2>
+    <p>This will make a simple API call to verify the key works.</p>
+    <button id="test-btn" onclick="testApiKey()">Test API Key</button>
+    <div id="test-result"></div>
+  </div>
+
+  <script>
+    // Check localStorage
+    function checkLocalStorage() {
+      const storageDiv = document.getElementById('storage-check');
+      const geminiKey = localStorage.getItem('gemini_api_key');
+
+      let html = '<div class="key-info">';
+
+      if (geminiKey) {
+        const masked = geminiKey.substring(0, 10) + '...' + geminiKey.substring(geminiKey.length - 4);
+        html += `<strong>gemini_api_key:</strong> <span class="status success">FOUND</span><br>`;
+        html += `<span class="key-value">${masked}</span>`;
+      } else {
+        html += `<strong>gemini_api_key:</strong> <span class="status error">NOT FOUND</span><br>`;
+        html += `<em>API key not found in localStorage. Either:<br>`;
+        html += `1. Set it in Pulse app Settings, or<br>`;
+        html += `2. Use the manual entry field below to test</em>`;
+      }
+
+      html += '</div>';
+      storageDiv.innerHTML = html;
+    }
+
+    // Save manual key to localStorage
+    function saveToLocalStorage() {
+      const manualKey = document.getElementById('manual-key').value;
+      if (!manualKey) {
+        alert('Please enter an API key');
+        return;
+      }
+
+      localStorage.setItem('gemini_api_key', manualKey);
+      alert('API key saved to localStorage!');
+      checkLocalStorage();
+      document.getElementById('manual-key').value = '';
+    }
+
+    // Test the API key
+    async function testApiKey() {
+      const statusEl = document.getElementById('test-status');
+      const resultEl = document.getElementById('test-result');
+      const btnEl = document.getElementById('test-btn');
+
+      // Get API key from localStorage or manual input
+      let apiKey = localStorage.getItem('gemini_api_key');
+
+      if (!apiKey) {
+        apiKey = document.getElementById('manual-key').value;
+      }
+
+      if (!apiKey) {
+        statusEl.className = 'status error';
+        statusEl.textContent = 'ERROR';
+        resultEl.innerHTML = '<div class="result">No API key found.<br><br>To fix:<br>1. Enter your API key in the manual entry field above, OR<br>2. Go to Settings in your Pulse app and save it there<br>3. Click "Test API Key" again</div>';
+        return;
+      }
+
+      statusEl.className = 'status loading';
+      statusEl.textContent = 'TESTING...';
+      btnEl.disabled = true;
+      resultEl.innerHTML = '';
+
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{ text: 'Say "Hello! API key is working correctly." in exactly those words.' }]
+              }]
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(JSON.stringify(errorData, null, 2));
+        }
+
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response text';
+
+        statusEl.className = 'status success';
+        statusEl.textContent = 'SUCCESS ✓';
+        resultEl.innerHTML = `<div class="result"><strong>✓ API Key is working!</strong><br><br><strong>Response:</strong><br>${text}<br><br><strong>Model Used:</strong> gemini-2.5-flash<br><br><strong>All AI features should work correctly in your app!</strong></div>`;
+      } catch (error) {
+        statusEl.className = 'status error';
+        statusEl.textContent = 'FAILED ✗';
+
+        let errorMsg = error.message;
+
+        // Check for common errors
+        if (errorMsg.includes('403') || errorMsg.includes('API_KEY_INVALID')) {
+          errorMsg = 'API Key is invalid or has been revoked.\n\nTo fix:\n1. Go to https://aistudio.google.com/apikey\n2. Create a new API key\n3. Update it in Settings or paste it above\n4. Try again';
+        } else if (errorMsg.includes('429')) {
+          errorMsg = 'Rate limit exceeded. Wait a moment and try again.';
+        } else if (errorMsg.includes('PERMISSION_DENIED')) {
+          errorMsg = 'API key doesn\'t have permission for this model.\n\nEnsure your API key has access to Gemini 2.0 Flash.';
+        }
+
+        resultEl.innerHTML = `<div class="result"><strong>✗ Error:</strong><br><br>${errorMsg}</div>`;
+      } finally {
+        btnEl.disabled = false;
+      }
+    }
+
+    // Initialize on load
+    checkLocalStorage();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Know Your Network — Design Playground</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ctrl-bg: #0d0d0f;
+    --ctrl-border: #1e1e24;
+    --ctrl-label: #6b7280;
+    --ctrl-text: #e4e4e7;
+    --ctrl-accent: #f43f5e;
+    --ctrl-accent2: #6366f1;
+    --ctrl-slider-track: #1e1e24;
+    --ctrl-slider-thumb: #f43f5e;
+    --ctrl-section: #111115;
+    --radius: 8px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #08080a;
+    color: var(--ctrl-text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Controls Panel ──────────────────────────────────── */
+  #controls {
+    width: 280px;
+    min-width: 280px;
+    background: var(--ctrl-bg);
+    border-right: 1px solid var(--ctrl-border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .ctrl-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--ctrl-border);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ctrl-label);
+  }
+  .ctrl-header span { color: var(--ctrl-accent); }
+
+  .ctrl-group {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--ctrl-border);
+  }
+
+  .ctrl-group-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ctrl-label);
+    margin-bottom: 10px;
+  }
+
+  .ctrl-row { margin-bottom: 12px; }
+  .ctrl-row:last-child { margin-bottom: 0; }
+  .ctrl-row-label {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ctrl-row-label span { color: var(--ctrl-accent); font-weight: 700; }
+
+  /* Button group */
+  .btn-group {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+  }
+  .btn-opt {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 5px;
+    border: 1px solid var(--ctrl-border);
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .btn-opt:hover { border-color: #374151; color: #d1d5db; }
+  .btn-opt.active {
+    background: rgba(244,63,94,0.15);
+    border-color: rgba(244,63,94,0.5);
+    color: #f43f5e;
+  }
+  .btn-opt.active-indigo {
+    background: rgba(99,102,241,0.15);
+    border-color: rgba(99,102,241,0.5);
+    color: #818cf8;
+  }
+
+  /* Slider */
+  .slider {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--ctrl-slider-track);
+    outline: none;
+    cursor: pointer;
+  }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: var(--ctrl-slider-thumb);
+    box-shadow: 0 0 6px rgba(244,63,94,0.6);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 11px;
+    color: #9ca3af;
+  }
+  .toggle-row:last-child { margin-bottom: 0; }
+  .toggle {
+    position: relative;
+    width: 34px; height: 18px;
+    cursor: pointer;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: #1f2937;
+    border-radius: 9px;
+    transition: background 0.2s;
+    border: 1px solid #374151;
+  }
+  .toggle input:checked + .toggle-track { background: rgba(244,63,94,0.5); border-color: rgba(244,63,94,0.6); }
+  .toggle-thumb {
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 12px; height: 12px;
+    background: #6b7280;
+    border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(16px); background: #f43f5e; }
+
+  /* Select */
+  select {
+    width: 100%;
+    padding: 5px 8px;
+    background: #111115;
+    border: 1px solid var(--ctrl-border);
+    border-radius: 5px;
+    color: var(--ctrl-text);
+    font-size: 11px;
+    cursor: pointer;
+    outline: none;
+  }
+  select:focus { border-color: rgba(244,63,94,0.4); }
+
+  .ctrl-footer {
+    padding: 14px 16px;
+    margin-top: auto;
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--ctrl-border);
+  }
+  .btn-reset, .btn-export {
+    flex: 1;
+    padding: 7px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: 5px;
+    border: 1px solid var(--ctrl-border);
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-reset:hover { border-color: #374151; color: var(--ctrl-text); }
+  .btn-export {
+    background: rgba(244,63,94,0.1);
+    border-color: rgba(244,63,94,0.3);
+    color: #f43f5e;
+  }
+  .btn-export:hover { background: rgba(244,63,94,0.2); }
+
+  /* ── Right Side: Preview + Prompt ──────────────────────── */
+  #right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #preview {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    transition: background 0.5s;
+  }
+
+  /* Prompt output */
+  #prompt-bar {
+    background: #0d0d0f;
+    border-top: 1px solid var(--ctrl-border);
+    padding: 10px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    min-height: 64px;
+    max-height: 100px;
+  }
+  #prompt-text {
+    flex: 1;
+    font-size: 10px;
+    line-height: 1.5;
+    color: #6b7280;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    overflow-y: auto;
+    max-height: 80px;
+  }
+  #copy-btn {
+    padding: 6px 12px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    border-radius: 5px;
+    background: rgba(99,102,241,0.15);
+    border: 1px solid rgba(99,102,241,0.4);
+    color: #818cf8;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #copy-btn:hover { background: rgba(99,102,241,0.25); }
+  #copy-btn.copied { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); color: #34d399; }
+
+  /* ──────────────────────────────────────────────────────────
+     SECTION STYLES (injected into preview)
+  ────────────────────────────────────────────────────────── */
+
+  .kyn-section {
+    position: relative;
+    overflow: hidden;
+    padding: 80px 32px;
+    transition: background 0.6s, padding 0.4s;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .kyn-section.light-mode { --text-primary: #0f0f11; --text-secondary: #4b5563; --text-muted: #9ca3af; --card-bg: rgba(255,255,255,0.8); --card-border: rgba(0,0,0,0.08); }
+  .kyn-section:not(.light-mode) { --text-primary: #f4f4f5; --text-secondary: #a1a1aa; --text-muted: #52525b; --card-bg: rgba(9,9,11,0.85); --card-border: rgba(255,255,255,0.05); }
+
+  /* grid overlay */
+  .kyn-grid-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    background-image:
+      linear-gradient(rgba(99,102,241,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,102,241,0.06) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .kyn-grid-overlay.visible { opacity: 1; }
+
+  /* canvas bg */
+  #kyn-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .kyn-inner {
+    position: relative;
+    z-index: 10;
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* ── Layout: hub ──────────── */
+  .kyn-layout-hub .kyn-header { text-align: center; align-items: center; display: flex; flex-direction: column; }
+  .kyn-layout-hub .kyn-body { display: flex; flex-direction: column; align-items: center; gap: 48px; }
+  .kyn-layout-hub .kyn-viz-wrap { width: 100%; max-width: 600px; }
+  .kyn-layout-hub .kyn-cards-wrap { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 800px; }
+  .kyn-layout-hub .kyn-logos-panel { width: 100%; max-width: 800px; }
+
+  /* ── Layout: stack ────────── */
+  .kyn-layout-stack .kyn-header { align-items: flex-start; display: flex; flex-direction: column; }
+  .kyn-layout-stack .kyn-body { display: flex; flex-direction: column; gap: 48px; }
+  .kyn-layout-stack .kyn-viz-wrap { width: 100%; }
+  .kyn-layout-stack .kyn-cards-wrap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .kyn-layout-stack .kyn-logos-panel { width: 100%; }
+
+  /* ── Layout: asymmetric ───── */
+  .kyn-layout-asym .kyn-header { align-items: flex-start; display: flex; flex-direction: column; }
+  .kyn-layout-asym .kyn-body { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  .kyn-layout-asym .kyn-viz-wrap { width: 100%; }
+  .kyn-layout-asym .kyn-left-col { display: flex; flex-direction: column; gap: 24px; }
+  .kyn-layout-asym .kyn-cards-wrap { display: flex; flex-direction: column; gap: 12px; }
+  .kyn-layout-asym .kyn-logos-panel { width: 100%; }
+
+  /* ── Header ───────────────── */
+  .kyn-header { margin-bottom: 40px; }
+
+  .kyn-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 100px;
+    background: rgba(244,63,94,0.1);
+    border: 1px solid rgba(244,63,94,0.25);
+    color: #f43f5e;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+  }
+
+  .kyn-pill svg { width: 12px; height: 12px; }
+
+  .kyn-headline {
+    font-weight: 800;
+    line-height: 1.05;
+    background: linear-gradient(135deg, #ffffff 0%, #ffd0d8 60%, #f9a8d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+    transition: font-size 0.3s;
+  }
+  .light-mode .kyn-headline {
+    background: linear-gradient(135deg, #0f0f11 0%, #881337 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  .kyn-subtext {
+    max-width: 580px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    transition: font-size 0.3s;
+  }
+
+  /* Typography scale */
+  .typo-compact .kyn-headline { font-size: clamp(28px, 4vw, 44px); }
+  .typo-compact .kyn-subtext { font-size: 14px; }
+  .typo-balanced .kyn-headline { font-size: clamp(36px, 5vw, 60px); }
+  .typo-balanced .kyn-subtext { font-size: 16px; }
+  .typo-massive .kyn-headline { font-size: clamp(48px, 6vw, 88px); }
+  .typo-massive .kyn-subtext { font-size: 18px; }
+
+  /* ── Viz canvas wrapper ───── */
+  .kyn-viz-wrap {
+    position: relative;
+    height: 340px;
+    border-radius: 20px;
+    overflow: hidden;
+  }
+  .kyn-layout-hub .kyn-viz-wrap { height: 380px; }
+
+  #contact-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 20px;
+  }
+
+  .viz-label {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgba(244,63,94,0.6);
+    pointer-events: none;
+  }
+
+  /* ── Cards ────────────────── */
+  .kyn-card {
+    padding: 18px 20px;
+    border-radius: 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    transition: border-color 0.3s, transform 0.2s, box-shadow 0.3s;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+  .kyn-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    background: radial-gradient(circle at 0% 0%, rgba(244,63,94,0.06) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .kyn-card:hover { transform: translateY(-2px); }
+  .kyn-card:hover::before { opacity: 1; }
+
+  /* Card styles */
+  .card-glass .kyn-card {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  }
+  .card-glass .kyn-card:hover { border-color: rgba(244,63,94,0.3); box-shadow: 0 8px 40px rgba(244,63,94,0.08); }
+
+  .card-solid .kyn-card {
+    background: #0d0d10;
+    border: 1px solid #1a1a1f;
+  }
+  .card-solid .kyn-card:hover { border-color: rgba(244,63,94,0.3); }
+
+  .card-bordered .kyn-card {
+    background: transparent;
+    border: 1px solid rgba(244,63,94,0.2);
+  }
+  .card-bordered .kyn-card:hover { border-color: rgba(244,63,94,0.5); background: rgba(244,63,94,0.03); }
+
+  .card-minimal .kyn-card {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-radius: 0;
+    padding: 16px 4px;
+  }
+  .card-minimal .kyn-card:hover { border-bottom-color: rgba(244,63,94,0.4); transform: none; }
+
+  .light-mode .card-glass .kyn-card { background: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.06); }
+  .light-mode .card-solid .kyn-card { background: #f9f9fb; border: 1px solid #e5e7eb; }
+
+  .kyn-card-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .kyn-card-icon svg { width: 16px; height: 16px; }
+
+  .kyn-card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+  }
+  .kyn-card-desc {
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  .kyn-card-inline {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .kyn-card-inline .kyn-card-icon { margin-bottom: 0; }
+
+  /* ── Logos Vision panel ───── */
+  .kyn-logos-panel {
+    border-radius: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    overflow: hidden;
+  }
+  .card-glass .kyn-logos-panel {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(99,102,241,0.15);
+    backdrop-filter: blur(20px);
+  }
+
+  .logos-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .light-mode .logos-header { border-bottom-color: rgba(0,0,0,0.05); }
+
+  .logos-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+    flex-shrink: 0;
+  }
+  .logos-icon svg { width: 16px; height: 16px; color: white; }
+
+  .logos-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+  .logos-sub { font-size: 10px; color: #818cf8; margin-top: 1px; }
+
+  .logos-status {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #34d399;
+  }
+
+  .logos-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #34d399;
+    position: relative;
+  }
+  .logos-dot::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: rgba(52,211,153,0.3);
+    animation: kyn-ping 1.5s cubic-bezier(0,0,0.2,1) infinite;
+  }
+
+  @keyframes kyn-ping {
+    0% { transform: scale(1); opacity: 0.75; }
+    100% { transform: scale(2); opacity: 0; }
+  }
+
+  .logos-items { padding: 14px 20px; display: flex; flex-direction: column; gap: 10px; }
+
+  .logos-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(99,102,241,0.04);
+    border: 1px solid rgba(99,102,241,0.08);
+    transition: border-color 0.3s, background 0.3s;
+    cursor: default;
+  }
+  .logos-item:hover {
+    border-color: rgba(99,102,241,0.25);
+    background: rgba(99,102,241,0.08);
+  }
+
+  .logos-item-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .logos-item-icon svg { width: 13px; height: 13px; }
+
+  .logos-item-title { font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+  .logos-item-desc { font-size: 10px; line-height: 1.55; color: var(--text-secondary); }
+
+  /* Sync animation - data flow line */
+  .sync-flow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+  }
+  .sync-dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0;
+    animation: sync-travel 1.8s ease-in-out infinite;
+  }
+  .sync-dot:nth-child(2) { animation-delay: 0.3s; }
+  .sync-dot:nth-child(3) { animation-delay: 0.6s; }
+  @keyframes sync-travel {
+    0%, 100% { opacity: 0; transform: scale(0.5); }
+    50% { opacity: 0.8; transform: scale(1); }
+  }
+
+  /* ── CTA ──────────────────── */
+  .kyn-cta-wrap {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+  .kyn-layout-hub .kyn-cta-wrap { justify-content: center; }
+
+  .kyn-cta {
+    padding: 11px 24px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+
+  .cta-gradient .kyn-cta:first-child {
+    background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+    color: white;
+    box-shadow: 0 4px 20px rgba(244,63,94,0.35);
+  }
+  .cta-gradient .kyn-cta:first-child:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(244,63,94,0.45); }
+  .cta-gradient .kyn-cta.secondary { background: transparent; border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
+
+  .cta-ghost .kyn-cta:first-child {
+    background: transparent;
+    border: 1px solid rgba(244,63,94,0.5);
+    color: #f43f5e;
+  }
+  .cta-ghost .kyn-cta.secondary { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+
+  .cta-filled .kyn-cta:first-child {
+    background: #f43f5e;
+    color: white;
+    box-shadow: 0 2px 12px rgba(244,63,94,0.25);
+  }
+  .cta-text .kyn-cta:first-child {
+    background: none;
+    color: #f43f5e;
+    padding-left: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .cta-text .kyn-cta.secondary { display: none; }
+
+  /* ── Animated icons (used inline in kyn-card-icon) ── */
+  @keyframes throb {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.25); opacity: 0.8; }
+  }
+  @keyframes orbit {
+    from { transform: rotate(0deg) translateX(0) rotate(0deg); }
+    to { transform: rotate(360deg) translateX(0) rotate(-360deg); }
+  }
+  @keyframes bar-pulse {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.5); }
+  }
+  @keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes sparkle-pop {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.8); opacity: 0; }
+  }
+
+  .icon-throb { animation: throb 2s ease-in-out infinite; }
+  .icon-orbit-group { animation: orbit 4s linear infinite; transform-origin: 10px 10px; }
+  .icon-bar-a { animation: bar-pulse 1.6s ease-in-out 0s infinite; transform-origin: 3px 18px; }
+  .icon-bar-b { animation: bar-pulse 1.6s ease-in-out 0.2s infinite; transform-origin: 8px 18px; }
+  .icon-bar-c { animation: bar-pulse 1.6s ease-in-out 0.4s infinite; transform-origin: 13px 18px; }
+  .icon-bar-d { animation: bar-pulse 1.6s ease-in-out 0.6s infinite; transform-origin: 17.5px 18px; }
+  .icon-flash { animation: flash 1.4s ease-in-out infinite; }
+  .icon-spin { animation: spin-slow 3s linear infinite; }
+  .icon-sparkle { animation: sparkle-pop 1.8s ease-in-out infinite; }
+
+  /* background color variants */
+  .bg-dark-cinema { background: #050508; }
+  .bg-deep-teal { background: #020d12; }
+  .bg-indigo-space { background: #050510; }
+  .bg-rose-deep { background: #0a0406; }
+  .light-mode.bg-dark-cinema, .light-mode.bg-deep-teal,
+  .light-mode.bg-indigo-space, .light-mode.bg-rose-deep { background: #f8f8fc; }
+
+  /* ── Scrollbar ───────────── */
+  #controls::-webkit-scrollbar { width: 4px; }
+  #controls::-webkit-scrollbar-track { background: transparent; }
+  #controls::-webkit-scrollbar-thumb { background: #1e1e24; border-radius: 2px; }
+  #preview::-webkit-scrollbar { width: 6px; }
+  #preview::-webkit-scrollbar-track { background: #08080a; }
+  #preview::-webkit-scrollbar-thumb { background: #1e1e24; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ── Controls Panel ────────────────────────────────────── -->
+<div id="controls">
+  <div class="ctrl-header">Design Playground &mdash; <span>Know Your Network</span></div>
+
+  <!-- Layout -->
+  <div class="ctrl-group">
+    <div class="ctrl-group-label">Layout</div>
+    <div class="ctrl-row">
+      <div class="ctrl-row-label">Mode</div>
+      <div class="btn-group" id="ctrl-layout">
+        <button class="btn-opt" data-val="hub">Hub</button>
+        <button class="btn-opt active" data-val="stack">Stack</button>
+        <button class="btn-opt" data-val="asym">Asym</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Background / Theme -->
+  <div class="ctrl-group">
+    <div class="ctrl-group-label">Background</div>
+    <div class="ctrl-row">
+      <div class="ctrl-row-label">Palette</div>
+      <div class="btn-group" id="ctrl-bg">
+        <button class="btn-opt active" data-val="dark-cinema">Cinema</button>
+        <button class="btn-opt" data-val="deep-teal">Teal</button>
+        <button class="btn-opt" data-val="indigo-space">Indigo</button>
+        <button class="btn-opt" data-val="rose-deep">Rose</button>
+      </div>
+    </div>
+    <div class="ctrl-row">
+      <div class="ctrl-row-label">Glow Intensity <span id="lbl-glow">60</span>%</div>
+      <input type="range" class="slider" id="ctrl-glow" min="0" max="100" value="60" />
+    </div>
+    <div class="toggle-row">
+      <span>Grid Overlay</span>
+      <label class="toggle">
+        <input type="checkbox" id="ctrl-grid" />
+        <span class="toggle-track"></span>
+        <span class="toggle-thumb"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span>Light Mode</span>
+      <label class="toggle">
+        <input type="checkbox" id="ctrl-light" />
+        <span class="toggle-track"></span>
+        <span class="toggle-thumb"></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Canvas / Viz -->
+  <div class="ctrl-group">
+    <div class="ctrl-group-label">Contact Visualization</div>
+    <div class="ctrl-row">
+      <div class="ctrl-row-label">Canvas Mode</div>
+      <div class="btn-group" id="ctrl-canvas">
+        <button class="btn-opt active" data-val="orbit">Orbit</button>
+        <button class="btn-opt" data-val="bubble">Bubble</button>
+        <button class="btn-opt" data-val="mesh">Mesh</button>
+        <button class="btn-opt" data-val="radial">Radial</button>
+      </div>
+    </div>
+    <div class="ctrl-row">
+      <div class="ctrl-row-label">Animation Speed <span id="lbl-speed">65</span>%</div>
+      <input type="range" class="slider" id="ctrl-speed" min="0" max="100" value="65" />
+    </div>
+    <div class="ctrl-row">
+      <div class="ctrl-row-label">Node Density <span id="lbl-density">50</span>%</div>
+      <input type="range" class="slider" id="ctrl-density" min="10" max="100" value="50" />
+    </div>
+  </div>
+
+  <!-- Cards -->
+  <div class="ctrl-group">
+    <div class="ctrl-group-label">Cards</div>
+    <div class="ctrl-row">
+      <div class="ctrl-row-label">Style</div>
+      <div class="btn-group" id="ctrl-card">
+        <button class="btn-opt active" data-val="glass">Glass</button>
+        <button class="btn-opt" data-val="solid">Solid</button>
+        <button class="btn-opt" data-val="bordered">Border</button>
+        <button class="btn-opt" data-val="minimal">Minimal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Typography -->
+  <div class="ctrl-group">
+    <div class="ctrl-group-label">Typography</div>
+    <div class="ctrl-row">
+      <div class="ctrl-row-label">Scale</div>
+      <div class="btn-group" id="ctrl-typo">
+        <button class="btn-opt" data-val="compact">Compact</button>
+        <button class="btn-opt active" data-val="balanced">Balanced</button>
+        <button class="btn-opt" data-val="massive">Massive</button>
+      </div>
+    </div>
+    <div class="ctrl-row">
+      <div class="ctrl-row-label">Tagline variant</div>
+      <select id="ctrl-tagline">
+        <option value="0">Deep relationship intelligence…</option>
+        <option value="1">Your network is your net worth.</option>
+        <option value="2">Every contact, scored. Every conversation, tracked.</option>
+        <option value="3">Intelligence that keeps relationships alive.</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="ctrl-group">
+    <div class="ctrl-group-label">CTA</div>
+    <div class="ctrl-row">
+      <div class="ctrl-row-label">Style</div>
+      <div class="btn-group" id="ctrl-cta">
+        <button class="btn-opt active" data-val="gradient">Gradient</button>
+        <button class="btn-opt" data-val="ghost">Ghost</button>
+        <button class="btn-opt" data-val="filled">Filled</button>
+        <button class="btn-opt" data-val="text">Text</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ctrl-footer">
+    <button class="btn-reset" id="btn-reset">Reset</button>
+    <button class="btn-export" id="btn-copy-prompt">Copy Prompt</button>
+  </div>
+</div>
+
+<!-- ── Preview + Prompt ──────────────────────────────────── -->
+<div id="right">
+  <div id="preview">
+    <!-- Section rendered here by JS -->
+    <section id="kyn-section" class="kyn-section kyn-layout-stack bg-dark-cinema typo-balanced card-glass cta-gradient">
+      <canvas id="kyn-canvas"></canvas>
+      <div class="kyn-grid-overlay" id="kyn-grid"></div>
+
+      <div class="kyn-inner">
+
+        <!-- Header -->
+        <div class="kyn-header" id="kyn-header">
+          <div class="kyn-pill">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="8" cy="8" r="2"/><circle cx="8" cy="8" r="6"/>
+              <circle cx="2" cy="8" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="14" cy="8" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="8" cy="2" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="8" cy="14" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+            Relationships and CRM
+          </div>
+          <h2 class="kyn-headline">Know Your Network</h2>
+          <p class="kyn-subtext" id="kyn-subtext">Deep relationship intelligence with 0–100 health scoring, contact circles, and bidirectional sync with Logos Vision — so every conversation in Pulse keeps your case records current.</p>
+          <div class="kyn-cta-wrap">
+            <button class="kyn-cta">See it in action</button>
+            <button class="kyn-cta secondary">Learn more</button>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="kyn-body" id="kyn-body">
+
+          <!-- Contact Viz -->
+          <div class="kyn-viz-wrap" id="kyn-viz-wrap">
+            <canvas id="contact-canvas"></canvas>
+            <div class="viz-label">Contact Intelligence</div>
+          </div>
+
+          <!-- Left col wrapper (asym layout uses this) -->
+          <div class="kyn-left-col" id="kyn-left-col" style="display:contents">
+
+            <!-- Feature Cards -->
+            <div class="kyn-cards-wrap" id="kyn-cards-wrap">
+
+              <div class="kyn-card kyn-card-inline">
+                <div class="kyn-card-icon" style="background:rgba(244,63,94,0.12);border:1px solid rgba(244,63,94,0.2)">
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="#f43f5e" aria-hidden="true">
+                    <path d="M10 17S3 12 3 7a3.5 3.5 0 017-1.3A3.5 3.5 0 0117 7c0 5-7 10-7 10z" class="icon-throb"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="kyn-card-title">Relationship Health Score</div>
+                  <div class="kyn-card-desc">0–100 score from interaction frequency, sentiment &amp; response time. Get alerts before relationships go cold.</div>
+                </div>
+              </div>
+
+              <div class="kyn-card kyn-card-inline">
+                <div class="kyn-card-icon" style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.2)">
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="#818cf8" aria-hidden="true">
+                    <circle cx="10" cy="10" r="3"/>
+                    <circle cx="10" cy="10" r="7" fill="none" stroke="#818cf8" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.4"/>
+                    <g class="icon-orbit-group">
+                      <circle cx="10" cy="3" r="1.5"/>
+                    </g>
+                  </svg>
+                </div>
+                <div>
+                  <div class="kyn-card-title">Contact Circles</div>
+                  <div class="kyn-card-desc">Bubble-chart visualization showing your network by proximity, value, and engagement depth.</div>
+                </div>
+              </div>
+
+              <div class="kyn-card kyn-card-inline">
+                <div class="kyn-card-icon" style="background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.2)">
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="#c084fc" aria-hidden="true">
+                    <rect x="1.5"  y="14" width="3" height="4"  rx="1" class="icon-bar-a"/>
+                    <rect x="6.5"  y="10" width="3" height="8"  rx="1" class="icon-bar-b"/>
+                    <rect x="11.5" y="6"  width="3" height="12" rx="1" class="icon-bar-c"/>
+                    <rect x="16.5" y="8"  width="2" height="10" rx="1" class="icon-bar-d"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="kyn-card-title">Network Analytics</div>
+                  <div class="kyn-card-desc">Communication pattern analysis, interaction heatmaps, and predictive engagement recommendations.</div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Logos Vision Panel -->
+            <div class="kyn-logos-panel" id="kyn-logos-panel">
+              <div class="logos-header">
+                <div class="logos-icon">
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round">
+                    <circle cx="10" cy="10" r="3.5"/>
+                    <path d="M10 3v2M10 15v2M3 10h2M15 10h2"/>
+                    <path d="M5.6 5.6l1.4 1.4M13 13l1.4 1.4M5.6 14.4l1.4-1.4M13 7l1.4-1.4"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="logos-title">Logos Vision</div>
+                  <div class="logos-sub">Bidirectional sync — live</div>
+                </div>
+                <div class="logos-status">
+                  <div class="logos-dot"></div>
+                  Connected
+                </div>
+              </div>
+
+              <div class="logos-items">
+
+                <div class="logos-item">
+                  <div class="logos-item-icon" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.25)">
+                    <svg viewBox="0 0 20 20" width="13" height="13" fill="#818cf8" aria-hidden="true">
+                      <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H8L5 14v-3H4a2 2 0 01-2-2V4z"/>
+                      <path d="M8 8a2 2 0 012-2h5a2 2 0 012 2v3a2 2 0 01-2 2h-1v2l-2-2h-2a2 2 0 01-2-2" opacity="0.5"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="logos-item-title">Conversation → Case Log</div>
+                    <div class="logos-item-desc">Send a Voxer message in Pulse — a case log entry is automatically created in Logos Vision.</div>
+                    <div class="sync-flow" style="color:#818cf8">
+                      <div class="sync-dot"></div><div class="sync-dot"></div><div class="sync-dot"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="logos-item">
+                  <div class="logos-item-icon" style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.25)">
+                    <svg viewBox="0 0 20 20" width="13" height="13" fill="#c084fc" aria-hidden="true">
+                      <path d="M11 2L4 12h6l-1 6 7-10h-6z" class="icon-flash"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="logos-item-title">Activity Feed Sync</div>
+                    <div class="logos-item-desc">Every touchpoint in Pulse — calls, messages, notes — surfaces instantly in Logos Vision.</div>
+                    <div class="sync-flow" style="color:#c084fc">
+                      <div class="sync-dot"></div><div class="sync-dot"></div><div class="sync-dot"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="logos-item">
+                  <div class="logos-item-icon" style="background:rgba(236,72,153,0.15);border:1px solid rgba(236,72,153,0.25)">
+                    <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="#f472b6" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                      <line x1="4" y1="16" x2="13" y2="7"/>
+                      <path d="M13 3l2 2-7 7-2-2z" fill="#f472b6" fill-opacity="0.35" stroke-width="1"/>
+                      <circle cx="16" cy="4" r="1" fill="#f472b6" stroke="none" class="icon-sparkle"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="logos-item-title">AI Field Population</div>
+                    <div class="logos-item-desc">Pulse pools conversation data to auto-fill contact fields and case details in Logos Vision.</div>
+                    <div class="sync-flow" style="color:#f472b6">
+                      <div class="sync-dot"></div><div class="sync-dot"></div><div class="sync-dot"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="logos-item">
+                  <div class="logos-item-icon" style="background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.25)">
+                    <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M17 10a7 7 0 11-7-7" class="icon-spin"/>
+                      <polyline points="13,3 17,3 17,7"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="logos-item-title">Records Flow Back</div>
+                    <div class="logos-item-desc">Case outcomes and notes in Logos Vision surface in your Pulse relationship feed and health score.</div>
+                    <div class="sync-flow" style="color:#22d3ee">
+                      <div class="sync-dot"></div><div class="sync-dot"></div><div class="sync-dot"></div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div><!-- /kyn-left-col -->
+        </div><!-- /kyn-body -->
+      </div><!-- /kyn-inner -->
+    </section>
+  </div>
+
+  <div id="prompt-bar">
+    <div id="prompt-text">Loading prompt...</div>
+    <button id="copy-btn">Copy Prompt</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  /* ── State ──────────────────────────────────────────── */
+  const DEFAULTS = {
+    layout: 'stack',
+    bg: 'dark-cinema',
+    glow: 60,
+    grid: false,
+    light: false,
+    canvas: 'orbit',
+    speed: 65,
+    density: 50,
+    card: 'glass',
+    typo: 'balanced',
+    tagline: 0,
+    cta: 'gradient',
+  };
+
+  let S = Object.assign({}, DEFAULTS);
+
+  /* ── Taglines ───────────────────────────────────────── */
+  const TAGLINES = [
+    'Deep relationship intelligence with 0–100 health scoring, contact circles, and bidirectional sync with Logos Vision — so every conversation in Pulse keeps your case records current.',
+    'Your network is your net worth. Pulse gives it a score, a story, and a sync to Logos Vision — so nothing slips through.',
+    'Every contact, scored. Every conversation, tracked. Every update, synced — automatically to Logos Vision.',
+    'Intelligence that keeps relationships alive. Health scoring, contact circles, and live bidirectional sync so cases stay current without effort.',
+  ];
+
+  /* ── DOM refs ───────────────────────────────────────── */
+  const section = document.getElementById('kyn-section');
+  const gridEl = document.getElementById('kyn-grid');
+  const subtextEl = document.getElementById('kyn-subtext');
+  const promptText = document.getElementById('prompt-text');
+  const copyBtn = document.getElementById('copy-btn');
+
+  /* ── Contact Canvas ─────────────────────────────────── */
+  const vizCanvas = document.getElementById('contact-canvas');
+  const vctx = vizCanvas.getContext('2d');
+  let animFrame = null;
+  let nodes = [];
+  let meshLines = [];
+
+  function buildNodes(count) {
+    const cx = vizCanvas.width / 2;
+    const cy = vizCanvas.height / 2;
+    const arr = [];
+    // Center node = user
+    arr.push({ x: cx, y: cy, r: 14, color: '#f43f5e', label: 'You', ring: 0, angle: 0, orbitR: 0, speed: 0, alpha: 1, scale: 1 });
+    // Ring 1 — close contacts
+    const ring1Count = Math.max(3, Math.round(count * 0.3));
+    for (let i = 0; i < ring1Count; i++) {
+      const angle = (i / ring1Count) * Math.PI * 2;
+      const orbitR = 80;
+      arr.push({
+        x: cx + Math.cos(angle) * orbitR,
+        y: cy + Math.sin(angle) * orbitR,
+        r: 8,
+        color: '#818cf8',
+        label: ['Sarah K.', 'Marcus T.', 'Elena R.', 'James L.', 'Nina W.'][i % 5],
+        ring: 1, angle, orbitR,
+        speed: 0.0003 + Math.random() * 0.0002,
+        alpha: 1, scale: 1, health: 70 + Math.random() * 30,
+      });
+    }
+    // Ring 2 — secondary contacts
+    const ring2Count = Math.max(4, Math.round(count * 0.5));
+    for (let i = 0; i < ring2Count; i++) {
+      const angle = (i / ring2Count) * Math.PI * 2 + 0.3;
+      const orbitR = 145;
+      arr.push({
+        x: cx + Math.cos(angle) * orbitR,
+        y: cy + Math.sin(angle) * orbitR,
+        r: 6,
+        color: '#c084fc',
+        label: '',
+        ring: 2, angle, orbitR,
+        speed: 0.0002 + Math.random() * 0.00015,
+        alpha: 0.7, scale: 1, health: 40 + Math.random() * 50,
+      });
+    }
+    // Ring 3 — peripheral
+    const ring3Count = Math.max(5, Math.round(count * 0.7));
+    for (let i = 0; i < ring3Count; i++) {
+      const angle = (i / ring3Count) * Math.PI * 2 + 0.6;
+      const orbitR = 200;
+      arr.push({
+        x: cx + Math.cos(angle) * orbitR,
+        y: cy + Math.sin(angle) * orbitR,
+        r: 4,
+        color: '#22d3ee',
+        label: '',
+        ring: 3, angle, orbitR,
+        speed: 0.00015 + Math.random() * 0.0001,
+        alpha: 0.4, scale: 1, health: 20 + Math.random() * 60,
+      });
+    }
+    return arr;
+  }
+
+  function buildMeshNodes(count) {
+    const arr = [];
+    for (let i = 0; i < count; i++) {
+      arr.push({
+        x: Math.random() * vizCanvas.width,
+        y: Math.random() * vizCanvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: 3 + Math.random() * 4,
+        color: ['#f43f5e','#818cf8','#c084fc','#22d3ee'][Math.floor(Math.random()*4)],
+        alpha: 0.4 + Math.random() * 0.5,
+      });
+    }
+    return arr;
+  }
+
+  function resizeVizCanvas() {
+    const wrap = document.getElementById('kyn-viz-wrap');
+    if (!wrap) return;
+    const rect = wrap.getBoundingClientRect();
+    vizCanvas.width = rect.width || 600;
+    vizCanvas.height = rect.height || 340;
+    nodes = buildNodes(Math.round(S.density / 10) + 8);
+    meshLines = buildMeshNodes(Math.round(S.density / 5) + 10);
+  }
+
+  function drawOrbit(t) {
+    const cx = vizCanvas.width / 2;
+    const cy = vizCanvas.height / 2;
+    const glow = S.glow / 100;
+    vctx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+
+    // bg glow
+    const g = vctx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(cx, cy) * 1.2);
+    if (!S.light) {
+      g.addColorStop(0, `rgba(244,63,94,${0.06 * glow})`);
+      g.addColorStop(0.5, `rgba(99,102,241,${0.04 * glow})`);
+      g.addColorStop(1, 'transparent');
+    }
+    vctx.fillStyle = g;
+    vctx.fillRect(0, 0, vizCanvas.width, vizCanvas.height);
+
+    const speedFactor = S.speed / 65;
+
+    // orbit rings
+    [80, 145, 200].forEach((r, ri) => {
+      vctx.beginPath();
+      vctx.arc(cx, cy, r, 0, Math.PI * 2);
+      vctx.strokeStyle = S.light
+        ? `rgba(0,0,0,${[0.07, 0.05, 0.03][ri]})`
+        : `rgba(255,255,255,${[0.06, 0.04, 0.025][ri]})`;
+      vctx.lineWidth = 1;
+      vctx.setLineDash([4, 8]);
+      vctx.stroke();
+      vctx.setLineDash([]);
+    });
+
+    nodes.forEach((n, i) => {
+      if (i === 0) return; // center drawn last
+      n.angle += n.speed * speedFactor;
+      n.x = cx + Math.cos(n.angle) * n.orbitR;
+      n.y = cy + Math.sin(n.angle) * n.orbitR;
+
+      // health score arc
+      if (n.health !== undefined) {
+        const hp = n.health / 100;
+        vctx.beginPath();
+        vctx.arc(n.x, n.y, n.r + 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * hp);
+        const hColor = hp > 0.7 ? '#34d399' : hp > 0.4 ? '#fbbf24' : '#f87171';
+        vctx.strokeStyle = hColor + 'aa';
+        vctx.lineWidth = 1.5;
+        vctx.stroke();
+      }
+
+      // node glow
+      if (glow > 0.2) {
+        const ng = vctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 3);
+        ng.addColorStop(0, n.color + Math.round(glow * 0.3 * 255).toString(16).padStart(2,'0'));
+        ng.addColorStop(1, 'transparent');
+        vctx.fillStyle = ng;
+        vctx.beginPath();
+        vctx.arc(n.x, n.y, n.r * 3, 0, Math.PI * 2);
+        vctx.fill();
+      }
+
+      // node circle
+      vctx.beginPath();
+      vctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      vctx.fillStyle = n.color;
+      vctx.globalAlpha = n.alpha;
+      vctx.fill();
+      vctx.globalAlpha = 1;
+
+      // label
+      if (n.label && n.ring === 1) {
+        vctx.font = 'bold 9px -apple-system, sans-serif';
+        vctx.fillStyle = S.light ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)';
+        vctx.textAlign = 'center';
+        vctx.fillText(n.label, n.x, n.y + n.r + 11);
+      }
+    });
+
+    // pulse rings from center
+    const pulsePhase = (t * speedFactor * 0.0008) % 1;
+    [0, 0.33, 0.66].forEach(offset => {
+      const phase = (pulsePhase + offset) % 1;
+      const pulseR = phase * 50;
+      const pulseAlpha = (1 - phase) * 0.25 * glow;
+      if (pulseAlpha > 0.01) {
+        vctx.beginPath();
+        vctx.arc(cx, cy, pulseR, 0, Math.PI * 2);
+        vctx.strokeStyle = `rgba(244,63,94,${pulseAlpha})`;
+        vctx.lineWidth = 1.5;
+        vctx.stroke();
+      }
+    });
+
+    // center node
+    const cn = nodes[0];
+    const cg = vctx.createRadialGradient(cx, cy, 0, cx, cy, cn.r * 4);
+    cg.addColorStop(0, `rgba(244,63,94,${0.4 * glow})`);
+    cg.addColorStop(1, 'transparent');
+    vctx.fillStyle = cg;
+    vctx.beginPath();
+    vctx.arc(cx, cy, cn.r * 4, 0, Math.PI * 2);
+    vctx.fill();
+
+    vctx.beginPath();
+    vctx.arc(cx, cy, cn.r, 0, Math.PI * 2);
+    vctx.fillStyle = '#f43f5e';
+    vctx.fill();
+    vctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    vctx.lineWidth = 1.5;
+    vctx.stroke();
+
+    vctx.font = 'bold 8px -apple-system, sans-serif';
+    vctx.fillStyle = 'white';
+    vctx.textAlign = 'center';
+    vctx.fillText('You', cx, cy + cn.r + 11);
+  }
+
+  function drawBubble(t) {
+    const speedFactor = S.speed / 65;
+    const glow = S.glow / 100;
+    vctx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+
+    nodes.forEach((n, i) => {
+      if (i === 0) return;
+      // float gently
+      const float = Math.sin(t * speedFactor * 0.001 + i * 0.8) * 6;
+      const drawY = n.y + float;
+
+      // bubble glow
+      if (glow > 0.2) {
+        const bg = vctx.createRadialGradient(n.x, drawY, 0, n.x, drawY, n.r * 4);
+        bg.addColorStop(0, n.color + '33');
+        bg.addColorStop(1, 'transparent');
+        vctx.fillStyle = bg;
+        vctx.beginPath();
+        vctx.arc(n.x, drawY, n.r * 4, 0, Math.PI * 2);
+        vctx.fill();
+      }
+
+      vctx.beginPath();
+      vctx.arc(n.x, drawY, n.r * (n.ring === 0 ? 1 : n.ring === 1 ? 1.8 : n.ring === 2 ? 1.3 : 1), 0, Math.PI * 2);
+      vctx.fillStyle = n.color + (n.ring === 1 ? 'cc' : n.ring === 2 ? '88' : '55');
+      vctx.fill();
+      vctx.strokeStyle = n.color + '66';
+      vctx.lineWidth = 1;
+      vctx.stroke();
+
+      if (n.label && n.ring <= 1) {
+        vctx.font = 'bold 9px -apple-system, sans-serif';
+        vctx.fillStyle = S.light ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)';
+        vctx.textAlign = 'center';
+        vctx.fillText(n.label, n.x, drawY + n.r * 2 + 10);
+      }
+    });
+
+    // center
+    const cx = vizCanvas.width / 2;
+    const cy = vizCanvas.height / 2;
+    const float0 = Math.sin(t * speedFactor * 0.001) * 3;
+    const cg = vctx.createRadialGradient(cx, cy + float0, 0, cx, cy + float0, 22);
+    cg.addColorStop(0, 'rgba(244,63,94,0.9)');
+    cg.addColorStop(1, 'rgba(244,63,94,0.1)');
+    vctx.fillStyle = cg;
+    vctx.beginPath();
+    vctx.arc(cx, cy + float0, 22, 0, Math.PI * 2);
+    vctx.fill();
+    vctx.font = 'bold 9px -apple-system, sans-serif';
+    vctx.fillStyle = 'white';
+    vctx.textAlign = 'center';
+    vctx.fillText('You', cx, cy + float0 + 3);
+  }
+
+  function drawMesh(t) {
+    const speedFactor = S.speed / 65;
+    const glow = S.glow / 100;
+    vctx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+
+    meshLines.forEach(n => {
+      n.x += n.vx * speedFactor;
+      n.y += n.vy * speedFactor;
+      if (n.x < -10) n.x = vizCanvas.width + 10;
+      if (n.x > vizCanvas.width + 10) n.x = -10;
+      if (n.y < -10) n.y = vizCanvas.height + 10;
+      if (n.y > vizCanvas.height + 10) n.y = -10;
+    });
+
+    // draw lines between close nodes
+    const maxDist = 120;
+    for (let i = 0; i < meshLines.length; i++) {
+      for (let j = i + 1; j < meshLines.length; j++) {
+        const dx = meshLines[i].x - meshLines[j].x;
+        const dy = meshLines[i].y - meshLines[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < maxDist) {
+          const alpha = (1 - dist / maxDist) * 0.3 * glow;
+          vctx.beginPath();
+          vctx.moveTo(meshLines[i].x, meshLines[i].y);
+          vctx.lineTo(meshLines[j].x, meshLines[j].y);
+          vctx.strokeStyle = `rgba(99,102,241,${alpha})`;
+          vctx.lineWidth = 0.8;
+          vctx.stroke();
+        }
+      }
+    }
+
+    // draw nodes
+    meshLines.forEach(n => {
+      if (glow > 0.3) {
+        const ng = vctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 3);
+        ng.addColorStop(0, n.color + '44');
+        ng.addColorStop(1, 'transparent');
+        vctx.fillStyle = ng;
+        vctx.beginPath();
+        vctx.arc(n.x, n.y, n.r * 3, 0, Math.PI * 2);
+        vctx.fill();
+      }
+      vctx.beginPath();
+      vctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      vctx.fillStyle = n.color;
+      vctx.globalAlpha = n.alpha;
+      vctx.fill();
+      vctx.globalAlpha = 1;
+    });
+  }
+
+  function drawRadial(t) {
+    const cx = vizCanvas.width / 2;
+    const cy = vizCanvas.height / 2;
+    const speedFactor = S.speed / 65;
+    const glow = S.glow / 100;
+    vctx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+
+    // radial gradient bg
+    if (glow > 0.1) {
+      const rg = vctx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(cx,cy));
+      rg.addColorStop(0, `rgba(244,63,94,${0.12 * glow})`);
+      rg.addColorStop(0.5, `rgba(99,102,241,${0.06 * glow})`);
+      rg.addColorStop(1, 'transparent');
+      vctx.fillStyle = rg;
+      vctx.fillRect(0, 0, vizCanvas.width, vizCanvas.height);
+    }
+
+    // pulsing concentric rings
+    const numRings = 5;
+    for (let r = 0; r < numRings; r++) {
+      const phase = (t * speedFactor * 0.0005 + r / numRings) % 1;
+      const radius = 20 + phase * (Math.min(cx,cy) - 20);
+      const a = (1 - phase) * 0.2 * glow;
+      vctx.beginPath();
+      vctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      vctx.strokeStyle = `rgba(244,63,94,${a})`;
+      vctx.lineWidth = 1.5;
+      vctx.stroke();
+    }
+
+    // spokes
+    const spokeCount = 8;
+    for (let s = 0; s < spokeCount; s++) {
+      const angle = (s / spokeCount) * Math.PI * 2 + t * speedFactor * 0.0002;
+      const len = Math.min(cx, cy) * 0.85;
+      const alpha = 0.08 * glow;
+      vctx.beginPath();
+      vctx.moveTo(cx, cy);
+      vctx.lineTo(cx + Math.cos(angle) * len, cy + Math.sin(angle) * len);
+      vctx.strokeStyle = `rgba(99,102,241,${alpha})`;
+      vctx.lineWidth = 1;
+      vctx.stroke();
+    }
+
+    // nodes along spokes
+    nodes.forEach((n, i) => {
+      if (i === 0) return;
+      n.angle += n.speed * speedFactor;
+      n.x = cx + Math.cos(n.angle) * n.orbitR;
+      n.y = cy + Math.sin(n.angle) * n.orbitR;
+
+      vctx.beginPath();
+      vctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      vctx.fillStyle = n.color;
+      vctx.globalAlpha = n.alpha;
+      vctx.fill();
+      vctx.globalAlpha = 1;
+    });
+
+    // center
+    vctx.beginPath();
+    vctx.arc(cx, cy, 14, 0, Math.PI * 2);
+    vctx.fillStyle = '#f43f5e';
+    vctx.fill();
+    vctx.font = 'bold 8px -apple-system, sans-serif';
+    vctx.fillStyle = 'white';
+    vctx.textAlign = 'center';
+    vctx.fillText('You', cx, cy + 3);
+  }
+
+  let lastT = 0;
+  function animate(t) {
+    animFrame = requestAnimationFrame(animate);
+    if (S.speed === 0 && lastT !== 0) return;
+    lastT = t;
+    switch (S.canvas) {
+      case 'orbit':  drawOrbit(t);  break;
+      case 'bubble': drawBubble(t); break;
+      case 'mesh':   drawMesh(t);   break;
+      case 'radial': drawRadial(t); break;
+    }
+  }
+
+  /* ── Background canvas (section BG) ─────────────────── */
+  const bgCanvas = document.getElementById('kyn-canvas');
+  const bgCtx = bgCanvas.getContext('2d');
+  let bgFrame = null;
+  let bgParticles = [];
+
+  function buildBgParticles() {
+    bgParticles = [];
+    const count = 60;
+    for (let i = 0; i < count; i++) {
+      bgParticles.push({
+        x: Math.random() * bgCanvas.width,
+        y: Math.random() * bgCanvas.height,
+        r: 0.5 + Math.random() * 1.5,
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: (Math.random() - 0.5) * 0.15,
+        alpha: 0.1 + Math.random() * 0.3,
+        color: ['#f43f5e','#818cf8','#c084fc','#22d3ee'][Math.floor(Math.random()*4)],
+      });
+    }
+  }
+
+  function resizeBgCanvas() {
+    bgCanvas.width = bgCanvas.offsetWidth;
+    bgCanvas.height = bgCanvas.offsetHeight;
+    buildBgParticles();
+  }
+
+  function animateBg() {
+    bgFrame = requestAnimationFrame(animateBg);
+    if (S.light) { bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height); return; }
+    const glow = S.glow / 100;
+    bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+    const speedFactor = S.speed / 65;
+
+    bgParticles.forEach(p => {
+      p.x += p.vx * speedFactor;
+      p.y += p.vy * speedFactor;
+      if (p.x < 0) p.x = bgCanvas.width;
+      if (p.x > bgCanvas.width) p.x = 0;
+      if (p.y < 0) p.y = bgCanvas.height;
+      if (p.y > bgCanvas.height) p.y = 0;
+
+      bgCtx.beginPath();
+      bgCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      bgCtx.fillStyle = p.color;
+      bgCtx.globalAlpha = p.alpha * glow;
+      bgCtx.fill();
+      bgCtx.globalAlpha = 1;
+    });
+
+    // connect close particles
+    for (let i = 0; i < bgParticles.length; i++) {
+      for (let j = i + 1; j < bgParticles.length; j++) {
+        const dx = bgParticles[i].x - bgParticles[j].x;
+        const dy = bgParticles[i].y - bgParticles[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 100) {
+          bgCtx.beginPath();
+          bgCtx.moveTo(bgParticles[i].x, bgParticles[i].y);
+          bgCtx.lineTo(bgParticles[j].x, bgParticles[j].y);
+          bgCtx.strokeStyle = `rgba(99,102,241,${(1-dist/100)*0.04*glow})`;
+          bgCtx.lineWidth = 0.5;
+          bgCtx.stroke();
+        }
+      }
+    }
+  }
+
+  /* ── Apply state ─────────────────────────────────────── */
+  function applyState() {
+    const s = section;
+
+    // Remove all layout/bg/typo/card/cta classes
+    ['kyn-layout-hub','kyn-layout-stack','kyn-layout-asym'].forEach(c => s.classList.remove(c));
+    ['bg-dark-cinema','bg-deep-teal','bg-indigo-space','bg-rose-deep'].forEach(c => s.classList.remove(c));
+    ['typo-compact','typo-balanced','typo-massive'].forEach(c => s.classList.remove(c));
+    ['card-glass','card-solid','card-bordered','card-minimal'].forEach(c => s.classList.remove(c));
+    ['cta-gradient','cta-ghost','cta-filled','cta-text'].forEach(c => s.classList.remove(c));
+    s.classList.remove('light-mode');
+
+    s.classList.add('kyn-layout-' + S.layout);
+    s.classList.add('bg-' + S.bg);
+    s.classList.add('typo-' + S.typo);
+    s.classList.add('card-' + S.card);
+    s.classList.add('cta-' + S.cta);
+    if (S.light) s.classList.add('light-mode');
+
+    // Grid
+    gridEl.classList.toggle('visible', S.grid);
+
+    // Tagline
+    subtextEl.textContent = TAGLINES[S.tagline];
+
+    // Background color for preview area
+    const bgColors = {
+      'dark-cinema': S.light ? '#f8f8fc' : '#050508',
+      'deep-teal':   S.light ? '#f0fafb' : '#020d12',
+      'indigo-space':S.light ? '#f5f4ff' : '#050510',
+      'rose-deep':   S.light ? '#fff4f5' : '#0a0406',
+    };
+    document.getElementById('preview').style.background = bgColors[S.bg];
+
+    // Glow bg overlays
+    const overlayColors = {
+      'dark-cinema': `radial-gradient(ellipse at 15% 30%, rgba(244,63,94,${0.12*S.glow/100}) 0%, transparent 50%), radial-gradient(ellipse at 85% 70%, rgba(99,102,241,${0.1*S.glow/100}) 0%, transparent 50%)`,
+      'deep-teal':   `radial-gradient(ellipse at 15% 30%, rgba(6,182,212,${0.14*S.glow/100}) 0%, transparent 50%), radial-gradient(ellipse at 85% 70%, rgba(20,184,166,${0.1*S.glow/100}) 0%, transparent 50%)`,
+      'indigo-space':`radial-gradient(ellipse at 15% 30%, rgba(99,102,241,${0.16*S.glow/100}) 0%, transparent 50%), radial-gradient(ellipse at 85% 70%, rgba(168,85,247,${0.12*S.glow/100}) 0%, transparent 50%)`,
+      'rose-deep':   `radial-gradient(ellipse at 15% 30%, rgba(244,63,94,${0.18*S.glow/100}) 0%, transparent 50%), radial-gradient(ellipse at 85% 70%, rgba(236,72,153,${0.12*S.glow/100}) 0%, transparent 50%)`,
+    };
+    s.style.background = S.light ? '' : overlayColors[S.bg];
+
+    // Asym layout restructure
+    const body = document.getElementById('kyn-body');
+    const leftCol = document.getElementById('kyn-left-col');
+    const cardsWrap = document.getElementById('kyn-cards-wrap');
+    const logosPanel = document.getElementById('kyn-logos-panel');
+
+    if (S.layout === 'asym') {
+      leftCol.style.display = 'flex';
+      // Put cards + logos inside left-col
+      leftCol.appendChild(cardsWrap);
+      leftCol.appendChild(logosPanel);
+      // viz goes alongside left-col (grid in kyn-body is 1fr 1fr)
+    } else if (S.layout === 'hub') {
+      leftCol.style.display = 'contents';
+      body.appendChild(cardsWrap);
+      body.appendChild(logosPanel);
+    } else {
+      // stack
+      leftCol.style.display = 'contents';
+      body.appendChild(cardsWrap);
+      body.appendChild(logosPanel);
+    }
+
+    updatePrompt();
+  }
+
+  /* ── Prompt generator ───────────────────────────────── */
+  function updatePrompt() {
+    const taglineShort = TAGLINES[S.tagline].substring(0, 50) + '…';
+    const densityDesc = S.density < 33 ? 'sparse' : S.density < 66 ? 'moderate' : 'dense';
+    const speedDesc = S.speed < 33 ? 'slow' : S.speed < 66 ? 'medium' : 'fast';
+
+    const text = [
+      'Know Your Network — Layout: ' + S.layout,
+      ' — bg: ' + S.bg.replace('-', ' '),
+      ', contact viz: ' + S.canvas + ' mode',
+      ', glow at ' + S.glow + '%',
+      ', animation ' + speedDesc,
+      ', nodes ' + densityDesc + '.',
+      ' ' + (S.typo === 'balanced' ? 'Balanced' : S.typo === 'massive' ? 'Massive' : 'Compact') + ' type scale.',
+      ' Cards: ' + S.card + '.',
+      ' CTA: ' + S.cta + '.',
+      ' Tagline: "' + taglineShort + '"',
+      ' Grid: ' + (S.grid ? 'on' : 'off') + '.',
+      ' Mode: ' + (S.light ? 'light' : 'dark') + '.',
+    ].join('');
+
+    promptText.textContent = text;
+  }
+
+  /* ── Button group helper ─────────────────────────────── */
+  function setupGroup(id, key, activeClass) {
+    activeClass = activeClass || 'active';
+    const group = document.getElementById(id);
+    group.querySelectorAll('.btn-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        group.querySelectorAll('.btn-opt').forEach(b => b.classList.remove('active', 'active-indigo'));
+        btn.classList.add(activeClass);
+        S[key] = btn.dataset.val;
+        if (key === 'canvas') {
+          resizeVizCanvas();
+        }
+        applyState();
+      });
+    });
+  }
+
+  /* ── Init controls ───────────────────────────────────── */
+  setupGroup('ctrl-layout', 'layout');
+  setupGroup('ctrl-bg', 'bg');
+  setupGroup('ctrl-canvas', 'canvas');
+  setupGroup('ctrl-card', 'card');
+  setupGroup('ctrl-typo', 'typo');
+  setupGroup('ctrl-cta', 'cta');
+
+  document.getElementById('ctrl-glow').addEventListener('input', e => {
+    S.glow = parseInt(e.target.value);
+    document.getElementById('lbl-glow').textContent = S.glow;
+    applyState();
+  });
+  document.getElementById('ctrl-speed').addEventListener('input', e => {
+    S.speed = parseInt(e.target.value);
+    document.getElementById('lbl-speed').textContent = S.speed;
+    applyState();
+  });
+  document.getElementById('ctrl-density').addEventListener('input', e => {
+    S.density = parseInt(e.target.value);
+    document.getElementById('lbl-density').textContent = S.density;
+    resizeVizCanvas();
+    applyState();
+  });
+  document.getElementById('ctrl-grid').addEventListener('change', e => {
+    S.grid = e.target.checked;
+    applyState();
+  });
+  document.getElementById('ctrl-light').addEventListener('change', e => {
+    S.light = e.target.checked;
+    applyState();
+  });
+  document.getElementById('ctrl-tagline').addEventListener('change', e => {
+    S.tagline = parseInt(e.target.value);
+    applyState();
+  });
+
+  /* Reset */
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    S = Object.assign({}, DEFAULTS);
+    // Sync controls
+    document.querySelectorAll('.btn-opt').forEach(b => b.classList.remove('active','active-indigo'));
+    document.querySelectorAll('[data-val="' + S.layout + '"]')[0].classList.add('active');
+    document.querySelectorAll('[data-val="' + S.bg + '"]')[0].classList.add('active');
+    document.querySelectorAll('[data-val="' + S.canvas + '"]')[0].classList.add('active');
+    document.querySelectorAll('[data-val="' + S.card + '"]')[0].classList.add('active');
+    document.querySelectorAll('[data-val="' + S.typo + '"]')[0].classList.add('active');
+    document.querySelectorAll('[data-val="' + S.cta + '"]')[0].classList.add('active');
+    document.getElementById('ctrl-glow').value = S.glow;
+    document.getElementById('ctrl-speed').value = S.speed;
+    document.getElementById('ctrl-density').value = S.density;
+    document.getElementById('lbl-glow').textContent = S.glow;
+    document.getElementById('lbl-speed').textContent = S.speed;
+    document.getElementById('lbl-density').textContent = S.density;
+    document.getElementById('ctrl-grid').checked = false;
+    document.getElementById('ctrl-light').checked = false;
+    document.getElementById('ctrl-tagline').value = 0;
+    resizeVizCanvas();
+    applyState();
+  });
+
+  /* Copy prompt */
+  function doCopy() {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(promptText.textContent).then(() => {
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = 'Copy Prompt'; copyBtn.classList.remove('copied'); }, 1800);
+      });
+    }
+  }
+  copyBtn.addEventListener('click', doCopy);
+  document.getElementById('btn-copy-prompt').addEventListener('click', doCopy);
+
+  /* ── Resize observer ─────────────────────────────────── */
+  const ro = new ResizeObserver(() => {
+    resizeBgCanvas();
+    resizeVizCanvas();
+  });
+  ro.observe(section);
+  ro.observe(document.getElementById('kyn-viz-wrap'));
+
+  /* ── Boot ────────────────────────────────────────────── */
+  resizeBgCanvas();
+  resizeVizCanvas();
+  applyState();
+  animate(0);
+  animateBg();
+
+})();
+</script>
+</body>
+</html>

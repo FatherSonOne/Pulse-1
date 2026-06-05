@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entomate — Logo Concept Chooser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:            #080810;
+      --surface:       #0e0e1a;
+      --surface2:      #13131f;
+      --border:        #1e1e30;
+      --rose:          #f43f5e;
+      --rose-dim:      rgba(244,63,94,.18);
+      --emerald:       #10b981;
+      --emerald-dim:   rgba(16,185,129,.18);
+      --emerald-glow:  rgba(16,185,129,.35);
+      --zinc400:       #a1a1aa;
+      --zinc500:       #71717a;
+      --white:         #f4f4f8;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* grain overlay */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ambient glow */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -30vh; left: 50%;
+      transform: translateX(-50%);
+      width: 80vw; height: 60vh;
+      background: radial-gradient(ellipse at center, rgba(16,185,129,.07) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 56px 24px 160px;
+    }
+
+    /* ── header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+    .header-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--emerald);
+      background: var(--emerald-dim);
+      border: 1px solid rgba(16,185,129,.25);
+      border-radius: 100px;
+      padding: 5px 14px;
+      margin-bottom: 20px;
+    }
+    .header-eyebrow svg { width: 10px; height: 10px; }
+    .header h1 {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: -.02em;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+    .header h1 .accent { color: var(--emerald); }
+    .header p {
+      font-size: 15px;
+      color: var(--zinc400);
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── card ── */
+    .card {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 36px 28px 28px;
+      cursor: pointer;
+      transition: border-color .25s, box-shadow .25s, transform .2s;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(ellipse at 50% 0%, rgba(16,185,129,.06) 0%, transparent 65%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .card:hover {
+      border-color: rgba(16,185,129,.3);
+      box-shadow: 0 0 0 1px rgba(16,185,129,.12), 0 8px 40px rgba(0,0,0,.4);
+      transform: translateY(-2px);
+    }
+    .card:hover::before { opacity: 1; }
+    .card.selected {
+      border-color: var(--emerald);
+      box-shadow:
+        0 0 0 1px var(--emerald),
+        0 0 28px var(--emerald-glow),
+        0 12px 48px rgba(0,0,0,.5);
+    }
+    .card.selected::before { opacity: 1; }
+    .card.selected .selected-badge {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .selected-badge {
+      position: absolute;
+      top: 14px; right: 14px;
+      width: 22px; height: 22px;
+      background: var(--emerald);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transform: scale(.6);
+      transition: opacity .2s, transform .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    .selected-badge svg { width: 11px; height: 11px; }
+
+    .concept-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--zinc500);
+      margin-bottom: 24px;
+      align-self: flex-start;
+    }
+
+    .logo-display {
+      width: 120px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+    .logo-display svg.logo-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--white);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .card-desc {
+      font-size: 12px;
+      color: var(--zinc400);
+      text-align: center;
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    /* ── bottom prompt bar ── */
+    .prompt-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(8,8,16,.92);
+      backdrop-filter: blur(16px) saturate(1.4);
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 100;
+    }
+    .prompt-icon {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--emerald-dim);
+      border: 1px solid rgba(16,185,129,.25);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .prompt-icon svg { width: 14px; height: 14px; }
+    .prompt-content { flex: 1; min-width: 0; }
+    .prompt-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--emerald);
+      margin-bottom: 3px;
+    }
+    .prompt-text {
+      font-size: 13px;
+      color: var(--zinc400);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .prompt-text .prompt-bold {
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    /* ── copy button ── */
+    .copy-btn {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      background: var(--emerald);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .2s, box-shadow .2s, transform .15s;
+    }
+    .copy-btn:hover:not(:disabled) {
+      background: #0ea06f;
+      box-shadow: 0 0 16px var(--emerald-glow);
+      transform: translateY(-1px);
+    }
+    .copy-btn:active:not(:disabled) { transform: translateY(0); }
+    .copy-btn:disabled {
+      background: var(--surface2);
+      color: var(--zinc500);
+      border: 1px solid var(--border);
+      cursor: not-allowed;
+    }
+    .copy-btn svg { width: 14px; height: 14px; }
+
+    /* ── toast ── */
+    .toast {
+      position: fixed;
+      top: 24px; right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--emerald);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--emerald);
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 32px rgba(0,0,0,.5);
+      z-index: 200;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity .2s, transform .2s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast svg { width: 14px; height: 14px; }
+
+    /* ── SVG animations ── */
+    @keyframes dash-flow {
+      to { stroke-dashoffset: -40; }
+    }
+    @keyframes helix-pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .55; }
+    }
+    @keyframes antenna-blink {
+      0%, 80%, 100% { opacity: 1; }
+      90%           { opacity: .15; }
+    }
+
+    .flow-dash {
+      animation: dash-flow 2s linear infinite;
+    }
+    .flow-dash-delayed {
+      animation: dash-flow 2s linear infinite;
+      animation-delay: -.6s;
+    }
+    .helix-a {
+      animation: helix-pulse 3s ease-in-out infinite;
+    }
+    .helix-b {
+      animation: helix-pulse 3s ease-in-out infinite .75s;
+    }
+    .antenna-dot {
+      animation: antenna-blink 2.4s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="header">
+    <div class="header-eyebrow">
+      <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="5" cy="5" r="4" stroke="#10b981" stroke-width="1.5"/>
+        <circle cx="5" cy="5" r="1.5" fill="#10b981"/>
+      </svg>
+      Brand Identity &middot; Logo Review
+    </div>
+    <h1>Choose your <span class="accent">Entomate</span> mark</h1>
+    <p>Four distinct directions for the Entomate brand identity. Select a concept to preview, then copy the SVG for handoff.</p>
+  </header>
+
+  <div class="grid" id="grid">
+
+    <!-- CARD A: Robotics / Circuit Mark -->
+    <div class="card" data-concept="a" role="button" tabindex="0" aria-label="Select Concept A — Robotics Mark">
+      <div class="selected-badge" aria-hidden="true">
+        <svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="concept-tag">Concept A</div>
+      <div class="logo-display">
+        <svg class="logo-svg" id="svg-a" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Robotics circuit mark">
+          <rect x="18" y="22" width="44" height="32" rx="4" stroke="#10b981" stroke-width="2.2"/>
+          <rect x="26" y="30" width="10" height="10" rx="1.5" fill="#10b981" opacity=".9"/>
+          <rect x="44" y="30" width="10" height="10" rx="1.5" fill="#10b981" opacity=".9"/>
+          <line x1="36" y1="35" x2="44" y2="35" stroke="#10b981" stroke-width="1.5"/>
+          <line x1="27" y1="46" x2="53" y2="46" stroke="#10b981" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="31" y1="46" x2="31" y2="49" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="49" y1="46" x2="49" y2="49" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="26" y1="54" x2="26" y2="66" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+          <line x1="22" y1="66" x2="30" y2="66" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+          <line x1="54" y1="54" x2="54" y2="66" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+          <line x1="50" y1="66" x2="58" y2="66" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+          <line x1="40" y1="22" x2="40" y2="13" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+          <circle class="antenna-dot" cx="40" cy="10" r="3" fill="#f43f5e"/>
+          <path d="M18 28 L14 28 L14 24" stroke="#10b981" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity=".4"/>
+          <path d="M62 28 L66 28 L66 24" stroke="#10b981" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity=".4"/>
+        </svg>
+      </div>
+      <div class="card-title">Robotics / Circuit Mark</div>
+      <div class="card-desc">Geometric robot-face with circuit accents. Communicates intelligence, automation, and precision engineering at a glance.</div>
+    </div>
+
+    <!-- CARD B: Flow / Pipeline Mark -->
+    <div class="card" data-concept="b" role="button" tabindex="0" aria-label="Select Concept B — Flow Mark">
+      <div class="selected-badge" aria-hidden="true">
+        <svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="concept-tag">Concept B</div>
+      <div class="logo-display">
+        <svg class="logo-svg" id="svg-b" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow pipeline mark">
+          <circle cx="16" cy="36" r="7" fill="#10b981" opacity=".95"/>
+          <circle cx="40" cy="36" r="7" fill="#10b981" opacity=".95"/>
+          <circle cx="64" cy="36" r="7" fill="#10b981" opacity=".95"/>
+          <circle cx="16" cy="36" r="2.5" fill="#080810"/>
+          <circle cx="40" cy="36" r="2.5" fill="#080810"/>
+          <circle cx="64" cy="36" r="2.5" fill="#080810"/>
+          <line class="flow-dash" x1="24" y1="36" x2="32" y2="36"
+            stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round"
+            stroke-dasharray="5 4"/>
+          <line class="flow-dash-delayed" x1="48" y1="36" x2="56" y2="36"
+            stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round"
+            stroke-dasharray="5 4"/>
+          <path d="M64 43 Q64 60 40 60 Q16 60 16 43"
+            stroke="#10b981" stroke-width="1.8" stroke-linecap="round"
+            stroke-dasharray="4 4" opacity=".55"/>
+          <path d="M13 45 L16 43 L19 45" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
+          <line x1="16" y1="22" x2="16" y2="27" stroke="#10b981" stroke-width="1.2" stroke-linecap="round" opacity=".35"/>
+          <line x1="40" y1="22" x2="40" y2="27" stroke="#10b981" stroke-width="1.2" stroke-linecap="round" opacity=".35"/>
+          <line x1="64" y1="22" x2="64" y2="27" stroke="#10b981" stroke-width="1.2" stroke-linecap="round" opacity=".35"/>
+        </svg>
+      </div>
+      <div class="card-title">Flow / Pipeline Mark</div>
+      <div class="card-desc">Three nodes linked by animated dashes with a looping return path. Visualises continuous automation and workflow orchestration.</div>
+    </div>
+
+    <!-- CARD C: E Monogram Mark -->
+    <div class="card" data-concept="c" role="button" tabindex="0" aria-label="Select Concept C — E Monogram Mark">
+      <div class="selected-badge" aria-hidden="true">
+        <svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="concept-tag">Concept C</div>
+      <div class="logo-display">
+        <svg class="logo-svg" id="svg-c" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="E monogram mark">
+          <rect x="18" y="16" width="8" height="48" rx="3" fill="#10b981"/>
+          <rect x="18" y="16" width="42" height="8" rx="3" fill="#10b981"/>
+          <rect x="18" y="56" width="42" height="8" rx="3" fill="#10b981"/>
+          <rect x="18" y="36" width="30" height="8" rx="3" fill="#f43f5e"/>
+          <circle cx="62" cy="20" r="3" fill="#10b981" opacity=".4"/>
+          <circle cx="62" cy="60" r="3" fill="#10b981" opacity=".4"/>
+          <circle cx="50" cy="40" r="3" fill="#f43f5e" opacity=".5"/>
+        </svg>
+      </div>
+      <div class="card-title">E Monogram Mark</div>
+      <div class="card-desc">Bold geometric "E" with emerald verticals and a rose mid-bar creating visual hierarchy. Timeless, scalable, instantly ownable.</div>
+    </div>
+
+    <!-- CARD D: Helix / DNA Strand -->
+    <div class="card" data-concept="d" role="button" tabindex="0" aria-label="Select Concept D — Helix Mark">
+      <div class="selected-badge" aria-hidden="true">
+        <svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="concept-tag">Concept D</div>
+      <div class="logo-display">
+        <svg class="logo-svg" id="svg-d" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Helix DNA strand mark">
+          <path class="helix-a"
+            d="M28 14 C28 14 52 22 52 40 C52 58 28 66 28 66"
+            stroke="#10b981" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path class="helix-b"
+            d="M52 14 C52 14 28 22 28 40 C28 58 52 66 52 66"
+            stroke="#f43f5e" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <line x1="30" y1="22" x2="50" y2="22" stroke="#10b981" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>
+          <line x1="34" y1="30" x2="46" y2="30" stroke="#a1a1aa" stroke-width="1.2" stroke-linecap="round" opacity=".3"/>
+          <line x1="28" y1="40" x2="52" y2="40" stroke="#f43f5e" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>
+          <line x1="34" y1="50" x2="46" y2="50" stroke="#a1a1aa" stroke-width="1.2" stroke-linecap="round" opacity=".3"/>
+          <line x1="30" y1="58" x2="50" y2="58" stroke="#10b981" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>
+          <circle cx="28" cy="14" r="3.5" fill="#10b981"/>
+          <circle cx="52" cy="14" r="3.5" fill="#f43f5e"/>
+          <circle cx="28" cy="66" r="3.5" fill="#10b981"/>
+          <circle cx="52" cy="66" r="3.5" fill="#f43f5e"/>
+        </svg>
+      </div>
+      <div class="card-title">Helix / DNA Mark</div>
+      <div class="card-desc">Intertwining S-curves suggest process threading, transformation, and continuous evolution — a wildcard full of energy and depth.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Bottom Prompt Bar -->
+<div class="prompt-bar" id="promptBar" role="status" aria-live="polite">
+  <div class="prompt-icon" aria-hidden="true">
+    <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M7 1L9 5H13L9.5 7.5L11 12L7 9L3 12L4.5 7.5L1 5H5L7 1Z"
+        stroke="#10b981" stroke-width="1.3" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="prompt-content">
+    <div class="prompt-label">Direction Note</div>
+    <div class="prompt-text" id="promptText">Select a concept above to see the creative direction brief.</div>
+  </div>
+  <button class="copy-btn" id="copyBtn" disabled aria-label="Copy selected logo SVG code">
+    <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="1" y="4" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+      <path d="M4 4V2.5A1.5 1.5 0 0 1 5.5 1H11.5A1.5 1.5 0 0 1 13 2.5V8.5A1.5 1.5 0 0 1 11.5 10H10"
+        stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    </svg>
+    Copy SVG
+  </button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" role="alert" aria-live="assertive">
+  <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7l4 4 6-6" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  SVG copied to clipboard
+</div>
+
+<script>
+  (function () {
+    'use strict';
+
+    var prompts = {
+      a: {
+        label: 'Concept A — Robotics Mark:',
+        body: 'Evolve into a tighter circuit-board icon. Refine proportions, try filled-eye variants, add subtle grid lines behind the face. Explore a version where the legs become electrical traces.'
+      },
+      b: {
+        label: 'Concept B — Flow Mark:',
+        body: 'Try different node shapes (hex, diamond). Adjust the dash rhythm and loop-back arc. Explore a vertical stack variant. Consider making one node rose-coloured to show the trigger step.'
+      },
+      c: {
+        label: 'Concept C — E Monogram:',
+        body: 'Experiment with bar-length ratios and stroke caps (rounded vs square). Try the middle bar as a gradient. Test at 16px favicon scale. Pair with a condensed wordmark to the right.'
+      },
+      d: {
+        label: 'Concept D — Helix Mark:',
+        body: 'Tighten the strand spacing. Try a version with more rungs at varying opacity. Explore animating the strands slowly rotating. Test as a dark-on-light lockup for light-mode contexts.'
+      }
+    };
+
+    var selected = null;
+
+    function setPromptText(id) {
+      var el = document.getElementById('promptText');
+      while (el.firstChild) { el.removeChild(el.firstChild); }
+
+      var strong = document.createElement('span');
+      strong.className = 'prompt-bold';
+      strong.textContent = prompts[id].label;
+
+      var rest = document.createTextNode(' ' + prompts[id].body);
+
+      el.appendChild(strong);
+      el.appendChild(rest);
+    }
+
+    function selectConcept(id) {
+      document.querySelectorAll('.card').forEach(function (c) {
+        c.classList.remove('selected');
+        c.setAttribute('aria-pressed', 'false');
+      });
+
+      var card = document.querySelector('[data-concept="' + id + '"]');
+      card.classList.add('selected');
+      card.setAttribute('aria-pressed', 'true');
+      selected = id;
+
+      setPromptText(id);
+
+      var btn = document.getElementById('copyBtn');
+      btn.disabled = false;
+    }
+
+    function getSvgString(id) {
+      var svgEl = document.getElementById('svg-' + id);
+      var clone = svgEl.cloneNode(true);
+
+      // Strip animation class attributes from clone
+      clone.querySelectorAll('[class]').forEach(function (el) {
+        el.removeAttribute('class');
+      });
+
+      var serializer = new XMLSerializer();
+      var str = serializer.serializeToString(clone);
+
+      // Ensure xmlns present
+      if (str.indexOf('xmlns=') === -1) {
+        str = str.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+      return str;
+    }
+
+    function showToast() {
+      var toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(function () { toast.classList.remove('show'); }, 2400);
+    }
+
+    function copySvg() {
+      if (!selected) { return; }
+      var svgStr = getSvgString(selected);
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(svgStr).then(showToast).catch(function () {
+          fallbackCopy(svgStr);
+        });
+      } else {
+        fallbackCopy(svgStr);
+      }
+    }
+
+    function fallbackCopy(text) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try { document.execCommand('copy'); showToast(); } catch (e) { /* silent */ }
+      document.body.removeChild(ta);
+    }
+
+    // Wire up card clicks and keyboard activation
+    document.querySelectorAll('.card').forEach(function (card) {
+      var id = card.getAttribute('data-concept');
+      card.addEventListener('click', function () { selectConcept(id); });
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectConcept(id);
+        }
+      });
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', copySvg);
+  }());
+</script>
+</body>
+</html>
