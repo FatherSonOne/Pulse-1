@@ -230,11 +230,15 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     }, 150);
   }, [setMode, setNudgeFocused]);
 
-  // pulse:compose-email
+  // pulse:compose-email — warm path. Fires when this client is already mounted
+  // (you're on Email and trigger compose from the palette). Also clears any
+  // pending sessionStorage intent so the cold-drain effect below can't re-open a
+  // blank composer on the next remount (the stale-key bug).
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const handler = (evt: Event) => {
       const detail = (evt as CustomEvent<ComposeEventDetail>).detail || {};
+      try { sessionStorage.removeItem('pulse_pending_compose'); } catch {}
       restoreComposer({
         to: detail.recipient ? [detail.recipient] : [],
         subject: detail.subject || '',
@@ -243,6 +247,27 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     };
     window.addEventListener('pulse:compose-email', handler);
     return () => window.removeEventListener('pulse:compose-email', handler);
+  }, [restoreComposer]);
+
+  // pulse:compose-email — cold-start drain. The warm listener above only catches
+  // the event if this client is already mounted; navigating in from another view
+  // mounts it AFTER the CustomEvent dispatched, and CustomEvents aren't buffered.
+  // So the palette also stashes the intent in sessionStorage and we drain it here
+  // on mount. The key is cleared on consume (here and in the warm listener), so
+  // neither path leaves a stale key that would pop a blank composer on remount.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const raw = sessionStorage.getItem('pulse_pending_compose');
+    if (!raw) return;
+    sessionStorage.removeItem('pulse_pending_compose');
+    try {
+      const d = JSON.parse(raw) as ComposeEventDetail;
+      restoreComposer({
+        to: d.recipient ? [d.recipient] : [],
+        subject: d.subject || '',
+        body: d.body || '',
+      });
+    } catch {}
   }, [restoreComposer]);
 
   // ── handleSearch: ports legacy semantic+fallback chain ────────────────

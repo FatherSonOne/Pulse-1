@@ -44,7 +44,15 @@ export const EmailClientWrapper: React.FC<EmailClientWrapperProps> = ({
     let alive = true;
     setGmail('checking');
     getGmailConnectStatus().then((s) => {
-      if (alive) setGmail(s.connected ? 'connected' : 'disconnected');
+      if (!alive) return;
+      setGmail(s.connected ? 'connected' : 'disconnected');
+      // If Gmail isn't connected, EmailHybridClient won't mount and can't drain a
+      // pending compose intent — drop it so a palette "Compose email" triggered
+      // while disconnected can't pop a stale composer after a later connect.
+      // (The palette gates compose on emailEnabled, not on the Gmail grant.)
+      if (!s.connected) {
+        try { sessionStorage.removeItem('pulse_pending_compose'); } catch {}
+      }
     });
     return () => { alive = false; };
   }, [features.emailEnabled]);

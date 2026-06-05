@@ -73,7 +73,7 @@ import { PulseAssistantButton } from './components/PulseAssistant/PulseAssistant
 import { PulseAIProactiveChecker } from './components/PulseAssistant/PulseAIProactiveChecker';
 import { InstallPrompt } from './components/PWA/InstallPrompt';
 import { OnlineStatus } from './components/PWA/OnlineStatus';
-import { FeatureProvider } from './contexts/FeatureContext';
+import { FeatureProvider, useFeatures } from './contexts/FeatureContext';
 import { PulseAIProvider } from './contexts/PulseAIContext';
 import { CommandPaletteProvider, useCommandPalette, useRegisterCommands, Command } from './contexts/CommandPaletteContext';
 import { GlobalCommandPalette } from './components/GlobalCommandPalette';
@@ -187,6 +187,9 @@ interface AppCommandRegistrarProps {
   onOpenContact: (id: string) => void;
   onMessageContact: (id: string) => void;
   onMeetContact: (id: string) => void;
+  // Compose-email intent. Gated on emailEnabled inside the registrar (see
+  // emailCommands) so it never surfaces when the Email surface is off.
+  onComposeEmail: () => void;
 }
 
 const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
@@ -199,6 +202,7 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   onOpenContact,
   onMessageContact,
   onMeetContact,
+  onComposeEmail,
 }) => {
   const { open } = useCommandPalette();
 
@@ -206,6 +210,13 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   // `use` prefix, useFeatureFlag is a plain synchronous read (env + URL/
   // localStorage), so it is safe to call here and inside useMemo.
   const smsEnabled = useFeatureFlag('inAppSms', undefined, false);
+
+  // Email compose command is gated on the emailEnabled feature switch (Settings
+  // → Features & Labs, default off). When off, EmailClientWrapper renders a
+  // placeholder and EmailHybridClient never mounts, so the compose intent would
+  // be silently dropped — we don't surface the command at all in that case.
+  // useFeatures is valid here: the registrar sits inside FeatureProvider.
+  const { features } = useFeatures();
 
   // Bridge the global Cmd+K event into the provider scope.
   useEffect(() => {
@@ -352,6 +363,26 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
     },
   ], [onNewTask, onNewContact]);
 
+  // Compose email — gated on emailEnabled (default off). Empty composer; the
+  // run() handler (App.handleComposeEmail) writes a pending intent to
+  // sessionStorage and dispatches the live event, so it works whether or not
+  // the Email surface is already mounted. Registered under its own app:email
+  // scope so the gate is obvious and the empty array cleanly removes the row
+  // when email is off.
+  const emailCommands = useMemo<Command[]>(() => (
+    features.emailEnabled
+      ? [{
+          id: 'compose-email',
+          label: 'Compose email',
+          desc: 'Start a new email',
+          icon: 'fa-envelope',
+          kind: 'action' as const,
+          keywords: ['email', 'new email', 'write', 'send mail', 'compose'],
+          run: onComposeEmail,
+        }]
+      : []
+  ), [features.emailEnabled, onComposeEmail]);
+
   // People entity-jump — typing a name (2+ chars) surfaces matching contacts,
   // each as an "Open <name>" (their card) plus a "Message <name>" (their
   // conversation). Dynamic provider so it reflects the live contacts array and
@@ -406,6 +437,7 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   useRegisterCommands('app:navigation', { commands: navCommands });
   useRegisterCommands('app:help',       { commands: helpCommands });
   useRegisterCommands('app:create',     { commands: createCommands });
+  useRegisterCommands('app:email',       { commands: emailCommands });
   useRegisterCommands('contacts:people', { provider: peopleProvider });
 
   return null;
@@ -551,6 +583,23 @@ const App: React.FC = () => {
   const handleMeetContact = useCallback((id: string) => {
     setSelectedContactId(id);
     setView(AppView.MEETINGS);
+  }, []);
+  // "Compose email" palette command (Tier D / D1). Two-path bridge mirroring the
+  // contacts open-card pattern: stash a pending intent in sessionStorage (drained
+  // on EmailHybridClient mount — covers cold navigation in from another view) AND
+  // dispatch the live event (caught by the already-mounted client's listener —
+  // the warm path when you're already on Email). CustomEvents aren't buffered, so
+  // the sessionStorage path is what survives the mount-after-event race. The
+  // command is only registered when emailEnabled is on (AppCommandRegistrar), and
+  // EmailClientWrapper drops the pending key when Gmail is disconnected so it can
+  // never pop a stale composer later. Empty composer by product decision.
+  const handleComposeEmail = useCallback(() => {
+    const payload = { recipient: '', subject: '', body: '' };
+    try {
+      sessionStorage.setItem('pulse_pending_compose', JSON.stringify(payload));
+    } catch {}
+    window.dispatchEvent(new CustomEvent('pulse:compose-email', { detail: payload }));
+    setView(AppView.EMAIL);
   }, []);
   const navRef = useRef<HTMLElement>(null);
   const preservedScrollTop = useRef<number | null>(null);
@@ -1240,7 +1289,7 @@ const App: React.FC = () => {
           Sections register their commands via useRegisterCommands so the
           palette aggregates Pulse-wide actions and section-specific ones. */}
       <GlobalCommandPalette />
-      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} />
+      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onComposeEmail={handleComposeEmail} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
           (g m → Map, g c → Contacts, …) plus a `?` overlay listing them
