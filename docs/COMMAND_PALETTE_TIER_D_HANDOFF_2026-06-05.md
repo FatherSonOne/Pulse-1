@@ -1,7 +1,10 @@
 # Command Palette — Tier D Handoff
 
 **Date:** 2026-06-05
-**Status:** Tiers A + B + C shipped to `main`; Tier D deferred (this doc).
+**Status:** ✅ **ALL SHIPPED 2026-06-05** — Tiers A+B+C + Tier D all on `main`
+(local/unpushed at write time; eyeball-pending). See the "Shipped" block below;
+the per-item sections that follow are now the **implementation record**, not a
+to-do list.
 **Author context:** Follows the echo usability walkthrough + adversarial recon of the
 global Command Palette. Tiers A–C are live; this handoff specifies the three
 remaining "create/act" verbs that were deliberately **not** bundled because each
@@ -11,6 +14,47 @@ needs new intent plumbing and/or carries a real landmine.
 > recon pass, but absolute line numbers predate the A–C edits to `App.tsx` and have
 > since shifted by ~140 lines. **Grep the named anchors, don't trust the numbers.**
 > Re-read each file before editing. Dry-run `tsc` gating on *no new* errors.
+
+---
+
+## ✅ SHIPPED — 2026-06-05 (all four items)
+
+All Tier D items landed on `main` this session (local/unpushed at write time;
+**eyeball-pending** — none verifiable headless). The per-item sections below are
+now the **implementation record**, not a to-do list.
+
+| Commit | Item | Notes |
+|--------|------|-------|
+| `cca4e2f` | D3 "Meet `<name>`" | Free reuse: `handleMeetContact` → `selectedContactId` → Meetings `initialContactId` auto-start. |
+| `4da5b1a` | D1 Compose email | `app:email` scope gated on `features.emailEnabled` (`useFeatures()`); two-path bridge (`pulse_pending_compose` + `pulse:compose-email`); warm listener + NEW cold-drain both clear the key; `EmailClientWrapper` drops the key on the Gmail-disconnected branch. |
+| `9504544` | D3 Start a meeting | Global `app:meetings` scope; `meetingIntent` state + `startIntent`/`onIntentConsumed` props on `Meetings.tsx`; reuses `createAndJoinPulseRoom('Instant Pulse Meeting')`. |
+| `f64225e` | D2 Vox `<name>` | Per-person in `contacts:people` via `handleVoxContact` → Relay Direct (self-arming recorder). |
+
+**Product decisions made (the "DO NOT auto-resolve" set):**
+
+- **D1 Gmail-disconnected:** gate registration on `emailEnabled` only (not the
+  Gmail grant); the command lands on the Connect-Gmail screen, and
+  `EmailClientWrapper` clears `pulse_pending_compose` on the disconnected branch
+  so no stale composer pops after a later connect.
+- **D1 prefill:** empty composer (no prefill; no per-person "Compose `<name>`").
+- **D2 target:** chose **per-person "Vox `<name>`"** over a global "new voice
+  note." Recorder is **per-mode** — only Notes is always-enabled;
+  Direct/Channel/Broadcast register no recorder until a target exists
+  (`enabled: !!activeContactId`). No auto-mic — the FloatingMic click stays the
+  consenting `getUserMedia` gesture.
+- **D3 semantics:** instant blank room (not navigate-only); coexists with the
+  Dashboard-scoped navigate-only "Schedule Meet" (`action-meeting`).
+
+**Deviation from this doc's D3 plan (#5), named per CLAUDE.md:**
+`handleStartMeeting` clears `selectedContactId` before arming the intent —
+otherwise Meetings' `initialContactId` effect would ALSO fire
+`createAndJoinPulseRoom('Meeting with <name>')` on a cold navigation in, creating
+two rooms / two edge calls.
+
+**Net:** `contacts:people` now emits **4 rows/person** (Open/Message/Meet/Vox,
+≤5 matches ⇒ ≤20 rows) plus two global commands (Compose email, Start a meeting).
+`tsc`: no new errors (App.tsx carries 3 pre-existing: `'note'` `ArchiveType`,
+`setUser`, FeatureProvider `defaultMode`).
 
 ---
 
