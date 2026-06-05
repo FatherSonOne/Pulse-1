@@ -1203,7 +1203,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
   const quickActions = useMemo(() => [
     { id: 'task', label: 'New Task', icon: 'fa-check', view: AppView.CALENDAR, openTaskPanel: true },
     { id: 'message', label: 'Send Message', icon: 'fa-message', view: AppView.MESSAGES },
-    { id: 'meeting', label: 'Schedule Meet', icon: 'fa-video', view: AppView.CALENDAR },
+    { id: 'meeting', label: 'Schedule Meet', icon: 'fa-video', view: AppView.MEETINGS },
     { id: 'email', label: 'Compose Email', icon: 'fa-envelope', view: AppView.EMAIL },
     { id: 'vox', label: 'Quick Relay', icon: 'fa-microphone', view: AppView.RELAY },
     { id: 'contact', label: 'New Contact', icon: 'fa-user-plus', view: AppView.CONTACTS, openAddContact: true },
