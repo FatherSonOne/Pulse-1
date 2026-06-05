@@ -486,6 +486,22 @@ export function usePermissions() {
     console.log('[Permissions] Setup marked as complete');
   }, []);
 
+  // Explicit "Skip for now / Set these later in Settings": record that setup was
+  // offered and the user deferred, so the modal stops auto-appearing on every
+  // auth refresh. Marks all essential permissions as *handled* — NOT granted
+  // (feature-gating reads permissions.X.granted, not completedPermissions) — and
+  // flags setup complete so shouldShowPermissionModal() resolves to false.
+  const dismissPermissionSetup = useCallback(async () => {
+    const essentials: PermissionName[] = ['microphone', 'camera', 'notifications', 'contacts', 'location'];
+    setCompletedPermissions(prev => {
+      const updated = new Set<PermissionName>([...prev, ...essentials]);
+      saveCompletedPermissions(updated).catch(console.error);
+      return updated;
+    });
+    await markSetupComplete();
+    console.log('[Permissions] Setup dismissed (deferred to Settings)');
+  }, [markSetupComplete]);
+
   // Request all essential permissions (called on app startup)
   const requestAllPermissions = useCallback(async () => {
     if (hasRequestedOnStartup) {
@@ -582,6 +598,14 @@ export function usePermissions() {
     const essentialPermissions: PermissionName[] = ['microphone', 'camera', 'notifications', 'contacts', 'location'];
 
     for (const name of essentialPermissions) {
+      // Skip permissions that can't surface a prompt on this platform (the web
+      // Contact Picker is Chrome-Android only) — otherwise they sit "pending"
+      // forever and keep shouldShowPermissionModal() true, re-popping the modal
+      // on every auth refresh.
+      if (name === 'contacts' && !isNativePlatform() && !('contacts' in navigator)) {
+        continue;
+      }
+
       const state = permissions[name];
       const wasCompleted = completedPermissions.has(name);
 
@@ -640,6 +664,7 @@ export function usePermissions() {
     getPermissionsToRequest,
     shouldShowPermissionModal,
     markSetupComplete,
+    dismissPermissionSetup,
     isNativePlatform: isNativePlatform(),
     isAndroid: isAndroid(),
     isIOS: isIOS(),

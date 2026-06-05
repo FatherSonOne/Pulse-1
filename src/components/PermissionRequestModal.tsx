@@ -142,6 +142,7 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
     markPermissionCompleted,
     completedPermissions,
     markSetupComplete,
+    dismissPermissionSetup,
     isNativePlatform,
   } = usePermissions();
 
@@ -540,12 +541,14 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
           </div>
         )}
 
-        {/* Skip-all link — only at step 0 */}
+        {/* Skip-all link — only at step 0. Persists the deferral so the wizard
+            doesn't auto-reappear on every auth refresh (the copy promises
+            "later in Settings"); backdrop-click stays ephemeral by contrast. */}
         {onSkip && currentStep === 0 && (
           <div className="px-6 pb-5">
             <button
               type="button"
-              onClick={onSkip}
+              onClick={() => { dismissPermissionSetup(); onSkip(); }}
               className="perm-focus w-full text-center text-xs rounded-lg py-1 transition-colors"
               style={{ color: 'var(--pulse-ink-3)' }}
             >
