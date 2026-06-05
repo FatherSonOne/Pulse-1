@@ -647,7 +647,6 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                       filteredFeatures={filteredFeatures as (keyof FeatureFlags)[]}
                       features={features}
                       isExpanded={expandedCategories.has(categoryId)}
-                      isPriority={categoryId === 'priority'}
                       isDark={isDark}
                       theme={t}
                       onToggleCategory={toggleCategory}
@@ -1074,7 +1073,6 @@ interface CategoryRowProps {
   filteredFeatures: (keyof FeatureFlags)[];
   features: FeatureFlags;
   isExpanded: boolean;
-  isPriority: boolean;
   isDark: boolean;
   theme: ThemeShape;
   onToggleCategory: (id: string) => void;
@@ -1091,7 +1089,6 @@ const CategoryRow: React.FC<CategoryRowProps> = React.memo(function CategoryRow(
   filteredFeatures,
   features,
   isExpanded,
-  isPriority,
   isDark,
   theme: t,
   onToggleCategory,
@@ -1162,65 +1159,62 @@ const CategoryRow: React.FC<CategoryRowProps> = React.memo(function CategoryRow(
               featureId={featureId}
               featureName={FEATURE_NAMES[featureId]}
               isEnabled={!!features[featureId]}
-              isPriority={isPriority}
               isDark={isDark}
               theme={t}
               onToggle={onToggleFeature}
             />
           ))}
 
-          {!isPriority && (
-            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-              <button
-                type="button"
-                onClick={() => onEnableCategory(categoryId)}
-                style={{
-                  flex: 1,
-                  padding: '8px',
-                  background: t.enableBtnBg,
-                  border: `1px solid ${t.enableBtnBorder}`,
-                  borderRadius: '8px',
-                  color: t.disableBtnText,
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'background 0.15s ease, color 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#f43f5e';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = t.disableBtnText;
-                }}
-              >
-                {tr('messages.featureSettings.enableAll', 'Enable All')}
-              </button>
-              <button
-                type="button"
-                onClick={() => onDisableCategory(categoryId)}
-                style={{
-                  flex: 1,
-                  padding: '8px',
-                  background: t.disableBtnBg,
-                  border: `1px solid ${t.disableBtnBorder}`,
-                  borderRadius: '8px',
-                  color: t.disableBtnText,
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'background 0.15s ease, color 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#f43f5e';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = t.disableBtnText;
-                }}
-              >
-                {tr('messages.featureSettings.disableAll', 'Disable All')}
-              </button>
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+            <button
+              type="button"
+              onClick={() => onEnableCategory(categoryId)}
+              style={{
+                flex: 1,
+                padding: '8px',
+                background: t.enableBtnBg,
+                border: `1px solid ${t.enableBtnBorder}`,
+                borderRadius: '8px',
+                color: t.disableBtnText,
+                fontSize: '12px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'background 0.15s ease, color 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#f43f5e';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = t.disableBtnText;
+              }}
+            >
+              {tr('messages.featureSettings.enableAll', 'Enable All')}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDisableCategory(categoryId)}
+              style={{
+                flex: 1,
+                padding: '8px',
+                background: t.disableBtnBg,
+                border: `1px solid ${t.disableBtnBorder}`,
+                borderRadius: '8px',
+                color: t.disableBtnText,
+                fontSize: '12px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'background 0.15s ease, color 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#f43f5e';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = t.disableBtnText;
+              }}
+            >
+              {tr('messages.featureSettings.disableAll', 'Disable All')}
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -1231,7 +1225,6 @@ interface FeatureRowProps {
   featureId: keyof FeatureFlags;
   featureName: string;
   isEnabled: boolean;
-  isPriority: boolean;
   isDark: boolean;
   theme: ThemeShape;
   onToggle: (id: keyof FeatureFlags, enabled?: boolean) => void;
@@ -1241,7 +1234,6 @@ const FeatureRow: React.FC<FeatureRowProps> = React.memo(function FeatureRow({
   featureId,
   featureName,
   isEnabled,
-  isPriority,
   isDark,
   theme: t,
   onToggle,
@@ -1266,29 +1258,11 @@ const FeatureRow: React.FC<FeatureRowProps> = React.memo(function FeatureRow({
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: '14px', fontWeight: 500, color: t.featureText }}>
           {featureName}
-          {isPriority && (
-            <span
-              style={{
-                marginLeft: '8px',
-                fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
-                fontSize: '10px',
-                letterSpacing: '0.1em',
-                padding: '2px 6px',
-                background: '#f43f5e',
-                color: '#fafafa',
-                borderRadius: '4px',
-                fontWeight: 500,
-              }}
-            >
-              {tr('messages.featureSettings.priorityBadge', 'PRIORITY')}
-            </span>
-          )}
         </div>
       </div>
       <ToggleSwitch
         checked={isEnabled}
         onChange={handleToggle}
-        disabled={isPriority}
         ariaLabel={tr('messages.featureSettings.toggleFeature', {
           name: featureName,
           defaultValue: 'Toggle {{name}}',
