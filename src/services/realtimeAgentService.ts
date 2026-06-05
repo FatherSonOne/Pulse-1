@@ -783,31 +783,45 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
       participantModeInstructions,
     ].filter(Boolean).join('\n\n');
 
+    const turnDetection = this.config.turnDetection.type === 'semantic_vad'
+      ? {
+          type: 'semantic_vad',
+          eagerness: this.config.turnDetection.eagerness || 'medium', // CHANGED: Medium eagerness for natural flow
+          create_response: true,
+          interrupt_response: false, // Disable to prevent AI interrupting itself from echo
+        }
+      : {
+          type: 'server_vad',
+          threshold: this.config.turnDetection.threshold || 0.7, // Moderate threshold for natural speech detection
+          prefix_padding_ms: this.config.turnDetection.prefixPaddingMs || 800, // Longer prefix to capture full thoughts
+          silence_duration_ms: this.config.turnDetection.silenceDurationMs || 2500, // INCREASED: Allow natural pauses (2.5s)
+        };
+
+    // GA session shape: `session.type` is REQUIRED ('realtime'); audio settings
+    // moved under `audio.input` / `audio.output` (the old flat `voice` /
+    // `input_audio_format` / `input_audio_transcription` / `turn_detection` /
+    // `modalities` were beta-only and GA rejects/ignores them). The 'audio'
+    // output modality carries both the spoken audio and its transcript. We don't
+    // pin input/output `format` — over WebRTC the codec is negotiated on the
+    // media channel, so format here is moot.
     const sessionUpdate = {
       type: 'session.update',
       session: {
-        modalities: ['text', 'audio'],
-        voice: this.config.voice,
+        type: 'realtime',
+        output_modalities: ['audio'],
         instructions: fullInstructions,
-        input_audio_format: 'pcm16',
-        output_audio_format: 'pcm16',
-        input_audio_transcription: {
-          model: this.config.inputAudioTranscription?.model || 'whisper-1',
-          language: this.config.preferredLanguage || this.config.inputAudioTranscription?.language || 'en',
-        },
-        turn_detection: this.config.turnDetection.type === 'semantic_vad'
-          ? {
-              type: 'semantic_vad',
-              eagerness: this.config.turnDetection.eagerness || 'medium', // CHANGED: Medium eagerness for natural flow
-              create_response: true,
-              interrupt_response: false, // Disable to prevent AI interrupting itself from echo
-            }
-          : {
-              type: 'server_vad',
-              threshold: this.config.turnDetection.threshold || 0.7, // Moderate threshold for natural speech detection
-              prefix_padding_ms: this.config.turnDetection.prefixPaddingMs || 800, // Longer prefix to capture full thoughts
-              silence_duration_ms: this.config.turnDetection.silenceDurationMs || 2500, // INCREASED: Allow natural pauses (2.5s)
+        audio: {
+          input: {
+            transcription: {
+              model: this.config.inputAudioTranscription?.model || 'whisper-1',
+              language: this.config.preferredLanguage || this.config.inputAudioTranscription?.language || 'en',
             },
+            turn_detection: turnDetection,
+          },
+          output: {
+            voice: this.config.voice,
+          },
+        },
         tools: this.buildToolsConfig(),
       },
     };
@@ -895,6 +909,7 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
         break;
 
       case 'response.audio_transcript.delta':
+      case 'response.output_audio_transcript.delta': // GA event name
         this.emit({
           type: 'transcript_delta',
           delta: event.delta as string,
@@ -904,6 +919,7 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
         break;
 
       case 'response.audio_transcript.done':
+      case 'response.output_audio_transcript.done': // GA event name
         this.emit({
           type: 'transcript_delta',
           delta: event.transcript as string,
@@ -935,11 +951,13 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
         break;
 
       case 'response.audio.delta':
+      case 'response.output_audio.delta': // GA event name
         // Audio chunks are handled by WebRTC automatically
         this.isSpeaking = true;
         break;
 
       case 'response.audio.done':
+      case 'response.output_audio.done': // GA event name
         this.isSpeaking = false;
         break;
 
