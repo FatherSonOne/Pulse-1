@@ -14,8 +14,7 @@
 // Codes: NO_SUBSCRIPTION, OVER_CAP, TRIAL_CAP, WRONG_TIER, NOT_MEMBER,
 //        UPSTREAM_ERROR. The client switches UX on the code.
 
-import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,7 +35,7 @@ const TRIAL_SESSION_SEC = 300;
 // Hard ceilings if a plan somehow lands without explicit caps.
 const FALLBACK_SESSION_SEC = 900;
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
