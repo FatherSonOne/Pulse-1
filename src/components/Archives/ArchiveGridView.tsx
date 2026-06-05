@@ -34,7 +34,7 @@ export const ArchiveGridView: React.FC<ArchiveGridViewProps> = ({ items }) => {
               selectedItem?.id === item.id
                 ? 'bg-rose-500/5 border-rose-500/30'
                 : isSelected
-                ? 'bg-blue-500/5 border-blue-500/30'
+                ? 'bg-rose-500/[0.04] border-rose-500/20'
                 : 'bg-white dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
             }`}
           >

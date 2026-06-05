@@ -204,7 +204,7 @@ export const MemoryOverviewPanel: React.FC = () => {
             Every word. Every voice. Every Pulse.
           </h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-            One searchable surface for every conversation that happens through Pulse — meetings, voice notes, transcripts, decisions, AI summaries. Capture a conversation to start the catalogue.
+            One searchable surface for every conversation that happens through Pulse: meetings, voice notes, transcripts, decisions, AI summaries. Capture a conversation to start the catalogue.
           </p>
         </div>
       </div>
@@ -236,7 +236,7 @@ export const MemoryOverviewPanel: React.FC = () => {
           )}
         </div>
         <h2 className="text-base font-light text-zinc-900 dark:text-zinc-50 leading-snug max-w-prose">
-          <span className="font-mono text-[15px] text-rose-500">{memory.total.toLocaleString()}</span>
+          <span className="font-mono text-[15px] text-zinc-900 dark:text-zinc-50">{memory.total.toLocaleString()}</span>
           <span className="text-zinc-600 dark:text-zinc-400"> conversations across </span>
           <span className="font-mono text-[15px] text-zinc-900 dark:text-zinc-50">{memory.contactCount}</span>
           <span className="text-zinc-600 dark:text-zinc-400"> people</span>

@@ -133,7 +133,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
               </h2>
               {briefing && (
                 <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-500 mt-1.5 tabular-nums">
-                  {briefing.sourceCount} conversation{briefing.sourceCount === 1 ? '' : 's'} · {fmtShort(briefing.rangeStart)} — {fmtShort(briefing.rangeEnd)}
+                  {briefing.sourceCount} conversation{briefing.sourceCount === 1 ? '' : 's'} · {fmtShort(briefing.rangeStart)} to {fmtShort(briefing.rangeEnd)}
                 </p>
               )}
             </div>
