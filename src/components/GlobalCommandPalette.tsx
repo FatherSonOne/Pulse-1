@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Search, ArrowRight, Clock, NotebookPen } from 'lucide-react';
-import { Command, useCommandPalette } from '../contexts/CommandPaletteContext';
+import { Command, useCommandPalette, canonicalizeShortcut } from '../contexts/CommandPaletteContext';
 import { getRecentCommandIds, pushRecentCommand, getMostUsedCommandIds, isMac } from '../utils/recentCommands';
 import { useWorkspaceData } from '../contexts/WorkspaceContext';
 import { captureService, type CaptureNote } from '../services/captureService';
@@ -98,6 +98,21 @@ function highlightMatch(text: string, query: string): React.ReactNode {
 /** Cached at module scope so we render the right glyph without per-render work. */
 const SHORTCUT_HINT = isMac() ? '⌘K' : 'Ctrl+K';
 
+/**
+ * A shortcut chip should render ONLY if the global runner could actually fire
+ * it. The runner (CommandPaletteContext) accepts a keypress via eventToCanonical,
+ * which rejects bare keys — it requires a mod/alt — and canonicalizeShortcut
+ * returns null for multi-key sequences ('g e'). So a chip is "live" iff the
+ * shortcut canonicalizes AND its canonical form carries a 'mod' or 'alt' token.
+ * Rendering a chip the runner can't fire (e.g. 'c', 'g e') advertises a dead
+ * binding — the single most-cited trust defect in the palette's usability review.
+ */
+function isLiveShortcut(shortcut: string): boolean {
+  const canonical = canonicalizeShortcut(shortcut);
+  if (!canonical) return false;
+  return canonical.split('+').some(tok => tok === 'mod' || tok === 'alt');
+}
+
 // ─── CommandRow ───────────────────────────────────────────────────────────────
 
 interface CommandRowProps {
@@ -169,10 +184,12 @@ const CommandRow: React.FC<CommandRowProps> = ({ command, active, onHover, onAct
             </span>
           )}
         </span>
-        {command.shortcut ? (
+        {command.shortcut && isLiveShortcut(command.shortcut) ? (
           // A real shortcut wins the right-aligned slot — more useful to the
           // user than the kind badge. Split on '+' so multi-key combos like
-          // 'Ctrl+Shift+R' render as separate kbd chips.
+          // 'Ctrl+Shift+R' render as separate kbd chips. Chips only render for
+          // shortcuts the runner can actually fire (isLiveShortcut) — a dead
+          // 'g e' / 'c' hint falls through to the kind badge below.
           <span className="shrink-0 inline-flex items-center gap-1">
             {command.shortcut.split('+').map((key, i) => (
               <kbd

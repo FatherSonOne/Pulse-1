@@ -57,7 +57,7 @@ interface RegistryEntry {
 //   • Multi-key sequences like 'g e' aren't supported here — they render
 //     as chips but won't fire. The runner skips strings with whitespace.
 
-function canonicalizeShortcut(raw: string): string | null {
+export function canonicalizeShortcut(raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed || /\s/.test(trimmed)) return null;
   const parts = trimmed.split('+').map(p => p.trim().toLowerCase()).filter(Boolean);
