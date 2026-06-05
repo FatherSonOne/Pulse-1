@@ -186,6 +186,7 @@ interface AppCommandRegistrarProps {
   contacts: Contact[];
   onOpenContact: (id: string) => void;
   onMessageContact: (id: string) => void;
+  onMeetContact: (id: string) => void;
 }
 
 const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
@@ -197,6 +198,7 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   contacts,
   onOpenContact,
   onMessageContact,
+  onMeetContact,
 }) => {
   const { open } = useCommandPalette();
 
@@ -386,9 +388,18 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
         group: 'People',
         run: () => onMessageContact(c.id),
       });
+      cmds.push({
+        id: `person-meet-${c.id}`,
+        label: `Meet ${display}`,
+        desc: 'Start a video meeting',
+        icon: 'fa-video',
+        kind: 'action',
+        group: 'People',
+        run: () => onMeetContact(c.id),
+      });
     }
     return cmds;
-  }, [contacts, onOpenContact, onMessageContact]);
+  }, [contacts, onOpenContact, onMessageContact, onMeetContact]);
 
   // Register navigation as a separate scope from help so registries are
   // organized by intent and easy to debug.
@@ -534,8 +545,20 @@ const App: React.FC = () => {
     setSelectedContactId(id);
     setView(AppView.MESSAGES);
   }, []);
+  // "Meet <name>" palette command. Sets selectedContactId + routes to Meetings,
+  // which auto-starts an instant Pulse room via its initialContactId effect —
+  // the same path Contacts' handleContactAction('meet') already uses.
+  const handleMeetContact = useCallback((id: string) => {
+    setSelectedContactId(id);
+    setView(AppView.MEETINGS);
+  }, []);
   const navRef = useRef<HTMLElement>(null);
   const preservedScrollTop = useRef<number | null>(null);
+  // Guards the setup modal to auto-open at most once per app session. Without it
+  // the trigger effect below re-fires on every Supabase token refresh (each
+  // yields a new `user` object reference) and re-pops the modal every ~hour / on
+  // re-auth.
+  const permissionPromptShownRef = useRef(false);
 
   // Permissions hook
   const {
@@ -720,17 +743,21 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, [contacts, toggleTheme]);
 
-  // Show permission request modal on first login or when new permissions are needed
-  // Only show once per session and only for permissions that haven't been handled
+  // Show permission request modal on first login or when new permissions are needed.
+  // Auto-shows at most ONCE per app session (permissionPromptShownRef) — otherwise
+  // this effect re-fires on every Supabase token refresh (each yields a new `user`
+  // reference) and re-pops the modal every ~hour / on re-auth.
   useEffect(() => {
+    if (permissionPromptShownRef.current || showPermissionModal) return;
     if (user && permissionsInitialized && !isAuthLoading && shouldShowPermissionModal()) {
       // Delay slightly to let the app fully render first
       const timer = setTimeout(() => {
+        permissionPromptShownRef.current = true;
         setShowPermissionModal(true);
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [user, permissionsInitialized, isAuthLoading, shouldShowPermissionModal]);
+  }, [user, permissionsInitialized, isAuthLoading, shouldShowPermissionModal, showPermissionModal]);
 
   // Sync settings from cloud on login
   useEffect(() => {
@@ -1213,7 +1240,7 @@ const App: React.FC = () => {
           Sections register their commands via useRegisterCommands so the
           palette aggregates Pulse-wide actions and section-specific ones. */}
       <GlobalCommandPalette />
-      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} />
+      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
           (g m → Map, g c → Contacts, …) plus a `?` overlay listing them
