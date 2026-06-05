@@ -546,7 +546,7 @@ const App: React.FC = () => {
   const initialMeetingCode = meetingMatch ? meetingMatch[1] : null;
 
   // Use authentication context
-  const { user, isLoading: isAuthLoading, logout } = useAuth();
+  const { user, isLoading: isAuthLoading, logout, refreshSession } = useAuth();
 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
@@ -1241,7 +1241,7 @@ const App: React.FC = () => {
               setView(AppView.MAP);
               return null;
             case AppView.EMAIL:
-              return user ? <EmailClient user={user} onUpdateUser={() => setUser({...user})} /> : null;
+              return user ? <EmailClient user={user} onUpdateUser={() => { refreshSession(); }} /> : null;
             case AppView.ARCHIVES:
               return <Archives />;
             case AppView.SETTINGS:
