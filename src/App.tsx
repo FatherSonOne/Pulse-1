@@ -1468,11 +1468,12 @@ const App: React.FC = () => {
           single Toaster serves the whole app. */}
       <Toaster position="top-right" gutter={8} />
 
-      {/* Global command surface — a chrome pill that expands the shared palette
-          drawer (Phase 5: the centered modal was retired). Sections register
-          their commands via useRegisterCommands so the palette aggregates
-          Pulse-wide and section-specific actions. Suppressed on the Dashboard,
-          which keeps its own hero command bar and handles ⌘K itself. */}
+      {/* Global command surface — the command drawer, opened by ⌘K / the sidebar
+          launcher / the mobile button / the g-/ chord (Phase 5: the centered modal
+          was retired). Renders nothing at rest. Sections register their commands
+          via useRegisterCommands so the palette aggregates Pulse-wide and
+          section-specific actions. Suppressed on the Dashboard, which keeps its
+          own hero command bar and handles ⌘K itself. */}
       <GlobalCommandBar suppressed={view === AppView.DASHBOARD} />
       {/* Global quick-actions FAB — floats on every view, fires real actions
           (Phase 5b). Reuses App's intent handlers; gates the email action on

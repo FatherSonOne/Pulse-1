@@ -392,14 +392,14 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
   );
 };
 
-// ─── GlobalCommandBar (chrome pill → expand) ───────────────────────────────────
-// The command surface (Phase 5: the centered modal was retired). A collapsed
-// command pill that floats in the app chrome; clicking it — or pressing ⌘K, which
-// App dispatches as pulse:command-palette-open — expands it in place into the
-// shared palette drawer. The expanded panel is portal'd to <body> so it's never
-// clipped by the overflow-hidden view panes (Messages/Calendar). `suppressed` is
-// set on views that own their own command surface (the Dashboard hero bar);
-// there the pill is hidden and unwired, and that view handles ⌘K itself. Hooks
+// ─── GlobalCommandBar (command drawer host) ────────────────────────────────────
+// The command surface (Phase 5: the centered modal was retired). Renders nothing
+// at rest — the launcher is a button in the sidebar header. When ⌘K (or the
+// mobile button / g/ chord / sidebar launcher) dispatches pulse:command-palette-open,
+// this opens a top-centered command drawer over a dismiss backdrop, portal'd to
+// <body> so it's never clipped by the overflow-hidden view panes (Messages/
+// Calendar). `suppressed` is set on views that own their own command surface (the
+// Dashboard hero bar); there this is unwired and the view handles ⌘K itself. Hooks
 // run every render so the early null-return stays Rules-of-Hooks safe. Collapses
 // on Escape, outside-click, or after running a command.
 
@@ -407,8 +407,10 @@ export const GlobalCommandBar: React.FC<{ suppressed?: boolean }> = ({ suppresse
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Expand on ⌘K (pulse:command-palette-open, dispatched by App) and on an
-  // explicit focus request. Not wired when suppressed (the host view owns ⌘K).
+  // Open on pulse:command-palette-open (dispatched by ⌘K, the mobile header
+  // button, the g/ chord, and the sidebar command launcher) or an explicit
+  // focus request. Not wired when suppressed (the host view owns ⌘K — the
+  // Dashboard focuses its hero bar instead).
   useEffect(() => {
     if (suppressed) return;
     const onRequest = () => setExpanded(true);
@@ -420,48 +422,31 @@ export const GlobalCommandBar: React.FC<{ suppressed?: boolean }> = ({ suppresse
     };
   }, [suppressed]);
 
-  if (suppressed) return null;
-
   const collapse = () => setExpanded(false);
 
-  return (
-    <>
-      {/* Collapsed pill — floats top-right, zero layout cost (portal'd). */}
-      {!expanded && ReactDOM.createPortal(
-        <button
-          type="button"
-          onClick={() => setExpanded(true)}
-          aria-label="Open command bar"
-          className="fixed top-3 right-4 z-[9996] inline-flex items-center gap-2 h-9 pl-3 pr-2 rounded-lg bg-white/95 dark:bg-zinc-900/90 backdrop-blur border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 shadow-sm hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-white/[0.14] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
-        >
-          <Search className="w-4 h-4 shrink-0" />
-          <span className="text-sm hidden md:inline">Search or run a command</span>
-          <kbd className="hidden md:inline-flex items-center justify-center h-5 px-1.5 rounded text-[10px] font-mono bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.08]">{SHORTCUT_HINT}</kbd>
-        </button>,
-        document.body
-      )}
+  // Renders nothing until opened — the launcher lives in the sidebar header.
+  // When opened, a top-centered command drawer over a dismiss backdrop, portal'd
+  // to <body> so it's never clipped by the overflow-hidden view panes.
+  if (suppressed || !expanded) return null;
 
-      {/* Expanded — full-screen catcher + panel anchored to the pill corner. */}
-      {expanded && ReactDOM.createPortal(
-        <div
-          className="fixed inset-0 z-[10000] bg-zinc-950/20 dark:bg-zinc-950/40 animate-fade-in"
-          onMouseDown={collapse}
-          role="presentation"
-        >
-          <div
-            className="absolute top-3 right-4 left-4 sm:left-auto sm:w-[min(92vw,34rem)]"
-            onMouseDown={e => e.stopPropagation()}
-          >
-            <InlineCommandPalette
-              inputRef={inputRef}
-              autoFocusOnMount
-              onClose={collapse}
-              placeholder={`Run a command — type to search · ${SHORTCUT_HINT}`}
-            />
-          </div>
-        </div>,
-        document.body
-      )}
-    </>
+  return ReactDOM.createPortal(
+    <div
+      className="fixed inset-0 z-[10000] bg-zinc-950/30 dark:bg-zinc-950/50 backdrop-blur-sm animate-fade-in"
+      onMouseDown={collapse}
+      role="presentation"
+    >
+      <div
+        className="absolute top-[12vh] left-1/2 -translate-x-1/2 w-[min(92vw,36rem)] px-2"
+        onMouseDown={e => e.stopPropagation()}
+      >
+        <InlineCommandPalette
+          inputRef={inputRef}
+          autoFocusOnMount
+          onClose={collapse}
+          placeholder={`Run a command — type to search · ${SHORTCUT_HINT}`}
+        />
+      </div>
+    </div>,
+    document.body
   );
 };

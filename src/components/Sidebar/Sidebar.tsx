@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useEntitlements } from '../../hooks/useEntitlements';
 import { useFeatures } from '../../contexts/FeatureContext';
+import { isMac } from '../../utils/recentCommands';
 
 // ============================================
 // TYPES
@@ -333,6 +334,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
         </div>
+
+        {/* Command launcher — opens the global command palette drawer. ⌘K works
+            anywhere; this is the visible chrome affordance (replaces the old
+            floating pill, which collided with section controls). */}
+        {!isCollapsed ? (
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('pulse:command-palette-open'))}
+            title="Search or run a command"
+            aria-label="Search or run a command"
+            className="mx-3 mb-2 flex items-center gap-2 h-9 px-3 rounded-lg bg-zinc-800/40 hover:bg-zinc-800 border border-white/[0.06] text-zinc-400 hover:text-zinc-200 transition-colors"
+          >
+            <Search size={15} className="shrink-0" />
+            <span className="text-sm flex-1 text-left">Search</span>
+            <kbd className="inline-flex items-center h-5 px-1.5 rounded text-[10px] font-mono bg-white/[0.06] border border-white/[0.08]">{isMac() ? '⌘K' : 'Ctrl+K'}</kbd>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('pulse:command-palette-open'))}
+            title={`Search or run a command (${isMac() ? '⌘K' : 'Ctrl+K'})`}
+            aria-label="Search or run a command"
+            className="mx-auto mb-2 w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+          >
+            <Search size={16} />
+          </button>
+        )}
 
         {/* Workspace Switcher */}
         <WorkspaceSwitcher isCollapsed={isCollapsed} />
