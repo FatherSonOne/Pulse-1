@@ -66,6 +66,7 @@ export const EditableAvatar: React.FC<EditableAvatarProps> = ({
         <img
           src={url}
           alt={name}
+          onError={() => setUrl(undefined)}
           className="rounded-full object-cover"
           style={{ width: size, height: size }}
         />

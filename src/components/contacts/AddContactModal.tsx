@@ -64,6 +64,16 @@ export const AddContactModal: React.FC<AddContactModalProps> = ({
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id));
   }, []);
 
+  // Reset the avatar + regenerate the upload key each time the modal opens, so a
+  // reopen never reuses a prior session's key (the component returns null when
+  // closed but stays mounted, keeping state).
+  useEffect(() => {
+    if (isOpen) {
+      setAvatarUrl(undefined);
+      setAvatarKey(crypto.randomUUID());
+    }
+  }, [isOpen]);
+
   const handleSubmit = async () => {
     if (!form.name.trim() || !form.email.trim()) return;
     

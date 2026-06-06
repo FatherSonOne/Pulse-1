@@ -39,8 +39,8 @@ export const ContactListItem: React.FC<ContactListItemProps> = ({
           onSelect();
         }
       }}
-      aria-current={selected}
-      className={`group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-colors cursor-pointer ${
+      aria-current={selected ? 'true' : undefined}
+      className={`group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
         selected
           ? 'bg-[var(--pulse-rose-soft)] border-[var(--pulse-rose-soft)]'
           : 'border-transparent hover:bg-[var(--pulse-surface-raised)]'
@@ -57,7 +57,7 @@ export const ContactListItem: React.FC<ContactListItemProps> = ({
           onToggleCheck();
         }}
         className={`shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-opacity ${
-          checked || selectionActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
+          checked || selectionActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus:opacity-100 focus:opacity-100'
         }`}
         style={{
           borderColor: checked ? 'var(--pulse-rose)' : 'var(--pulse-border-strong)',

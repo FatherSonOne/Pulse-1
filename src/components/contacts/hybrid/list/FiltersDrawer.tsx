@@ -55,6 +55,7 @@ const SectionToggle: React.FC<{ label: string; open: boolean; onToggle: () => vo
     type="button"
     onClick={onToggle}
     aria-expanded={open}
+    aria-label={`Toggle ${label} section`}
     className="w-full flex items-center justify-between px-1 pb-1.5 text-[10px] uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500"
     style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
   >
@@ -107,6 +108,7 @@ export const FiltersDrawer: React.FC<FiltersDrawerProps> = ({
                 <button
                   key={list.id}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => onSmartListChange(active ? null : list.id)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm border transition-colors ${
                     active
@@ -139,6 +141,8 @@ export const FiltersDrawer: React.FC<FiltersDrawerProps> = ({
                     key={circle.id}
                     type="button"
                     title={circle.name}
+                    aria-label={circle.name}
+                    aria-pressed={active}
                     onClick={() => onCircleChange(active ? null : circle.id)}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm border transition-colors ${
                       active
@@ -149,6 +153,7 @@ export const FiltersDrawer: React.FC<FiltersDrawerProps> = ({
                     <span
                       className="shrink-0 w-2.5 h-2.5 rounded-full"
                       style={{ background: circle.color || 'var(--pulse-ink-3)' }}
+                      aria-hidden="true"
                     />
                     <span className="flex-1 truncate">{circle.name}</span>
                     <span className="text-xs text-zinc-400 dark:text-zinc-500">

@@ -222,6 +222,7 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
                 <textarea
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
+                  aria-label="Drafted opener message"
                   rows={3}
                   className="w-full text-xs rounded-lg p-2 resize-none outline-none border bg-transparent text-zinc-600 dark:text-zinc-300 focus:ring-1 focus:ring-rose-400"
                   style={{ borderColor: 'var(--pulse-border)' }}

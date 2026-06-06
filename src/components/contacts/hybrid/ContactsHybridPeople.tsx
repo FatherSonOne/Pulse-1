@@ -366,6 +366,11 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
     await refreshArchivedContacts();
     const nextContacts = await dataService.getContacts();
     onSyncComplete?.(nextContacts);
+    // If the focused contact was part of the bulk op (archived/deleted), drop the
+    // focus so the Focus pane doesn't keep showing a now-removed contact.
+    if (selectedContactId && selectedIdList.includes(selectedContactId)) {
+      setSelectedContactId(null);
+    }
   };
 
   const handleBulkArchive = async () => {
@@ -418,17 +423,23 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
   };
 
   const handleShareToWorkspace = async (workspaceId: string) => {
-    const result = await shareContactsToWorkspace(selectedIdList, workspaceId);
-    const workspaceName = workspaces.find((w) => w.id === workspaceId)?.name ?? '';
-    if (result.failed.length > 0) {
-      toast.error(t('contacts.bulkToolbar.partial_failure', { succeeded: result.succeeded.length, failed: result.failed.length, total: selectedIdList.length }));
-    } else {
-      toast.success(t('contacts.bulkToolbar.success_shared', { count: result.succeeded.length, workspace: workspaceName }));
+    if (bulkInFlight || selectedIdList.length === 0) return { shared: 0, failed: 0 };
+    setBulkInFlight(true);
+    try {
+      const result = await shareContactsToWorkspace(selectedIdList, workspaceId);
+      const workspaceName = workspaces.find((w) => w.id === workspaceId)?.name ?? '';
+      if (result.failed.length > 0) {
+        toast.error(t('contacts.bulkToolbar.partial_failure', { succeeded: result.succeeded.length, failed: result.failed.length, total: selectedIdList.length }));
+      } else {
+        toast.success(t('contacts.bulkToolbar.success_shared', { count: result.succeeded.length, workspace: workspaceName }));
+      }
+      setShowWorkspaceShare(false);
+      setSelectedIds(new Set());
+      await refreshAfterBulkOperation();
+      return { shared: result.succeeded.length, failed: result.failed.length };
+    } finally {
+      setBulkInFlight(false);
     }
-    setShowWorkspaceShare(false);
-    setSelectedIds(new Set());
-    await refreshAfterBulkOperation();
-    return { shared: result.succeeded.length, failed: result.failed.length };
   };
 
   // Cards (Send-as-card) intentionally omitted — Phase C, deferred to a later slice.
@@ -547,10 +558,16 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
         }}
         activeSmartList={activeSmartList}
         smartListCounts={smartListCounts || EMPTY_SMART_LIST_COUNTS}
-        onSmartListChange={setActiveSmartList}
+        onSmartListChange={(list) => {
+          setActiveSmartList(list);
+          setSelectedIds(new Set());
+        }}
         circles={circles}
         activeCircleId={activeCircleId}
-        onCircleChange={setActiveCircleId}
+        onCircleChange={(id) => {
+          setActiveCircleId(id);
+          setSelectedIds(new Set());
+        }}
         showArchived={showArchived}
         archivedCount={archivedCount}
         onToggleArchived={(next) => {
