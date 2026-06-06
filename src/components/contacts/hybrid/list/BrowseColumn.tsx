@@ -46,6 +46,14 @@ interface BrowseColumnProps {
   /** Count of active drawer filters (smart list + circle + saved filter + archived) for the badge. */
   activeDrawerFilterCount: number;
 
+  // Bulk selection (Phase 7)
+  selectedIds: Set<string>;
+  onToggleCheck: (id: string) => void;
+  onSelectAllVisible: () => void;
+  onClearSelection: () => void;
+  /** BulkActionToolbar, built by the orchestrator (where the handlers live). */
+  bulkToolbar?: React.ReactNode;
+
   onAddContact: () => void;
 }
 
@@ -91,6 +99,11 @@ export const BrowseColumn: React.FC<BrowseColumnProps> = ({
   onToggleArchived,
   savedFiltersPanel,
   activeDrawerFilterCount,
+  selectedIds,
+  onToggleCheck,
+  onSelectAllVisible,
+  onClearSelection,
+  bulkToolbar,
   onAddContact,
 }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -100,6 +113,10 @@ export const BrowseColumn: React.FC<BrowseColumnProps> = ({
       className="flex flex-col h-full w-[330px] shrink-0 border-r"
       style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
     >
+      {/* Bulk action toolbar — replaces nothing; sits above the header when a
+          selection is active (mirrors legacy's header-replacement placement). */}
+      {selectedIds.size > 0 && bulkToolbar}
+
       {/* Header — search + Filters toggle */}
       <div className="p-3 border-b" style={{ borderColor: 'var(--pulse-border)' }}>
         <div
@@ -182,6 +199,24 @@ export const BrowseColumn: React.FC<BrowseColumnProps> = ({
 
       {/* Contact list */}
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+        {selectedIds.size > 0 && contacts.length > 0 && (
+          <div className="flex items-center justify-between px-1.5 py-1 mb-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+            <button
+              type="button"
+              onClick={onSelectAllVisible}
+              className="font-medium hover:text-rose-500 transition-colors"
+            >
+              Select all {contacts.length}
+            </button>
+            <button
+              type="button"
+              onClick={onClearSelection}
+              className="hover:text-rose-500 transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+        )}
         {contacts.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center h-full px-6 text-zinc-400 dark:text-zinc-500">
             <UserX className="w-6 h-6 mb-2" />
@@ -194,7 +229,10 @@ export const BrowseColumn: React.FC<BrowseColumnProps> = ({
               key={c.id}
               contact={c}
               selected={selectedContactId === c.id}
+              checked={selectedIds.has(c.id)}
+              selectionActive={selectedIds.size > 0}
               onSelect={() => onSelectContact(c)}
+              onToggleCheck={() => onToggleCheck(c.id)}
             />
           ))
         )}

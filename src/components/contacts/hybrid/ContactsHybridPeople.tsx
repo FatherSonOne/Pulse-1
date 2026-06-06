@@ -42,6 +42,7 @@ import { useRelationshipIntelligence } from '../../../hooks/useRelationshipIntel
 import { supabase } from '../../../services/supabase';
 import { dataService } from '../../../services/dataService';
 import { getCircles } from '../../../services/contactCircleService';
+import { shareContactsToWorkspace } from '../../../services/workspaceContactsService';
 import {
   applyFilterPredicate,
   createSavedFilter,
@@ -55,6 +56,8 @@ import { SavedFiltersPanel } from '../SavedFiltersPanel';
 import { NamePromptModal } from '../NamePromptModal';
 import { AddContactModal } from '../AddContactModal';
 import { EditContactModal } from '../EditContactModal';
+import { BulkActionToolbar } from '../BulkActionToolbar';
+import { WorkspaceShareModal } from '../WorkspaceShareModal';
 import { BrowseColumn } from './list/BrowseColumn';
 import { FocusColumn } from './detail/FocusColumn';
 import { CopilotRail } from './copilot/CopilotRail';
@@ -102,7 +105,7 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
 }) => {
   const { t } = useTranslation();
   const { features } = useFeatures();
-  const { currentWorkspace } = useWorkspaceData();
+  const { currentWorkspace, workspaces } = useWorkspaceData();
   const { isAdmin, isOwner } = useWorkspacePermissions();
 
   // ── Selection + filter state ──────────────────────────────────────────────
@@ -135,6 +138,9 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkInFlight, setBulkInFlight] = useState(false);
+  const [showWorkspaceShare, setShowWorkspaceShare] = useState(false);
 
   const { profiles, smartListCounts, getProfileByEmail, getLeadScoreByEmail } =
     useRelationshipIntelligence();
@@ -328,6 +334,116 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
   };
 
   // ── Focus pane helpers ────────────────────────────────────────────────────
+  // ── Bulk selection (Phase 7) ──────────────────────────────────────────────
+  const selectedIdList = useMemo(() => Array.from(selectedIds), [selectedIds]);
+
+  const handleToggleSelection = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Warn when a bulk archive would empty a whole circle (mirrors legacy).
+  const affectsCircle = useMemo(() => {
+    if (selectedIds.size === 0) return null;
+    const emptied = circles.find(
+      (circle) =>
+        circle.memberContactIds.length > 0 &&
+        circle.memberContactIds.every((id) => selectedIds.has(id)),
+    );
+    return emptied?.name ?? null;
+  }, [circles, selectedIds]);
+
+  const refreshAfterBulkOperation = async () => {
+    await refreshArchivedContacts();
+    const nextContacts = await dataService.getContacts();
+    onSyncComplete?.(nextContacts);
+  };
+
+  const handleBulkArchive = async () => {
+    if (bulkInFlight || selectedIdList.length === 0) return;
+    setBulkInFlight(true);
+    try {
+      const result = await dataService.archiveContacts(selectedIdList);
+      if (result.failed.length > 0) {
+        toast.error(t('contacts.bulkToolbar.partial_failure', { succeeded: result.succeeded.length, failed: result.failed.length, total: selectedIdList.length }));
+      } else {
+        toast.success(t('contacts.bulkToolbar.success_archived', { count: result.succeeded.length }));
+      }
+      setSelectedIds(new Set());
+      await refreshAfterBulkOperation();
+    } finally {
+      setBulkInFlight(false);
+    }
+  };
+
+  const handleBulkRestore = async () => {
+    if (bulkInFlight || selectedIdList.length === 0) return;
+    setBulkInFlight(true);
+    try {
+      const result = await dataService.restoreContacts(selectedIdList);
+      if (result.failed.length > 0) {
+        toast.error(t('contacts.bulkToolbar.partial_failure', { succeeded: result.succeeded.length, failed: result.failed.length, total: selectedIdList.length }));
+      } else {
+        toast.success(t('contacts.bulkToolbar.success_restored', { count: result.succeeded.length }));
+      }
+      setSelectedIds(new Set());
+      await refreshAfterBulkOperation();
+    } finally {
+      setBulkInFlight(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (bulkInFlight || selectedIdList.length === 0) return;
+    setBulkInFlight(true);
+    try {
+      const result = await dataService.bulkDeleteContacts(selectedIdList);
+      if (result.failed.length > 0) {
+        toast.error(t('contacts.bulkToolbar.partial_failure', { succeeded: result.succeeded.length, failed: result.failed.length, total: selectedIdList.length }));
+      }
+      setSelectedIds(new Set());
+      await refreshAfterBulkOperation();
+    } finally {
+      setBulkInFlight(false);
+    }
+  };
+
+  const handleShareToWorkspace = async (workspaceId: string) => {
+    const result = await shareContactsToWorkspace(selectedIdList, workspaceId);
+    const workspaceName = workspaces.find((w) => w.id === workspaceId)?.name ?? '';
+    if (result.failed.length > 0) {
+      toast.error(t('contacts.bulkToolbar.partial_failure', { succeeded: result.succeeded.length, failed: result.failed.length, total: selectedIdList.length }));
+    } else {
+      toast.success(t('contacts.bulkToolbar.success_shared', { count: result.succeeded.length, workspace: workspaceName }));
+    }
+    setShowWorkspaceShare(false);
+    setSelectedIds(new Set());
+    await refreshAfterBulkOperation();
+    return { shared: result.succeeded.length, failed: result.failed.length };
+  };
+
+  // Cards (Send-as-card) intentionally omitted — Phase C, deferred to a later slice.
+  const bulkToolbar = (
+    <BulkActionToolbar
+      selectedCount={selectedIds.size}
+      onClearSelection={() => setSelectedIds(new Set())}
+      onShare={() => setShowWorkspaceShare(true)}
+      onArchive={handleBulkArchive}
+      onUnarchive={handleBulkRestore}
+      onDelete={handleBulkDelete}
+      onSaveAsFilter={() => handleSaveCurrentFilter()}
+      canShare={!!currentWorkspace && selectedIds.size >= 2}
+      canDelete
+      isInArchivedView={showArchived}
+      affectsCircle={affectsCircle}
+    />
+  );
+
+  // ── Focus pane helpers ────────────────────────────────────────────────────
   const selectedContact = useMemo(
     () => [...contacts, ...archivedContacts].find((c) => c.id === selectedContactId) ?? null,
     [contacts, archivedContacts, selectedContactId],
@@ -431,9 +547,15 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
         onToggleArchived={(next) => {
           setShowArchived(next);
           setActiveSavedFilterId(null);
+          setSelectedIds(new Set());
         }}
         savedFiltersPanel={savedFiltersPanel}
         activeDrawerFilterCount={activeDrawerFilterCount}
+        selectedIds={selectedIds}
+        onToggleCheck={handleToggleSelection}
+        onSelectAllVisible={() => setSelectedIds(new Set(filteredContacts.map((c) => c.id)))}
+        onClearSelection={() => setSelectedIds(new Set())}
+        bulkToolbar={bulkToolbar}
         onAddContact={() => setShowAddModal(true)}
       />
 
@@ -508,6 +630,13 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
           setContactToEdit(null);
         }}
         onSave={handleSaveContact}
+      />
+      <WorkspaceShareModal
+        open={showWorkspaceShare}
+        contactIds={selectedIdList}
+        availableWorkspaces={workspaces.map((w) => ({ id: w.id, name: w.name }))}
+        onShare={handleShareToWorkspace}
+        onCancel={() => setShowWorkspaceShare(false)}
       />
     </div>
   );
