@@ -53,9 +53,9 @@ export interface FeatureFlags {
   // Labs to use them. Gated in Sidebar.tsx.
   experimentalEnabled: boolean;
 
-  // Contacts Hybrid redesign (Path D) master switch. OFF by default → the
-  // People tab renders the legacy ContactsRedesigned layout. ON → the new
-  // 3-pane hybrid People view (Browse / Focus / Co-pilot) under
+  // Contacts Hybrid redesign (Path D) master switch. ON by default as of
+  // Phase 11. OFF → the People tab renders the legacy ContactsRedesigned
+  // layout. ON → the new 3-pane hybrid People view (Browse / Focus / Co-pilot) under
   // src/components/contacts/hybrid/. Gated in ContactsShell.tsx on the People
   // body only; the Today tab is unchanged either way. See
   // docs/CONTACTS_REDESIGN_HANDOFF_2026-06-05.md.
@@ -112,8 +112,11 @@ const DEFAULT_FEATURES: FeatureFlags = {
   // Experimental section OFF by default ("features disabled"); flip on for dev/test.
   experimentalEnabled: false,
 
-  // Contacts Hybrid (Path D) OFF by default → legacy People view; flip on for dev/test.
-  contactsHybrid: false,
+  // Contacts Hybrid (Path D) is the DEFAULT as of Phase 11. New 3-pane People
+  // view; existing users keep their persisted choice (localStorage merge), so
+  // this only changes fresh loads. Legacy stays the fallback (flag still
+  // toggleable) until Phase 12 removes ContactsRedesigned.
+  contactsHybrid: true,
 
   // Slack send OFF by default (dark-launch); flip on once the 8f wiring ships.
   slackSend: false,

@@ -44,8 +44,8 @@ export const FeaturesLabsSettings: React.FC = () => {
           (Browse / Focus / Co-pilot). Today tab is unchanged either way. */}
       <SettingsCard>
         <ToggleItem
-          label="Contacts Hybrid (Beta)"
-          desc="When on, the Contacts → People tab uses the new 3-pane hybrid layout (Browse · Focus · Co-pilot) with adaptive channel actions. Off keeps the current People view. In active development."
+          label="Contacts Hybrid"
+          desc="The Contacts → People tab uses the new 3-pane hybrid layout (Browse · Focus · Co-pilot) with adaptive channel actions. On by default — turn off to fall back to the legacy People view."
           active={features.contactsHybrid}
           onToggle={() => toggleFeature('contactsHybrid')}
         />
