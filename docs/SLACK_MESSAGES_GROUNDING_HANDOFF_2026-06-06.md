@@ -2,7 +2,7 @@
 
 > **Created:** 2026-06-06 · **Type:** investigation → design brief (NOT an implementation plan yet).
 > **Goal of this handoff:** run a grounded investigation of the Messages architecture, then design the implementation of "Slack as a foundational grounding for Pulse Messages." Output = a locked scope doc + phased plan + a design-playground mockup (the same treatment Slack *send* got in `docs/SLACK_PHASE8_SCOPE_2026-06-05.md`).
-> **Status:** NOT STARTED. No code. This is the input to the work, not the result.
+> **Status:** Strategic direction **LOCKED 2026-06-06** (§9: full two-way · Slack user-OAuth · **AT LAUNCH**). Investigation NOT STARTED. No code yet. This is the input to the work, not the result.
 > **Predecessor:** Slack send + per-contact identity (contactsHybrid Phase 8) — SHIPPED 2026-06-06, commits `65609aa → 5e1c271`. Scope: `docs/SLACK_PHASE8_SCOPE_2026-06-05.md`. Memory: `project_pulse_slack_phase8_scope`.
 
 ---
@@ -85,10 +85,10 @@ Answer each question against the **real code/schema** (quote `path:line`; query 
 
 Each is a fork the design must lock, with options + tradeoffs, then a recommendation + rationale (mirror Phase 8 §3 "Locked Decisions"). Surface the genuinely user-facing ones as questions.
 
-- **D1 · Scope: graph-grounding-lite vs full thread-mirroring.** (a) Import Slack people + send-as-you + graduation, no history mirror [lighter, likely higher ROI for cold-start]; (b) full two-way Slack threads inside Messages [richer, much bigger]. *Recommend (a) for v1; (b) as a later phase.*
+- **D1 · Scope — LOCKED: full two-way thread-mirroring (option b)** per the user (§9). The open sub-decision is now *sequencing*: identify the **minimum shippable-at-launch slice** of full 2-way (recommend 1:1 DM threads first; multi-party channels/threads as a fast-follow) so it lands by launch without a half-built core.
 - **D2 · Transport model in the conversation schema.** Extend `pulse_conversations` with a `transport`/`source` + external-participant reference, vs a parallel external-conversation table, vs riding the Unified Inbox model. (Schema-first; dry-run.)
-- **D3 · Slack OAuth user-token** — new client + token table + callback + scopes. Required for D1 send-as-you regardless. Define the minimal scope set.
-- **D4 · Real-time inbound** — Events API edge function (for two-way) vs poll-only (for grounding-lite). Tie to D1.
+- **D3 · Slack OAuth user-token — LOCKED: YES** (§9). New OAuth client + token table + callback + scopes. Define the minimal scope set + the Slack app distribution/verification path (a launch-timeline dependency — start it early).
+- **D4 · Real-time inbound — REQUIRED: Events API edge function.** Full 2-way (D1) needs live receive; poll-only is insufficient. (Was conditional; now locked by D1.)
 - **D5 · Graduation mechanic** — auto vs prompted; identity match by email; history continuity; what the UI shows on flip.
 - **D6 · Messages UI** — how a Slack-backed thread is labeled/provenance'd (channel marker = Slack plum, never chrome; coral stays AI-only), composer behavior, the external-participant avatar/presence fallback, "invite to Pulse" CTA placement.
 - **D7 · Proxy auth hardening** — add the Supabase Bearer check to `/api/slack/proxy` (Phase 8 deferred) as part of this, since user tokens flow through it.
@@ -123,8 +123,17 @@ Run it like Phase 1 of Slack send: a **multi-agent investigation workflow** (par
 
 ---
 
-## 9. Open strategic questions for the user (resolve before/early in the work)
+## 9. Strategic direction — LOCKED 2026-06-06
 
-1. **Lighter vs richer (D1):** is the cold-start solved by *graph grounding + send-as-you + graduation* (no full history), or do you want full two-way Slack threads mirrored in Messages? (Strong recommendation: ship the lighter version first.)
-2. **OAuth appetite:** are you OK standing up a real Slack **user-OAuth** app (new client, token table, distribution/verification)? It's required for any version that sends *as you* / reads *your* conversations — the bot token can't.
-3. **Scope vs launch:** this is meaningfully bigger than Phase 8 and touches the Messages core. Is it a pre-launch ramp lever, or a fast-follow after the Pulse-native Messages launch?
+Answered by the user; these set the target for the investigation + design:
+
+1. **Scope = FULL two-way (D1 → option b).** Mirror real two-way Slack threads inside Messages — not the lighter graph-grounding-only path. Therefore **real-time inbound (D4, Events API) and user-token read+write are REQUIRED**, not optional.
+2. **Slack user-OAuth = YES (D3).** Stand up a real Slack user-OAuth app — new OAuth client, token table, callback, distribution/verification. The bot token is insufficient (can't send-as-you or read your DMs).
+3. **Timing = PRE-LAUNCH / AT LAUNCH.** This is a launch deliverable — the user wants Slack-grounded Messages live **at launch** to make Messages genuinely useful on day one (it solves the empty-Messages cold start; the whole point is that Messages is useful from the first session).
+
+**Implication — read honestly.** Full 2-way + user-OAuth + Events API + a conversation-transport schema change, landed *before launch*, is a LARGE build that competes with the existing pre-launch roadmap (`docs/PULSE_PRELAUNCH_ROADMAP.md`; memory `project_pulse_prelaunch_roadmap`). To make "at launch" real without shipping a half-built core, the design MUST:
+- Define the **minimum shippable-at-launch slice** of full 2-way (recommend **1:1 DM threads** end-to-end first — send-as-you + live inbound + graduation — with multi-party channels/threads as an immediate fast-follow).
+- Surface **external launch-timeline dependencies up front**: Slack app **OAuth distribution / verification** review (can take days–weeks), Events API **Request URL** setup, and any Slack rate-limit/approval gates.
+- Sequence so each slice is independently shippable + flag-gated (default OFF), and the launch decision can include "ship what's ready" rather than all-or-nothing.
+
+This timing reality is itself a finding to validate in the investigation (what can credibly land by launch), and should be reflected as a risk + a phased plan in the resulting scope doc.
