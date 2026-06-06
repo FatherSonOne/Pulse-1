@@ -3,6 +3,7 @@ import type { User } from '../../../types';
 import { UnifiedMessage } from '../../../types/index';
 import { SlackService } from '../../../services/slackService';
 import { unifiedInboxDb } from '../../../services/unifiedInboxDb';
+import { getSlackBotToken, setSlackBotToken } from '../../../lib/slackToken';
 import {
   Info, Plug,
   Loader2, Download,
@@ -15,7 +16,10 @@ interface SlackIntegrationProps {
 }
 
 export const SlackIntegration: React.FC<SlackIntegrationProps> = ({ user, slackChannels, setSlackChannels }) => {
-  const [slackToken, setSlackToken] = useState(import.meta.env.VITE_SLACK_BOT_TOKEN || '');
+  // Phase 8: seed from the persisted per-user token (localStorage) so it
+  // survives reload and is reachable by the Contacts Slack send path; fall back
+  // to the build-time env var for dev. See src/lib/slackToken.ts.
+  const [slackToken, setSlackToken] = useState(() => getSlackBotToken() || import.meta.env.VITE_SLACK_BOT_TOKEN || '');
   const [slackTesting, setSlackTesting] = useState(false);
   const [slackStatus, setSlackStatus] = useState<{ success: boolean; workspace?: string; error?: string } | null>(null);
   const [slackMessages, setSlackMessages] = useState<UnifiedMessage[]>([]);
@@ -35,6 +39,9 @@ export const SlackIntegration: React.FC<SlackIntegrationProps> = ({ user, slackC
       setSlackStatus(result);
 
       if (result.success) {
+        // Phase 8: remember the validated token (per-user, client-side) so the
+        // Contacts Slack send path can reuse it without a re-paste.
+        setSlackBotToken(slackToken);
         const channels = await slackService.getChannels();
         setSlackChannels(channels);
       }
@@ -152,9 +159,15 @@ export const SlackIntegration: React.FC<SlackIntegrationProps> = ({ user, slackC
               <li><code>im:read</code> View DMs</li>
               <li><code>mpim:read</code> View group DMs</li>
               <li><code>users:read</code> View user info</li>
+              <li style={{ marginTop: '6px' }}><code>chat:write</code> <strong>Send</strong> DMs (Phase 8)</li>
+              <li><code>im:write</code> Open a DM channel (Phase 8)</li>
+              <li><code>users:read.email</code> Match a contact email → Slack user (Phase 8)</li>
             </ul>
             <p style={{ marginTop: '12px' }}>
               Configure at <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer">Slack API Dashboard</a> → OAuth &amp; Permissions → Scopes
+            </p>
+            <p style={{ marginTop: '8px' }}>
+              The last three scopes power <strong>sending a DM to a contact</strong> + matching their email. Add them, then <strong>reinstall the app</strong> to mint a new token — existing read-only tokens return <code>missing_scope</code> on send.
             </p>
           </div>
         </div>
