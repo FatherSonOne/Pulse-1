@@ -3,11 +3,11 @@
 // Path D redesign. Replaces the ContactsRedesigned body when the
 // `contactsHybrid` feature flag is ON (gated in ContactsShell.tsx).
 //
-// Phase 2 — Browse column + filter engine. This component owns the filter
-// state + data loading (verbatim-ported from ContactsRedesigned) and renders
-// the 3-pane shell: Col 1 BrowseColumn (real), Col 2 Focus (selected contact +
-// the Phase-1 ChannelRow in its real home; full detail lands in Phase 3),
-// Col 3 Co-pilot (placeholder until Phase 4).
+// Phases 2-3 — Browse column + filter engine + Focus column. This component
+// owns the filter + selection state and data loading (verbatim-ported from
+// ContactsRedesigned) and renders the 3-pane shell: Col 1 BrowseColumn, Col 2
+// FocusColumn (full inline detail, reusing ContactDetail sub-components), Col 3
+// Co-pilot (placeholder until Phase 4).
 //
 // Reuses services verbatim: useRelationshipIntelligence, getCircles,
 // savedFiltersService, dataService. Legacy ContactsRedesigned stays intact
@@ -52,8 +52,9 @@ import {
 import { SavedFiltersPanel } from '../SavedFiltersPanel';
 import { NamePromptModal } from '../NamePromptModal';
 import { AddContactModal } from '../AddContactModal';
-import { ChannelRow } from './channels/ChannelRow';
+import { EditContactModal } from '../EditContactModal';
 import { BrowseColumn } from './list/BrowseColumn';
+import { FocusColumn } from './detail/FocusColumn';
 import {
   filterBrowseContacts,
   countBrowseContacts,
@@ -92,6 +93,7 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
   onSyncComplete,
   onUpdateContact,
   onAddContact,
+  onDeleteContact,
   openAddContact,
 }) => {
   const { t } = useTranslation();
@@ -127,8 +129,11 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
     onSubmit: (name: string) => void;
   } | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
 
-  const { profiles, smartListCounts } = useRelationshipIntelligence();
+  const { profiles, smartListCounts, getProfileByEmail, getLeadScoreByEmail } =
+    useRelationshipIntelligence();
 
   // ── Data loading (ported verbatim from ContactsRedesigned) ────────────────
   useEffect(() => {
@@ -324,11 +329,15 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
     [contacts, archivedContacts, selectedContactId],
   );
 
-  // Phase 2 quick-log; the real inline-note editor is FocusColumn (Phase 3).
-  const handleNote = (c: Contact) => {
-    if (!onUpdateContact) return;
-    const stamp = new Date().toLocaleString();
-    onUpdateContact({ ...c, notes: `${c.notes ? `${c.notes}\n` : ''}[${stamp}] Quick note (Phase 2)` });
+  const selectedProfile = selectedContact?.email ? getProfileByEmail(selectedContact.email) : null;
+  const selectedLeadScore = selectedContact?.email ? getLeadScoreByEmail(selectedContact.email) : null;
+
+  const handleEditContact = (c: Contact) => {
+    setContactToEdit(c);
+    setShowEditModal(true);
+  };
+  const handleSaveContact = async (updated: Contact) => {
+    onUpdateContact?.(updated);
   };
 
   const activeDrawerFilterCount =
@@ -389,48 +398,26 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
       />
 
       {/* Col 2 — Focus */}
-      <div className="flex-1 min-w-0 overflow-y-auto">
+      <div className="flex-1 min-w-0">
         {selectedContact ? (
-          <div className="max-w-xl mx-auto px-6 py-8">
-            <div className="flex items-center gap-4">
-              <span
-                className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-semibold shrink-0"
-                style={{ backgroundColor: selectedContact.avatarColor || '#6366f1' }}
-              >
-                {selectedContact.name.charAt(0).toUpperCase()}
-              </span>
-              <div className="min-w-0">
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 truncate">
-                  {selectedContact.name}
-                </h2>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">
-                  {selectedContact.role || 'Contact'}
-                  {selectedContact.company ? ` · ${selectedContact.company}` : ''}
-                </p>
-              </div>
-            </div>
-
-            {/* The Phase-1 ChannelRow, now in its real home (the Focus pane). */}
-            <div className="mt-6">
-              <div
-                className="text-[10px] uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500 mb-2"
-                style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
-              >
-                Your next touch
-              </div>
-              <ChannelRow
-                contact={selectedContact}
-                emailEnabled={features.emailEnabled}
-                onAction={onAction}
-                onNote={handleNote}
-              />
-            </div>
-
-            <p className="mt-8 text-xs text-zinc-400 dark:text-zinc-500 leading-relaxed">
-              Cadence spine, cross-channel timeline, contact info, groups, and AI context arrive in
-              Phase 3.
-            </p>
-          </div>
+          <FocusColumn
+            contact={selectedContact}
+            userId={userId ?? undefined}
+            relationshipProfile={selectedProfile}
+            leadScore={selectedLeadScore}
+            emailEnabled={features.emailEnabled}
+            onAction={onAction}
+            onUpdateContact={onUpdateContact}
+            onEdit={handleEditContact}
+            onDelete={
+              onDeleteContact
+                ? async () => {
+                    const ok = await onDeleteContact(selectedContact.id);
+                    if (ok) setSelectedContactId(null);
+                  }
+                : undefined
+            }
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center px-6 text-zinc-400 dark:text-zinc-500">
             <p className="text-sm">Select a contact to focus.</p>
@@ -474,6 +461,15 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
         onAdd={async (contact) => {
           await onAddContact?.(contact);
         }}
+      />
+      <EditContactModal
+        isOpen={showEditModal}
+        contact={contactToEdit}
+        onClose={() => {
+          setShowEditModal(false);
+          setContactToEdit(null);
+        }}
+        onSave={handleSaveContact}
       />
     </div>
   );
