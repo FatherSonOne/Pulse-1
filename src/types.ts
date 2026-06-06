@@ -94,6 +94,7 @@ export interface Contact {
   contactType?: ContactType; // team, client, volunteer, vendor, other
   isTeamMember?: boolean; // Quick flag for team members
   pulseUserId?: string; // If linked to a Pulse user account
+  slackUserId?: string; // Phase 8: resolved Slack user id (DB: contacts.slack_user_id) for an external contact; gates Slack DM send
   userRole?: 'owner' | 'admin' | 'moderator' | 'member' | 'guest' | 'bot'; // Phase 4.2: User role for badges
   lastSeen?: Date; // Phase 4.4: Last activity timestamp
   isTyping?: boolean; // Phase 4.4: Typing indicator
