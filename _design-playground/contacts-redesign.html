@@ -1,0 +1,1264 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Contacts Redesign — Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: { extend: { fontFamily: {
+      sans: ['Inter', 'system-ui', 'sans-serif'],
+      mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+      serif: ['Fraunces', 'Georgia', 'serif'],
+    } } },
+  };
+</script>
+<style>
+  /* ─── Pulse design tokens ─── */
+  :root {
+    --pulse-rose: #f43f5e;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-bright: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+    --pulse-canvas: #f8f8f8;
+    --pulse-canvas-soft: #f2f2f2;
+    --pulse-surface: #ffffff;
+    --pulse-surface-raised: #f2f2f2;
+    --pulse-border: rgba(0, 0, 0, 0.08);
+    --pulse-border-strong: rgba(0, 0, 0, 0.16);
+    --pulse-ink: #0f0f0f;
+    --pulse-ink-2: #52525b;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral: var(--pulse-rose);
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 35%, black 65%);
+    --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-rose) 12%, transparent);
+    --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-rose) 8%, transparent);
+    --pulse-font: 'Inter', system-ui, sans-serif;
+    --pulse-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --pulse-serif: 'Fraunces', Georgia, serif;
+    --pulse-sidebar-bg: #ffffff;
+    --pulse-shadow-main: 0 6px 24px rgba(0, 0, 0, 0.08);
+    --slack-aubergine: #4A154B;
+    --ch-email: #2563eb;
+    --ch-slack: #6d28d9;
+    --ch-call: #0d9488;
+    --temp-hot: #f59e0b;
+    --temp-warm: #10b981;
+    --temp-cool: #3b82f6;
+    --temp-cold: #6b7280;
+  }
+  html[data-theme='dark'] {
+    --pulse-canvas: #000000;
+    --pulse-canvas-soft: #080808;
+    --pulse-surface: rgba(255, 255, 255, 0.03);
+    --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+    --pulse-border: rgba(255, 255, 255, 0.06);
+    --pulse-border-strong: rgba(255, 255, 255, 0.10);
+    --pulse-ink: #fafafa;
+    --pulse-ink-2: #b4b4b8;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 60%, white 40%);
+    --pulse-rose: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.14);
+    --pulse-sidebar-bg: #0a0a0b;
+    --pulse-shadow-main: 0 10px 40px rgba(0, 0, 0, 0.4);
+    --ch-email: #60a5fa;
+    --ch-slack: #c4b5fd;
+    --ch-call: #5eead4;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--pulse-font);
+    background: var(--pulse-canvas);
+    color: var(--pulse-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .pulse-bg { background: var(--pulse-canvas); }
+  .pulse-bg-soft { background: var(--pulse-canvas-soft); }
+  .pulse-surface { background: var(--pulse-surface); }
+  .pulse-surface-raised { background: var(--pulse-surface-raised); }
+  .pulse-ink-color { color: var(--pulse-ink); }
+  .pulse-ink-2-color { color: var(--pulse-ink-2); }
+  .pulse-ink-3-color { color: var(--pulse-ink-3); }
+  .pulse-border-color { border-color: var(--pulse-border); }
+  .pulse-border-strong-color { border-color: var(--pulse-border-strong); }
+  .pulse-coral-fg-color { color: var(--pulse-coral-fg); }
+  .pulse-coral-bg-color { background: var(--pulse-coral-bg-12); }
+  .pulse-rose-color { color: var(--pulse-rose); }
+  .pulse-rose-bg-color { background: var(--pulse-rose); }
+  .pulse-rose-bg-soft-color { background: var(--pulse-rose-soft); }
+  .pulse-rose-border { border-color: var(--pulse-rose); }
+  .font-mono-pulse { font-family: var(--pulse-mono); font-feature-settings: 'tnum' 1; }
+  .font-serif-pulse { font-family: var(--pulse-serif); }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--pulse-border-strong); border-radius: 3px; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--pulse-ink-3); }
+
+  .tracking-tight-mono { letter-spacing: 0.06em; }
+  .tracking-wide-mono { letter-spacing: 0.16em; }
+
+  /* ─── Motion ─── */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 280ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes slideInR { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+  .slide-in-r { animation: slideInR 320ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes scaleIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+  .scale-in { animation: scaleIn 220ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.85); } }
+  .pulse-dot-anim { animation: pulseDot 1.6s ease-in-out infinite; }
+
+  /* ─── AI provenance chip (coral reserved for AI only) ─── */
+  .ai-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px;
+    background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
+    font-family: var(--pulse-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; line-height: 1;
+  }
+  .ai-chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+  .ai-chip.muted { background: var(--pulse-surface-raised); color: var(--pulse-ink-2); }
+
+  /* ─── AI surface (the one place coral fills a region) ─── */
+  .ai-surface {
+    background: var(--pulse-coral-bg-08);
+    border: 1px solid var(--pulse-rose-soft);
+    border-radius: 12px;
+  }
+
+  /* ─── Temperature pill (status vocabulary, never coral) ─── */
+  .temp-pill {
+    display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 999px;
+    font-family: var(--pulse-mono); font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; line-height: 1;
+  }
+  .temp-pill .d { width: 5px; height: 5px; border-radius: 999px; }
+
+  /* ─── Channel button (neutral chrome, coral only on hover) ─── */
+  .ch-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 10px 6px; border-radius: 12px;
+    background: var(--pulse-surface-raised);
+    border: 1px solid var(--pulse-border);
+    color: var(--pulse-ink-2);
+    transition: transform 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    cursor: pointer;
+  }
+  .ch-btn:hover {
+    color: var(--pulse-coral-fg);
+    border-color: var(--pulse-rose-soft);
+    background: var(--pulse-rose-soft);
+    transform: translateY(-1px);
+  }
+  .ch-btn .lbl { font-family: var(--pulse-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+  .ch-btn.compact { flex-direction: row; gap: 7px; padding: 7px 11px; border-radius: 9px; }
+
+  /* ─── Editable avatar with upload affordance ─── */
+  .ava-edit { position: relative; }
+  .ava-edit .cam {
+    position: absolute; right: -2px; bottom: -2px;
+    width: 22px; height: 22px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--pulse-surface); border: 1px solid var(--pulse-border-strong);
+    color: var(--pulse-ink-2);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  }
+  .ava-edit:hover .cam { color: var(--pulse-coral-fg); border-color: var(--pulse-rose-soft); }
+  .ava-dashed {
+    border: 1.5px dashed var(--pulse-border-strong);
+    background: var(--pulse-surface-raised);
+    color: var(--pulse-ink-3);
+  }
+
+  /* ─── Pulse vs External identity badge ─── */
+  .id-badge {
+    display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px;
+    font-family: var(--pulse-mono); font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    border: 1px solid var(--pulse-border);
+  }
+  .id-badge.pulse { background: var(--pulse-rose-soft); color: var(--pulse-coral-fg); border-color: transparent; }
+  .id-badge.ext   { background: var(--pulse-surface-raised); color: var(--pulse-ink-2); }
+
+  /* ─── List rows ─── */
+  .row-x { transition: background 150ms ease, box-shadow 150ms ease; cursor: pointer; }
+  .row-x:hover { background: var(--pulse-surface-raised); }
+  .row-x.sel { background: var(--pulse-rose-soft); }
+  .row-x.sel .nm { color: var(--pulse-coral-fg); }
+
+  .keycap {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 4px; border: 1px solid var(--pulse-border-strong);
+    background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
+    font-family: var(--pulse-mono); font-size: 10px; line-height: 1;
+  }
+
+  /* ─── Ledger timeline ─── */
+  .led-line { position: relative; padding-left: 26px; }
+  .led-line::before { content: ''; position: absolute; left: 9px; top: 4px; bottom: 4px; width: 1.5px; background: var(--pulse-border); }
+  .led-node { position: relative; }
+  .led-node .pin {
+    position: absolute; left: -26px; top: 2px; width: 20px; height: 20px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--pulse-surface); border: 1px solid var(--pulse-border);
+  }
+
+  /* ─── Lane cards (Path C) ─── */
+  .lane-card { transition: transform 180ms cubic-bezier(0.16,1,0.3,1), box-shadow 180ms ease; cursor: pointer; }
+  .lane-card:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,0,0,0.10), 0 0 0 1px var(--pulse-border-strong); }
+  html[data-theme='dark'] .lane-card:hover { box-shadow: 0 12px 30px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08); }
+
+  /* ─── Playground chrome ─── */
+  .pg-bar { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); }
+  html[data-theme='light'] .pg-bar { background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent); }
+  .pg-pill { transition: background 180ms, color 180ms; }
+  .pg-pill[data-active='true'] { background: var(--pulse-rose); color: white; }
+  .pg-pill:not([data-active='true']):hover { background: var(--pulse-surface-raised); }
+
+  .seg {
+    display: inline-flex; align-items: center; padding: 3px; border-radius: 9px;
+    background: var(--pulse-surface-raised); border: 1px solid var(--pulse-border);
+  }
+  .seg button {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; color: var(--pulse-ink-2); transition: all 160ms ease;
+  }
+  .seg button[data-active='true'] { background: var(--pulse-rose); color: white; }
+</style>
+</head>
+<body class="overflow-hidden">
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect, useRef } = React;
+
+/* ════════════════════════════════════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════════════════════════════════════ */
+const AVATAR_PALETTE = ['#6366f1','#8b5cf6','#d946ef','#ec4899','#0ea5e9','#06b6d4','#14b8a6','#64748b'];
+function colorForId(id = '') {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+}
+function initials(name = '') {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || '?';
+}
+
+const TEMP = {
+  hot:  { color: 'var(--temp-hot)',  label: 'Hot' },
+  warm: { color: 'var(--temp-warm)', label: 'Warm' },
+  cool: { color: 'var(--temp-cool)', label: 'Cooling' },
+  cold: { color: 'var(--temp-cold)', label: 'Dormant' },
+};
+
+/* ════════════════════════════════════════════════════════════════════════
+   MOCK DATA — shared across all three directions
+   isPulseUser → native Pulse channels (Message/Vox/Meet)
+   slackLinked → has a resolved slackUserId; Slack is a real send target
+   ════════════════════════════════════════════════════════════════════════ */
+const CONTACTS = [
+  { id:'c1', name:'Maria Schaefer', org:'Northwind Studio', role:'Founder',
+    email:'maria@northwindstudio.com', phone:'+1 415 555 0102',
+    isPulseUser:false, slackLinked:false, slackHandle:null, preferred:'email',
+    temp:'warm', state:'due', lastTouch:'2h', lastChannel:'email', nudge:'reply owed',
+    cadence:{ label:'Every 2 weeks', channel:'any', leftDays:4 }, lead:82,
+    groups:['VIP','Customer'], avatar:null, place:'Hayes Valley · SF', birthday:null,
+    blurb:'Owns the Friday board deck. Waiting on your Q2 figures.' },
+  { id:'c2', name:'Sarah Chen', org:'LegalTrust', role:'Counsel',
+    email:'sarah.chen@legaltrust.co', phone:'+1 628 555 0188',
+    isPulseUser:false, slackLinked:false, slackHandle:null, preferred:'email',
+    temp:'cool', state:'due', lastTouch:'5h', lastChannel:'email', nudge:'confirm by Wed',
+    cadence:{ label:'Monthly', channel:'email', leftDays:11 }, lead:60,
+    groups:['Partner'], avatar:null, place:null, birthday:null,
+    blurb:'NDA Option B approved, one tweak on page 2. Needs a yes.' },
+  { id:'c3', name:'Jaylen Park', org:'Pulse · Design', role:'Product Designer',
+    email:'jaylen@pulse-design.com', phone:'+1 510 555 0143',
+    isPulseUser:true, slackLinked:true, slackHandle:'@jaylen', preferred:'message',
+    temp:'warm', state:'warm', lastTouch:'1d', lastChannel:'vox', nudge:null,
+    cadence:null, lead:null, groups:['Team'], avatar:'ring', place:'Oakland', birthday:null,
+    blurb:'On Pulse. Flagged two broken empty-states in onboarding.' },
+  { id:'c4', name:'Theo Bridgewater', org:'Bridgewater Capital', role:'Partner',
+    email:'theo@bridgewater-cap.com', phone:'+1 212 555 0177',
+    isPulseUser:false, slackLinked:false, slackHandle:null, preferred:'email',
+    temp:'cool', state:'cooling', lastTouch:'9d', lastChannel:'email', nudge:'9 days quiet',
+    cadence:{ label:'Weekly', channel:'any', leftDays:-2 }, lead:91,
+    groups:['Prospect','VIP'], avatar:null, place:'FiDi · SF', birthday:null,
+    blurb:'Asked for the v3 deck twice. Opens your mail, never replies.' },
+  { id:'c5', name:'Priya Devarajan', org:'Helios Labs', role:'Head of Product',
+    email:'priya@helioslabs.io', phone:'+1 408 555 0190',
+    isPulseUser:false, slackLinked:true, slackHandle:'@priya', preferred:'slack',
+    temp:'hot', state:'hot', lastTouch:'3h', lastChannel:'slack', nudge:'renewal open',
+    cadence:{ label:'Weekly', channel:'slack', leftDays:2 }, lead:77,
+    groups:['Customer'], avatar:null, place:'San Jose', birthday:null,
+    blurb:'Helios renewal is live in a shared Slack channel. Replies fast.' },
+  { id:'c6', name:'Marcus Webb', org:'Forge & Co', role:'Operations',
+    email:'marcus@forgeandco.com', phone:'+1 503 555 0166',
+    isPulseUser:false, slackLinked:false, slackHandle:null, preferred:'call',
+    temp:'cold', state:'dormant', lastTouch:'6w', lastChannel:'call', nudge:'6 weeks cold',
+    cadence:null, lead:34, groups:['Vendor'], avatar:null, place:'Oakland', birthday:null,
+    blurb:'Vendor for print runs. No location set — quiet since spring.' },
+  { id:'c7', name:'Devin Olsen', org:'Pulse · Eng', role:'Engineer',
+    email:'devin@pulse-eng.com', phone:'+1 415 555 0121',
+    isPulseUser:true, slackLinked:true, slackHandle:'@devin', preferred:'message',
+    temp:'warm', state:'warm', lastTouch:'4h', lastChannel:'message', nudge:null,
+    cadence:null, lead:null, groups:['Team'], avatar:'ring', place:'SF', birthday:null,
+    blurb:'On Pulse. Pairing on the realtime voice migration.' },
+  { id:'c8', name:'Linda Messana', org:'Family', role:'Mom',
+    email:'linda.messana@gmail.com', phone:'+1 718 555 0134',
+    isPulseUser:false, slackLinked:false, slackHandle:null, preferred:'call',
+    temp:'warm', state:'due', lastTouch:'2d', lastChannel:'call', nudge:'birthday in 3d',
+    cadence:{ label:'Weekly', channel:'any', leftDays:1 }, lead:null,
+    groups:['Family'], avatar:null, place:'Brooklyn', birthday:'Jun 8', blurb:'Birthday Saturday. Call, do not text.' },
+];
+
+const byId = id => CONTACTS.find(c => c.id === id);
+
+/* ════════════════════════════════════════════════════════════════════════
+   ICONS
+   ════════════════════════════════════════════════════════════════════════ */
+function Icon({ name, className = 'w-4 h-4' }) {
+  const c = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  switch (name) {
+    case 'mail':     return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>;
+    case 'inbox':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>;
+    case 'message':  return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg>;
+    case 'slack':    return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/><line x1="3" y1="9" x2="21" y2="7.5"/><line x1="3" y1="16.5" x2="21" y2="15"/></svg>;
+    case 'phone':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>;
+    case 'video':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="m23 7-7 5 7 5V7Z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>;
+    case 'live':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="7"/></svg>;
+    case 'note':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>;
+    case 'camera':   return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>;
+    case 'upload':   return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+    case 'search':   return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+    case 'settings': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06A2 2 0 1 1 4.14 16.93l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9.4a1.7 1.7 0 0 0-.34-1.87l-.06-.06A2 2 0 1 1 7.07 4.64l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1.03Z"/></svg>;
+    case 'chevR':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 6 15 12 9 18"/></svg>;
+    case 'chevD':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="6 9 12 15 18 9"/></svg>;
+    case 'sparkles': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>;
+    case 'task':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>;
+    case 'calendar': return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8"  y1="2" x2="8"  y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+    case 'clock':    return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>;
+    case 'user':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>;
+    case 'users':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+    case 'dot':      return <svg viewBox="0 0 24 24" className={className}><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>;
+    case 'check':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="20 6 9 17 4 12"/></svg>;
+    case 'x':        return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+    case 'sun':      return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>;
+    case 'moon':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>;
+    case 'logo':     return <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h3l2-7 4 14 2-7h7"/></svg>;
+    case 'plus':     return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+    case 'more':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/></svg>;
+    case 'arrowR':   return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
+    case 'mapPin':   return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
+    case 'rotate':   return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>;
+    case 'bell':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
+    case 'cake':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s1-1 4-1 5 2 8 2 4-1 4-1"/><path d="M2 21h20"/><path d="M7 8v3M12 7v4M17 8v3"/></svg>;
+    case 'flame':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 2c1.5 3 3 4 5 7s2 5-1 8c-2 2-5 2-7 0-2-2-2-5 0-7 1-1 2-1 2-3 0-1 0-3 1-5Z"/></svg>;
+    case 'link':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>;
+    case 'target':   return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>;
+    default: return null;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PRIMITIVES
+   ════════════════════════════════════════════════════════════════════════ */
+function Avatar({ c, size = 40, ring = false }) {
+  const isPulse = ring && c.avatar === 'ring';
+  return (
+    <div className="rounded-full flex items-center justify-center text-white font-semibold shrink-0 relative"
+      style={{ width: size, height: size, fontSize: size * 0.36, background: colorForId(c.name),
+        boxShadow: isPulse ? '0 0 0 2px var(--pulse-rose), 0 0 0 4px var(--pulse-canvas)' : 'none' }}>
+      {initials(c.name)}
+    </div>
+  );
+}
+
+/* Editable avatar — the upload affordance that does not exist today. */
+function EditableAvatar({ c, size = 64 }) {
+  return (
+    <div className="ava-edit" title="Upload photo">
+      <Avatar c={c} size={size} ring />
+      <span className="cam"><Icon name="camera" className="w-3 h-3"/></span>
+    </div>
+  );
+}
+
+function TempPill({ t }) {
+  const m = TEMP[t] || TEMP.warm;
+  return (
+    <span className="temp-pill" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
+      <span className="d" style={{ background: m.color }}/>{m.label}
+    </span>
+  );
+}
+
+function IdBadge({ c }) {
+  return c.isPulseUser
+    ? <span className="id-badge pulse"><Icon name="logo" className="w-2.5 h-2.5"/>Pulse user</span>
+    : <span className="id-badge ext"><Icon name="user" className="w-2.5 h-2.5"/>External</span>;
+}
+
+function AiChip({ children, muted }) {
+  return <span className={muted ? 'ai-chip muted' : 'ai-chip'}>{children}</span>;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   THE SHARED HYBRID CHANNEL ROW — the locked action model.
+   Pulse user → Message / Vox / Meet (native).
+   External   → Email / Slack(if linked) / Call / Note.
+   Neutral chrome; coral only on hover. Slack is a real send target.
+   ──────────────────────────────────────────────────────────────────────── */
+function channelsFor(c) {
+  if (c.isPulseUser) {
+    return [
+      { icon: 'message', label: 'Message', tone: 'pulse' },
+      { icon: 'live',    label: 'Vox',     tone: 'pulse' },
+      { icon: 'video',   label: 'Meet',    tone: 'pulse' },
+    ];
+  }
+  const out = [{ icon: 'mail', label: 'Email', tone: 'email' }];
+  if (c.slackLinked) out.push({ icon: 'slack', label: 'Slack', tone: 'slack' });
+  out.push({ icon: 'phone', label: 'Call', tone: 'call' });
+  out.push({ icon: 'note', label: 'Note', tone: 'note' });
+  return out;
+}
+
+function ChannelRow({ c, compact = false }) {
+  const ch = channelsFor(c);
+  return (
+    <div className={compact ? 'flex flex-wrap gap-1.5' : 'grid gap-2'} style={compact ? {} : { gridTemplateColumns: `repeat(${ch.length}, minmax(0,1fr))` }}>
+      {ch.map(a => (
+        <button key={a.label} className={'ch-btn' + (compact ? ' compact' : '')}>
+          <Icon name={a.icon} className="w-[18px] h-[18px]"/>
+          <span className="lbl">{a.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* Preferred-channel hint — reads the relationship signal that already exists. */
+function PreferredHint({ c }) {
+  const map = { email:'mail', slack:'slack', call:'phone', message:'message', meet:'video' };
+  const reachable = c.isPulseUser || c.preferred !== 'slack' || c.slackLinked;
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11px] pulse-ink-3-color">
+      <Icon name={map[c.preferred] || 'message'} className="w-3 h-3"/>
+      Prefers {c.preferred}{!reachable && ' · not linked'}
+    </span>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   FAKE PULSE SIDEBAR
+   ════════════════════════════════════════════════════════════════════════ */
+function PulseSidebar() {
+  const groups = [
+    { group: 'Overview',      rows: [{ icon: 'inbox', label: 'Dashboard' }] },
+    { group: 'Communication', rows: [
+        { icon: 'message', label: 'Messages' },
+        { icon: 'mail',    label: 'Email' },
+        { icon: 'live',    label: 'Relay' },
+        { icon: 'video',   label: 'Glimpse' },
+      ] },
+    { group: 'Work & People', rows: [
+        { icon: 'calendar', label: 'Calendar' },
+        { icon: 'video',    label: 'Meetings' },
+        { icon: 'users',    label: 'Contacts', active: true },
+        { icon: 'task',     label: 'Decisions & Tasks' },
+      ] },
+  ];
+  return (
+    <aside className="h-full w-[232px] shrink-0 flex flex-col border-r pulse-border-color" style={{ background: 'var(--pulse-sidebar-bg)' }}>
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center pulse-rose-bg-color text-white shrink-0"><Icon name="logo" className="w-5 h-5"/></div>
+        <div className="leading-tight">
+          <div className="text-lg font-semibold pulse-rose-color">Pulse</div>
+          <div className="text-[10px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">QNTM</div>
+        </div>
+      </div>
+      <div className="mx-3 mb-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--pulse-surface-raised)' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md pulse-rose-bg-color"/>
+          <span className="text-sm font-medium pulse-ink-color">Quantum Ecosystems</span>
+        </div>
+        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse pulse-coral-bg-color pulse-coral-fg-color tracking-tight-mono">OWNER</span>
+      </div>
+      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        {groups.map(grp => (
+          <div key={grp.group} className="mb-3">
+            <div className="flex items-center gap-2 px-2 py-1.5 text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color">
+              <Icon name="dot" className="w-1.5 h-1.5"/><span>{grp.group.toUpperCase()}</span>
+            </div>
+            {grp.rows.map(r => (
+              <button key={r.label} className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition ${r.active ? 'pulse-rose-color pulse-rose-bg-soft-color font-medium' : 'pulse-ink-2-color hover:pulse-ink-color'}`}>
+                <Icon name={r.icon} className="w-4 h-4 opacity-90"/><span>{r.label}</span>
+              </button>
+            ))}
+          </div>
+        ))}
+      </nav>
+      <div className="px-3 pb-2">
+        <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl pulse-rose-bg-soft-color">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="sparkles" className="w-4 h-4"/></div>
+            <span className="text-sm font-medium pulse-rose-color">Pulse AI</span>
+          </div>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono-pulse pulse-ink-3-color border pulse-border-color">Ctrl·/</span>
+        </button>
+      </div>
+      <div className="border-t pulse-border-color px-3 py-2 flex items-center gap-2.5">
+        <Avatar c={{ name: 'Frank Messana' }} size={28}/>
+        <div className="leading-tight">
+          <div className="text-xs font-medium pulse-ink-color">Frank Messana</div>
+          <div className="text-[10px] pulse-ink-3-color">qntmecos@gmail.com</div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* Shared Today/People tab bar header so each path reads as the real section. */
+function TabBar({ activeMode = 'people' }) {
+  return (
+    <div className="flex-shrink-0 border-b pulse-border-color pulse-surface px-2 pt-2">
+      <div className="flex items-stretch gap-0.5">
+        {[{ id:'today', label:'Today', icon:'target', k:'1' }, { id:'people', label:'People', icon:'users', k:'2' }].map(t => {
+          const on = t.id === activeMode;
+          return (
+            <div key={t.id} className={`relative flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium uppercase ${on ? 'pulse-surface-raised pulse-rose-color' : 'pulse-ink-3-color'}`}
+              style={{ fontFamily: 'var(--pulse-mono)', letterSpacing: '0.06em' }}>
+              <Icon name={t.icon} className="w-4 h-4"/><span>{t.label}</span>
+              {on && <span className="absolute bottom-0 left-0 right-0 h-0.5 pulse-rose-bg-color rounded-full"/>}
+            </div>
+          );
+        })}
+        <div className="ml-auto flex items-center gap-1.5 pr-2 pb-1">
+          <span className="hidden sm:flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-[0.08em] pulse-ink-3-color rounded border pulse-border-color" style={{ fontFamily:'var(--pulse-mono)' }}>
+            <Icon name="mapPin" className="w-3 h-3"/>View on Map
+          </span>
+          <span className="hidden sm:flex items-center gap-1 px-2 py-1 text-[10px] pulse-ink-3-color rounded border pulse-border-color"><Icon name="search" className="w-2.5 h-2.5"/>⌘K</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Honest Route empty-state — the locked fix (lives on the Today tab; shown
+   here so reviewers see all three directions inherit it). */
+function RouteEmptyState() {
+  return (
+    <div className="rounded-xl border pulse-border-color p-3 flex items-start gap-3" style={{ background:'var(--pulse-surface)' }}>
+      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background:'var(--pulse-surface-raised)', color:'var(--pulse-ink-2)' }}>
+        <Icon name="mapPin" className="w-4 h-4"/>
+      </div>
+      <div className="min-w-0">
+        <div className="text-[10px] font-mono-pulse tracking-tight-mono pulse-ink-3-color mb-0.5">TODAY · ROUTE MODE</div>
+        <div className="text-sm pulse-ink-color font-medium">Set locations on contacts to group your day by area.</div>
+        <div className="text-xs pulse-ink-2-color mt-0.5">None of today's people have a home or work address yet. Add one and Route clusters them by neighborhood.</div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH A — SWITCHBOARD
+   Directory-first. Fast searchable list, reach is the hero.
+   "Superhuman for your address book."
+   ════════════════════════════════════════════════════════════════════════ */
+function PathA() {
+  const [selId, setSelId] = useState('c1');
+  const [q, setQ] = useState('');
+  const sel = byId(selId);
+  const filters = ['All', 'VIP', 'Prospects', 'Team', 'External'];
+  const [fil, setFil] = useState('All');
+
+  const list = CONTACTS.filter(c => {
+    if (q && !c.name.toLowerCase().includes(q.toLowerCase()) && !c.org.toLowerCase().includes(q.toLowerCase())) return false;
+    if (fil === 'VIP') return c.groups.includes('VIP');
+    if (fil === 'Prospects') return c.groups.includes('Prospect');
+    if (fil === 'Team') return c.isPulseUser;
+    if (fil === 'External') return !c.isPulseUser;
+    return true;
+  });
+
+  return (
+    <div className="h-full flex flex-col">
+      <TabBar />
+      <div className="flex-1 flex overflow-hidden">
+        {/* LIST */}
+        <div className="w-[360px] shrink-0 border-r pulse-border-color flex flex-col">
+          <div className="p-3 border-b pulse-border-color">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface-raised border pulse-border-color">
+              <Icon name="search" className="w-4 h-4 pulse-ink-3-color"/>
+              <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search people, orgs…"
+                className="bg-transparent outline-none text-sm flex-1 pulse-ink-color placeholder:pulse-ink-3-color" style={{ color:'var(--pulse-ink)' }}/>
+              <span className="keycap">⌘K</span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto">
+              {filters.map(f => (
+                <button key={f} onClick={()=>setFil(f)}
+                  className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition ${fil===f ? 'pulse-rose-bg-soft-color pulse-coral-fg-color' : 'pulse-surface-raised pulse-ink-2-color'}`}>{f}</button>
+              ))}
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {list.map(c => (
+              <div key={c.id} onClick={()=>setSelId(c.id)}
+                className={`row-x flex items-center gap-3 px-3 py-2.5 border-b pulse-border-color ${selId===c.id?'sel':''}`}>
+                <Avatar c={c} size={38} ring/>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="nm text-sm font-medium pulse-ink-color truncate">{c.name}</span>
+                    {c.isPulseUser && <Icon name="logo" className="w-3 h-3 pulse-rose-color shrink-0"/>}
+                  </div>
+                  <div className="text-xs pulse-ink-3-color truncate">{c.role} · {c.org}</div>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{c.lastTouch}</span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: TEMP[c.temp].color }}/>
+                    <Icon name={c.preferred==='slack'?'slack':c.preferred==='call'?'phone':c.preferred==='message'?'message':'mail'} className="w-3 h-3 pulse-ink-3-color"/>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="p-2 border-t pulse-border-color">
+            <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg pulse-surface-raised text-sm pulse-ink-2-color hover:pulse-ink-color transition">
+              <Icon name="plus" className="w-4 h-4"/>Add contact
+            </button>
+          </div>
+        </div>
+
+        {/* DETAIL — reach is the hero */}
+        <div className="flex-1 overflow-y-auto">
+          {sel && (
+            <div className="max-w-[560px] mx-auto p-6 fade-up" key={sel.id}>
+              <div className="flex items-start gap-4">
+                <EditableAvatar c={sel} size={72}/>
+                <div className="flex-1 min-w-0 pt-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-xl font-semibold pulse-ink-color">{sel.name}</h2>
+                    <IdBadge c={sel}/>
+                  </div>
+                  <div className="text-sm pulse-ink-2-color mt-0.5">{sel.role} · {sel.org}</div>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <TempPill t={sel.temp}/>
+                    <PreferredHint c={sel}/>
+                  </div>
+                </div>
+              </div>
+
+              {/* HERO: adaptive channel row */}
+              <div className="mt-5">
+                <div className="text-[10px] font-mono-pulse tracking-tight-mono pulse-ink-3-color mb-2">
+                  {sel.isPulseUser ? 'REACH ON PULSE' : 'REACH'}
+                </div>
+                <ChannelRow c={sel}/>
+                {!sel.isPulseUser && sel.preferred === 'slack' && !sel.slackLinked && (
+                  <div className="mt-2 text-[11px] pulse-ink-3-color flex items-center gap-1.5">
+                    <Icon name="link" className="w-3 h-3"/>Prefers Slack but no Slack identity linked yet.
+                  </div>
+                )}
+              </div>
+
+              {/* AI insight — the only coral region */}
+              <div className="ai-surface p-3 mt-5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <AiChip>PULSE AI · CONTEXT</AiChip>
+                  <span className="text-[10px] pulse-ink-3-color">editable · dismissable</span>
+                </div>
+                <p className="text-sm pulse-ink-color leading-relaxed">{sel.blurb}</p>
+                {sel.lead != null && (
+                  <div className="text-xs pulse-ink-2-color mt-1.5">Lead score <span className="font-mono-pulse">{sel.lead}</span> · last touch {sel.lastTouch} via {sel.lastChannel}.</div>
+                )}
+              </div>
+
+              {/* Contact info — copyable, plus the channels it powers */}
+              <div className="mt-5 rounded-xl border pulse-border-color overflow-hidden">
+                <div className="px-3 py-2 text-[10px] font-mono-pulse tracking-tight-mono pulse-ink-3-color border-b pulse-border-color">CONTACT INFO</div>
+                <InfoRow icon="mail"  value={sel.email} action="Email"/>
+                <InfoRow icon="phone" value={sel.phone} action="Call"/>
+                {sel.slackLinked && <InfoRow icon="slack" value={sel.slackHandle + ' · Helios workspace'} action="Slack"/>}
+                {sel.place && <InfoRow icon="mapPin" value={sel.place} action="Map"/>}
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {sel.groups.map(g => (
+                  <span key={g} className="px-2 py-1 rounded-md text-[11px] pulse-surface-raised pulse-ink-2-color">{g}</span>
+                ))}
+                <button className="px-2 py-1 rounded-md text-[11px] border border-dashed pulse-border-strong-color pulse-ink-3-color">+ Group</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+function InfoRow({ icon, value, action }) {
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5 border-b pulse-border-color last:border-0 group">
+      <Icon name={icon} className="w-4 h-4 pulse-ink-3-color shrink-0"/>
+      <span className="text-sm pulse-ink-color flex-1 truncate select-all">{value}</span>
+      <button className="opacity-0 group-hover:opacity-100 text-[11px] font-mono-pulse pulse-coral-fg-color transition">{action}</button>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH B — RELATIONSHIP LEDGER
+   Relationship-first. Grouped by state, cadence is the spine, detail is a
+   cross-channel interaction timeline. CRM-grade, warm.
+   ════════════════════════════════════════════════════════════════════════ */
+const LEDGER = {
+  c4: [
+    { ch:'email', dir:'out', when:'2d',  text:'Follow-up: "v3 draft this week?"' },
+    { ch:'email', dir:'in',  when:'8d',  text:'Opened · no reply', faint:true },
+    { ch:'email', dir:'out', when:'9d',  text:'Sent v2 deck draft' },
+    { ch:'video', dir:'in',  when:'3w',  text:'Intro call · 22 min' },
+  ],
+  c1: [
+    { ch:'email', dir:'in',  when:'2h',  text:'"Need Q2 figures for slide 4"' },
+    { ch:'email', dir:'out', when:'3d',  text:'Sent March variance notes' },
+    { ch:'video', dir:'out', when:'1w',  text:'Board prep · 30 min' },
+  ],
+  c5: [
+    { ch:'slack', dir:'in',  when:'3h',  text:'#helios-renewal: "send the redline?"' },
+    { ch:'slack', dir:'out', when:'1d',  text:'Shared renewal terms' },
+    { ch:'email', dir:'out', when:'5d',  text:'Q3 proposal' },
+  ],
+};
+function PathB() {
+  const [selId, setSelId] = useState('c4');
+  const sel = byId(selId);
+  const sections = [
+    { key:'cooling', label:'Cooling',           ic:'clock',  c:'var(--temp-cool)' },
+    { key:'due',     label:'Due for check-in',   ic:'bell',   c:'var(--temp-warm)' },
+    { key:'hot',     label:'Hot leads',          ic:'flame',  c:'var(--temp-hot)' },
+    { key:'warm',    label:'Warm',               ic:'check',  c:'var(--temp-warm)' },
+    { key:'dormant', label:'Dormant',            ic:'dot',    c:'var(--temp-cold)' },
+  ];
+  const led = LEDGER[selId] || LEDGER.c1;
+  const chIcon = { email:'mail', slack:'slack', video:'video', call:'phone', message:'message' };
+
+  return (
+    <div className="h-full flex flex-col">
+      <TabBar />
+      <div className="flex-1 flex overflow-hidden">
+        {/* STATE-GROUPED LIST */}
+        <div className="w-[380px] shrink-0 border-r pulse-border-color overflow-y-auto">
+          <div className="p-3 border-b pulse-border-color flex items-center justify-between">
+            <span className="text-sm font-medium pulse-ink-color">By relationship</span>
+            <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{CONTACTS.length} people</span>
+          </div>
+          {sections.map(s => {
+            const rows = CONTACTS.filter(c => c.state === s.key);
+            if (!rows.length) return null;
+            return (
+              <div key={s.key} className="border-b pulse-border-color">
+                <div className="flex items-center gap-2 px-3 py-2 pulse-bg-soft">
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background:s.c }}/>
+                  <span className="text-[10px] font-mono-pulse tracking-tight-mono pulse-ink-2-color uppercase">{s.label}</span>
+                  <span className="text-[10px] pulse-ink-3-color">{rows.length}</span>
+                </div>
+                {rows.map(c => (
+                  <div key={c.id} onClick={()=>setSelId(c.id)}
+                    className={`row-x flex items-center gap-3 px-3 py-2.5 ${selId===c.id?'sel':''}`}>
+                    <Avatar c={c} size={36} ring/>
+                    <div className="flex-1 min-w-0">
+                      <div className="nm text-sm font-medium pulse-ink-color truncate">{c.name}</div>
+                      <div className="text-xs pulse-ink-3-color truncate">{c.org}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[10px] font-mono-pulse pulse-ink-2-color">{c.lastTouch}</div>
+                      {c.nudge && <div className="text-[10px] pulse-ink-3-color">{c.nudge}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* LEDGER DETAIL */}
+        <div className="flex-1 overflow-y-auto">
+          {sel && (
+            <div className="max-w-[600px] mx-auto p-6 fade-up" key={sel.id}>
+              <div className="flex items-start gap-4">
+                <EditableAvatar c={sel} size={64}/>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-xl font-semibold pulse-ink-color">{sel.name}</h2>
+                    <IdBadge c={sel}/>
+                    <TempPill t={sel.temp}/>
+                  </div>
+                  <div className="text-sm pulse-ink-2-color mt-0.5">{sel.role} · {sel.org}</div>
+                </div>
+              </div>
+
+              {/* Cadence goal — the spine */}
+              {sel.cadence && (
+                <div className="mt-4 flex items-center gap-3 px-3 py-2.5 rounded-xl border pulse-border-color">
+                  <Icon name="target" className="w-4 h-4 pulse-ink-2-color"/>
+                  <div className="text-sm pulse-ink-color">
+                    <span className="font-medium">{sel.cadence.label}</span>
+                    <span className="pulse-ink-3-color"> · {sel.cadence.channel === 'any' ? 'any channel' : sel.cadence.channel}</span>
+                  </div>
+                  <span className={`ml-auto text-[11px] font-mono-pulse px-2 py-0.5 rounded ${sel.cadence.leftDays < 0 ? 'pulse-ink-color' : 'pulse-ink-2-color'}`}
+                    style={{ background: sel.cadence.leftDays < 0 ? 'rgba(245,158,11,0.14)' : 'var(--pulse-surface-raised)', color: sel.cadence.leftDays<0?'#b45309':'var(--pulse-ink-2)' }}>
+                    {sel.cadence.leftDays < 0 ? `${Math.abs(sel.cadence.leftDays)}d overdue` : `${sel.cadence.leftDays}d left`}
+                  </span>
+                </div>
+              )}
+
+              {/* AI nudge — the one coral region */}
+              <div className="ai-surface p-3 mt-4">
+                <div className="flex items-center gap-2 mb-1.5"><AiChip>PULSE AI · SUGGESTION</AiChip></div>
+                <p className="text-sm pulse-ink-color leading-relaxed">
+                  {sel.id==='c4' && 'Theo has gone quiet 9 days. Your last three were email; he opens but never replies. A 20-second Vox lands differently than a fourth email.'}
+                  {sel.id==='c1' && 'Maria is waiting on the Q2 figures she asked for 2 hours ago. A one-line reply now keeps the Friday deck on track.'}
+                  {sel.id==='c5' && 'Priya replied in #helios-renewal 3 hours ago. She moves fast on Slack; answer there, not by email.'}
+                  {!['c1','c4','c5'].includes(sel.id) && `${sel.name.split(' ')[0]} is ${TEMP[sel.temp].label.toLowerCase()}. ${sel.blurb}`}
+                </p>
+              </div>
+
+              {/* Cross-channel timeline */}
+              <div className="mt-5">
+                <div className="text-[10px] font-mono-pulse tracking-tight-mono pulse-ink-3-color mb-3">INTERACTION HISTORY</div>
+                <div className="led-line space-y-4">
+                  {led.map((e, i) => (
+                    <div key={i} className="led-node">
+                      <span className="pin"><Icon name={chIcon[e.ch]} className="w-3 h-3 pulse-ink-2-color"/></span>
+                      <div className={e.faint ? 'opacity-55' : ''}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono-pulse uppercase tracking-tight-mono pulse-ink-3-color">{e.ch}</span>
+                          <span className="text-[10px] pulse-ink-3-color">· {e.dir === 'out' ? 'you →' : '→ you'} · {e.when} ago</span>
+                        </div>
+                        <div className="text-sm pulse-ink-color">{e.text}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Log next touch — adaptive channel row */}
+              <div className="mt-6">
+                <div className="text-[10px] font-mono-pulse tracking-tight-mono pulse-ink-3-color mb-2">YOUR NEXT TOUCH</div>
+                <ChannelRow c={sel}/>
+              </div>
+
+              {/* Cross-reference: the honest Route empty-state lives on Today */}
+              <div className="mt-6">
+                <RouteEmptyState/>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH C — PEOPLE OS (AI companion)
+   AI-first, editorial. Curated lanes on the canvas + a Pulse-AI companion
+   rail that narrates who to reach, why, and on which channel.
+   ════════════════════════════════════════════════════════════════════════ */
+function PathC() {
+  const [openId, setOpenId] = useState(null);
+  const lanes = [
+    { key:'reconnect', label:'Reconnect this week', ic:'rotate', ids:['c4','c6'],
+      line:c => c.id==='c4' ? 'Quiet 9 days. Opens, never replies.' : 'Cold 6 weeks. Vendor relationship slipping.' },
+    { key:'awaiting',  label:'Awaiting your reply',  ic:'bell',   ids:['c1','c2'],
+      line:c => c.id==='c1' ? 'Wants Q2 figures for the Friday deck.' : 'NDA Option B needs your yes by Wed.' },
+    { key:'slack',     label:'New from Slack',       ic:'slack',  ids:['c5','c7'],
+      line:c => c.id==='c5' ? '#helios-renewal: "send the redline?"' : 'DM about the realtime voice migration.' },
+    { key:'moments',   label:'Birthdays & moments',  ic:'cake',   ids:['c8'],
+      line:c => 'Birthday Saturday. Call, do not text.' },
+  ];
+  const open = openId ? byId(openId) : null;
+
+  return (
+    <div className="h-full flex flex-col">
+      <TabBar />
+      <div className="flex-1 flex overflow-hidden">
+        {/* EDITORIAL CANVAS */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-[760px] mx-auto p-6">
+            {/* AI briefing strip — coral earns it here */}
+            <div className="ai-surface p-4 mb-6 fade-up">
+              <div className="flex items-center justify-between mb-2">
+                <AiChip>PULSE AI · BRIEFING</AiChip>
+                <span className="text-[10px] pulse-ink-3-color">Friday, June 5</span>
+              </div>
+              <h2 className="font-serif-pulse text-2xl pulse-ink-color leading-tight">Three people need you today.</h2>
+              <p className="text-sm pulse-ink-2-color mt-1.5 leading-relaxed">Theo's gone quiet, Maria's waiting on the Q2 figures, and Priya answered in Slack. Clear those and the week stays light.</p>
+            </div>
+
+            {lanes.map(lane => (
+              <div key={lane.key} className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon name={lane.ic} className="w-4 h-4 pulse-ink-2-color"/>
+                  <h3 className="text-sm font-semibold pulse-ink-color">{lane.label}</h3>
+                  <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{lane.ids.length}</span>
+                  <div className="flex-1 h-px pulse-border-color border-b"/>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {lane.ids.map(id => {
+                    const c = byId(id);
+                    return (
+                      <div key={id} onClick={()=>setOpenId(id)} className="lane-card rounded-xl border pulse-border-color pulse-surface p-3">
+                        <div className="flex items-center gap-3">
+                          <Avatar c={c} size={40} ring/>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-medium pulse-ink-color truncate">{c.name}</span>
+                              {c.isPulseUser && <Icon name="logo" className="w-3 h-3 pulse-rose-color"/>}
+                            </div>
+                            <div className="text-xs pulse-ink-3-color truncate">{c.org}</div>
+                          </div>
+                          <TempPill t={c.temp}/>
+                        </div>
+                        <p className="text-xs pulse-ink-2-color mt-2 leading-snug">{lane.line(c)}</p>
+                        <div className="mt-2.5"><ChannelRow c={c} compact/></div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* COMPANION RAIL */}
+        <div className="w-[320px] shrink-0 border-l pulse-border-color flex flex-col pulse-bg-soft">
+          <div className="p-4 border-b pulse-border-color flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="sparkles" className="w-4 h-4"/></div>
+            <div>
+              <div className="text-sm font-medium pulse-ink-color">Pulse AI</div>
+              <div className="text-[10px] pulse-ink-3-color">your relationship co-pilot</div>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="ai-surface p-3">
+              <AiChip muted>SUGGESTED · 1 OF 3</AiChip>
+              <p className="text-sm pulse-ink-color mt-2 leading-relaxed">Reach <span className="font-medium">Theo</span> before the day fills. Try a Vox, not a fourth email.</p>
+              <div className="mt-2.5 rounded-lg border pulse-border-color pulse-surface p-2.5">
+                <div className="text-[10px] font-mono-pulse pulse-ink-3-color mb-1">DRAFTED OPENER · EDITABLE</div>
+                <p className="text-xs pulse-ink-2-color italic">"Theo, skipping the inbox, here's a 20-sec voice note on where the v3 deck landed…"</p>
+              </div>
+              <div className="mt-2.5"><ChannelRow c={byId('c4')} compact/></div>
+            </div>
+
+            <div className="rounded-xl border pulse-border-color pulse-surface p-3">
+              <div className="flex items-center gap-2 mb-1.5"><Icon name="slack" className="w-3.5 h-3.5 pulse-ink-2-color"/><span className="text-xs font-medium pulse-ink-color">Slack · Priya</span></div>
+              <p className="text-xs pulse-ink-2-color leading-relaxed">She asked for the redline 3h ago in <span className="font-mono-pulse">#helios-renewal</span>.</p>
+              <button className="ch-btn compact mt-2.5 w-full justify-center"><Icon name="slack" className="w-4 h-4"/><span className="lbl">Reply in Slack</span></button>
+            </div>
+
+            <RouteEmptyState/>
+          </div>
+        </div>
+      </div>
+
+      {/* FOCAL DOSSIER */}
+      {open && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center p-6" style={{ background:'rgba(0,0,0,0.45)' }} onClick={()=>setOpenId(null)}>
+          <div className="w-full max-w-[520px] rounded-2xl border pulse-border-strong-color pulse-surface scale-in overflow-hidden" style={{ boxShadow:'var(--pulse-shadow-main)' }} onClick={e=>e.stopPropagation()}>
+            <div className="p-5">
+              <div className="flex items-start gap-4">
+                <EditableAvatar c={open} size={64}/>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-xl font-semibold pulse-ink-color">{open.name}</h2>
+                    <IdBadge c={open}/>
+                  </div>
+                  <div className="text-sm pulse-ink-2-color mt-0.5">{open.role} · {open.org}</div>
+                  <div className="flex items-center gap-3 mt-1.5"><TempPill t={open.temp}/><PreferredHint c={open}/></div>
+                </div>
+                <button onClick={()=>setOpenId(null)} className="pulse-ink-3-color hover:pulse-ink-color"><Icon name="x" className="w-5 h-5"/></button>
+              </div>
+              <div className="ai-surface p-3 mt-4">
+                <AiChip>PULSE AI · CONTEXT</AiChip>
+                <p className="text-sm pulse-ink-color mt-2 leading-relaxed">{open.blurb}</p>
+              </div>
+              <div className="mt-4">
+                <div className="text-[10px] font-mono-pulse tracking-tight-mono pulse-ink-3-color mb-2">{open.isPulseUser ? 'REACH ON PULSE' : 'REACH'}</div>
+                <ChannelRow c={open}/>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATH D — HYBRID  (the locked direction)
+   List from A · Detail = B's cadence-spine + cross-channel timeline fused
+   with A's AI-context + contact-info + groups · AI co-pilot rail from C.
+   Three panes: Browse / Focus / Co-pilot.
+   ════════════════════════════════════════════════════════════════════════ */
+function PathD() {
+  const [selId, setSelId] = useState('c1');
+  const [q, setQ] = useState('');
+  const [fil, setFil] = useState('All');
+  const sel = byId(selId);
+  const filters = ['All', 'VIP', 'Prospects', 'Team', 'External'];
+  const led = LEDGER[selId] || LEDGER.c1;
+  const chIcon = { email:'mail', slack:'slack', video:'video', call:'phone', message:'message' };
+  const suggested = byId('c4'); // AI co-pilot's pick — independent of list selection
+
+  const list = CONTACTS.filter(c => {
+    if (q && !c.name.toLowerCase().includes(q.toLowerCase()) && !c.org.toLowerCase().includes(q.toLowerCase())) return false;
+    if (fil === 'VIP') return c.groups.includes('VIP');
+    if (fil === 'Prospects') return c.groups.includes('Prospect');
+    if (fil === 'Team') return c.isPulseUser;
+    if (fil === 'External') return !c.isPulseUser;
+    return true;
+  });
+
+  return (
+    <div className="h-full flex flex-col">
+      <TabBar />
+      <div className="flex-1 flex overflow-hidden">
+
+        {/* ── COL 1 · BROWSE (list from A) ── */}
+        <div className="w-[330px] shrink-0 border-r pulse-border-color flex flex-col">
+          <div className="p-3 border-b pulse-border-color">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface-raised border pulse-border-color">
+              <Icon name="search" className="w-4 h-4 pulse-ink-3-color"/>
+              <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search people, orgs…"
+                className="bg-transparent outline-none text-sm flex-1" style={{ color:'var(--pulse-ink)' }}/>
+              <span className="keycap">⌘K</span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto">
+              {filters.map(f => (
+                <button key={f} onClick={()=>setFil(f)}
+                  className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition ${fil===f ? 'pulse-rose-bg-soft-color pulse-coral-fg-color' : 'pulse-surface-raised pulse-ink-2-color'}`}>{f}</button>
+              ))}
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {list.map(c => (
+              <div key={c.id} onClick={()=>setSelId(c.id)}
+                className={`row-x flex items-center gap-3 px-3 py-2.5 border-b pulse-border-color ${selId===c.id?'sel':''}`}>
+                <Avatar c={c} size={36} ring/>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="nm text-sm font-medium pulse-ink-color truncate">{c.name}</span>
+                    {c.isPulseUser && <Icon name="logo" className="w-3 h-3 pulse-rose-color shrink-0"/>}
+                  </div>
+                  <div className="text-xs pulse-ink-3-color truncate">{c.role} · {c.org}</div>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{c.lastTouch}</span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: TEMP[c.temp].color }}/>
+                    <Icon name={c.preferred==='slack'?'slack':c.preferred==='call'?'phone':c.preferred==='message'?'message':'mail'} className="w-3 h-3 pulse-ink-3-color"/>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="p-2 border-t pulse-border-color">
+            <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg pulse-surface-raised text-sm pulse-ink-2-color hover:pulse-ink-color transition">
+              <Icon name="plus" className="w-4 h-4"/>Add contact
+            </button>
+          </div>
+        </div>
+
+        {/* ── COL 2 · FOCUS (B spine + timeline, A context + info + groups) ── */}
+        <div className="flex-1 overflow-y-auto">
+          {sel && (
+            <div className="max-w-[600px] mx-auto p-6 fade-up" key={sel.id}>
+              {/* Header */}
+              <div className="flex items-start gap-4">
+                <EditableAvatar c={sel} size={64}/>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-xl font-semibold pulse-ink-color">{sel.name}</h2>
+                    <IdBadge c={sel}/>
+                    <TempPill t={sel.temp}/>
+                  </div>
+                  <div className="text-sm pulse-ink-2-color mt-0.5">{sel.role} · {sel.org}</div>
+                  <div className="mt-1.5"><PreferredHint c={sel}/></div>
+                </div>
+              </div>
+
+              {/* Cadence spine (B) */}
+              {sel.cadence && (
+                <div className="mt-4 flex items-center gap-3 px-3 py-2.5 rounded-xl border pulse-border-color">
+                  <Icon name="target" className="w-4 h-4 pulse-ink-2-color"/>
+                  <div className="text-sm pulse-ink-color">
+                    <span className="font-medium">{sel.cadence.label}</span>
+                    <span className="pulse-ink-3-color"> · {sel.cadence.channel === 'any' ? 'any channel' : sel.cadence.channel}</span>
+                  </div>
+                  <span className="ml-auto text-[11px] font-mono-pulse px-2 py-0.5 rounded"
+                    style={{ background: sel.cadence.leftDays < 0 ? 'rgba(245,158,11,0.14)' : 'var(--pulse-surface-raised)', color: sel.cadence.leftDays<0?'#b45309':'var(--pulse-ink-2)' }}>
+                    {sel.cadence.leftDays < 0 ? `${Math.abs(sel.cadence.leftDays)}d overdue` : `${sel.cadence.leftDays}d left`}
+                  </span>
+                </div>
+              )}
+
+              {/* AI context (A) — the inline coral region */}
+              <div className="ai-surface p-3 mt-4">
+                <div className="flex items-center justify-between mb-1.5">
+                  <AiChip>PULSE AI · CONTEXT</AiChip>
+                  <span className="text-[10px] pulse-ink-3-color">editable · dismissable</span>
+                </div>
+                <p className="text-sm pulse-ink-color leading-relaxed">{sel.blurb}</p>
+                {sel.lead != null && (
+                  <div className="text-xs pulse-ink-2-color mt-1.5">Lead score <span className="font-mono-pulse">{sel.lead}</span> · last touch {sel.lastTouch} via {sel.lastChannel}.</div>
+                )}
+              </div>
+
+              {/* Interaction history (B) */}
+              <div className="mt-5">
+                <div className="text-[10px] font-mono-pulse tracking-tight-mono pulse-ink-3-color mb-3">INTERACTION HISTORY</div>
+                <div className="led-line space-y-4">
+                  {led.map((e, i) => (
+                    <div key={i} className="led-node">
+                      <span className="pin"><Icon name={chIcon[e.ch]} className="w-3 h-3 pulse-ink-2-color"/></span>
+                      <div className={e.faint ? 'opacity-55' : ''}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono-pulse uppercase tracking-tight-mono pulse-ink-3-color">{e.ch}</span>
+                          <span className="text-[10px] pulse-ink-3-color">· {e.dir === 'out' ? 'you →' : '→ you'} · {e.when} ago</span>
+                        </div>
+                        <div className="text-sm pulse-ink-color">{e.text}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Contact info (A) */}
+              <div className="mt-5 rounded-xl border pulse-border-color overflow-hidden">
+                <div className="px-3 py-2 text-[10px] font-mono-pulse tracking-tight-mono pulse-ink-3-color border-b pulse-border-color">CONTACT INFO</div>
+                <InfoRow icon="mail"  value={sel.email} action="Email"/>
+                <InfoRow icon="phone" value={sel.phone} action="Call"/>
+                {sel.slackLinked && <InfoRow icon="slack" value={sel.slackHandle + ' · Helios workspace'} action="Slack"/>}
+                {sel.place && <InfoRow icon="mapPin" value={sel.place} action="Map"/>}
+              </div>
+
+              {/* Groups (A) */}
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {sel.groups.map(g => (
+                  <span key={g} className="px-2 py-1 rounded-md text-[11px] pulse-surface-raised pulse-ink-2-color">{g}</span>
+                ))}
+                <button className="px-2 py-1 rounded-md text-[11px] border border-dashed pulse-border-strong-color pulse-ink-3-color">+ Group</button>
+              </div>
+
+              {/* Your next touch — adaptive channel row (B) */}
+              <div className="mt-6">
+                <div className="text-[10px] font-mono-pulse tracking-tight-mono pulse-ink-3-color mb-2">
+                  {sel.isPulseUser ? 'YOUR NEXT TOUCH · ON PULSE' : 'YOUR NEXT TOUCH'}
+                </div>
+                <ChannelRow c={sel}/>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── COL 3 · CO-PILOT (AI rail from C) ── */}
+        <div className="w-[320px] shrink-0 border-l pulse-border-color flex flex-col pulse-bg-soft">
+          <div className="p-4 border-b pulse-border-color flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="sparkles" className="w-4 h-4"/></div>
+            <div>
+              <div className="text-sm font-medium pulse-ink-color">Pulse AI</div>
+              <div className="text-[10px] pulse-ink-3-color">your relationship co-pilot</div>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="ai-surface p-3">
+              <AiChip muted>SUGGESTED · 1 OF 3</AiChip>
+              <p className="text-sm pulse-ink-color mt-2 leading-relaxed">Reach <button onClick={()=>setSelId('c4')} className="font-medium pulse-coral-fg-color underline decoration-dotted">Theo</button> before the day fills. Try a Vox, not a fourth email.</p>
+              <div className="mt-2.5 rounded-lg border pulse-border-color pulse-surface p-2.5">
+                <div className="text-[10px] font-mono-pulse pulse-ink-3-color mb-1">DRAFTED OPENER · EDITABLE</div>
+                <p className="text-xs pulse-ink-2-color italic">"Theo, skipping the inbox, here's a 20-sec voice note on where the v3 deck landed…"</p>
+              </div>
+              <div className="mt-2.5"><ChannelRow c={suggested} compact/></div>
+            </div>
+
+            <div className="rounded-xl border pulse-border-color pulse-surface p-3">
+              <div className="flex items-center gap-2 mb-1.5"><Icon name="slack" className="w-3.5 h-3.5 pulse-ink-2-color"/><span className="text-xs font-medium pulse-ink-color">Slack · Priya</span></div>
+              <p className="text-xs pulse-ink-2-color leading-relaxed">She asked for the redline 3h ago in <span className="font-mono-pulse">#helios-renewal</span>.</p>
+              <button onClick={()=>setSelId('c5')} className="ch-btn compact mt-2.5 w-full justify-center"><Icon name="slack" className="w-4 h-4"/><span className="lbl">Reply in Slack</span></button>
+            </div>
+
+            <RouteEmptyState/>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   APP SHELL
+   ════════════════════════════════════════════════════════════════════════ */
+function App() {
+  const [theme, setTheme] = useState('dark');
+  const [path, setPath] = useState('D');
+  useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
+  return (
+    <div className="h-screen w-screen flex flex-col overflow-hidden pulse-bg">
+      <div className="pg-bar flex items-center gap-3 px-4 py-2 border-b pulse-border-color shrink-0" style={{ height: 48 }}>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md pulse-rose-bg-color flex items-center justify-center text-white"><Icon name="users" className="w-3.5 h-3.5"/></div>
+          <span className="text-sm font-semibold pulse-ink-color">Contacts Redesign</span>
+          <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">· D = LOCKED HYBRID · A/B/C = SOURCES</span>
+        </div>
+        <div className="ml-6 flex items-center gap-1 p-0.5 rounded-lg pulse-surface-raised">
+          {[
+            { id: 'D', label: 'D · Hybrid',      icon: 'users' },
+            { id: 'A', label: 'A · Switchboard', icon: 'search' },
+            { id: 'B', label: 'B · Ledger',      icon: 'clock'  },
+            { id: 'C', label: 'C · People OS',   icon: 'sparkles' },
+          ].map(p => (
+            <button key={p.id} data-active={path === p.id} onClick={() => setPath(p.id)}
+              className="pg-pill px-3 py-1.5 rounded-md text-[12px] font-medium pulse-ink-2-color flex items-center gap-1.5">
+              <Icon name={p.icon} className="w-3.5 h-3.5"/><span>{p.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-1">
+          <button onClick={toggleTheme} className="px-2.5 py-1.5 rounded-md text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color hover:pulse-surface-raised flex items-center gap-1.5">
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5"/>{theme === 'dark' ? 'LIGHT' : 'DARK'}
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 flex overflow-hidden">
+        <PulseSidebar/>
+        <main className="flex-1 overflow-hidden m-3 rounded-2xl border pulse-border-color pulse-surface relative" style={{ boxShadow: 'var(--pulse-shadow-main)' }}>
+          {path === 'D' && <PathD/>}
+          {path === 'A' && <PathA/>}
+          {path === 'B' && <PathB/>}
+          {path === 'C' && <PathC/>}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
