@@ -616,13 +616,16 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
         )}
       </div>
 
-      {/* Col 3 — Co-pilot rail. Shown at md+ (768px, a STANDARD Tailwind
-          breakpoint so it reliably applies) — covers desktop incl. high-DPI /
-          zoomed laptops whose effective CSS viewport is well under the device
-          width. Hidden below 768px; full mobile/responsive layout is Phase 10. */}
+      {/* Col 3 — Co-pilot rail. Shown via a plain `flex` class + an INLINE width,
+          NOT `hidden md:flex w-[280px]`. Successive responsive/arbitrary Tailwind
+          classes (xl→lg→md→w-[..]) never appeared for the user even on a ~1900px
+          screen — the likely cause is the dev server's Tailwind JIT not
+          regenerating those utilities on HMR, so the rule was simply absent from
+          the CSS. `flex` + inline style sidestep JIT entirely. Responsive
+          mobile hide is Phase 10. */}
       <div
-        className="hidden md:flex flex-col w-[280px] xl:w-[320px] shrink-0 border-l p-4"
-        style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
+        className="flex flex-col shrink-0 border-l p-4 overflow-hidden"
+        style={{ width: 300, borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
       >
         <CopilotRail
           userId={userId ?? undefined}
