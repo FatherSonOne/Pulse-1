@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom';
 import toast from 'react-hot-toast';
 import { User, AppView, BatchedNotification, CalendarEvent, Task, Thread, Contact } from '../types';
 import { generateDailyBriefing, generateThinkingResponse } from '../services/geminiService';
-import { useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
 import { InlineCommandPalette } from './GlobalCommandPalette';
 import { dataService } from '../services/dataService';
 import { useWorkspaceData, useWorkspacePermissions } from '../contexts/WorkspaceContext';
@@ -36,7 +35,7 @@ import { AttentionDashboard } from './attention';
 import { attentionService } from '../services/attentionService';
 import { emailSyncService } from '../services/emailSyncService';
 
-import { Archive, ArrowRight, BookUser, Calendar, Check, CheckCircle2, CheckSquare, ChevronRight, Copy, Heart, List, Loader2, Mail, MessageSquare, MessagesSquare, Mic, Plus, Search, Send, Target, TrendingUp, UserCheck, UserPlus, Users, X } from 'lucide-react';
+import { Archive, ArrowRight, BookUser, Calendar, Check, CheckCircle2, CheckSquare, ChevronRight, Copy, Heart, List, Loader2, Mail, MessageSquare, MessagesSquare, Mic, Search, Send, Target, TrendingUp, UserCheck, UserPlus, Users, X } from 'lucide-react';
 
 // Auto-refresh interval in milliseconds. Bumped from 5min → 30min after
 // the 2026-05-21 egress incident: the briefing fans out to 10 DB queries
@@ -461,7 +460,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
   const [analyticsTimeRange, setAnalyticsTimeRange] = useState<'day' | 'week' | 'month'>('week');
   const [selectedMetric, setSelectedMetric] = useState<'tasks' | 'messages' | 'meetings'>('tasks');
   const [showGoalEditor, setShowGoalEditor] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(false);
   const [goalEditorTab, setGoalEditorTab] = useState<'productivity' | 'communication' | 'wellness' | 'all'>('all');
 
   // Keyboard shortcut overlay
@@ -744,7 +742,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
       // ESC closes overlays in priority order
       if (e.key === 'Escape') {
         if (showKbdOverlay) { setShowKbdOverlay(false); return; }
-        if (showQuickActions) { setShowQuickActions(false); return; }
       }
 
       // The rest only fire when the user isn't typing
@@ -777,7 +774,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [showQuickActions, showKbdOverlay, priorities, loadingBriefing]);
+  }, [showKbdOverlay, priorities, loadingBriefing]);
 
   // Listen for the global "show shortcuts" command from the palette.
   useEffect(() => {
@@ -1216,48 +1213,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   }, []);
 
-  // Quick Actions — neutral surfaces, single primary action style
-  const quickActions = useMemo(() => [
-    { id: 'task', label: 'New Task', icon: 'fa-check', view: AppView.CALENDAR, openTaskPanel: true },
-    { id: 'message', label: 'Send Message', icon: 'fa-message', view: AppView.MESSAGES },
-    { id: 'meeting', label: 'Schedule Meet', icon: 'fa-video', view: AppView.MEETINGS },
-    { id: 'email', label: 'Compose Email', icon: 'fa-envelope', view: AppView.EMAIL },
-    { id: 'vox', label: 'Quick Relay', icon: 'fa-microphone', view: AppView.RELAY },
-    { id: 'contact', label: 'New Contact', icon: 'fa-user-plus', view: AppView.CONTACTS, openAddContact: true },
-    { id: 'warroom', label: 'War Room', icon: 'fa-book-open', view: AppView.LIVE },
-    { id: 'search', label: 'Search', icon: 'fa-magnifying-glass', view: AppView.MULTI_MODAL },
-  ], []);
-
-  // Build dashboard-scoped commands (Quick Actions). Navigation rows live in
-  // AppCommandRegistrar so they're available on every view, not just here.
-  const dashboardCommands = useMemo<PaletteCommand[]>(() => {
-    const actionDescs: Record<string, string> = {
-      task: 'Open the task composer',
-      message: 'Compose a new message',
-      meeting: 'Schedule a video meeting',
-      email: 'Open the email composer',
-      vox: 'Record a quick voice message',
-      contact: 'Add a new contact',
-      warroom: 'Open the live war room',
-      search: 'Open Pulse search',
-    };
-
-    return quickActions.map(a => ({
-      id: `action-${a.id}`,
-      label: a.label,
-      desc: actionDescs[a.id] || 'Run this action',
-      kind: 'action' as const,
-      icon: a.icon,
-      run: () => {
-        const params: Record<string, boolean> = {};
-        if (a.openTaskPanel) params.openTaskPanel = true;
-        if (a.openAddContact) params.openAddContact = true;
-        setView(a.view, Object.keys(params).length > 0 ? params : undefined);
-      },
-    }));
-  }, [quickActions, setView]);
-
-  useRegisterCommands('dashboard:actions', { commands: dashboardCommands });
+  // Quick Actions moved to the app-level GlobalQuickActions FAB (Phase 5b) so
+  // they're available on every view and fire real actions (open composer,
+  // instant meeting, contact-picked voice message), not navigate-only. The old
+  // 'dashboard:actions' palette scope was redundant with the global app:create /
+  // app:actions / nav commands, so it was retired with the move.
 
   // Derived: message unread count from threads
   const messageUnreadCount = useMemo(() => threads.filter(t => t.unread).length, [threads]);
@@ -1857,61 +1817,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
       </div>
       )}
 
-      {/* Quick Actions Floating Button — Rendered via Portal */}
-      {ReactDOM.createPortal(
-        <div className="fixed bottom-6 right-6 z-[9999]" style={{ position: 'fixed' }}>
-          {showQuickActions && (
-            <div
-              className="absolute bottom-full right-0 mb-3 w-56 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/[0.08] shadow-lg overflow-hidden animate-fade-in"
-              role="menu"
-            >
-              <ul className="py-1">
-                {quickActions.map(action => (
-                  <li key={action.id}>
-                    <button
-                      onClick={() => {
-                        const params: Record<string, boolean> = {};
-                        if (action.openTaskPanel) params.openTaskPanel = true;
-                        if (action.openAddContact) params.openAddContact = true;
-                        setView(action.view, Object.keys(params).length > 0 ? params : undefined);
-                        setShowQuickActions(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/[0.04] hover:text-rose-600 dark:hover:text-rose-400 focus-visible:outline-none focus-visible:bg-zinc-50 dark:focus-visible:bg-white/[0.04] transition-colors duration-150"
-                      role="menuitem"
-                    >
-                      <i className={`fa-solid ${action.icon} w-4 text-center text-zinc-400 dark:text-zinc-500`}></i>
-                      <span>{action.label}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowKbdOverlay(true)}
-              aria-label="Keyboard shortcuts"
-              title="Keyboard shortcuts (?)"
-              className="hidden sm:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-white/[0.10] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 shadow-sm"
-            >
-              <span className="font-mono text-sm">?</span>
-            </button>
-            <button
-              onClick={() => setShowQuickActions(!showQuickActions)}
-              aria-expanded={showQuickActions}
-              aria-label={showQuickActions ? 'Close quick actions' : 'Open quick actions'}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 ${
-                showQuickActions
-                  ? 'bg-zinc-200 dark:bg-white/[0.08] text-zinc-700 dark:text-zinc-200 rotate-45'
-                  : 'bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white shadow-md shadow-rose-500/20'
-              }`}
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Quick Actions FAB moved to the app-level GlobalQuickActions (Phase 5b);
+          it now floats on every view. The "?" keyboard-help button was dropped —
+          the global KeyboardChordsLayer already owns the `?` overlay. */}
 
       {/* Persistent activity badge — bottom-left corner. Shows briefly after any save. */}
       {lastSavedAt && ReactDOM.createPortal(

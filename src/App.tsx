@@ -77,6 +77,7 @@ import { FeatureProvider, useFeatures } from './contexts/FeatureContext';
 import { PulseAIProvider } from './contexts/PulseAIContext';
 import { CommandPaletteProvider, useRegisterCommands, Command } from './contexts/CommandPaletteContext';
 import { GlobalCommandBar } from './components/GlobalCommandPalette';
+import { GlobalQuickActions } from './components/GlobalQuickActions';
 import KeyboardChordsLayer from './components/KeyboardChordsLayer';
 import CaptureModal from './components/Capture/CaptureModal';
 import { WorkspaceProvider, useWorkspaceData, useWorkspaceActions } from './contexts/WorkspaceContext';
@@ -1473,6 +1474,18 @@ const App: React.FC = () => {
           Pulse-wide and section-specific actions. Suppressed on the Dashboard,
           which keeps its own hero command bar and handles ⌘K itself. */}
       <GlobalCommandBar suppressed={view === AppView.DASHBOARD} />
+      {/* Global quick-actions FAB — floats on every view, fires real actions
+          (Phase 5b). Reuses App's intent handlers; gates the email action on
+          emailEnabled internally. */}
+      <GlobalQuickActions
+        contacts={contacts}
+        setView={setView}
+        onNewTask={handleNewTask}
+        onNewContact={handleNewContact}
+        onComposeEmail={handleComposeEmail}
+        onStartMeeting={handleStartMeeting}
+        onVoxContact={handleVoxContact}
+      />
       <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onVoxContact={handleVoxContact} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onSignOut={logout} onTogglePulseAI={() => setShowPulseAI(prev => !prev)} onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)} onSectionAction={handleSectionAction} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
