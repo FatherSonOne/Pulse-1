@@ -3,7 +3,7 @@
 > **Generated:** 2026-06-05 · Phase 1 (brainstorm + scope) of the Slack build.
 > **Method:** 8-dimension code/schema audit + 5-claim adversarial verification (workflow `slack-phase1-scope`, 14 agents), synthesized against live `information_schema` ground truth.
 > **Scope owner:** contactsHybrid redesign · Phase 8 of 13 · handoff `docs/CONTACTS_REDESIGN_HANDOFF_2026-06-05.md`
-> **Status:** Recommendations below are LOCKED **pending the 4 user decisions in §11** (Q1 identity endpoint, Q2 token storage, Q3 proxy auth, Q4 send-as-bot). Feeds Phase 2 (gateway/proxy), Phase 5 (section-redesign mockup), Phase 8 (build).
+> **Status:** LOCKED. The 4 user-facing forks (§11) were **RESOLVED 2026-06-05 — all confirmed as recommended** (Q1 `users.lookupByEmail`, Q2 per-user localStorage, Q3 ship-send-now / harden-proxy-auth-later, Q4 send-as-bot). Feeds Phase 2 (gateway/proxy), Phase 5 (section-redesign mockup), Phase 8 (build).
 > **Guardrail:** this phase is **additive** to a working read-only Slack path. No existing Slack ingestion code, proxy read path, or `channelsFor` contract may be rewritten or deleted (CLAUDE.md Rule A). Every "gap" below is a documented Phase-8 seam, not a bug.
 
 ## 1. As-Is (verified)
@@ -37,7 +37,9 @@
 - **"`channelsFor` must change to enable Slack."** WRONG. The contract is already correct and test-locked: `disabled:true`+"Slack send arrives in a later phase" when `slackLinked && !slackSendEnabled` (`channelsFor.test.ts:46-51`), `disabled:false` when both true (`:53-61`). Phase 8 makes the *callers* pass the real values; it must not edit the resolver's branch shape.
 - **"Identity via `users.lookupByEmail`."** The handoff actually specs identity via **`users.info.profile.email` match** (handoff `:166,294`), because Slack *messages* carry no email but the user-profile endpoint does. The audit's `lookupByEmail` framing is one option, not the locked one — see D-B / Q1.
 
-## 3. Decisions (recommended — see §11 for the 4 awaiting user confirmation)
+## 3. Decisions (LOCKED)
+
+> The 4 user-facing forks (D-A send-as-bot, D-B identity endpoint, D-C token storage, and the proxy-auth call) were confirmed by the user on 2026-06-05 — **all as recommended** (see §11).
 
 | ID | Question | Decision | Rationale | Rejected |
 |----|----------|----------|-----------|----------|
@@ -174,12 +176,14 @@ Tone notes (CLAUDE.md §4):
 | R9 | Breaking the test-locked `channelsFor`/`ChannelRow` contract | Med | High | Only callers change; add `onSendSlack` prop instead of widening `onAction`; keep all 5 tests green. |
 | R10 | DM appears "from the Pulse bot," surprising the operator | Med | Low | UX copy clarifies "Sent via Pulse"; user-send is the deferred v1.1 path. |
 
-## 11. Open Questions for the User
+## 11. User Decisions — RESOLVED 2026-06-05
 
-1. **Identity endpoint — `users.lookupByEmail` (recommended, D-B) vs the handoff's `users.info.profile.email` match?** The handoff text (`:166,294`) says `users.info`, but `lookupByEmail` is a single scalar call vs scanning member lists. Both need `users:read.email`. Options: (a) lock `users.lookupByEmail` [recommended]; (b) honor the handoff's `users.info` scan literally.
-2. **Token storage — per-user `localStorage` (recommended, D-C) vs workspace `shared_config`?** shared_config is readable by all members under current RLS and is currently dead/unencrypted. Options: (a) per-user localStorage [recommended]; (b) shared workspace token (requires encryption + admin-only RLS first).
-3. **Should `/api/slack/proxy` gain a Supabase Bearer auth check before we add send?** It's currently an unauthenticated open relay (`server.js:139-144`); adding write capability widens that surface. Security decision, not something to change silently (Rule A). Options: (a) add auth in this phase; (b) ship send now, track auth-hardening as a separate follow-up [pragmatic]; (c) hold send until auth lands [most cautious].
-4. **Send-as-bot is the only option this phase (D-A) — confirm acceptable for v1?** User-send needs OAuth (deferred). The DM will read "from the Pulse app," not from the operator personally.
+All four confirmed **as recommended**:
+
+1. **Identity endpoint → `users.lookupByEmail` (D-B).** One scalar `email→id` call requiring `users:read.email`. This **overrides** the handoff's `users.info`-scan wording (`:166,294`).
+2. **Token storage → per-user `localStorage`** key `pulse_slack_bot_token` + a non-React reader (D-C). `workspace_integrations.shared_config` rejected (member-readable under current RLS, unencrypted).
+3. **Proxy auth → ship send now, harden later.** The additive POST branch lands this phase; a Supabase Bearer check on `/api/slack/proxy` (an open relay today, `server.js:139-144`) is tracked as a **separate security follow-up**, not a Phase-8 blocker. ⚠️ **Carry this forward as an explicit follow-up item** so it isn't lost.
+4. **Send identity → send-as-bot for v1 (D-A).** DMs post from the Pulse bot app ("Sent via Pulse"); send-as-user (OAuth `xoxp-`) stays deferred to v1.1.
 
 ## 12. Acceptance Criteria
 
