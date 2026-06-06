@@ -39,18 +39,6 @@ export const FeaturesLabsSettings: React.FC = () => {
         />
       </SettingsCard>
 
-      {/* Contacts Hybrid (Path D) redesign on/off. OFF (default) renders the
-          legacy People view; ON renders the new 3-pane hybrid layout
-          (Browse / Focus / Co-pilot). Today tab is unchanged either way. */}
-      <SettingsCard>
-        <ToggleItem
-          label="Contacts Hybrid"
-          desc="The Contacts → People tab uses the new 3-pane hybrid layout (Browse · Focus · Co-pilot) with adaptive channel actions. On by default — turn off to fall back to the legacy People view."
-          active={features.contactsHybrid}
-          onToggle={() => toggleFeature('contactsHybrid')}
-        />
-      </SettingsCard>
-
       {/* Slack Send (Phase 8) on/off. OFF (default) → the ChannelRow Slack button
           stays disabled even for a linked contact. ON → an inline DM composer in
           the People → Focus column. Needs a connected Slack bot token (chat:write)

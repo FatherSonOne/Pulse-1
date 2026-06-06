@@ -10,8 +10,9 @@
 // ContactDetail sub-components), Col 3 CopilotRail (todayFeedService agenda).
 //
 // Reuses services verbatim: useRelationshipIntelligence, getCircles,
-// savedFiltersService, dataService. Legacy ContactsRedesigned stays intact
-// until Phase 12. Props mirror ContactsRedesignedProps.
+// savedFiltersService, dataService. The legacy ContactsRedesigned/ContactDetail
+// were removed in Phase 12 — this is now the sole People view (props mirror the
+// former ContactsRedesignedProps shape, kept for the ContactsShell call site).
 //
 // DEFERRED from the legacy People surface (documented, NOT silently dropped —
 // these are not filters, so Phase 2's AC is unaffected; each lands in its named
