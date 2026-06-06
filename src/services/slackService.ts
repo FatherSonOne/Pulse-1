@@ -17,7 +17,11 @@ export class SlackService {
   /**
    * Helper to make Slack API requests via proxy server
    */
-  private async slackRequest(endpoint: string, params: Record<string, any> = {}) {
+  private async slackRequest(
+    endpoint: string,
+    params: Record<string, any> = {},
+    options: { method?: 'GET' | 'POST' } = {}
+  ) {
     const response = await fetch(this.proxyURL, {
       method: 'POST',
       headers: {
@@ -27,6 +31,9 @@ export class SlackService {
         endpoint,
         token: this.botToken,
         params,
+        // Phase 8: tell the proxy to POST upstream (write methods) vs GET (reads).
+        // Omitted for reads so existing read calls hit the unchanged GET path.
+        ...(options.method ? { method: options.method } : {}),
       }),
     });
 
@@ -194,5 +201,70 @@ export class SlackService {
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
+  }
+
+  // ============================================================
+  // Phase 8 — outbound send + per-contact identity (contactsHybrid).
+  // All write methods POST upstream via the proxy's method:'POST' branch.
+  // Sends post as the Pulse BOT app (xoxb-), not the operator; send-as-user
+  // (OAuth xoxp-) is deferred to v1.1. See docs/SLACK_PHASE8_SCOPE_2026-06-05.md.
+  // ============================================================
+
+  /**
+   * Resolve a contact's email to a Slack user id (Phase 8 identity).
+   * Requires the `users:read.email` scope. Returns null when no Slack member
+   * matches the email (the expected "not on Slack" outcome, surfaced as a
+   * manual "Link Slack" prompt); throws on any other Slack error (e.g.
+   * missing_scope, invalid_auth).
+   */
+  async lookupUserByEmail(email: string): Promise<string | null> {
+    try {
+      const result = await this.slackRequest('users.lookupByEmail', { email });
+      return (result.user?.id as string) ?? null;
+    } catch (error) {
+      if (error instanceof Error && /users_not_found/.test(error.message)) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Open (or fetch) the DM channel id for a Slack user. Requires `im:write`.
+   * Returns the IM channel id used as the chat.postMessage target.
+   */
+  async openDm(slackUserId: string): Promise<string> {
+    const result = await this.slackRequest(
+      'conversations.open',
+      { users: slackUserId },
+      { method: 'POST' }
+    );
+    const channelId = result.channel?.id as string | undefined;
+    if (!channelId) {
+      throw new Error('conversations.open returned no channel id');
+    }
+    return channelId;
+  }
+
+  /**
+   * Send a plain-text DM to a Slack user id (Phase 8). Requires `chat:write`
+   * (+ `im:write` to open the DM). Posts as the Pulse bot app. Returns the
+   * message ts + channel on success; throws on empty text or any Slack error.
+   */
+  async sendMessage(
+    slackUserId: string,
+    text: string
+  ): Promise<{ ts: string; channel: string }> {
+    const trimmed = (text ?? '').trim();
+    if (!trimmed) {
+      throw new Error('Cannot send an empty Slack message');
+    }
+    const channel = await this.openDm(slackUserId);
+    const result = await this.slackRequest(
+      'chat.postMessage',
+      { channel, text: trimmed },
+      { method: 'POST' }
+    );
+    return { ts: result.ts as string, channel: (result.channel as string) ?? channel };
   }
 }
