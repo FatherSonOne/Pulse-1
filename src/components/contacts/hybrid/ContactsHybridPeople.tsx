@@ -608,7 +608,7 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
         <CopilotRail
           userId={userId ?? undefined}
           contacts={contacts}
-          selectedContactId={selectedContactId}
+          emailEnabled={features.emailEnabled}
           onSelectContact={setSelectedContactId}
           onAction={onAction}
         />
