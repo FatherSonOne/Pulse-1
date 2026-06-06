@@ -39,6 +39,18 @@ export const FeaturesLabsSettings: React.FC = () => {
         />
       </SettingsCard>
 
+      {/* Contacts Hybrid (Path D) redesign on/off. OFF (default) renders the
+          legacy People view; ON renders the new 3-pane hybrid layout
+          (Browse / Focus / Co-pilot). Today tab is unchanged either way. */}
+      <SettingsCard>
+        <ToggleItem
+          label="Contacts Hybrid (Beta)"
+          desc="When on, the Contacts → People tab uses the new 3-pane hybrid layout (Browse · Focus · Co-pilot) with adaptive channel actions. Off keeps the current People view. In active development."
+          active={features.contactsHybrid}
+          onToggle={() => toggleFeature('contactsHybrid')}
+        />
+      </SettingsCard>
+
       {/* Feature categories */}
       {Object.entries(FEATURE_CATEGORIES).map(([catKey, cat]) => (
         <SettingsCard key={catKey} className="space-y-4">

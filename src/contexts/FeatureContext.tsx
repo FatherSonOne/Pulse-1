@@ -52,6 +52,14 @@ export interface FeatureFlags {
   // the items are greyed out + non-clickable. Turn ON in Settings → Features &
   // Labs to use them. Gated in Sidebar.tsx.
   experimentalEnabled: boolean;
+
+  // Contacts Hybrid redesign (Path D) master switch. OFF by default → the
+  // People tab renders the legacy ContactsRedesigned layout. ON → the new
+  // 3-pane hybrid People view (Browse / Focus / Co-pilot) under
+  // src/components/contacts/hybrid/. Gated in ContactsShell.tsx on the People
+  // body only; the Today tab is unchanged either way. See
+  // docs/CONTACTS_REDESIGN_HANDOFF_2026-06-05.md.
+  contactsHybrid: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -95,6 +103,9 @@ const DEFAULT_FEATURES: FeatureFlags = {
 
   // Experimental section OFF by default ("features disabled"); flip on for dev/test.
   experimentalEnabled: false,
+
+  // Contacts Hybrid (Path D) OFF by default → legacy People view; flip on for dev/test.
+  contactsHybrid: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -275,6 +286,7 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   toolsMenuV2: 'New Tools Menu (Beta)',
   emailEnabled: 'Email Section',
   experimentalEnabled: 'Experimental Features',
+  contactsHybrid: 'Contacts Hybrid (Beta)',
 };
 
 /**

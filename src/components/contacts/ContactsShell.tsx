@@ -10,6 +10,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { AppView, Contact } from '../../types';
 import { ContactsRedesigned } from './ContactsRedesigned';
+import { ContactsHybridPeople } from './hybrid/ContactsHybridPeople';
 import { TodayView } from './TodayView';
 import { ContactsOnboarding, shouldShowContactsTour } from './ContactsOnboarding';
 import { useContactsKeyboard } from './useContactsKeyboard';
@@ -19,6 +20,7 @@ import { TrimWizard } from './TrimWizard';
 import { AddContactModal } from './AddContactModal';
 import { ReconnectGoogleModal } from '../Auth/ReconnectGoogleModal';
 import { useWorkspaceData } from '../../contexts/WorkspaceContext';
+import { useFeatures } from '../../contexts/FeatureContext';
 import { useTranslation } from 'react-i18next';
 
 import { MapPin, Search } from 'lucide-react';
@@ -75,6 +77,10 @@ const TABS: ModeTab[] = [
 export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
   const { t } = useTranslation();
   const { currentWorkspace } = useWorkspaceData();
+  const { isFeatureEnabled } = useFeatures();
+  // Path D rollout: ON → new 3-pane hybrid People view; OFF → legacy
+  // ContactsRedesigned. Gates the People body only — Today is unchanged.
+  const hybridPeople = isFeatureEnabled('contactsHybrid');
   const [activeMode, setActiveMode] = useState<ContactsMode>(props.initialMode ?? 'today');
   const [showTour, setShowTour] = useState(() => shouldShowContactsTour());
   const [connectModalOpen, setConnectModalOpen] = useState(false);
@@ -274,15 +280,27 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
               <TodayView onAction={props.onAction} contacts={props.contacts} />
             )}
             {activeMode === 'people' && (
-              <ContactsRedesigned
-                contacts={props.contacts}
-                onAction={props.onAction}
-                onSyncComplete={props.onSyncComplete}
-                onUpdateContact={props.onUpdateContact}
-                onAddContact={props.onAddContact}
-                onDeleteContact={props.onDeleteContact}
-                openAddContact={props.openAddContact}
-              />
+              hybridPeople ? (
+                <ContactsHybridPeople
+                  contacts={props.contacts}
+                  onAction={props.onAction}
+                  onSyncComplete={props.onSyncComplete}
+                  onUpdateContact={props.onUpdateContact}
+                  onAddContact={props.onAddContact}
+                  onDeleteContact={props.onDeleteContact}
+                  openAddContact={props.openAddContact}
+                />
+              ) : (
+                <ContactsRedesigned
+                  contacts={props.contacts}
+                  onAction={props.onAction}
+                  onSyncComplete={props.onSyncComplete}
+                  onUpdateContact={props.onUpdateContact}
+                  onAddContact={props.onAddContact}
+                  onDeleteContact={props.onDeleteContact}
+                  openAddContact={props.openAddContact}
+                />
+              )
             )}
           </>
         )}
