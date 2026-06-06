@@ -616,10 +616,12 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
         )}
       </div>
 
-      {/* Col 3 — Co-pilot rail. Shown at lg+ (1024px); below that it hides so
-          Browse + Focus keep room (full mobile layout is Phase 10). */}
+      {/* Col 3 — Co-pilot rail. Shown at md+ (768px, a STANDARD Tailwind
+          breakpoint so it reliably applies) — covers desktop incl. high-DPI /
+          zoomed laptops whose effective CSS viewport is well under the device
+          width. Hidden below 768px; full mobile/responsive layout is Phase 10. */}
       <div
-        className="hidden lg:flex flex-col w-[300px] xl:w-[320px] shrink-0 border-l p-4"
+        className="hidden md:flex flex-col w-[280px] xl:w-[320px] shrink-0 border-l p-4"
         style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
       >
         <CopilotRail
