@@ -6,7 +6,8 @@
 went through three live iterations (floating pill → sidebar launcher) and is now being
 **finalized** per the user's decision (2026-06-06): a **dedicated, persistent global
 command bar header on every view** (see **Phase 6** below — the authoritative target).
-Phase 6 is PLANNED, not yet implemented. The `commandBarGlobal` flag was removed in 5a.
+Phase 6 is **SHIPPED + verified live** (`2d60aec` cutover, `a5c2fa6` dropdown portal fix).
+The `commandBarGlobal` flag was removed in 5a.
 
 > **Read Phase 6 first.** The "Final architecture (as shipped)" section below it documents
 > the *interim* pill/sidebar state and is **superseded** by Phase 6's persistent header.
@@ -22,7 +23,8 @@ Phase 6 is PLANNED, not yet implemented. The `commandBarGlobal` flag was removed
 | 5a — Retire modal, flag removed, pill = one surface | `dad241f` | ✅ shipped, ⚠️ eyeball-pending |
 | 5b — Globalize the quick-actions FAB (real actions) | `068a871` | ✅ shipped, ⚠️ eyeball-pending |
 | (interim) Launcher → sidebar header (pill collided) | `4c92bf3` | ✅ shipped, ⚠️ superseded by Phase 6 |
-| **6 — Dedicated persistent global command bar header** | — | 🔜 **PLANNED — final position** |
+| **6 — Dedicated persistent global command bar header** | `2d60aec` | ✅ **shipped + verified live** |
+| 6-fix — Portal the dropdown above page content | `a5c2fa6` | ✅ shipped + verified live |
 
 ## Final architecture (as shipped)
 
