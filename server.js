@@ -137,14 +137,40 @@ app.use(express.json());
 
 // Slack API Proxy endpoint
 app.post('/api/slack/proxy', async (req, res) => {
-  const { endpoint, token, params } = req.body;
+  const { endpoint, token, params, method } = req.body;
 
   if (!endpoint || !token) {
     return res.status(400).json({ error: 'Missing endpoint or token' });
   }
 
+  // Phase 8 (Slack send): write methods (chat.postMessage, conversations.open,
+  // users.lookupByEmail) need an HTTP POST with a JSON body — structured args
+  // (channel, text, users) would be String()-mangled onto the query string by
+  // the read path below. Reads stay on the original GET-with-query-params path,
+  // unchanged. Opt in by passing method:'POST' in the request body.
+  const isWrite = String(method || 'GET').toUpperCase() === 'POST';
+
   try {
     const url = new URL(`https://slack.com/api/${endpoint}`);
+
+    if (isWrite) {
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify(params || {}),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return res.status(response.status).json({ error: data.error || 'Slack API request failed' });
+      }
+
+      return res.json(data);
+    }
 
     // Add query parameters
     if (params) {
