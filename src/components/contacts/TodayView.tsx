@@ -472,6 +472,24 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
         {/* Feed items — Route view: items grouped by geographic cluster */}
         {!loading && !error && viewMode === 'route' && filteredItems.length > 0 && (
           <div className="p-4 space-y-5">
+            {/* Honest empty-state (Phase 6, D7): when nothing resolves a
+                location every item falls into the single "No location" bucket.
+                Explain why + how to fix instead of a silent ungrouped list.
+                Neutral surface — NOT coral (it's a system hint, not AI output). */}
+            {!clusters.some(c => c.centroid != null) && (
+              <div
+                className="flex items-start gap-2.5 rounded-xl border p-3"
+                style={{ background: 'var(--pulse-surface-raised)', borderColor: 'var(--pulse-border)' }}
+              >
+                <MapPin size={16} className="mt-0.5 shrink-0 text-zinc-400 dark:text-zinc-500" />
+                <div>
+                  <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">No locations yet</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Set home or work locations on your contacts to group today's actions by area.
+                  </p>
+                </div>
+              </div>
+            )}
             {clusters.map(c => (
               <div key={c.id} className="space-y-2">
                 <div className="flex items-baseline justify-between gap-2 px-1">
