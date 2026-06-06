@@ -202,6 +202,11 @@ interface AppCommandRegistrarProps {
   onSignOut: () => void;
   onTogglePulseAI: () => void;
   onToggleSidebar: () => void;
+  // Global section actions — deep-link to a section AND fire one of its actions
+  // (Create event / New decision / Prioritize) via the pending-intent bridge,
+  // so section actions are reachable from any view, not only when that section
+  // is already mounted.
+  onSectionAction: (target: 'calendar' | 'decisions', action: string) => void;
 }
 
 const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
@@ -222,6 +227,7 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   onSignOut,
   onTogglePulseAI,
   onToggleSidebar,
+  onSectionAction,
 }) => {
   const { open } = useCommandPalette();
 
@@ -469,6 +475,42 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
     },
   ], [isDarkMode, onToggleTheme, onTogglePulseAI, onToggleSidebar, onSignOut]);
 
+  // Global section actions — the high-value "do something in a section" commands
+  // that previously only existed while that section was mounted (Calendar's
+  // Create Event, the cockpit's New decision / Prioritize). onSectionAction
+  // deep-links to the section AND fires the action via the pending-intent
+  // bridge, so they work from any view. "New task" already ships globally via
+  // app:create, so it's intentionally not duplicated here.
+  const actionsCommands = useMemo<Command[]>(() => [
+    {
+      id: 'action-create-event',
+      label: 'Create event',
+      desc: 'Open the calendar event form',
+      icon: 'fa-calendar-plus',
+      kind: 'action',
+      keywords: ['event', 'calendar', 'schedule', 'new event', 'add event'],
+      run: () => onSectionAction('calendar', 'create-event'),
+    },
+    {
+      id: 'action-new-decision',
+      label: 'New decision',
+      desc: 'Open the decision wizard',
+      icon: 'fa-scale-balanced',
+      kind: 'action',
+      keywords: ['decision', 'decide', 'new decision', 'propose'],
+      run: () => onSectionAction('decisions', 'decision'),
+    },
+    {
+      id: 'action-prioritize-tasks',
+      label: 'Prioritize tasks with AI',
+      desc: 'Rank your open tasks',
+      icon: 'fa-bolt',
+      kind: 'action',
+      keywords: ['prioritize', 'ai', 'rank', 'triage', 'tasks'],
+      run: () => onSectionAction('decisions', 'prioritize'),
+    },
+  ], [onSectionAction]);
+
   // People entity-jump — typing a name (2+ chars) surfaces matching contacts,
   // each as an "Open <name>" (their card) plus a "Message <name>" (their
   // conversation). Dynamic provider so it reflects the live contacts array and
@@ -535,6 +577,7 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   useRegisterCommands('app:email',       { commands: emailCommands });
   useRegisterCommands('app:meetings',    { commands: meetingCommands });
   useRegisterCommands('app:controls',    { commands: controlsCommands });
+  useRegisterCommands('app:actions',      { commands: actionsCommands });
   useRegisterCommands('contacts:people', { provider: peopleProvider });
 
   return null;
@@ -718,6 +761,20 @@ const App: React.FC = () => {
     setSelectedContactId(undefined);
     setMeetingIntent('startPulse');
     setView(AppView.MEETINGS);
+  }, []);
+  // Global section-action bridge (Phase 3). Lets a palette command both navigate
+  // to a section AND fire one of its in-section actions (Create event / New
+  // decision / Prioritize) from any view. Dual-path, mirroring pulse_pending_compose:
+  // the sessionStorage key is drained by the destination on mount (cold nav,
+  // covers the lazy-loaded CockpitHub chunk that isn't listening yet), and the
+  // CustomEvent is caught by the destination's live listener (warm path, already
+  // mounted). The destination removes the key when it consumes the intent.
+  const handleSectionAction = useCallback((target: 'calendar' | 'decisions', action: string) => {
+    try {
+      sessionStorage.setItem('pulse_pending_section_action', JSON.stringify({ target, action }));
+    } catch {}
+    setView(target === 'calendar' ? AppView.CALENDAR : AppView.DECISIONS_TASKS);
+    window.dispatchEvent(new CustomEvent('pulse:section-action', { detail: { target, action } }));
   }, []);
   const navRef = useRef<HTMLElement>(null);
   const preservedScrollTop = useRef<number | null>(null);
@@ -1418,7 +1475,7 @@ const App: React.FC = () => {
           Sections register their commands via useRegisterCommands so the
           palette aggregates Pulse-wide actions and section-specific ones. */}
       <GlobalCommandPalette />
-      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onVoxContact={handleVoxContact} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onSignOut={logout} onTogglePulseAI={() => setShowPulseAI(prev => !prev)} onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)} />
+      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onVoxContact={handleVoxContact} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onSignOut={logout} onTogglePulseAI={() => setShowPulseAI(prev => !prev)} onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)} onSectionAction={handleSectionAction} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
           (g m → Map, g c → Contacts, …) plus a `?` overlay listing them

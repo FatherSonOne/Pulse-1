@@ -290,6 +290,40 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
   );
   useRegisterCommands('decisions-cockpit', { commands: paletteCommands });
 
+  // Global section-action drain (Phase 3 of the palette globalization). A palette
+  // command run from another view stashes { target:'decisions', action } in
+  // sessionStorage and dispatches pulse:section-action, then navigates here.
+  // CockpitHub is lazy-loaded, so on cold navigation the event fires before this
+  // chunk mounts — the sessionStorage drain on mount is what catches it; the live
+  // listener covers the warm path (already on this view). Intent is removed the
+  // moment it's consumed so it can't re-fire on a later visit.
+  useEffect(() => {
+    const runAction = (action: string) => {
+      if (action === 'decision') setCreateMode({ mode: 'decision' });
+      else if (action === 'task') setCreateMode({ mode: 'task' });
+      else if (action === 'prioritize') setShowPrioritizer(true);
+    };
+    try {
+      const raw = sessionStorage.getItem('pulse_pending_section_action');
+      if (raw) {
+        const intent = JSON.parse(raw) as { target?: string; action?: string };
+        if (intent?.target === 'decisions' && intent.action) {
+          sessionStorage.removeItem('pulse_pending_section_action');
+          runAction(intent.action);
+        }
+      }
+    } catch {}
+    const onSectionAction = (e: Event) => {
+      const detail = (e as CustomEvent<{ target?: string; action?: string }>).detail;
+      if (detail?.target === 'decisions' && detail.action) {
+        try { sessionStorage.removeItem('pulse_pending_section_action'); } catch {}
+        runAction(detail.action);
+      }
+    };
+    window.addEventListener('pulse:section-action', onSectionAction);
+    return () => window.removeEventListener('pulse:section-action', onSectionAction);
+  }, []);
+
   // Queue row hover quick-actions. `done` marks a task done (realtime refreshes
   // the queue) or casts an Approve vote on a decision. Snooze lands in Phase 8.
   const handleQuickAction = useCallback(

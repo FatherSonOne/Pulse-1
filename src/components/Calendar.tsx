@@ -1663,6 +1663,39 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   useRegisterCommands('calendar:actions', { commands: calendarStaticCommands });
   useRegisterCommands('calendar:events',  { provider: calendarEventProvider });
 
+  // Global section-action drain (Phase 3 of the palette globalization). A palette
+  // command run from another view stashes { target:'calendar', action } in
+  // sessionStorage and dispatches pulse:section-action. We fire the matching
+  // in-section handler on both paths: the cold drain on mount (navigated in from
+  // elsewhere — the event already fired before this component existed) and the
+  // live listener (already on Calendar when the command runs). The intent is
+  // removed the moment it's consumed so it can't re-fire on a later visit.
+  useEffect(() => {
+    const runAction = (action: string) => {
+      if (action === 'create-event') setShowEventModal(true);
+      else if (action === 'today') handleToday();
+    };
+    try {
+      const raw = sessionStorage.getItem('pulse_pending_section_action');
+      if (raw) {
+        const intent = JSON.parse(raw) as { target?: string; action?: string };
+        if (intent?.target === 'calendar' && intent.action) {
+          sessionStorage.removeItem('pulse_pending_section_action');
+          runAction(intent.action);
+        }
+      }
+    } catch {}
+    const onSectionAction = (e: Event) => {
+      const detail = (e as CustomEvent<{ target?: string; action?: string }>).detail;
+      if (detail?.target === 'calendar' && detail.action) {
+        try { sessionStorage.removeItem('pulse_pending_section_action'); } catch {}
+        runAction(detail.action);
+      }
+    };
+    window.addEventListener('pulse:section-action', onSectionAction);
+    return () => window.removeEventListener('pulse:section-action', onSectionAction);
+  }, [handleToday]);
+
   /** Handle drag-to-reschedule from WeekView / DayView. Optimistically applies the
    *  new times locally and surfaces a 6s "Moved · Undo" toast; the Google Calendar
    *  and Supabase writes are deferred until the toast expires so an Undo click
