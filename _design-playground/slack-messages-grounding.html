@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Slack-grounded Messages — Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  /* ─── Pulse design tokens (mirrors src/styles/pulse-tokens.css) ─── */
+  :root {
+    --pulse-rose: #f43f5e;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-bright: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+    --pulse-tone-positive: #22c55e;
+    --pulse-tone-positive-soft: rgba(34, 197, 94, 0.12);
+    --pulse-tone-warning: #f97316;
+    --pulse-tone-warning-soft: rgba(249, 115, 22, 0.12);
+    --pulse-tone-info: #3b82f6;
+    --pulse-tone-info-soft: rgba(59, 130, 246, 0.12);
+    --pulse-tone-neutral: #6b7280;
+    --pulse-canvas: #f8f8f8;
+    --pulse-canvas-soft: #f2f2f2;
+    --pulse-surface: #ffffff;
+    --pulse-surface-raised: #f2f2f2;
+    --pulse-border: rgba(0, 0, 0, 0.08);
+    --pulse-border-strong: rgba(0, 0, 0, 0.16);
+    --pulse-ink: #0f0f0f;
+    --pulse-ink-2: #52525b;
+    --pulse-ink-3: #6b7280;
+    /* Coral = AI provenance ONLY. There is NO AI surface in this feature,
+       so coral appears nowhere below — declared only for token parity. */
+    --pulse-coral: var(--pulse-rose);
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 35%, black 65%);
+    --pulse-coral-bg-12: color-mix(in oklab, var(--pulse-rose) 12%, transparent);
+    --pulse-coral-bg-08: color-mix(in oklab, var(--pulse-rose) 8%, transparent);
+    --pulse-font: 'Inter', system-ui, sans-serif;
+    --pulse-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --pulse-sidebar-bg: #ffffff;
+    --pulse-shadow-main: 0 6px 24px rgba(0, 0, 0, 0.08);
+    /* Message bubbles — derived from ink so they flip correctly per theme,
+       and are NEVER rose (rose is the Send CTA only). */
+    --msg-recv-bg: var(--pulse-surface-raised);
+    --msg-sent-bg: color-mix(in oklab, var(--pulse-ink) 9%, transparent);
+    /* Slack PLUM — channel-provenance MARKER only (chip/dot/label).
+       Never chrome, never a CTA, never coral. Mirrors slack-redesign.html. */
+    --ch-slack: #6d28d9;
+    --ch-slack-soft: rgba(109, 40, 217, 0.10);
+    --ch-slack-border: rgba(109, 40, 217, 0.28);
+  }
+  html[data-theme='dark'] {
+    --pulse-canvas: #000000;
+    --pulse-canvas-soft: #080808;
+    --pulse-surface: rgba(255, 255, 255, 0.03);
+    --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+    --pulse-border: rgba(255, 255, 255, 0.06);
+    --pulse-border-strong: rgba(255, 255, 255, 0.10);
+    --pulse-ink: #fafafa;
+    --pulse-ink-2: #b4b4b8;
+    --pulse-ink-3: #a1a1aa;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 60%, white 40%);
+    --pulse-rose: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.12);
+    --pulse-sidebar-bg: #0a0a0b;
+    --pulse-shadow-main: 0 10px 40px rgba(0, 0, 0, 0.4);
+    --msg-sent-bg: color-mix(in oklab, var(--pulse-ink) 12%, transparent);
+    --ch-slack: #c4b5fd;     /* lifted plum on dark */
+    --ch-slack-soft: rgba(196, 181, 253, 0.14);
+    --ch-slack-border: rgba(196, 181, 253, 0.30);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--pulse-font);
+    background: var(--pulse-canvas);
+    color: var(--pulse-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .pulse-bg { background: var(--pulse-canvas); }
+  .pulse-bg-soft { background: var(--pulse-canvas-soft); }
+  .pulse-surface { background: var(--pulse-surface); }
+  .pulse-surface-raised { background: var(--pulse-surface-raised); }
+  .pulse-ink-color { color: var(--pulse-ink); }
+  .pulse-ink-2-color { color: var(--pulse-ink-2); }
+  .pulse-ink-3-color { color: var(--pulse-ink-3); }
+  .pulse-border-color { border-color: var(--pulse-border); }
+  .pulse-border-strong-color { border-color: var(--pulse-border-strong); }
+  .pulse-rose-color { color: var(--pulse-rose); }
+  .pulse-rose-bg-color { background: var(--pulse-rose); }
+  .pulse-rose-bg-soft-color { background: var(--pulse-rose-soft); }
+  .pulse-rose-glow-shadow { box-shadow: 0 0 0 1px var(--pulse-rose), 0 4px 28px var(--pulse-rose-glow); }
+  .font-mono-pulse { font-family: var(--pulse-mono); font-feature-settings: 'tnum' 1; }
+  .tracking-wide-mono { letter-spacing: 0.16em; }
+  .tracking-tight-mono { letter-spacing: 0.06em; }
+
+  /* ─── Slack provenance MARKER primitives (plum, marker-only) ─── */
+  .slack-glyph { color: var(--ch-slack); }
+  .slack-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px 2px 6px; border-radius: 7px;
+    background: var(--ch-slack-soft); color: var(--ch-slack);
+    font-family: var(--pulse-mono); font-size: 11px; font-weight: 600; line-height: 1.5;
+  }
+  .slack-chip svg { width: 12px; height: 12px; }
+  .slack-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 1px 6px 1px 5px; border-radius: 999px;
+    background: var(--ch-slack-soft); color: var(--ch-slack);
+    font-family: var(--pulse-mono); font-size: 9px; font-weight: 600; line-height: 1.6;
+    letter-spacing: 0.04em;
+  }
+  .slack-pill svg { width: 9px; height: 9px; }
+  /* avatar marker badge — sits where a presence dot would, but it's a glyph
+     not a status (Slack gives no presence) */
+  .slack-badge {
+    position: absolute; bottom: -2px; right: -2px;
+    width: 15px; height: 15px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--pulse-canvas-soft); color: var(--ch-slack);
+    border: 1.5px solid var(--ch-slack-border);
+  }
+  .slack-badge svg { width: 9px; height: 9px; }
+
+  /* ─── Scrollbars ─── */
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--pulse-border-strong); border-radius: 3px; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--pulse-ink-3); }
+
+  /* ─── Motion ─── */
+  @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+  .pulse-dot-anim { animation: pulseDot 1.4s ease-in-out infinite; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 240ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes typingBlink { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-1px); } }
+  .typing-dot { animation: typingBlink 1.1s ease-in-out infinite; }
+
+  /* ─── Message bubbles ─── */
+  .bubble { max-width: 72%; border-radius: 16px; padding: 9px 13px; line-height: 1.45; font-size: 14px; }
+  .bubble-them { background: var(--msg-recv-bg); border-top-left-radius: 5px; }
+  .bubble-me   { background: var(--msg-sent-bg); border-top-right-radius: 5px; }
+  html[data-theme='light'] .bubble-them { border: 1px solid var(--pulse-border); }
+
+  .msg-row { transition: background 140ms ease; }
+  .react-pill {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 1px 7px 1px 5px; border-radius: 999px;
+    background: var(--pulse-surface); border: 1px solid var(--pulse-border);
+    font-size: 11px; line-height: 1.6;
+  }
+
+  /* ─── Thread rows ─── */
+  .thread-row { transition: background 140ms ease; }
+  .thread-row:hover { background: var(--pulse-surface-raised); }
+  .thread-row[data-active='true'] { background: var(--pulse-surface-raised); }
+
+  /* ─── Graduation prompt card ─── */
+  .grad-card {
+    border: 1px solid var(--pulse-tone-positive);
+    background: var(--pulse-tone-positive-soft);
+    border-radius: 12px;
+  }
+
+  /* ─── System divider (flip transition marker) ─── */
+  .sys-divider .sys-line { background: var(--pulse-tone-positive); opacity: 0.45; }
+
+  /* ─── Skeleton shimmer (resolver loading) ─── */
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skeleton {
+    border-radius: 5px;
+    background: linear-gradient(90deg, var(--pulse-border) 25%, var(--pulse-border-strong) 37%, var(--pulse-border) 63%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 0.8s linear infinite; }
+
+  /* ─── Compact filter bar — icon-led segmented control (from messages-redesign) ─── */
+  .filter-seg { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; row-gap: 4px; }
+  .filter-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 28px; padding: 0 7px; border-radius: 8px;
+    color: var(--pulse-ink-3); font-size: 12px; font-weight: 500;
+    white-space: nowrap; position: relative; flex: 0 0 auto;
+    transition: background 160ms ease, color 160ms ease;
+  }
+  .filter-btn:hover { background: var(--pulse-surface-raised); }
+  .filter-btn[data-active='true'] { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
+  .filter-btn .lbl { overflow: hidden; max-width: 0; opacity: 0; transition: max-width 240ms cubic-bezier(0.16,1,0.3,1), opacity 160ms ease; }
+  .filter-btn[data-active='true'] .lbl { max-width: 96px; opacity: 1; }
+  .filter-badge {
+    min-width: 15px; height: 15px; padding: 0 4px; border-radius: 999px;
+    font-size: 9px; font-weight: 600; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--pulse-mono);
+  }
+  .filter-dot { position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 999px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fade-up, .skeleton, .pulse-dot-anim, .typing-dot, .spin { animation: none !important; }
+    .filter-btn .lbl { transition: none !important; }
+  }
+
+  /* ─── Playground chrome ─── */
+  .pg-bar { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .pg-pill { transition: background 180ms, color 180ms; }
+  .pg-pill[data-active='true'] { background: var(--pulse-rose); color: white; }
+  .pg-pill:not([data-active='true']):hover { background: var(--pulse-surface-raised); }
+
+  /* ─── Honest "gated-off" placeholder slot ─── */
+  .gated-slot {
+    border: 1px dashed var(--pulse-border-strong);
+    border-radius: 8px;
+  }
+</style>
+</head>
+<body class="overflow-hidden">
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect } = React;
+
+/* ════════════════════════════════════════════════════════════════════════
+   SLACK-GROUNDED MESSAGES — design playground
+
+   THE THESIS: On day one, Pulse Messages is NOT an empty inbox. We seed the
+   conversation list from the operator's real Slack people. Some rows are
+   native Pulse contacts (full presence/typing/receipts). Several are
+   Slack-backed — they carry a small PLUM "Slack" marker, the person's Slack
+   display name + avatar, and NO presence dot (Slack gives Pulse no presence).
+   A Slack-backed thread sends "as you in Slack" (rose Send), shows none of
+   the native real-time signals (because we don't have them), and — when the
+   person later joins Pulse — offers a one-tap GRADUATION to flip the thread
+   to native, history preserved.
+
+   HARD RULES baked in:
+   • Coral (--pulse-coral*) is AI-only → there is NO AI here → coral appears
+     NOWHERE. (Marker is plum; Send is rose.)
+   • Slack provenance = plum marker only (chip / dot-glyph / micro-label).
+   • Rose = the Send CTA (matches messages-redesign.html).
+   • Same Pulse Messages surface — additive external-transport variant.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Threads. transport: 'pulse' (native) | 'slack' (external).
+   Slack-backed rows have NO `online` field (no presence available). ── */
+const THREADS = [
+  // Native Pulse contacts — full presence
+  { id: 't1', name: 'Frank Messana',  handle: '@frank',  transport: 'pulse', preview: 'Recap from the call: three things landed…', t: '11:02 AM', unread: 2, online: true,  active: false, pinned: true },
+  { id: 't2', name: 'Maria Schaefer', handle: '@maria',  transport: 'pulse', preview: 'Sounds good — Thursday works for the review.', t: '8:51 PM', unread: 0, online: true,  active: false, pinned: false },
+  // Slack-backed people (seeded from the user's Slack workspace) — NO presence
+  { id: 's1', name: 'Maya Chen',      slackHandle: '@maya.chen',   workspace: 'Northwind', transport: 'slack', preview: 'Can you send over the Q3 route plan?', t: '1:20 PM', unread: 1, active: true, pinned: false },
+  { id: 's2', name: 'Devon Okafor',   slackHandle: '@devon.okafor', workspace: 'Northwind', transport: 'slack', preview: 'Thanks — got the manifest.', t: '11:40 AM', unread: 0, active: false, pinned: false },
+  { id: 's3', name: 'Priya Mehta',    slackHandle: '@priya.mehta',  workspace: 'Acme',      transport: 'slack', preview: 'Looping in ops on the SLA thread.', t: 'Yesterday', unread: 0, active: false, pinned: false, noAvatar: true },
+  { id: 's4', name: 'Theo Bridgewater', slackHandle: '@theo.b',     workspace: 'Acme',      transport: 'slack', preview: 'Will confirm the numbers by EOD.', t: '2d', unread: 0, active: false, pinned: false },
+  // Another native row, low in the list
+  { id: 't3', name: 'Jaylen Park',    handle: '@jaylen', transport: 'pulse', preview: '+1, I’ll hop on the sync too.', t: '4h', unread: 0, online: false, active: false, pinned: false },
+];
+
+/* ── Maya Chen thread (transport='slack'). who: 'me' | 'them'. ──
+   No receipts, no read-state, no typing — we model only what Slack gives us. */
+const SLACK_CONVO = [
+  { day: 'Today', msgs: [
+    { id: 'sm1', who: 'them', t: '1:02 PM', text: 'Hey — are you still good to share the Q3 route plan this week?' },
+    { id: 'sm2', who: 'me',   t: '1:09 PM', text: 'Yep — pulling the latest numbers together now. Should have it to you before Thursday.', sentToSlack: true },
+    { id: 'sm3', who: 'them', t: '1:18 PM', text: 'Perfect. No rush — Thursday works great on our side.' },
+    { id: 'sm4', who: 'them', t: '1:20 PM', text: 'Can you send over the Q3 route plan?' },
+  ]},
+];
+
+/* ── The SAME thread after Maya joins Pulse and the operator graduates it.
+   History above the flip is preserved; everything below is native (presence,
+   typing, READ receipts return). ── */
+const GRADUATED_CONVO = {
+  history: SLACK_CONVO[0].msgs,            // preserved, rendered as past Slack history
+  native: [
+    { id: 'gm1', who: 'me',   t: '1:24 PM', text: 'Just sent it your way — let me know if the cluster view loads cleanly for you.', read: true },
+    { id: 'gm2', who: 'them', t: '1:25 PM', text: 'Got it, opening now 🙌' },
+  ],
+};
+
+const FILTERS = [
+  { id: 'all',    label: 'All',    icon: 'inbox' },
+  { id: 'unread', label: 'Unread', icon: 'dot', urgent: true },
+  { id: 'slack',  label: 'Slack',  icon: 'slack', plum: true },
+  { id: 'pinned', label: 'Pinned', icon: 'pin' },
+];
+function filterThreads(id) {
+  return THREADS.filter(t => {
+    if (id === 'unread') return t.unread > 0;
+    if (id === 'slack')  return t.transport === 'slack';
+    if (id === 'pinned') return t.pinned;
+    return true;
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════════════════════════════════════ */
+const AVATAR_PALETTE = ['#6366f1','#8b5cf6','#d946ef','#ec4899','#0ea5e9','#06b6d4','#14b8a6','#64748b'];
+function colorForId(id = '') {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+}
+function initials(name = '') {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || '?';
+}
+const TONE_VAR = {
+  positive: 'var(--pulse-tone-positive)',
+  warning:  'var(--pulse-tone-warning)',
+  info:     'var(--pulse-tone-info)',
+  neutral:  'var(--pulse-tone-neutral)',
+};
+
+/* ════════════════════════════════════════════════════════════════════════
+   ICON SET (inline SVG)
+   ════════════════════════════════════════════════════════════════════════ */
+function Icon({ name, className = 'w-4 h-4' }) {
+  const c = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  switch (name) {
+    case 'inbox':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>;
+    case 'mail':     return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>;
+    case 'radio':    return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.48"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>;
+    case 'video':    return <svg viewBox="0 0 24 24" className={className} {...c}><path d="m23 7-7 5 7 5V7Z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>;
+    case 'calendar': return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+    case 'user':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>;
+    case 'checkSquare': return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>;
+    case 'search':   return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+    case 'analytics':return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>;
+    case 'settings': return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06A2 2 0 1 1 4.14 16.93l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9.4a1.7 1.7 0 0 0-.34-1.87l-.06-.06A2 2 0 1 1 7.07 4.64l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1.03Z"/></svg>;
+    case 'reply':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>;
+    case 'send':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg>;
+    case 'mic':      return <svg viewBox="0 0 24 24" className={className} {...c}><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>;
+    case 'paperclip':return <svg viewBox="0 0 24 24" className={className} {...c}><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>;
+    case 'smile':    return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+    case 'pin':      return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 17v5"/><path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1Z"/></svg>;
+    case 'info':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>;
+    case 'edit':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>;
+    case 'kebab':    return <svg viewBox="0 0 24 24" className={className} fill="currentColor" stroke="none"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>;
+    case 'chevD':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="6 9 12 15 18 9"/></svg>;
+    case 'chevR':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="9 6 15 12 9 18"/></svg>;
+    case 'x':        return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+    case 'check':    return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="20 6 9 17 4 12"/></svg>;
+    case 'checks':   return <svg viewBox="0 0 24 24" className={className} {...c}><polyline points="18 6 7 17 3 13"/><polyline points="22 8 13 17"/></svg>;
+    case 'sun':      return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>;
+    case 'moon':     return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>;
+    case 'dot':      return <svg viewBox="0 0 24 24" className={className}><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>;
+    case 'help':     return <svg viewBox="0 0 24 24" className={className} {...c}><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+    case 'logo':     return <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h3l2-7 4 14 2-7h7"/></svg>;
+    case 'sparkles': return <svg viewBox="0 0 24 24" className={className} {...c}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>;
+    case 'arrowUp':  return <svg viewBox="0 0 24 24" className={className} {...c}><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>;
+    case 'slack':    return <svg viewBox="0 0 24 24" className={className} fill="currentColor" stroke="none"><path d="M5.04 15.16a2.52 2.52 0 1 1-2.52-2.52h2.52v2.52zm1.27 0a2.52 2.52 0 0 1 5.04 0v6.31a2.52 2.52 0 0 1-5.04 0v-6.31zM8.83 5.04A2.52 2.52 0 1 1 11.35 2.52v2.52H8.83zm0 1.27a2.52 2.52 0 0 1 0 5.04H2.52a2.52 2.52 0 0 1 0-5.04h6.31zM18.96 8.83a2.52 2.52 0 1 1 2.52 2.52h-2.52V8.83zm-1.27 0a2.52 2.52 0 0 1-5.04 0V2.52a2.52 2.52 0 0 1 5.04 0v6.31zM15.16 18.96a2.52 2.52 0 1 1-2.52 2.52v-2.52h2.52zm0-1.27a2.52 2.52 0 0 1 0-5.04h6.31a2.52 2.52 0 0 1 0 5.04h-6.31z"/></svg>;
+    default:         return null;
+  }
+}
+
+/* ── Avatar. Slack-backed people get a small plum marker badge where a native
+   contact would carry a presence dot — but it's a MARKER, not a status. ── */
+function Avatar({ name, size = 36, transport = 'pulse', online = false, noAvatar = false }) {
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <div className="rounded-full flex items-center justify-center font-semibold text-white"
+        style={{ width: size, height: size, background: colorForId(name), fontSize: size * 0.32,
+                 /* honest fallback: external person with no Pulse profile = dashed ring */
+                 ...(noAvatar ? { background: 'transparent', color: 'var(--ch-slack)', border: '1.5px dashed var(--ch-slack-border)' } : {}) }}>
+        {initials(name)}
+      </div>
+      {/* Native contact → real presence dot (green). */}
+      {transport === 'pulse' && online && (
+        <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
+          style={{ background: 'var(--pulse-tone-positive)', borderColor: 'var(--pulse-canvas-soft)' }}/>
+      )}
+      {/* Slack-backed → plum marker badge, NEVER a presence dot. */}
+      {transport === 'slack' && size >= 32 && (
+        <span className="slack-badge" title="Slack contact"><Icon name="slack" /></span>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED PULSE SIDEBAR (mirrors messages-redesign.html)
+   ════════════════════════════════════════════════════════════════════════ */
+function PulseSidebar({ theme, onToggleTheme }) {
+  const groups = [
+    { group: 'Overview',      rows: [{ icon: 'inbox', label: 'Dashboard' }] },
+    { group: 'Communication', rows: [
+        { icon: 'mail',  label: 'Messages', active: true, badge: 3 },
+        { icon: 'mail',  label: 'Email' },
+        { icon: 'radio', label: 'Relay' },
+        { icon: 'video', label: 'Glimpse' },
+      ] },
+    { group: 'Work & People', rows: [
+        { icon: 'calendar',    label: 'Calendar' },
+        { icon: 'video',       label: 'Meetings' },
+        { icon: 'user',        label: 'Contacts' },
+        { icon: 'checkSquare', label: 'Decisions & Tasks' },
+      ] },
+    { group: 'Intelligence',  rows: [
+        { icon: 'search',    label: 'Search' },
+        { icon: 'analytics', label: 'Analytics' },
+      ] },
+  ];
+  return (
+    <aside className="h-full w-[232px] shrink-0 flex flex-col border-r pulse-border-color" style={{ background: 'var(--pulse-sidebar-bg)' }}>
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center pulse-rose-bg-color text-white shrink-0"><Icon name="logo" className="w-5 h-5"/></div>
+        <div className="leading-tight">
+          <div className="text-lg font-semibold pulse-rose-color">Pulse</div>
+          <div className="text-[10px] font-mono-pulse pulse-ink-3-color tracking-wide-mono">⌘K</div>
+        </div>
+        <div className="ml-auto flex items-center gap-2 pulse-ink-3-color">
+          <button className="hover:pulse-ink-color"><Icon name="help" className="w-4 h-4"/></button>
+          <button className="hover:pulse-ink-color"><Icon name="dot" className="w-2 h-2"/></button>
+        </div>
+      </div>
+
+      <div className="mx-3 mb-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--pulse-surface-raised)' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md pulse-rose-bg-color"/>
+          <span className="text-sm font-medium pulse-ink-color">My Workspace</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono-pulse pulse-rose-bg-soft-color pulse-rose-color tracking-tight-mono">OWNER</span>
+          <Icon name="chevD" className="w-3 h-3 pulse-ink-3-color"/>
+        </div>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        {groups.map(grp => (
+          <div key={grp.group} className="mb-3">
+            <div className="flex items-center gap-2 px-2 py-1.5 text-[10px] font-mono-pulse tracking-wide-mono pulse-rose-color">
+              <Icon name="dot" className="w-1.5 h-1.5"/><span>{grp.group.toUpperCase()}</span>
+            </div>
+            {grp.rows.map(r => (
+              <button key={r.label} className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition ${r.active ? 'pulse-rose-color pulse-rose-bg-soft-color' : 'pulse-ink-2-color hover:pulse-ink-color'}`}>
+                <Icon name={r.icon} className="w-4 h-4 opacity-90"/>
+                <span>{r.label}</span>
+                {r.badge && <span className="ml-auto text-[10px] font-mono-pulse pulse-rose-color">{r.badge}</span>}
+              </button>
+            ))}
+          </div>
+        ))}
+      </nav>
+
+      <div className="border-t pulse-border-color px-3 py-2 space-y-1">
+        <button onClick={onToggleTheme} className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm pulse-ink-2-color hover:pulse-ink-color">
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4"/>
+          <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+        </button>
+        <button className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm pulse-ink-2-color hover:pulse-ink-color">
+          <Icon name="settings" className="w-4 h-4"/><span>Settings</span>
+        </button>
+        <div className="mt-2 pt-2 border-t pulse-border-color flex items-center gap-2.5 px-2 py-1">
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: colorForId('Frankie Messana') }}>FM</div>
+          <div className="leading-tight">
+            <div className="text-xs font-medium pulse-ink-color">Frankie Messana</div>
+            <div className="text-[10px] pulse-ink-3-color truncate max-w-[140px]">jehovahsneaky83@gmail.com</div>
+          </div>
+          <Icon name="chevD" className="w-3 h-3 ml-auto pulse-ink-3-color"/>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ABOUT-THIS-STATE banner (same shape as the redesign playground's AboutPath)
+   ════════════════════════════════════════════════════════════════════════ */
+function AboutState({ tag, name, shows, honesty }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="mx-4 mt-3 rounded-lg border pulse-border-color overflow-hidden text-xs shrink-0" style={{ background: 'var(--pulse-surface)' }}>
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-2 px-3 py-2 pulse-ink-2-color">
+        <span className="slack-glyph"><Icon name="slack" className="w-3.5 h-3.5"/></span>
+        <span className="font-mono-pulse tracking-wide-mono" style={{ color: 'var(--ch-slack)' }}>STATE {tag}</span>
+        <span className="pulse-ink-color font-medium">{name}</span>
+        <span className="ml-auto pulse-ink-3-color">{open ? 'hide' : 'show'} notes</span>
+        <Icon name={open ? 'chevD' : 'chevR'} className="w-3.5 h-3.5 pulse-ink-3-color"/>
+      </button>
+      {open && (
+        <div className="grid grid-cols-2 gap-3 px-3 pb-3 border-t pulse-border-color pt-3">
+          <div><div className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-1">WHAT IT SHOWS</div><div className="pulse-ink-color leading-snug">{shows}</div></div>
+          <div><div className="text-[10px] font-mono-pulse tracking-wide-mono mb-1" style={{ color: 'var(--ch-slack)' }}>HONEST SIGNAL</div><div className="pulse-ink-color leading-snug">{honesty}</div></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Compact filter bar (icon-led, plum-aware Slack chip) ── */
+function FilterBar({ value, onChange }) {
+  return (
+    <div className="filter-seg px-2.5 pb-2">
+      {FILTERS.map(f => {
+        const active = value === f.id;
+        const count = f.id === 'all' ? 0 : filterThreads(f.id).length;
+        const badgeStyle = f.urgent
+          ? { background: 'var(--pulse-rose)', color: '#fff' }
+          : f.plum
+          ? { background: 'var(--ch-slack-soft)', color: 'var(--ch-slack)' }
+          : { background: 'var(--pulse-surface)', color: 'var(--pulse-ink-3)' };
+        const dotColor = f.urgent ? 'var(--pulse-rose)' : f.plum ? 'var(--ch-slack)' : 'var(--pulse-ink-3)';
+        return (
+          <button key={f.id} data-active={active} onClick={() => onChange(f.id)}
+            className="filter-btn" title={f.label} aria-label={count ? `${f.label} (${count})` : f.label}>
+            <Icon name={f.icon} className="w-3.5 h-3.5 shrink-0"/>
+            <span className="lbl">{f.label}</span>
+            {active && count > 0 && <span className="filter-badge" style={badgeStyle}>{count}</span>}
+            {!active && count > 0 && <span className="filter-dot" style={{ background: dotColor }}/>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── A single thread-list row (handles both native + Slack-backed) ── */
+function ThreadRow({ t, onClick, activeId }) {
+  const slack = t.transport === 'slack';
+  return (
+    <button data-active={t.id === activeId} onClick={() => onClick && onClick(t.id)}
+      className="thread-row w-full flex items-start gap-3 px-2.5 py-2.5 rounded-lg text-left">
+      <Avatar name={t.name} size={40} transport={t.transport} online={t.online} noAvatar={t.noAvatar}/>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          {t.pinned && <Icon name="pin" className="w-3 h-3 pulse-ink-3-color"/>}
+          <span className={`text-sm truncate ${t.unread ? 'font-semibold pulse-ink-color' : 'font-medium pulse-ink-2-color'}`}>{t.name}</span>
+          {slack && (
+            <span className="slack-pill shrink-0"><Icon name="slack" />Slack</span>
+          )}
+          <span className="ml-auto text-[10px] font-mono-pulse pulse-ink-3-color shrink-0">{t.t}</span>
+        </div>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className={`text-[12px] truncate ${t.unread ? 'pulse-ink-2-color' : 'pulse-ink-3-color'}`}>
+            {slack && <span className="pulse-ink-3-color">{t.slackHandle} · </span>}{t.preview}
+          </span>
+          {t.unread > 0 && <span className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full pulse-rose-bg-color text-white text-[10px] font-semibold flex items-center justify-center">{t.unread}</span>}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   STATE 1 — COLD-START POPULATED MESSAGES
+   The list is seeded from Slack on day one: native rows + Slack-backed rows.
+   ════════════════════════════════════════════════════════════════════════ */
+function StateColdStart() {
+  const [filter, setFilter] = useState('all');
+  const threads = filterThreads(filter);
+  const slackCount = THREADS.filter(t => t.transport === 'slack').length;
+
+  return (
+    <div className="h-full flex flex-col">
+      <AboutState tag="1 · Cold start"
+        name="Seeded from your Slack people"
+        shows="Day-one list is NOT empty. Native Pulse contacts (green presence dot) sit alongside Slack-backed people pulled from your workspaces (plum Slack marker, Slack display name + avatar)."
+        honesty="Slack rows carry NO presence dot — Slack gives Pulse no presence. The plum badge marks provenance, it is not a status light." />
+
+      <div className="flex-1 overflow-hidden grid min-h-0" style={{ gridTemplateColumns: '340px 1fr' }}>
+        {/* ── Thread list ── */}
+        <div className="border-r pulse-border-color flex flex-col min-h-0">
+          <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+            <span className="text-[15px] font-semibold pulse-ink-color">Messages</span>
+            <span className="slack-pill"><Icon name="slack"/>{slackCount} from Slack</span>
+            <button className="ml-auto p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="search" className="w-4 h-4"/></button>
+            <button className="p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="edit" className="w-4 h-4"/></button>
+          </div>
+          <FilterBar value={filter} onChange={setFilter}/>
+          <div className="flex-1 overflow-y-auto px-2 pb-3">
+            {threads.map(t => <ThreadRow key={t.id} t={t} activeId="s1"/>)}
+          </div>
+        </div>
+
+        {/* ── Legend / explainer pane ── */}
+        <div className="flex flex-col min-h-0 items-center justify-center px-10 py-8">
+          <div className="max-w-[460px] w-full">
+            <div className="slack-chip mb-4"><Icon name="slack"/>SLACK-GROUNDED INBOX</div>
+            <h2 className="text-[22px] font-semibold pulse-ink-color leading-snug mb-2">Your inbox knows people on day one.</h2>
+            <p className="text-[14px] pulse-ink-2-color leading-relaxed mb-6">
+              Pulse seeds Messages from the people you already talk to on Slack — so the list is populated
+              before you’ve sent a single native message. The two row types stay legible at a glance:
+            </p>
+
+            <div className="space-y-3">
+              {/* native legend row */}
+              <div className="flex items-center gap-3 p-3 rounded-xl pulse-surface" style={{ border: '1px solid var(--pulse-border)' }}>
+                <Avatar name="Frank Messana" size={40} transport="pulse" online={true}/>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-semibold pulse-ink-color">Native Pulse contact</div>
+                  <div className="text-[12px] pulse-ink-3-color leading-snug">Green presence dot · typing · read receipts — all real.</div>
+                </div>
+                <span className="flex items-center gap-1.5 text-[11px] font-mono-pulse" style={{ color: 'var(--pulse-tone-positive)' }}>
+                  <span className="w-2 h-2 rounded-full" style={{ background: 'var(--pulse-tone-positive)' }}/>present
+                </span>
+              </div>
+              {/* slack legend row */}
+              <div className="flex items-center gap-3 p-3 rounded-xl pulse-surface" style={{ border: '1px solid var(--ch-slack-border)' }}>
+                <Avatar name="Maya Chen" size={40} transport="slack"/>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[13px] font-semibold pulse-ink-color">Slack-backed person</span>
+                    <span className="slack-pill"><Icon name="slack"/>Slack</span>
+                  </div>
+                  <div className="text-[12px] pulse-ink-3-color leading-snug">Slack name + avatar · plum marker · no presence (we don’t have it).</div>
+                </div>
+                <span className="text-[11px] font-mono-pulse pulse-ink-3-color">— no status</span>
+              </div>
+            </div>
+
+            <p className="text-[12px] pulse-ink-3-color leading-relaxed mt-5">
+              Tip: filter to <span className="slack-pill"><Icon name="slack"/>Slack</span> to see only the seeded rows.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── A Slack-backed message bubble (no receipts on inbound, optional
+   "Sent to Slack" plum micro-label on outbound). ── */
+function SlackBubble({ m, person }) {
+  const me = m.who === 'me';
+  return (
+    <div className={`msg-row group flex gap-2.5 mb-3 ${me ? 'flex-row-reverse' : ''}`}>
+      {!me && <Avatar name={person} size={28} transport="slack"/>}
+      <div className={`flex flex-col ${me ? 'items-end' : 'items-start'} max-w-[78%]`}>
+        <div className={`bubble ${me ? 'bubble-me' : 'bubble-them'} pulse-ink-color`}>{m.text}</div>
+        <div className={`flex items-center gap-2 mt-1 ${me ? 'flex-row-reverse' : ''}`}>
+          <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{m.t}</span>
+          {/* Outbound on Slack → a subtle PLUM micro-label, NOT a read/delivered receipt. */}
+          {me && m.sentToSlack && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-mono-pulse" style={{ color: 'var(--ch-slack)' }}>
+              <Icon name="slack" className="w-2.5 h-2.5"/>Sent to Slack
+            </span>
+          )}
+          {/* NOTE: no check / double-check / "READ" — Slack provides no receipt. */}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   STATE 2 — A SLACK-BACKED THREAD (transport='slack')
+   ════════════════════════════════════════════════════════════════════════ */
+function StateSlackThread() {
+  const [filter, setFilter] = useState('all');
+  const threads = filterThreads(filter);
+  const person = 'Maya Chen';
+
+  return (
+    <div className="h-full flex flex-col">
+      <AboutState tag="2 · Slack thread"
+        name="Maya Chen · transport = slack"
+        shows="External identity in the header (Slack name + avatar + plum “via Slack” chip). Bubbles align me/them correctly. Composer sends as you in Slack; rose Send."
+        honesty="No presence dot, no typing indicator, NO read/delivered receipts — Slack provides none over Pulse’s channels. Where native shows READ, we show a quiet “Sent to Slack” plum label." />
+
+      <div className="flex-1 overflow-hidden grid min-h-0" style={{ gridTemplateColumns: '300px 1fr' }}>
+        {/* ── Thread list ── */}
+        <div className="border-r pulse-border-color flex flex-col min-h-0">
+          <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+            <span className="text-[15px] font-semibold pulse-ink-color">Messages</span>
+            <button className="ml-auto p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="search" className="w-4 h-4"/></button>
+            <button className="p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="edit" className="w-4 h-4"/></button>
+          </div>
+          <FilterBar value={filter} onChange={setFilter}/>
+          <div className="flex-1 overflow-y-auto px-2 pb-3">
+            {threads.map(t => <ThreadRow key={t.id} t={t} activeId="s1"/>)}
+          </div>
+        </div>
+
+        {/* ── Conversation ── */}
+        <div className="flex flex-col min-h-0">
+          {/* header — external Slack identity */}
+          <div className="px-5 py-3 border-b pulse-border-color flex items-center gap-3 shrink-0">
+            <Avatar name={person} size={36} transport="slack"/>
+            <div className="leading-tight min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-semibold pulse-ink-color truncate">{person}</div>
+                <span className="slack-chip"><Icon name="slack"/>via Slack</span>
+              </div>
+              {/* honest sub-line: identity + workspace, explicitly NO "active now" */}
+              <div className="text-[11px] pulse-ink-3-color font-mono-pulse">@maya.chen · Northwind workspace · presence unavailable</div>
+            </div>
+            <div className="ml-auto flex items-center gap-1 pulse-ink-3-color">
+              <button className="p-1.5 rounded-md hover:pulse-surface-raised"><Icon name="search" className="w-4 h-4"/></button>
+              <button className="p-1.5 rounded-md hover:pulse-surface-raised"><Icon name="info" className="w-4 h-4"/></button>
+            </div>
+          </div>
+
+          {/* messages */}
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            {SLACK_CONVO.map(group => (
+              <div key={group.day}>
+                <div className="flex items-center gap-3 my-4">
+                  <div className="flex-1 h-px pulse-border-color border-t"/>
+                  <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">{group.day.toUpperCase()}</span>
+                  <div className="flex-1 h-px pulse-border-color border-t"/>
+                </div>
+                {group.msgs.map(m => <SlackBubble key={m.id} m={m} person={person}/>)}
+                {/* Honest gated-off slot: where a native thread would show a typing
+                    indicator, we render an explicit "unavailable" note. */}
+                <div className="gated-slot mt-2 px-3 py-2 flex items-center gap-2 text-[11px] font-mono-pulse pulse-ink-3-color">
+                  <Icon name="info" className="w-3.5 h-3.5"/>
+                  No typing indicator or read receipt — Slack doesn’t send these to Pulse.
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* composer — send AS YOU in Slack; rose Send */}
+          <div className="px-4 py-3 border-t pulse-border-color shrink-0">
+            <div className="flex items-end gap-2 rounded-2xl pulse-surface-raised px-2 py-1.5" style={{ border: '1px solid var(--pulse-border)' }}>
+              <button className="p-2 rounded-lg hover:pulse-surface pulse-ink-3-color"><Icon name="paperclip" className="w-4 h-4"/></button>
+              <div className="flex-1 py-2 text-sm pulse-ink-3-color">Message Maya on Slack…</div>
+              <button className="p-2 rounded-lg hover:pulse-surface pulse-ink-3-color"><Icon name="smile" className="w-4 h-4"/></button>
+              {/* Send = rose (matches messages-redesign.html). NOT plum, NOT coral. */}
+              <button className="flex items-center gap-1.5 pl-3 pr-2.5 py-2 rounded-xl pulse-rose-bg-color text-white text-[13px] font-medium hover:pulse-rose-glow-shadow transition" title="Send as you in Slack">
+                Send <Icon name="send" className="w-3.5 h-3.5"/>
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5 mt-1.5 px-2 text-[10px] font-mono-pulse" style={{ color: 'var(--ch-slack)' }}>
+              <Icon name="slack" className="w-3 h-3"/>Sending as you in Slack · @maya.chen
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   STATE 3 — GRADUATION MOMENT
+   Prompted-first: a one-tap inline prompt offers the flip; once confirmed the
+   SAME thread becomes native (presence + typing + READ return), history above.
+   ════════════════════════════════════════════════════════════════════════ */
+function StateGraduation() {
+  const [flipped, setFlipped] = useState(false);
+  const person = 'Maya Chen';
+
+  return (
+    <div className="h-full flex flex-col">
+      <AboutState tag="3 · Graduation"
+        name="Maya joined Pulse → switch to native?"
+        shows="A one-tap inline prompt in the open Slack thread (prompted-first, never silent). Confirm flips the SAME thread to native: presence dot, typing, READ receipts return. History is preserved above the flip."
+        honesty="The native signals only appear AFTER the flip — because only after Maya is on Pulse do we actually have them. A system divider marks where Slack history ends and native begins." />
+
+      <div className="flex-1 overflow-hidden grid min-h-0" style={{ gridTemplateColumns: '300px 1fr' }}>
+        {/* ── Thread list ── */}
+        <div className="border-r pulse-border-color flex flex-col min-h-0">
+          <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+            <span className="text-[15px] font-semibold pulse-ink-color">Messages</span>
+            <button className="ml-auto p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="edit" className="w-4 h-4"/></button>
+          </div>
+          <FilterBar value="all" onChange={() => {}}/>
+          <div className="flex-1 overflow-y-auto px-2 pb-3">
+            {THREADS.map(t => {
+              // After the flip, Maya's row is native: presence dot, no plum marker.
+              const row = (t.id === 's1' && flipped)
+                ? { ...t, transport: 'pulse', online: true, slackHandle: undefined, preview: 'Got it, opening now 🙌', t: '1:25 PM' }
+                : t;
+              return <ThreadRow key={t.id} t={row} activeId="s1"/>;
+            })}
+          </div>
+        </div>
+
+        {/* ── Conversation ── */}
+        <div className="flex flex-col min-h-0">
+          {/* header — flips from Slack identity to native */}
+          <div className="px-5 py-3 border-b pulse-border-color flex items-center gap-3 shrink-0">
+            <Avatar name={person} size={36} transport={flipped ? 'pulse' : 'slack'} online={flipped}/>
+            <div className="leading-tight min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-semibold pulse-ink-color truncate">{person}</div>
+                {!flipped
+                  ? <span className="slack-chip"><Icon name="slack"/>via Slack</span>
+                  : <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-md" style={{ background: 'var(--pulse-tone-positive-soft)', color: 'var(--pulse-tone-positive)' }}>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--pulse-tone-positive)' }}/>on Pulse
+                    </span>}
+              </div>
+              <div className="text-[11px] pulse-ink-3-color font-mono-pulse">
+                {flipped ? '@maya · Active now · typing…' : '@maya.chen · Northwind workspace · presence unavailable'}
+              </div>
+            </div>
+            <div className="ml-auto flex items-center gap-1 pulse-ink-3-color">
+              {flipped && <button onClick={() => setFlipped(false)} className="text-[10px] font-mono-pulse px-2 py-1 rounded-md hover:pulse-surface-raised">↺ replay</button>}
+              <button className="p-1.5 rounded-md hover:pulse-surface-raised"><Icon name="info" className="w-4 h-4"/></button>
+            </div>
+          </div>
+
+          {/* messages */}
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 h-px pulse-border-color border-t"/>
+              <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">TODAY</span>
+              <div className="flex-1 h-px pulse-border-color border-t"/>
+            </div>
+
+            {/* preserved Slack history (always present) */}
+            {GRADUATED_CONVO.history.map(m => <SlackBubble key={m.id} m={m} person={person}/>)}
+
+            {/* ── BEFORE flip: the graduation prompt ── */}
+            {!flipped && (
+              <div className="grad-card p-4 my-3 fade-up">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--pulse-tone-positive-soft)', color: 'var(--pulse-tone-positive)' }}>
+                    <Icon name="arrowUp" className="w-4.5 h-4.5"/>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[14px] font-semibold pulse-ink-color">Maya is now on Pulse</div>
+                    <div className="text-[13px] pulse-ink-2-color leading-snug mt-0.5">
+                      Switch this thread to native? You’ll get presence, typing, and read receipts —
+                      and this Slack history stays right here.
+                    </div>
+                    <div className="flex items-center gap-2 mt-3">
+                      <button onClick={() => setFlipped(true)} className="px-3.5 py-1.5 rounded-lg text-[13px] font-semibold text-white" style={{ background: 'var(--pulse-tone-positive)' }}>
+                        Switch to native
+                      </button>
+                      <button className="px-3 py-1.5 rounded-lg text-[13px] font-medium pulse-ink-2-color hover:pulse-surface-raised">Keep on Slack</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── AFTER flip: system divider + native messages ── */}
+            {flipped && (
+              <div className="fade-up">
+                <div className="sys-divider flex items-center gap-3 my-4">
+                  <div className="sys-line flex-1 h-px"/>
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-mono-pulse tracking-tight-mono px-2 py-1 rounded-full"
+                    style={{ background: 'var(--pulse-tone-positive-soft)', color: 'var(--pulse-tone-positive)' }}>
+                    <Icon name="check" className="w-3 h-3"/>NOW ON PULSE · MESSAGES ARE NATIVE
+                  </span>
+                  <div className="sys-line flex-1 h-px"/>
+                </div>
+
+                {GRADUATED_CONVO.native.map(m => {
+                  const me = m.who === 'me';
+                  return (
+                    <div key={m.id} className={`msg-row flex gap-2.5 mb-3 ${me ? 'flex-row-reverse' : ''}`}>
+                      {!me && <Avatar name={person} size={28} transport="pulse" online={true}/>}
+                      <div className={`flex flex-col ${me ? 'items-end' : 'items-start'} max-w-[78%]`}>
+                        <div className={`bubble ${me ? 'bubble-me' : 'bubble-them'} pulse-ink-color`}>{m.text}</div>
+                        <div className={`flex items-center gap-2 mt-1 ${me ? 'flex-row-reverse' : ''}`}>
+                          <span className="text-[10px] font-mono-pulse pulse-ink-3-color">{m.t}</span>
+                          {/* native READ receipt — returns ONLY now that we have it */}
+                          {me && m.read && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-mono-pulse" style={{ color: 'var(--pulse-tone-positive)' }}>
+                              <Icon name="checks" className="w-3 h-3"/>Read
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* native typing indicator — also only now */}
+                <div className="flex gap-2.5 mb-3">
+                  <Avatar name={person} size={28} transport="pulse" online={true}/>
+                  <div className="bubble bubble-them flex items-center gap-1 py-3" style={{ width: 'fit-content' }}>
+                    <span className="w-1.5 h-1.5 rounded-full typing-dot pulse-ink-3-color" style={{ background: 'var(--pulse-ink-3)', animationDelay: '0ms' }}/>
+                    <span className="w-1.5 h-1.5 rounded-full typing-dot" style={{ background: 'var(--pulse-ink-3)', animationDelay: '160ms' }}/>
+                    <span className="w-1.5 h-1.5 rounded-full typing-dot" style={{ background: 'var(--pulse-ink-3)', animationDelay: '320ms' }}/>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* composer — flips label from Slack to native */}
+          <div className="px-4 py-3 border-t pulse-border-color shrink-0">
+            <div className="flex items-end gap-2 rounded-2xl pulse-surface-raised px-2 py-1.5" style={{ border: '1px solid var(--pulse-border)' }}>
+              <button className="p-2 rounded-lg hover:pulse-surface pulse-ink-3-color"><Icon name="paperclip" className="w-4 h-4"/></button>
+              <div className="flex-1 py-2 text-sm pulse-ink-3-color">{flipped ? 'Message Maya…' : 'Message Maya on Slack…'}</div>
+              <button className="p-2 rounded-lg hover:pulse-surface pulse-ink-3-color"><Icon name="smile" className="w-4 h-4"/></button>
+              <button className="flex items-center gap-1.5 pl-3 pr-2.5 py-2 rounded-xl pulse-rose-bg-color text-white text-[13px] font-medium hover:pulse-rose-glow-shadow transition">
+                Send <Icon name="send" className="w-3.5 h-3.5"/>
+              </button>
+            </div>
+            {!flipped && (
+              <div className="flex items-center gap-1.5 mt-1.5 px-2 text-[10px] font-mono-pulse" style={{ color: 'var(--ch-slack)' }}>
+                <Icon name="slack" className="w-3 h-3"/>Sending as you in Slack · @maya.chen
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   STATE 4 — SEND-AS-YOU COMPOSER DETAIL + EXTERNAL AVATAR FALLBACK
+   Close-ups of the composer states and how external vs native participants
+   render (initial-based fallback + plum marker for Slack-only people).
+   ════════════════════════════════════════════════════════════════════════ */
+function StateComposerDetail() {
+  const [sent, setSent] = useState(false);
+
+  return (
+    <div className="h-full flex flex-col overflow-y-auto">
+      <AboutState tag="4 · Composer + identity"
+        name="Send-as-you detail · external avatar fallback"
+        shows="The Slack composer up close: empty → typing → sending → sent (no receipt). And how a Slack-only participant renders next to a native Pulse one."
+        honesty="“Sent to Slack” is the terminal state — there is no “Delivered” / “Read” because Slack doesn’t tell Pulse. External people with no Pulse profile fall back to initials + plum marker." />
+
+      <div className="flex-1 grid gap-6 p-6 min-h-0" style={{ gridTemplateColumns: '1fr 1fr' }}>
+
+        {/* ── LEFT: send-as-you composer, live ── */}
+        <div className="space-y-5">
+          <div>
+            <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">SEND-AS-YOU COMPOSER</div>
+            <div className="rounded-2xl pulse-surface p-3" style={{ border: '1px solid var(--pulse-border-strong)' }}>
+              {/* identity strip — who you'll appear as on Slack */}
+              <div className="flex items-center gap-2 pb-2.5 mb-2.5 border-b pulse-border-color">
+                <Avatar name="Maya Chen" size={26} transport="slack"/>
+                <span className="text-[12px] pulse-ink-2-color">To <b className="pulse-ink-color">Maya Chen</b></span>
+                <span className="slack-chip ml-auto"><Icon name="slack"/>@maya.chen</span>
+              </div>
+
+              {!sent ? (
+                <div className="fade-up">
+                  <div className="text-[14px] pulse-ink-color leading-relaxed min-h-[40px]">
+                    Hey Maya — pulling the Q3 route plan together now, will have it to you before Thursday.
+                  </div>
+                  <div className="flex items-center gap-2 mt-3 pt-2.5 border-t pulse-border-color">
+                    <button className="p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="paperclip" className="w-4 h-4"/></button>
+                    <button className="p-1.5 rounded-md hover:pulse-surface-raised pulse-ink-3-color"><Icon name="smile" className="w-4 h-4"/></button>
+                    <span className="text-[10px] font-mono-pulse ml-1" style={{ color: 'var(--ch-slack)' }}>posts as you in Slack</span>
+                    <div className="ml-auto">
+                      <button onClick={() => setSent(true)} className="flex items-center gap-1.5 pl-3 pr-2.5 py-1.5 rounded-lg pulse-rose-bg-color text-white text-[13px] font-medium hover:pulse-rose-glow-shadow transition">
+                        Send <span className="font-mono-pulse text-[10px] px-1 rounded bg-white/20">⌘↵</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="fade-up py-3 flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--ch-slack-soft)', color: 'var(--ch-slack)' }}><Icon name="slack" className="w-3.5 h-3.5"/></span>
+                  <div>
+                    <div className="text-[13px] pulse-ink-color font-medium">Sent to Slack · as you</div>
+                    <div className="text-[11px] font-mono-pulse pulse-ink-3-color">no delivery / read receipt available</div>
+                  </div>
+                  <button onClick={() => setSent(false)} className="ml-auto text-[11px] font-mono-pulse pulse-ink-3-color hover:pulse-ink-color">↺ reset</button>
+                </div>
+              )}
+            </div>
+            <p className="text-[12px] pulse-ink-3-color mt-2">Click <b className="pulse-ink-2-color">Send</b> to see the terminal "Sent to Slack" state — there is no Delivered/Read beyond it.</p>
+          </div>
+
+          {/* the explicit send-state ladder */}
+          <div>
+            <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">SEND-STATE LADDER (honest)</div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface" style={{ border: '1px solid var(--pulse-border)' }}>
+                <span className="text-[12px] pulse-ink-3-color flex-1">Message Maya on Slack…</span>
+                <span className="text-[10px] font-mono-pulse pulse-ink-3-color">empty → Send disabled</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface" style={{ border: '1px solid var(--pulse-border-strong)' }}>
+                <span className="text-[12px] pulse-ink-color flex-1">Hey Maya — quick one.</span>
+                <span className="text-[10px] font-mono-pulse pulse-ink-3-color">typing → Send enabled</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface" style={{ border: '1px solid var(--pulse-border)' }}>
+                <span className="text-[12px] pulse-ink-2-color flex-1">Sending…</span>
+                <svg className="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pulse-rose)" strokeWidth="3"><path d="M21 12a9 9 0 1 1-6.2-8.5" strokeLinecap="round"/></svg>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'var(--ch-slack-soft)' }}>
+                <Icon name="slack" className="w-3.5 h-3.5" style={{ color: 'var(--ch-slack)' }}/>
+                <span className="text-[12px] pulse-ink-2-color flex-1">Sent to Slack · <span className="pulse-ink-3-color">as you</span></span>
+                <span className="text-[10px] font-mono-pulse pulse-ink-3-color">terminal — no receipt</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── RIGHT: avatar / identity fallback matrix ── */}
+        <div className="space-y-5">
+          <div>
+            <div className="text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-3-color mb-2">PARTICIPANT IDENTITY RENDERING</div>
+            <div className="space-y-3">
+
+              {/* native pulse participant */}
+              <div className="flex items-center gap-3 p-3 rounded-xl pulse-surface" style={{ border: '1px solid var(--pulse-border)' }}>
+                <Avatar name="Frank Messana" size={44} transport="pulse" online={true}/>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-semibold pulse-ink-color">Frank Messana</div>
+                  <div className="text-[12px] pulse-ink-3-color">Native Pulse profile · avatar + presence</div>
+                </div>
+                <span className="text-[10px] font-mono-pulse px-2 py-1 rounded" style={{ background: 'var(--pulse-tone-positive-soft)', color: 'var(--pulse-tone-positive)' }}>NATIVE</span>
+              </div>
+
+              {/* slack participant WITH a Slack avatar/name */}
+              <div className="flex items-center gap-3 p-3 rounded-xl pulse-surface" style={{ border: '1px solid var(--ch-slack-border)' }}>
+                <Avatar name="Maya Chen" size={44} transport="slack"/>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[13px] font-semibold pulse-ink-color">Maya Chen</span>
+                    <span className="slack-pill"><Icon name="slack"/>Slack</span>
+                  </div>
+                  <div className="text-[12px] pulse-ink-3-color">Slack display name + avatar · plum marker</div>
+                </div>
+                <span className="text-[10px] font-mono-pulse px-2 py-1 rounded" style={{ background: 'var(--ch-slack-soft)', color: 'var(--ch-slack)' }}>SLACK</span>
+              </div>
+
+              {/* slack participant with NO Pulse profile → initials fallback */}
+              <div className="flex items-center gap-3 p-3 rounded-xl pulse-surface" style={{ border: '1px solid var(--ch-slack-border)' }}>
+                <Avatar name="Priya Mehta" size={44} transport="slack" noAvatar={true}/>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[13px] font-semibold pulse-ink-color">Priya Mehta</span>
+                    <span className="slack-pill"><Icon name="slack"/>Slack</span>
+                  </div>
+                  <div className="text-[12px] pulse-ink-3-color">No Pulse profile → initials fallback (dashed plum ring)</div>
+                </div>
+                <span className="text-[10px] font-mono-pulse px-2 py-1 rounded" style={{ background: 'var(--ch-slack-soft)', color: 'var(--ch-slack)' }}>FALLBACK</span>
+              </div>
+            </div>
+          </div>
+
+          {/* the rule, stated */}
+          <div className="rounded-xl p-4" style={{ background: 'var(--ch-slack-soft)', border: '1px solid var(--ch-slack-border)' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <Icon name="slack" className="w-4 h-4" style={{ color: 'var(--ch-slack)' }}/>
+              <span className="text-[12px] font-semibold" style={{ color: 'var(--ch-slack)' }}>The plum rule</span>
+            </div>
+            <p className="text-[12px] pulse-ink-2-color leading-relaxed">
+              Plum is the <b className="pulse-ink-color">provenance marker</b> — it tells you a person/thread is reached over Slack.
+              It is never chrome, never a button, never an AI accent. The Send CTA stays <span className="pulse-rose-color font-semibold">rose</span>;
+              coral is reserved for AI output and appears <b className="pulse-ink-color">nowhere</b> in this feature.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PLAYGROUND SHELL — top bar + state switcher + theme toggle
+   (mirrors messages-redesign.html App())
+   ════════════════════════════════════════════════════════════════════════ */
+function App() {
+  const [theme, setTheme] = useState('dark');
+  const [state, setState] = useState('1');
+
+  useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
+  const STATES = [
+    { id: '1', label: '1 · Cold start' },
+    { id: '2', label: '2 · Slack thread' },
+    { id: '3', label: '3 · Graduation' },
+    { id: '4', label: '4 · Composer + identity' },
+  ];
+
+  return (
+    <div className="h-screen w-screen flex flex-col overflow-hidden pulse-bg">
+      <div className="pg-bar flex items-center gap-3 px-4 py-2 border-b pulse-border-color shrink-0" style={{ height: 48 }}>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md flex items-center justify-center text-white" style={{ background: 'var(--ch-slack)' }}><Icon name="slack" className="w-3.5 h-3.5"/></div>
+          <span className="text-sm font-semibold pulse-ink-color">Slack-grounded Messages</span>
+          <span className="text-[10px] font-mono-pulse tracking-wide-mono pulse-ink-3-color">· PLAYGROUND</span>
+        </div>
+
+        <div className="ml-6 flex items-center gap-1 p-0.5 rounded-lg pulse-surface-raised">
+          {STATES.map(s => (
+            <button key={s.id} data-active={state === s.id} onClick={() => setState(s.id)}
+              className="pg-pill px-3 py-1.5 rounded-md text-[12px] font-medium pulse-ink-2-color">{s.label}</button>
+          ))}
+        </div>
+
+        {/* legend — the three color rules, stated up front */}
+        <div className="ml-auto flex items-center gap-3 text-[10px] font-mono-pulse pulse-ink-3-color">
+          <span className="hidden xl:flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: 'var(--ch-slack)' }}/>plum = Slack marker</span>
+          <span className="hidden xl:flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: 'var(--pulse-rose)' }}/>rose = Send</span>
+          <button onClick={toggleTheme} className="px-2.5 py-1.5 rounded-md tracking-wide-mono pulse-ink-2-color hover:pulse-surface-raised flex items-center gap-1.5">
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5"/>{theme === 'dark' ? 'LIGHT' : 'DARK'}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 flex overflow-hidden">
+        <PulseSidebar theme={theme} onToggleTheme={toggleTheme}/>
+        <main className="flex-1 overflow-hidden m-3 rounded-2xl border pulse-border-color pulse-bg-soft relative" style={{ boxShadow: 'var(--pulse-shadow-main)' }}>
+          {state === '1' && <StateColdStart/>}
+          {state === '2' && <StateSlackThread/>}
+          {state === '3' && <StateGraduation/>}
+          {state === '4' && <StateComposerDetail/>}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
