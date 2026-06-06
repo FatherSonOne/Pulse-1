@@ -3,6 +3,7 @@ import { Autocomplete } from '@react-google-maps/api';
 import { Briefcase, Home, Loader2, X } from 'lucide-react';
 import { Contact } from '../../../types';
 import { saveContactLocation, clearContactLocation } from '../../../services/locationService';
+import { useGoogleMapsLoader } from '../hooks/useGoogleMapsLoader';
 
 interface LocationEditModalProps {
   contact: Contact;
@@ -118,6 +119,12 @@ interface LocationFieldProps {
   autocompleteRef: React.MutableRefObject<google.maps.places.Autocomplete | null>;
   inputRef: React.RefObject<HTMLInputElement>;
   isDarkMode: boolean;
+  /** Maps JS + Places library ready. Until true we MUST NOT mount
+   *  <Autocomplete> — it reads google.maps.places in componentDidMount and
+   *  throws if the script hasn't loaded (Contacts mounts no map, so the
+   *  loader would otherwise never have run). */
+  isLoaded: boolean;
+  loadError?: Error;
   onPlaceChanged: () => void;
   onClear: () => void;
 }
@@ -129,6 +136,8 @@ const LocationField: React.FC<LocationFieldProps> = ({
   autocompleteRef,
   inputRef,
   isDarkMode,
+  isLoaded,
+  loadError,
   onPlaceChanged,
   onClear,
 }) => {
@@ -157,18 +166,28 @@ const LocationField: React.FC<LocationFieldProps> = ({
           Current: {currentAddress}
         </p>
       )}
-      <Autocomplete
-        onLoad={a => { autocompleteRef.current = a; }}
-        onPlaceChanged={onPlaceChanged}
-        options={{ types: ['address'] }}
-      >
+      {isLoaded ? (
+        <Autocomplete
+          onLoad={a => { autocompleteRef.current = a; }}
+          onPlaceChanged={onPlaceChanged}
+          options={{ types: ['address'] }}
+        >
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder={`Search for ${label.toLowerCase()} address...`}
+            className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${inputCls}`}
+          />
+        </Autocomplete>
+      ) : (
         <input
           ref={inputRef}
           type="text"
-          placeholder={`Search for ${label.toLowerCase()} address...`}
-          className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${inputCls}`}
+          disabled
+          placeholder={loadError ? 'Address search unavailable' : 'Loading address search…'}
+          className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors opacity-70 ${inputCls}`}
         />
-      </Autocomplete>
+      )}
     </div>
   );
 };
@@ -182,6 +201,12 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
 }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load (and gate on) the Maps JS + Places library here. Contacts mounts no
+  // <GoogleMap>, so without this call the loader never runs and <Autocomplete>
+  // throws on mount. Shares the 'pulse-google-maps' loader id, so this is a
+  // no-op join when a map elsewhere already triggered the load.
+  const { isLoaded, loadError } = useGoogleMapsLoader();
 
   const homeRef = useRef<google.maps.places.Autocomplete | null>(null);
   const workRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -323,6 +348,8 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
               autocompleteRef={homeRef}
               inputRef={homeInputRef}
               isDarkMode={isDarkMode}
+              isLoaded={isLoaded}
+              loadError={loadError}
               onPlaceChanged={() => handlePlaceChanged('home', homeRef)}
               onClear={() => handleClear('home')}
             />
@@ -344,6 +371,8 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
               autocompleteRef={workRef}
               inputRef={workInputRef}
               isDarkMode={isDarkMode}
+              isLoaded={isLoaded}
+              loadError={loadError}
               onPlaceChanged={() => handlePlaceChanged('work', workRef)}
               onClear={() => handleClear('work')}
             />
