@@ -60,6 +60,14 @@ export interface FeatureFlags {
   // body only; the Today tab is unchanged either way. See
   // docs/CONTACTS_REDESIGN_HANDOFF_2026-06-05.md.
   contactsHybrid: boolean;
+
+  // Slack DM send from a contact (contactsHybrid Phase 8). OFF by default → the
+  // Contacts ChannelRow Slack button stays disabled ("Link Slack") even for a
+  // linked contact. ON → enabled inline DM composer in FocusColumn. System-wide
+  // kill-switch for the send capability; per-contact identity is separate data
+  // (contact.slackUserId). Consumer gate + Settings toggle land in Phase 8 · 8f.
+  // See docs/SLACK_PHASE8_SCOPE_2026-06-05.md (decision D-F).
+  slackSend: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -106,6 +114,9 @@ const DEFAULT_FEATURES: FeatureFlags = {
 
   // Contacts Hybrid (Path D) OFF by default → legacy People view; flip on for dev/test.
   contactsHybrid: false,
+
+  // Slack send OFF by default (dark-launch); flip on once the 8f wiring ships.
+  slackSend: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -287,6 +298,7 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   emailEnabled: 'Email Section',
   experimentalEnabled: 'Experimental Features',
   contactsHybrid: 'Contacts Hybrid (Beta)',
+  slackSend: 'Slack Send (Beta)',
 };
 
 /**
@@ -307,4 +319,5 @@ export const FEATURE_DESCRIPTIONS: Partial<Record<keyof FeatureFlags, string>> =
   smartReplies: 'Suggest one-tap AI replies in Relay voice threads.',
   toneAnalysis: "Analyze your draft's tone in the classic composer (Advanced Mode).",
   scheduledMessages: 'Schedule a message to send at a later time.',
+  slackSend: 'Send a Slack DM to a linked contact from the People view (Phase 8).',
 };
