@@ -33,6 +33,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { UserSearch, Users, UserPlus } from 'lucide-react';
 import { Contact } from '../../../types';
 import type { SmartListType } from '../../../types/relationshipTypes';
 import type { ContactCircle } from '../../../types/contactCircleTypes';
@@ -58,6 +59,8 @@ import { AddContactModal } from '../AddContactModal';
 import { EditContactModal } from '../EditContactModal';
 import { BulkActionToolbar } from '../BulkActionToolbar';
 import { WorkspaceShareModal } from '../WorkspaceShareModal';
+import { FindTeammatesSheet } from '../FindTeammatesSheet';
+import type { DiscoveredPulseUser } from '../../../services/pulseUserDiscoveryService';
 import { BrowseColumn } from './list/BrowseColumn';
 import { FocusColumn } from './detail/FocusColumn';
 import { CopilotRail } from './copilot/CopilotRail';
@@ -141,6 +144,8 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkInFlight, setBulkInFlight] = useState(false);
   const [showWorkspaceShare, setShowWorkspaceShare] = useState(false);
+  const [showAddChooser, setShowAddChooser] = useState(false);
+  const [showFindTeammates, setShowFindTeammates] = useState(false);
 
   const { profiles, smartListCounts, getProfileByEmail, getLeadScoreByEmail } =
     useRelationshipIntelligence();
@@ -496,6 +501,10 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
     onUpdateContact?.(updated);
   };
 
+  const handleAddContactWrapper = async (newContact: Omit<Contact, 'id'>) => {
+    if (onAddContact) await onAddContact(newContact);
+  };
+
   const activeDrawerFilterCount =
     (activeSmartList ? 1 : 0) +
     (activeCircleId ? 1 : 0) +
@@ -556,7 +565,7 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
         onSelectAllVisible={() => setSelectedIds(new Set(filteredContacts.map((c) => c.id)))}
         onClearSelection={() => setSelectedIds(new Set())}
         bulkToolbar={bulkToolbar}
-        onAddContact={() => setShowAddModal(true)}
+        onAddContact={() => setShowAddChooser(true)}
       />
 
       {/* Col 2 — Focus */}
@@ -637,6 +646,138 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
         availableWorkspaces={workspaces.map((w) => ({ id: w.id, name: w.name }))}
         onShare={handleShareToWorkspace}
         onCancel={() => setShowWorkspaceShare(false)}
+      />
+
+      {/* Add-contact chooser (3 tiles) — ported from ContactsRedesigned. The
+          Add Contact footer opens this; manual tile opens AddContactModal,
+          Google tile dispatches the existing connect-modal event, teammates
+          tile opens FindTeammatesSheet. */}
+      {showAddChooser && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0, 0, 0, 0.70)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setShowAddChooser(false)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-contact-chooser-title"
+            className="w-full max-w-sm rounded-2xl overflow-hidden"
+            style={{
+              background: 'var(--pulse-surface)',
+              border: '1px solid var(--pulse-border)',
+              boxShadow: 'var(--pulse-shadow-md)',
+              color: 'var(--pulse-ink)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b" style={{ borderColor: 'var(--pulse-border)' }}>
+              <h2 id="add-contact-chooser-title" className="text-lg font-semibold">
+                Add a contact
+              </h2>
+              <p className="mt-1 text-sm" style={{ color: 'var(--pulse-ink-2)' }}>
+                Pick someone from Google, or add one yourself.
+              </p>
+            </div>
+            <div className="p-3 space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddChooser(false);
+                  setShowFindTeammates(true);
+                }}
+                className="w-full flex items-start gap-3 p-3 rounded-xl border text-left hover:border-rose-300 dark:hover:border-rose-400/40 transition-colors"
+                style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
+              >
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'var(--pulse-tone-info-soft)' }}
+                >
+                  <UserSearch className="w-4 h-4" style={{ color: 'var(--pulse-tone-info)' }} aria-hidden="true" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold">Find teammates on Pulse</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--pulse-ink-3)' }}>
+                    See who's already here. Add them in one tap.
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddChooser(false);
+                  window.dispatchEvent(new CustomEvent('pulse:contacts:open-connect-modal'));
+                }}
+                className="w-full flex items-start gap-3 p-3 rounded-xl border text-left hover:border-rose-300 dark:hover:border-rose-400/40 transition-colors"
+                style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
+              >
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'var(--pulse-rose-soft)' }}
+                >
+                  <Users className="w-4 h-4" style={{ color: 'var(--pulse-rose)' }} aria-hidden="true" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold">Import from Google</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--pulse-ink-3)' }}>
+                    Open the picker. Tick exactly who Pulse should know about.
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddChooser(false);
+                  setShowAddModal(true);
+                }}
+                className="w-full flex items-start gap-3 p-3 rounded-xl border text-left hover:border-rose-300 dark:hover:border-rose-400/40 transition-colors"
+                style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
+              >
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'var(--pulse-tone-neutral-soft)' }}
+                >
+                  <UserPlus className="w-4 h-4" style={{ color: 'var(--pulse-tone-neutral)' }} aria-hidden="true" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold">Add manually</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--pulse-ink-3)' }}>
+                    Fill in a name, email, phone. Stays Pulse-local.
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div className="px-5 py-3 border-t flex justify-end" style={{ borderColor: 'var(--pulse-border)' }}>
+              <button
+                type="button"
+                onClick={() => setShowAddChooser(false)}
+                className="min-h-[36px] px-3 py-1.5 rounded-lg text-sm font-medium"
+                style={{ color: 'var(--pulse-ink-2)' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <FindTeammatesSheet
+        isOpen={showFindTeammates}
+        onClose={() => setShowFindTeammates(false)}
+        workspaceId={currentWorkspace?.id ?? ''}
+        onAdd={async (user: DiscoveredPulseUser) => {
+          await handleAddContactWrapper({
+            name: user.display_name,
+            email: '',
+            role: user.shared_workspace_role,
+            avatarColor: '#f43f5e',
+            avatarUrl: user.avatar_url ?? undefined,
+            status: (user.online_status as Contact['status']) ?? 'offline',
+            source: 'local',
+            pulseUserId: user.user_id,
+          });
+        }}
       />
     </div>
   );
