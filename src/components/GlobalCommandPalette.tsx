@@ -1,12 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { Search, ArrowRight, Clock, NotebookPen } from 'lucide-react';
+import { Search, ArrowRight, Clock } from 'lucide-react';
 import { Command, useCommandPalette, canonicalizeShortcut } from '../contexts/CommandPaletteContext';
 import { getRecentCommandIds, pushRecentCommand, getMostUsedCommandIds, isMac } from '../utils/recentCommands';
-import { useWorkspaceData } from '../contexts/WorkspaceContext';
-import { useFeatures } from '../contexts/FeatureContext';
-import { captureService, type CaptureNote } from '../services/captureService';
-import { AppView } from '../types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -213,240 +209,6 @@ const CommandRow: React.FC<CommandRowProps> = ({ command, active, onHover, onAct
   );
 };
 
-// ─── Modal palette (Cmd+K) ────────────────────────────────────────────────────
-
-export const GlobalCommandPalette: React.FC = () => {
-  const { isOpen, close, getMatches } = useCommandPalette();
-  const { currentWorkspace } = useWorkspaceData();
-  const [query, setQuery] = useState('');
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [recentIds, setRecentIds] = useState<string[]>([]);
-  const [popularIds, setPopularIds] = useState<Set<string>>(() => new Set());
-  const [captureMatches, setCaptureMatches] = useState<CaptureNote[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const activeRowRef = useRef<HTMLLIElement>(null);
-
-  // Debounced full-text capture search. Triggers at 2+ chars; results render in
-  // a "NOTES" group below commands. Falls back to empty array silently on
-  // workspace-missing / network failure.
-  useEffect(() => {
-    if (!isOpen) return;
-    const q = query.trim();
-    if (q.length < 2 || !currentWorkspace?.id) {
-      setCaptureMatches([]);
-      return;
-    }
-    let cancelled = false;
-    const t = window.setTimeout(async () => {
-      const rows = await captureService.search(currentWorkspace.id, q, 5);
-      if (!cancelled) setCaptureMatches(rows);
-    }, 200);
-    return () => { cancelled = true; window.clearTimeout(t); };
-  }, [isOpen, query, currentWorkspace?.id]);
-
-  // Reset query + focus input each time the palette opens. Re-read recents
-  // and most-used so a Run from elsewhere (or another tab) is reflected.
-  useEffect(() => {
-    if (isOpen) {
-      setQuery('');
-      setActiveIdx(0);
-      setRecentIds(getRecentCommandIds());
-      setPopularIds(new Set(getMostUsedCommandIds(3)));
-      // RAF so the input mounts before we focus.
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
-  }, [isOpen]);
-
-  const matches = useMemo(() => (isOpen ? getMatches(query) : []), [isOpen, query, getMatches]);
-
-  // Recent ordering only applies to the empty-query state; once the user
-  // types, search relevance owns the order.
-  const groups = useMemo(
-    () => groupCommands(matches, { recentIds, pinRecent: query.trim().length === 0 }),
-    [matches, recentIds, query]
-  );
-
-  // Flat list in render order — what arrow keys + Enter walk through.
-  const flatCommands = useMemo(() => groups.flatMap(g => g.items), [groups]);
-
-  // Clamp the active index when results shrink.
-  useEffect(() => {
-    if (activeIdx >= flatCommands.length) {
-      setActiveIdx(Math.max(0, flatCommands.length - 1));
-    }
-  }, [flatCommands.length, activeIdx]);
-
-  // Scroll the active row into view on arrow nav. `block: 'nearest'` avoids
-  // jumping the entire list when the row is already visible.
-  useEffect(() => {
-    activeRowRef.current?.scrollIntoView({ block: 'nearest' });
-  }, [activeIdx]);
-
-  const activate = (cmd: Command) => {
-    pushRecentCommand(cmd.id);
-    // Refresh popular set inline so the next open reflects the just-bumped
-    // count without waiting for a fresh mount.
-    setPopularIds(new Set(getMostUsedCommandIds(3)));
-    cmd.run();
-    close();
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIdx(i => Math.min(i + 1, flatCommands.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIdx(i => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const cmd = flatCommands[activeIdx];
-      if (cmd) activate(cmd);
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      close();
-    } else if (e.key === 'Tab') {
-      // Focus trap: Tab and Shift+Tab both keep focus inside the palette.
-      // Without this, Tab escapes the modal to whichever element is next in
-      // the DOM (likely behind the backdrop) — bad for accessibility.
-      e.preventDefault();
-      // The input is the only first-class focusable in the palette; rows
-      // have tabIndex={-1} so we just bounce focus back here.
-      inputRef.current?.focus();
-    }
-  };
-
-  if (!isOpen) return null;
-
-  // Track running offset across groups so each row knows its global index for
-  // ↑/↓ navigation alignment.
-  let cursor = 0;
-
-  return ReactDOM.createPortal(
-    <div
-      className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-start justify-center z-[10001] p-4 pt-[12vh] animate-fade-in"
-      onClick={close}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Command palette"
-    >
-      <div
-        className="bg-white dark:bg-zinc-950 rounded-xl w-full max-w-lg shadow-2xl border border-zinc-200 dark:border-white/[0.08] overflow-hidden animate-scale-in flex flex-col"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-100 dark:border-white/[0.06]">
-          <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={e => { setQuery(e.target.value); setActiveIdx(0); }}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a command, jump to a section…"
-            className="flex-1 bg-transparent border-0 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-0"
-            autoFocus
-            autoComplete="off"
-            spellCheck={false}
-            aria-label="Command palette search"
-          />
-          <kbd className="hidden sm:inline-flex pulse-label items-center justify-center min-w-[2rem] h-5 px-1.5 rounded text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.06] shrink-0">ESC</kbd>
-        </div>
-
-        {/* Rows */}
-        <div className="max-h-[55vh] overflow-y-auto py-1">
-          {flatCommands.length === 0 ? (
-            <div className="px-4 py-8 text-center">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">No commands match.</p>
-              <p className="pulse-label text-zinc-400 dark:text-zinc-500 mt-1">TRY A SHORTER QUERY</p>
-            </div>
-          ) : (
-            groups.map(group => (
-              <div key={group.label}>
-                <div className="px-4 pt-3 pb-1 pulse-label text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
-                  {group.label === RECENT_GROUP_LABEL && <Clock size={10} />}
-                  {group.label}
-                </div>
-                <ul role="listbox">
-                  {group.items.map(cmd => {
-                    const idx = cursor++;
-                    const isActive = idx === activeIdx;
-                    return (
-                      <CommandRow
-                        key={cmd.id}
-                        command={cmd}
-                        active={isActive}
-                        query={query}
-                        popular={popularIds.has(cmd.id)}
-                        rowRef={isActive ? activeRowRef : undefined}
-                        onHover={() => setActiveIdx(idx)}
-                        onActivate={() => activate(cmd)}
-                      />
-                    );
-                  })}
-                </ul>
-              </div>
-            ))
-          )}
-
-          {/* Capture matches — separate group below commands. Not part of the
-              keyboard-navigable command list; clicking jumps to Archives. */}
-          {captureMatches.length > 0 && (
-            <div>
-              <div className="px-4 pt-3 pb-1 pulse-label text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
-                <NotebookPen size={10} />
-                NOTES · {captureMatches.length}
-              </div>
-              <ul role="listbox">
-                {captureMatches.map(note => {
-                  const date = new Date(note.created_at);
-                  const dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
-                  return (
-                    <li key={note.id}>
-                      <button
-                        onClick={() => {
-                          sessionStorage.setItem('pulse_focus_note', note.id);
-                          window.dispatchEvent(new CustomEvent('pulse:navigate', { detail: { view: AppView.ARCHIVES } }));
-                          close();
-                        }}
-                        className="w-full flex items-baseline gap-3 px-4 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
-                      >
-                        <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 min-w-[46px]">
-                          {dateLabel}
-                        </span>
-                        {note.kind && (
-                          <span className="pulse-label text-rose-600 dark:text-rose-400 shrink-0">
-                            {note.kind.toUpperCase()}
-                          </span>
-                        )}
-                        <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate flex-1">
-                          {note.content.slice(0, 80)}{note.content.length > 80 ? '…' : ''}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-zinc-100 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02]">
-          <div className="pulse-label inline-flex items-center gap-2 text-zinc-400 dark:text-zinc-500">
-            <kbd className="font-mono normal-case tracking-normal">↑↓</kbd> NAVIGATE
-            <kbd className="font-mono normal-case tracking-normal ml-2">↵</kbd> RUN
-          </div>
-          <span className="pulse-label text-zinc-400 dark:text-zinc-500">
-            {flatCommands.length} {flatCommands.length === 1 ? 'COMMAND' : 'COMMANDS'}
-          </span>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-};
-
 // ─── Inline palette (Dashboard bar mode) ──────────────────────────────────────
 // Renders an input + dropdown that shares command resolution with the modal.
 // Used in place of the old "Search the web" bar so the bar IS the palette.
@@ -631,27 +393,24 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
 };
 
 // ─── GlobalCommandBar (chrome pill → expand) ───────────────────────────────────
-// Phase 4 of the palette globalization (flag: commandBarGlobal, default OFF).
-// A collapsed command pill that floats in the app chrome on every view; clicking
-// it — or pressing ⌘K, which App already dispatches as pulse:command-palette-open
-// — expands it in place into the shared palette drawer. The expanded panel is
-// portal'd to <body> so it's never clipped by the overflow-hidden view panes
-// (Messages/Calendar). Self-gates: returns null when the flag is off, so the
-// component can be mounted unconditionally. The modal's open-listener
-// (AppCommandRegistrar) is gated off when this flag is on, so ⌘K drives exactly
-// one surface. Collapses on Escape, outside-click, or after running a command.
+// The command surface (Phase 5: the centered modal was retired). A collapsed
+// command pill that floats in the app chrome; clicking it — or pressing ⌘K, which
+// App dispatches as pulse:command-palette-open — expands it in place into the
+// shared palette drawer. The expanded panel is portal'd to <body> so it's never
+// clipped by the overflow-hidden view panes (Messages/Calendar). `suppressed` is
+// set on views that own their own command surface (the Dashboard hero bar);
+// there the pill is hidden and unwired, and that view handles ⌘K itself. Hooks
+// run every render so the early null-return stays Rules-of-Hooks safe. Collapses
+// on Escape, outside-click, or after running a command.
 
-export const GlobalCommandBar: React.FC = () => {
-  const { features } = useFeatures();
-  const enabled = features.commandBarGlobal;
+export const GlobalCommandBar: React.FC<{ suppressed?: boolean }> = ({ suppressed = false }) => {
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Expand on ⌘K (pulse:command-palette-open, dispatched by App) and on an
-  // explicit focus request. Only wired when enabled; hooks still run every
-  // render so the early null-return below stays Rules-of-Hooks safe.
+  // explicit focus request. Not wired when suppressed (the host view owns ⌘K).
   useEffect(() => {
-    if (!enabled) return;
+    if (suppressed) return;
     const onRequest = () => setExpanded(true);
     window.addEventListener('pulse:command-bar-focus', onRequest);
     window.addEventListener('pulse:command-palette-open', onRequest);
@@ -659,9 +418,9 @@ export const GlobalCommandBar: React.FC = () => {
       window.removeEventListener('pulse:command-bar-focus', onRequest);
       window.removeEventListener('pulse:command-palette-open', onRequest);
     };
-  }, [enabled]);
+  }, [suppressed]);
 
-  if (!enabled) return null;
+  if (suppressed) return null;
 
   const collapse = () => setExpanded(false);
 
@@ -706,5 +465,3 @@ export const GlobalCommandBar: React.FC = () => {
     </>
   );
 };
-
-export default GlobalCommandPalette;

@@ -22,7 +22,7 @@ import CustomEventTypesManager from './CustomEventTypesManager';
 import { customEventTypesService } from '../services/customEventTypesService';
 import { EventCreationModal } from './Calendar/EventCreationModal';
 import { CalendarAIPanel } from './Calendar/CalendarAIPanel';
-import { useCommandPalette, useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
+import { useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
 import ShortcutsHelp from './ShortcutsHelp';
 import JumpToDate from './JumpToDate';
 import ConflictResolutionBanner, { EventConflict, detectConflicts } from './ConflictResolutionBanner';
@@ -77,7 +77,9 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   // Calendar contributes its event-finder + view-switching commands to the
   // global palette via useRegisterCommands. The local Cmd+K state and modal
   // are gone — App.tsx owns Cmd+K, and the global palette renders at root.
-  const { open: openCommandPalette } = useCommandPalette();
+  // The command surface is the global bar/pill (the centered modal was retired
+  // in Phase 5). Dispatch the canonical open event; the pill listens for it.
+  const openCommandPalette = () => window.dispatchEvent(new CustomEvent('pulse:command-palette-open'));
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [showJumpToDate, setShowJumpToDate] = useState(false);
   const [focusMode, setFocusMode] = useState(false);

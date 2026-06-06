@@ -75,8 +75,8 @@ import { InstallPrompt } from './components/PWA/InstallPrompt';
 import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider, useFeatures } from './contexts/FeatureContext';
 import { PulseAIProvider } from './contexts/PulseAIContext';
-import { CommandPaletteProvider, useCommandPalette, useRegisterCommands, Command } from './contexts/CommandPaletteContext';
-import { GlobalCommandPalette, GlobalCommandBar } from './components/GlobalCommandPalette';
+import { CommandPaletteProvider, useRegisterCommands, Command } from './contexts/CommandPaletteContext';
+import { GlobalCommandBar } from './components/GlobalCommandPalette';
 import KeyboardChordsLayer from './components/KeyboardChordsLayer';
 import CaptureModal from './components/Capture/CaptureModal';
 import { WorkspaceProvider, useWorkspaceData, useWorkspaceActions } from './contexts/WorkspaceContext';
@@ -229,8 +229,6 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   onToggleSidebar,
   onSectionAction,
 }) => {
-  const { open } = useCommandPalette();
-
   // In-app SMS is a mock shell, hidden for v1 (issue #100). Despite the
   // `use` prefix, useFeatureFlag is a plain synchronous read (env + URL/
   // localStorage), so it is safe to call here and inside useMemo.
@@ -243,15 +241,10 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   // useFeatures is valid here: the registrar sits inside FeatureProvider.
   const { features } = useFeatures();
 
-  // Bridge the global Cmd+K event into the provider scope. When the global
-  // command bar is on, ⌘K instead expands the in-chrome pill (GlobalCommandBar
-  // listens for the same event), so we suppress the modal here to keep exactly
-  // one surface responding to ⌘K.
-  useEffect(() => {
-    const handler = () => { if (!features.commandBarGlobal) open(); };
-    window.addEventListener('pulse:command-palette-open', handler);
-    return () => window.removeEventListener('pulse:command-palette-open', handler);
-  }, [open, features.commandBarGlobal]);
+  // Note: ⌘K is dispatched as pulse:command-palette-open by App's keydown
+  // handler and consumed directly by the command surface (the GlobalCommandBar
+  // pill, or the Dashboard hero bar on Dashboard). The registrar no longer
+  // bridges it — the centered modal it used to open was retired in Phase 5.
 
   const navCommands = useMemo<Command[]>(() => {
     const navDestinations: Array<{
@@ -1474,13 +1467,12 @@ const App: React.FC = () => {
           single Toaster serves the whole app. */}
       <Toaster position="top-right" gutter={8} />
 
-      {/* Single global command palette — opened by Cmd+K from anywhere.
-          Sections register their commands via useRegisterCommands so the
-          palette aggregates Pulse-wide actions and section-specific ones. */}
-      <GlobalCommandPalette />
-      {/* Phase 4: in-chrome command pill — self-gates on the commandBarGlobal
-          flag (renders null when off, so the modal above stays the entry). */}
-      <GlobalCommandBar />
+      {/* Global command surface — a chrome pill that expands the shared palette
+          drawer (Phase 5: the centered modal was retired). Sections register
+          their commands via useRegisterCommands so the palette aggregates
+          Pulse-wide and section-specific actions. Suppressed on the Dashboard,
+          which keeps its own hero command bar and handles ⌘K itself. */}
+      <GlobalCommandBar suppressed={view === AppView.DASHBOARD} />
       <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onVoxContact={handleVoxContact} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onSignOut={logout} onTogglePulseAI={() => setShowPulseAI(prev => !prev)} onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)} onSectionAction={handleSectionAction} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords

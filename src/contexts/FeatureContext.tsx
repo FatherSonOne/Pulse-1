@@ -68,16 +68,6 @@ export interface FeatureFlags {
   // (contact.slackUserId). Consumer gate + Settings toggle land in Phase 8 · 8f.
   // See docs/SLACK_PHASE8_SCOPE_2026-06-05.md (decision D-F).
   slackSend: boolean;
-
-  // Global command bar (palette globalization Phase 4). OFF by default → ⌘K
-  // opens the centered GlobalCommandPalette modal (current behavior) and the
-  // command bar lives only in the Dashboard hero. ON → a collapsed command pill
-  // sits in the app chrome on every view, expands in place into the shared
-  // palette drawer, and ⌘K focuses it instead of opening the modal; the
-  // Dashboard hero bar is suppressed to avoid a double bar. The modal stays
-  // mounted as a fallback until this proves out (then Phase 5 retires it). See
-  // docs/COMMAND_PALETTE_GLOBALIZATION_HANDOFF_2026-06-06.md.
-  commandBarGlobal: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -127,10 +117,6 @@ const DEFAULT_FEATURES: FeatureFlags = {
 
   // Slack send OFF by default (dark-launch); flip on once the 8f wiring ships.
   slackSend: false,
-
-  // Global command bar OFF by default → centered ⌘K modal + Dashboard-only bar.
-  // Flip on in Settings → Features & Labs to test the in-chrome pill + drawer.
-  commandBarGlobal: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -283,11 +269,6 @@ export const FEATURE_CATEGORIES = {
       'smartReplies',
       'scheduledMessages'
     ] as (keyof FeatureFlags)[]
-  },
-  interface: {
-    name: 'Interface (Beta)',
-    description: 'Experimental navigation and command surfaces.',
-    features: ['commandBarGlobal'] as (keyof FeatureFlags)[]
   }
   // voiceInput / aiComposer / toneAnalysis removed from this surface 2026-06-05:
   // their only consumer is the *classic* MessageInput composer (lines 104-106),
@@ -318,7 +299,6 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   experimentalEnabled: 'Experimental Features',
   contactsHybrid: 'Contacts Hybrid (Beta)',
   slackSend: 'Slack Send (Beta)',
-  commandBarGlobal: 'Global Command Bar (Beta)',
 };
 
 /**
@@ -340,5 +320,4 @@ export const FEATURE_DESCRIPTIONS: Partial<Record<keyof FeatureFlags, string>> =
   toneAnalysis: "Analyze your draft's tone in the classic composer (Advanced Mode).",
   scheduledMessages: 'Schedule a message to send at a later time.',
   slackSend: 'Send a Slack DM to a linked contact from the People view (Phase 8).',
-  commandBarGlobal: 'Show a command pill in the app chrome on every view (⌘K focuses it instead of opening the centered palette).',
 };

@@ -20,7 +20,7 @@ import toast from 'react-hot-toast';
 import { Plus, Zap, Download, RotateCw } from 'lucide-react';
 import { User } from '../../../types';
 import { CockpitMasthead, type CockpitTab } from './CockpitMasthead';
-import { useCommandPalette, useRegisterCommands, type Command } from '../../../contexts/CommandPaletteContext';
+import { useRegisterCommands, type Command } from '../../../contexts/CommandPaletteContext';
 import { PropertyFilterBar, type ViewKind, type ViewAssignee } from './filters/PropertyFilterBar';
 import { type SavedViewPreset } from './filters/SavedViews';
 import { TriageView } from './triage/TriageView';
@@ -79,7 +79,8 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
   const [tab, setTab] = useState<CockpitTab>('triage');
   // ⌘K is the app-wide GlobalCommandPalette — the cockpit registers its
   // commands into it rather than running a second palette.
-  const { open: openCommandPalette } = useCommandPalette();
+  // Command surface is the global bar/pill (centered modal retired in Phase 5).
+  const openCommandPalette = () => window.dispatchEvent(new CustomEvent('pulse:command-palette-open'));
 
   // ── Data state (ported) ──
   const [decisions, setDecisions] = useState<DecisionWithVotes[]>([]);

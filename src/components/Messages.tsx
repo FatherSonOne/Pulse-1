@@ -101,7 +101,7 @@ import { AnalyticsExport } from './MessageEnhancements/AnalyticsExport';
 import { AttachmentManager } from './MessageEnhancements/AttachmentManager';
 import { BackupSync } from './MessageEnhancements/BackupSync';
 import { SmartSuggestions } from './MessageEnhancements/SmartSuggestions';
-import { useRegisterCommands, useCommandPalette, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
+import { useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
 import { getAllToolActions, fuzzySearchTools, saveRecentTool, suggestToolsFromContext, getRecentTools, getToolOverlayType } from '../services/toolRegistry';
 import type { ToolAction } from '../services/toolRegistry';
 import { messageEnhancementsService } from '../services/messageEnhancementsService';
@@ -411,9 +411,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // the legacy thread branch mounts. (Repair plan W1 / triage S1.)
   const [newMessage, setNewMessage] = useState('');
   // Programmatic opener for the global command palette, wired to the header
-  // Command Palette button (its old local `setShowCommandPalette` setter was
-  // removed when the local Cmd+K palette was retired). (Repair plan W1 / triage S1.)
-  const { open: openCommandPalette } = useCommandPalette();
+  // Command Palette button. The command surface is the global bar/pill (the
+  // centered modal was retired in Phase 5); dispatch the canonical open event,
+  // which the pill listens for. (Repair plan W1 / triage S1.)
+  const openCommandPalette = () => window.dispatchEvent(new CustomEvent('pulse:command-palette-open'));
   // Messages tools surface gate. The tools menu (legacy drawer + 38-panel
   // ToolOverlay + the ToolsMenuV2 4-tile redesign) is removed from the UX
   // pre-launch as "extra baggage" — the 4 surviving tools are 3/4 stub and
