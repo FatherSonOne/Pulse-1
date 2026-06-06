@@ -662,6 +662,173 @@ app.delete('/api/gmail/disconnect', async (req, res) => {
   }
 });
 
+// ============================================
+// SLACK USER-OAUTH (send-as-you + own-DM read) — P1 of Slack-grounded Messages.
+// Mirrors the Gmail per-user block above. Single-tenant: the operator installs
+// to their own workspace. The xoxp- USER token is stored server-side in
+// public.user_slack_tokens and NEVER reaches the browser; it is distinct from
+// the Phase-8 bot token (xoxb-, localStorage) which keeps powering reads +
+// Contacts send (D8 — keep both). The public bot proxy (/api/slack/proxy) is
+// intentionally NOT used for the user token (D7).
+// Scope: docs/SLACK_MESSAGES_GROUNDING_SCOPE_2026-06-06.md §8.
+// ============================================
+
+const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID;
+const SLACK_CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET;
+const SLACK_OAUTH_REDIRECT_URI = process.env.SLACK_OAUTH_REDIRECT_URI;
+// Launch USER-scope set (1:1 DM send + read). im:write is required by
+// conversations.open; users:read.email must be requested alongside users:read.
+// channels:history / groups:history / mpim:history are a post-launch fast-follow.
+const SLACK_USER_SCOPES = 'chat:write,im:write,im:history,users:read,users:read.email';
+
+function slackOauthConfigured() {
+  return !!(SLACK_CLIENT_ID && SLACK_CLIENT_SECRET && SLACK_OAUTH_REDIRECT_URI);
+}
+
+// Same signed-state scheme as Gmail: the PUBLIC callback (a redirect from Slack,
+// no Bearer) attributes the grant via an HMAC over {uid, exp}. 10-minute validity.
+const SLACK_STATE_SECRET =
+  process.env.JWT_SECRET || process.env.LOGOS_VISION_API_KEY || SUPABASE_SERVICE_KEY || 'pulse-slack-state';
+
+function signSlackState(userId) {
+  const payload = Buffer.from(JSON.stringify({ uid: userId, exp: Date.now() + 10 * 60 * 1000 })).toString('base64url');
+  const sig = crypto.createHmac('sha256', SLACK_STATE_SECRET).update(payload).digest('base64url');
+  return `${payload}.${sig}`;
+}
+
+function verifySlackState(state) {
+  const [payload, sig] = String(state || '').split('.');
+  if (!payload || !sig) throw new Error('malformed state');
+  const expected = crypto.createHmac('sha256', SLACK_STATE_SECRET).update(payload).digest('base64url');
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) throw new Error('state signature mismatch');
+  const data = JSON.parse(Buffer.from(payload, 'base64url').toString());
+  if (!data.exp || Date.now() > data.exp) throw new Error('state expired');
+  return data.uid;
+}
+
+async function getUserSlackToken(userId) {
+  const { data, error } = await tokenStoreClient()
+    .from('user_slack_tokens').select('*').eq('user_id', userId).maybeSingle();
+  if (error) { console.error('[Slack Token] get error:', error); return null; }
+  return data;
+}
+
+async function upsertUserSlackToken(userId, fields) {
+  const { error } = await tokenStoreClient()
+    .from('user_slack_tokens')
+    .upsert({ user_id: userId, ...fields, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  if (error) console.error('[Slack Token] upsert error:', error);
+}
+
+async function deleteUserSlackToken(userId) {
+  const { error } = await tokenStoreClient().from('user_slack_tokens').delete().eq('user_id', userId);
+  if (error) console.error('[Slack Token] delete error:', error);
+}
+
+// GET /api/slack/status — is the owner's Slack user-token grant connected?
+app.get('/api/slack/status', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    const row = await getUserSlackToken(userId);
+    res.json({
+      connected: !!row,
+      configured: slackOauthConfigured(),
+      slackUserId: row?.slack_user_id || null,
+      teamId: row?.slack_team_id || null,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// GET /api/slack/auth/url — Slack user-token authorize URL (user_scope, NOT scope)
+app.get('/api/slack/auth/url', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    if (!slackOauthConfigured()) {
+      return res.status(500).json({ error: 'Slack OAuth client not configured on the server', code: 'MISSING_CONFIG' });
+    }
+    const params = new URLSearchParams({
+      client_id: SLACK_CLIENT_ID,
+      user_scope: SLACK_USER_SCOPES,   // USER scopes go in user_scope, NOT scope (=bot scopes)
+      redirect_uri: SLACK_OAUTH_REDIRECT_URI,
+      state: signSlackState(userId),
+    });
+    res.json({ url: `https://slack.com/oauth/v2/authorize?${params.toString()}` });
+  } catch (error) {
+    console.error('[Slack Auth URL] error:', error);
+    res.status(500).json({ error: error.message || 'Failed to build auth URL' });
+  }
+});
+
+// GET /api/slack/auth/callback — Slack redirects here; store the xoxp- grant, bounce to app
+app.get('/api/slack/auth/callback', async (req, res) => {
+  const appUrl = process.env.VITE_APP_URL || process.env.PRODUCTION_URL || 'http://localhost:5173';
+  try {
+    const { code, state, error: oauthError } = req.query;
+    if (oauthError) return res.redirect(`${appUrl}/?slack_error=${encodeURIComponent(oauthError)}`);
+    if (!code || !state) return res.redirect(`${appUrl}/?slack_error=missing_code`);
+
+    let userId;
+    try { userId = verifySlackState(state); }
+    catch { return res.redirect(`${appUrl}/?slack_error=bad_state`); }
+
+    const tokenRes = await fetch('https://slack.com/api/oauth.v2.access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: SLACK_CLIENT_ID,
+        client_secret: SLACK_CLIENT_SECRET,
+        code,
+        redirect_uri: SLACK_OAUTH_REDIRECT_URI,
+      }),
+    });
+    const data = await tokenRes.json();
+    // Slack returns HTTP 200 with { ok:false, error } on logical failures.
+    if (!data.ok) {
+      return res.redirect(`${appUrl}/?slack_error=${encodeURIComponent(data.error || 'oauth_failed')}`);
+    }
+    // The USER token (xoxp-) is nested under authed_user.access_token; the
+    // top-level access_token would be the bot token (xoxb-) if bot scopes were set.
+    const authedUser = data.authed_user || {};
+    if (!authedUser.access_token) {
+      return res.redirect(`${appUrl}/?slack_error=no_user_token`);
+    }
+    await upsertUserSlackToken(userId, {
+      access_token: authedUser.access_token,
+      scope: authedUser.scope || null,
+      slack_user_id: authedUser.id || null,
+      slack_team_id: data.team?.id || null,
+      bot_user_id: data.bot_user_id || null,
+      token_type: authedUser.token_type || 'user',
+    });
+    console.log('✅ Slack user grant stored for user:', userId);
+    res.redirect(`${appUrl}/?slack=connected`);
+  } catch (error) {
+    console.error('[Slack Callback] error:', error);
+    res.redirect(`${appUrl}/?slack_error=${encodeURIComponent(error.message || 'callback_failed')}`);
+  }
+});
+
+// DELETE /api/slack/disconnect — drop the stored user-token grant.
+// No refresh route: Slack user tokens are non-expiring unless rotation is enabled
+// (out of scope). On invalid_auth at send time, the send path deletes the row and
+// prompts reconnect — mirrors the Gmail invalid_grant branch.
+app.delete('/api/slack/disconnect', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    await deleteUserSlackToken(userId);
+    res.json({ disconnected: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 // OpenAI Realtime API - Ephemeral Token Generation
 // This endpoint generates a short-lived token for WebRTC connections
 app.post('/api/realtime/session-token', async (req, res) => {
