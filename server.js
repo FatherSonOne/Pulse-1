@@ -675,7 +675,9 @@ app.delete('/api/gmail/disconnect', async (req, res) => {
 
 const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID;
 const SLACK_CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET;
-const SLACK_OAUTH_REDIRECT_URI = process.env.SLACK_OAUTH_REDIRECT_URI;
+// Accept both _URI (Gmail-convention) and _URL to avoid the URL/URI footgun
+// (the value set on Render is named SLACK_OAUTH_REDIRECT_URL).
+const SLACK_OAUTH_REDIRECT_URI = process.env.SLACK_OAUTH_REDIRECT_URI || process.env.SLACK_OAUTH_REDIRECT_URL;
 // Launch USER-scope set (1:1 DM send + read). im:write is required by
 // conversations.open; users:read.email must be requested alongside users:read.
 // channels:history / groups:history / mpim:history are a post-launch fast-follow.
