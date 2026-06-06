@@ -30,6 +30,7 @@ export interface DBContact {
   role: string;
   company?: string;
   avatar_color: string;
+  avatar_url?: string;
   status: 'online' | 'offline' | 'busy' | 'away';
   email: string;
   phone?: string;
@@ -173,6 +174,7 @@ function dbToContact(db: DBContact): Contact {
     role: db.role,
     company: db.company,
     avatarColor: db.avatar_color,
+    avatarUrl: db.avatar_url,
     status: db.status,
     email: db.email,
     phone: db.phone,
@@ -202,6 +204,7 @@ function contactToDb(contact: Partial<Contact>, userId: string): Partial<DBConta
     role: contact.role,
     company: contact.company,
     avatar_color: contact.avatarColor,
+    avatar_url: contact.avatarUrl,
     status: contact.status,
     email: contact.email,
     phone: contact.phone,

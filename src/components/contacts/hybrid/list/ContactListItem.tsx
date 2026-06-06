@@ -26,12 +26,20 @@ export const ContactListItem: React.FC<ContactListItemProps> = ({ contact, selec
           : 'border-transparent hover:bg-[var(--pulse-surface-raised)]'
       }`}
     >
-      <span
-        className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0"
-        style={{ backgroundColor: contact.avatarColor || '#6366f1' }}
-      >
-        {contact.name.charAt(0).toUpperCase()}
-      </span>
+      {contact.avatarUrl ? (
+        <img
+          src={contact.avatarUrl}
+          alt={contact.name}
+          className="w-9 h-9 rounded-full object-cover shrink-0"
+        />
+      ) : (
+        <span
+          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0"
+          style={{ backgroundColor: contact.avatarColor || '#6366f1' }}
+        >
+          {contact.name.charAt(0).toUpperCase()}
+        </span>
+      )}
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
           <span className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-100">

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Contact } from '../../types';
+import { EditableAvatar } from './EditableAvatar';
+import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
 
 import { Loader2, Plus, UserPlus, X } from 'lucide-react';
@@ -52,6 +54,15 @@ export const AddContactModal: React.FC<AddContactModalProps> = ({
     company: '',
     notes: ''
   });
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
+  // Upload-path key — no contact id exists yet. Regenerated after each add so a
+  // later add can't overwrite the previous contact's avatar at the same path.
+  const [avatarKey, setAvatarKey] = useState(() => crypto.randomUUID());
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id));
+  }, []);
 
   const handleSubmit = async () => {
     if (!form.name.trim() || !form.email.trim()) return;
@@ -66,11 +77,14 @@ export const AddContactModal: React.FC<AddContactModalProps> = ({
         company: form.company || undefined,
         notes: form.notes || undefined,
         avatarColor: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
+        avatarUrl: avatarUrl || undefined,
         status: 'offline',
         groups: [],
         source: 'local'
       });
       setForm({ name: '', email: '', phone: '', role: '', company: '', notes: '' });
+      setAvatarUrl(undefined);
+      setAvatarKey(crypto.randomUUID());
       onClose();
     } catch (error) {
       console.error(error);
@@ -94,6 +108,17 @@ export const AddContactModal: React.FC<AddContactModalProps> = ({
           </button>
         </div>
         <div className="p-4 space-y-4">
+          {/* Avatar — optional upload (Phase 5) */}
+          <div className="flex justify-center">
+            <EditableAvatar
+              name={form.name || 'New contact'}
+              avatarUrl={avatarUrl}
+              userId={userId}
+              storageKey={avatarKey}
+              size={72}
+              onUploaded={setAvatarUrl}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">

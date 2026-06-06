@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Contact } from '../../types';
 import LocationEditModal from '../map/contacts/LocationEditModal';
+import { EditableAvatar } from './EditableAvatar';
+import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
 
 import { Check, Loader2, UserPen, X } from 'lucide-react';
@@ -33,6 +35,12 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
   // Lazy-init from contact so first paint already has correct values (no flash).
   const [localContact, setLocalContact] = useState<Contact | null>(contact);
   const [form, setForm] = useState(() => buildForm(contact));
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(contact?.avatarUrl);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id));
+  }, []);
 
   // Single sync: re-hydrate state when the contact identity changes
   // (re-opening with a different contact). Keyed on contact?.id, not the
@@ -41,6 +49,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
     if (contact) {
       setLocalContact(contact);
       setForm(buildForm(contact));
+      setAvatarUrl(contact.avatarUrl);
     }
   }, [contact?.id]);
 
@@ -58,6 +67,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
         company: form.company || undefined,
         notes: form.notes || undefined,
         groups: form.groups,
+        avatarUrl: avatarUrl || undefined,
       });
       onClose();
     } catch (error) {
@@ -98,11 +108,17 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
 
         {/* Content */}
         <div className="p-4 space-y-4 overflow-y-auto flex-1">
-          {/* Avatar Preview */}
+          {/* Avatar — upload affordance (Phase 5) */}
           <div className="flex items-center gap-4 mb-6">
-            <div className={`w-16 h-16 rounded-full ${contact.avatarColor || 'bg-blue-500'} flex items-center justify-center text-2xl font-bold text-white`}>
-              {form.name.charAt(0) || '?'}
-            </div>
+            <EditableAvatar
+              name={form.name}
+              avatarColor={contact.avatarColor}
+              avatarUrl={avatarUrl}
+              userId={userId}
+              storageKey={contact.id}
+              size={64}
+              onUploaded={setAvatarUrl}
+            />
             <div className="flex-1">
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Contact ID: {contact.id}</p>
               <p className="text-xs text-zinc-400 dark:text-zinc-500">Source: {contact.source || 'local'}</p>

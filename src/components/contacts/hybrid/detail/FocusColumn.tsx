@@ -151,14 +151,24 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
       <div className="px-6 pt-6 pb-4 border-b border-zinc-100 dark:border-zinc-800/60">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4 min-w-0">
-            <span
-              className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold shrink-0 ring-offset-2 ring-offset-white dark:ring-offset-black ${
-                score !== undefined ? ringClassFor(score) : ''
-              }`}
-              style={{ backgroundColor: contact.avatarColor || '#6366f1' }}
-            >
-              {contact.name.charAt(0).toUpperCase()}
-            </span>
+            {contact.avatarUrl ? (
+              <img
+                src={contact.avatarUrl}
+                alt={contact.name}
+                className={`w-16 h-16 rounded-full object-cover shrink-0 ring-offset-2 ring-offset-white dark:ring-offset-black ${
+                  score !== undefined ? ringClassFor(score) : ''
+                }`}
+              />
+            ) : (
+              <span
+                className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold shrink-0 ring-offset-2 ring-offset-white dark:ring-offset-black ${
+                  score !== undefined ? ringClassFor(score) : ''
+                }`}
+                style={{ backgroundColor: contact.avatarColor || '#6366f1' }}
+              >
+                {contact.name.charAt(0).toUpperCase()}
+              </span>
+            )}
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-xl font-bold text-zinc-900 dark:text-white truncate">{contact.name}</h2>
