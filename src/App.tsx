@@ -195,6 +195,13 @@ interface AppCommandRegistrarProps {
   // Dashboard-scoped navigate-only "Schedule Meet"; this one instant-creates a
   // Pulse room.
   onStartMeeting: () => void;
+  // Global app controls — reuse App's existing handlers (theme/auth/assistant/
+  // sidebar). isDarkMode feeds the toggle label so it reads the right direction.
+  isDarkMode: boolean;
+  onToggleTheme: () => void;
+  onSignOut: () => void;
+  onTogglePulseAI: () => void;
+  onToggleSidebar: () => void;
 }
 
 const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
@@ -210,6 +217,11 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   onVoxContact,
   onComposeEmail,
   onStartMeeting,
+  isDarkMode,
+  onToggleTheme,
+  onSignOut,
+  onTogglePulseAI,
+  onToggleSidebar,
 }) => {
   const { open } = useCommandPalette();
 
@@ -241,12 +253,16 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
       { id: 'nav-email', label: 'Email', desc: 'Pulse email client', view: AppView.EMAIL, icon: 'fa-envelope', keywords: ['mail', 'gmail'] },
       { id: 'nav-calendar', label: 'Calendar', desc: 'Schedule and tasks', view: AppView.CALENDAR, icon: 'fa-calendar', keywords: ['schedule', 'events', 'tasks', 'meeting'] },
       { id: 'nav-relay', label: 'Relay', desc: 'Voice messages and notes', view: AppView.RELAY, icon: 'fa-microphone', keywords: ['vox', 'voice', 'audio'] },
+      { id: 'nav-glimpse', label: 'Glimpse', desc: 'Video glimpses and peer reels', view: AppView.GLIMPSE, icon: 'fa-clapperboard', keywords: ['video', 'reels', 'peer', 'glimpse'] },
       { id: 'nav-contacts', label: 'Contacts', desc: 'People and teams', view: AppView.CONTACTS, icon: 'fa-users', keywords: ['people', 'crm'] },
       { id: 'nav-map', label: 'Map', desc: 'Spatial layer — contacts, places, geofences', view: AppView.MAP, icon: 'fa-location-dot', keywords: ['location', 'geo', 'team radar', 'places', 'broadcast'] },
       { id: 'nav-archives', label: 'Memory', desc: 'Every word, every voice — find any conversation', view: AppView.ARCHIVES, icon: 'fa-box-archive', keywords: ['archives', 'history'] },
       { id: 'nav-search', label: 'Search', desc: 'Search across Pulse', view: AppView.MULTI_MODAL, icon: 'fa-magnifying-glass', keywords: ['find', 'global'] },
+      { id: 'nav-analytics', label: 'Analytics', desc: 'Metrics, trends, and reports', view: AppView.ANALYTICS, icon: 'fa-chart-line', keywords: ['analytics', 'metrics', 'stats', 'reports', 'insights'] },
       { id: 'nav-decisions', label: 'Decisions & Tasks', desc: 'Decision hub and task board', view: AppView.DECISIONS_TASKS, icon: 'fa-list-check', keywords: ['todo', 'task'] },
       { id: 'nav-meetings', label: 'Meetings', desc: 'Video meetings', view: AppView.MEETINGS, icon: 'fa-video', keywords: ['video', 'call'] },
+      { id: 'nav-summit', label: 'Summit', desc: 'Live voice sessions', view: AppView.LIVE, icon: 'fa-comments', keywords: ['summit', 'live', 'session', 'voice', 'realtime'] },
+      { id: 'nav-warroom', label: 'War Room', desc: 'Sources, chat, and studio', view: AppView.LIVE_AI, icon: 'fa-book-open', keywords: ['war room', 'notebook', 'research', 'studio', 'ai', 'sources'] },
       { id: 'nav-sms', label: 'SMS', desc: 'Text messages', view: AppView.SMS, icon: 'fa-comment-sms', keywords: ['text'] },
       { id: 'nav-settings', label: 'Settings', desc: 'Preferences and account', view: AppView.SETTINGS, icon: 'fa-gear', keywords: ['preferences', 'account'] },
       { id: 'nav-users-guide', label: "User's Guide", desc: 'How to use Pulse', view: AppView.USERS_GUIDE, icon: 'fa-circle-question', keywords: ['help', 'docs', 'guide'] },
@@ -407,6 +423,52 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
     },
   ], [onStartMeeting]);
 
+  // Global app controls — the staples users reflexively reach for in a palette
+  // (theme, sign out, assistant, sidebar). Each reuses an existing App handler;
+  // no new state. The theme label reflects the current mode so it reads as the
+  // action it performs. Registered under app:controls so it's available on every
+  // view. (Switch-workspace deferred until a clean WorkspaceContext setter is
+  // confirmed — see the globalization handoff doc, §8.)
+  const controlsCommands = useMemo<Command[]>(() => [
+    {
+      id: 'control-theme',
+      label: isDarkMode ? 'Switch to light mode' : 'Switch to dark mode',
+      desc: 'Toggle the app theme',
+      icon: isDarkMode ? 'fa-sun' : 'fa-moon',
+      kind: 'action',
+      keywords: ['theme', 'dark', 'light', 'mode', 'appearance', 'night'],
+      run: onToggleTheme,
+    },
+    {
+      id: 'control-pulse-ai',
+      label: 'Open Pulse AI',
+      desc: 'Toggle the AI assistant',
+      icon: 'fa-wand-magic-sparkles',
+      kind: 'action',
+      keywords: ['assistant', 'ai', 'copilot', 'chat', 'help'],
+      shortcut: '⌘/',
+      run: onTogglePulseAI,
+    },
+    {
+      id: 'control-sidebar',
+      label: 'Collapse / expand sidebar',
+      desc: 'Toggle the navigation rail',
+      icon: 'fa-table-columns',
+      kind: 'action',
+      keywords: ['sidebar', 'nav', 'rail', 'collapse', 'expand', 'hide'],
+      run: onToggleSidebar,
+    },
+    {
+      id: 'control-signout',
+      label: 'Sign out',
+      desc: 'Log out of Pulse',
+      icon: 'fa-arrow-right-from-bracket',
+      kind: 'action',
+      keywords: ['logout', 'log out', 'sign off', 'exit', 'leave'],
+      run: onSignOut,
+    },
+  ], [isDarkMode, onToggleTheme, onTogglePulseAI, onToggleSidebar, onSignOut]);
+
   // People entity-jump — typing a name (2+ chars) surfaces matching contacts,
   // each as an "Open <name>" (their card) plus a "Message <name>" (their
   // conversation). Dynamic provider so it reflects the live contacts array and
@@ -472,6 +534,7 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   useRegisterCommands('app:create',     { commands: createCommands });
   useRegisterCommands('app:email',       { commands: emailCommands });
   useRegisterCommands('app:meetings',    { commands: meetingCommands });
+  useRegisterCommands('app:controls',    { commands: controlsCommands });
   useRegisterCommands('contacts:people', { provider: peopleProvider });
 
   return null;
@@ -1355,7 +1418,7 @@ const App: React.FC = () => {
           Sections register their commands via useRegisterCommands so the
           palette aggregates Pulse-wide actions and section-specific ones. */}
       <GlobalCommandPalette />
-      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onVoxContact={handleVoxContact} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} />
+      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onVoxContact={handleVoxContact} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onSignOut={logout} onTogglePulseAI={() => setShowPulseAI(prev => !prev)} onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
           (g m → Map, g c → Contacts, …) plus a `?` overlay listing them
