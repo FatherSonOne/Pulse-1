@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { Search, ArrowRight, Clock } from 'lucide-react';
 import { Command, useCommandPalette, canonicalizeShortcut } from '../contexts/CommandPaletteContext';
 import { getRecentCommandIds, pushRecentCommand, getMostUsedCommandIds, isMac } from '../utils/recentCommands';
@@ -247,6 +248,14 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
   const [recentIds, setRecentIds] = useState<string[]>(() => getRecentCommandIds());
   const [popularIds, setPopularIds] = useState<Set<string>>(() => new Set(getMostUsedCommandIds(3)));
   const activeRowRef = useRef<HTMLLIElement>(null);
+  // The dropdown is portal'd to <body> and positioned under the input via fixed
+  // coords. It MUST escape the in-flow command bar: the bar lives in a header
+  // whose backdrop-blur forms a non-positioned stacking context that paints in
+  // DOM order BELOW the page-content sibling, and section content is saturated
+  // with z-50 (175+ uses) — so an absolutely-positioned in-flow dropdown gets
+  // occluded by content. Portal + fixed sidesteps the entire z-index war while
+  // staying below the app's z-[9999]/z-[10000] modal band.
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const matches = useMemo(() => (open || query ? getMatches(query) : []), [open, query, getMatches]);
   const groups = useMemo(
@@ -265,6 +274,32 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
   useEffect(() => {
     activeRowRef.current?.scrollIntoView({ block: 'nearest' });
   }, [activeIdx]);
+
+  // Measure the input so the portal'd dropdown can be positioned (fixed) flush
+  // under it. Recompute on open, on viewport resize, on scroll, and whenever the
+  // input itself resizes (e.g. the sidebar collapses and the bar reflows).
+  // useLayoutEffect runs synchronously pre-paint so the dropdown never flashes
+  // at the wrong spot. inputRef identity is stable; only `open` drives this.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const el = inputRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setDropdownPos({ top: r.bottom + 8, left: r.left, width: r.width });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Focus + open on mount when a wrapper requests it, so the palette is
   // immediately typeable the moment it appears.
@@ -335,10 +370,13 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
         )}
       </div>
 
-      {/* Inline dropdown — non-modal, anchored to the bar */}
-      {open && flatCommands.length > 0 && (
+      {/* Dropdown — portal'd to <body>, fixed under the input (see dropdownPos).
+          Escapes the command bar's backdrop-blur stacking context and the z-50
+          saturation of section content. */}
+      {open && dropdownPos && flatCommands.length > 0 && ReactDOM.createPortal(
         <div
-          className="absolute left-0 right-0 mt-2 bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-white/[0.08] shadow-xl overflow-hidden z-50 animate-fade-in"
+          style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9000 }}
+          className="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-white/[0.08] shadow-xl overflow-hidden animate-fade-in"
           // Suppress mousedown blur on the input so clicks register on rows.
           onMouseDown={e => e.preventDefault()}
         >
@@ -378,15 +416,20 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
               {flatCommands.length} {flatCommands.length === 1 ? 'COMMAND' : 'COMMANDS'}
             </span>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Inline dropdown — empty state for an active query that matches nothing */}
-      {open && query && flatCommands.length === 0 && (
-        <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-white/[0.08] shadow-xl px-4 py-6 text-center z-50 animate-fade-in">
+      {/* Dropdown — empty state for an active query that matches nothing */}
+      {open && dropdownPos && query && flatCommands.length === 0 && ReactDOM.createPortal(
+        <div
+          style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9000 }}
+          className="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-white/[0.08] shadow-xl px-4 py-6 text-center animate-fade-in"
+        >
           <p className="text-sm text-zinc-500 dark:text-zinc-400">No commands match "{query}".</p>
           <p className="pulse-label text-zinc-400 dark:text-zinc-500 mt-1 uppercase tracking-wider text-[10px]">TRY A SHORTER QUERY</p>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
