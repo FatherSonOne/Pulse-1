@@ -53,8 +53,10 @@ import { LeadGradeBadge, LeadStatusBadge } from '../../LeadScoreIndicator';
 import { ProvenanceChip, type ContactProvenanceSource } from '../../ProvenanceChip';
 import MapPreview from '../../../map/MapPreview';
 import { ChannelRow } from '../channels/ChannelRow';
+import { sendSlackDm, resolveSlackUser } from '../channels/actions';
 import { CadenceSpine } from './CadenceSpine';
 import { InteractionTimeline } from './InteractionTimeline';
+import { useFeatures } from '../../../../contexts/FeatureContext';
 
 const CHANNEL_ICON: Record<string, string> = {
   email: 'fa-solid fa-envelope',
@@ -118,6 +120,16 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Phase 8 — Slack inline DM (Direction A) + "Link Slack" resolver.
+  const { features } = useFeatures();
+  const [slackOpen, setSlackOpen] = useState(false);
+  const [slackBusy, setSlackBusy] = useState(false);
+  const [slackSent, setSlackSent] = useState(false);
+  const [slackErr, setSlackErr] = useState<string | null>(null);
+  const slackRef = useRef<HTMLTextAreaElement>(null);
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkMsg, setLinkMsg] = useState<string | null>(null);
+
   const profile = relationshipProfile;
   const score = profile?.relationshipScore;
   const trend = profile?.relationshipTrend;
@@ -143,6 +155,48 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
       }
     }
     setNotesEditing((v) => !v);
+  };
+
+  const handleSlackSend = async () => {
+    const text = slackRef.current?.value.trim() ?? '';
+    if (!text) { setSlackErr('Write a message first.'); return; }
+    setSlackBusy(true);
+    setSlackErr(null);
+    try {
+      await sendSlackDm(contact, text);
+      setSlackSent(true);
+      setTimeout(() => { setSlackOpen(false); setSlackSent(false); }, 1600);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'send failed';
+      setSlackErr(
+        msg === 'NO_TOKEN' ? 'Connect Slack in Settings first.'
+          : /missing_scope/.test(msg) ? 'Token needs chat:write — reinstall in Settings.'
+          : `Couldn't send: ${msg}`,
+      );
+    } finally {
+      setSlackBusy(false);
+    }
+  };
+
+  const handleLinkSlack = async () => {
+    setLinkBusy(true);
+    setLinkMsg(null);
+    try {
+      const id = await resolveSlackUser(contact);
+      if (!id) { setLinkMsg('No Slack member uses this email.'); return; }
+      await supabase.from('contacts').update({ slack_user_id: id }).eq('id', contact.id);
+      onUpdateContact?.({ ...contact, slackUserId: id });
+      toast.success('Linked to Slack');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'lookup failed';
+      setLinkMsg(
+        msg === 'NO_TOKEN' ? 'Connect Slack in Settings first.'
+          : /missing_scope/.test(msg) ? 'Token needs users:read.email — reinstall in Settings.'
+          : `Couldn't link: ${msg}`,
+      );
+    } finally {
+      setLinkBusy(false);
+    }
   };
 
   return (
@@ -245,7 +299,98 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
             emailEnabled={emailEnabled}
             onAction={onAction}
             onNote={() => setNotesEditing(true)}
+            slackLinked={!!contact.slackUserId}
+            slackSendEnabled={features.slackSend}
+            onSlack={() => { setSlackOpen(true); setSlackSent(false); setSlackErr(null); }}
           />
+
+          {/* Phase 8 · Link Slack — external, unlinked, send-on: resolve email → Slack id */}
+          {features.slackSend && !contact.pulseUserId && !contact.slackUserId && contact.email && (
+            <div
+              className="mt-2.5 flex items-center gap-2 rounded-xl border p-2.5"
+              style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-surface-raised)' }}
+            >
+              <i className="fa-brands fa-slack text-sm" style={{ color: 'var(--ch-slack, #6d28d9)' }} aria-hidden="true" />
+              <span className="text-xs" style={{ color: 'var(--pulse-ink-2)' }}>
+                {linkMsg ?? 'Link this contact to Slack to DM them.'}
+              </span>
+              <button
+                type="button"
+                onClick={handleLinkSlack}
+                disabled={linkBusy}
+                className="ml-auto text-xs font-medium px-2.5 py-1 rounded-lg disabled:opacity-50"
+                style={{ background: 'var(--pulse-rose)', color: '#fff' }}
+              >
+                {linkBusy ? 'Linking…' : 'Link Slack'}
+              </button>
+            </div>
+          )}
+
+          {/* Phase 8 · inline Slack DM composer (Direction A — _design-playground/slack-redesign.html) */}
+          {slackOpen && contact.slackUserId && (
+            <div
+              className="mt-2.5 rounded-xl border p-3"
+              style={{ borderColor: 'var(--pulse-border-strong)', background: 'var(--pulse-surface)' }}
+            >
+              {slackSent ? (
+                <div className="flex items-center gap-2 text-sm">
+                  <i className="fa-solid fa-circle-check" style={{ color: 'var(--pulse-tone-positive, #22c55e)' }} aria-hidden="true" />
+                  <span style={{ color: 'var(--pulse-ink-2)' }}>
+                    Sent on Slack · <span style={{ color: 'var(--pulse-ink-3)' }}>via Pulse</span>
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div
+                    className="flex items-center gap-1.5 mb-2 text-[11px] uppercase tracking-[0.08em]"
+                    style={{ color: 'var(--ch-slack, #6d28d9)', fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
+                  >
+                    <i className="fa-brands fa-slack" aria-hidden="true" /> Slack DM · {contact.name}
+                  </div>
+                  <textarea
+                    ref={slackRef}
+                    rows={2}
+                    placeholder={`Message ${contact.name} on Slack…`}
+                    disabled={slackBusy}
+                    onChange={() => slackErr && setSlackErr(null)}
+                    className="w-full text-sm bg-transparent resize-none focus:outline-none"
+                    style={{ color: 'var(--pulse-ink)' }}
+                  />
+                  <div
+                    className="flex items-center justify-between mt-2 pt-2 border-t"
+                    style={{ borderColor: 'var(--pulse-border)' }}
+                  >
+                    <span
+                      className="text-[11px]"
+                      style={{ color: slackErr ? 'var(--pulse-tone-overdue, #ef4444)' : 'var(--pulse-ink-3)' }}
+                    >
+                      {slackErr ?? 'Posts as the Pulse bot'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setSlackOpen(false); setSlackErr(null); }}
+                        disabled={slackBusy}
+                        className="text-xs px-2.5 py-1.5 rounded-lg disabled:opacity-50"
+                        style={{ color: 'var(--pulse-ink-3)' }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSlackSend}
+                        disabled={slackBusy}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50"
+                        style={{ background: 'var(--pulse-rose)', color: '#fff' }}
+                      >
+                        {slackBusy ? 'Sending…' : 'Send'}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

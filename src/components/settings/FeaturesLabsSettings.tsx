@@ -51,6 +51,19 @@ export const FeaturesLabsSettings: React.FC = () => {
         />
       </SettingsCard>
 
+      {/* Slack Send (Phase 8) on/off. OFF (default) → the ChannelRow Slack button
+          stays disabled even for a linked contact. ON → an inline DM composer in
+          the People → Focus column. Needs a connected Slack bot token (chat:write)
+          + a contact with a resolved slack_user_id. */}
+      <SettingsCard>
+        <ToggleItem
+          label="Slack Send (Beta)"
+          desc="When on, you can DM a linked contact on Slack from the People → Focus column. Needs a connected Slack bot token with chat:write / users:read.email (Settings → Integrations → Slack). Off keeps the Slack channel disabled. Messages post as the Pulse bot."
+          active={features.slackSend}
+          onToggle={() => toggleFeature('slackSend')}
+        />
+      </SettingsCard>
+
       {/* Feature categories */}
       {Object.entries(FEATURE_CATEGORIES).map(([catKey, cat]) => (
         <SettingsCard key={catKey} className="space-y-4">

@@ -8,6 +8,8 @@
 // ============================================
 
 import { Contact, AppView } from '../../../../types';
+import { SlackService } from '../../../../services/slackService';
+import { getSlackBotToken } from '../../../../lib/slackToken';
 
 /**
  * Open the email composer pre-addressed to a contact. Mirrors
@@ -37,4 +39,32 @@ export function callContact(contact: Contact): void {
   const dialable = contact.phone.replace(/[^\d+]/g, '');
   if (!dialable) return;
   window.location.href = `tel:${dialable}`;
+}
+
+/**
+ * Resolve a contact's email to a Slack user id (Phase 8 identity). Returns the
+ * id, or null when no Slack member matches (caller surfaces a manual hint).
+ * Throws 'NO_TOKEN' when no bot token is connected, or the Slack error
+ * (e.g. missing_scope) otherwise. Routes through the existing /api/slack/proxy.
+ */
+export async function resolveSlackUser(contact: Contact): Promise<string | null> {
+  const token = getSlackBotToken();
+  if (!token) throw new Error('NO_TOKEN');
+  if (!contact.email) return null;
+  return new SlackService(token).lookupUserByEmail(contact.email);
+}
+
+/**
+ * Send a plain-text Slack DM to a linked contact (Phase 8). Requires a connected
+ * bot token + a resolved contact.slackUserId. Posts as the Pulse bot app (xoxb-),
+ * not the operator. Throws 'NO_TOKEN' / 'NOT_LINKED' or the Slack error.
+ */
+export async function sendSlackDm(
+  contact: Contact,
+  text: string,
+): Promise<{ ts: string; channel: string }> {
+  const token = getSlackBotToken();
+  if (!token) throw new Error('NO_TOKEN');
+  if (!contact.slackUserId) throw new Error('NOT_LINKED');
+  return new SlackService(token).sendMessage(contact.slackUserId, text);
 }

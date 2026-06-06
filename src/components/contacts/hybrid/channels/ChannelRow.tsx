@@ -33,6 +33,8 @@ export interface ChannelRowProps {
   slackLinked?: boolean;
   /** Phase 8: Slack send is wired. Until then a shown Slack button is disabled. */
   slackSendEnabled?: boolean;
+  /** Phase 8: open the inline Slack DM composer (fired only when the Slack button is enabled). */
+  onSlack?: (contact: Contact) => void;
   /** Horizontal pill layout (list rows / rail) vs. the default vertical grid. */
   compact?: boolean;
   className?: string;
@@ -45,6 +47,7 @@ export const ChannelRow: React.FC<ChannelRowProps> = ({
   onNote,
   slackLinked,
   slackSendEnabled,
+  onSlack,
   compact = false,
   className = '',
 }) => {
@@ -67,7 +70,8 @@ export const ChannelRow: React.FC<ChannelRowProps> = ({
         onNote?.(contact);
         break;
       case 'slack':
-        // disabled until Phase 8 wires send — no handler
+        // Phase 8: an enabled Slack button opens the inline DM composer (FocusColumn).
+        onSlack?.(contact);
         break;
     }
   };

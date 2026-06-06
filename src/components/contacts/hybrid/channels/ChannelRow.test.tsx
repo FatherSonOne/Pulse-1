@@ -66,4 +66,23 @@ describe('ChannelRow (Phase 1 acceptance)', () => {
     const noteBtn = screen.getByText('Note').closest('button') as HTMLButtonElement;
     expect(noteBtn.disabled).toBe(true);
   });
+
+  it('a slack-send-enabled contact fires onSlack on click (Phase 8)', () => {
+    const onSlack = vi.fn();
+    render(
+      <ChannelRow
+        contact={make({ phone: '+1 555 0100', slackUserId: 'U1' })}
+        emailEnabled
+        slackLinked
+        slackSendEnabled
+        onAction={vi.fn()}
+        onNote={vi.fn()}
+        onSlack={onSlack}
+      />,
+    );
+    const slackBtn = screen.getByText('Slack').closest('button') as HTMLButtonElement;
+    expect(slackBtn.disabled).toBe(false);
+    slackBtn.click();
+    expect(onSlack).toHaveBeenCalledTimes(1);
+  });
 });

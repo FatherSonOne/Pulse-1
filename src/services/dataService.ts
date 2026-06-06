@@ -54,6 +54,7 @@ export interface DBContact {
   geo_accuracy?: 'none' | 'approximate' | 'precise';
   location_updated_at?: string;
   archived_at?: string | null;
+  slack_user_id?: string | null;
 }
 
 export interface GetContactsOptions {
@@ -194,6 +195,7 @@ function dbToContact(db: DBContact): Contact {
     workAddress: db.work_address,
     geoAccuracy: db.geo_accuracy,
     locationUpdatedAt: db.location_updated_at ? new Date(db.location_updated_at) : undefined,
+    slackUserId: db.slack_user_id ?? undefined,
   };
 }
 
@@ -224,6 +226,7 @@ function contactToDb(contact: Partial<Contact>, userId: string): Partial<DBConta
     work_address: contact.workAddress,
     geo_accuracy: contact.geoAccuracy,
     location_updated_at: contact.locationUpdatedAt?.toISOString(),
+    slack_user_id: contact.slackUserId,
   };
 }
 
