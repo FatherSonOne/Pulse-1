@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Slack Send + Identity — Playground (contactsHybrid Phase 8)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: { extend: { fontFamily: {
+      sans: ['Inter', 'system-ui', 'sans-serif'],
+      mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+    } } },
+  };
+</script>
+<style>
+  /* ─── Pulse design tokens (mirror src/styles/pulse-tokens.css + App.css coral) ─── */
+  :root {
+    --pulse-rose: #f43f5e;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-bright: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.10);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.25);
+    --pulse-canvas: #f8f8f8;
+    --pulse-canvas-soft: #f2f2f2;
+    --pulse-surface: #ffffff;
+    --pulse-surface-raised: #f2f2f2;
+    --pulse-border: rgba(0, 0, 0, 0.08);
+    --pulse-border-strong: rgba(0, 0, 0, 0.16);
+    --pulse-ink: #0f0f0f;
+    --pulse-ink-2: #52525b;
+    --pulse-ink-3: #6b7280;
+    --pulse-coral: var(--pulse-rose);              /* coral === rose; AI-only surfaces */
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 35%, black 65%);
+    --pulse-tone-positive: #22c55e;
+    --pulse-tone-positive-soft: rgba(34, 197, 94, 0.10);
+    --pulse-tone-warning: #f97316;
+    --pulse-tone-warning-soft: rgba(249, 115, 22, 0.10);
+    --pulse-tone-overdue: #ef4444;
+    --pulse-tone-overdue-soft: rgba(239, 68, 68, 0.10);
+    --pulse-font: 'Inter', system-ui, sans-serif;
+    --pulse-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --pulse-shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --pulse-shadow-main: 0 6px 24px rgba(0, 0, 0, 0.10);
+    /* Channel marker palette — identical to _design-playground/contacts-redesign.html */
+    --slack-aubergine: #4A154B;
+    --ch-slack: #6d28d9;     /* Slack PLUM — channel MARKER only, never chrome */
+    --ch-slack-soft: rgba(109, 40, 217, 0.10);
+  }
+  html[data-theme='dark'] {
+    --pulse-canvas: #000000;
+    --pulse-canvas-soft: #080808;
+    --pulse-surface: rgba(255, 255, 255, 0.03);
+    --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+    --pulse-border: rgba(255, 255, 255, 0.06);
+    --pulse-border-strong: rgba(255, 255, 255, 0.10);
+    --pulse-ink: #fafafa;
+    --pulse-ink-2: #b4b4b8;
+    --pulse-ink-3: #a1a1aa;
+    --pulse-coral-fg: color-mix(in oklab, var(--pulse-rose) 60%, white 40%);
+    --pulse-rose: #fb7185;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.14);
+    --pulse-shadow-main: 0 10px 40px rgba(0, 0, 0, 0.5);
+    --ch-slack: #c4b5fd;     /* lifted plum on dark */
+    --ch-slack-soft: rgba(196, 181, 253, 0.14);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--pulse-font);
+    background: var(--pulse-canvas);
+    color: var(--pulse-ink);
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; margin: 0;
+  }
+  .mono { font-family: var(--pulse-mono); font-feature-settings: 'tnum' 1; }
+  .surface { background: var(--pulse-surface); }
+  .raised { background: var(--pulse-surface-raised); }
+  .ink2 { color: var(--pulse-ink-2); }
+  .ink3 { color: var(--pulse-ink-3); }
+  .bd { border-color: var(--pulse-border); }
+  .bds { border-color: var(--pulse-border-strong); }
+  *::-webkit-scrollbar { width: 7px; height: 7px; }
+  *::-webkit-scrollbar-thumb { background: var(--pulse-border-strong); border-radius: 4px; }
+
+  /* Primary CTA — rose (DESIGN.md §5). NEVER coral (coral === AI only). */
+  .btn-primary {
+    background: var(--pulse-rose); color: #fff; border: none; cursor: pointer;
+    transition: transform .2s cubic-bezier(.16,1,.3,1), box-shadow .2s, background .2s, opacity .2s;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--pulse-rose-deep); transform: translateY(-1px); box-shadow: 0 0 0 1px var(--pulse-rose), 0 4px 24px var(--pulse-rose-glow); }
+  .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+  html[data-theme='dark'] .btn-primary { color: #1a0006; }
+  .btn-ghost { background: var(--pulse-surface-raised); border: 1px solid var(--pulse-border); color: var(--pulse-ink-2); cursor: pointer; }
+
+  /* Slack MARKER — plum used ONLY for the brand glyph + identity chip. */
+  .slack-glyph { color: var(--ch-slack); }
+  .slack-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 7px; border-radius: 7px;
+    background: var(--ch-slack-soft); color: var(--ch-slack);
+    font-family: var(--pulse-mono); font-size: 11px; font-weight: 600; line-height: 1;
+  }
+  .slack-chip svg { width: 13px; height: 13px; }
+
+  /* Channel buttons — the real ChannelRow primitive (neutral; coral-fg hover, per ChannelRow.tsx:96). */
+  .ch-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border-radius: 12px;
+    background: var(--pulse-surface-raised); border: 1px solid var(--pulse-border); color: var(--pulse-ink-2);
+    font-family: var(--pulse-mono); font-size: 10px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase;
+    transition: all .15s cubic-bezier(.16,1,.3,1); cursor: pointer; min-width: 0;
+  }
+  .ch-btn:hover:not(.inert) { transform: translateY(-1px); color: var(--pulse-coral-fg); border-color: var(--pulse-rose-soft); background: var(--pulse-rose-soft); }
+  .ch-btn.inert { opacity: .40; cursor: not-allowed; }
+  .ch-btn svg { width: 18px; height: 18px; }
+  .ch-btn.is-slack svg { color: var(--ch-slack); }   /* marker tint stays even at rest */
+  .ch-btn.active { color: var(--pulse-coral-fg); border-color: var(--pulse-rose-soft); background: var(--pulse-rose-soft); }
+
+  .seg { transition: all .15s; cursor: pointer; }
+  .seg[aria-selected="true"] { background: var(--pulse-surface); color: var(--pulse-ink); box-shadow: var(--pulse-shadow-sm); }
+  .seg[aria-selected="false"] { color: var(--pulse-ink-3); }
+
+  .composer-box { background: var(--pulse-surface); border: 1px solid var(--pulse-border-strong); border-radius: 12px; }
+  .composer-text { color: var(--pulse-ink); font-size: 14px; line-height: 1.5; }
+  .caret { display:inline-block; width:1.5px; height:1.05em; background: var(--pulse-rose); margin-left:1px; vertical-align:-2px; animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px);} to {opacity:1; transform: translateY(0);} }
+  .fade-up { animation: fadeUp .26s cubic-bezier(.16,1,.3,1); }
+  @keyframes slideR { from { opacity:0; transform: translateX(18px);} to {opacity:1; transform: translateX(0);} }
+  .slide-r { animation: slideR .32s cubic-bezier(.16,1,.3,1); }
+  @keyframes pop { from { opacity:0; transform: scale(.96) translateY(4px);} to {opacity:1; transform: scale(1) translateY(0);} }
+  .pop { animation: pop .18s cubic-bezier(.16,1,.3,1); transform-origin: top left; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin .8s linear infinite; }
+  @media (prefers-reduced-motion: reduce) { .fade-up,.slide-r,.pop,.spin,.caret { animation: none; } }
+
+  .card { background: var(--pulse-surface); border: 1px solid var(--pulse-border); border-radius: 14px; }
+  /* reserve vertical room for the absolutely-positioned B/C panels (A is inline, needs none) */
+  #stageWrap.has-overlay { min-height: 392px; }
+  .hint { font-size: 11px; color: var(--pulse-ink-3); }
+  [hidden] { display: none !important; }
+
+  /* send-demo: .sent on a stage hides the composer, shows the confirmation */
+  .stage .on-sent { display: none; }
+  .stage.sent .pre-send { display: none; }
+  .stage.sent .on-sent { display: flex; }
+</style>
+</head>
+<body>
+<!-- ════════════════════ TOOLBAR ════════════════════ -->
+<header class="sticky top-0 z-30 surface border-b bd" style="backdrop-filter: blur(8px);">
+  <div class="max-w-[1180px] mx-auto px-5 py-3 flex items-center gap-4 flex-wrap">
+    <div class="flex items-center gap-2.5">
+      <span class="slack-glyph">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M5.04 15.16a2.52 2.52 0 1 1-2.52-2.52h2.52v2.52zm1.27 0a2.52 2.52 0 0 1 5.04 0v6.31a2.52 2.52 0 0 1-5.04 0v-6.31zM8.83 5.04A2.52 2.52 0 1 1 11.35 2.52v2.52H8.83zm0 1.27a2.52 2.52 0 0 1 0 5.04H2.52a2.52 2.52 0 0 1 0-5.04h6.31zM18.96 8.83a2.52 2.52 0 1 1 2.52 2.52h-2.52V8.83zm-1.27 0a2.52 2.52 0 0 1-5.04 0V2.52a2.52 2.52 0 0 1 5.04 0v6.31zM15.16 18.96a2.52 2.52 0 1 1-2.52 2.52v-2.52h2.52zm0-1.27a2.52 2.52 0 0 1 0-5.04h6.31a2.52 2.52 0 0 1 0 5.04h-6.31z"/></svg>
+      </span>
+      <div>
+        <h1 class="text-[15px] font-semibold leading-none">Slack · Send + Identity</h1>
+        <p class="hint mt-1 mono">contactsHybrid · Phase 8 · 3 directions</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-1 raised rounded-xl p-1 ml-auto" role="tablist" aria-label="Direction">
+      <button class="seg px-3.5 py-1.5 rounded-lg text-[12px] font-semibold mono" role="tab" aria-selected="true"  data-dir="A">A · Inline</button>
+      <button class="seg px-3.5 py-1.5 rounded-lg text-[12px] font-semibold mono" role="tab" aria-selected="false" data-dir="B">B · Sidecar</button>
+      <button class="seg px-3.5 py-1.5 rounded-lg text-[12px] font-semibold mono" role="tab" aria-selected="false" data-dir="C">C · Popover</button>
+    </div>
+
+    <button id="themeBtn" class="btn-ghost px-3 py-1.5 rounded-lg text-[12px] font-semibold mono" title="Toggle theme">◐ Theme</button>
+  </div>
+  <div class="max-w-[1180px] mx-auto px-5 pb-3 flex items-center gap-4 flex-wrap text-[11px] mono ink3">
+    <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:var(--ch-slack)"></span> Slack plum = channel marker only</span>
+    <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:var(--pulse-rose)"></span> Rose = Send CTA</span>
+    <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:var(--pulse-coral-fg)"></span> Coral = AI only → <b class="ink2">absent here</b> (send is human)</span>
+    <span class="ml-auto">Posts <b class="ink2">as the Pulse bot</b> (xoxb-) — OAuth send-as-you = v1.1</span>
+  </div>
+</header>
+
+<main class="max-w-[1180px] mx-auto px-5 py-6 grid gap-7">
+
+  <!-- ════════════════════ DIRECTION STAGE ════════════════════ -->
+  <section>
+    <div class="mb-3">
+      <h2 id="dirTitle" class="text-[18px] font-semibold">Direction A — Inline composer</h2>
+      <p id="dirSub" class="hint mt-1">The Slack DM composes in place, beneath the channel row. The act stays local to the contact — no surface to navigate to. <b class="ink2">Recommended (scope D-E).</b></p>
+    </div>
+
+    <!-- faux Focus column (contact detail middle pane), external contact -->
+    <div id="stageWrap" class="relative" style="max-width:560px">
+      <div class="card overflow-hidden">
+        <!-- header -->
+        <div class="p-5 flex items-center gap-3.5 border-b bd">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-[17px]" style="background:linear-gradient(135deg,#7c3aed,#db2777)">PM</div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h3 class="text-[16px] font-semibold truncate">Priya Mehta</h3>
+              <span class="text-[10px] mono px-1.5 py-0.5 rounded raised ink2 border bd">EXTERNAL</span>
+            </div>
+            <p class="ink2 text-[13px] truncate">Head of Ops · Acme Logistics</p>
+            <p class="ink3 text-[12px] mono truncate">priya@acme.co</p>
+          </div>
+        </div>
+        <!-- channel row -->
+        <div class="px-5 pt-4 pb-1">
+          <p class="hint mono uppercase tracking-wider mb-2.5" style="letter-spacing:.12em">Your next touch</p>
+          <div class="grid gap-2" style="grid-template-columns: repeat(4, minmax(0,1fr));">
+            <button class="ch-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Email</button>
+            <button id="slackChBtn" class="ch-btn is-slack" aria-expanded="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5.04 15.16a2.52 2.52 0 1 1-2.52-2.52h2.52v2.52zm1.27 0a2.52 2.52 0 0 1 5.04 0v6.31a2.52 2.52 0 0 1-5.04 0v-6.31zM8.83 5.04A2.52 2.52 0 1 1 11.35 2.52v2.52H8.83zm0 1.27a2.52 2.52 0 0 1 0 5.04H2.52a2.52 2.52 0 0 1 0-5.04h6.31zM18.96 8.83a2.52 2.52 0 1 1 2.52 2.52h-2.52V8.83zm-1.27 0a2.52 2.52 0 0 1-5.04 0V2.52a2.52 2.52 0 0 1 5.04 0v6.31zM15.16 18.96a2.52 2.52 0 1 1-2.52 2.52v-2.52h2.52zm0-1.27a2.52 2.52 0 0 1 0-5.04h6.31a2.52 2.52 0 0 1 0 5.04h-6.31z"/></svg>
+              Slack</button>
+            <button class="ch-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 2 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.8 12.8 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call</button>
+            <button class="ch-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Note</button>
+          </div>
+        </div>
+
+        <!-- DIRECTION A — inline composer -->
+        <div id="dirA" class="px-5 pb-5 pt-3">
+          <div class="stage rounded-2xl border bd p-3.5 fade-up" style="background:var(--pulse-surface-raised)">
+            <div class="flex items-center gap-2 mb-2.5">
+              <span class="slack-chip"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 15a2 2 0 1 1-2-2h2v2zm3-9a2 2 0 1 1 2-2v2H9zm0 1a2 2 0 0 1 0 4H4a2 2 0 0 1 0-4h5zm9 2a2 2 0 1 1 2 2h-2V9z"/></svg>@priya.mehta</span>
+              <span class="ink3 text-[12px]">Acme workspace</span>
+            </div>
+            <div class="pre-send composer-box p-3">
+              <div class="composer-text">Hey Priya — quick one about the Q3 route plan.<span class="caret"></span></div>
+              <div class="flex items-center justify-between mt-3 pt-2.5 border-t bd">
+                <span class="hint">Posts as the Pulse bot</span>
+                <button class="send btn-primary px-4 py-1.5 rounded-lg text-[12px] font-semibold">Send</button>
+              </div>
+            </div>
+            <div class="on-sent rounded-lg p-3 items-center gap-2" style="background:var(--pulse-tone-positive-soft)">
+              <span style="color:var(--pulse-tone-positive)">✓</span><span class="text-[13px] ink2">Sent on Slack · <span class="ink3">via Pulse</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIRECTION B — sidecar -->
+      <aside id="dirB" hidden class="absolute top-0 right-0 h-full w-[320px] surface border-l bds slide-r" style="box-shadow:var(--pulse-shadow-main); border-top-right-radius:14px; border-bottom-right-radius:14px;">
+        <div class="p-4 border-b bd flex items-center gap-2">
+          <span class="slack-chip"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 15a2 2 0 1 1-2-2h2v2zm3-9a2 2 0 1 1 2-2v2H9zm0 1a2 2 0 0 1 0 4H4a2 2 0 0 1 0-4h5zm9 2a2 2 0 1 1 2 2h-2V9z"/></svg>@priya.mehta</span>
+          <span class="ink3 text-[11px] mono">Acme</span>
+          <span class="ml-auto ink3 text-[18px] leading-none">×</span>
+        </div>
+        <div class="stage p-4 grid gap-3">
+          <div class="hint mono uppercase tracking-wider" style="letter-spacing:.12em">Recent on Slack</div>
+          <div class="raised rounded-lg p-2.5 text-[12px] ink2">"Thanks — got the manifest." <span class="ink3">· 2d</span></div>
+          <div class="pre-send composer-box p-3 mt-1">
+            <div class="composer-text">Hey Priya — quick one about the Q3 route plan.<span class="caret"></span></div>
+            <div class="flex items-center justify-between mt-3 pt-2.5 border-t bd">
+              <span class="hint">as the Pulse bot</span>
+              <button class="send btn-primary px-3.5 py-1.5 rounded-lg text-[12px] font-semibold">Send</button>
+            </div>
+          </div>
+          <div class="on-sent rounded-lg p-3 items-center gap-2 mt-1" style="background:var(--pulse-tone-positive-soft)">
+            <span style="color:var(--pulse-tone-positive)">✓</span><span class="text-[13px] ink2">Sent · <span class="ink3">via Pulse</span></span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- DIRECTION C — popover anchored under the Slack button -->
+      <div id="dirC" hidden class="absolute z-20 pop" style="top:188px; left:150px;">
+        <div class="stage w-[280px] surface border bds rounded-2xl p-3.5" style="box-shadow:var(--pulse-shadow-main)">
+          <div class="flex items-center gap-2 mb-2.5">
+            <span class="slack-chip"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 15a2 2 0 1 1-2-2h2v2zm3-9a2 2 0 1 1 2-2v2H9zm0 1a2 2 0 0 1 0 4H4a2 2 0 0 1 0-4h5zm9 2a2 2 0 1 1 2 2h-2V9z"/></svg>@priya.mehta</span>
+            <span class="ml-auto ink3 text-[16px] leading-none">×</span>
+          </div>
+          <div class="pre-send composer-box p-2.5">
+            <div class="composer-text text-[13px]">Quick one about Q3.<span class="caret"></span></div>
+            <div class="flex items-center justify-between mt-2.5 pt-2 border-t bd">
+              <span class="hint">via Pulse</span>
+              <button class="send btn-primary px-3 py-1 rounded-lg text-[12px] font-semibold">Send</button>
+            </div>
+          </div>
+          <div class="on-sent rounded-lg p-2.5 items-center gap-2" style="background:var(--pulse-tone-positive-soft)">
+            <span style="color:var(--pulse-tone-positive)">✓</span><span class="text-[12px] ink2">Sent · via Pulse</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="hint mt-3">Click <b class="ink2">Send</b> in any direction to see the sent confirmation · the Slack channel button toggles the surface.</p>
+  </section>
+
+  <!-- ════════════════════ STATE MATRIX (§9, direction-independent) ════════════════════ -->
+  <section>
+    <h2 class="text-[18px] font-semibold mb-1">Every state (§9 coverage)</h2>
+    <p class="hint mb-4">What the build must handle regardless of the chosen direction. Hover the channel buttons to feel the real ChannelRow interaction.</p>
+    <div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+
+      <div class="card p-4">
+        <p class="hint mono uppercase tracking-wider mb-3" style="letter-spacing:.12em">Channel button · 3 states</p>
+        <div class="grid gap-3.5">
+          <div>
+            <div class="grid gap-2" style="grid-template-columns: repeat(3, minmax(0,1fr));">
+              <button class="ch-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Email</button>
+              <button class="ch-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 2 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.8 12.8 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call</button>
+              <button class="ch-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Note</button>
+            </div>
+            <p class="hint mt-2">① <b class="ink2">Not linked</b> → Slack absent (no dead button)</p>
+          </div>
+          <div>
+            <div class="grid gap-2" style="grid-template-columns: repeat(2, minmax(0,1fr));">
+              <button class="ch-btn is-slack inert" title="Slack send arrives in a later phase">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 15a2 2 0 1 1-2-2h2v2zm3-9a2 2 0 1 1 2-2v2H9zm0 1a2 2 0 0 1 0 4H4a2 2 0 0 1 0-4h5zm9 2a2 2 0 1 1 2 2h-2V9zm-1 0a2 2 0 0 1-4 0V4a2 2 0 0 1 4 0v5z"/></svg>Link Slack</button>
+              <button class="ch-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Note</button>
+            </div>
+            <p class="hint mt-2">② <b class="ink2">Linked, flag OFF</b> → disabled "Link Slack"</p>
+          </div>
+          <div>
+            <div class="grid gap-2" style="grid-template-columns: repeat(2, minmax(0,1fr));">
+              <button class="ch-btn is-slack"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 15a2 2 0 1 1-2-2h2v2zm3-9a2 2 0 1 1 2-2v2H9zm0 1a2 2 0 0 1 0 4H4a2 2 0 0 1 0-4h5zm9 2a2 2 0 1 1 2 2h-2V9zm-1 0a2 2 0 0 1-4 0V4a2 2 0 0 1 4 0v5z"/></svg>Slack</button>
+              <button class="ch-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Note</button>
+            </div>
+            <p class="hint mt-2">③ <b class="ink2">Linked, flag ON</b> → live "Slack"</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-4">
+        <p class="hint mono uppercase tracking-wider mb-3" style="letter-spacing:.12em">"Link Slack" resolver · email → id</p>
+        <div class="grid gap-2.5">
+          <div class="raised rounded-lg px-3 py-2.5 flex items-center gap-2 text-[13px]"><span class="slack-glyph">●</span> <span class="ink2">Idle</span> <span class="ink3">— "Link this contact"</span></div>
+          <div class="raised rounded-lg px-3 py-2.5 flex items-center gap-2 text-[13px]"><svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ch-slack)" stroke-width="3"><path d="M21 12a9 9 0 1 1-6.2-8.5" stroke-linecap="round"/></svg> <span class="ink2">Looking up</span> <span class="mono ink3">priya@acme.co…</span></div>
+          <div class="rounded-lg px-3 py-2.5 flex items-center gap-2 text-[13px]" style="background:var(--ch-slack-soft)"><span class="slack-chip"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 15a2 2 0 1 1-2-2h2v2zm3-9a2 2 0 1 1 2-2v2H9z"/></svg>@priya.mehta</span> <span class="ink2">Linked</span></div>
+          <div class="rounded-lg px-3 py-2.5 text-[13px]" style="background:var(--pulse-tone-warning-soft)"><span style="color:var(--pulse-tone-warning)">⚠ No match</span> <span class="ink2">— not on Slack.</span> <span class="ink3">Enter @handle manually.</span></div>
+          <div class="rounded-lg px-3 py-2.5 text-[13px]" style="background:var(--pulse-tone-overdue-soft)"><span style="color:var(--pulse-tone-overdue)">⚠ missing_scope</span> <span class="ink2">— reinstall w/ <span class="mono">users:read.email</span></span></div>
+        </div>
+      </div>
+
+      <div class="card p-4">
+        <p class="hint mono uppercase tracking-wider mb-3" style="letter-spacing:.12em">DM composer · send states</p>
+        <div class="grid gap-2.5">
+          <div class="rounded-lg border bd p-2.5"><div class="ink3 text-[13px]">Message Priya on Slack…</div><div class="hint mt-2 text-right">empty → Send disabled</div></div>
+          <div class="rounded-lg border bds p-2.5"><div class="text-[13px]">Hey Priya — quick one.<span class="caret"></span></div><div class="hint mt-2 text-right">typing → Send enabled</div></div>
+          <div class="rounded-lg border bd p-2.5 flex items-center justify-between"><span class="text-[13px] ink2">Sending…</span><svg class="spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--pulse-rose)" stroke-width="3"><path d="M21 12a9 9 0 1 1-6.2-8.5" stroke-linecap="round"/></svg></div>
+          <div class="rounded-lg p-2.5 flex items-center gap-2" style="background:var(--pulse-tone-positive-soft)"><span style="color:var(--pulse-tone-positive)">✓</span><span class="text-[13px] ink2">Sent on Slack · <span class="ink3">via Pulse</span></span></div>
+          <div class="rounded-lg p-2.5" style="background:var(--pulse-tone-overdue-soft)"><span style="color:var(--pulse-tone-overdue)" class="text-[13px]">Couldn't send: channel_not_found.</span> <span class="hint">Kept — retry</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════ SETTINGS SCOPE PANEL ════════════════════ -->
+  <section>
+    <h2 class="text-[18px] font-semibold mb-1">Settings → Integrations → Slack</h2>
+    <p class="hint mb-4">Send needs three scopes the read-only token never had — the card surfaces them + a re-install prompt (existing tokens fail with <span class="mono">missing_scope</span> until reinstalled).</p>
+    <div class="card p-5" style="max-width:640px">
+      <div class="flex items-center gap-2.5 mb-4">
+        <span class="slack-glyph"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M5.04 15.16a2.52 2.52 0 1 1-2.52-2.52h2.52v2.52zm1.27 0a2.52 2.52 0 0 1 5.04 0v6.31a2.52 2.52 0 0 1-5.04 0v-6.31zM8.83 5.04A2.52 2.52 0 1 1 11.35 2.52v2.52H8.83zm0 1.27a2.52 2.52 0 0 1 0 5.04H2.52a2.52 2.52 0 0 1 0-5.04h6.31zM18.96 8.83a2.52 2.52 0 1 1 2.52 2.52h-2.52V8.83zm-1.27 0a2.52 2.52 0 0 1-5.04 0V2.52a2.52 2.52 0 0 1 5.04 0v6.31zM15.16 18.96a2.52 2.52 0 1 1-2.52 2.52v-2.52h2.52zm0-1.27a2.52 2.52 0 0 1 0-5.04h6.31a2.52 2.52 0 0 1 0 5.04h-6.31z"/></svg></span>
+        <div>
+          <div class="font-semibold text-[14px]">Slack</div>
+          <div class="hint">Connected · <span style="color:var(--pulse-tone-warning)">read-only token</span> — sending disabled</div>
+        </div>
+        <button class="btn-primary ml-auto px-4 py-2 rounded-lg text-[13px] font-semibold">Reinstall for send</button>
+      </div>
+      <p class="hint mono uppercase tracking-wider mb-2" style="letter-spacing:.12em">Required scopes</p>
+      <div class="flex flex-wrap gap-1.5 text-[11px] mono">
+        <span class="px-2 py-1 rounded raised ink2 border bd">channels:history</span>
+        <span class="px-2 py-1 rounded raised ink2 border bd">channels:read</span>
+        <span class="px-2 py-1 rounded raised ink2 border bd">users:read</span>
+        <span class="px-2 py-1 rounded raised ink2 border bd">im:history</span>
+        <span class="px-2 py-1 rounded" style="background:var(--ch-slack-soft);color:var(--ch-slack)">+ chat:write</span>
+        <span class="px-2 py-1 rounded" style="background:var(--ch-slack-soft);color:var(--ch-slack)">+ im:write</span>
+        <span class="px-2 py-1 rounded" style="background:var(--ch-slack-soft);color:var(--ch-slack)">+ users:read.email</span>
+      </div>
+      <p class="hint mt-3">The three plum scopes are new for Phase 8 (send + identity). Your bot token is bring-your-own and stays on this device (<span class="mono">localStorage</span>); messages post <b class="ink2">as the Pulse app</b>.</p>
+    </div>
+  </section>
+
+  <footer class="hint pt-1 pb-8 mono">Spec: docs/SLACK_PHASE8_SCOPE_2026-06-05.md · Build seam: channelsFor.ts / ChannelRow.tsx (FocusColumn) · server.js /api/slack/proxy</footer>
+</main>
+
+<script>
+  // theme
+  const html = document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+  });
+
+  // direction tabs (show/hide pre-rendered stages; no innerHTML)
+  const DIR = {
+    A: ['Direction A — Inline composer', 'The Slack DM composes in place, beneath the channel row. The act stays local to the contact — no surface to navigate to. Recommended (scope D-E).'],
+    B: ['Direction B — Sidecar panel', 'A dedicated Slack panel slides in from the right (mirrors the email-reply sidecar). More room + inbound context, but a separate surface alongside the detail.'],
+    C: ['Direction C — Command popover', 'A compact popover anchored to the Slack button — a fast, dismissable one-shot DM. Lowest commitment; cramped for longer messages.'],
+  };
+  const stages = { A: document.getElementById('dirA'), B: document.getElementById('dirB'), C: document.getElementById('dirC') };
+  function setDir(d) {
+    document.querySelectorAll('.seg[data-dir]').forEach(s => s.setAttribute('aria-selected', String(s.dataset.dir === d)));
+    document.getElementById('dirTitle').textContent = DIR[d][0];
+    document.getElementById('dirSub').textContent = DIR[d][1];
+    ['A','B','C'].forEach(k => {
+      stages[k].hidden = (k !== d);
+      stages[k].querySelector('.stage')?.classList.remove('sent'); // reset send demo
+    });
+    document.getElementById('stageWrap').classList.toggle('has-overlay', d !== 'A');
+  }
+  document.querySelectorAll('.seg[data-dir]').forEach(s => s.addEventListener('click', () => setDir(s.dataset.dir)));
+
+  // send demo — toggle .sent on the active stage (class only, no innerHTML)
+  document.querySelectorAll('.send').forEach(btn => btn.addEventListener('click', () => {
+    const stage = btn.closest('.stage');
+    if (stage) stage.classList.add('sent');
+  }));
+
+  // slack channel button toggles the active surface visibility
+  const slackBtn = document.getElementById('slackChBtn');
+  slackBtn.addEventListener('click', () => {
+    const open = slackBtn.getAttribute('aria-expanded') !== 'true';
+    slackBtn.setAttribute('aria-expanded', String(open));
+    slackBtn.classList.toggle('active', open);
+    const cur = document.querySelector('.seg[aria-selected="true"]').dataset.dir;
+    stages[cur].hidden = !open;
+  });
+
+  setDir('A');
+</script>
+</body>
+</html>
