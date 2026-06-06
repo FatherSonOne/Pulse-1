@@ -268,6 +268,13 @@ export const FEATURE_CATEGORIES = {
       'smartReplies',
       'scheduledMessages'
     ] as (keyof FeatureFlags)[]
+  },
+  integrations: {
+    name: 'Integrations (Beta)',
+    description: 'Connect external services into Pulse. Off by default.',
+    features: [
+      'slackMessagesGrounding'
+    ] as (keyof FeatureFlags)[]
   }
   // voiceInput / aiComposer / toneAnalysis removed from this surface 2026-06-05:
   // their only consumer is the *classic* MessageInput composer (lines 104-106),
@@ -319,4 +326,5 @@ export const FEATURE_DESCRIPTIONS: Partial<Record<keyof FeatureFlags, string>> =
   toneAnalysis: "Analyze your draft's tone in the classic composer (Advanced Mode).",
   scheduledMessages: 'Schedule a message to send at a later time.',
   slackSend: 'Send a Slack DM to a linked contact from the People view (Phase 8).',
+  slackMessagesGrounding: 'Bring your Slack DMs into Messages: connect Slack to send as you and mirror 1:1 threads. Backend + inbound still rolling out.',
 };

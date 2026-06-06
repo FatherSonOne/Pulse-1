@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { User } from '../../../types';
 import { UnifiedMessage } from '../../../types/index';
 import { SlackService } from '../../../services/slackService';
 import { unifiedInboxDb } from '../../../services/unifiedInboxDb';
 import { getSlackBotToken, setSlackBotToken } from '../../../lib/slackToken';
+import { useFeatures } from '../../../contexts/FeatureContext';
+import {
+  getSlackUserConnectStatus,
+  startSlackUserConnect,
+  disconnectSlackUser,
+  type SlackUserConnectStatus,
+} from '../../../services/slackUserConnect';
 import {
   Info, Plug,
   Loader2, Download,
@@ -23,6 +30,33 @@ export const SlackIntegration: React.FC<SlackIntegrationProps> = ({ user, slackC
   const [slackTesting, setSlackTesting] = useState(false);
   const [slackStatus, setSlackStatus] = useState<{ success: boolean; workspace?: string; error?: string } | null>(null);
   const [slackMessages, setSlackMessages] = useState<UnifiedMessage[]>([]);
+
+  // Send-as-you (user OAuth) — gated behind slackMessagesGrounding. Distinct from
+  // the bot-token flow above. See src/services/slackUserConnect.ts.
+  const { features } = useFeatures();
+  const [userConn, setUserConn] = useState<SlackUserConnectStatus | null>(null);
+  const [userConnBusy, setUserConnBusy] = useState(false);
+
+  useEffect(() => {
+    if (!features.slackMessagesGrounding) return;
+    let cancelled = false;
+    getSlackUserConnectStatus().then((s) => { if (!cancelled) setUserConn(s); });
+    return () => { cancelled = true; };
+  }, [features.slackMessagesGrounding]);
+
+  const handleSlackUserConnect = async () => {
+    setUserConnBusy(true);
+    const ok = await startSlackUserConnect();
+    // On success the browser redirects to Slack; on failure, re-enable the button.
+    if (!ok) setUserConnBusy(false);
+  };
+
+  const handleSlackUserDisconnect = async () => {
+    setUserConnBusy(true);
+    await disconnectSlackUser();
+    setUserConn(await getSlackUserConnectStatus());
+    setUserConnBusy(false);
+  };
 
   const testSlackConnection = async () => {
     if (!slackToken) {
@@ -242,6 +276,48 @@ export const SlackIntegration: React.FC<SlackIntegrationProps> = ({ user, slackC
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {features.slackMessagesGrounding && (
+          <div className="mt-4 pt-4 border-t border-[var(--pulse-border)]">
+            <h5 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">
+              Send as you (user OAuth · Beta)
+            </h5>
+            <p className="text-xs text-zinc-500 mb-3">
+              Connect your own Slack so Pulse can DM <strong>as you</strong> (not the bot) and
+              mirror your 1:1 threads in Messages. Your user token is stored on the server, never in the browser.
+            </p>
+            {userConn && !userConn.configured && (
+              <div className="status-display error">
+                <i className="fa-solid fa-circle-xmark status-icon"></i>
+                <span>Slack OAuth isn't configured on the server yet.</span>
+              </div>
+            )}
+            {userConn?.connected ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="connected-badge">
+                  Connected{userConn.slackUserId ? ` · ${userConn.slackUserId}` : ''}
+                </span>
+                <button
+                  onClick={handleSlackUserDisconnect}
+                  disabled={userConnBusy}
+                  className="nothing-btn nothing-btn-secondary"
+                >
+                  {userConnBusy ? <Loader2 className="spinner-icon" /> : <Plug />}
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleSlackUserConnect}
+                disabled={userConnBusy || (userConn ? !userConn.configured : false)}
+                className="nothing-btn nothing-btn-primary"
+              >
+                {userConnBusy ? <Loader2 className="spinner-icon" /> : <Plug />}
+                Connect Slack
+              </button>
+            )}
           </div>
         )}
       </div>
