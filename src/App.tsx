@@ -76,7 +76,7 @@ import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider, useFeatures } from './contexts/FeatureContext';
 import { PulseAIProvider } from './contexts/PulseAIContext';
 import { CommandPaletteProvider, useRegisterCommands, Command } from './contexts/CommandPaletteContext';
-import { GlobalCommandBar } from './components/GlobalCommandPalette';
+import { CommandBarHeader } from './components/GlobalCommandPalette';
 import { GlobalQuickActions } from './components/GlobalQuickActions';
 import KeyboardChordsLayer from './components/KeyboardChordsLayer';
 import CaptureModal from './components/Capture/CaptureModal';
@@ -243,9 +243,9 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   const { features } = useFeatures();
 
   // Note: ⌘K is dispatched as pulse:command-palette-open by App's keydown
-  // handler and consumed directly by the command surface (the GlobalCommandBar
-  // pill, or the Dashboard hero bar on Dashboard). The registrar no longer
-  // bridges it — the centered modal it used to open was retired in Phase 5.
+  // handler and consumed directly by the command surface (the persistent
+  // CommandBarHeader, which focuses its input on the event — Phase 6). The
+  // registrar no longer bridges it — the centered modal was retired in Phase 5.
 
   const navCommands = useMemo<Command[]>(() => {
     const navDestinations: Array<{
@@ -1468,13 +1468,6 @@ const App: React.FC = () => {
           single Toaster serves the whole app. */}
       <Toaster position="top-right" gutter={8} />
 
-      {/* Global command surface — the command drawer, opened by ⌘K / the sidebar
-          launcher / the mobile button / the g-/ chord (Phase 5: the centered modal
-          was retired). Renders nothing at rest. Sections register their commands
-          via useRegisterCommands so the palette aggregates Pulse-wide and
-          section-specific actions. Suppressed on the Dashboard, which keeps its
-          own hero command bar and handles ⌘K itself. */}
-      <GlobalCommandBar suppressed={view === AppView.DASHBOARD} />
       {/* Global quick-actions FAB — floats on every view, fires real actions
           (Phase 5b). Reuses App's intent handlers; gates the email action on
           emailEnabled internally. */}
@@ -1613,8 +1606,12 @@ const App: React.FC = () => {
       />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden relative transition-colors duration-500 w-full safe-area-bottom pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
-        <div className={`h-full w-full flex flex-col ${view === AppView.MESSAGES || view === AppView.CALENDAR ? 'overflow-hidden' : 'overflow-auto mobile-scroll p-2 sm:p-3 md:p-4 lg:p-6'}`}>
+      <main className="flex-1 overflow-hidden relative flex flex-col transition-colors duration-500 w-full safe-area-bottom pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
+        {/* Persistent global command bar (Phase 6) — pinned above the per-view
+            scroll area on every view, so it's outside the overflow-hidden
+            Messages/Calendar panes and its dropdown is never clipped. */}
+        <CommandBarHeader />
+        <div className={`flex-1 min-h-0 w-full flex flex-col ${view === AppView.MESSAGES || view === AppView.CALENDAR ? 'overflow-hidden' : 'overflow-auto mobile-scroll p-2 sm:p-3 md:p-4 lg:p-6'}`}>
           <div className={`w-full ${view === AppView.MESSAGES || view === AppView.CALENDAR ? 'h-full min-h-0 flex flex-col' : 'min-h-full max-w-[1600px] mx-auto flex flex-col'} animate-fade-in`}>
             {renderContent()}
           </div>

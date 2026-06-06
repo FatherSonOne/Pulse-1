@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom';
 import toast from 'react-hot-toast';
 import { User, AppView, BatchedNotification, CalendarEvent, Task, Thread, Contact } from '../types';
 import { generateDailyBriefing, generateThinkingResponse } from '../services/geminiService';
-import { InlineCommandPalette } from './GlobalCommandPalette';
 import { dataService } from '../services/dataService';
 import { useWorkspaceData, useWorkspacePermissions } from '../contexts/WorkspaceContext';
 import { dailyBriefingService, BriefingContext } from '../services/dailyBriefingService';
@@ -464,10 +463,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
 
   // Keyboard shortcut overlay
   const [showKbdOverlay, setShowKbdOverlay] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
-  // The Dashboard's command-palette state moved to App-level CommandPaletteProvider.
-  // Cmd+K is owned by App.tsx; this view registers its own commands via
-  // useRegisterCommands and renders the InlineCommandPalette in the hero slot.
+  // The command surface is the global CommandBarHeader pinned at the top of every
+  // view (Phase 6). The Dashboard no longer renders its own hero bar; ⌘K and `/`
+  // dispatch pulse:command-palette-open, which the header focuses. This view still
+  // registers its own commands via useRegisterCommands.
 
   // Persistent activity badge — shows "SAVED hh:mm" briefly after any save.
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -754,10 +753,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
         return;
       }
 
-      // / focuses the dashboard inline palette
+      // / focuses the global command bar (the persistent header owns the surface).
       if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
-        searchInputRef.current?.focus();
+        window.dispatchEvent(new CustomEvent('pulse:command-palette-open'));
         return;
       }
 
@@ -781,23 +780,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
     const handler = () => setShowKbdOverlay(true);
     window.addEventListener('pulse:show-shortcuts', handler);
     return () => window.removeEventListener('pulse:show-shortcuts', handler);
-  }, []);
-
-  // ⌘K on the Dashboard focuses the hero command bar. The global pill is
-  // suppressed here (Dashboard owns its hero bar), and the centered modal that
-  // used to catch ⌘K was retired in Phase 5 — so the Dashboard listens for the
-  // canonical open event itself and focuses the inline palette input, which
-  // opens its dropdown on focus.
-  useEffect(() => {
-    const handler = () => {
-      requestAnimationFrame(() => searchInputRef.current?.focus());
-    };
-    window.addEventListener('pulse:command-palette-open', handler);
-    window.addEventListener('pulse:command-bar-focus', handler);
-    return () => {
-      window.removeEventListener('pulse:command-palette-open', handler);
-      window.removeEventListener('pulse:command-bar-focus', handler);
-    };
   }, []);
 
   // Real-time subscriptions
@@ -1282,12 +1264,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
 
       {/* Organization setup checklist — shown to admins while onboarding_step='named' */}
       {openSettings && <OrgSetupChecklist openSettings={openSettings} />}
-
-      {/* Global command palette — inline mode. The bar IS the palette: type a
-          command (Compose Email, Go to Calendar, View shortcuts, …) and hit
-          Enter. ⌘K focuses this bar on the Dashboard (the global pill is
-          suppressed here, the centered modal was retired in Phase 5). */}
-      <InlineCommandPalette inputRef={searchInputRef} />
 
       {/* Daily Briefing — quiet, triage-first */}
       {loadingBriefing || isLoading ? (
@@ -1860,7 +1836,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
             <dl className="px-5 py-4 space-y-2">
               {[
                 { keys: ['⌘', 'K'], desc: 'Command palette' },
-                { keys: ['/'], desc: 'Focus search' },
+                { keys: ['/'], desc: 'Focus command bar' },
                 { keys: ['J'], desc: 'Open top priority' },
                 { keys: ['K'], desc: 'Open second priority' },
                 { keys: ['R'], desc: 'Refresh briefing' },

@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
 import { Search, ArrowRight, Clock } from 'lucide-react';
 import { Command, useCommandPalette, canonicalizeShortcut } from '../contexts/CommandPaletteContext';
 import { getRecentCommandIds, pushRecentCommand, getMostUsedCommandIds, isMac } from '../utils/recentCommands';
@@ -219,15 +218,16 @@ interface InlineCommandPaletteProps {
   /** Forwarded ref so parents can focus via shortcut. */
   inputRef?: React.RefObject<HTMLInputElement>;
   /**
-   * When true, focus the input + open the dropdown on mount. Used by the
-   * GlobalCommandBar pill so the palette is ready to type the instant it
-   * expands. Default false preserves the Dashboard hero behavior.
+   * When true, focus the input + open the dropdown on mount. For a wrapper that
+   * mounts the palette pre-opened (e.g. a transient overlay) so it's typeable
+   * immediately. Default false — the persistent CommandBarHeader focuses on
+   * demand via the open event instead.
    */
   autoFocusOnMount?: boolean;
   /**
    * Called when the palette closes from inside (Escape, outside-click blur, or
-   * after running a command). Lets a wrapper (GlobalCommandBar) collapse the
-   * pill. Optional — the Dashboard usage doesn't pass it.
+   * after running a command). Lets a wrapper react to the close. Optional — the
+   * persistent header usage doesn't pass it.
    */
   onClose?: () => void;
 }
@@ -266,8 +266,8 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
     activeRowRef.current?.scrollIntoView({ block: 'nearest' });
   }, [activeIdx]);
 
-  // Focus + open on mount when driven by the GlobalCommandBar pill, so the
-  // palette is immediately typeable the moment the pill expands.
+  // Focus + open on mount when a wrapper requests it, so the palette is
+  // immediately typeable the moment it appears.
   useEffect(() => {
     if (autoFocusOnMount) {
       setOpen(true);
@@ -392,61 +392,38 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
   );
 };
 
-// ─── GlobalCommandBar (command drawer host) ────────────────────────────────────
-// The command surface (Phase 5: the centered modal was retired). Renders nothing
-// at rest — the launcher is a button in the sidebar header. When ⌘K (or the
-// mobile button / g/ chord / sidebar launcher) dispatches pulse:command-palette-open,
-// this opens a top-centered command drawer over a dismiss backdrop, portal'd to
-// <body> so it's never clipped by the overflow-hidden view panes (Messages/
-// Calendar). `suppressed` is set on views that own their own command surface (the
-// Dashboard hero bar); there this is unwired and the view handles ⌘K itself. Hooks
-// run every render so the early null-return stays Rules-of-Hooks safe. Collapses
-// on Escape, outside-click, or after running a command.
+// ─── CommandBarHeader (persistent global command bar) ──────────────────────────
+// Phase 6: the ONE command surface. A slim chrome strip pinned to the top of
+// <main> on every view (App renders it above the per-view scroll area, so it's
+// outside the overflow-hidden Messages/Calendar panes and can't be clipped). The
+// bar IS the affordance — there's no float, no drawer host, no centered modal.
+// ⌘K, the mobile command button, the `g /` chord, and the Calendar/Messages/
+// CockpitHub buttons all dispatch pulse:command-palette-open (or
+// pulse:command-bar-focus), which focuses the input; InlineCommandPalette opens
+// its dropdown on focus. Neutral chrome — coral is confined to the focus ring,
+// active row, and match highlight (DESIGN.md coral budget).
 
-export const GlobalCommandBar: React.FC<{ suppressed?: boolean }> = ({ suppressed = false }) => {
-  const [expanded, setExpanded] = useState(false);
+export const CommandBarHeader: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Open on pulse:command-palette-open (dispatched by ⌘K, the mobile header
-  // button, the g/ chord, and the sidebar command launcher) or an explicit
-  // focus request. Not wired when suppressed (the host view owns ⌘K — the
-  // Dashboard focuses its hero bar instead).
   useEffect(() => {
-    if (suppressed) return;
-    const onRequest = () => setExpanded(true);
-    window.addEventListener('pulse:command-bar-focus', onRequest);
-    window.addEventListener('pulse:command-palette-open', onRequest);
+    const focus = () => requestAnimationFrame(() => inputRef.current?.focus());
+    window.addEventListener('pulse:command-palette-open', focus);
+    window.addEventListener('pulse:command-bar-focus', focus);
     return () => {
-      window.removeEventListener('pulse:command-bar-focus', onRequest);
-      window.removeEventListener('pulse:command-palette-open', onRequest);
+      window.removeEventListener('pulse:command-palette-open', focus);
+      window.removeEventListener('pulse:command-bar-focus', focus);
     };
-  }, [suppressed]);
+  }, []);
 
-  const collapse = () => setExpanded(false);
-
-  // Renders nothing until opened — the launcher lives in the sidebar header.
-  // When opened, a top-centered command drawer over a dismiss backdrop, portal'd
-  // to <body> so it's never clipped by the overflow-hidden view panes.
-  if (suppressed || !expanded) return null;
-
-  return ReactDOM.createPortal(
-    <div
-      className="fixed inset-0 z-[10000] bg-zinc-950/30 dark:bg-zinc-950/50 backdrop-blur-sm animate-fade-in"
-      onMouseDown={collapse}
-      role="presentation"
-    >
-      <div
-        className="absolute top-[12vh] left-1/2 -translate-x-1/2 w-[min(92vw,36rem)] px-2"
-        onMouseDown={e => e.stopPropagation()}
-      >
-        <InlineCommandPalette
-          inputRef={inputRef}
-          autoFocusOnMount
-          onClose={collapse}
-          placeholder={`Run a command — type to search · ${SHORTCUT_HINT}`}
-        />
+  return (
+    <div className="shrink-0 px-3 sm:px-4 md:px-6 py-2.5 border-b border-zinc-200 dark:border-white/[0.06] bg-white/80 dark:bg-zinc-950/60 backdrop-blur">
+      {/* Inner max-width mirrors the content centering so the bar lines up with
+          page content on wide screens. Not overflow-hidden, so the dropdown
+          (absolute, z-50, below the input) overlays the content freely. */}
+      <div className="w-full max-w-[1600px] mx-auto">
+        <InlineCommandPalette inputRef={inputRef} />
       </div>
-    </div>,
-    document.body
+    </div>
   );
 };
