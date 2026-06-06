@@ -76,7 +76,7 @@ import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider, useFeatures } from './contexts/FeatureContext';
 import { PulseAIProvider } from './contexts/PulseAIContext';
 import { CommandPaletteProvider, useCommandPalette, useRegisterCommands, Command } from './contexts/CommandPaletteContext';
-import { GlobalCommandPalette } from './components/GlobalCommandPalette';
+import { GlobalCommandPalette, GlobalCommandBar } from './components/GlobalCommandPalette';
 import KeyboardChordsLayer from './components/KeyboardChordsLayer';
 import CaptureModal from './components/Capture/CaptureModal';
 import { WorkspaceProvider, useWorkspaceData, useWorkspaceActions } from './contexts/WorkspaceContext';
@@ -243,12 +243,15 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   // useFeatures is valid here: the registrar sits inside FeatureProvider.
   const { features } = useFeatures();
 
-  // Bridge the global Cmd+K event into the provider scope.
+  // Bridge the global Cmd+K event into the provider scope. When the global
+  // command bar is on, ⌘K instead expands the in-chrome pill (GlobalCommandBar
+  // listens for the same event), so we suppress the modal here to keep exactly
+  // one surface responding to ⌘K.
   useEffect(() => {
-    const handler = () => open();
+    const handler = () => { if (!features.commandBarGlobal) open(); };
     window.addEventListener('pulse:command-palette-open', handler);
     return () => window.removeEventListener('pulse:command-palette-open', handler);
-  }, [open]);
+  }, [open, features.commandBarGlobal]);
 
   const navCommands = useMemo<Command[]>(() => {
     const navDestinations: Array<{
@@ -1475,6 +1478,9 @@ const App: React.FC = () => {
           Sections register their commands via useRegisterCommands so the
           palette aggregates Pulse-wide actions and section-specific ones. */}
       <GlobalCommandPalette />
+      {/* Phase 4: in-chrome command pill — self-gates on the commandBarGlobal
+          flag (renders null when off, so the modal above stays the entry). */}
+      <GlobalCommandBar />
       <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onVoxContact={handleVoxContact} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onSignOut={logout} onTogglePulseAI={() => setShowPulseAI(prev => !prev)} onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)} onSectionAction={handleSectionAction} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords

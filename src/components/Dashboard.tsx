@@ -6,6 +6,7 @@ import { User, AppView, BatchedNotification, CalendarEvent, Task, Thread, Contac
 import { generateDailyBriefing, generateThinkingResponse } from '../services/geminiService';
 import { useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
 import { InlineCommandPalette } from './GlobalCommandPalette';
+import { useFeatures } from '../contexts/FeatureContext';
 import { dataService } from '../services/dataService';
 import { useWorkspaceData, useWorkspacePermissions } from '../contexts/WorkspaceContext';
 import { dailyBriefingService, BriefingContext } from '../services/dailyBriefingService';
@@ -456,6 +457,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
     if (count <= 12) return 62 + (count - 7) * 4;
     return Math.min(85 + (count - 12) * 2, 98);
   }, [batchedNotifications]);
+
+  // When the global command bar is on, the in-chrome pill is the command entry
+  // app-wide, so the Dashboard hero bar is suppressed to avoid a double bar.
+  const { features } = useFeatures();
 
   // Enhanced Analytics State
   const [analyticsTimeRange, setAnalyticsTimeRange] = useState<'day' | 'week' | 'month'>('week');
@@ -1308,8 +1313,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
 
       {/* Global command palette — inline mode. The bar IS the palette: type a
           command (Compose Email, Go to Calendar, View shortcuts, …) and hit
-          Enter. Cmd+K everywhere opens the modal version of the same palette. */}
-      <InlineCommandPalette inputRef={searchInputRef} />
+          Enter. Cmd+K everywhere opens the modal version of the same palette.
+          Suppressed when the global command bar is on (the in-chrome pill takes
+          over app-wide, so showing both here would be a double bar). */}
+      {!features.commandBarGlobal && <InlineCommandPalette inputRef={searchInputRef} />}
 
       {/* Daily Briefing — quiet, triage-first */}
       {loadingBriefing || isLoading ? (

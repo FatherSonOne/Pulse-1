@@ -4,6 +4,7 @@ import { Search, ArrowRight, Clock, NotebookPen } from 'lucide-react';
 import { Command, useCommandPalette, canonicalizeShortcut } from '../contexts/CommandPaletteContext';
 import { getRecentCommandIds, pushRecentCommand, getMostUsedCommandIds, isMac } from '../utils/recentCommands';
 import { useWorkspaceData } from '../contexts/WorkspaceContext';
+import { useFeatures } from '../contexts/FeatureContext';
 import { captureService, type CaptureNote } from '../services/captureService';
 import { AppView } from '../types';
 
@@ -455,11 +456,25 @@ interface InlineCommandPaletteProps {
   placeholder?: string;
   /** Forwarded ref so parents can focus via shortcut. */
   inputRef?: React.RefObject<HTMLInputElement>;
+  /**
+   * When true, focus the input + open the dropdown on mount. Used by the
+   * GlobalCommandBar pill so the palette is ready to type the instant it
+   * expands. Default false preserves the Dashboard hero behavior.
+   */
+  autoFocusOnMount?: boolean;
+  /**
+   * Called when the palette closes from inside (Escape, outside-click blur, or
+   * after running a command). Lets a wrapper (GlobalCommandBar) collapse the
+   * pill. Optional — the Dashboard usage doesn't pass it.
+   */
+  onClose?: () => void;
 }
 
 export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
   placeholder = `Run a command — type to search · ${SHORTCUT_HINT} opens anywhere`,
   inputRef: forwardedRef,
+  autoFocusOnMount = false,
+  onClose,
 }) => {
   const { getMatches } = useCommandPalette();
   const localRef = useRef<HTMLInputElement>(null);
@@ -489,6 +504,17 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
     activeRowRef.current?.scrollIntoView({ block: 'nearest' });
   }, [activeIdx]);
 
+  // Focus + open on mount when driven by the GlobalCommandBar pill, so the
+  // palette is immediately typeable the moment the pill expands.
+  useEffect(() => {
+    if (autoFocusOnMount) {
+      setOpen(true);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
+    // inputRef identity is stable; only run on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFocusOnMount]);
+
   const activate = (cmd: Command) => {
     pushRecentCommand(cmd.id);
     setRecentIds(getRecentCommandIds());
@@ -496,6 +522,7 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
     cmd.run();
     setQuery('');
     setOpen(false);
+    onClose?.();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -513,6 +540,7 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
       setQuery('');
       setOpen(false);
       inputRef.current?.blur();
+      onClose?.();
     }
   };
 
@@ -529,7 +557,7 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
           onChange={e => { setQuery(e.target.value); setActiveIdx(0); setOpen(true); }}
           onFocus={() => setOpen(true)}
           // Slight delay so a click on a result still fires before close.
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onBlur={() => setTimeout(() => { setOpen(false); onClose?.(); }, 150)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="w-full bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl pl-11 pr-32 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/60 dark:focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-colors duration-150"
@@ -599,6 +627,83 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
         </div>
       )}
     </div>
+  );
+};
+
+// ─── GlobalCommandBar (chrome pill → expand) ───────────────────────────────────
+// Phase 4 of the palette globalization (flag: commandBarGlobal, default OFF).
+// A collapsed command pill that floats in the app chrome on every view; clicking
+// it — or pressing ⌘K, which App already dispatches as pulse:command-palette-open
+// — expands it in place into the shared palette drawer. The expanded panel is
+// portal'd to <body> so it's never clipped by the overflow-hidden view panes
+// (Messages/Calendar). Self-gates: returns null when the flag is off, so the
+// component can be mounted unconditionally. The modal's open-listener
+// (AppCommandRegistrar) is gated off when this flag is on, so ⌘K drives exactly
+// one surface. Collapses on Escape, outside-click, or after running a command.
+
+export const GlobalCommandBar: React.FC = () => {
+  const { features } = useFeatures();
+  const enabled = features.commandBarGlobal;
+  const [expanded, setExpanded] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Expand on ⌘K (pulse:command-palette-open, dispatched by App) and on an
+  // explicit focus request. Only wired when enabled; hooks still run every
+  // render so the early null-return below stays Rules-of-Hooks safe.
+  useEffect(() => {
+    if (!enabled) return;
+    const onRequest = () => setExpanded(true);
+    window.addEventListener('pulse:command-bar-focus', onRequest);
+    window.addEventListener('pulse:command-palette-open', onRequest);
+    return () => {
+      window.removeEventListener('pulse:command-bar-focus', onRequest);
+      window.removeEventListener('pulse:command-palette-open', onRequest);
+    };
+  }, [enabled]);
+
+  if (!enabled) return null;
+
+  const collapse = () => setExpanded(false);
+
+  return (
+    <>
+      {/* Collapsed pill — floats top-right, zero layout cost (portal'd). */}
+      {!expanded && ReactDOM.createPortal(
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          aria-label="Open command bar"
+          className="fixed top-3 right-4 z-[9996] inline-flex items-center gap-2 h-9 pl-3 pr-2 rounded-lg bg-white/95 dark:bg-zinc-900/90 backdrop-blur border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 shadow-sm hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-white/[0.14] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+        >
+          <Search className="w-4 h-4 shrink-0" />
+          <span className="text-sm hidden md:inline">Search or run a command</span>
+          <kbd className="hidden md:inline-flex items-center justify-center h-5 px-1.5 rounded text-[10px] font-mono bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.08]">{SHORTCUT_HINT}</kbd>
+        </button>,
+        document.body
+      )}
+
+      {/* Expanded — full-screen catcher + panel anchored to the pill corner. */}
+      {expanded && ReactDOM.createPortal(
+        <div
+          className="fixed inset-0 z-[10000] bg-zinc-950/20 dark:bg-zinc-950/40 animate-fade-in"
+          onMouseDown={collapse}
+          role="presentation"
+        >
+          <div
+            className="absolute top-3 right-4 left-4 sm:left-auto sm:w-[min(92vw,34rem)]"
+            onMouseDown={e => e.stopPropagation()}
+          >
+            <InlineCommandPalette
+              inputRef={inputRef}
+              autoFocusOnMount
+              onClose={collapse}
+              placeholder={`Run a command — type to search · ${SHORTCUT_HINT}`}
+            />
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 };
 
