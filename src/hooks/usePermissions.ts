@@ -337,9 +337,16 @@ export function usePermissions() {
         const storedVersion = await getStorageValue(PERMISSIONS_VERSION_KEY);
         
         if (storedVersion !== CURRENT_PERMISSIONS_VERSION) {
-          // Version changed - could add logic here to only re-request new permissions
-          console.log('[Permissions] Version changed, updating...');
+          // Version bumped because the app added/changed essential permissions.
+          // Re-arm the one-time setup prompt so it shows ONCE for the new set,
+          // then records itself again. Gated on storedVersion !== null so this
+          // only re-arms for EXISTING users upgrading — brand-new users have no
+          // requested flag yet and will see the prompt regardless.
+          console.log('[Permissions] Version changed — re-arming setup prompt');
           await setStorageValue(PERMISSIONS_VERSION_KEY, CURRENT_PERMISSIONS_VERSION);
+          if (storedVersion !== null) {
+            await setStorageValue(PERMISSIONS_REQUESTED_KEY, 'false');
+          }
         }
 
         // Load completed permissions
@@ -628,25 +635,20 @@ export function usePermissions() {
     return toRequest;
   }, [permissions, completedPermissions]);
 
-  // Check if we should show the permission modal
-  // Only show if:
-  // 1. Initial setup not done (!hasRequestedOnStartup)
-  // 2. OR there are permissions that need requesting (new or revoked)
+  // Check if we should show the permission modal. The setup prompt is a ONE-TIME
+  // onboarding step, gated solely on hasRequestedOnStartup (persisted in
+  // PERMISSIONS_REQUESTED_KEY, set the moment the modal is first shown — see the
+  // App trigger). We deliberately do NOT re-derive "should show" from which
+  // permissions are still ungranted: that re-popped the modal on every auth
+  // refresh / reload for anyone who declined or skipped a permission (e.g. denied
+  // notifications), because Supabase hands a new `user` object on each token
+  // refresh and the trigger re-evaluated. Re-prompting when the app genuinely
+  // ADDS a permission is handled by bumping CURRENT_PERMISSIONS_VERSION, which
+  // re-arms the requested flag in init().
   const shouldShowPermissionModal = useCallback((): boolean => {
     if (!isInitialized) return false;
-    
-    // If initial setup never done, show modal
-    if (!hasRequestedOnStartup) {
-      return true;
-    }
-
-    // If setup was done, only show if there are new permissions to request
-    // (e.g., app update added new permissions)
-    const toRequest = getPermissionsToRequest();
-    const hasNewPermissions = toRequest.some(name => !completedPermissions.has(name));
-    
-    return hasNewPermissions;
-  }, [isInitialized, hasRequestedOnStartup, getPermissionsToRequest, completedPermissions]);
+    return !hasRequestedOnStartup;
+  }, [isInitialized, hasRequestedOnStartup]);
 
   return {
     permissions,

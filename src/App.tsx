@@ -667,6 +667,7 @@ const App: React.FC = () => {
   // Permissions hook
   const {
     shouldShowPermissionModal,
+    markSetupComplete,
     isInitialized: permissionsInitialized,
     isNativePlatform: isNative
   } = usePermissions();
@@ -861,11 +862,17 @@ const App: React.FC = () => {
       // Delay slightly to let the app fully render first
       const timer = setTimeout(() => {
         permissionPromptShownRef.current = true;
+        // Persist that the one-time setup prompt has been shown BEFORE the user
+        // interacts — so dismissing it (backdrop, browser refresh, denying a
+        // required perm and closing) doesn't leave it re-popping on every auth
+        // refresh / reload. localStorage-backed, so it survives the authed-tree
+        // remount that token refresh triggers (which defeats the in-memory ref).
+        markSetupComplete();
         setShowPermissionModal(true);
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [user, permissionsInitialized, isAuthLoading, shouldShowPermissionModal, showPermissionModal]);
+  }, [user, permissionsInitialized, isAuthLoading, shouldShowPermissionModal, showPermissionModal, markSetupComplete]);
 
   // Sync settings from cloud on login
   useEffect(() => {
