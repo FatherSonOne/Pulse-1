@@ -3,11 +3,11 @@
 // Path D redesign. Replaces the ContactsRedesigned body when the
 // `contactsHybrid` feature flag is ON (gated in ContactsShell.tsx).
 //
-// Phases 2-3 — Browse column + filter engine + Focus column. This component
-// owns the filter + selection state and data loading (verbatim-ported from
-// ContactsRedesigned) and renders the 3-pane shell: Col 1 BrowseColumn, Col 2
-// FocusColumn (full inline detail, reusing ContactDetail sub-components), Col 3
-// Co-pilot (placeholder until Phase 4).
+// Phases 2-4 — Browse column + filter engine + Focus column + Co-pilot rail.
+// This component owns the filter + selection state and data loading
+// (verbatim-ported from ContactsRedesigned) and renders the 3-pane shell:
+// Col 1 BrowseColumn, Col 2 FocusColumn (full inline detail, reusing
+// ContactDetail sub-components), Col 3 CopilotRail (todayFeedService agenda).
 //
 // Reuses services verbatim: useRelationshipIntelligence, getCircles,
 // savedFiltersService, dataService. Legacy ContactsRedesigned stays intact
@@ -16,10 +16,12 @@
 // DEFERRED from the legacy People surface (documented, NOT silently dropped —
 // these are not filters, so Phase 2's AC is unaffected; each lands in its named
 // phase):
-//   • Relationship alerts banner + RelationshipAlertsFeed (legacy Sidebar
-//     ~lines 323-350) → Phase 4 Co-pilot rail (alerts are AI-surfaced signals).
-//     The handoff matrix never assigned this a home; flagged for §4.7.
-//   • AI / NL contact search (AIContactSearch) → Phase 4 Co-pilot.
+//   • Relationship alerts → SURFACED in the Phase-4 CopilotRail: generateTodayFeed
+//     folds relationshipAlertService alerts into the feed, so the rail's
+//     Suggested list IS the alerts home (no separate banner needed).
+//   • AI / NL contact search (AIContactSearch, the list-narrowing search bar) →
+//     still deferred; distinct from the rail. The filter engine already supports
+//     aiResultIds (null = inactive); wiring the bar is additive, a later phase.
 //   • Duplicates banner + DuplicateDetectionModal → Phase 7 preserve-and-port.
 //   • Bulk multi-select + BulkActionToolbar + workspace share → Phase 7.
 //   • Grid view mode → optional/later (§9; List is the hybrid default).
@@ -55,6 +57,7 @@ import { AddContactModal } from '../AddContactModal';
 import { EditContactModal } from '../EditContactModal';
 import { BrowseColumn } from './list/BrowseColumn';
 import { FocusColumn } from './detail/FocusColumn';
+import { CopilotRail } from './copilot/CopilotRail';
 import {
   filterBrowseContacts,
   countBrowseContacts,
@@ -428,21 +431,18 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
         )}
       </div>
 
-      {/* Col 3 — Co-pilot (placeholder until Phase 4) */}
+      {/* Col 3 — Co-pilot rail */}
       <div
         className="hidden xl:flex flex-col w-[320px] shrink-0 border-l p-4"
         style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
       >
-        <div
-          className="text-[10px] uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500"
-          style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
-        >
-          Pulse AI
-        </div>
-        <p className="mt-3 text-sm text-zinc-400 dark:text-zinc-500">
-          The AI co-pilot rail — Suggested + drafted opener, relationship alerts, and the Route
-          hint — arrives in Phase 4.
-        </p>
+        <CopilotRail
+          userId={userId ?? undefined}
+          contacts={contacts}
+          selectedContactId={selectedContactId}
+          onSelectContact={setSelectedContactId}
+          onAction={onAction}
+        />
       </div>
 
       {/* Modals */}
