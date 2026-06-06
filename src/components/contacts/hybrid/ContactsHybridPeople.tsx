@@ -58,6 +58,7 @@ import { EditContactModal } from '../EditContactModal';
 import { BrowseColumn } from './list/BrowseColumn';
 import { FocusColumn } from './detail/FocusColumn';
 import { CopilotRail } from './copilot/CopilotRail';
+import { composeEmail } from './channels/actions';
 import {
   filterBrowseContacts,
   countBrowseContacts,
@@ -334,6 +335,42 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
 
   const selectedProfile = selectedContact?.email ? getProfileByEmail(selectedContact.email) : null;
   const selectedLeadScore = selectedContact?.email ? getLeadScoreByEmail(selectedContact.email) : null;
+
+  // Phase 9: keyboard navigation over the Browse list. Kept local to the hybrid
+  // (not the shared useContactsKeyboard hook) so it never affects the legacy
+  // surface. ArrowUp/Down move the selection; Enter fires the primary action;
+  // 'e' emails an external contact (when Email is enabled).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (filteredContacts.length === 0) return;
+        e.preventDefault();
+        const idx = filteredContacts.findIndex((c) => c.id === selectedContactId);
+        const next =
+          e.key === 'ArrowDown'
+            ? Math.min(idx < 0 ? 0 : idx + 1, filteredContacts.length - 1)
+            : Math.max(idx < 0 ? 0 : idx - 1, 0);
+        setSelectedContactId(filteredContacts[next].id);
+      } else if (e.key === 'Enter' && selectedContact) {
+        if (selectedContact.pulseUserId) {
+          e.preventDefault();
+          onAction('message', selectedContact.id);
+        } else if (features.emailEnabled) {
+          e.preventDefault();
+          composeEmail(selectedContact);
+        }
+      } else if (e.key === 'e' && selectedContact && !selectedContact.pulseUserId && features.emailEnabled) {
+        e.preventDefault();
+        composeEmail(selectedContact);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [filteredContacts, selectedContactId, selectedContact, features.emailEnabled, onAction]);
 
   const handleEditContact = (c: Contact) => {
     setContactToEdit(c);
