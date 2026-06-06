@@ -2,8 +2,33 @@
 
 **Date:** 2026-06-06
 **Origin:** `/impeccable critique` of the global search / command bar / palette / FAB
-**Status:** Plan locked, pending execution approval on the destructive cutover (Phase 4–5)
-**Flag:** `commandBarGlobal` (default OFF) gates the surface cutover only; coverage phases ship unflagged
+**Status:** Phases 1–4 SHIPPED to main (typecheck-clean, not yet eyeballed live).
+Phase 5 (retire modal + globalize FAB) is the only remaining work, gated on Phase 4
+proving out in the running app.
+**Flag:** `commandBarGlobal` (default OFF) gates the surface cutover only; coverage phases shipped unflagged
+
+## Progress log
+
+| Phase | Commit | State |
+|-------|--------|-------|
+| 1 — Section coverage (4 nav rows) | `c9ccdf1` | ✅ shipped |
+| 2 — Global controls (`app:controls`) | `c9ccdf1` | ✅ shipped |
+| 3 — Global section actions (`app:actions` + drains) | `b33daf5` | ✅ shipped |
+| 4 — Global command bar pill (flagged) | `615f435` | ✅ shipped, ⚠️ eyeball-pending |
+| 5 — Retire modal + globalize FAB | — | ⛔ gated on Phase 4 proving out |
+
+**Phase 4 form decision (2026-06-06):** user chose the **collapsed pill that
+expands in place** (not a persistent full-width bar) — respects the dense
+overflow-hidden views and costs no permanent vertical space. Implemented as a
+portal'd top-right pill; expanded drawer is portal'd to `<body>` so it can't be
+clipped. Flip `commandBarGlobal` in Settings → Features & Labs (new "Interface
+(Beta)" category) to evaluate.
+
+**To validate Phase 4 (do before Phase 5):** flip the flag, then confirm in both
+themes + mobile — pill appears top-right on every view; ⌘K expands it (modal no
+longer opens); drawer isn't clipped on Messages/Calendar; Esc/outside-click/run
+collapses; Dashboard hero bar is gone (no double bar); pill doesn't collide with
+any per-view top-right controls (reposition is trivial if it does).
 
 ---
 
