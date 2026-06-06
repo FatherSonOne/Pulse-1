@@ -2,9 +2,14 @@
 
 **Date:** 2026-06-06
 **Origin:** `/impeccable critique` of the global search / command bar / palette / FAB
-**Status:** ALL phases (1–5) SHIPPED to main. Phase 4 was validated live by the user;
-Phases 5a/5b are typecheck-clean but NOT yet eyeballed. The `commandBarGlobal` flag
-was removed in 5a — the command bar/pill is now unconditional.
+**Status:** Phases 1–5 SHIPPED. Phase 4 validated live. The command-surface *position*
+went through three live iterations (floating pill → sidebar launcher) and is now being
+**finalized** per the user's decision (2026-06-06): a **dedicated, persistent global
+command bar header on every view** (see **Phase 6** below — the authoritative target).
+Phase 6 is PLANNED, not yet implemented. The `commandBarGlobal` flag was removed in 5a.
+
+> **Read Phase 6 first.** The "Final architecture (as shipped)" section below it documents
+> the *interim* pill/sidebar state and is **superseded** by Phase 6's persistent header.
 
 ## Progress log
 
@@ -16,6 +21,8 @@ was removed in 5a — the command bar/pill is now unconditional.
 | 4 — Global command bar pill (flagged) | `615f435` | ✅ shipped + validated live |
 | 5a — Retire modal, flag removed, pill = one surface | `dad241f` | ✅ shipped, ⚠️ eyeball-pending |
 | 5b — Globalize the quick-actions FAB (real actions) | `068a871` | ✅ shipped, ⚠️ eyeball-pending |
+| (interim) Launcher → sidebar header (pill collided) | `4c92bf3` | ✅ shipped, ⚠️ superseded by Phase 6 |
+| **6 — Dedicated persistent global command bar header** | — | 🔜 **PLANNED — final position** |
 
 ## Final architecture (as shipped)
 
@@ -281,3 +288,159 @@ These are the only subtractive moves. They do **not** execute until explicitly a
 Phases 1–3 are pure additions — safe to ship now, benefit the modal immediately, and de-risk
 the cutover by making coverage complete before the surface changes. Phases 4–5 are the flagged,
 sign-off-gated surface cutover. Recommend: **ship 1–3, then pause for the §6 approval before 4–5.**
+
+---
+
+# Phase 6 — Dedicated persistent global command bar header (FINAL position)
+
+**Decision (2026-06-06, user):** make the command surface a **dedicated command bar header
+that is always visible at the top of the content area, identical on every view.** The user
+explicitly chose to **sacrifice the vertical space** for a surface that is **consistent
+throughout the app**. This supersedes the floating pill (5a) and the sidebar launcher
+(`4c92bf3`).
+
+**Why we landed here (the position journey):**
+- Floating top-right pill (5a) → collided with per-section top-right controls (gear, SIGNALS/?).
+- Sidebar header launcher (`4c92bf3`) → fixed the collision, but its drawer opened **centered**,
+  which read as "a modal again," and the experience differed by view (Dashboard hero bar vs
+  pill-drawer elsewhere).
+- **Resolution:** one persistent bar, same place, every view. No floats, no per-view variants,
+  no centered popup. The dropdown "slides down from the bar" (the bar IS the affordance).
+
+## 6.1 Target architecture
+
+ONE `InlineCommandPalette` rendered in a **persistent top chrome strip inside `<main>`**, above
+the view content, on **every** view. ⌘K (and the mobile button / `g /` chord / the
+Calendar·Messages·Cockpit buttons) **focus** that bar; focusing opens its dropdown
+(`InlineCommandPalette` already does this). The bar is neutral chrome (coral only on focus
+ring / active row, per DESIGN.md).
+
+This is exactly the Dashboard hero bar (`InlineCommandPalette`) **lifted to the app shell** and
+made universal. Everything else that exists today for "where the command surface lives" is
+removed.
+
+## 6.2 Change surface (exact, verified against `main` @ `4c92bf3`)
+
+### ADD — the persistent header
+**`src/App.tsx`** — restructure `<main>` (currently [App.tsx:1616-1622](../src/App.tsx#L1616)) into a
+flex column with the bar pinned above a flex-1 scroll area. Current:
+```jsx
+<main className="flex-1 overflow-hidden relative transition-colors duration-500 w-full safe-area-bottom pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
+  <div className={`h-full w-full flex flex-col ${MSG||CAL ? 'overflow-hidden' : 'overflow-auto mobile-scroll p-2 sm:p-3 md:p-4 lg:p-6'}`}>
+    <div className={`w-full ${MSG||CAL ? 'h-full min-h-0 flex flex-col' : 'min-h-full max-w-[1600px] mx-auto flex flex-col'} animate-fade-in`}>
+      {renderContent()}
+    </div>
+  </div>
+</main>
+```
+Target:
+```jsx
+<main className="flex-1 overflow-hidden relative flex flex-col transition-colors duration-500 w-full safe-area-bottom pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
+  <CommandBarHeader />               {/* shrink-0; ~56px strip; the one global bar */}
+  <div className={`flex-1 min-h-0 w-full flex flex-col ${MSG||CAL ? 'overflow-hidden' : 'overflow-auto mobile-scroll p-2 sm:p-3 md:p-4 lg:p-6'}`}>
+    <div className={`w-full ${MSG||CAL ? 'h-full min-h-0 flex flex-col' : 'min-h-full max-w-[1600px] mx-auto flex flex-col'} animate-fade-in`}>
+      {renderContent()}
+    </div>
+  </div>
+</main>
+```
+Key deltas: add `flex flex-col` to `<main>`; the content wrapper changes `h-full` → `flex-1 min-h-0`
+so it fills the remaining height and scrolls **below** the pinned bar. The bar is OUTSIDE the
+per-view overflow container, so Messages/Calendar (`overflow-hidden` panes) can't clip it or its
+dropdown.
+
+**New `CommandBarHeader`** (recommend a small component, either a new file
+`src/components/CommandBarHeader.tsx` or exported from `GlobalCommandPalette.tsx`):
+```tsx
+export const CommandBarHeader: React.FC = () => {
+  const ref = useRef<HTMLInputElement>(null);
+  // ⌘K / mobile button / g-/ chord / section buttons all dispatch this → focus the bar.
+  useEffect(() => {
+    const focus = () => requestAnimationFrame(() => ref.current?.focus());
+    window.addEventListener('pulse:command-palette-open', focus);
+    window.addEventListener('pulse:command-bar-focus', focus);
+    return () => { window.removeEventListener('pulse:command-palette-open', focus);
+                   window.removeEventListener('pulse:command-bar-focus', focus); };
+  }, []);
+  return (
+    <div className="shrink-0 px-3 sm:px-4 md:px-6 py-2.5 border-b border-zinc-200 dark:border-white/[0.06] bg-white/80 dark:bg-zinc-950/60 backdrop-blur">
+      <div className="w-full max-w-[1600px] mx-auto">
+        <InlineCommandPalette inputRef={ref} />
+      </div>
+    </div>
+  );
+};
+```
+Notes: align the inner `max-w-[1600px] mx-auto` with the content centering so the bar lines up
+with content on wide screens. `InlineCommandPalette`'s dropdown is `absolute … z-50` below the
+input — it overlays the content area (fine; bar sits at the top of `<main>`). Confirm the dropdown
+is not clipped (the header div should not be `overflow-hidden`; default is visible).
+
+### REMOVE — the interim surfaces (Rule A: working code; this is the approved replacement)
+1. **Sidebar launcher** — revert `4c92bf3` in `src/components/Sidebar/Sidebar.tsx`: delete the
+   command-launcher block ([Sidebar.tsx:338-363](../src/components/Sidebar/Sidebar.tsx#L338)) and the
+   `isMac` import (line 30). It's redundant with the always-visible header.
+2. **`GlobalCommandBar`** (the drawer host) in `src/components/GlobalCommandPalette.tsx` — retire it;
+   remove `<GlobalCommandBar suppressed=… />` from `App.tsx` and the import. Its whole reason (open
+   a drawer because the bar wasn't visible) is gone now the bar is persistent.
+3. **Dashboard hero bar** — in `src/components/Dashboard.tsx`, remove the `<InlineCommandPalette
+   inputRef={searchInputRef} />` hero render and the `pulse:command-palette-open` focus listener I
+   added in 5a (the global header replaces both). Decide on `searchInputRef` + the `/` shortcut:
+   the Dashboard `/`-to-focus handler should either be dropped or re-pointed to dispatch
+   `pulse:command-palette-open` (so `/` focuses the global bar). **Don't leave `/` focusing a
+   removed ref.**
+
+### KEEP (unchanged)
+- `InlineCommandPalette` component, the registry/`getMatches`, all command scopes (nav/help/
+  create/email/meetings/controls/actions/people, calendar/decisions section drains).
+- `GlobalQuickActions` FAB (`068a871`) — separate concern, stays.
+- App's ⌘K keydown handler (dispatches `pulse:command-palette-open`), the mobile header command
+  button, the `g /` chord, and the Calendar/Messages/CockpitHub buttons — all already dispatch the
+  event; they now focus the header. No change needed.
+
+## 6.3 Layout / responsive / a11y details
+
+- **Height:** ~56px strip (`py-2.5` around the ~40px input). Same on all views.
+- **Centering:** inner `max-w-[1600px] mx-auto` to match content; bar background spans full width,
+  input column aligns with content.
+- **Dropdown:** opens downward (existing). Verify `z-50` sits above content; verify not clipped by
+  `<main>` (it isn't — main is full height; dropdown near top).
+- **Mobile:** the bar shows on mobile too (consistency is the whole point). Verify it sits below any
+  mobile top chrome / hamburger and above content; check it doesn't crowd the 48px touch targets.
+  Confirm the `MobileBottomNav` and the mobile command button still make sense (the visible bar may
+  make a mobile "open command" button redundant — optional cleanup).
+- **Dark + light:** strip uses tinted neutrals + hairline border (no `#000`/`#fff`); test both.
+- **Reduced motion:** the dropdown reveal should respect `prefers-reduced-motion`.
+- **Coral budget:** chrome only; coral confined to focus ring + active row + match highlight.
+
+## 6.4 Rule A — what's being removed (all working code), and the trade
+
+- **Sacrificed:** ~56px of vertical space on every view (the user explicitly accepted this), the
+  Dashboard's distinct hero treatment, and the floating/sidebar variants.
+- **Gained:** one identical command surface everywhere (the user's stated goal: consistency), no
+  collisions, no centered-modal feel, less code (three surfaces → one).
+- **Preserved:** every command, all resolution logic, the FAB, all keyboard entry points.
+- Execution still follows Rule A on the three deletions above — but the direction is the user's
+  explicit decision, so this handoff IS the approved plan; implement, then eyeball.
+
+## 6.5 Verification + eyeball checklist
+
+- `tsc` gate: **no NEW errors** vs the 917 baseline (`NODE_OPTIONS=--max-old-space-size=8192 npx tsc
+  --noEmit`); confirm zero refs to removed symbols (`GlobalCommandBar`, the Sidebar launcher,
+  Dashboard `searchInputRef` if dropped).
+- Eyeball, both themes + mobile + collapsed/expanded sidebar:
+  - The bar appears at the top of **every** view, identical position, including Messages/Calendar
+    (not clipped) and Dashboard (no separate hero bar, no double bar).
+  - ⌘K focuses the bar and opens the dropdown; typing filters; Enter runs; Esc closes.
+  - The `g /` chord, the mobile command button, and the Calendar/Messages/Cockpit "search" buttons
+    all focus the same bar.
+  - Content scrolls below the bar; the bar stays pinned.
+  - The old sidebar launcher and any floating pill are gone.
+
+## 6.6 Suggested commit sequencing
+
+1. Add `CommandBarHeader` + restructure `<main>` (bar live on all views).
+2. Remove the Dashboard hero bar + listener; re-point/drop the `/` shortcut.
+3. Remove the sidebar launcher (revert `4c92bf3`’s Sidebar changes).
+4. Retire `GlobalCommandBar` + its App mount/import.
+Each step is independently revertable; `tsc` after each.
