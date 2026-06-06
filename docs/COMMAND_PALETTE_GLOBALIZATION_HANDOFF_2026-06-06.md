@@ -2,10 +2,9 @@
 
 **Date:** 2026-06-06
 **Origin:** `/impeccable critique` of the global search / command bar / palette / FAB
-**Status:** Phases 1–4 SHIPPED to main (typecheck-clean, not yet eyeballed live).
-Phase 5 (retire modal + globalize FAB) is the only remaining work, gated on Phase 4
-proving out in the running app.
-**Flag:** `commandBarGlobal` (default OFF) gates the surface cutover only; coverage phases shipped unflagged
+**Status:** ALL phases (1–5) SHIPPED to main. Phase 4 was validated live by the user;
+Phases 5a/5b are typecheck-clean but NOT yet eyeballed. The `commandBarGlobal` flag
+was removed in 5a — the command bar/pill is now unconditional.
 
 ## Progress log
 
@@ -14,8 +13,32 @@ proving out in the running app.
 | 1 — Section coverage (4 nav rows) | `c9ccdf1` | ✅ shipped |
 | 2 — Global controls (`app:controls`) | `c9ccdf1` | ✅ shipped |
 | 3 — Global section actions (`app:actions` + drains) | `b33daf5` | ✅ shipped |
-| 4 — Global command bar pill (flagged) | `615f435` | ✅ shipped, ⚠️ eyeball-pending |
-| 5 — Retire modal + globalize FAB | — | ⛔ gated on Phase 4 proving out |
+| 4 — Global command bar pill (flagged) | `615f435` | ✅ shipped + validated live |
+| 5a — Retire modal, flag removed, pill = one surface | `dad241f` | ✅ shipped, ⚠️ eyeball-pending |
+| 5b — Globalize the quick-actions FAB (real actions) | `068a871` | ✅ shipped, ⚠️ eyeball-pending |
+
+## Final architecture (as shipped)
+
+- **Command surface:** the `GlobalCommandBar` pill (`GlobalCommandPalette.tsx`) on every
+  view EXCEPT Dashboard (where the `InlineCommandPalette` hero bar stays). App renders
+  `<GlobalCommandBar suppressed={view === AppView.DASHBOARD} />`. ⌘K → `pulse:command-palette-open`
+  → the pill expands (or, on Dashboard, the hero bar focuses via a Dashboard listener).
+  The centered modal is **deleted**.
+- **Re-pointed buttons:** Calendar/Messages/CockpitHub "open palette" buttons now dispatch
+  `pulse:command-palette-open` (they used to call the deleted modal's `open()`).
+- **Quick-actions FAB:** `GlobalQuickActions.tsx`, mounted at App level, on every view.
+  Real actions (task/contact/email composers, instant meeting, Quick-Relay contact picker);
+  message/search navigate; War Room → `LIVE_AI` (route bug fixed). Email item gated on
+  `emailEnabled`. The old Dashboard FAB + `dashboard:actions` scope + "?" button were removed
+  (KeyboardChordsLayer already owns the `?` overlay).
+
+## Eyeball checklist (do before considering this done)
+
+Both themes + mobile: pill top-right on every non-Dashboard view; ⌘K expands it; Dashboard
+shows the hero bar (no pill, no double bar) and ⌘K focuses it; drawer not clipped on
+Messages/Calendar; the FAB shows on every view and each action fires (task/contact/email open
+composers, meeting instant-starts, Quick Relay opens the contact picker → records, War Room
+opens the War Room not Summit); Calendar/Messages/Cockpit palette buttons open the pill.
 
 **Phase 4 form decision (2026-06-06):** user chose the **collapsed pill that
 expands in place** (not a persistent full-width bar) — respects the dense
