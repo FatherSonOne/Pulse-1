@@ -48,9 +48,15 @@ const GOOGLE_LOGIN_CLIENT_SECRET = process.env.GOOGLE_LOGIN_CLIENT_SECRET;
 // "Testing" so the restricted Gmail scopes work for the owner (test user) with
 // no CASA. Used only by the owner-only Gmail connect flow (/api/gmail/auth/*);
 // the production login client (35770) stays CASA-free. Never VITE_-prefix.
-const GMAIL_OAUTH_CLIENT_ID = process.env.GMAIL_OAUTH_CLIENT_ID;
-const GMAIL_OAUTH_CLIENT_SECRET = process.env.GMAIL_OAUTH_CLIENT_SECRET;
-const GMAIL_OAUTH_REDIRECT_URI = process.env.GMAIL_OAUTH_REDIRECT_URI;
+// .trim() guards the paste footgun: a trailing space/newline in the Render env
+// value gets URL-encoded into the OAuth request (client_id=…%0A, redirect_uri
+// =…/callback\n) → Google rejects with invalid_request "doesn't comply with
+// OAuth 2.0 policy" (confirmed live: the authorize URL carried client_id=…%0A).
+// Same paste-footgun fix already applied to the Slack/Supabase reads (b4d39fe,
+// da52d0b). ?.trim() is null-safe — undefined stays undefined so gmailConfigured() still reports not-configured.
+const GMAIL_OAUTH_CLIENT_ID = process.env.GMAIL_OAUTH_CLIENT_ID?.trim();
+const GMAIL_OAUTH_CLIENT_SECRET = process.env.GMAIL_OAUTH_CLIENT_SECRET?.trim();
+const GMAIL_OAUTH_REDIRECT_URI = process.env.GMAIL_OAUTH_REDIRECT_URI?.trim();
 const GMAIL_OAUTH_SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.send',
