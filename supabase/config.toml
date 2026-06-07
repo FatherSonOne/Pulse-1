@@ -428,6 +428,13 @@ verify_jwt = false
 [functions.delete-account]
 verify_jwt = true
 
+# slack-events: Slack Events API receiver (Slack-grounded Messages inbound, P3).
+# Slack sends NO Supabase JWT, so platform verify_jwt MUST be off or the gateway
+# 401s before the function's own auth runs. Auth is the Slack v0 request signature
+# (HMAC over the raw body, verified inside the function via SLACK_SIGNING_SECRET).
+[functions.slack-events]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
