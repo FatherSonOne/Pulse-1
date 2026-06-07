@@ -883,7 +883,7 @@ app.post('/api/slack/send', async (req, res) => {
     const userId = await resolveUserId(req);
     if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
 
-    const { slackUserId, channel: bodyChannel, text } = req.body || {};
+    const { slackUserId, channel: bodyChannel, text, email, displayName } = req.body || {};
     const trimmed = typeof text === 'string' ? text.trim() : '';
     if (!trimmed) return res.status(400).json({ error: 'Missing text', code: 'MISSING_TEXT' });
     if (!slackUserId && !bodyChannel) {
@@ -939,9 +939,38 @@ app.post('/api/slack/send', async (req, res) => {
       return res.status(502).json({ error: sent.error || 'chat.postMessage failed', code: 'SLACK_ERROR' });
     }
 
+    // Mirror the delivered DM into Messages as a local outbound row so the operator
+    // sees it in the thread. That needs the shadow auth.users row (the recipient side)
+    // + a transport='slack' conversation — both minted server-side here (service-role,
+    // the deterministic uuidv5 + auth.users insert can't be done from the browser). The
+    // CLIENT then writes the actual message via send_pulse_message (sender=self) so RLS
+    // + the _assert_caller_is guard pass naturally; we just return the ids it needs.
+    let shadowUserId = null;
+    let conversationId = null;
+    const teamId = row.slack_team_id || null;
+    if (slackUserId && teamId) {
+      try {
+        shadowUserId = await ensureSlackShadowUser(teamId, slackUserId, email || null, displayName || null);
+        const { data: convId, error: convErr } = await tokenStoreClient().rpc('get_or_create_slack_conversation', {
+          p_pulse_user_id: userId,
+          p_shadow_id: shadowUserId,
+          p_external_slack_user_id: slackUserId,
+          p_external_email: email || null,
+          p_external_display_name: displayName || null,
+        });
+        if (convErr) console.error('[Slack Send] conversation upsert error:', convErr);
+        else conversationId = convId;
+      } catch (mintErr) {
+        // The DM already landed in Slack; a local-mirror failure must NOT fail the send.
+        // ids stay null → the client falls back to optimistic-only display.
+        console.error('[Slack Send] local mirror failed (DM still delivered):', mintErr);
+      }
+    }
+
     // ts is returned so the client can tag the local outbound row + the slack-events
-    // edge fn (P3) can echo-dedup the operator's own message.
-    res.json({ ok: true, channel: sent.channel || channel, ts: sent.ts });
+    // edge fn (P3) can echo-dedup the operator's own message. shadowUserId/conversationId
+    // let the client persist the local outbound row in the right slack thread.
+    res.json({ ok: true, channel: sent.channel || channel, ts: sent.ts, shadowUserId, conversationId, teamId });
   } catch (error) {
     console.error('[Slack Send] error:', error);
     res.status(500).json({ error: error.message || 'Internal server error' });
