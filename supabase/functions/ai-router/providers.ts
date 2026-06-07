@@ -79,7 +79,16 @@ export async function invokeGemini(input: AIInvokeInput): Promise<AIResponse> {
     generationConfig: {
       temperature: input.temperature ?? 0.7,
       maxOutputTokens: input.maxOutputTokens ?? 2048,
-      ...(useJson ? { responseMimeType: 'application/json' } : {}),
+      // JSON-mode tasks are deterministic structured extraction. Gemini 2.5
+      // Flash is a thinking model whose thinking tokens are drawn from the SAME
+      // maxOutputTokens budget, so default thinking silently truncated the
+      // visible JSON mid-string (the daily briefing cut at ~1821 chars / ~500
+      // tokens under the 2048 cap). thinkingBudget:0 disables thinking on Flash
+      // → the full budget goes to output. Non-JSON Gemini calls (plain
+      // generation, webSearch grounding) keep thinking untouched.
+      ...(useJson
+        ? { responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } }
+        : {}),
     },
   };
 
@@ -109,6 +118,17 @@ export async function invokeGemini(input: AIInvokeInput): Promise<AIResponse> {
   const candidate = data.candidates?.[0];
   const text = candidate?.content?.parts?.[0]?.text;
   if (!text) throw new Error('Gemini returned no text');
+  // Surface truncation: a non-STOP finishReason (e.g. MAX_TOKENS) means the
+  // model was cut off mid-output. We don't throw — the JSON-parse repair tiers
+  // + caller's AIJsonParseError fallback already handle malformed output — but
+  // without this the truncation was invisible until the parser failed
+  // downstream, so the root cause couldn't be told apart from stray garbage.
+  if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+    console.warn(
+      `[ai-router] Gemini finishReason=${candidate.finishReason} — output may be truncated`,
+      { model: input.model, outputTokens: data.usageMetadata?.candidatesTokenCount },
+    );
+  }
 
   // Extract grounding metadata when webSearch was enabled
   let groundingChunks: GroundingChunk[] | undefined;
