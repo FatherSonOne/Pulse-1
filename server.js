@@ -13,9 +13,12 @@ const app = express();
 // 3003 for local dev. Binding the wrong port makes platform health checks fail.
 const PORT = process.env.PORT || 3003;
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+// .trim() all three: a trailing space/newline in an env value breaks the Supabase
+// client with "Invalid API key" (the same whitespace footgun that hit the Slack
+// redirect_uri). Valid URLs/keys never carry surrounding whitespace.
+const SUPABASE_URL = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
+const SUPABASE_ANON_KEY = (process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
+const SUPABASE_SERVICE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY || '').trim();
 
 // Google OAuth configuration.
 //
