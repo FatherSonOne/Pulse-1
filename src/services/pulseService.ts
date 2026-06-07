@@ -787,6 +787,36 @@ class PulseService {
       supabase.removeChannel(channel);
     };
   }
+
+  /**
+   * Subscribe to conversation INSERT/UPDATE in real-time (RLS-filtered to conversations the
+   * user participates in). Fires onChange so the caller can re-fetch the list. This surfaces:
+   *  - a brand-new inbound thread the instant it's created, and
+   *  - a Slack→native graduation (transport flip / merge) live, which the message subscription
+   *    can't catch because graduation may not insert a new message.
+   */
+  subscribeToConversations(onChange: () => void): () => void {
+    const channelName = `pulse-conversations-${Date.now()}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'pulse_conversations' },
+        () => onChange()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'pulse_conversations' },
+        () => onChange()
+      )
+      .subscribe((status) => {
+        console.log('Pulse conversations realtime subscription status:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }
   // ========================================
   // REACTION METHODS
   // ========================================

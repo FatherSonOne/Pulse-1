@@ -43,6 +43,60 @@ const KEYBOARD_SHORTCUTS: Record<string, string> = {
   '⇧F': 'Toggle Focus Mode',
 };
 
+// Slack-grounded Messages front-door: enter an email to start a 1:1 Slack DM as yourself.
+// The parent resolves the email -> Slack user, mints the thread, and opens it (closing the
+// modal on success); we own only the input + inline busy/error feedback. Plum, not coral/rose.
+function SlackDmStarter({
+  onStart,
+}: {
+  onStart: (email: string) => Promise<{ ok: boolean; error?: string }>;
+}) {
+  const [email, setEmail] = React.useState('');
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const submit = async () => {
+    const trimmed = email.trim();
+    if (!trimmed || busy) return;
+    setBusy(true);
+    setError(null);
+    const res = await onStart(trimmed);
+    setBusy(false);
+    if (!res.ok) setError(res.error || 'Could not start the Slack chat');
+    // On success the parent closes the modal — nothing more to do here.
+  };
+
+  return (
+    <div className="mt-4 pt-4 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
+      <p className="text-[10px] font-mono font-medium text-zinc-500 uppercase tracking-[0.1em] mb-2 px-1">
+        <MessagesSquare className="mr-1 inline w-3 h-3 text-purple-500" /> Message on Slack (as you)
+      </p>
+      <div className="flex gap-2">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+          placeholder="their@email.com"
+          className="flex-1 min-w-0 px-3 py-2.5 bg-[var(--pulse-surface-raised)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        />
+        <button
+          onClick={submit}
+          disabled={busy || !email.trim()}
+          className="px-3.5 py-2.5 rounded-xl text-sm font-medium bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-300 hover:bg-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 flex-shrink-0 transition"
+        >
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessagesSquare className="w-4 h-4" />}
+          Slack
+        </button>
+      </div>
+      {error && <p className="text-xs text-rose-500 mt-2 px-1">{error}</p>}
+      <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-2 px-1">
+        Delivered as you via Slack; opens as a “via Slack” thread.
+      </p>
+    </div>
+  );
+}
+
 export interface MessagesTopModalsProps {
   // ---- New Chat Modal ----
   showNewChatModal: boolean;
@@ -55,6 +109,10 @@ export interface MessagesTopModalsProps {
   recentPulseContacts: SearchUserResult[];
   suggestedPulseUsers: SearchUserResult[];
   startPulseConversation: (user: SearchUserResult) => void;
+  /** Slack-grounded Messages: show the "message someone on Slack (as you)" entry. */
+  slackGroundingEnabled?: boolean;
+  /** Start a Slack DM by email; resolves + opens the thread, returns inline feedback. */
+  onStartSlackConversation?: (email: string) => Promise<{ ok: boolean; error?: string }>;
 
   // ---- Artifact Modal ----
   showArtifactModal: boolean;
@@ -321,6 +379,10 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                   </div>
                 )}
               </div>
+
+              {props.slackGroundingEnabled && props.onStartSlackConversation && (
+                <SlackDmStarter onStart={props.onStartSlackConversation} />
+              )}
             </div>
 
             <div className="border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] mt-4 pt-4 px-4 pb-4">

@@ -977,6 +977,84 @@ app.post('/api/slack/send', async (req, res) => {
   }
 });
 
+// POST /api/slack/conversation — start (or fetch) a 1:1 Slack thread to message someone AS
+// YOU, WITHOUT sending yet (the Messages "New Slack message" front-door). Resolves an email
+// -> Slack user id via the operator's xoxp- (users:read.email), mints the shadow recipient +
+// the transport='slack' conversation (service-role), and returns the conversation id so the
+// client can open it in Messages. Body: { email } or { slackUserId } (+ optional displayName).
+app.post('/api/slack/conversation', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+
+    let { slackUserId, email, displayName } = req.body || {};
+    email = typeof email === 'string' ? email.trim() : null;
+    if (!slackUserId && !email) {
+      return res.status(400).json({ error: 'Provide an email or slackUserId', code: 'MISSING_TARGET' });
+    }
+
+    const row = await getUserSlackToken(userId);
+    if (!row?.access_token) return res.status(400).json({ error: 'Slack not connected', code: 'NOT_CONNECTED' });
+    const teamId = row.slack_team_id || null;
+    if (!teamId) return res.status(400).json({ error: 'Slack workspace unknown', code: 'NO_TEAM' });
+    const userToken = row.access_token;
+
+    const slackGet = async (method, params) => {
+      const qs = new URLSearchParams(params).toString();
+      const r = await fetch(`https://slack.com/api/${method}?${qs}`, {
+        headers: { Authorization: `Bearer ${userToken}` },
+      });
+      return r.json();
+    };
+    const isAuthDead = (err) =>
+      ['invalid_auth', 'token_revoked', 'account_inactive', 'token_expired', 'not_authed'].includes(err);
+
+    // Resolve email -> Slack user id (+ profile) when no id was given.
+    if (!slackUserId) {
+      const look = await slackGet('users.lookupByEmail', { email });
+      if (!look.ok) {
+        if (isAuthDead(look.error)) {
+          await deleteUserSlackToken(userId);
+          return res.status(401).json({ error: look.error, code: 'RECONNECT_REQUIRED' });
+        }
+        if (look.error === 'users_not_found') {
+          return res.status(404).json({ error: 'No Slack user has that email', code: 'NOT_ON_SLACK' });
+        }
+        return res.status(502).json({ error: look.error || 'lookup failed', code: 'SLACK_ERROR' });
+      }
+      slackUserId = look.user?.id;
+      displayName = displayName || look.user?.profile?.real_name || look.user?.real_name || look.user?.name || null;
+      email = email || look.user?.profile?.email || null;
+      if (!slackUserId) return res.status(502).json({ error: 'lookup returned no user id', code: 'SLACK_ERROR' });
+    } else if (!displayName) {
+      // Best-effort enrich a directly-provided id.
+      const info = await slackGet('users.info', { user: slackUserId });
+      if (info.ok) {
+        displayName = info.user?.profile?.real_name || info.user?.real_name || info.user?.name || null;
+        email = email || info.user?.profile?.email || null;
+      }
+    }
+
+    const shadowUserId = await ensureSlackShadowUser(teamId, slackUserId, email || null, displayName || null);
+    const { data: conversationId, error: convErr } = await tokenStoreClient().rpc('get_or_create_slack_conversation', {
+      p_pulse_user_id: userId,
+      p_shadow_id: shadowUserId,
+      p_external_slack_user_id: slackUserId,
+      p_external_email: email || null,
+      p_external_display_name: displayName || null,
+    });
+    if (convErr) {
+      console.error('[Slack Conversation] upsert error:', convErr);
+      return res.status(500).json({ error: convErr.message || 'conversation create failed' });
+    }
+
+    res.json({ ok: true, conversationId, shadowUserId, slackUserId, displayName: displayName || null, email: email || null, teamId });
+  } catch (error) {
+    console.error('[Slack Conversation] error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 // OpenAI Realtime API - Ephemeral Token Generation
 // This endpoint generates a short-lived token for WebRTC connections
 app.post('/api/realtime/session-token', async (req, res) => {

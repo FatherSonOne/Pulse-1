@@ -55,7 +55,7 @@ import { useMessageTrigger } from '../hooks/useMessageTrigger';
 import { useVirtualList } from '../hooks/useVirtualList';
 import { createInvitation, sendInvitationViaGmail, generateMailtoLink, generateEarlyAccessInvite, generateShareableInviteText } from '../services/inviteService';
 import { pulseService, SearchUserResult, PulseConversation, PulseMessage } from '../services/pulseService';
-import { sendSlackUserMessage } from '../services/slackUserConnect';
+import { sendSlackUserMessage, startSlackUserConversation } from '../services/slackUserConnect';
 import { messagePersonalService } from '../services/messagePersonalService';
 import { nativeSmsService } from '../services/nativeSmsService';
 import { canSendSms, openSmsApp, isNativePlatform } from '../services/permissionService';
@@ -1105,6 +1105,24 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     };
   }, [currentUser?.id]);
 
+  // Real-time subscription for conversation INSERT/UPDATE — surfaces a new inbound thread
+  // and a live Slack→native graduation swap (the message subscription can't catch a
+  // graduation that doesn't insert a message).
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const unsubscribe = pulseService.subscribeToConversations(async () => {
+      try {
+        const conversations = await pulseService.getConversations();
+        setPulseConversations(conversations);
+      } catch (error) {
+        console.error('Failed to refresh conversations (realtime):', error);
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUser?.id]);
+
   // Real-time subscription for reaction changes
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -1266,6 +1284,42 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       setPulseMessages(messages);
     } catch (error) {
       console.error('Failed to start Pulse conversation:', error);
+    }
+  }, []);
+
+  // Start (or open) a Slack DM to message someone AS YOU (Slack-grounded Messages front-door).
+  // Resolves the email -> Slack user server-side, mints the shadow + transport='slack'
+  // conversation, then opens it. Returns {ok,error} so the modal can show inline feedback.
+  const startSlackConversationByEmail = useCallback(async (email: string): Promise<{ ok: boolean; error?: string }> => {
+    const trimmed = email.trim();
+    if (!trimmed) return { ok: false, error: 'Enter an email' };
+    try {
+      const res = await startSlackUserConversation({ email: trimmed });
+      if (!res.ok || !res.conversationId) {
+        return {
+          ok: false,
+          error: res.code === 'NOT_ON_SLACK'
+            ? 'No Slack user has that email'
+            : res.code === 'RECONNECT_REQUIRED'
+            ? 'Slack disconnected — reconnect in Settings → Integrations'
+            : res.code === 'NOT_CONNECTED'
+            ? 'Connect Slack first (Settings → Integrations)'
+            : (res.error || 'Could not start the Slack chat'),
+        };
+      }
+      setActiveThreadId('');
+      setActivePulseConversation(res.conversationId);
+      setMobileView('chat');
+      setShowNewChatModal(false);
+      setPulseUserSearch('');
+      setPulseSearchResults([]);
+      const conversations = await pulseService.getConversations();
+      setPulseConversations(conversations);
+      const messages = await pulseService.getMessages(res.conversationId);
+      setPulseMessages(messages);
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Failed to start Slack chat' };
     }
   }, []);
 
@@ -3600,6 +3654,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         recentPulseContacts={recentPulseContacts}
         suggestedPulseUsers={suggestedPulseUsers}
         startPulseConversation={startPulseConversation}
+        slackGroundingEnabled={features.isFeatureEnabled('slackMessagesGrounding')}
+        onStartSlackConversation={startSlackConversationByEmail}
         showArtifactModal={showArtifactModal}
         setShowArtifactModal={setShowArtifactModal}
         loadingArtifact={loadingArtifact}

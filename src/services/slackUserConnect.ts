@@ -139,3 +139,50 @@ export async function sendSlackUserMessage(params: {
     return { ok: false, code: 'NETWORK', error: error instanceof Error ? error.message : 'Network error' };
   }
 }
+
+export interface SlackStartConversationResult {
+  ok: boolean;
+  /** The transport='slack' conversation id to open in Messages. */
+  conversationId?: string;
+  slackUserId?: string;
+  displayName?: string | null;
+  email?: string | null;
+  /** Error code when ok=false (NOT_ON_SLACK, NOT_CONNECTED, RECONNECT_REQUIRED, …). */
+  code?: string;
+  error?: string;
+}
+
+/**
+ * Start (or fetch) a 1:1 Slack thread to message someone AS YOU, without sending yet — the
+ * Messages "New Slack message" front-door. Pass an email (resolved to a Slack user server-side
+ * via the operator's token) or a known slackUserId. The server mints the shadow recipient + the
+ * slack conversation and returns conversationId, which the caller opens in Messages.
+ */
+export async function startSlackUserConversation(params: {
+  email?: string;
+  slackUserId?: string;
+  displayName?: string;
+}): Promise<SlackStartConversationResult> {
+  try {
+    const headers = await authHeaders();
+    if (!headers) return { ok: false, code: 'UNAUTHENTICATED', error: 'Not signed in' };
+    const res = await fetch(`${BACKEND_URL}/api/slack/conversation`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(params),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      return { ok: false, code: data.code || 'FAILED', error: data.error || `HTTP ${res.status}` };
+    }
+    return {
+      ok: true,
+      conversationId: data.conversationId,
+      slackUserId: data.slackUserId,
+      displayName: data.displayName ?? null,
+      email: data.email ?? null,
+    };
+  } catch (error) {
+    return { ok: false, code: 'NETWORK', error: error instanceof Error ? error.message : 'Network error' };
+  }
+}
