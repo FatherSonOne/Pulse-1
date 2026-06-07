@@ -59,6 +59,13 @@ export interface PulseConversation {
   // Joined fields
   other_user?: UserProfile;
   unread_count?: number;
+  // Slack-grounded Messages (slackMessagesGrounding): transport discriminator +
+  // conversation-level external identity. 'pulse' (default) for native Pulse DMs;
+  // 'slack' for a Slack-backed thread whose counterpart is a shadow auth.users row.
+  transport?: string;
+  external_slack_user_id?: string | null;
+  external_email?: string | null;
+  external_display_name?: string | null;
 }
 
 export interface SearchUserResult {
@@ -299,9 +306,32 @@ class PulseService {
       .map(conv => {
         const isUser1 = conv.user1_id === user.id;
         const otherUserId = isUser1 ? conv.user2_id : conv.user1_id;
+        let other_user: UserProfile | null = profileMap.get(otherUserId) || null;
+        // Slack-grounded Messages: the counterpart is a shadow auth.users row with no
+        // user_profiles entry, so synthesize a display identity from the conversation's
+        // external_* columns. This keeps the existing Messages render path (which keys
+        // off other_user) working verbatim — only the live-signal seams (presence/typing/
+        // receipts) are gated off downstream. transport='pulse' rows are unaffected.
+        if (!other_user && (conv as any).transport === 'slack') {
+          other_user = {
+            id: otherUserId,
+            handle: (conv as any).external_slack_user_id || null,
+            display_name: (conv as any).external_display_name || (conv as any).external_email || 'Slack user',
+            full_name: (conv as any).external_display_name || null,
+            bio: null,
+            avatar_url: null,
+            is_public: false,
+            is_verified: false,
+            last_seen_at: conv.updated_at,
+            created_at: conv.created_at,
+            updated_at: conv.updated_at,
+            language: 'en',
+            timezone: 'UTC',
+          } as UserProfile;
+        }
         return {
           ...conv,
-          other_user: profileMap.get(otherUserId) || null,
+          other_user,
           unread_count: isUser1 ? conv.user1_unread_count : conv.user2_unread_count
         };
       });

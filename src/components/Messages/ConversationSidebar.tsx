@@ -245,6 +245,9 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
             {virtualConversations.map(({ item: conv, style }) => {
               const otherUser = conv.other_user;
               if (!otherUser) return null;
+              // Slack-grounded Messages: gate Pulse-only signals (presence) + the raw
+              // Slack-id handle for a slack-transport thread; mark it with a plum chip.
+              const isSlack = conv.transport === 'slack';
               const hasUnread = (conv.unread_count || 0) > 0;
               return (
                 <div key={conv.id} style={style}>
@@ -270,10 +273,12 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                       ) : (
                         (otherUser.display_name || otherUser.handle || '?').charAt(0).toUpperCase()
                       )}
-                      {/* Online indicator */}
-                      <div className="absolute -bottom-0.5 -right-0.5">
-                        <OnlineIndicator userId={otherUser.id} size="medium" />
-                      </div>
+                      {/* Online indicator — gated off for Slack (no Pulse presence for a shadow) */}
+                      {!isSlack && (
+                        <div className="absolute -bottom-0.5 -right-0.5">
+                          <OnlineIndicator userId={otherUser.id} size="medium" />
+                        </div>
+                      )}
                       {otherUser.is_verified && (
                         <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-zinc-400 dark:bg-zinc-500 rounded-full flex items-center justify-center border-2 border-white dark:border-black" title="Verified">
                           <Check className="text-[7px] text-white" />
@@ -305,7 +310,10 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                         )}
                       </div>
                       <div className="flex items-center gap-1.5">
-                        {otherUser.handle && (
+                        {isSlack && (
+                          <span className="font-mono text-[10px] text-purple-600 dark:text-purple-300 flex-shrink-0" title="Delivered via Slack">Slack</span>
+                        )}
+                        {!isSlack && otherUser.handle && (
                           <span className="font-mono text-[10px] text-zinc-600 dark:text-zinc-400 flex-shrink-0">@{otherUser.handle}</span>
                         )}
                         {conv.last_message_preview ? (

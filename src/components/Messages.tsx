@@ -55,6 +55,7 @@ import { useMessageTrigger } from '../hooks/useMessageTrigger';
 import { useVirtualList } from '../hooks/useVirtualList';
 import { createInvitation, sendInvitationViaGmail, generateMailtoLink, generateEarlyAccessInvite, generateShareableInviteText } from '../services/inviteService';
 import { pulseService, SearchUserResult, PulseConversation, PulseMessage } from '../services/pulseService';
+import { sendSlackUserMessage } from '../services/slackUserConnect';
 import { messagePersonalService } from '../services/messagePersonalService';
 import { nativeSmsService } from '../services/nativeSmsService';
 import { canSendSms, openSmsApp, isNativePlatform } from '../services/permissionService';
@@ -1375,6 +1376,49 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     setPulseMessages(prev => [...prev, optimisticMessage]);
 
     try {
+      // Slack-grounded Messages (slackMessagesGrounding): a transport='slack' thread is
+      // delivered to Slack AS THE OPERATOR via the authenticated send endpoint (xoxp-
+      // injected server-side), then mirrored as a local outbound row so it shows in the
+      // thread. We never call pulseService.sendMessage alone here — that would write a
+      // local row without ever reaching Slack.
+      if ((conversation as any).transport === 'slack') {
+        const slackUserId = (conversation as any).external_slack_user_id as string | undefined;
+        if (!slackUserId) {
+          throw new Error('This Slack conversation is missing its Slack identity.');
+        }
+        const result = await sendSlackUserMessage({
+          slackUserId,
+          text: messageContent,
+          email: (conversation as any).external_email ?? null,
+          displayName: (conversation as any).external_display_name ?? null,
+        });
+        if (!result.ok) {
+          setPulseMessages(prev => prev.filter(m => m.id !== tempId));
+          setInputText(messageContent);
+          setPulseEditToast(
+            result.code === 'RECONNECT_REQUIRED'
+              ? 'Slack disconnected — reconnect under Settings → Integrations'
+              : `Slack send failed: ${result.error || 'unknown error'}`
+          );
+          return;
+        }
+        // Persist the local outbound row so the sent message survives a refresh. The
+        // server already minted the shadow recipient + the slack conversation; we write
+        // as ourselves (sender=self, recipient=shadow) via send_pulse_message.
+        const recipientShadowId = result.shadowUserId || conversation.other_user.id;
+        try {
+          const slackMsgId = await pulseService.sendMessage(recipientShadowId, messageContent);
+          setPulseMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: slackMsgId } : m));
+        } catch (persistErr) {
+          // The Slack DM already landed; keep the optimistic row (it reconciles on next
+          // load) rather than yanking a message the recipient already received.
+          console.error('Slack send: local row persist failed (DM delivered):', persistErr);
+        }
+        const slackConversations = await pulseService.getConversations();
+        setPulseConversations(slackConversations);
+        return;
+      }
+
       const messageId = await pulseService.sendMessage(conversation.other_user.id, messageContent);
 
       // Swap the optimistic id for the real one so the realtime
@@ -1407,6 +1451,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   // Get active Pulse conversation details
   const activePulseConv = pulseConversations.find(c => c.id === activePulseConversation);
+  // Slack-grounded Messages: a transport='slack' thread renders the external Slack
+  // identity (synthesized as other_user in getConversations) and gates OFF the Pulse-only
+  // live signals Slack can't provide (presence, typing, read/delivered receipts).
+  // See docs/SLACK_MESSAGES_GROUNDING_SCOPE_2026-06-06.md §11.
+  const isSlackConv = (activePulseConv as PulseConversation | undefined)?.transport === 'slack';
 
   // Load reactions for currently visible messages
   const loadReactionsForMessages = useCallback(async (messages: PulseMessage[]) => {
@@ -3670,7 +3719,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               </button>
               <button
                 onClick={() => {
-                  if (activePulseConv.other_user?.id) {
+                  // The Slack counterpart is a shadow auth.users row, not a real Pulse
+                  // contact — don't open a contact panel that would resolve to nothing.
+                  if (!isSlackConv && activePulseConv.other_user?.id) {
                     setSelectedContactUserId(activePulseConv.other_user.id);
                     setShowContactPanel(true);
                   }
@@ -3683,8 +3734,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 ) : (
                   (activePulseConv.other_user?.display_name || activePulseConv.other_user?.handle || '?').charAt(0).toUpperCase()
                 )}
-                {/* Online indicator */}
-                {activePulseConv.other_user?.id && (
+                {/* Online indicator — gated off for Slack (no Pulse presence for a shadow) */}
+                {!isSlackConv && activePulseConv.other_user?.id && (
                   <div className="absolute -bottom-0.5 -right-0.5">
                     <OnlineIndicator userId={activePulseConv.other_user.id} size="medium" />
                   </div>
@@ -3703,11 +3754,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   )}
                 </span>
                 <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">
-                  {activePulseConv.other_user?.handle && (
+                  {!isSlackConv && activePulseConv.other_user?.handle && (
                     <span>@{activePulseConv.other_user.handle}</span>
                   )}
-                  {activePulseConv.other_user?.id && (
+                  {!isSlackConv && activePulseConv.other_user?.id && (
                     <OnlineIndicator userId={activePulseConv.other_user.id} showText={true} />
+                  )}
+                  {isSlackConv && (
+                    <span
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-300 normal-case tracking-normal"
+                      title="Messages in this thread are delivered through Slack"
+                    >
+                      via Slack
+                    </span>
                   )}
                   {activeConvGoal && (
                     <span
@@ -4490,8 +4549,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         </GestureHandler>
 
                         {/* Receipt — only the latest own-message carries it.
-                            Coral mono "READ" when read, muted "DELIVERED" otherwise. */}
-                        {isLatestOwn && (
+                            Coral mono "READ" when read, muted "DELIVERED" otherwise.
+                            Gated off for Slack: there is no read-receipt channel from
+                            Slack, so is_read would forever read "DELIVERED" (misleading). */}
+                        {!isSlackConv && isLatestOwn && (
                           <div className="msg-receipt" data-state={msg.is_read ? 'read' : 'delivered'}>
                             <span className="msg-receipt-dot" aria-hidden="true" />
                             <span>{msg.is_read ? 'READ' : 'DELIVERED'}</span>
@@ -4526,7 +4587,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             )}
 
             {/* Typing Indicator - wired to Supabase Realtime broadcast */}
-            {otherUserTyping && activePulseConv?.other_user && (
+            {!isSlackConv && otherUserTyping && activePulseConv?.other_user && (
               <div className="flex justify-start mb-4 px-4">
                 <TypingIndicator
                   userName={activePulseConv.other_user.display_name || activePulseConv.other_user.handle || 'User'}
@@ -4848,7 +4909,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 messageCount={pulseMessages.length}
                 toolsEnabled={MESSAGES_TOOLS_ENABLED}
                 enterToSend={messageSettings.enterToSend}
-                sendTypingIndicators={messageSettings.sendTypingIndicators}
+                sendTypingIndicators={!isSlackConv && messageSettings.sendTypingIndicators}
               />
             </MessageInputPortal>
           )}
