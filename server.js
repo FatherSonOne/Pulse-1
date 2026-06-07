@@ -870,6 +870,84 @@ app.delete('/api/slack/disconnect', async (req, res) => {
   }
 });
 
+// POST /api/slack/send — send a 1:1 DM AS THE OPERATOR (xoxp-), for Slack-grounded
+// Messages send-as-you (P2). The user token is read server-side from
+// user_slack_tokens and injected into the Slack call; it NEVER reaches the browser,
+// and this route is intentionally separate from the open bot proxy (/api/slack/proxy,
+// D7). Mirrors slackService.openDm + sendMessage, but posts as the human. On a
+// token-death error the stored grant is dropped and the client is told to reconnect
+// (mirrors the Gmail invalid_grant branch). Phase-8 bot send (Contacts) is untouched
+// (D8 — both tokens coexist). Body: { slackUserId?, channel?, text } (one target req).
+app.post('/api/slack/send', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+
+    const { slackUserId, channel: bodyChannel, text } = req.body || {};
+    const trimmed = typeof text === 'string' ? text.trim() : '';
+    if (!trimmed) return res.status(400).json({ error: 'Missing text', code: 'MISSING_TEXT' });
+    if (!slackUserId && !bodyChannel) {
+      return res.status(400).json({ error: 'Missing slackUserId or channel', code: 'MISSING_TARGET' });
+    }
+
+    const row = await getUserSlackToken(userId);
+    if (!row?.access_token) {
+      return res.status(400).json({ error: 'Slack not connected', code: 'NOT_CONNECTED' });
+    }
+    const userToken = row.access_token;
+
+    const slackPost = async (method, payload) => {
+      const r = await fetch(`https://slack.com/api/${method}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          Authorization: `Bearer ${userToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      return r.json();
+    };
+
+    // A dead user token can't be refreshed (non-expiring unless rotation is on, which
+    // is out of scope); drop the grant + tell the client to reconnect.
+    const isAuthDead = (err) =>
+      ['invalid_auth', 'token_revoked', 'account_inactive', 'token_expired', 'not_authed'].includes(err);
+
+    // Resolve the DM channel (open it if only a slackUserId was given). Needs im:write.
+    let channel = bodyChannel;
+    if (!channel) {
+      const open = await slackPost('conversations.open', { users: slackUserId });
+      if (!open.ok) {
+        if (isAuthDead(open.error)) {
+          await deleteUserSlackToken(userId);
+          return res.status(401).json({ error: open.error, code: 'RECONNECT_REQUIRED' });
+        }
+        return res.status(502).json({ error: open.error || 'conversations.open failed', code: 'SLACK_ERROR' });
+      }
+      channel = open.channel?.id;
+      if (!channel) {
+        return res.status(502).json({ error: 'conversations.open returned no channel id', code: 'SLACK_ERROR' });
+      }
+    }
+
+    const sent = await slackPost('chat.postMessage', { channel, text: trimmed });
+    if (!sent.ok) {
+      if (isAuthDead(sent.error)) {
+        await deleteUserSlackToken(userId);
+        return res.status(401).json({ error: sent.error, code: 'RECONNECT_REQUIRED' });
+      }
+      return res.status(502).json({ error: sent.error || 'chat.postMessage failed', code: 'SLACK_ERROR' });
+    }
+
+    // ts is returned so the client can tag the local outbound row + the slack-events
+    // edge fn (P3) can echo-dedup the operator's own message.
+    res.json({ ok: true, channel: sent.channel || channel, ts: sent.ts });
+  } catch (error) {
+    console.error('[Slack Send] error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 // OpenAI Realtime API - Ephemeral Token Generation
 // This endpoint generates a short-lived token for WebRTC connections
 app.post('/api/realtime/session-token', async (req, res) => {

@@ -81,3 +81,43 @@ export async function disconnectSlackUser(): Promise<boolean> {
     return false;
   }
 }
+
+export interface SlackUserSendResult {
+  ok: boolean;
+  /** The IM channel the message landed in (chat.postMessage result). */
+  channel?: string;
+  /** The Slack message ts — used to tag the local row + echo-dedup inbound (P3). */
+  ts?: string;
+  /** Error code when ok=false (RECONNECT_REQUIRED, NOT_CONNECTED, SLACK_ERROR, …). */
+  code?: string;
+  error?: string;
+}
+
+/**
+ * Send a 1:1 DM to a Slack user AS THE OPERATOR (send-as-you, P2). The xoxp- user
+ * token is injected server-side and never touches the browser. Pass the recipient's
+ * Slack user id (contacts.slack_user_id) or an already-open DM channel id. A
+ * RECONNECT_REQUIRED code means the stored grant died and the user must reconnect.
+ */
+export async function sendSlackUserMessage(params: {
+  slackUserId?: string;
+  channel?: string;
+  text: string;
+}): Promise<SlackUserSendResult> {
+  try {
+    const headers = await authHeaders();
+    if (!headers) return { ok: false, code: 'UNAUTHENTICATED', error: 'Not signed in' };
+    const res = await fetch(`${BACKEND_URL}/api/slack/send`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(params),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      return { ok: false, code: data.code || 'SEND_FAILED', error: data.error || `HTTP ${res.status}` };
+    }
+    return { ok: true, channel: data.channel, ts: data.ts };
+  } catch (error) {
+    return { ok: false, code: 'NETWORK', error: error instanceof Error ? error.message : 'Network error' };
+  }
+}
