@@ -722,6 +722,7 @@ async function upsertUserSlackToken(userId, fields) {
     .from('user_slack_tokens')
     .upsert({ user_id: userId, ...fields, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
   if (error) console.error('[Slack Token] upsert error:', error);
+  return error || null;
 }
 
 async function deleteUserSlackToken(userId) {
@@ -800,7 +801,7 @@ app.get('/api/slack/auth/callback', async (req, res) => {
     if (!authedUser.access_token) {
       return res.redirect(`${appUrl}/?slack_error=no_user_token`);
     }
-    await upsertUserSlackToken(userId, {
+    const storeErr = await upsertUserSlackToken(userId, {
       access_token: authedUser.access_token,
       scope: authedUser.scope || null,
       slack_user_id: authedUser.id || null,
@@ -808,6 +809,13 @@ app.get('/api/slack/auth/callback', async (req, res) => {
       bot_user_id: data.bot_user_id || null,
       token_type: authedUser.token_type || 'user',
     });
+    if (storeErr) {
+      // Surface the real failure instead of a misleading ?slack=connected. A
+      // silent store failure (e.g. SUPABASE_SERVICE_ROLE_KEY missing → the client
+      // falls back to anon → RLS blocks the write) is what made an empty table
+      // look "connected".
+      return res.redirect(`${appUrl}/?slack_error=${encodeURIComponent('store_failed: ' + (storeErr.message || storeErr.code || 'db write blocked'))}`);
+    }
     console.log('✅ Slack user grant stored for user:', userId);
     res.redirect(`${appUrl}/?slack=connected`);
   } catch (error) {
