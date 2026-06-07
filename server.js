@@ -735,6 +735,32 @@ async function deleteUserSlackToken(userId) {
   if (error) console.error('[Slack Token] delete error:', error);
 }
 
+// Ensure a deterministic shadow auth.users row exists for a Slack counterpart so
+// they can occupy a participant slot in pulse_conversations/pulse_messages (all 4
+// participant cols FK -> auth.users; a bare synthetic uuid would fail the FK). The
+// DB RPC (SECURITY DEFINER, service_role-only) computes the uuidv5, inserts the row
+// email-less with raw_user_meta_data.pulse_shadow=true — which the 4 auth.users
+// onboarding triggers skip (migration 20260607061411) so it fires ZERO side effects
+// — and is idempotent (ON CONFLICT DO NOTHING). Returns the same uuid every call.
+// Used by P2 (send-as-you) and the slack-events edge fn (P3).
+// Scope: docs/SLACK_MESSAGES_GROUNDING_SCOPE_2026-06-06.md §3/§7.
+async function ensureSlackShadowUser(teamId, slackUserId, email = null, displayName = null) {
+  if (!teamId || !slackUserId) {
+    throw new Error('ensureSlackShadowUser: teamId and slackUserId are required');
+  }
+  const { data, error } = await tokenStoreClient().rpc('ensure_slack_shadow_user', {
+    p_team_id: teamId,
+    p_slack_user_id: slackUserId,
+    p_email: email,
+    p_display_name: displayName,
+  });
+  if (error) {
+    console.error('[Slack Shadow] mint error:', error);
+    throw new Error(error.message || 'shadow mint failed');
+  }
+  return data; // the deterministic shadow auth.users uuid
+}
+
 // GET /api/slack/status — is the owner's Slack user-token grant connected?
 app.get('/api/slack/status', async (req, res) => {
   try {
