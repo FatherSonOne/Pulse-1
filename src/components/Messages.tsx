@@ -55,7 +55,7 @@ import { useMessageTrigger } from '../hooks/useMessageTrigger';
 import { useVirtualList } from '../hooks/useVirtualList';
 import { createInvitation, sendInvitationViaGmail, generateMailtoLink, generateEarlyAccessInvite, generateShareableInviteText } from '../services/inviteService';
 import { pulseService, SearchUserResult, PulseConversation, PulseMessage } from '../services/pulseService';
-import { sendSlackUserMessage, startSlackUserConversation } from '../services/slackUserConnect';
+import { sendSlackUserMessage, startSlackUserConversation, resolveGraduationCandidate, graduateSlackConversation } from '../services/slackUserConnect';
 import { messagePersonalService } from '../services/messagePersonalService';
 import { nativeSmsService } from '../services/nativeSmsService';
 import { canSendSms, openSmsApp, isNativePlatform } from '../services/permissionService';
@@ -857,7 +857,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     return () => window.clearTimeout(handle);
   }, [pulseEditToast]);
 
+  // ─── Slack→native graduation (P5 client half) ───────────────────────────
+  // When the active transport='slack' thread's counterpart turns out to be a real
+  // Pulse user (matched by their verified email), offer a one-tap flip to a native
+  // DM. `graduationCandidateId` = the resolved real Pulse user id for the ACTIVE
+  // slack thread (null = not graduatable / not a slack thread). The DB engine
+  // (resolve_pulse_user_by_email + graduate_slack_conversation) is already built.
+  const [graduationCandidateId, setGraduationCandidateId] = useState<string | null>(null);
+  const [isGraduating, setIsGraduating] = useState(false);
+  /** Conversation ids whose graduation banner the user dismissed this session. */
+  const [dismissedGraduations, setDismissedGraduations] = useState<Set<string>>(() => new Set());
+
   const features = useFeatures();
+  const slackGroundingEnabled = features.isFeatureEnabled('slackMessagesGrounding');
   const { settings: messageSettings } = useMessageSettings();
   const [showFeatureSettings, setShowFeatureSettings] = useState(false);
 
@@ -1510,6 +1522,57 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // live signals Slack can't provide (presence, typing, read/delivered receipts).
   // See docs/SLACK_MESSAGES_GROUNDING_SCOPE_2026-06-06.md §11.
   const isSlackConv = (activePulseConv as PulseConversation | undefined)?.transport === 'slack';
+  const activeSlackEmail = (activePulseConv as PulseConversation | undefined)?.external_email ?? null;
+
+  // ─── Graduation: resolve whether the active slack thread is graduatable ──
+  // When the feature is on and we're viewing a transport='slack' thread with a
+  // known external email, ask the DB (oracle-guarded, read-only) whether that
+  // email belongs to a real Pulse user. A non-null result surfaces the prompt.
+  useEffect(() => {
+    if (!slackGroundingEnabled || !isSlackConv || !activeSlackEmail) {
+      setGraduationCandidateId(null);
+      return;
+    }
+    let cancelled = false;
+    setGraduationCandidateId(null);
+    void resolveGraduationCandidate(activeSlackEmail).then(id => {
+      if (!cancelled) setGraduationCandidateId(id);
+    });
+    return () => { cancelled = true; };
+  }, [slackGroundingEnabled, isSlackConv, activeSlackEmail, activePulseConversation]);
+
+  // ─── Graduation: flip the active slack thread to a native Pulse DM ───────
+  // The DB derives the real counterpart from the thread's verified external_email
+  // and returns the SURVIVING conversation id — same id for a flip-in-place (CASE
+  // A), a DIFFERENT (native) id when it merged into an existing thread (CASE B).
+  // We re-point the active thread to the survivor, reload its messages, and clear
+  // the prompt. subscribeToConversations also fires and refetches the list.
+  const handleGraduateConversation = useCallback(async () => {
+    if (!activePulseConversation || isGraduating) return;
+    setIsGraduating(true);
+    const shadowId = activePulseConversation;
+    try {
+      const res = await graduateSlackConversation(shadowId);
+      if (!res.ok || !res.conversationId) {
+        setPulseEditToast(res.error ? `Couldn't switch to native: ${res.error}` : "Couldn't switch to native — try again");
+        return;
+      }
+      const survivingId = res.conversationId;
+      const conversations = await pulseService.getConversations();
+      setPulseConversations(conversations);
+      if (survivingId !== shadowId) {
+        setActivePulseConversation(survivingId);
+      }
+      const messages = await pulseService.getMessages(survivingId);
+      setPulseMessages(messages);
+      setGraduationCandidateId(null);
+      setPulseEditToast('Now on Pulse — messages are native');
+    } catch (error) {
+      setPulseEditToast(error instanceof Error ? `Couldn't switch to native: ${error.message}` : "Couldn't switch to native — try again");
+    } finally {
+      setIsGraduating(false);
+    }
+  }, [activePulseConversation, isGraduating]);
 
   // Load reactions for currently visible messages
   const loadReactionsForMessages = useCallback(async (messages: PulseMessage[]) => {
@@ -3654,7 +3717,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         recentPulseContacts={recentPulseContacts}
         suggestedPulseUsers={suggestedPulseUsers}
         startPulseConversation={startPulseConversation}
-        slackGroundingEnabled={features.isFeatureEnabled('slackMessagesGrounding')}
+        slackGroundingEnabled={slackGroundingEnabled}
         onStartSlackConversation={startSlackConversationByEmail}
         showArtifactModal={showArtifactModal}
         setShowArtifactModal={setShowArtifactModal}
@@ -3911,6 +3974,38 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             </div>
 
           </div>
+
+          {/* Slack→native graduation prompt (P5 client half). Surfaces only when the
+              active slack thread's counterpart resolves to a real Pulse user. One tap
+              flips the thread to native (presence/typing/receipts re-enable). This is a
+              relationship nudge, NOT an AI surface — emerald accent, never coral. */}
+          {slackGroundingEnabled && isSlackConv && graduationCandidateId && activePulseConversation && !dismissedGraduations.has(activePulseConversation) && (
+            <div className="flex items-center gap-3 px-4 py-2.5 border-b border-emerald-500/20 bg-emerald-500/[0.07] dark:bg-emerald-500/[0.10]">
+              <GraduationCap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+              <span className="text-sm text-emerald-900 dark:text-emerald-100 flex-1 min-w-0">
+                <span className="font-medium">{activePulseConv?.other_user?.display_name || 'This person'}</span>
+                {' is on Pulse — switch this thread to native messaging?'}
+              </span>
+              <button
+                type="button"
+                onClick={handleGraduateConversation}
+                disabled={isGraduating}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 flex-shrink-0"
+              >
+                {isGraduating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                {isGraduating ? 'Switching…' : 'Switch to native'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { if (activePulseConversation) setDismissedGraduations(prev => new Set(prev).add(activePulseConversation)); }}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-emerald-700/70 dark:text-emerald-300/70 hover:bg-emerald-500/15 transition-colors flex-shrink-0"
+                title="Dismiss"
+                aria-label="Dismiss graduation prompt"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           {/* Pulse Message Search Panel */}
           {isSearchOpen && (

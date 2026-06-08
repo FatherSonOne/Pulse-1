@@ -140,6 +140,47 @@ export async function sendSlackUserMessage(params: {
   }
 }
 
+/**
+ * Slack→native graduation (P5 client half). Given a slack thread's verified counterpart
+ * email, ask the DB whether that person is a real Pulse user (so the thread can flip to a
+ * native DM). Returns the matching Pulse auth-user id, or null if there's no unambiguous
+ * match / the caller doesn't hold that email as a contact (the resolver is oracle-guarded).
+ * Read-only; safe to call on every slack-thread open.
+ */
+export async function resolveGraduationCandidate(email: string | null | undefined): Promise<string | null> {
+  const trimmed = (email ?? '').trim();
+  if (!trimmed) return null;
+  try {
+    const { data, error } = await supabase.rpc('resolve_pulse_user_by_email', { p_email: trimmed });
+    if (error) return null;
+    return (data as string | null) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Flip a transport='slack' thread to a native Pulse DM. The DB derives the real counterpart
+ * from the conversation's verified external_email (never client-supplied) and does a
+ * conditional MERGE: CASE A flips in place (returns the SAME id); CASE B merges into an
+ * existing native thread and deletes the shadow (returns the surviving NATIVE id, which
+ * DIFFERS from the shadow id — callers must re-point the active thread to it).
+ * Returns { ok, conversationId } where conversationId is the surviving thread.
+ */
+export async function graduateSlackConversation(
+  shadowConversationId: string
+): Promise<{ ok: boolean; conversationId?: string; error?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('graduate_slack_conversation', {
+      p_shadow_conversation_id: shadowConversationId,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, conversationId: (data as string | null) ?? shadowConversationId };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Graduation failed' };
+  }
+}
+
 export interface SlackStartConversationResult {
   ok: boolean;
   /** The transport='slack' conversation id to open in Messages. */
