@@ -42,7 +42,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
           Google Services
         </h3>
         <p>
-          Connect your Google account to sync Calendar, Contacts, Gmail, and Maps. All services use a single Google sign-in.
+          Connect your Google account to sync Calendar and Contacts. Gmail connects separately for Email.
         </p>
       </div>
 
@@ -80,13 +80,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
                   <p className="text-sm text-emerald-600 dark:text-emerald-500">{user?.email}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-2 mt-4">
-                <div className="flex flex-col items-center p-2 bg-[var(--pulse-surface)] rounded-lg">
-                  <svg viewBox="0 0 24 24" style={{ width: '20px', height: '20px', marginBottom: '4px' }}>
-                    <path fill="#EA4335" d="M20 18h-2V9.25L12 13 6 9.25V18H4V6h1.2l6.8 4.25L18.8 6H20m0-2H4c-1.11 0-2 .89-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
-                  </svg>
-                  <span className="text-[10px] text-zinc-600 dark:text-zinc-400">Gmail</span>
-                </div>
+              <div className="grid grid-cols-3 gap-2 mt-4">
                 <div className="flex flex-col items-center p-2 bg-[var(--pulse-surface)] rounded-lg">
                   <svg viewBox="0 0 24 24" style={{ width: '20px', height: '20px', marginBottom: '4px' }}>
                     <path fill="#4285F4" d="M19 19H5V8h14m-3-7v2H8V1H6v2H5c-1.11 0-2 .89-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-1V1m-1 11h-5v5h5v-5z"/>
@@ -129,8 +123,6 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
             <ul>
               <li><code>calendar.readonly</code> Read calendar events</li>
               <li><code>calendar.events</code> Create and modify events</li>
-              <li><code>gmail.readonly</code> Read email messages</li>
-              <li><code>gmail.send</code> Send emails</li>
               <li><code>contacts.readonly</code> Read your contacts</li>
             </ul>
             <p style={{ marginTop: '12px', opacity: 0.8 }}>
