@@ -3980,7 +3980,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               flips the thread to native (presence/typing/receipts re-enable). This is a
               relationship nudge, NOT an AI surface — emerald accent, never coral. */}
           {slackGroundingEnabled && isSlackConv && graduationCandidateId && activePulseConversation && !dismissedGraduations.has(activePulseConversation) && (
-            <div className="flex items-center gap-3 px-4 py-2.5 border-b border-emerald-500/20 bg-emerald-500/[0.07] dark:bg-emerald-500/[0.10]">
+            <div role="status" aria-live="polite" className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-emerald-500/20 bg-emerald-500/[0.07] dark:bg-emerald-500/[0.10]">
               <GraduationCap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
               <span className="text-sm text-emerald-900 dark:text-emerald-100 flex-1 min-w-0">
                 <span className="font-medium">{activePulseConv?.other_user?.display_name || 'This person'}</span>
@@ -3998,7 +3998,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               <button
                 type="button"
                 onClick={() => { if (activePulseConversation) setDismissedGraduations(prev => new Set(prev).add(activePulseConversation)); }}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-emerald-700/70 dark:text-emerald-300/70 hover:bg-emerald-500/15 transition-colors flex-shrink-0"
+                disabled={isGraduating}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-emerald-700/70 dark:text-emerald-300/70 hover:bg-emerald-500/15 transition-colors flex-shrink-0 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                 title="Dismiss"
                 aria-label="Dismiss graduation prompt"
               >
