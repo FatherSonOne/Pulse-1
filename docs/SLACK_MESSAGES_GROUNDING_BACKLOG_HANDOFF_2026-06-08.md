@@ -21,7 +21,8 @@
 | Front-door (start a Slack DM + realtime conv sub) | shipped | `server.js` `POST /api/slack/conversation`; `slackUserConnect.ts` `startSlackUserConversation`/`sendSlackUserMessage`; `Messages.tsx` `startSlackConversationByEmail` + conversation realtime `useEffect`; `MessagesTopModals.tsx` `SlackDmStarter`; `pulseService.subscribeToConversations` |
 
 **Commits (all on `origin/main`):** `e68744c`, `18acc23`, `6db5f30`, `9c34533`, `fdc1c14`,
-`6de821c`, `809064f`, `ef17b70` (front-door), `6f85645` (distribution doc), plus `3861dc7` (redeploy).
+`6de821c`, `809064f`, `ef17b70` (front-door), `6f85645` (distribution doc), `3861dc7` (redeploy),
+plus `9c451fd` (**3.1 graduation prompt UI — client half**, 2026-06-08).
 **Flag:** `slackMessagesGrounding` (FeatureContext, surfaced as **Settings → Features & Labs →
 Integrations (Beta) → "Slack in Messages (Beta)"**). Must be ON for the front-door UI.
 **Diagnostics removed:** the temporary `slack_inbound_debug` table is DROPPED; `slack-events` is the
@@ -55,9 +56,28 @@ Inbound only fires for a DM **to the connected account (FM1/`U0B5X67Q7A7`), INSI
 
 ## 3. Backlog (the work to finish, priority order)
 
-### 3.1 — Graduation prompt UI (P5 client half) — the engine is built, only the trigger UI is missing
+### 3.1 — Graduation prompt UI (P5 client half) — ✅ SHIPPED (commit `9c451fd`, pushed) · live-verify pending
 **Goal:** when a Slack counterpart is also a Pulse user (matched by email), offer one-tap
 "X is now on Pulse — switch to native?" and flip the thread.
+
+**What shipped (2026-06-08):** an emerald (not-coral) banner under the slack-thread chat header,
+gated on `slackMessagesGrounding`, per-session dismissible. On opening a `transport='slack'` thread
+it resolves the candidate (`resolveGraduationCandidate` → `resolve_pulse_user_by_email`); on confirm
+it calls `graduateSlackConversation` → `graduate_slack_conversation`, re-points
+`activePulseConversation` to the returned surviving id (CASE A == same id, CASE B == native id),
+reloads messages, and toasts "Now on Pulse — messages are native". Service wrappers live in
+`slackUserConnect.ts`; UI + effect + handler in `Messages.tsx`. tsc: no new errors.
+**Deferred:** the "Now on Pulse" history divider (still §10 below — needs a per-message watermark).
+L2 auto-after-prompted needs **no** client logic — `ingest_slack_inbound_message` already routes
+post-graduation inbound into the native thread, so no second slack thread is ever forked.
+**STILL TO DO — live-verify:** seed a graduatable case (a slack thread whose `external_email` matches
+a real Pulse user) and confirm the flip swaps live + preserves history both sides, for BOTH CASE A
+(flip-in-place) and CASE B (a native thread already existed → merge-then-delete). Engine dry-run
+already proved the DB MERGE; the client swap (active-id re-point + message reload) is type-checked
+but not yet runtime-confirmed.
+
+---
+**Original notes (reference):**
 - **On opening a `transport='slack'` thread:** call the resolver
   `supabase.rpc('resolve_pulse_user_by_email', { p_email: conv.external_email })`. If it returns a
   uuid (non-null), the counterpart is on Pulse → show the prompt. (Resolver is oracle-guarded: the
@@ -126,6 +146,8 @@ Full scope in **`docs/SLACK_PUBLIC_DISTRIBUTION_SCOPE_2026-06-07.md`**. Summary:
 
 ## 5. Start-here for the next session
 1. Read the contract + this doc + memory `project_pulse_slack_messages_grounding`.
-2. Pick up at **3.1 (graduation prompt UI)** — highest user value, engine already built + reviewed.
+2. **3.1 (graduation prompt UI) is SHIPPED** (`9c451fd`). First task: **live-verify the flip** (seed a
+   graduatable slack thread, confirm CASE A + CASE B swap live — see 3.1's "STILL TO DO"). Then pick up
+   **3.2 (multi-login inbound routing)**, the prerequisite for 3.3 public distribution.
 3. Each piece: flag-gated, tsc-no-new-errors, commit independently with explicit paths (a parallel
    command-palette session also commits to `main`).
