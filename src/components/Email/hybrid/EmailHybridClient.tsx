@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 import { Send, MailCheck, AlertTriangle } from 'lucide-react';
 import { emailSyncService } from '../../../services/emailSyncService';
 import { getGmailService, resetGmailService, type SendEmailParams } from '../../../services/gmailService';
+import { startGmailConnect } from '../../../services/google/gmailConnect';
 import { supabase } from '../../../services/supabase';
 import { settingsService } from '../../../services/settingsService';
 import analyticsCollector from '../../../services/analyticsCollector';
@@ -312,16 +313,18 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     setReAuthenticating(true);
     try {
       resetGmailService();
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          scopes:
-            'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify',
-          redirectTo: window.location.origin,
-          queryParams: { access_type: 'offline', prompt: 'consent' },
-        },
-      });
-      if (error) throw error;
+      // Reconnect the DEDICATED Gmail grant (separate Gmail OAuth client →
+      // /api/gmail/auth/url → public.user_gmail_tokens), NOT the login provider.
+      // The old supabase.auth.signInWithOAuth path re-logged-in via the
+      // CASA-free login client (35770), which never writes user_gmail_tokens —
+      // so the Gmail token was never refreshed and this banner looped forever
+      // (2026-06-07 reconnect-loop incident). startGmailConnect redirects the
+      // browser to Google on success; on failure it returns false.
+      const ok = await startGmailConnect();
+      if (!ok) {
+        toast.error('Could not start Gmail reconnect. Open Email settings to connect Gmail.');
+        setReAuthenticating(false);
+      }
     } catch (error) {
       console.error('[EmailHybridClient] Re-auth error:', error);
       toast.error('Failed to re-authenticate. Please try signing out and back in.');
