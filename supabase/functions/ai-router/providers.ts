@@ -2,7 +2,14 @@
 // Both return a normalized AIResponse so the router is provider-agnostic.
 // Claude provider implements prompt caching (90% cost reduction on repeated system prompts).
 
-const PROVIDER_TIMEOUT_MS = 25_000;
+// Per-provider hard abort. Held well under the edge worker's request budget so
+// that when the PRIMARY provider is pathologically slow, there's still time for
+// the configured fallback (e.g. email_analysis: Gemini → Claude Haiku) to run
+// within the same invocation. At 25s a late primary timeout left zero budget for
+// the fallback and the worker was reaped → 502 with no JSON body (the
+// email_analysis incident, 2026-06-07). Normal P50 here is 2–4s, so a 15s abort
+// only ever fires on a genuine upstream stall, never on a healthy call.
+const PROVIDER_TIMEOUT_MS = 15_000;
 
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = PROVIDER_TIMEOUT_MS) {
   const controller = new AbortController();
