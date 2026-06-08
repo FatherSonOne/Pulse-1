@@ -8,6 +8,9 @@
 //     https://ucaeuszgoihoyrvhewxk.supabase.co/functions/v1/slack-events
 //   Subscribe to events on behalf of users (USER token):  message.im
 //     (a BOT-token message.im only delivers DMs to the bot, not the operator's DMs)
+//   Subscribe to BOT events (Integration C, channels):  message.channels, message.groups
+//     (delivered to the bot for channels it is a member of; landed via a SEPARATE channel
+//      branch + ingest_slack_channel_message RPC — the DM path below is left untouched)
 //   Reinstall the app so the new event subscription takes effect.
 //
 // Secrets required (Supabase edge env):
@@ -168,6 +171,61 @@ async function processInboundEvent(event: any, teamId: string, isRetry: boolean)
   }
 }
 
+// Integration C (channels): land a Slack channel message into the owner-scoped sibling store
+// (slack_channel_threads / slack_channel_messages) via the service-role RPC. Mirror of
+// processInboundEvent's shape — owner resolution, echo filter, bounded enrichment, atomic RPC —
+// but routes to ingest_slack_channel_message (per-channel, N-author) instead of the DM ingest.
+async function processChannelEvent(event: any, teamId: string, isRetry: boolean): Promise<void> {
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+    // Resolve the owner (single-tenant L1; same resolution as the DM path).
+    const { data: tokenRow } = await supabase
+      .from('user_slack_tokens')
+      .select('user_id, slack_user_id, access_token')
+      .eq('slack_team_id', teamId)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (!tokenRow?.user_id) return; // no connected operator for this workspace
+
+    // Echo filter: skip the operator's OWN channel posts. Our reply-as-you (P6) posts as the
+    // operator and comes back as a message.channels event; P6 records the outgoing row itself,
+    // so re-ingesting here would double it. (Trade-off: the operator's messages typed directly
+    // in Slack are not mirrored in v1 — they remain visible in Slack.)
+    if (event.user === tokenRow.slack_user_id) return;
+
+    // Best-effort author enrichment (name + email), skipped on Slack retries.
+    const { displayName, email } = !isRetry && tokenRow.access_token
+      ? await fetchSlackUserProfile(tokenRow.access_token as string, event.user)
+      : { displayName: null, email: null };
+
+    // channel_type 'group' = private channel; 'channel' = public.
+    const isPrivate = event.channel_type === 'group';
+
+    const { data: msgId, error } = await supabase.rpc('ingest_slack_channel_message', {
+      p_owner_pulse_id: tokenRow.user_id,
+      p_team_id: teamId,
+      p_slack_channel_id: event.channel,
+      p_channel_name: null, // not in the event payload; resolved client-side from the bot token in P5
+      p_is_private: isPrivate,
+      p_sender_slack_id: event.user,
+      p_text: event.text ?? '',
+      p_slack_ts: event.ts,
+      p_slack_thread_ts: event.thread_ts ?? null,
+      p_email: email,
+      p_display_name: displayName,
+    });
+
+    if (error) console.error('[slack-events] channel ingest error:', error.message);
+    else if (msgId) console.log('[slack-events] ingested channel msg', event.ts, 'in', event.channel, '->', msgId);
+    else console.log('[slack-events] duplicate channel slack_ts skipped', event.ts);
+  } catch (err) {
+    console.error('[slack-events] processChannelEvent error:', (err as Error).message);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -208,6 +266,24 @@ serve(async (req) => {
   // either channel_type='im' OR a 'D…' channel id; anything else is rejected (so a future
   // widening of the event subscription can't mis-ingest a channel post as a 1:1 DM).
   const isDm = event?.channel_type === 'im' || String(event?.channel ?? '').startsWith('D');
+
+  // Integration C (channels): handle message.channels / message.groups via a SEPARATE branch
+  // BEFORE the DM gate, so the fail-closed DM logic below stays byte-for-byte intact. A channel
+  // post (channel_type 'channel'|'group') never matches isDm, and a DM never matches isChannel,
+  // so the two paths are disjoint. Same subtype/bot/echo discipline as the DM path.
+  const isChannel = event?.channel_type === 'channel' || event?.channel_type === 'group';
+  if (
+    event?.type === 'message' && !event.subtype && !event.bot_id && isChannel &&
+    teamId && event.user && event.ts
+  ) {
+    const isRetryC = !!req.headers.get('x-slack-retry-num');
+    const workC = processChannelEvent(event, teamId, isRetryC);
+    const erC = (globalThis as any).EdgeRuntime;
+    if (erC && typeof erC.waitUntil === 'function') erC.waitUntil(workC);
+    else await workC;
+    return json({ ok: true });
+  }
+
   if (
     event?.type !== 'message' || event.subtype || event.bot_id || !isDm ||
     !teamId || !event.user || !event.ts
