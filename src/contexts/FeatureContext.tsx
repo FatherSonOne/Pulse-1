@@ -67,6 +67,13 @@ export interface FeatureFlags {
   // Messages Path D; preserves the Pulse-DM surface unchanged.
   // See docs/SLACK_MESSAGES_GROUNDING_SCOPE_2026-06-06.md (P0–P6).
   slackMessagesGrounding: boolean;
+
+  // Slack Channels grounding master switch (Integration C). OFF by default → no
+  // Slack *channel* threads ingest or render, and the channel reply-as-you path
+  // is inactive. Sibling of slackMessagesGrounding (which is 1:1 DMs only); lands
+  // channel threads in a net-new owner-scoped store, never the DM tables.
+  // See docs/SLACK_CHANNELS_GROUNDING_SCOPE_2026-06-08.md (P0–P8).
+  slackChannelsGrounding: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -116,6 +123,9 @@ const DEFAULT_FEATURES: FeatureFlags = {
 
   // Slack-Grounded Messages OFF by default (dark-launch); P0 = schema only.
   slackMessagesGrounding: false,
+
+  // Slack Channels grounding OFF by default (dark-launch); P0 = flag scaffold only.
+  slackChannelsGrounding: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -305,6 +315,7 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   experimentalEnabled: 'Experimental Features',
   slackSend: 'Slack Send (Beta)',
   slackMessagesGrounding: 'Slack in Messages (Beta)',
+  slackChannelsGrounding: 'Slack Channels (Beta)',
 };
 
 /**
@@ -327,4 +338,5 @@ export const FEATURE_DESCRIPTIONS: Partial<Record<keyof FeatureFlags, string>> =
   scheduledMessages: 'Schedule a message to send at a later time.',
   slackSend: 'Send a Slack DM to a linked contact from the People view (Phase 8).',
   slackMessagesGrounding: 'Bring your Slack DMs into Messages: connect Slack to send as you and mirror 1:1 threads. Backend + inbound still rolling out.',
+  slackChannelsGrounding: 'Bring your Slack channels into Pulse: mirror channel threads and reply as you. Not yet available — backend rolling out.',
 };
