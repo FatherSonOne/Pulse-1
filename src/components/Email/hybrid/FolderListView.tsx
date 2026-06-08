@@ -14,14 +14,30 @@ import { BACKEND_URL } from '../../../config/backend';
 import { Avatar } from './primitives';
 import { FOLDER_META } from './data/folderMeta';
 import { cachedEmailToRow } from './data/emailRow';
-import type { CachedEmail } from '../../../services/emailSyncService';
+import type { CachedEmail, EmailCategory } from '../../../services/emailSyncService';
 
 type BulkAction = 'archive' | 'delete' | 'markAsRead';
+
+// Inbox category tabs (Gmail-style). The hybrid Inbox loads with
+// store.activeCategory as the server-side filter (getEmailsByFolder), but the
+// redesign never surfaced a switcher — so the inbox was pinned to Primary and
+// non-Primary mail (promotions/updates/social) was unreachable. These tabs wire
+// store.setActiveCategory; the loadEmails effect (EmailHybridClient) re-fetches
+// on activeCategory change. 'forums' omitted (Gmail hides it by default).
+const INBOX_CATEGORIES: { key: EmailCategory; label: string }[] = [
+  { key: 'primary', label: 'Primary' },
+  { key: 'social', label: 'Social' },
+  { key: 'promotions', label: 'Promotions' },
+  { key: 'updates', label: 'Updates' },
+];
 
 export const FolderListView: React.FC = () => {
   const currentFolder = useEmailStore((s) => s.currentFolder);
   const emails = useFilteredEmails();
   const loading = useEmailStore((s) => s.loading);
+  const activeCategory = useEmailStore((s) => s.activeCategory);
+  const setActiveCategory = useEmailStore((s) => s.setActiveCategory);
+  const categoryCounts = useEmailStore((s) => s.categoryCounts);
 
   const handleArchive = useEmailStore((s) => s.handleArchive);
   const handleTrash = useEmailStore((s) => s.handleTrash);
@@ -119,6 +135,36 @@ export const FolderListView: React.FC = () => {
           {meta.label}
         </h1>
       </div>
+
+      {/* Inbox category tabs (Primary / Social / Promotions / Updates) — inbox
+          folder only. Wires the server-side category filter so non-Primary mail
+          is reachable; without this the inbox is permanently pinned to Primary. */}
+      {currentFolder === 'inbox' && (
+        <div className="flex items-center gap-1 px-10 border-b pulse-border-color overflow-x-auto">
+          {INBOX_CATEGORIES.map(({ key, label }) => {
+            const active = activeCategory === key;
+            const count = categoryCounts?.[key] ?? 0;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveCategory(key)}
+                aria-pressed={active}
+                className={`relative px-3 py-2.5 text-[11px] font-mono-pulse tracking-wide-mono uppercase whitespace-nowrap transition border-b-2 -mb-px ${
+                  active
+                    ? 'pulse-rose-color border-current'
+                    : 'pulse-ink-3-color border-transparent hover:pulse-ink-color'
+                }`}
+              >
+                {label}
+                {count > 0 && (
+                  <span className="ml-1.5 text-[10px] pulse-rose-color tnum">{count}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <ActiveFiltersStrip />
 
