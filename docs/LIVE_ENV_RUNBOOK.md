@@ -16,16 +16,66 @@ Source logs: production console at `pulse.logosvision.org`, 2026-06-07.
 
 | # | Symptom (console) | Where the fix lives | Status |
 |---|---|---|---|
-| 1 | `POST /api/gmail/refresh-token 500` · `MISSING_CONFIG` | **Render** (3 `GMAIL_OAUTH_*` vars) | GCP project built; **fill Render → redeploy → connect** |
-| 2 | `Google Client ID not configured … VITE_GOOGLE_CLIENT_ID` | **Vercel** (build-time) | set value → **rebuild** |
-| 3 | `InvalidAccessError: applicationServerKey is not valid` | **Vercel** `VITE_VAPID_PUBLIC_KEY` (stale/bad) | set to verified value → **rebuild** |
-| 4 | `[briefing] … Unterminated string … position 1821` | `ai-router` (`gemini-2.5-flash` thinking budget) | code/server fix — needs sign-off |
+| 1 | `POST /api/gmail/refresh-token 500` · `MISSING_CONFIG` | **Render** (3 `GMAIL_OAUTH_*` vars) | ✅ **RESOLVED** (see log) |
+| 2 | `Google Client ID not configured … VITE_GOOGLE_CLIENT_ID` | **Vercel** (build-time) | ✅ **RESOLVED** — correct id baked + verified in bundle |
+| 3 | `InvalidAccessError: applicationServerKey is not valid` | **Vercel** `VITE_VAPID_PUBLIC_KEY` (stale/bad) | ✅ **RESOLVED** — canonical key baked + verified in bundle |
+| 4 | `[briefing] … Unterminated string … position 1821` | `ai-router` (`gemini-2.5-flash` thinking budget) | ✅ **RESOLVED** — `thinkingBudget:0` deployed (commit `785f02c`) |
 
 Verified facts (queried live, 2026-06-07):
 - `user_gmail_tokens` table **exists** on `pulse-chat` with correct columns
   (so Gmail needs **no** Supabase work — config is all on Render).
 - `pwa_settings.vapid_public_key` holds a **real, 87-char, well-formed**
   key set 2026-05-26 (the #101-verified one) — **do NOT regenerate**.
+
+---
+
+## Resolution log — 2026-06-07 (all four clear)
+
+**#2 / #3 (Vercel build vars).** Set + rebuilt; verified by grepping the live
+bundle for the literal values (Vite inlines them): `VITE_GOOGLE_CLIENT_ID`
+= `35770199098-…` and `VITE_VAPID_PUBLIC_KEY` = `BDosjYeK…GRTmU` both present.
+`VITE_*` is baked at build → **always trigger a fresh deploy after changing**.
+
+**#4 (briefing truncation).** `gemini-2.5-flash` is a thinking model; thinking
+tokens drew from the 2048 `maxOutputTokens` budget → JSON truncated. Fixed in
+`ai-router/providers.ts` with `thinkingConfig: { thinkingBudget: 0 }` on
+JSON-mode calls + a `finishReason` truncation log (commit `785f02c`, deployed
+via `supabase functions deploy ai-router`). Edge-fn logs confirmed ai-router
+calls dropped from 8–11 s → 3–4 s afterward.
+
+**#1 (Gmail) — the long one. Key facts for next time:**
+- The owner-only Gmail client is a **separate GCP project in Testing** with its
+  own OAuth client: **`854006180872-q0tntlkr…apps.googleusercontent.com`**,
+  redirect `https://pulse-api-1epw.onrender.com/api/gmail/auth/callback`.
+  `GMAIL_OAUTH_CLIENT_ID` / `_SECRET` / `_REDIRECT_URI` live **only on Render**
+  (+ optional local `.env.local`); never Vercel, never Supabase.
+- **Identity gotcha:** this account's Pulse `auth.users.email` is the *label*
+  `qntmecos@gmail.com`, but the real Google identity (`auth.identities`
+  provider email) is **`fm1@qntmecos.com`** (Frank Messana). Google rejects
+  `qntmecos@gmail.com` as a test user ("not a Google Account"); the **test
+  user / consent account must be `fm1@qntmecos.com`**.
+- **`unauthorized_client` on refresh** = the stored token was minted by a
+  *different* OAuth client than the one now refreshing (stale token from the
+  old client). Fix: clear the row in `user_gmail_tokens`, then reconnect via
+  the dedicated flow so a fresh token is minted by the current client.
+- **`invalid_request` / 400 on the authorize step** was a trailing **newline**
+  in the Render env value (`client_id=…%0A`). Fixed by trimming the
+  `GMAIL_OAUTH_*` reads in `server.js` (commit `63ba20a`) — same paste-footgun
+  pattern as the Slack/Supabase trims (`b4d39fe`, `da52d0b`).
+- The dedicated **Connect Gmail** button lives in the **Email section**
+  (`EmailClientWrapper` → `startGmailConnect`), *not* Settings. The Settings
+  "Google Account / Gmail" cards reflect the **login** Google connection and
+  are cosmetic for the Gmail grant.
+- **Email "not syncing" was a category filter, not sync.** The hybrid Inbox was
+  pinned to the Primary category (no switcher); all recent mail was
+  Promotions/Updates → hidden. Fixed by adding category tabs to
+  `FolderListView` (commit `2682996`) + rewiring the "Reconnect Google" banner
+  to `startGmailConnect` instead of the login OAuth.
+
+> **7-day reconnect caveat still applies** (Testing-mode refresh tokens expire
+> after 7 days) **unless** the GCP project is moved to **Internal** in the
+> qntmecos.com Workspace org — which would also drop the test-user requirement
+> and CASA. Not done; revisit if weekly reconnects become annoying.
 
 ---
 
