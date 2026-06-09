@@ -9,7 +9,7 @@
 //
 // Gated by the slackChannelsGrounding flag at the App.tsx render seam.
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Hash, Lock, RefreshCw, MessageSquare, Send, Slack as SlackIcon } from 'lucide-react';
 import { StudioMasthead } from '../Relay/studio';
 import { hasSlackBotToken } from '../../lib/slackToken';
@@ -64,6 +64,38 @@ const ViaSlackChip: React.FC = () => (
     via Slack
   </span>
 );
+
+// A Slack thread = one root message plus the replies nested under it.
+interface ThreadGroup {
+  root: SlackChannelMessage;
+  replies: SlackChannelMessage[];
+}
+
+// One message bubble — the exact markup the flat P5 list used, factored out so a
+// thread root and its replies render identically. Per-message in/out alignment,
+// avatar, and neutral --pulse-* tokens are preserved verbatim (no coral).
+const MessageRow: React.FC<{ m: SlackChannelMessage }> = ({ m }) => {
+  const out = m.is_outgoing;
+  return (
+    <div className={`flex items-start gap-2.5 ${out ? 'flex-row-reverse' : ''}`}>
+      <div
+        className="shrink-0 flex items-center justify-center rounded-full"
+        style={{ width: 32, height: 32, background: colorForId(out ? 'you' : m.sender_slack_id || m.sender_name), color: '#fff', fontSize: 12, fontWeight: 700 }}
+      >
+        {out ? 'You' : initials(m.sender_name)}
+      </div>
+      <div className={`flex-1 min-w-0 ${out ? 'text-right' : ''}`}>
+        <div className={`flex items-baseline gap-2 ${out ? 'justify-end' : ''}`}>
+          <span style={{ color: 'var(--pulse-ink)', fontWeight: 600, fontSize: 13.5 }}>{out ? 'You' : m.sender_name}</span>
+          <span style={{ color: 'var(--pulse-ink-3)', fontSize: 11 }}>{fmtTime(m.created_at)}</span>
+        </div>
+        <div style={{ color: 'var(--pulse-ink)', fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {m.content}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const SlackChannels: React.FC = () => {
   const { features } = useFeatures();
@@ -126,6 +158,32 @@ const SlackChannels: React.FC = () => {
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
+  }, [messages]);
+
+  // Group the flat mirror into Slack threads at render time. A reply
+  // (slack_thread_ts set and ≠ its own ts) nests under the root whose slack_ts it
+  // points to; a reply whose parent isn't in our mirror (e.g. posted before the
+  // bot joined) is promoted to its own root so nothing is ever hidden. Pure
+  // derivation — load / realtime / scroll / send paths are untouched.
+  const threadGroups = useMemo<ThreadGroup[]>(() => {
+    const isReply = (m: SlackChannelMessage) =>
+      m.slack_thread_ts != null && m.slack_thread_ts !== m.slack_ts;
+    const rootByTs = new Map<string, ThreadGroup>();
+    const groups: ThreadGroup[] = [];
+    for (const m of messages) {
+      if (isReply(m)) continue;
+      const g: ThreadGroup = { root: m, replies: [] };
+      groups.push(g);
+      if (m.slack_ts) rootByTs.set(m.slack_ts, g);
+    }
+    for (const m of messages) {
+      if (!isReply(m)) continue;
+      const parent = m.slack_thread_ts ? rootByTs.get(m.slack_thread_ts) : undefined;
+      if (parent) parent.replies.push(m);
+      else groups.push({ root: m, replies: [] }); // orphan → its own root, never dropped
+    }
+    groups.sort((a, b) => a.root.created_at.localeCompare(b.root.created_at));
+    return groups;
   }, [messages]);
 
   const activeThread = threads.find((t) => t.id === activeThreadId) || null;
@@ -270,28 +328,24 @@ const SlackChannels: React.FC = () => {
                 ) : messages.length === 0 ? (
                   <div style={{ color: 'var(--pulse-ink-3)', fontSize: 13 }}>No messages mirrored yet.</div>
                 ) : (
-                  messages.map((m) => {
-                    const out = m.is_outgoing;
-                    return (
-                      <div key={m.id} className={`flex items-start gap-2.5 ${out ? 'flex-row-reverse' : ''}`} style={{ marginBottom: 14 }}>
-                        <div
-                          className="shrink-0 flex items-center justify-center rounded-full"
-                          style={{ width: 32, height: 32, background: colorForId(out ? 'you' : m.sender_slack_id || m.sender_name), color: '#fff', fontSize: 12, fontWeight: 700 }}
-                        >
-                          {out ? 'You' : initials(m.sender_name)}
-                        </div>
-                        <div className={`flex-1 min-w-0 ${out ? 'text-right' : ''}`}>
-                          <div className={`flex items-baseline gap-2 ${out ? 'justify-end' : ''}`}>
-                            <span style={{ color: 'var(--pulse-ink)', fontWeight: 600, fontSize: 13.5 }}>{out ? 'You' : m.sender_name}</span>
-                            <span style={{ color: 'var(--pulse-ink-3)', fontSize: 11 }}>{fmtTime(m.created_at)}</span>
+                  threadGroups.map((g) => (
+                    <div key={g.root.id} style={{ marginBottom: 14 }}>
+                      <MessageRow m={g.root} />
+                      {g.replies.length > 0 && (
+                        <div style={{ marginLeft: 16, paddingLeft: 18, borderLeft: '2px solid var(--pulse-border)', marginTop: 10 }}>
+                          <div className="inline-flex items-center gap-1.5" style={{ color: 'var(--pulse-ink-3)', fontSize: 11, fontWeight: 600, marginBottom: 10 }}>
+                            <MessageSquare className="w-3 h-3" />
+                            {g.replies.length === 1 ? '1 reply' : `${g.replies.length} replies`}
                           </div>
-                          <div style={{ color: 'var(--pulse-ink)', fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                            {m.content}
-                          </div>
+                          {g.replies.map((r, i) => (
+                            <div key={r.id} style={{ marginTop: i === 0 ? 0 : 12 }}>
+                              <MessageRow m={r} />
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    );
-                  })
+                      )}
+                    </div>
+                  ))
                 )}
               </div>
 
