@@ -164,21 +164,21 @@
 .nothing-info-box {
   margin-top: 12px;
   padding: 16px;
-  background: var(--pulse-rose-softer);
-  border: 1px solid var(--pulse-rose-soft);
+  background: var(--pulse-surface-raised);
+  border: 1px solid var(--pulse-border);
   border-radius: 12px;
   font-size: 13px;
   line-height: 1.6;
 }
 
 .dark .nothing-info-box {
-  background: rgba(244, 63, 94, 0.06);
-  border-color: rgba(244, 63, 94, 0.20);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--pulse-border);
 }
 
 .nothing-info-box .info-title {
   font-weight: 700;
-  color: var(--pulse-rose);
+  color: var(--pulse-ink-2);
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -201,7 +201,7 @@
 
 .nothing-info-box li::before {
   content: '→';
-  color: var(--pulse-rose);
+  color: var(--pulse-ink-3);
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -213,7 +213,7 @@
   font-family: 'JetBrains Mono', 'Courier New', monospace;
   font-size: 11px;
   font-weight: 600;
-  color: var(--pulse-rose);
+  color: var(--pulse-ink-2);
 }
 
 .dark .nothing-info-box code {
@@ -593,7 +593,7 @@
 [data-integrations-dense] .nothing-input                { padding: 10px 14px; font-size: 14px; border-radius: 10px; }
 [data-integrations-dense] .nothing-input::placeholder   { font-size: 14px; }
 
-[data-integrations-dense] .nothing-btn            { padding: 8px 14px; font-size: 13px; border-radius: 10px; }
+[data-integrations-dense] .nothing-btn            { padding: 8px 14px; font-size: 13px; border-radius: 10px; min-height: 44px; }
 [data-integrations-dense] .nothing-btn svg        { width: 15px; height: 15px; }
 
 [data-integrations-dense] .connected-badge             { padding: 3px 8px; font-size: 10px; }
