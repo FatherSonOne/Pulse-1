@@ -672,6 +672,179 @@ app.delete('/api/gmail/disconnect', async (req, res) => {
 });
 
 // ============================================
+// GOOGLE CONTACTS PRIVATE GRANT (separate-account import — owner-only)
+// Lets a user import contacts from a DIFFERENT Google account than their login.
+// Mirrors the Gmail scope-split: reuses the private Gmail Testing OAuth client
+// (env may point at the same client id/secret with contacts.readonly added + its
+// own redirect URI). Tokens in public.user_google_contacts_tokens, keyed by auth
+// uid. State signing is shared with the Gmail flow (signGmailState/verifyGmailState).
+// ============================================
+
+const GOOGLE_CONTACTS_OAUTH_CLIENT_ID = process.env.GOOGLE_CONTACTS_OAUTH_CLIENT_ID?.trim();
+const GOOGLE_CONTACTS_OAUTH_CLIENT_SECRET = process.env.GOOGLE_CONTACTS_OAUTH_CLIENT_SECRET?.trim();
+const GOOGLE_CONTACTS_OAUTH_REDIRECT_URI = process.env.GOOGLE_CONTACTS_OAUTH_REDIRECT_URI?.trim();
+const GOOGLE_CONTACTS_OAUTH_SCOPES = ['https://www.googleapis.com/auth/contacts.readonly'];
+
+function getGoogleContactsOauthClient() {
+  return new google.auth.OAuth2(
+    GOOGLE_CONTACTS_OAUTH_CLIENT_ID,
+    GOOGLE_CONTACTS_OAUTH_CLIENT_SECRET,
+    GOOGLE_CONTACTS_OAUTH_REDIRECT_URI
+  );
+}
+
+function googleContactsConfigured() {
+  return !!(GOOGLE_CONTACTS_OAUTH_CLIENT_ID && GOOGLE_CONTACTS_OAUTH_CLIENT_SECRET && GOOGLE_CONTACTS_OAUTH_REDIRECT_URI);
+}
+
+async function getUserGoogleContactsToken(userId) {
+  const { data, error } = await tokenStoreClient()
+    .from('user_google_contacts_tokens').select('*').eq('user_id', userId).maybeSingle();
+  if (error) { console.error('[Contacts Token] get error:', error); return null; }
+  return data;
+}
+
+async function upsertUserGoogleContactsToken(userId, fields) {
+  const { error } = await tokenStoreClient()
+    .from('user_google_contacts_tokens')
+    .upsert({ user_id: userId, ...fields, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  if (error) console.error('[Contacts Token] upsert error:', error);
+}
+
+async function deleteUserGoogleContactsToken(userId) {
+  const { error } = await tokenStoreClient().from('user_google_contacts_tokens').delete().eq('user_id', userId);
+  if (error) console.error('[Contacts Token] delete error:', error);
+}
+
+// GET /api/google-contacts/status — is the separate Contacts grant connected?
+app.get('/api/google-contacts/status', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    const row = await getUserGoogleContactsToken(userId);
+    res.json({ connected: !!row, configured: googleContactsConfigured() });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// GET /api/google-contacts/auth/url — authorize URL; select_account so the user
+// can pick a DIFFERENT account than their login.
+app.get('/api/google-contacts/auth/url', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    if (!googleContactsConfigured()) {
+      return res.status(500).json({ error: 'Google Contacts OAuth client not configured on the server', code: 'MISSING_CONFIG' });
+    }
+    const url = getGoogleContactsOauthClient().generateAuthUrl({
+      access_type: 'offline',
+      prompt: 'select_account consent',  // account chooser (different account) + consent (refresh token)
+      scope: GOOGLE_CONTACTS_OAUTH_SCOPES,
+      state: signGmailState(userId),
+    });
+    res.json({ url });
+  } catch (error) {
+    console.error('[Contacts Auth URL] error:', error);
+    res.status(500).json({ error: error.message || 'Failed to build auth URL' });
+  }
+});
+
+// GET /api/google-contacts/auth/callback — Google redirects here; store the grant
+app.get('/api/google-contacts/auth/callback', async (req, res) => {
+  const appUrl = process.env.VITE_APP_URL || process.env.PRODUCTION_URL || 'http://localhost:5173';
+  try {
+    const { code, state, error: oauthError } = req.query;
+    if (oauthError) return res.redirect(`${appUrl}/?google_contacts_error=${encodeURIComponent(oauthError)}`);
+    if (!code || !state) return res.redirect(`${appUrl}/?google_contacts_error=missing_code`);
+
+    let userId;
+    try { userId = verifyGmailState(state); }
+    catch { return res.redirect(`${appUrl}/?google_contacts_error=bad_state`); }
+
+    const { tokens } = await getGoogleContactsOauthClient().getToken(code);
+    if (!tokens.refresh_token) {
+      return res.redirect(`${appUrl}/?google_contacts_error=no_refresh_token`);
+    }
+    await upsertUserGoogleContactsToken(userId, {
+      refresh_token: tokens.refresh_token,
+      access_token: tokens.access_token || null,
+      expiry_date: tokens.expiry_date || null,
+      scope: tokens.scope || null,
+    });
+    console.log('✅ Google Contacts grant stored for user:', userId);
+    res.redirect(`${appUrl}/?google_contacts=connected`);
+  } catch (error) {
+    console.error('[Contacts Callback] error:', error);
+    res.redirect(`${appUrl}/?google_contacts_error=${encodeURIComponent(error.message || 'callback_failed')}`);
+  }
+});
+
+// POST /api/google-contacts/refresh-token — mint a fresh access token from the grant
+app.post('/api/google-contacts/refresh-token', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    if (!googleContactsConfigured()) {
+      return res.status(500).json({ error: 'Google Contacts OAuth client not configured on the server', code: 'MISSING_CONFIG' });
+    }
+    const row = await getUserGoogleContactsToken(userId);
+    if (!row?.refresh_token) {
+      return res.status(404).json({ error: 'Google Contacts not connected', code: 'CONTACTS_NOT_CONNECTED', requiresConnect: true });
+    }
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: GOOGLE_CONTACTS_OAUTH_CLIENT_ID,
+        client_secret: GOOGLE_CONTACTS_OAUTH_CLIENT_SECRET,
+        grant_type: 'refresh_token',
+        refresh_token: row.refresh_token,
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      if (err.error === 'invalid_grant') {
+        // Grant dead (revoked, or the Testing 7-day refresh-token expiry). Clear
+        // it so we stop retrying; the user must reconnect.
+        await deleteUserGoogleContactsToken(userId);
+        return res.status(401).json({
+          error: 'Google Contacts grant expired or revoked. Please reconnect.',
+          code: 'INVALID_GRANT', requiresReauth: true, requiresConnect: true,
+        });
+      }
+      return res.status(response.status).json({
+        error: err.error_description || 'Google Contacts token refresh failed',
+        code: err.error || 'REFRESH_FAILED',
+      });
+    }
+    const data = await response.json();
+    await upsertUserGoogleContactsToken(userId, {
+      refresh_token: row.refresh_token,
+      access_token: data.access_token,
+      expiry_date: data.expires_in ? Date.now() + data.expires_in * 1000 : null,
+      ...(data.scope ? { scope: data.scope } : {}),
+    });
+    res.json({ access_token: data.access_token, expires_in: data.expires_in, token_type: data.token_type, scope: data.scope });
+  } catch (error) {
+    console.error('[Contacts Refresh] error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error', code: 'SERVER_ERROR' });
+  }
+});
+
+// DELETE /api/google-contacts/disconnect — drop the stored grant
+app.delete('/api/google-contacts/disconnect', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    await deleteUserGoogleContactsToken(userId);
+    res.json({ disconnected: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// ============================================
 // SLACK USER-OAUTH (send-as-you + own-DM read) — P1 of Slack-grounded Messages.
 // Mirrors the Gmail per-user block above. Single-tenant: the operator installs
 // to their own workspace. The xoxp- USER token is stored server-side in
