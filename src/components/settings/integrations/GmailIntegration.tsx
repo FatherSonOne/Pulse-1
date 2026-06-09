@@ -3,7 +3,7 @@ import type { User } from '../../../types';
 import { UnifiedMessage } from '../../../types/index';
 import {
   Check, Info, Plug,
-  Lock, Loader2, Download, Unlink,
+  Lock, Loader2, Download, Unlink, RefreshCw,
 } from 'lucide-react';
 import { useFeatures } from '../../../contexts/FeatureContext';
 import {
@@ -61,6 +61,25 @@ export const GmailIntegration: React.FC<GmailIntegrationProps> = () => {
   }, [emailEnabled]);
 
   const isConnected = emailEnabled && grant === 'connected';
+
+  // Once connected, surface the REAL Gmail address. /api/gmail/status doesn't
+  // carry it (never stored server-side), so fetch it live via testConnection
+  // (gated by emailEnabled, which isConnected already implies). Runs once until
+  // a result lands; manual Test Connection / disconnect reset gmailStatus.
+  useEffect(() => {
+    if (!isConnected || gmailStatus || gmailTesting) return;
+    let alive = true;
+    (async () => {
+      try {
+        const { getGmailService } = await import('../../../services/gmailService');
+        const result = await getGmailService().testConnection();
+        if (alive) setGmailStatus(result);
+      } catch (error: any) {
+        if (alive) setGmailStatus({ success: false, error: error?.message || 'Connection failed' });
+      }
+    })();
+    return () => { alive = false; };
+  }, [isConnected, gmailStatus, gmailTesting]);
 
   return (
     <div className="integration-card">
@@ -153,7 +172,7 @@ export const GmailIntegration: React.FC<GmailIntegrationProps> = () => {
               <div>
                 <p className="font-semibold text-emerald-700 dark:text-emerald-400">Gmail Connected</p>
                 <p className="text-sm text-emerald-600 dark:text-emerald-500">
-                  {gmailStatus?.email || 'Run Test Connection to confirm the account'}
+                  {gmailStatus?.email || 'Verifying account…'}
                 </p>
               </div>
             </div>
@@ -237,6 +256,23 @@ export const GmailIntegration: React.FC<GmailIntegrationProps> = () => {
                 Fetch Messages
               </button>
             )}
+
+            <button
+              onClick={async () => {
+                if (!window.confirm('Switch to a different Gmail account? You will pick the new account on Google\'s screen.')) {
+                  return;
+                }
+                setConnecting(true);
+                await disconnectGmail();
+                const ok = await startGmailConnect();
+                if (!ok) setConnecting(false); // otherwise the browser is redirecting
+              }}
+              disabled={connecting || disconnecting}
+              className="nothing-btn nothing-btn-secondary"
+            >
+              {connecting ? <Loader2 className="spinner-icon" /> : <RefreshCw />}
+              Switch account
+            </button>
 
             <button
               onClick={async () => {
