@@ -6,6 +6,7 @@ import {
   Check, AlertTriangle, Info,
   Unlink,
 } from 'lucide-react';
+import { CollapsibleIntegrationCard } from './CollapsibleIntegrationCard';
 
 interface MicrosoftIntegrationProps {
   user?: User | null;
@@ -29,25 +30,27 @@ export const MicrosoftIntegration: React.FC<MicrosoftIntegrationProps> = ({ user
         </p>
       </div>
 
-      <div className="integration-card" style={{ borderColor: user?.connectedProviders?.microsoft ? 'rgba(16, 185, 129, 0.3)' : undefined }}>
-        <div className="integration-header">
-          <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
-            <svg viewBox="0 0 23 23" style={{ width: '32px', height: '32px' }}>
-              <path fill="#f35325" d="M1 1h10v10H1z"/>
-              <path fill="#81bc06" d="M12 1h10v10H12z"/>
-              <path fill="#05a6f0" d="M1 12h10v10H1z"/>
-              <path fill="#ffba08" d="M12 12h10v10H12z"/>
-            </svg>
-          </div>
-          <div className="integration-info" style={{ flex: 1 }}>
-            <h4>Microsoft Account</h4>
-            <p>Connect once to enable all Microsoft services</p>
-          </div>
-          {user?.connectedProviders?.microsoft && (
-            <span className="connected-badge">Connected</span>
-          )}
-        </div>
-
+      <CollapsibleIntegrationCard
+        defaultOpen={!user?.connectedProviders?.microsoft}
+        style={{ borderColor: user?.connectedProviders?.microsoft ? 'rgba(16, 185, 129, 0.3)' : undefined }}
+        summary={
+          <>
+            <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+              <svg viewBox="0 0 23 23" style={{ width: '32px', height: '32px' }}>
+                <path fill="#f35325" d="M1 1h10v10H1z"/>
+                <path fill="#81bc06" d="M12 1h10v10H12z"/>
+                <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+                <path fill="#ffba08" d="M12 12h10v10H12z"/>
+              </svg>
+            </div>
+            <div className="integration-info" style={{ flex: 1 }}>
+              <h4>Microsoft Account</h4>
+              <p>Connect once to enable all Microsoft services</p>
+            </div>
+          </>
+        }
+        badge={user?.connectedProviders?.microsoft ? <span className="connected-badge">Connected</span> : undefined}
+      >
         <div className="space-y-3">
           {user?.connectedProviders?.microsoft ? (
             <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
@@ -153,7 +156,7 @@ export const MicrosoftIntegration: React.FC<MicrosoftIntegrationProps> = ({ user
             )}
           </div>
         </div>
-      </div>
+      </CollapsibleIntegrationCard>
     </>
   );
 };

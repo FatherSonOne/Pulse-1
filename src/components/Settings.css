@@ -599,3 +599,30 @@
 [data-integrations-dense] .connected-badge             { padding: 3px 8px; font-size: 10px; }
 [data-integrations-dense] .status-display              { padding: 12px; font-size: 13px; margin-top: 12px; }
 [data-integrations-dense] .status-display .status-icon { font-size: 16px; }
+
+/* ============================================================
+   INTEGRATIONS — collapsible card (SCOPED · additive · reversible).
+   Wraps .integration-card so an integration collapses to its header
+   row; the body uses the global .widget-collapse-grid trick (index.css)
+   and stays mounted when collapsed. Chevron rotates via transform.
+   Revert: delete this block + unwrap the cards.
+   ============================================================ */
+.collapsible-integration__summary {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.collapsible-integration:not(.is-open) .integration-header { margin-bottom: 0; }
+.collapsible-integration__chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--pulse-ink-3);
+}
+/* DESIGN.md heartbeat (220ms) vs the Dashboard utility's 350ms default. */
+.collapsible-integration .widget-collapse-grid { transition-duration: 220ms; }

@@ -11,6 +11,7 @@ import {
   startGmailConnect,
   disconnectGmail,
 } from '../../../services/google/gmailConnect';
+import { CollapsibleIntegrationCard } from './CollapsibleIntegrationCard';
 
 interface GmailIntegrationProps {
   // Kept for parent compatibility. The Gmail grant is a SEPARATE owner-only
@@ -82,24 +83,23 @@ export const GmailIntegration: React.FC<GmailIntegrationProps> = () => {
   }, [isConnected, gmailStatus, gmailTesting]);
 
   return (
-    <div className="integration-card">
-      <div className="integration-header">
-        <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <svg viewBox="0 0 24 24" style={{ width: '32px', height: '32px' }}>
-            <path fill="#EA4335" d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 2v.68l-7 4.9-7-4.9V6h14zm-14 12V9.12l6.45 4.51c.16.11.35.17.55.17s.39-.06.55-.17L19 9.12V18H5z"/>
-          </svg>
-        </div>
-        <div className="integration-info" style={{ flex: 1 }}>
-          <h4>Gmail</h4>
-          <p>Pull in email conversations</p>
-        </div>
-        {isConnected && (
-          <span className="connected-badge">
-            Connected
-          </span>
-        )}
-      </div>
-
+    <CollapsibleIntegrationCard
+      defaultOpen={!isConnected}
+      summary={
+        <>
+          <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+            <svg viewBox="0 0 24 24" style={{ width: '32px', height: '32px' }}>
+              <path fill="#EA4335" d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 2v.68l-7 4.9-7-4.9V6h14zm-14 12V9.12l6.45 4.51c.16.11.35.17.55.17s.39-.06.55-.17L19 9.12V18H5z"/>
+            </svg>
+          </div>
+          <div className="integration-info" style={{ flex: 1 }}>
+            <h4>Gmail</h4>
+            <p>Pull in email conversations</p>
+          </div>
+        </>
+      }
+      badge={isConnected ? <span className="connected-badge">Connected</span> : undefined}
+    >
       <div className="space-y-3">
         {/* (1) Email feature OFF — private, off by default. */}
         {!emailEnabled && (
@@ -327,6 +327,6 @@ export const GmailIntegration: React.FC<GmailIntegrationProps> = () => {
           </div>
         )}
       </div>
-    </div>
+    </CollapsibleIntegrationCard>
   );
 };

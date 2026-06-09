@@ -7,6 +7,7 @@ import {
   Info, Plug,
   Loader2, Download,
 } from 'lucide-react';
+import { CollapsibleIntegrationCard } from './CollapsibleIntegrationCard';
 
 interface TwilioIntegrationProps {
   user?: User | null;
@@ -94,24 +95,23 @@ export const TwilioIntegration: React.FC<TwilioIntegrationProps> = ({ user }) =>
   };
 
   return (
-    <div className="integration-card">
-      <div className="integration-header">
-        <div className="integration-icon" style={{ background: '#F22F46' }}>
-          <svg viewBox="0 0 24 24" style={{ width: '32px', height: '32px' }}>
-            <path fill="#fff" d="M12 0C5.381 0 0 5.381 0 12s5.381 12 12 12 12-5.381 12-12S18.619 0 12 0zm0 20.4c-4.639 0-8.4-3.761-8.4-8.4S7.361 3.6 12 3.6s8.4 3.761 8.4 8.4-3.761 8.4-8.4 8.4zm3.6-8.4c0 .994-.806 1.8-1.8 1.8s-1.8-.806-1.8-1.8.806-1.8 1.8-1.8 1.8.806 1.8 1.8zm-5.4 0c0 .994-.806 1.8-1.8 1.8S6.6 12.994 6.6 12s.806-1.8 1.8-1.8 1.8.806 1.8 1.8z"/>
-          </svg>
-        </div>
-        <div className="integration-info" style={{ flex: 1 }}>
-          <h4>Twilio SMS</h4>
-          <p>Include SMS messages</p>
-        </div>
-        {twilioStatus?.success && (
-          <span className="connected-badge">
-            Connected
-          </span>
-        )}
-      </div>
-
+    <CollapsibleIntegrationCard
+      defaultOpen={!twilioStatus?.success}
+      summary={
+        <>
+          <div className="integration-icon" style={{ background: '#F22F46' }}>
+            <svg viewBox="0 0 24 24" style={{ width: '32px', height: '32px' }}>
+              <path fill="#fff" d="M12 0C5.381 0 0 5.381 0 12s5.381 12 12 12 12-5.381 12-12S18.619 0 12 0zm0 20.4c-4.639 0-8.4-3.761-8.4-8.4S7.361 3.6 12 3.6s8.4 3.761 8.4 8.4-3.761 8.4-8.4 8.4zm3.6-8.4c0 .994-.806 1.8-1.8 1.8s-1.8-.806-1.8-1.8.806-1.8 1.8-1.8 1.8.806 1.8 1.8zm-5.4 0c0 .994-.806 1.8-1.8 1.8S6.6 12.994 6.6 12s.806-1.8 1.8-1.8 1.8.806 1.8 1.8z"/>
+            </svg>
+          </div>
+          <div className="integration-info" style={{ flex: 1 }}>
+            <h4>Twilio SMS</h4>
+            <p>Include SMS messages</p>
+          </div>
+        </>
+      }
+      badge={twilioStatus?.success ? <span className="connected-badge">Connected</span> : undefined}
+    >
       <div className="space-y-3">
         <div>
           <label className="nothing-input-label">
@@ -209,6 +209,6 @@ export const TwilioIntegration: React.FC<TwilioIntegrationProps> = ({ user }) =>
           </div>
         )}
       </div>
-    </div>
+    </CollapsibleIntegrationCard>
   );
 };
