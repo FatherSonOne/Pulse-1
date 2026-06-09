@@ -283,7 +283,8 @@ export const FEATURE_CATEGORIES = {
     name: 'Integrations (Beta)',
     description: 'Connect external services into Pulse. Off by default.',
     features: [
-      'slackMessagesGrounding'
+      'slackMessagesGrounding',
+      'slackChannelsGrounding'
     ] as (keyof FeatureFlags)[]
   }
   // voiceInput / aiComposer / toneAnalysis removed from this surface 2026-06-05:
@@ -338,5 +339,5 @@ export const FEATURE_DESCRIPTIONS: Partial<Record<keyof FeatureFlags, string>> =
   scheduledMessages: 'Schedule a message to send at a later time.',
   slackSend: 'Send a Slack DM to a linked contact from the People view (Phase 8).',
   slackMessagesGrounding: 'Bring your Slack DMs into Messages: connect Slack to send as you and mirror 1:1 threads. Backend + inbound still rolling out.',
-  slackChannelsGrounding: 'Bring your Slack channels into Pulse: mirror channel threads and reply as you. Not yet available — backend rolling out.',
+  slackChannelsGrounding: 'Mirror your Slack channels into Pulse (read-only for now; replying from Pulse arrives soon). Invite the Slack bot to a channel to start.',
 };

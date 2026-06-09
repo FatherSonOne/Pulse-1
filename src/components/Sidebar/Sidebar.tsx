@@ -11,6 +11,7 @@ import {
   BookOpen,
   Calendar,
   ClipboardCheck,
+  Hash,
   HelpCircle,
   Layers,
   Mail,
@@ -92,6 +93,7 @@ const getNavSections = (): NavSection[] => {
         { icon: Mail, label: 'Email', view: AppView.EMAIL },
         { icon: Radio, label: 'Relay', view: AppView.RELAY },
         { icon: Video, label: 'Glimpse', view: AppView.GLIMPSE },
+        { icon: Hash, label: 'Slack Channels', view: AppView.SLACK_CHANNELS },
       ],
     },
     {
@@ -411,6 +413,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 )}
                 {isSectionExpanded && section.items.map((item) => {
+                  // Slack Channels is a dark-launch beta — hidden entirely until
+                  // the slackChannelsGrounding flag is on (unlike Email below,
+                  // which shows-disabled when off).
+                  if (item.view === AppView.SLACK_CHANNELS && !features.slackChannelsGrounding) return null;
                   // Email shows a red "feature not available" caption when the
                   // section is toggled off (Settings → Features & Labs). Any
                   // other item with a static `note` renders it muted.

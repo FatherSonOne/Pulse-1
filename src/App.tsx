@@ -22,6 +22,7 @@ const Calendar = lazy(() => import('./components/Calendar'));
 const Settings = lazy(() => import('./components/Settings'));
 const Relay = lazy(() => import('./components/Relay'));
 const Glimpse = lazy(() => import('./components/Glimpse'));
+const SlackChannels = lazy(() => import('./components/SlackChannels/SlackChannels'));
 const SMS = lazy(() => import('./components/SMS'));
 const Meetings = lazy(() => import('./components/Meetings').then(module => ({ default: module.Meetings })));
 const Contacts = lazy(() => import('./components/Contacts'));
@@ -661,6 +662,10 @@ const App: React.FC = () => {
   // is a synchronous read despite the `use` prefix, so it is safe to call
   // here in the component body.
   const smsEnabled = useFeatureFlag('inAppSms', user?.id, false);
+
+  // Slack Channels (Integration C) is gated by the FeatureContext flag; read it
+  // here so the renderContent switch can gate the surface (default OFF).
+  const { features } = useFeatures();
 
   // Belt-and-suspenders: if a stale `view` state or deep-link lands on the
   // hidden SMS surface, bounce back to the Dashboard so the mock can't render.
@@ -1330,6 +1335,9 @@ const App: React.FC = () => {
               return <Relay contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} />;
             case AppView.GLIMPSE:
               return <Glimpse isDarkMode={isDarkMode} />;
+            case AppView.SLACK_CHANNELS:
+              if (!features.slackChannelsGrounding) return null;
+              return <SlackChannels />;
             case AppView.MESSAGES:
               return <Messages contacts={contacts} initialContactId={selectedContactId} onAddContact={handleAddContact} fullPage={true} />;
             case AppView.SMS:
