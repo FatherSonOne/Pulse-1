@@ -663,10 +663,6 @@ const App: React.FC = () => {
   // here in the component body.
   const smsEnabled = useFeatureFlag('inAppSms', user?.id, false);
 
-  // Slack Channels (Integration C) is gated by the FeatureContext flag; read it
-  // here so the renderContent switch can gate the surface (default OFF).
-  const { features } = useFeatures();
-
   // Belt-and-suspenders: if a stale `view` state or deep-link lands on the
   // hidden SMS surface, bounce back to the Dashboard so the mock can't render.
   useEffect(() => {
@@ -1336,7 +1332,8 @@ const App: React.FC = () => {
             case AppView.GLIMPSE:
               return <Glimpse isDarkMode={isDarkMode} />;
             case AppView.SLACK_CHANNELS:
-              if (!features.slackChannelsGrounding) return null;
+              // Self-gates on slackChannelsGrounding internally (App is mounted
+              // OUTSIDE FeatureProvider, so it can't read `features` here).
               return <SlackChannels />;
             case AppView.MESSAGES:
               return <Messages contacts={contacts} initialContactId={selectedContactId} onAddContact={handleAddContact} fullPage={true} />;

@@ -13,6 +13,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Hash, Lock, RefreshCw, MessageSquare, Slack as SlackIcon } from 'lucide-react';
 import { StudioMasthead } from '../Relay/studio';
 import { hasSlackBotToken } from '../../lib/slackToken';
+import { useFeatures } from '../../contexts/FeatureContext';
 import {
   slackChannelsService,
   type SlackChannelThread,
@@ -65,6 +66,7 @@ const ViaSlackChip: React.FC = () => (
 );
 
 const SlackChannels: React.FC = () => {
+  const { features } = useFeatures();
   const [threads, setThreads] = useState<SlackChannelThread[]>([]);
   const [nameById, setNameById] = useState<Map<string, string>>(new Map());
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -124,6 +126,11 @@ const SlackChannels: React.FC = () => {
   }, [messages]);
 
   const activeThread = threads.find((t) => t.id === activeThreadId) || null;
+
+  // Self-gate: render nothing unless the flag is on. App.tsx can't gate this
+  // (it's mounted outside FeatureProvider); all hooks above run unconditionally
+  // so this conditional return is rules-of-hooks-safe.
+  if (!features.slackChannelsGrounding) return null;
 
   // ── empty / cold states ───────────────────────────────────────────────────
   if (!hasToken) {
