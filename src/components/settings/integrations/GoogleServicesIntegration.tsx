@@ -6,6 +6,7 @@ import {
   Check, AlertTriangle, Info, Plug,
   Lock, Loader2, Unlink, Ban,
 } from 'lucide-react';
+import { CollapsibleIntegrationCard } from './CollapsibleIntegrationCard';
 
 interface GoogleServicesIntegrationProps {
   user?: User | null;
@@ -190,26 +191,25 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
       </div>
 
       {/* Google Calendar Integration */}
-      <div className="integration-card">
-        <div className="integration-header">
-          <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
-            <svg viewBox="0 0 24 24" style={{ width: '32px', height: '32px' }}>
-              <path fill="#4285F4" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/>
-              <path fill="#fff" d="M5 10h14v10H5z"/>
-              <path fill="#EA4335" d="M9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/>
-            </svg>
-          </div>
-          <div className="integration-info" style={{ flex: 1 }}>
-            <h4>Google Calendar</h4>
-            <p>Sync events and schedule meetings</p>
-          </div>
-          {user?.connectedProviders.google && calendarStatus?.success && (
-            <span className="connected-badge">
-              Connected
-            </span>
-          )}
-        </div>
-
+      <CollapsibleIntegrationCard
+        defaultOpen={!calendarStatus?.success}
+        summary={
+          <>
+            <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+              <svg viewBox="0 0 24 24" style={{ width: '32px', height: '32px' }}>
+                <path fill="#4285F4" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/>
+                <path fill="#fff" d="M5 10h14v10H5z"/>
+                <path fill="#EA4335" d="M9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/>
+              </svg>
+            </div>
+            <div className="integration-info" style={{ flex: 1 }}>
+              <h4>Google Calendar</h4>
+              <p>Sync events and schedule meetings</p>
+            </div>
+          </>
+        }
+        badge={user?.connectedProviders.google && calendarStatus?.success ? <span className="connected-badge">Connected</span> : undefined}
+      >
         <div className="space-y-3">
           {user?.connectedProviders.google ? (
             <>
@@ -294,27 +294,26 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
             </div>
           )}
         </div>
-      </div>
+      </CollapsibleIntegrationCard>
 
       {/* Google Contacts Integration */}
-      <div className="integration-card">
-        <div className="integration-header">
-          <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
-            <svg viewBox="0 0 24 24" style={{ width: '32px', height: '32px' }}>
-              <path fill="#1A73E8" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-            </svg>
-          </div>
-          <div className="integration-info" style={{ flex: 1 }}>
-            <h4>Google Contacts</h4>
-            <p>Sync your contacts and connections</p>
-          </div>
-          {user?.connectedProviders.google && contactsStatus?.success && (
-            <span className="connected-badge">
-              Connected
-            </span>
-          )}
-        </div>
-
+      <CollapsibleIntegrationCard
+        defaultOpen={!contactsStatus?.success}
+        summary={
+          <>
+            <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+              <svg viewBox="0 0 24 24" style={{ width: '32px', height: '32px' }}>
+                <path fill="#1A73E8" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+              </svg>
+            </div>
+            <div className="integration-info" style={{ flex: 1 }}>
+              <h4>Google Contacts</h4>
+              <p>Sync your contacts and connections</p>
+            </div>
+          </>
+        }
+        badge={user?.connectedProviders.google && contactsStatus?.success ? <span className="connected-badge">Connected</span> : undefined}
+      >
         <div className="space-y-3">
           {user?.connectedProviders.google ? (
             <>
@@ -445,28 +444,27 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
             </div>
           )}
         </div>
-      </div>
+      </CollapsibleIntegrationCard>
 
       {/* Google Maps Integration */}
-      <div className="integration-card">
-        <div className="integration-header">
-          <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
-            <svg viewBox="0 0 24 24" style={{ width: '32px', height: '32px' }}>
-              <path fill="#EA4335" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-              <circle fill="#ffffff" cx="12" cy="9" r="2.5"/>
-            </svg>
-          </div>
-          <div className="integration-info" style={{ flex: 1 }}>
-            <h4>Google Maps</h4>
-            <p>Location services and directions</p>
-          </div>
-          {mapsStatus?.success && (
-            <span className="connected-badge">
-              Connected
-            </span>
-          )}
-        </div>
-
+      <CollapsibleIntegrationCard
+        defaultOpen={!mapsStatus?.success}
+        summary={
+          <>
+            <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+              <svg viewBox="0 0 24 24" style={{ width: '32px', height: '32px' }}>
+                <path fill="#EA4335" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                <circle fill="#ffffff" cx="12" cy="9" r="2.5"/>
+              </svg>
+            </div>
+            <div className="integration-info" style={{ flex: 1 }}>
+              <h4>Google Maps</h4>
+              <p>Location services and directions</p>
+            </div>
+          </>
+        }
+        badge={mapsStatus?.success ? <span className="connected-badge">Connected</span> : undefined}
+      >
         <div className="space-y-3">
           <div className="nothing-info-box">
             <p className="info-title">
@@ -551,7 +549,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
             </div>
           )}
         </div>
-      </div>
+      </CollapsibleIntegrationCard>
     </>
   );
 };
