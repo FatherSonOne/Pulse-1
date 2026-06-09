@@ -18,8 +18,9 @@ interface CollapsibleIntegrationCardProps {
  * CollapsibleIntegrationCard — wraps the existing .integration-card shell so an
  * integration collapses to its header row (icon + name + status pill + chevron)
  * and expands to the full body on click. Uncontrolled (owns its open state), so
- * each card opts in with `defaultOpen={!connected}` and there is no parent
- * accordion / single-open coupling.
+ * each card opts in (collapsed by default — the header row shows the at-a-glance
+ * state; pass `defaultOpen` to override) and there is no parent accordion /
+ * single-open coupling.
  *
  * Reuses the repo's grid-template-rows collapse (.widget-collapse-grid /
  * .widget-spring in index.css). The body stays MOUNTED when collapsed, so a
@@ -30,7 +31,7 @@ interface CollapsibleIntegrationCardProps {
 export const CollapsibleIntegrationCard: React.FC<CollapsibleIntegrationCardProps> = ({
   summary,
   badge,
-  defaultOpen = true,
+  defaultOpen = false,
   style,
   className,
   children,

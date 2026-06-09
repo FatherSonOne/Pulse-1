@@ -84,7 +84,7 @@ export const GmailIntegration: React.FC<GmailIntegrationProps> = () => {
 
   return (
     <CollapsibleIntegrationCard
-      defaultOpen={!isConnected}
+      defaultOpen={false}
       summary={
         <>
           <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>

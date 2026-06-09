@@ -148,7 +148,7 @@ export const SlackIntegration: React.FC<SlackIntegrationProps> = ({ user, slackC
 
   return (
     <CollapsibleIntegrationCard
-      defaultOpen={!slackStatus?.success}
+      defaultOpen={false}
       summary={
         <>
           <div className="integration-icon" style={{ background: '#4A154B' }}>

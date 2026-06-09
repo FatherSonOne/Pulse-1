@@ -49,7 +49,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
 
       {/* Google Account Connection Card */}
       <CollapsibleIntegrationCard
-        defaultOpen={!user?.connectedProviders.google}
+        defaultOpen={false}
         style={{ borderColor: user?.connectedProviders.google ? 'rgba(16, 185, 129, 0.3)' : undefined }}
         summary={
           <>
@@ -186,7 +186,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
 
       {/* Google Calendar Integration */}
       <CollapsibleIntegrationCard
-        defaultOpen={!calendarStatus?.success}
+        defaultOpen={false}
         summary={
           <>
             <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
@@ -292,7 +292,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
 
       {/* Google Contacts Integration */}
       <CollapsibleIntegrationCard
-        defaultOpen={!contactsStatus?.success}
+        defaultOpen={false}
         summary={
           <>
             <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
@@ -442,7 +442,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
 
       {/* Google Maps Integration */}
       <CollapsibleIntegrationCard
-        defaultOpen={!mapsStatus?.success}
+        defaultOpen={false}
         summary={
           <>
             <div className="integration-icon" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>

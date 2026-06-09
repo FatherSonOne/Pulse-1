@@ -96,7 +96,7 @@ export const TwilioIntegration: React.FC<TwilioIntegrationProps> = ({ user }) =>
 
   return (
     <CollapsibleIntegrationCard
-      defaultOpen={!twilioStatus?.success}
+      defaultOpen={false}
       summary={
         <>
           <div className="integration-icon" style={{ background: '#F22F46' }}>

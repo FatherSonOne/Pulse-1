@@ -31,7 +31,7 @@ export const MicrosoftIntegration: React.FC<MicrosoftIntegrationProps> = ({ user
       </div>
 
       <CollapsibleIntegrationCard
-        defaultOpen={!user?.connectedProviders?.microsoft}
+        defaultOpen={false}
         style={{ borderColor: user?.connectedProviders?.microsoft ? 'rgba(16, 185, 129, 0.3)' : undefined }}
         summary={
           <>
