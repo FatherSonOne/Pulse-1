@@ -565,7 +565,7 @@ app.get('/api/gmail/auth/url', async (req, res) => {
     }
     const url = getGmailOauthClient().generateAuthUrl({
       access_type: 'offline',
-      prompt: 'consent',        // force consent → always returns a refresh token
+      prompt: 'consent select_account',  // consent (refresh token) + account chooser (switch accounts)
       scope: GMAIL_OAUTH_SCOPES,
       state: signGmailState(userId),
     });
@@ -979,6 +979,93 @@ app.post('/api/slack/send', async (req, res) => {
     res.json({ ok: true, channel: sent.channel || channel, ts: sent.ts, shadowUserId, conversationId, teamId });
   } catch (error) {
     console.error('[Slack Send] error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Slack CHANNEL reply-as-you (Integration C · P6). Posts the operator's reply into a Slack
+// channel AS THE HUMAN (xoxp- injected server-side, never the open bot proxy — D7), then
+// records a local outbound row in the channel mirror so Pulse shows it. Unlike /api/slack/send
+// there is no conversations.open — you post directly to a channel you're a member of. The
+// inbound echo of this post is filtered by the slack-events edge fn (operator's own slack id),
+// and the UNIQUE(thread_id, slack_ts) index dedups even if it weren't. Body: { channel, text }.
+app.post('/api/slack/channel-send', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+
+    const { channel, text } = req.body || {};
+    const trimmed = typeof text === 'string' ? text.trim() : '';
+    if (!trimmed) return res.status(400).json({ error: 'Missing text', code: 'MISSING_TEXT' });
+    if (!channel) return res.status(400).json({ error: 'Missing channel', code: 'MISSING_CHANNEL' });
+
+    const row = await getUserSlackToken(userId);
+    if (!row?.access_token) return res.status(400).json({ error: 'Slack not connected', code: 'NOT_CONNECTED' });
+    const userToken = row.access_token;
+    const teamId = row.slack_team_id || null;
+
+    const isAuthDead = (err) =>
+      ['invalid_auth', 'token_revoked', 'account_inactive', 'token_expired', 'not_authed'].includes(err);
+
+    const sent = await fetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8', Authorization: `Bearer ${userToken}` },
+      body: JSON.stringify({ channel, text: trimmed }),
+    }).then((r) => r.json());
+
+    if (!sent.ok) {
+      if (isAuthDead(sent.error)) {
+        await deleteUserSlackToken(userId);
+        return res.status(401).json({ error: sent.error, code: 'RECONNECT_REQUIRED' });
+      }
+      // e.g. not_in_channel / missing_scope — surface so the UI can explain.
+      return res.status(502).json({ error: sent.error || 'chat.postMessage failed', code: 'SLACK_ERROR' });
+    }
+
+    // Record the local outbound row (best-effort; the Slack post already succeeded, so a
+    // mirror failure must NOT fail the send — the client falls back to realtime/refresh).
+    let message = null;
+    if (teamId) {
+      try {
+        const store = tokenStoreClient();
+        const { data: threadId, error: tErr } = await store.rpc('get_or_create_slack_channel_thread', {
+          p_owner_pulse_id: userId,
+          p_team_id: teamId,
+          p_slack_channel_id: channel,
+          p_channel_name: null,
+          p_is_private: false,
+        });
+        if (tErr) throw tErr;
+        if (threadId) {
+          const { data: inserted, error: insErr } = await store
+            .from('slack_channel_messages')
+            .insert({
+              thread_id: threadId,
+              sender_shadow_id: null,
+              sender_slack_id: row.slack_user_id || null,
+              sender_name: 'You',
+              content: trimmed,
+              is_outgoing: true,
+              slack_ts: sent.ts,
+              metadata: { transport: 'slack_channel', slack_ts: sent.ts, slack_channel: channel },
+            })
+            .select()
+            .maybeSingle();
+          if (insErr) throw insErr;
+          message = inserted || null;
+          await store
+            .from('slack_channel_threads')
+            .update({ last_message_at: new Date().toISOString() })
+            .eq('id', threadId);
+        }
+      } catch (mirrorErr) {
+        console.error('[Slack Channel Send] local mirror failed (message still delivered):', mirrorErr);
+      }
+    }
+
+    res.json({ ok: true, channel: sent.channel || channel, ts: sent.ts, message });
+  } catch (error) {
+    console.error('[Slack Channel Send] error:', error);
     res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });

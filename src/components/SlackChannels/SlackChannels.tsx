@@ -10,7 +10,7 @@
 // Gated by the slackChannelsGrounding flag at the App.tsx render seam.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Hash, Lock, RefreshCw, MessageSquare, Slack as SlackIcon } from 'lucide-react';
+import { Hash, Lock, RefreshCw, MessageSquare, Send, Slack as SlackIcon } from 'lucide-react';
 import { StudioMasthead } from '../Relay/studio';
 import { hasSlackBotToken } from '../../lib/slackToken';
 import { useFeatures } from '../../contexts/FeatureContext';
@@ -73,6 +73,9 @@ const SlackChannels: React.FC = () => {
   const [messages, setMessages] = useState<SlackChannelMessage[]>([]);
   const [loadingThreads, setLoadingThreads] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const hasToken = hasSlackBotToken();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -126,6 +129,28 @@ const SlackChannels: React.FC = () => {
   }, [messages]);
 
   const activeThread = threads.find((t) => t.id === activeThreadId) || null;
+
+  const handleSend = async () => {
+    if (!activeThread || sending) return;
+    const text = draft.trim();
+    if (!text) return;
+    setSending(true);
+    setSendError(null);
+    const res = await slackChannelsService.sendChannelMessage(activeThread.slack_channel_id, text);
+    setSending(false);
+    if (!res.ok) {
+      setSendError(
+        res.code === 'RECONNECT_REQUIRED'
+          ? 'Slack disconnected — reconnect in Settings → Integrations.'
+          : res.error || 'Failed to send',
+      );
+      return;
+    }
+    setDraft('');
+    if (res.message) {
+      setMessages((prev) => (prev.some((x) => x.id === res.message!.id) ? prev : [...prev, res.message!]));
+    }
+  };
 
   // Self-gate: render nothing unless the flag is on. App.tsx can't gate this
   // (it's mounted outside FeatureProvider); all hooks above run unconditionally
@@ -245,34 +270,70 @@ const SlackChannels: React.FC = () => {
                 ) : messages.length === 0 ? (
                   <div style={{ color: 'var(--pulse-ink-3)', fontSize: 13 }}>No messages mirrored yet.</div>
                 ) : (
-                  messages.map((m) => (
-                    <div key={m.id} className="flex items-start gap-2.5" style={{ marginBottom: 14 }}>
-                      <div
-                        className="shrink-0 flex items-center justify-center rounded-full"
-                        style={{ width: 32, height: 32, background: colorForId(m.sender_slack_id || m.sender_name), color: '#fff', fontSize: 12, fontWeight: 700 }}
-                      >
-                        {initials(m.sender_name)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2">
-                          <span style={{ color: 'var(--pulse-ink)', fontWeight: 600, fontSize: 13.5 }}>{m.sender_name}</span>
-                          <span style={{ color: 'var(--pulse-ink-3)', fontSize: 11 }}>{fmtTime(m.created_at)}</span>
+                  messages.map((m) => {
+                    const out = m.is_outgoing;
+                    return (
+                      <div key={m.id} className={`flex items-start gap-2.5 ${out ? 'flex-row-reverse' : ''}`} style={{ marginBottom: 14 }}>
+                        <div
+                          className="shrink-0 flex items-center justify-center rounded-full"
+                          style={{ width: 32, height: 32, background: colorForId(out ? 'you' : m.sender_slack_id || m.sender_name), color: '#fff', fontSize: 12, fontWeight: 700 }}
+                        >
+                          {out ? 'You' : initials(m.sender_name)}
                         </div>
-                        <div style={{ color: 'var(--pulse-ink)', fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                          {m.content}
+                        <div className={`flex-1 min-w-0 ${out ? 'text-right' : ''}`}>
+                          <div className={`flex items-baseline gap-2 ${out ? 'justify-end' : ''}`}>
+                            <span style={{ color: 'var(--pulse-ink)', fontWeight: 600, fontSize: 13.5 }}>{out ? 'You' : m.sender_name}</span>
+                            <span style={{ color: 'var(--pulse-ink-3)', fontSize: 11 }}>{fmtTime(m.created_at)}</span>
+                          </div>
+                          <div style={{ color: 'var(--pulse-ink)', fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                            {m.content}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
-              {/* P6 will replace this with a reply-as-you composer (POST /api/slack/channel-send). */}
+              {/* Reply-as-you composer (P6) — posts via POST /api/slack/channel-send. */}
               <footer
-                className="shrink-0 px-5 py-3"
-                style={{ borderTop: '1px solid var(--pulse-border)', background: 'var(--pulse-surface)', color: 'var(--pulse-ink-3)', fontSize: 12 }}
+                className="shrink-0 px-4 py-3"
+                style={{ borderTop: '1px solid var(--pulse-border)', background: 'var(--pulse-surface)' }}
               >
-                Read-only mirror — replying from Pulse arrives in a later update.
+                {sendError && (
+                  <div style={{ color: 'var(--pulse-tone-overdue, #ef4444)', fontSize: 12, marginBottom: 6 }}>{sendError}</div>
+                )}
+                <div className="flex items-end gap-2">
+                  <textarea
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        void handleSend();
+                      }
+                    }}
+                    placeholder={`Message #${channelLabel(activeThread)} as you…`}
+                    rows={1}
+                    className="flex-1 resize-none rounded-lg px-3 py-2"
+                    style={{ background: 'var(--pulse-canvas)', border: '1px solid var(--pulse-border)', color: 'var(--pulse-ink)', fontSize: 14, maxHeight: 120 }}
+                  />
+                  <button
+                    onClick={() => void handleSend()}
+                    disabled={sending || !draft.trim()}
+                    className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium"
+                    style={{
+                      background: sending || !draft.trim() ? 'var(--pulse-surface-raised)' : 'var(--pulse-ink)',
+                      color: sending || !draft.trim() ? 'var(--pulse-ink-3)' : 'var(--pulse-canvas)',
+                      cursor: sending || !draft.trim() ? 'default' : 'pointer',
+                    }}
+                  >
+                    <Send className="w-3.5 h-3.5" /> {sending ? 'Sending…' : 'Send'}
+                  </button>
+                </div>
+                <div style={{ color: 'var(--pulse-ink-3)', fontSize: 11, marginTop: 6 }}>
+                  Posts to Slack as you · Enter to send, Shift+Enter for a new line
+                </div>
               </footer>
             </>
           )}

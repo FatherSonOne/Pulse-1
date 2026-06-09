@@ -13,6 +13,7 @@
 import { supabase } from './supabase';
 import { SlackService } from './slackService';
 import { getSlackBotToken } from '../lib/slackToken';
+import { BACKEND_URL } from '../config/backend';
 
 export interface SlackChannelThread {
   id: string;
@@ -92,6 +93,34 @@ export const slackChannelsService = {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'slack_channel_threads' }, () => onChange())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
+  },
+
+  /**
+   * Reply-as-you into a Slack channel (P6). Posts via the dedicated authed route
+   * POST /api/slack/channel-send — the xoxp- user token is injected server-side
+   * and NEVER the open proxy (D7). On success the server records the outgoing row
+   * and returns it; the caller appends it (realtime also delivers it — dedup by id).
+   */
+  async sendChannelMessage(
+    channel: string,
+    text: string,
+  ): Promise<{ ok: boolean; message?: SlackChannelMessage; code?: string; error?: string }> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return { ok: false, code: 'UNAUTHENTICATED', error: 'Not signed in' };
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/slack/channel-send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ channel, text }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        return { ok: false, code: data.code || 'SEND_FAILED', error: data.error || `HTTP ${res.status}` };
+      }
+      return { ok: true, message: (data.message ?? undefined) as SlackChannelMessage | undefined };
+    } catch (e) {
+      return { ok: false, code: 'NETWORK', error: e instanceof Error ? e.message : 'Network error' };
+    }
   },
 
   /**
