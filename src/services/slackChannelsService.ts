@@ -14,6 +14,7 @@ import { supabase } from './supabase';
 import { SlackService } from './slackService';
 import { getSlackBotToken } from '../lib/slackToken';
 import { BACKEND_URL } from '../config/backend';
+import { summarizeConversation, type ConversationSummary, type VoxMessage } from './relay/relayAIService';
 
 export interface SlackChannelThread {
   id: string;
@@ -169,6 +170,28 @@ export const slackChannelsService = {
     } catch (e) {
       return { ok: false, code: 'NETWORK', error: e instanceof Error ? e.message : 'Network error' };
     }
+  },
+
+  /**
+   * Summarize the current channel thread via the EXISTING server-side summarizer (P8 §4).
+   * Maps the mirror's text rows into the relay summarizer's VoxMessage shape and routes through
+   * the ai-router edge function (relayAIService.summarizeConversation) — NO client-side AI calls
+   * (CLAUDE.md §4 / Gemini-is-server-side). Deleted + empty rows are excluded. Returns null on an
+   * empty thread; the summarizer's throws (e.g. "No active workspace") propagate to the caller.
+   */
+  async summarizeThread(messages: SlackChannelMessage[]): Promise<ConversationSummary | null> {
+    const vox: VoxMessage[] = messages
+      .filter((m) => !m.deleted_at && (m.content ?? '').trim().length > 0)
+      .map((m) => ({
+        id: m.id,
+        transcription: m.content,
+        sender: m.is_outgoing ? 'me' : 'other',
+        senderName: m.sender_name,
+        timestamp: new Date(m.created_at),
+        duration: 0, // text rows, not voice — duration is cosmetic in the summary output
+      }));
+    if (vox.length === 0) return null;
+    return summarizeConversation(undefined, vox);
   },
 
   /**

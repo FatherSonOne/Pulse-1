@@ -10,7 +10,7 @@
 // Gated by the slackChannelsGrounding flag at the App.tsx render seam.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Hash, Lock, RefreshCw, MessageSquare, Send, Slack as SlackIcon, History } from 'lucide-react';
+import { Hash, Lock, RefreshCw, MessageSquare, Send, Slack as SlackIcon, History, Sparkles, X } from 'lucide-react';
 import { StudioMasthead } from '../Relay/studio';
 import { hasSlackBotToken } from '../../lib/slackToken';
 import { useFeatures } from '../../contexts/FeatureContext';
@@ -19,6 +19,7 @@ import {
   type SlackChannelThread,
   type SlackChannelMessage,
 } from '../../services/slackChannelsService';
+import type { ConversationSummary } from '../../services/relay/relayAIService';
 
 // ── small local presentation helpers ──────────────────────────────────────
 function initials(name: string): string {
@@ -110,6 +111,24 @@ const MessageRow: React.FC<{ m: SlackChannelMessage }> = ({ m }) => {
   );
 };
 
+// A coral AI-provenance list (P8 §4) — Key Points / Decisions / Action Items inside the channel
+// summary card. Coral is correct HERE (AI output) per CLAUDE.md §4; channel chrome stays neutral.
+const CoralList: React.FC<{ label: string; items: string[] }> = ({ label, items }) => (
+  <div style={{ marginTop: 10 }}>
+    <div style={{ color: 'var(--pulse-coral-fg)', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 6 }}>
+      {label}
+    </div>
+    <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+      {items.map((it, i) => (
+        <li key={i} style={{ display: 'flex', gap: 8, color: 'var(--pulse-ink)', fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
+          <span aria-hidden style={{ marginTop: 7, flexShrink: 0, width: 5, height: 5, borderRadius: 999, background: 'var(--pulse-coral)' }} />
+          <span>{it}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
 const SlackChannels: React.FC = () => {
   const { features } = useFeatures();
   const [threads, setThreads] = useState<SlackChannelThread[]>([]);
@@ -123,6 +142,9 @@ const SlackChannels: React.FC = () => {
   const [sendError, setSendError] = useState<string | null>(null);
   const [backfilling, setBackfilling] = useState(false);
   const [backfillNote, setBackfillNote] = useState<string | null>(null);
+  const [summary, setSummary] = useState<ConversationSummary | null>(null);
+  const [summarizing, setSummarizing] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   const hasToken = hasSlackBotToken();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -155,6 +177,8 @@ const SlackChannels: React.FC = () => {
     }
     let cancelled = false;
     setBackfillNote(null); // a result note belongs to the channel it was run on
+    setSummary(null); // a summary belongs to the channel it was generated from
+    setSummaryError(null);
     setLoadingMessages(true);
     void slackChannelsService.getMessages(activeThreadId).then((rows) => {
       if (cancelled) return;
@@ -263,6 +287,23 @@ const SlackChannels: React.FC = () => {
       );
     }
     setBackfilling(false);
+  };
+
+  // Summarize the open thread via the EXISTING server-side AI summarizer (P8 §4) — routed through
+  // the ai-router edge fn (no client AI calls). Rendered as a coral provenance card (the one place
+  // coral is correct). The summarizer is workspace-scoped, so it throws when no workspace is active.
+  const handleSummarize = async () => {
+    if (!activeThread || summarizing) return;
+    setSummarizing(true);
+    setSummaryError(null);
+    try {
+      const result = await slackChannelsService.summarizeThread(messages);
+      if (result) setSummary(result);
+      else setSummaryError('Nothing to summarize in this channel yet.');
+    } catch (e) {
+      setSummaryError(e instanceof Error ? e.message : 'Summary failed.');
+    }
+    setSummarizing(false);
   };
 
   // Self-gate: render nothing unless the flag is on. App.tsx can't gate this
@@ -375,21 +416,39 @@ const SlackChannels: React.FC = () => {
                 )}
                 <span style={{ color: 'var(--pulse-ink)', fontWeight: 600, fontSize: 15 }}>{channelLabel(activeThread)}</span>
                 <ViaSlackChip />
-                <button
-                  onClick={() => void handleBackfill()}
-                  disabled={backfilling}
-                  className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
-                  style={{
-                    color: 'var(--pulse-ink-2)',
-                    border: '1px solid var(--pulse-border)',
-                    background: 'var(--pulse-surface)',
-                    cursor: backfilling ? 'default' : 'pointer',
-                  }}
-                  title="Import this channel's recent history from Slack"
-                >
-                  <History className={`w-3.5 h-3.5 ${backfilling ? 'animate-pulse' : ''}`} />
-                  {backfilling ? 'Importing…' : 'Import history'}
-                </button>
+                <div className="ml-auto flex items-center gap-1.5">
+                  <button
+                    onClick={() => void handleSummarize()}
+                    disabled={summarizing || messages.length === 0}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
+                    style={{
+                      color: 'var(--pulse-coral-fg)',
+                      border: '1px solid var(--pulse-coral-bg-12)',
+                      background: 'var(--pulse-coral-bg-08)',
+                      cursor: summarizing || messages.length === 0 ? 'default' : 'pointer',
+                      opacity: messages.length === 0 ? 0.5 : 1,
+                    }}
+                    title="Summarize this channel with AI"
+                  >
+                    <Sparkles className={`w-3.5 h-3.5 ${summarizing ? 'animate-pulse' : ''}`} />
+                    {summarizing ? 'Summarizing…' : 'Summarize'}
+                  </button>
+                  <button
+                    onClick={() => void handleBackfill()}
+                    disabled={backfilling}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
+                    style={{
+                      color: 'var(--pulse-ink-2)',
+                      border: '1px solid var(--pulse-border)',
+                      background: 'var(--pulse-surface)',
+                      cursor: backfilling ? 'default' : 'pointer',
+                    }}
+                    title="Import this channel's recent history from Slack"
+                  >
+                    <History className={`w-3.5 h-3.5 ${backfilling ? 'animate-pulse' : ''}`} />
+                    {backfilling ? 'Importing…' : 'Import history'}
+                  </button>
+                </div>
               </header>
 
               {backfillNote && (
@@ -403,6 +462,32 @@ const SlackChannels: React.FC = () => {
                   }}
                 >
                   {backfillNote}
+                </div>
+              )}
+
+              {summaryError && !summary && (
+                <div className="shrink-0 px-5 py-2" style={{ color: 'var(--pulse-tone-overdue, #ef4444)', fontSize: 12 }}>
+                  {summaryError}
+                </div>
+              )}
+
+              {summary && (
+                <div
+                  className="shrink-0 mx-5 mt-3 rounded-xl"
+                  style={{ background: 'var(--pulse-coral-bg-08)', border: '1px solid var(--pulse-coral-bg-12)', padding: '14px 16px' }}
+                >
+                  <div className="flex items-start justify-between gap-3" style={{ marginBottom: 8 }}>
+                    <div className="inline-flex items-center gap-1.5" style={{ color: 'var(--pulse-coral-fg)', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>
+                      <Sparkles className="w-3.5 h-3.5" /> AI SUMMARY · via Gemini
+                    </div>
+                    <button onClick={() => setSummary(null)} title="Dismiss summary" style={{ color: 'var(--pulse-ink-3)', lineHeight: 0 }}>
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p style={{ color: 'var(--pulse-ink)', fontSize: 13.5, lineHeight: 1.55, margin: 0 }}>{summary.overview}</p>
+                  {summary.keyPoints.length > 0 && <CoralList label="KEY POINTS" items={summary.keyPoints} />}
+                  {summary.keyDecisions && summary.keyDecisions.length > 0 && <CoralList label="DECISIONS" items={summary.keyDecisions} />}
+                  {summary.actionItems.length > 0 && <CoralList label="ACTION ITEMS" items={summary.actionItems} />}
                 </div>
               )}
 
