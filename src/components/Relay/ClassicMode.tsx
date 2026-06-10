@@ -63,16 +63,13 @@ import { VoxSelectToolbar } from './VoxSelectToolbar';
 // Phase 5: AI Enhancements
 import {
   MessageAIPanel,
-  VoxSmartReplies,
 } from './index';
 
 import {
   summarizeConversation,
-  generateSmartReplies,
   generateMeetingNotes,
   generateAutoChapters,
   ConversationSummary,
-  SmartReply,
   MeetingNotes,
   Chapter,
 } from '../../services/relay/relayAIService';
@@ -299,9 +296,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   const [showSummary, setShowSummary] = useState(false);
   const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
-
-  const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
-  const [isGeneratingReplies, setIsGeneratingReplies] = useState(false);
 
   const [meetingNotes, setMeetingNotes] = useState<MeetingNotes | null>(null);
   const [isGeneratingNotes, setIsGeneratingNotes] = useState(false);
@@ -1075,51 +1069,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // PHASE 5: AI ENHANCEMENT HANDLERS (CONTINUED)
   // ============================================
 
-  // Generate smart replies
-  const handleGenerateSmartReplies = async () => {
-    if (activeThreadRecordings.length === 0) {
-      toast.error('No messages to reply to');
-      return;
-    }
-
-    // Use most recent message regardless of sender; fall back to placeholder if no transcription
-    const lastMessage = [...activeThreadRecordings]
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
-
-    setIsGeneratingReplies(true);
-    try {
-      const context = activeThreadRecordings.slice(-5).map(rec => ({
-        id: rec.id,
-        transcription: rec.transcription || '[Voice message]',
-        sender: rec.sender,
-        senderName: rec.sender === 'other' ? activeContact?.displayName || activeContact?.handle : undefined,
-        timestamp: rec.timestamp,
-        duration: rec.duration,
-      }));
-
-      const replies = await generateSmartReplies(apiKey, {
-        id: lastMessage.id,
-        transcription: lastMessage.transcription || '[Voice message]',
-        sender: lastMessage.sender,
-        senderName: activeContact?.displayName || activeContact?.handle,
-        timestamp: lastMessage.timestamp,
-        duration: lastMessage.duration,
-      }, context);
-
-      if (replies.length > 0) {
-        setSmartReplies(replies);
-        toast.success('Smart replies generated!');
-      } else {
-        toast.error('Failed to generate smart replies');
-      }
-    } catch (error) {
-      console.error('Smart replies error:', error);
-      toast.error('Failed to generate smart replies');
-    } finally {
-      setIsGeneratingReplies(false);
-    }
-  };
-
   // Generate meeting notes
   const handleGenerateMeetingNotes = async () => {
     if (activeThreadRecordings.length === 0) return;
@@ -1185,13 +1134,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       console.error('Chapters error:', error);
       toast.error('Failed to generate chapters', { id: 'chapters' });
     }
-  };
-
-  // Handle smart reply selection
-  const handleSelectSmartReply = (replyText: string) => {
-    navigator.clipboard.writeText(replyText);
-    toast.success('Smart reply copied! Use it in your next message.');
-    setSmartReplies([]);
   };
 
   // ============================================
@@ -1446,16 +1388,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                         >
                           {isSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <AlignLeft className="w-3 h-3" />}
                           <span className="hidden lg:inline">Summarize</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleGenerateSmartReplies}
-                          disabled={isGeneratingReplies}
-                          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 transition"
-                          title="Generate smart replies"
-                        >
-                          {isGeneratingReplies ? <Loader2 className="w-3 h-3 animate-spin" /> : <Reply className="w-3 h-3" />}
-                          <span className="hidden lg:inline">Reply</span>
                         </button>
                         <button
                           type="button"
@@ -1955,18 +1887,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
         </div>
       )}
 
-      {/* Smart Replies Panel */}
-      {smartReplies.length > 0 && (
-        <div className="fixed bottom-20 right-4 z-[200] w-96">
-          <VoxSmartReplies
-            replies={smartReplies}
-            onSelectReply={handleSelectSmartReply}
-            isDarkMode={isDarkMode}
-            accentColor="#f43f5e"
-          />
-        </div>
-      )}
-
       {/* Meeting Notes Modal */}
       {meetingNotes && (
         <div
@@ -2005,8 +1925,14 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
             <MessageAIPanel
               chapters={activeChapters}
               currentTime={0}
-              onSeek={(_time) => {
-                // TODO: Implement seek functionality
+              onSeek={(time) => {
+                const rec = recordings.find(r => r.id === chapterRecordingId);
+                if (!rec || !rec.duration) return;
+                // Load the chapter's recording into the shared transport if it
+                // isn't already, then seek to the chapter start (seek takes a
+                // 0→1 fraction).
+                if (studio.nowPlaying?.id !== rec.id) playRecording(rec);
+                studio.seek(Math.min(1, Math.max(0, time / rec.duration)));
               }}
               isDarkMode={isDarkMode}
               defaultOpen={{ chapters: true }}
