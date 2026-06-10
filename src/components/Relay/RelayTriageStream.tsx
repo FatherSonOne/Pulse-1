@@ -281,7 +281,7 @@ const InboxCard: React.FC<{
                 Now playing
               </span>
             )}
-            <span className="ml-auto font-mono text-[11px] text-zinc-500 dark:text-zinc-400 shrink-0 group-hover:opacity-0 transition-opacity">
+            <span className="ml-auto font-mono text-[11px] text-zinc-500 dark:text-zinc-400 shrink-0 transition-opacity group-hover:opacity-0 [@media(hover:none)]:opacity-0">
               {formatRelativeTime(item.createdAt)} · {formatDuration(item.durationSec)}
             </span>
           </div>
@@ -351,9 +351,11 @@ const InboxCard: React.FC<{
       {/* Hover actions */}
       {(canReply || onDismiss || onSnooze || onMarkRead || onDelete) && (
         <div
-          className={`absolute right-3 top-3 ${
-            snoozeMenuOpen || overflowMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
-          } transition flex items-center gap-1.5`}
+          className={`absolute right-3 top-3 transition flex items-center gap-1.5 ${
+            snoozeMenuOpen || overflowMenuOpen
+              ? 'opacity-100'
+              : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100'
+          }`}
         >
           {onDismiss && (
             <button
