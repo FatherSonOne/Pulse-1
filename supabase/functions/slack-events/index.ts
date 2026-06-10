@@ -293,6 +293,50 @@ async function processChannelEdit(event: any, teamId: string): Promise<void> {
   }
 }
 
+// Integration C (channels): apply a REACTION add/remove to a mirrored channel message (P8 §1.3).
+// reaction_added / reaction_removed are their OWN Slack event types (not 'message'), carrying
+// item.{channel,ts} + reaction (emoji name) + user (reactor). Stored as a per-emoji SET of reactor
+// ids in metadata.reactions via the service-role RPCs (idempotent — a retry can't double-count).
+// Fans out across all operators (like the ingest/edit paths); the RPCs no-op when the reacted
+// message isn't mirrored. No echo skip — a reaction is display-only, so the operator's own reaction
+// is shown too.
+async function processChannelReaction(event: any, teamId: string): Promise<void> {
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+    const item = event.item;
+    if (!item || item.type !== 'message' || !item.channel || !item.ts) return;
+    if (!event.reaction || !event.user) return;
+
+    const { data: tokenRows } = await supabase
+      .from('user_slack_tokens')
+      .select('user_id')
+      .eq('slack_team_id', teamId)
+      .order('created_at', { ascending: true });
+    const operators = tokenRows ?? [];
+    if (operators.length === 0) return;
+
+    const rpc = event.type === 'reaction_added'
+      ? 'add_slack_channel_reaction'
+      : 'remove_slack_channel_reaction';
+
+    for (const op of operators) {
+      const { error } = await supabase.rpc(rpc, {
+        p_owner_pulse_id: op.user_id,
+        p_team_id: teamId,
+        p_slack_channel_id: item.channel,
+        p_slack_ts: item.ts,
+        p_emoji: event.reaction,
+        p_reactor: event.user,
+      });
+      if (error) console.error('[slack-events] channel reaction error:', error.message);
+    }
+    console.log('[slack-events]', event.type, event.reaction, 'on', item.ts, 'in', item.channel, 'to', operators.length, 'operator(s)');
+  } catch (err) {
+    console.error('[slack-events] processChannelReaction error:', (err as Error).message);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -366,6 +410,21 @@ serve(async (req) => {
     const erM = (globalThis as any).EdgeRuntime;
     if (erM && typeof erM.waitUntil === 'function') erM.waitUntil(workM);
     else await workM;
+    return json({ ok: true });
+  }
+
+  // Integration C (channels): REACTIONS (P8 §1.3). reaction_added / reaction_removed are their OWN
+  // event types (not 'message'), so they never matched any gate above. Channel-scoped via the
+  // item.channel C/G prefix (a DM reaction's item.channel starts with 'D' and is ignored). Placed
+  // before the DM gate; the DM gate requires type==='message' so reactions would otherwise be dropped.
+  if (
+    (event?.type === 'reaction_added' || event?.type === 'reaction_removed') &&
+    teamId && event.item?.type === 'message' && /^[CG]/.test(String(event.item?.channel ?? ''))
+  ) {
+    const workR = processChannelReaction(event, teamId);
+    const erR = (globalThis as any).EdgeRuntime;
+    if (erR && typeof erR.waitUntil === 'function') erR.waitUntil(workR);
+    else await workR;
     return json({ ok: true });
   }
 

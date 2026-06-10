@@ -36,6 +36,20 @@ function colorForId(id: string): string {
   return AVATAR_COLORS[h % AVATAR_COLORS.length];
 }
 
+// Compact map of the most common Slack reaction names → glyph (P8 §1.3). Anything not mapped falls
+// back to its :colon-name: — honest and readable without bundling a full emoji set. Skin-tone
+// modifiers ("thumbsup::skin-tone-2") collapse to the base name.
+const REACTION_EMOJI: Record<string, string> = {
+  '+1': '👍', thumbsup: '👍', '-1': '👎', thumbsdown: '👎', heart: '❤️', eyes: '👀',
+  fire: '🔥', tada: '🎉', white_check_mark: '✅', heavy_check_mark: '✔️', rocket: '🚀',
+  pray: '🙏', clap: '👏', joy: '😂', smile: '😄', smiley: '😃', thinking_face: '🤔',
+  raised_hands: '🙌', '100': '💯', ok_hand: '👌', wave: '👋', point_up: '☝️', star: '⭐',
+};
+function reactionGlyph(name: string): string {
+  const base = name.split('::')[0];
+  return REACTION_EMOJI[base] || `:${base}:`;
+}
+
 function fmtTime(iso: string): string {
   try {
     return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -78,6 +92,10 @@ interface ThreadGroup {
 const MessageRow: React.FC<{ m: SlackChannelMessage }> = ({ m }) => {
   const out = m.is_outgoing;
   const deleted = !!m.deleted_at;
+  // Reactions (P8 §1.3) live in metadata.reactions = { "<emoji>": ["<reactor_id>", ...] }.
+  const reactionEntries = Object.entries(
+    (m.metadata?.reactions ?? {}) as Record<string, unknown>,
+  ).filter((e): e is [string, string[]] => Array.isArray(e[1]) && e[1].length > 0);
   return (
     <div className={`flex items-start gap-2.5 ${out ? 'flex-row-reverse' : ''}`}>
       <div
@@ -106,6 +124,21 @@ const MessageRow: React.FC<{ m: SlackChannelMessage }> = ({ m }) => {
         >
           {deleted ? 'message deleted' : m.content}
         </div>
+        {!deleted && reactionEntries.length > 0 && (
+          <div className={`flex flex-wrap gap-1 mt-1.5 ${out ? 'justify-end' : ''}`}>
+            {reactionEntries.map(([emoji, users]) => (
+              <span
+                key={emoji}
+                className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5"
+                style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)', fontSize: 11, color: 'var(--pulse-ink-2)' }}
+                title={`:${emoji}: · ${users.length}`}
+              >
+                <span>{reactionGlyph(emoji)}</span>
+                <span>{users.length}</span>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
