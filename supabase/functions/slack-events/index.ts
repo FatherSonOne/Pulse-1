@@ -179,48 +179,57 @@ async function processChannelEvent(event: any, teamId: string, isRetry: boolean)
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-    // Resolve the owner (single-tenant L1; same resolution as the DM path).
-    const { data: tokenRow } = await supabase
+    // Resolve ALL connected operators for this workspace and fan the channel message out into each
+    // one's owner-scoped mirror (P8 §2 multi-operator routing). Channel events are workspace-level
+    // (one bot delivers a post once), so a single post must reach every connected operator — the
+    // old limit(1) "oldest token" resolver mirrored to ONE login and the rest saw nothing. For a
+    // single operator this loops exactly once = identical to the prior behavior; the per-operator
+    // rows are owner-scoped so copies are expected, not duplicates. (DM path's analogous 3.2 gap is
+    // tracked separately under slackMessagesGrounding and is intentionally NOT touched here.)
+    const { data: tokenRows } = await supabase
       .from('user_slack_tokens')
       .select('user_id, slack_user_id, access_token')
       .eq('slack_team_id', teamId)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .order('created_at', { ascending: true });
 
-    if (!tokenRow?.user_id) return; // no connected operator for this workspace
+    const operators = tokenRows ?? [];
+    if (operators.length === 0) return; // no connected operator for this workspace
 
-    // Echo filter: skip the operator's OWN channel posts. Our reply-as-you (P6) posts as the
-    // operator and comes back as a message.channels event; P6 records the outgoing row itself,
-    // so re-ingesting here would double it. (Trade-off: the operator's messages typed directly
-    // in Slack are not mirrored in v1 — they remain visible in Slack.)
-    if (event.user === tokenRow.slack_user_id) return;
-
-    // Best-effort author enrichment (name + email), skipped on Slack retries.
-    const { displayName, email } = !isRetry && tokenRow.access_token
-      ? await fetchSlackUserProfile(tokenRow.access_token as string, event.user)
+    // Enrich the author's name/email ONCE (users.info is workspace-scoped, so any operator's token
+    // resolves any member). Skipped on Slack retries. Prefer a NON-author operator's token; fall
+    // back to the first available.
+    const enrichTok = (operators.find((o) => o.slack_user_id !== event.user) ?? operators[0])?.access_token;
+    const { displayName, email } = !isRetry && enrichTok
+      ? await fetchSlackUserProfile(enrichTok as string, event.user)
       : { displayName: null, email: null };
 
     // channel_type 'group' = private channel; 'channel' = public.
     const isPrivate = event.channel_type === 'group';
 
-    const { data: msgId, error } = await supabase.rpc('ingest_slack_channel_message', {
-      p_owner_pulse_id: tokenRow.user_id,
-      p_team_id: teamId,
-      p_slack_channel_id: event.channel,
-      p_channel_name: null, // not in the event payload; resolved client-side from the bot token in P5
-      p_is_private: isPrivate,
-      p_sender_slack_id: event.user,
-      p_text: event.text ?? '',
-      p_slack_ts: event.ts,
-      p_slack_thread_ts: event.thread_ts ?? null,
-      p_email: email,
-      p_display_name: displayName,
-    });
+    for (const op of operators) {
+      // Per-operator echo filter: skip the post for the operator who AUTHORED it (P6 reply-as-you
+      // already recorded their own outgoing row), but still mirror it for every OTHER operator —
+      // one operator's post is another's inbound. Getting this per-operator is the crux of fan-out.
+      if (event.user === op.slack_user_id) continue;
 
-    if (error) console.error('[slack-events] channel ingest error:', error.message);
-    else if (msgId) console.log('[slack-events] ingested channel msg', event.ts, 'in', event.channel, '->', msgId);
-    else console.log('[slack-events] duplicate channel slack_ts skipped', event.ts);
+      const { data: msgId, error } = await supabase.rpc('ingest_slack_channel_message', {
+        p_owner_pulse_id: op.user_id,
+        p_team_id: teamId,
+        p_slack_channel_id: event.channel,
+        p_channel_name: null, // not in the event payload; resolved client-side from the bot token in P5
+        p_is_private: isPrivate,
+        p_sender_slack_id: event.user,
+        p_text: event.text ?? '',
+        p_slack_ts: event.ts,
+        p_slack_thread_ts: event.thread_ts ?? null,
+        p_email: email,
+        p_display_name: displayName,
+      });
+
+      if (error) console.error('[slack-events] channel ingest error:', error.message);
+      else if (msgId) console.log('[slack-events] ingested channel msg', event.ts, 'in', event.channel, '-> owner', op.user_id);
+      else console.log('[slack-events] duplicate channel slack_ts skipped', event.ts, 'owner', op.user_id);
+    }
   } catch (err) {
     console.error('[slack-events] processChannelEvent error:', (err as Error).message);
   }
@@ -236,14 +245,17 @@ async function processChannelEdit(event: any, teamId: string): Promise<void> {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-    const { data: tokenRow } = await supabase
+    // Fan the edit/delete out to every connected operator's mirror (P8 §2), mirroring the ingest
+    // resolver. The RPCs no-op for any operator that doesn't have the message mirrored (e.g. the
+    // author-operator, whose own posts aren't mirrored inbound), so looping all operators is safe
+    // and self-correcting. One operator → loops once = identical to the prior limit(1) behavior.
+    const { data: tokenRows } = await supabase
       .from('user_slack_tokens')
       .select('user_id')
       .eq('slack_team_id', teamId)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (!tokenRow?.user_id) return;
+      .order('created_at', { ascending: true });
+    const operators = tokenRows ?? [];
+    if (operators.length === 0) return;
 
     const channel = event.channel;
     if (!channel) return;
@@ -252,25 +264,29 @@ async function processChannelEdit(event: any, teamId: string): Promise<void> {
       const edited = event.message;
       // The edited message keeps its original ts; ignore non-user/system edits.
       if (!edited?.ts || edited.subtype || edited.bot_id) return;
-      const { error } = await supabase.rpc('edit_slack_channel_message', {
-        p_owner_pulse_id: tokenRow.user_id,
-        p_team_id: teamId,
-        p_slack_channel_id: channel,
-        p_slack_ts: edited.ts,
-        p_text: edited.text ?? '',
-      });
-      if (error) console.error('[slack-events] channel edit error:', error.message);
-      else console.log('[slack-events] channel edit applied', edited.ts, 'in', channel);
+      for (const op of operators) {
+        const { error } = await supabase.rpc('edit_slack_channel_message', {
+          p_owner_pulse_id: op.user_id,
+          p_team_id: teamId,
+          p_slack_channel_id: channel,
+          p_slack_ts: edited.ts,
+          p_text: edited.text ?? '',
+        });
+        if (error) console.error('[slack-events] channel edit error:', error.message);
+      }
+      console.log('[slack-events] channel edit applied', edited.ts, 'in', channel, 'to', operators.length, 'operator(s)');
     } else if (event.subtype === 'message_deleted') {
       if (!event.deleted_ts) return;
-      const { error } = await supabase.rpc('tombstone_slack_channel_message', {
-        p_owner_pulse_id: tokenRow.user_id,
-        p_team_id: teamId,
-        p_slack_channel_id: channel,
-        p_slack_ts: event.deleted_ts,
-      });
-      if (error) console.error('[slack-events] channel delete error:', error.message);
-      else console.log('[slack-events] channel delete applied', event.deleted_ts, 'in', channel);
+      for (const op of operators) {
+        const { error } = await supabase.rpc('tombstone_slack_channel_message', {
+          p_owner_pulse_id: op.user_id,
+          p_team_id: teamId,
+          p_slack_channel_id: channel,
+          p_slack_ts: event.deleted_ts,
+        });
+        if (error) console.error('[slack-events] channel delete error:', error.message);
+      }
+      console.log('[slack-events] channel delete applied', event.deleted_ts, 'in', channel, 'to', operators.length, 'operator(s)');
     }
   } catch (err) {
     console.error('[slack-events] processChannelEdit error:', (err as Error).message);
