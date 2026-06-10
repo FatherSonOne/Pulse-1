@@ -648,6 +648,28 @@ class VoxModeService {
     return data.map(broadcast => this.mapDbToBroadcast(broadcast));
   }
 
+  /**
+   * Delete a broadcast you authored. Ownership-scoped on author_id (mirrors
+   * deleteTeamVoxMessage); RLS is the backstop. Returns false on RLS reject so
+   * the caller can roll its optimistic removal back.
+   */
+  async deleteBroadcast(broadcastId: string): Promise<boolean> {
+    const userId = await this.ensureUserId();
+    if (!userId) return false;
+
+    const { error } = await supabase
+      .from('broadcasts')
+      .delete()
+      .eq('id', broadcastId)
+      .eq('author_id', userId);
+
+    if (error) {
+      console.error('Error deleting broadcast:', error);
+      return false;
+    }
+    return true;
+  }
+
   // ============================================
   // VOICE THREADS
   // ============================================

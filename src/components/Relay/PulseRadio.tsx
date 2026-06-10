@@ -28,7 +28,6 @@ import {
   Edit3,
   CheckCheck,
   Tower,
-  Reply,
   MoreVertical,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
@@ -53,13 +52,10 @@ import { VoxSelectToolbar } from './VoxSelectToolbar';
 // Phase 5: AI Enhancements
 import {
   MessageAIPanel,
-  VoxSmartReplies,
 } from './index';
 import {
   summarizeConversation,
-  generateSmartReplies,
   ConversationSummary,
-  SmartReply,
 } from '../../services/relay/relayAIService';
 
 // Phase 6: Final Polish
@@ -139,8 +135,6 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const [showSummary, setShowSummary] = useState(false);
   const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
-  const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
-  const [isGeneratingReplies, setIsGeneratingReplies] = useState(false);
 
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
@@ -427,10 +421,12 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
     try {
       const messages = broadcasts.map(b => ({
         id: b.id,
-        transcription: b.title || 'Untitled broadcast',
+        // Summarize the actual voice transcript, not just the title — the
+        // transcript is the content; titles alone gave shallow summaries.
+        transcription: b.transcript || b.title || 'Untitled broadcast',
         sender: 'other' as const,
-        senderName: b.broadcaster || 'Unknown',
-        timestamp: b.timestamp,
+        senderName: b.authorName || 'Unknown',
+        timestamp: b.publishedAt,
         duration: 0,
       }));
 
@@ -454,58 +450,6 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       }
     } finally {
       setIsSummarizing(false);
-    }
-  };
-
-  const handleGenerateSmartReplies = async () => {
-    if (broadcasts.length === 0) {
-      toast.error('No broadcasts to analyze');
-      return;
-    }
-
-    if (!apiKey) {
-      toast.error('Gemini API key not configured');
-      return;
-    }
-
-    setIsGeneratingReplies(true);
-    try {
-      const recentBroadcasts = broadcasts.slice(0, 5);
-      const lastBroadcast = recentBroadcasts[0];
-
-      const context = recentBroadcasts.map(b => ({
-        id: b.id,
-        transcription: b.title || 'Untitled broadcast',
-        sender: 'other' as const,
-        senderName: b.broadcaster || 'Unknown',
-        timestamp: b.timestamp,
-        duration: 0,
-      }));
-
-      const replies = await generateSmartReplies(apiKey, {
-        id: lastBroadcast.id,
-        transcription: lastBroadcast.title || 'Untitled broadcast',
-        sender: 'other' as const,
-        senderName: lastBroadcast.broadcaster || 'Unknown',
-        timestamp: lastBroadcast.timestamp,
-        duration: 0,
-      }, context);
-      if (replies.length > 0) {
-        setSmartReplies(replies);
-        toast.success('Smart replies generated!');
-      } else {
-        toast.error('AI replies unavailable. Try again later.');
-      }
-    } catch (error: any) {
-      console.error('Smart reply generation failed:', error);
-      const msg = error?.message || '';
-      if (msg.includes('API key') || msg.includes('API_KEY')) {
-        toast.error('AI features require API configuration');
-      } else {
-        toast.error('AI replies unavailable (beta)');
-      }
-    } finally {
-      setIsGeneratingReplies(false);
     }
   };
 
@@ -709,16 +653,6 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                           >
                             {isSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <AlignLeft className="w-3 h-3" />}
                             <span className="hidden sm:inline">Summarize</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleGenerateSmartReplies}
-                            disabled={isGeneratingReplies}
-                            className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition"
-                            title="Generate smart replies"
-                          >
-                            {isGeneratingReplies ? <Loader2 className="w-3 h-3 animate-spin" /> : <Reply className="w-3 h-3" />}
-                            <span className="hidden sm:inline">Reply</span>
                           </button>
                           <button
                             type="button"
@@ -966,9 +900,39 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                                   onArchive={() => handleArchiveBroadcast(b)}
                                   onDownload={() => handleDownloadBroadcast(b)}
                                   onDelete={() => {
-                                    setBroadcasts((prev) => prev.filter((x) => x.id !== b.id));
                                     setShowMessageMenu(null);
-                                    toast.success('Broadcast deleted');
+                                    toast((t) => (
+                                      <span className="flex flex-col gap-2 min-w-[14rem]">
+                                        <span className="text-sm">Delete this broadcast forever? This can't be undone.</span>
+                                        <div className="flex items-center gap-2 justify-end">
+                                          <button
+                                            type="button"
+                                            onClick={() => toast.dismiss(t.id)}
+                                            className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                          >
+                                            Cancel
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={async () => {
+                                              toast.dismiss(t.id);
+                                              const snapshot = broadcasts;
+                                              setBroadcasts((cur) => cur.filter((x) => x.id !== b.id));
+                                              const ok = await voxModeService.deleteBroadcast(b.id);
+                                              if (ok) {
+                                                toast.success('Broadcast deleted');
+                                              } else {
+                                                setBroadcasts(snapshot);
+                                                toast.error("Couldn't delete — you may not own this broadcast.");
+                                              }
+                                            }}
+                                            className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white"
+                                          >
+                                            Delete
+                                          </button>
+                                        </div>
+                                      </span>
+                                    ), { duration: 8000 });
                                   }}
                                   onClose={() => setShowMessageMenu(null)}
                                 />
@@ -1376,21 +1340,6 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
             />
           </div>
         </div>
-      )}
-
-      {smartReplies.length > 0 && (
-        <VoxSmartReplies
-          replies={smartReplies}
-          onSelectReply={(reply) => {
-            // Use the reply - could set it as broadcastTitle or copy to clipboard
-            setBroadcastTitle(reply);
-            setSmartReplies([]);
-            toast.success('Reply suggestion applied');
-          }}
-          onClose={() => setSmartReplies([])}
-          isDarkMode={isDarkMode}
-          accentColor="#f43f5e"
-        />
       )}
 
       {/* Phase 6: Keyboard Shortcuts Help Modal */}
