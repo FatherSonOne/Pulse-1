@@ -18,9 +18,7 @@ import {
   Check,
   MoreVertical,
   List,
-  Bookmark,
   AlignLeft,
-  Reply,
   CheckCheck,
   Loader2,
 } from 'lucide-react';
@@ -31,6 +29,7 @@ import VoxRecordArea from './VoxRecordArea';
 import RelayPanelShell from './RelayPanelShell';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/relay/voxModeService';
+import { supabase } from '../../services/supabase';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
 import { type VoxWorkspace, type VoxTeamChannel, type TeamVoxMessage } from '../../services/relay/voxModeTypes';
 import toast from 'react-hot-toast';
@@ -44,9 +43,9 @@ import VoxDownloadModal from './VoxDownloadModal';
 import { archiveRelayConversation, archiveMeetingNotes } from '../../services/relay/relayArchiveService';
 
 // Phase 5: AI Enhancements
-import { MessageAIPanel, VoxSmartReplies } from './index';
-import { summarizeConversation, generateSmartReplies, generateMeetingNotes, generateAutoChapters } from '../../services/relay/relayAIService';
-import type { ConversationSummary, SmartReply, MeetingNotes, Chapter } from '../../services/relay/relayAIService';
+import { MessageAIPanel } from './index';
+import { summarizeConversation, generateMeetingNotes, generateAutoChapters } from '../../services/relay/relayAIService';
+import type { ConversationSummary, MeetingNotes, Chapter } from '../../services/relay/relayAIService';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 
 // Phase 6: Final Polish
@@ -153,8 +152,6 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   // Phase 5: AI Enhancement States
   const [showSummary, setShowSummary] = useState(false);
   const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
-  const [showSmartReplies, setShowSmartReplies] = useState(false);
-  const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [meetingNotes, setMeetingNotes] = useState<MeetingNotes | null>(null);
   const [isGeneratingMeetingNotes, setIsGeneratingMeetingNotes] = useState(false);
@@ -230,53 +227,6 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     } catch (error) {
       console.error('Summarization error:', error);
       toast.error('Failed to generate summary');
-    } finally {
-      setIsGeneratingAI(false);
-    }
-  };
-
-  const handleGenerateSmartReplies = async () => {
-    const recentMessages = messages.slice(-5);
-    if (recentMessages.length === 0) {
-      toast.error('No messages to analyze');
-      return;
-    }
-
-    if (!apiKey) {
-      toast.error('Gemini API key not configured');
-      return;
-    }
-
-    setIsGeneratingAI(true);
-    try {
-      const lastMessage = recentMessages[recentMessages.length - 1];
-      const context = recentMessages.map(msg => ({
-        id: msg.id,
-        transcription: msg.transcript || '',
-        sender: (msg.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
-        senderName: msg.senderName,
-        timestamp: msg.createdAt,
-        duration: msg.duration,
-      }));
-
-      const replies = await generateSmartReplies(apiKey, {
-        id: lastMessage.id,
-        transcription: lastMessage.transcript || '',
-        sender: (lastMessage.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
-        senderName: lastMessage.senderName,
-        timestamp: lastMessage.createdAt,
-        duration: lastMessage.duration,
-      }, context);
-
-      if (replies.length > 0) {
-        setSmartReplies(replies);
-        toast.success('Smart replies generated!');
-      } else {
-        toast.error('Failed to generate smart replies');
-      }
-    } catch (error) {
-      console.error('Smart replies error:', error);
-      toast.error('Failed to generate smart replies');
     } finally {
       setIsGeneratingAI(false);
     }
@@ -435,7 +385,6 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       if (showMessageMenu) { setShowMessageMenu(null); return; }
       if (meetingNotes) { setMeetingNotes(null); return; }
       if (showSummary) { setShowSummary(false); return; }
-      if (showSmartReplies) { setShowSmartReplies(false); return; }
       if (showDownloadModal) { setShowDownloadModal(false); return; }
       if (showMentionPicker) { setShowMentionPicker(false); return; }
       if (showAddMember) { setShowAddMember(false); return; }
@@ -523,6 +472,28 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     const data = await voxModeService.getChannelMessages(selectedChannel.id);
     setMessages(data);
   };
+
+  // Realtime: keep the active channel's feed live. Any insert/update/delete on
+  // team_vox_messages for this channel (a teammate's new post, a reaction from
+  // another client, a delete) triggers a refetch — mirrors the Inbox's
+  // refetch-on-change approach so the per-channel mapping stays in one place.
+  useEffect(() => {
+    if (!selectedChannel) return;
+    const channelId = selectedChannel.id;
+    const sub = supabase
+      .channel(`team-vox-${channelId}`)
+      .on(
+        'postgres_changes' as any,
+        { event: '*', schema: 'public', table: 'team_vox_messages', filter: `channel_id=eq.${channelId}` },
+        () => { void loadMessages(); },
+      )
+      .subscribe();
+    return () => {
+      try { supabase.removeChannel(sub); } catch { /* noop */ }
+    };
+    // loadMessages closes over selectedChannel; re-subscribe only on channel change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChannel]);
 
   const loadPulseContacts = async () => {
     const pulseUsers = await voxModeService.getPulseUsersAsContacts();
@@ -629,6 +600,34 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     };
     setDownloadItem(item);
     setShowDownloadModal(true);
+  };
+
+  // Toggle the current user's reaction on a message and persist it. Reactions
+  // live in team_vox_messages.reactions (jsonb), so they survive reload and
+  // reach other clients (the realtime sub refetches on the resulting update).
+  const toggleReaction = (messageId: string, emoji: string) => {
+    const userId = voxModeService.getUserId();
+    let nextReactions: Record<string, string[]> | null = null;
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== messageId) return m;
+        const reactions: Record<string, string[]> = { ...m.reactions };
+        const existing = reactions[emoji] || [];
+        if (existing.includes(userId)) {
+          reactions[emoji] = existing.filter((id: string) => id !== userId);
+          if (reactions[emoji].length === 0) delete reactions[emoji];
+        } else {
+          reactions[emoji] = [...existing, userId];
+        }
+        nextReactions = reactions;
+        return { ...m, reactions };
+      }),
+    );
+    if (nextReactions) {
+      voxModeService
+        .updateTeamVoxReactions(messageId, nextReactions)
+        .catch((err) => console.error('Failed to persist reaction:', err));
+    }
   };
 
   const formatDuration = (seconds: number) => {
@@ -1042,16 +1041,6 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                         </button>
                         <button
                           type="button"
-                          onClick={handleGenerateSmartReplies}
-                          disabled={isGeneratingAI}
-                          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition"
-                          title="Generate smart replies"
-                        >
-                          <Reply className="w-3 h-3" />
-                          <span className="hidden lg:inline">Reply</span>
-                        </button>
-                        <button
-                          type="button"
                           onClick={handleGenerateMeetingNotes}
                           disabled={isGeneratingMeetingNotes}
                           className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition"
@@ -1092,14 +1081,6 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                       title="Notifications"
                     >
                       <Bell className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`p-1.5 rounded-md ${tc.btnGhost}`}
-                      aria-label="Bookmark channel"
-                      title="Bookmark"
-                    >
-                      <Bookmark className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
@@ -1316,21 +1297,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                       className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${tc.cardBg} border ${tc.border} ${tc.hoverBg}`}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        const userId = voxModeService.getUserId();
-                                        setMessages((prev) =>
-                                          prev.map((m) => {
-                                            if (m.id !== message.id) return m;
-                                            const reactions = { ...m.reactions };
-                                            const existing = reactions[emoji] || [];
-                                            if (existing.includes(userId)) {
-                                              reactions[emoji] = existing.filter((id: string) => id !== userId);
-                                              if (reactions[emoji].length === 0) delete reactions[emoji];
-                                            } else {
-                                              reactions[emoji] = [...existing, userId];
-                                            }
-                                            return { ...m, reactions };
-                                          })
-                                        );
+                                        toggleReaction(message.id, emoji);
                                       }}
                                     >
                                       <span>{emoji}</span>
@@ -1348,21 +1315,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f43f5e]/20 transition-colors text-lg"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            const userId = voxModeService.getUserId();
-                                            setMessages((prev) =>
-                                              prev.map((m) => {
-                                                if (m.id !== message.id) return m;
-                                                const reactions = { ...m.reactions };
-                                                const existing = reactions[emoji] || [];
-                                                if (existing.includes(userId)) {
-                                                  reactions[emoji] = existing.filter((id: string) => id !== userId);
-                                                  if (reactions[emoji].length === 0) delete reactions[emoji];
-                                                } else {
-                                                  reactions[emoji] = [...existing, userId];
-                                                }
-                                                return { ...m, reactions };
-                                              })
-                                            );
+                                            toggleReaction(message.id, emoji);
                                             setReactionPickerMessageId(null);
                                           }}
                                         >
@@ -1383,15 +1336,38 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                 anchorRect={menuAnchorRect!}
                                 onArchive={() => handleArchiveMessage(message)}
                                 onDownload={() => handleDownloadMessage(message)}
-                                onDelete={async () => {
-                                  const success = await voxModeService.deleteTeamVoxMessage(message.id);
-                                  if (success) {
-                                    setMessages(prev => prev.filter(m => m.id !== message.id));
-                                    toast.success('Message deleted');
-                                  } else {
-                                    toast.error('Failed to delete message');
-                                  }
+                                onDelete={() => {
                                   setShowMessageMenu(null);
+                                  toast((t) => (
+                                    <span className="flex flex-col gap-2 min-w-[14rem]">
+                                      <span className="text-sm">Delete this voice message forever? This can't be undone.</span>
+                                      <div className="flex items-center gap-2 justify-end">
+                                        <button
+                                          type="button"
+                                          onClick={() => toast.dismiss(t.id)}
+                                          className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                        >
+                                          Cancel
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={async () => {
+                                            toast.dismiss(t.id);
+                                            const success = await voxModeService.deleteTeamVoxMessage(message.id);
+                                            if (success) {
+                                              setMessages(prev => prev.filter(m => m.id !== message.id));
+                                              toast.success('Message deleted');
+                                            } else {
+                                              toast.error('Failed to delete message');
+                                            }
+                                          }}
+                                          className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white"
+                                        >
+                                          Delete
+                                        </button>
+                                      </div>
+                                    </span>
+                                  ), { duration: 8000 });
                                 }}
                                 onClose={() => setShowMessageMenu(null)}
                               />
@@ -1988,24 +1964,6 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         </div>
       )}
 
-      {/* Smart Replies Panel */}
-      {smartReplies.length > 0 && showSmartReplies && (
-        <div className="fixed bottom-20 right-4 z-40 w-96">
-          <VoxSmartReplies
-            replies={smartReplies}
-            onSelectReply={(reply) => {
-              navigator.clipboard.writeText(reply.text);
-              toast.success('Smart reply copied! Use it in your next message.');
-              setSmartReplies([]);
-              setShowSmartReplies(false);
-            }}
-            onClose={() => setShowSmartReplies(false)}
-            isDarkMode={isDarkMode}
-            accentColor="#f43f5e"
-          />
-        </div>
-      )}
-
       {/* Meeting Notes Modal */}
       {meetingNotes && (
         <div
@@ -2046,6 +2004,12 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             <MessageAIPanel
               chapters={activeChapters}
               currentTime={0}
+              onSeek={(time) => {
+                const msg = messages.find((m) => m.id === chapterMessageId);
+                if (!msg || !msg.duration) return;
+                if (studio.nowPlaying?.id !== msg.id) handlePlayMessage(msg);
+                studio.seek(Math.min(1, Math.max(0, time / msg.duration)));
+              }}
               isDarkMode={isDarkMode}
               defaultOpen={{ chapters: true }}
             />
