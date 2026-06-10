@@ -17,7 +17,6 @@ import {
   StickyNote,
   Trash2,
   Copy,
-  ExternalLink,
   X,
   Check,
   Download,
@@ -27,7 +26,6 @@ import {
   ChevronLeft,
   Pencil,
   AlignLeft,
-  Reply,
   CheckCheck,
   HelpCircle,
   Loader2,
@@ -52,9 +50,9 @@ import VoxDownloadModal from './VoxDownloadModal';
 import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
 
 // Phase 5: AI Enhancements
-import { MessageAIPanel, VoxSmartReplies } from './index';
-import { summarizeConversation, generateSmartReplies } from '../../services/relay/relayAIService';
-import type { ConversationSummary, SmartReply } from '../../services/relay/relayAIService';
+import { MessageAIPanel } from './index';
+import { summarizeConversation } from '../../services/relay/relayAIService';
+import type { ConversationSummary } from '../../services/relay/relayAIService';
 
 // Phase 6: Final Polish
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
@@ -107,6 +105,9 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
   const [showTagInput, setShowTagInput] = useState(false);
   const [newTagText, setNewTagText] = useState('');
+  // Real contact picker for linking (replaces the old placeholder-link creator).
+  const [linkContacts, setLinkContacts] = useState<Array<{ id: string; name: string; handle: string }>>([]);
+  const [linkSearch, setLinkSearch] = useState('');
 
 
   // Phase 2: Selection Mode State
@@ -126,8 +127,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   // Phase 5: AI Enhancement States
   const [showSummary, setShowSummary] = useState(false);
   const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
-  const [showSmartReplies, setShowSmartReplies] = useState(false);
-  const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   // Phase 6: Final Polish States
@@ -211,61 +210,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     }
   };
 
-  const handleGenerateSmartReplies = async () => {
-    const recentNotes = notes.slice(0, 5);
-    if (recentNotes.length === 0) {
-      toast.error('No notes to analyze');
-      return;
-    }
-
-    if (!apiKey) {
-      toast.error('Gemini API key not configured');
-      return;
-    }
-
-    setIsGeneratingAI(true);
-    try {
-      const lastNote = recentNotes[0];
-      const context = recentNotes.map(note => ({
-        id: note.id,
-        transcription: note.transcript || '',
-        sender: 'me' as const,
-        senderName: 'Me',
-        timestamp: note.createdAt,
-        duration: note.duration,
-      }));
-
-      const replies = await generateSmartReplies(apiKey, {
-        id: lastNote.id,
-        transcription: lastNote.transcript || '',
-        sender: 'me' as const,
-        senderName: 'Me',
-        timestamp: lastNote.createdAt,
-        duration: lastNote.duration,
-      }, context);
-
-      if (replies.length > 0) {
-        setSmartReplies(replies);
-        setShowSmartReplies(true);
-        toast.success('Smart replies generated!');
-      } else {
-        toast.error('Smart replies unavailable. Try again later.');
-      }
-    } catch (error: any) {
-      console.error('Smart replies error:', error);
-      const msg = error?.message || '';
-      if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
-        toast.error('AI features require API configuration');
-      } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
-        toast.error('Network error. Please try again.');
-      } else {
-        toast.error('Smart replies unavailable (beta)');
-      }
-    } finally {
-      setIsGeneratingAI(false);
-    }
-  };
-
   const handleSelectAllNotes = () => {
     const allItems: VoxSelectionItem[] = filteredNotes.map(note => ({
       id: note.id,
@@ -292,7 +236,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       // Priority 1: close any open modal/overlay first
       if (showMessageMenu) { setShowMessageMenu(null); return; }
       if (showSummary) { setShowSummary(false); return; }
-      if (showSmartReplies) { setShowSmartReplies(false); return; }
       if (showDownloadModal) { setShowDownloadModal(false); return; }
       if (showLinkModal) { setShowLinkModal(false); return; }
       // Priority 2: discard active recording
@@ -387,11 +330,12 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     loadNotes();
   }, []);
 
-  // Reload notes when search changes
+  // Reload notes when search changes — including when cleared, so emptying the
+  // box restores the full list instead of leaving the last filtered results.
   useEffect(() => {
-    if (searchQuery !== '') {
-      loadNotes();
-    }
+    loadNotes();
+    // loadNotes reads searchQuery; re-run whenever it changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   // Auto-open a note ONLY when a triage deep-link hands us a matching
@@ -408,6 +352,16 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     notes.forEach(note => note.tags.forEach(tag => tags.add(tag)));
     setAllTags(Array.from(tags));
   }, [notes]);
+
+  // Load real contacts when the link picker opens.
+  useEffect(() => {
+    if (!showLinkModal) return;
+    let cancelled = false;
+    voxModeService.getPulseUsersAsContacts().then((cs) => {
+      if (!cancelled) setLinkContacts(cs.map((c) => ({ id: c.id, name: c.name, handle: c.handle })));
+    });
+    return () => { cancelled = true; };
+  }, [showLinkModal]);
 
   const loadNotes = async () => {
     try {
@@ -456,10 +410,17 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   const noteProgress = selectedNote && studio.nowPlaying?.id === selectedNote.id ? studio.progress : 0;
 
   const handleToggleFavorite = async (note: VoxNote) => {
-    const updatedNote = { ...note, isFavorite: !note.isFavorite };
-    setNotes(notes.map(n => n.id === note.id ? updatedNote : n));
-    if (selectedNote?.id === note.id) {
-      setSelectedNote(updatedNote);
+    const next = !note.isFavorite;
+    // Optimistic — then persist (the star + the Favorites filter both depend on
+    // this surviving reload; it was previously local-only).
+    setNotes((prev) => prev.map(n => n.id === note.id ? { ...n, isFavorite: next } : n));
+    if (selectedNote?.id === note.id) setSelectedNote((s) => s ? { ...s, isFavorite: next } : s);
+
+    const ok = await voxModeService.updateVoxNote(note.id, { is_favorite: next });
+    if (!ok) {
+      setNotes((prev) => prev.map(n => n.id === note.id ? { ...n, isFavorite: !next } : n));
+      if (selectedNote?.id === note.id) setSelectedNote((s) => s ? { ...s, isFavorite: !next } : s);
+      toast.error('Could not update favorite');
     }
   };
 
@@ -519,38 +480,33 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     setIsEditing(false);
   };
 
-  const handleLinkToItem = async (itemType: 'email' | 'meeting' | 'task' | 'contact' | 'note') => {
-    if (!selectedNote) {
-      console.error('No note selected for linking');
-      return;
-    }
-
-    // For now, create a placeholder link - in production, this would open a picker modal
-    const itemId = `${itemType}-${Date.now()}`;
-    const itemTitle = `${itemType.charAt(0).toUpperCase() + itemType.slice(1)} Item`;
+  // Link a real contact to the note (replaces the old fake placeholder-link
+  // creator that minted dead "Email Item" entries pointing at nothing).
+  const handleLinkContact = async (contact: { id: string; name: string }) => {
+    if (!selectedNote) return;
 
     const success = await voxModeService.linkNoteToItem(
       selectedNote.id,
-      itemType,
-      itemId,
-      itemTitle
+      'contact',
+      contact.id,
+      contact.name,
     );
 
     if (success) {
-      // Update local state
       const updatedNote = {
         ...selectedNote,
         linkedItems: [
           ...(selectedNote.linkedItems || []),
-          { type: itemType, id: itemId, title: itemTitle }
-        ]
+          { type: 'contact' as const, id: contact.id, title: contact.name, linkedAt: new Date() },
+        ],
       };
       setSelectedNote(updatedNote);
-      setNotes(notes.map(n => n.id === selectedNote.id ? updatedNote : n));
+      setNotes((prev) => prev.map(n => n.id === selectedNote.id ? updatedNote : n));
       setShowLinkModal(false);
-      toast.success(`Linked to ${itemType}!`);
+      setLinkSearch('');
+      toast.success(`Linked to ${contact.name}`);
     } else {
-      toast.error(`Failed to link to ${itemType}`);
+      toast.error('Failed to link contact');
     }
   };
 
@@ -902,16 +858,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={handleGenerateSmartReplies}
-                    disabled={isGeneratingAI}
-                    className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition"
-                    title="Generate smart replies"
-                  >
-                    <Reply className="w-3 h-3" />
-                    <span className="hidden sm:inline">Reply</span>
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => (isSelectionMode ? exitSelectionMode() : enterSelectionMode())}
                     title={isSelectionMode ? 'Exit selection' : 'Select notes'}
                     aria-label={isSelectionMode ? 'Exit selection' : 'Select notes'}
@@ -1164,7 +1110,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                     {selectedNote.linkedItems.map((item, index) => (
                       <div
                         key={index}
-                        className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer group ${tc.cardBg} border ${tc.border} ${tc.hoverBg}`}
+                        className={`flex items-center gap-3 p-3 rounded-xl ${tc.cardBg} border ${tc.border}`}
                       >
                         <div className={`shrink-0 ${tc.textMuted}`}>
                           {LINK_TYPE_ICONS[item.type]}
@@ -1173,7 +1119,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                           <p className={`text-sm truncate ${tc.text}`}>{item.title}</p>
                           <p className={`text-xs capitalize ${tc.textMuted}`}>{item.type}</p>
                         </div>
-                        <ExternalLink className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity ${tc.textMuted}`} />
                       </div>
                     ))}
 
@@ -1182,7 +1127,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                       className={`w-full p-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2 ${tc.cardBg} border ${tc.border} ${tc.textSecondary} ${tc.hoverBg} hover:text-[#f43f5e]`}
                     >
                       <Link2 className="w-4 h-4" />
-                      Link to Email, Meeting, or Task
+                      Link a contact
                     </button>
                   </div>
                 </div>
@@ -1229,9 +1174,9 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
           <div className={tc.modalOverlay} onClick={() => setShowLinkModal(false)} />
           <div className={`relative w-full max-w-sm rounded-2xl border ${tc.modalBg} p-5`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className={`text-[11px] font-mono uppercase tracking-[0.1em] ${tc.textSecondary}`}>Link to item</h3>
+              <h3 className={`text-[11px] font-mono uppercase tracking-[0.1em] ${tc.textSecondary}`}>Link a contact</h3>
               <button
-                onClick={() => setShowLinkModal(false)}
+                onClick={() => { setShowLinkModal(false); setLinkSearch(''); }}
                 className={`p-1 rounded-md ${tc.btnGhost}`}
                 type="button"
                 aria-label="Close"
@@ -1240,25 +1185,39 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
               </button>
             </div>
 
-            <div className="space-y-0.5">
-              {([
-                { type: 'email' as const, Icon: Mail },
-                { type: 'meeting' as const, Icon: Calendar },
-                { type: 'task' as const, Icon: CheckSquare },
-                { type: 'contact' as const, Icon: User },
-                { type: 'note' as const, Icon: StickyNote },
-              ]).map(({ type, Icon }) => (
-                <button
-                  key={type}
-                  onClick={() => handleLinkToItem(type)}
-                  className={`w-full px-3 py-2.5 rounded-lg text-left transition-colors flex items-center gap-3 ${tc.hoverBg}`}
-                  type="button"
-                >
-                  <Icon className={`w-4 h-4 shrink-0 ${tc.textMuted}`} />
-                  <span className={`flex-1 text-sm capitalize ${tc.text}`}>{type}</span>
-                  <ChevronRight className={`w-4 h-4 ${tc.textMuted}`} />
-                </button>
-              ))}
+            <div className="relative mb-3">
+              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${tc.textMuted}`} />
+              <input
+                type="text"
+                placeholder="Search contacts..."
+                value={linkSearch}
+                onChange={(e) => setLinkSearch(e.target.value)}
+                autoFocus
+                className={`w-full pl-10 pr-3 py-2 rounded-lg text-sm border ${tc.border} ${tc.cardBg} ${tc.text} focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50`}
+              />
+            </div>
+
+            <div className="space-y-0.5 max-h-64 overflow-y-auto">
+              {linkContacts
+                .filter((c) => c.name.toLowerCase().includes(linkSearch.toLowerCase()))
+                .map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => handleLinkContact(c)}
+                    className={`w-full px-3 py-2.5 rounded-lg text-left transition-colors flex items-center gap-3 ${tc.hoverBg}`}
+                    type="button"
+                  >
+                    <User className={`w-4 h-4 shrink-0 ${tc.textMuted}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm truncate ${tc.text}`}>{c.name}</p>
+                      {c.handle && <p className={`text-xs truncate ${tc.textMuted}`}>@{c.handle}</p>}
+                    </div>
+                    <ChevronRight className={`w-4 h-4 ${tc.textMuted}`} />
+                  </button>
+                ))}
+              {linkContacts.filter((c) => c.name.toLowerCase().includes(linkSearch.toLowerCase())).length === 0 && (
+                <p className={`text-center py-4 text-sm ${tc.textMuted}`}>No contacts found</p>
+              )}
             </div>
           </div>
         </div>
@@ -1292,24 +1251,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
               onClose={() => setShowSummary(false)}
             />
           </div>
-        </div>
-      )}
-
-      {/* Smart Replies Panel */}
-      {smartReplies.length > 0 && showSmartReplies && (
-        <div className="fixed bottom-20 right-4 z-40 w-96">
-          <VoxSmartReplies
-            replies={smartReplies}
-            onSelectReply={(reply) => {
-              navigator.clipboard.writeText(reply.text);
-              toast.success('Smart reply copied! Use it in your next note.');
-              setSmartReplies([]);
-              setShowSmartReplies(false);
-            }}
-            onClose={() => setShowSmartReplies(false)}
-            isDarkMode={isDarkMode}
-            accentColor="#f43f5e"
-          />
         </div>
       )}
 
