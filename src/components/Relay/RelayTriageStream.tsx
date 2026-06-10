@@ -188,14 +188,20 @@ const InboxCard: React.FC<{
   active: boolean;
   isPlaying: boolean;
   progress: number;
+  /** Keyboard-focused row (j/k navigation) — gets a neutral focus outline,
+   *  distinct from the coral now-playing ring. */
+  focused?: boolean;
   onOpen: () => void;
   onTogglePlay?: () => void;
+  /** Seek the active track to a 0→1 fraction (waveform scrub). Only meaningful
+   *  while this card is the active/playing one. */
+  onSeek?: (fraction: number) => void;
   onReply?: () => void;
   onMarkRead?: () => void;
   onSnooze?: (untilMs: number) => void;
   onDismiss?: () => void;
   onDelete?: () => void;
-}> = ({ item, active, isPlaying, progress, onOpen, onTogglePlay, onReply, onMarkRead, onSnooze, onDismiss, onDelete }) => {
+}> = ({ item, active, isPlaying, progress, focused, onOpen, onTogglePlay, onSeek, onReply, onMarkRead, onSnooze, onDismiss, onDelete }) => {
   const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false);
   const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
   const snoozeRef = useRef<HTMLDivElement | null>(null);
@@ -233,7 +239,16 @@ const InboxCard: React.FC<{
   const splitIdx = hasKaraoke ? Math.floor(transcript.length * progress) : 0;
 
   return (
-    <StudioCard active={active} className="relative group p-4">
+    <StudioCard
+      active={active}
+      // Click the card body to play (or open when there's no audio). Inner
+      // controls (name, play, waveform, action cluster) stopPropagation so they
+      // don't double-fire this.
+      onClick={canPlay ? onTogglePlay : onOpen}
+      className={`relative group p-4 ${
+        focused ? 'outline outline-2 outline-offset-2 outline-zinc-300 dark:outline-zinc-600' : ''
+      }`}
+    >
       {/* Header row */}
       <div className="flex items-center gap-3 mb-3">
         <div className="relative shrink-0">
@@ -267,7 +282,7 @@ const InboxCard: React.FC<{
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onOpen}
+              onClick={(e) => { e.stopPropagation(); onOpen(); }}
               className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate hover:underline focus:outline-none"
             >
               {item.senderName}
@@ -293,7 +308,7 @@ const InboxCard: React.FC<{
         {canPlay ? (
           <button
             type="button"
-            onClick={onTogglePlay}
+            onClick={(e) => { e.stopPropagation(); onTogglePlay?.(); }}
             className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
               active
                 ? 'bg-rose-500 text-white'
@@ -311,7 +326,24 @@ const InboxCard: React.FC<{
             <Play className="w-4 h-4 opacity-40" />
           </div>
         )}
-        <div className="relative flex-1">
+        <div
+          className={`relative flex-1 ${canPlay ? 'cursor-pointer' : ''}`}
+          role={canPlay ? 'button' : undefined}
+          aria-label={canPlay ? (active ? 'Seek' : `Play ${item.senderName}`) : undefined}
+          onClick={
+            canPlay
+              ? (e) => {
+                  e.stopPropagation();
+                  if (active && onSeek) {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    if (rect.width > 0) onSeek((e.clientX - rect.left) / rect.width);
+                  } else {
+                    onTogglePlay?.();
+                  }
+                }
+              : undefined
+          }
+        >
           <span style={{ color: active ? 'var(--pulse-rose)' : 'var(--pulse-ink-2)', display: 'block' }}>
             <Waveform seed={studioKey(item)} height={32} count={72} tall progress={active ? progress : 0} />
           </span>
@@ -503,6 +535,9 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
   const sourceMenuRef = useRef<HTMLDivElement | null>(null);
+  // Keyboard list-drive: which row j/k focuses. Clamped to the filtered length.
+  const [focusedIdx, setFocusedIdx] = useState(0);
+  const listRef = useRef<HTMLDivElement | null>(null);
 
   const {
     items,
@@ -654,6 +689,85 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
     );
   };
 
+  // Reply to the keyboard-focused row — mirrors the per-card onReply wiring.
+  const replyToItem = (item: TriageItem) => {
+    if (item.kind === 'thread') {
+      const threadId = (item.raw as any)?.thread_id;
+      if (threadId) onReplyToThread(threadId, item.senderName);
+    } else if (item.senderId) {
+      onReply(item.senderId);
+    }
+  };
+
+  // Latest snapshot for the keyboard handler. Held in a ref so the single
+  // window listener never re-subscribes on playback-progress ticks (which fire
+  // many times a second and would otherwise churn the listener).
+  const navRef = useRef({ filtered, focusedIdx, play: togglePlayItem, open: handleRowOpen, reply: replyToItem, dismiss: dismissItem });
+  navRef.current = { filtered, focusedIdx, play: togglePlayItem, open: handleRowOpen, reply: replyToItem, dismiss: dismissItem };
+
+  // List keyboard model (Superhuman-style). Space stays the Relay record key
+  // (owned by useRelayKeyboardShortcuts), so play is on Enter here, not Space.
+  //   j / ↓ · k / ↑ — move focus    Enter — play/pause    o — open conversation
+  //   r — reply    e — dismiss (reversible)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t?.isContentEditable) return;
+      // Defer to a focused interactive control (a tabbed-to button, an open
+      // menu) so Enter / r / e activate that control, not the list.
+      if (t?.closest('button, a, [role="menuitem"], [role="menu"]')) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const nav = navRef.current;
+      if (!nav.filtered.length) return;
+      const idx = Math.min(Math.max(nav.focusedIdx, 0), nav.filtered.length - 1);
+      const cur = nav.filtered[idx];
+      switch (e.key) {
+        case 'j':
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusedIdx(Math.min(idx + 1, nav.filtered.length - 1));
+          break;
+        case 'k':
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusedIdx(Math.max(idx - 1, 0));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          nav.play(cur);
+          break;
+        case 'o':
+          e.preventDefault();
+          nav.open(cur);
+          break;
+        case 'r':
+          e.preventDefault();
+          nav.reply(cur);
+          break;
+        case 'e':
+          e.preventDefault();
+          nav.dismiss(cur);
+          break;
+        default:
+          break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Keep the focused index inside the (possibly shrinking) filtered list.
+  useEffect(() => {
+    setFocusedIdx((i) => Math.min(Math.max(i, 0), Math.max(0, filtered.length - 1)));
+  }, [filtered.length]);
+
+  // Scroll the focused row into view as j/k moves through the list.
+  useEffect(() => {
+    const el = listRef.current?.children[focusedIdx] as HTMLElement | undefined;
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [focusedIdx]);
+
   const activeSourceLabel = SOURCE_OPTIONS.find((o) => o.id === sourceFilter)?.label ?? 'All sources';
 
   return (
@@ -758,8 +872,8 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
         {!isLoading && filtered.length === 0 && <EmptyState source={sourceFilter} onCompose={onCompose} />}
 
         {!isLoading && filtered.length > 0 && (
-          <div className="space-y-3">
-            {filtered.map((item) => {
+          <div ref={listRef} className="space-y-3">
+            {filtered.map((item, idx) => {
               const key = studioKey(item);
               const active = studio.nowPlaying?.id === key;
               return (
@@ -769,8 +883,10 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
                   active={active}
                   isPlaying={active && studio.isPlaying}
                   progress={active ? studio.progress : 0}
-                  onOpen={() => handleRowOpen(item)}
-                  onTogglePlay={() => togglePlayItem(item)}
+                  focused={idx === focusedIdx}
+                  onOpen={() => { setFocusedIdx(idx); handleRowOpen(item); }}
+                  onTogglePlay={() => { setFocusedIdx(idx); togglePlayItem(item); }}
+                  onSeek={(f) => studio.seek(f)}
                   onMarkRead={() => markRead(item)}
                   onSnooze={(ms) => snoozeItem(item, ms)}
                   onDismiss={() => dismissItem(item)}
