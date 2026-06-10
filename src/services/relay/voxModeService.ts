@@ -1277,6 +1277,25 @@ class VoxModeService {
     return true;
   }
 
+  /**
+   * Persist the full reactions map for a team vox message. The caller computes
+   * the toggled map (adds/removes the current user for an emoji); we write it
+   * back to the jsonb column so reactions survive reload and reach other
+   * clients. Low-concurrency surface (solo operator), so last-write-wins is fine.
+   */
+  async updateTeamVoxReactions(messageId: string, reactions: Record<string, string[]>): Promise<boolean> {
+    const { error } = await supabase
+      .from('team_vox_messages')
+      .update({ reactions })
+      .eq('id', messageId);
+
+    if (error) {
+      console.error('Error updating team vox reactions:', error);
+      return false;
+    }
+    return true;
+  }
+
   async updateTeamChannel(
     channelId: string,
     updates: { name?: string; description?: string }
