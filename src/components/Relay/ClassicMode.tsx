@@ -16,7 +16,7 @@ import {
   CheckCheck,
   Loader2,
   X,
-  Settings,
+  Keyboard,
   Star,
   Clock,
   MessageCircle,
@@ -852,7 +852,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     }
   }, [recordings]);
 
-  const deleteRecording = useCallback(async (recordingId: string) => {
+  const performDelete = useCallback(async (recordingId: string) => {
     // Revoke the blob URL for the deleted recording to free memory
     const recording = recordings.find(r => r.id === recordingId);
     if (recording?.url && recording.url.startsWith('blob:')) {
@@ -863,6 +863,32 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     await dataService.deleteVoxerRecording(recordingId);
     toast.success('Message deleted');
   }, [recordings]);
+
+  // Confirm before destroying — voxer_recordings deletes are not reversible.
+  // Matches the safety the Inbox uses so the two surfaces feel like one product.
+  const deleteRecording = useCallback((recordingId: string) => {
+    toast((t) => (
+      <span className="flex flex-col gap-2 min-w-[14rem]">
+        <span className="text-sm">Delete this voice message forever? This can't be undone.</span>
+        <div className="flex items-center gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => toast.dismiss(t.id)}
+            className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => { toast.dismiss(t.id); performDelete(recordingId); }}
+            className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white"
+          >
+            Delete
+          </button>
+        </div>
+      </span>
+    ), { duration: 8000 });
+  }, [performDelete]);
 
   // Format duration
   const formatDuration = (seconds: number) => {
@@ -1465,16 +1491,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                         </button>
                       </>
                     )}
-                    {/* Visual-parity icon cluster from the playground header.
-                        Search has no in-thread handler yet — kept for parity. */}
-                    <button
-                      type="button"
-                      title="Search this conversation"
-                      aria-label="Search this conversation"
-                      className="p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-                    >
-                      <Search className="w-4 h-4" />
-                    </button>
                     <button
                       type="button"
                       onClick={() => {
@@ -1491,11 +1507,11 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowShortcutsHelp(true)}
-                      title="Settings & shortcuts"
-                      aria-label="Settings & shortcuts"
+                      title="Keyboard shortcuts"
+                      aria-label="Keyboard shortcuts"
                       className="p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                     >
-                      <Settings className="w-4 h-4" />
+                      <Keyboard className="w-4 h-4" />
                     </button>
                   </div>
                 </header>
