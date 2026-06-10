@@ -226,6 +226,57 @@ async function processChannelEvent(event: any, teamId: string, isRetry: boolean)
   }
 }
 
+// Integration C (channels): apply an EDIT or DELETE to an already-mirrored channel message
+// (P8 §1.2). message_changed → UPDATE the row's content (edits keep the same slack_ts, so this is
+// an in-place update, never a new row); message_deleted → soft-delete (stamp deleted_at, render as
+// "message deleted"). Both are no-ops when the target isn't mirrored (e.g. edited/deleted before
+// the bot joined). Owner resolution mirrors processChannelEvent; the service-role RPCs keep the
+// (thread, slack_ts) dedup intact. Idempotent, so Slack retries are harmless (no isRetry needed).
+async function processChannelEdit(event: any, teamId: string): Promise<void> {
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+    const { data: tokenRow } = await supabase
+      .from('user_slack_tokens')
+      .select('user_id')
+      .eq('slack_team_id', teamId)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (!tokenRow?.user_id) return;
+
+    const channel = event.channel;
+    if (!channel) return;
+
+    if (event.subtype === 'message_changed') {
+      const edited = event.message;
+      // The edited message keeps its original ts; ignore non-user/system edits.
+      if (!edited?.ts || edited.subtype || edited.bot_id) return;
+      const { error } = await supabase.rpc('edit_slack_channel_message', {
+        p_owner_pulse_id: tokenRow.user_id,
+        p_team_id: teamId,
+        p_slack_channel_id: channel,
+        p_slack_ts: edited.ts,
+        p_text: edited.text ?? '',
+      });
+      if (error) console.error('[slack-events] channel edit error:', error.message);
+      else console.log('[slack-events] channel edit applied', edited.ts, 'in', channel);
+    } else if (event.subtype === 'message_deleted') {
+      if (!event.deleted_ts) return;
+      const { error } = await supabase.rpc('tombstone_slack_channel_message', {
+        p_owner_pulse_id: tokenRow.user_id,
+        p_team_id: teamId,
+        p_slack_channel_id: channel,
+        p_slack_ts: event.deleted_ts,
+      });
+      if (error) console.error('[slack-events] channel delete error:', error.message);
+      else console.log('[slack-events] channel delete applied', event.deleted_ts, 'in', channel);
+    }
+  } catch (err) {
+    console.error('[slack-events] processChannelEdit error:', (err as Error).message);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -281,6 +332,24 @@ serve(async (req) => {
     const erC = (globalThis as any).EdgeRuntime;
     if (erC && typeof erC.waitUntil === 'function') erC.waitUntil(workC);
     else await workC;
+    return json({ ok: true });
+  }
+
+  // Integration C (channels): EDITS / DELETES (P8 §1.2). Explicit subtype branch — placed AFTER the
+  // new-message channel branch (which requires !event.subtype) and BEFORE the DM gate, so all three
+  // paths stay disjoint and the fail-closed discipline holds: ONLY these two subtypes are handled
+  // here; any other subtype still falls through and is dropped. Channel-scoped via channel_type OR a
+  // C/G channel id (subtype events reliably carry the channel id; a DM 'D…' id never matches /^[CG]/).
+  const chId = String(event?.channel ?? '');
+  const isChannelMut = isChannel || (/^[CG]/.test(chId) && event?.channel_type !== 'im');
+  if (
+    event?.type === 'message' && isChannelMut && teamId &&
+    (event.subtype === 'message_changed' || event.subtype === 'message_deleted')
+  ) {
+    const workM = processChannelEdit(event, teamId);
+    const erM = (globalThis as any).EdgeRuntime;
+    if (erM && typeof erM.waitUntil === 'function') erM.waitUntil(workM);
+    else await workM;
     return json({ ok: true });
   }
 

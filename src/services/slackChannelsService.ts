@@ -39,6 +39,8 @@ export interface SlackChannelMessage {
   slack_thread_ts: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
+  edited_at: string | null;
+  deleted_at: string | null;
 }
 
 export const slackChannelsService = {
@@ -70,8 +72,16 @@ export const slackChannelsService = {
     return (data ?? []) as SlackChannelMessage[];
   },
 
-  /** Live INSERTs into one thread. Returns an unsubscribe fn. */
-  subscribeToMessages(threadId: string, onInsert: (m: SlackChannelMessage) => void): () => void {
+  /**
+   * Live changes to one thread. onInsert fires on new messages; onUpdate (optional) fires on
+   * edits/deletes (P8 §1.2) — the table is REPLICA IDENTITY FULL so payload.new carries the whole
+   * updated row (content + edited_at/deleted_at). Returns an unsubscribe fn.
+   */
+  subscribeToMessages(
+    threadId: string,
+    onInsert: (m: SlackChannelMessage) => void,
+    onUpdate?: (m: SlackChannelMessage) => void,
+  ): () => void {
     const channelName = `slack-channel-messages-${threadId}-${Date.now()}`;
     const channel = supabase
       .channel(channelName)
@@ -79,6 +89,11 @@ export const slackChannelsService = {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'slack_channel_messages', filter: `thread_id=eq.${threadId}` },
         (payload) => onInsert(payload.new as SlackChannelMessage),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'slack_channel_messages', filter: `thread_id=eq.${threadId}` },
+        (payload) => onUpdate?.(payload.new as SlackChannelMessage),
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };

@@ -76,6 +76,7 @@ interface ThreadGroup {
 // avatar, and neutral --pulse-* tokens are preserved verbatim (no coral).
 const MessageRow: React.FC<{ m: SlackChannelMessage }> = ({ m }) => {
   const out = m.is_outgoing;
+  const deleted = !!m.deleted_at;
   return (
     <div className={`flex items-start gap-2.5 ${out ? 'flex-row-reverse' : ''}`}>
       <div
@@ -88,9 +89,21 @@ const MessageRow: React.FC<{ m: SlackChannelMessage }> = ({ m }) => {
         <div className={`flex items-baseline gap-2 ${out ? 'justify-end' : ''}`}>
           <span style={{ color: 'var(--pulse-ink)', fontWeight: 600, fontSize: 13.5 }}>{out ? 'You' : m.sender_name}</span>
           <span style={{ color: 'var(--pulse-ink-3)', fontSize: 11 }}>{fmtTime(m.created_at)}</span>
+          {m.edited_at && !deleted && (
+            <span style={{ color: 'var(--pulse-ink-3)', fontSize: 11 }} title="Edited in Slack">(edited)</span>
+          )}
         </div>
-        <div style={{ color: 'var(--pulse-ink)', fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-          {m.content}
+        <div
+          style={{
+            color: deleted ? 'var(--pulse-ink-3)' : 'var(--pulse-ink)',
+            fontStyle: deleted ? 'italic' : 'normal',
+            fontSize: 14,
+            lineHeight: 1.5,
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          {deleted ? 'message deleted' : m.content}
         </div>
       </div>
     </div>
@@ -148,9 +161,16 @@ const SlackChannels: React.FC = () => {
       setMessages(rows);
       setLoadingMessages(false);
     });
-    const unsub = slackChannelsService.subscribeToMessages(activeThreadId, (m) => {
-      setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
-    });
+    const unsub = slackChannelsService.subscribeToMessages(
+      activeThreadId,
+      (m) => {
+        setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+      },
+      (m) => {
+        // edit/delete (P8 §1.2) — replace the row in place (new content + edited_at/deleted_at).
+        setMessages((prev) => prev.map((x) => (x.id === m.id ? m : x)));
+      },
+    );
     return () => {
       cancelled = true;
       unsub();
