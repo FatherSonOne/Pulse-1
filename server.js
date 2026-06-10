@@ -1243,6 +1243,103 @@ app.post('/api/slack/channel-send', async (req, res) => {
   }
 });
 
+// Slack CHANNEL history backfill (Integration C · P8 §3). A one-shot, bounded import of a
+// channel's recent history into the owner-scoped mirror. Go-forward ingest (slack-events) only
+// sees messages posted AFTER the bot joined + events were wired; this fills the gap before then.
+//
+// Trust model mirrors the other Slack routes: the SERVER talks to Slack directly (here with the
+// forwarded xoxb- bot token — the same token + endpoint the read surface already uses) and mints
+// via the service-role backfill RPC. The owner is derived from the JWT and the team from the
+// operator's stored token row (never client-supplied), so a request can only ever write into the
+// caller's own mirror in their own connected workspace. The RPC is idempotent on
+// (thread_id, slack_ts), so re-running is safe and overlaps with already-landed go-forward rows
+// are skipped. v1 imports the channel TIMELINE (top-level + standalone messages); threaded
+// replies that live in conversations.replies are not deep-fetched here — go-forward replies still
+// ingest live. Body: { channel, channelName?, isPrivate?, botToken, limit? }.
+app.post('/api/slack/channel-backfill', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+
+    const { channel, channelName, isPrivate, botToken, limit } = req.body || {};
+    if (!channel) return res.status(400).json({ error: 'Missing channel', code: 'MISSING_CHANNEL' });
+    const token = typeof botToken === 'string' ? botToken.trim() : '';
+    if (!token) return res.status(400).json({ error: 'Missing Slack bot token', code: 'MISSING_TOKEN' });
+
+    // Owner's connected workspace — server-derived, NOT trusted from the client, so a backfill
+    // can only ever mint shadows inside the caller's own Slack team.
+    const row = await getUserSlackToken(userId);
+    const teamId = row?.slack_team_id || null;
+    if (!teamId) return res.status(400).json({ error: 'Slack not connected', code: 'NOT_CONNECTED' });
+
+    // Bound the window: conversations.history is Tier-3 rate-limited; never unbounded-import.
+    const n = Math.max(1, Math.min(200, Number.isFinite(Number(limit)) ? Math.floor(Number(limit)) : 100));
+
+    const slackGet = async (method, params) => {
+      const qs = new URLSearchParams(params).toString();
+      const r = await fetch(`https://slack.com/api/${method}?${qs}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return r.json();
+    };
+
+    const history = await slackGet('conversations.history', { channel, limit: String(n) });
+    if (!history.ok) {
+      const dead = ['invalid_auth', 'token_revoked', 'account_inactive', 'not_authed'].includes(history.error);
+      return res
+        .status(dead ? 401 : 502)
+        .json({ error: history.error || 'conversations.history failed', code: dead ? 'RECONNECT_REQUIRED' : 'SLACK_ERROR' });
+    }
+
+    const raw = Array.isArray(history.messages) ? history.messages : [];
+    // Same gate as the live ingest: real human posts only (skip bot + system subtypes).
+    const msgs = raw.filter((m) => m && m.ts && m.user && !m.bot_id && !m.subtype);
+
+    // Enrich author names once per unique sender (bounded users.info, cached). A failed lookup
+    // degrades to the raw slack id (the RPC COALESCEs name -> sender id) and never blocks ingest.
+    const nameById = new Map();
+    const emailById = new Map();
+    for (const uid of new Set(msgs.map((m) => m.user))) {
+      try {
+        const info = await slackGet('users.info', { user: uid });
+        if (info && info.ok && info.user) {
+          const prof = info.user.profile || {};
+          const nm = prof.real_name || info.user.real_name || prof.display_name || info.user.name || null;
+          if (nm) nameById.set(uid, nm);
+          if (prof.email) emailById.set(uid, prof.email);
+        }
+      } catch (_e) { /* leave unenriched */ }
+    }
+
+    const priv = isPrivate === true || String(channel).startsWith('G');
+    const store = tokenStoreClient();
+    let inserted = 0;
+    let skipped = 0;
+    for (const m of msgs) {
+      const { data: msgId, error } = await store.rpc('backfill_slack_channel_message', {
+        p_owner_pulse_id: userId,
+        p_team_id: teamId,
+        p_slack_channel_id: channel,
+        p_channel_name: channelName || null,
+        p_is_private: priv,
+        p_sender_slack_id: m.user,
+        p_text: m.text || '',
+        p_slack_ts: m.ts,
+        p_slack_thread_ts: m.thread_ts || null,
+        p_email: emailById.get(m.user) || null,
+        p_display_name: nameById.get(m.user) || null,
+      });
+      if (error) { console.error('[Slack Backfill] ingest error:', error.message); continue; }
+      if (msgId) inserted += 1; else skipped += 1;
+    }
+
+    res.json({ ok: true, inserted, skipped, total: msgs.length });
+  } catch (error) {
+    console.error('[Slack Backfill] error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 // POST /api/slack/conversation — start (or fetch) a 1:1 Slack thread to message someone AS
 // YOU, WITHOUT sending yet (the Messages "New Slack message" front-door). Resolves an email
 // -> Slack user id via the operator's xoxp- (users:read.email), mints the shadow recipient +

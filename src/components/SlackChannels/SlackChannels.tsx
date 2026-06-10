@@ -10,7 +10,7 @@
 // Gated by the slackChannelsGrounding flag at the App.tsx render seam.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Hash, Lock, RefreshCw, MessageSquare, Send, Slack as SlackIcon } from 'lucide-react';
+import { Hash, Lock, RefreshCw, MessageSquare, Send, Slack as SlackIcon, History } from 'lucide-react';
 import { StudioMasthead } from '../Relay/studio';
 import { hasSlackBotToken } from '../../lib/slackToken';
 import { useFeatures } from '../../contexts/FeatureContext';
@@ -108,6 +108,8 @@ const SlackChannels: React.FC = () => {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillNote, setBackfillNote] = useState<string | null>(null);
 
   const hasToken = hasSlackBotToken();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -139,6 +141,7 @@ const SlackChannels: React.FC = () => {
       return;
     }
     let cancelled = false;
+    setBackfillNote(null); // a result note belongs to the channel it was run on
     setLoadingMessages(true);
     void slackChannelsService.getMessages(activeThreadId).then((rows) => {
       if (cancelled) return;
@@ -208,6 +211,38 @@ const SlackChannels: React.FC = () => {
     if (res.message) {
       setMessages((prev) => (prev.some((x) => x.id === res.message!.id) ? prev : [...prev, res.message!]));
     }
+  };
+
+  // Import the channel's recent history from Slack (P8 §3). One-shot + idempotent: the server
+  // dedups on slack_ts, so re-running only fills the gap before go-forward ingest started. On
+  // success we refetch (imported rows carry their real Slack created_at, so they slot into the
+  // thread in chronological order rather than at the bottom).
+  const handleBackfill = async () => {
+    if (!activeThread || backfilling) return;
+    setBackfilling(true);
+    setBackfillNote(null);
+    const res = await slackChannelsService.backfillChannel(
+      activeThread.slack_channel_id,
+      nameById.get(activeThread.slack_channel_id) ?? null,
+      activeThread.is_private,
+    );
+    if (res.ok) {
+      const rows = await slackChannelsService.getMessages(activeThread.id);
+      setMessages(rows);
+      const n = res.inserted ?? 0;
+      setBackfillNote(
+        n > 0
+          ? `Imported ${n} earlier message${n === 1 ? '' : 's'}.`
+          : 'Already up to date — no earlier messages to import.',
+      );
+    } else {
+      setBackfillNote(
+        res.code === 'RECONNECT_REQUIRED'
+          ? 'Slack token invalid — reconnect in Settings → Integrations.'
+          : res.error || 'Import failed.',
+      );
+    }
+    setBackfilling(false);
   };
 
   // Self-gate: render nothing unless the flag is on. App.tsx can't gate this
@@ -320,7 +355,36 @@ const SlackChannels: React.FC = () => {
                 )}
                 <span style={{ color: 'var(--pulse-ink)', fontWeight: 600, fontSize: 15 }}>{channelLabel(activeThread)}</span>
                 <ViaSlackChip />
+                <button
+                  onClick={() => void handleBackfill()}
+                  disabled={backfilling}
+                  className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
+                  style={{
+                    color: 'var(--pulse-ink-2)',
+                    border: '1px solid var(--pulse-border)',
+                    background: 'var(--pulse-surface)',
+                    cursor: backfilling ? 'default' : 'pointer',
+                  }}
+                  title="Import this channel's recent history from Slack"
+                >
+                  <History className={`w-3.5 h-3.5 ${backfilling ? 'animate-pulse' : ''}`} />
+                  {backfilling ? 'Importing…' : 'Import history'}
+                </button>
               </header>
+
+              {backfillNote && (
+                <div
+                  className="shrink-0 px-5 py-2"
+                  style={{
+                    borderBottom: '1px solid var(--pulse-border)',
+                    background: 'var(--pulse-surface)',
+                    color: 'var(--pulse-ink-3)',
+                    fontSize: 12,
+                  }}
+                >
+                  {backfillNote}
+                </div>
+              )}
 
               <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto" style={{ padding: '16px 20px' }}>
                 {loadingMessages ? (

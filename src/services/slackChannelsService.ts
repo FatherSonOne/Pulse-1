@@ -124,6 +124,39 @@ export const slackChannelsService = {
   },
 
   /**
+   * Import a channel's recent history into the mirror (P8 §3). One-shot, bounded, idempotent —
+   * the server dedups on slack_ts, so re-running only adds what's still missing. The xoxb- bot
+   * token is forwarded so the SERVER fetches conversations.history + mints via service-role; the
+   * client never calls the minting RPC (POST /api/slack/channel-backfill). Returns the
+   * inserted/skipped counts on success.
+   */
+  async backfillChannel(
+    channel: string,
+    channelName: string | null,
+    isPrivate: boolean,
+    limit = 100,
+  ): Promise<{ ok: boolean; inserted?: number; skipped?: number; total?: number; code?: string; error?: string }> {
+    const botToken = getSlackBotToken();
+    if (!botToken) return { ok: false, code: 'NO_TOKEN', error: 'No Slack bot token' };
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return { ok: false, code: 'UNAUTHENTICATED', error: 'Not signed in' };
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/slack/channel-backfill`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ channel, channelName, isPrivate, botToken, limit }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        return { ok: false, code: data.code || 'BACKFILL_FAILED', error: data.error || `HTTP ${res.status}` };
+      }
+      return { ok: true, inserted: data.inserted ?? 0, skipped: data.skipped ?? 0, total: data.total ?? 0 };
+    } catch (e) {
+      return { ok: false, code: 'NETWORK', error: e instanceof Error ? e.message : 'Network error' };
+    }
+  },
+
+  /**
    * Resolve slack_channel_id → channel name via the bot token (the edge fn
    * stores null). Best-effort: returns an empty map with no token or on failure,
    * and the UI falls back to the raw channel id.
