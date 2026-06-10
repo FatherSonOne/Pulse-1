@@ -83,13 +83,17 @@
   outline: 2px solid var(--pulse-rose);
   outline-offset: -2px;
 }
+/* Active source — coral text + a 2px leading state-mark, no background fill
+   (DESIGN.md nav rule: the active item is rose text with an optional ≤2px
+   leading indicator, never a filled panel). The inset shadow reads as a state
+   mark, not a decorative side-stripe. */
 .pulse-rail__item--active {
-  background: var(--pulse-rose-soft);
   color: var(--pulse-rose);
+  box-shadow: inset 2px 0 0 var(--pulse-rose);
 }
 .pulse-rail__item--active:hover {
-  background: var(--pulse-rose-soft);
   color: var(--pulse-rose);
+  background: var(--pulse-rose-soft);
 }
 
 .pulse-rail__icon-wrap {
