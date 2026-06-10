@@ -77,6 +77,7 @@ import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider, useFeatures } from './contexts/FeatureContext';
 import { PulseAIProvider } from './contexts/PulseAIContext';
 import { CommandPaletteProvider, useRegisterCommands, Command } from './contexts/CommandPaletteContext';
+import type { RelayShortcutView } from './hooks/useRelayKeyboardShortcuts';
 import { CommandBarHeader } from './components/GlobalCommandPalette';
 import { GlobalQuickActions } from './components/GlobalQuickActions';
 import KeyboardChordsLayer from './components/KeyboardChordsLayer';
@@ -190,6 +191,11 @@ interface AppCommandRegistrarProps {
   onMessageContact: (id: string) => void;
   onMeetContact: (id: string) => void;
   onVoxContact: (id: string) => void;
+  // Relay deep-links. onRelayNavigate jumps to a specific Relay source
+  // (Inbox/Direct/Channels/Broadcast/Notes/Live) from any view; onNewVox lands
+  // in Relay and opens the record composer. Both ride App's intent bridge.
+  onRelayNavigate: (view: RelayShortcutView) => void;
+  onNewVox: () => void;
   // Compose-email intent. Gated on emailEnabled inside the registrar (see
   // emailCommands) so it never surfaces when the Email surface is off.
   onComposeEmail: () => void;
@@ -222,6 +228,8 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   onMessageContact,
   onMeetContact,
   onVoxContact,
+  onRelayNavigate,
+  onNewVox,
   onComposeEmail,
   onStartMeeting,
   isDarkMode,
@@ -567,9 +575,23 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
     return cmds;
   }, [contacts, onOpenContact, onMessageContact, onMeetContact, onVoxContact]);
 
+  // Relay sub-source deep-links + record action. The plain `nav-relay` entry
+  // only opens the section; these jump straight to a specific voice source from
+  // anywhere, and "New voice message" opens the record composer on landing.
+  const relayCommands = useMemo<Command[]>(() => [
+    { id: 'relay-inbox',     label: 'Relay: Inbox',     desc: 'Voice that needs you',  icon: 'fa-inbox',            kind: 'navigate', keywords: ['relay', 'voice', 'triage', 'playlist'], run: () => onRelayNavigate('triage') },
+    { id: 'relay-direct',    label: 'Relay: Direct',    desc: '1:1 voice',             icon: 'fa-user',             kind: 'navigate', keywords: ['relay', 'voice', 'dm', '1:1', 'direct'], run: () => onRelayNavigate('direct') },
+    { id: 'relay-channels',  label: 'Relay: Channels',  desc: 'Team voice',            icon: 'fa-hashtag',          kind: 'navigate', keywords: ['relay', 'voice', 'team', 'channel'],     run: () => onRelayNavigate('channel') },
+    { id: 'relay-broadcast', label: 'Relay: Broadcast', desc: 'One to many',           icon: 'fa-tower-broadcast',  kind: 'navigate', keywords: ['relay', 'voice', 'broadcast', 'radio'], run: () => onRelayNavigate('broadcast') },
+    { id: 'relay-notes',     label: 'Relay: Notes',     desc: 'Personal voice notes',  icon: 'fa-file-lines',       kind: 'navigate', keywords: ['relay', 'voice', 'notes', 'memo'],      run: () => onRelayNavigate('notes') },
+    { id: 'relay-live',      label: 'Relay: Live',      desc: 'Voice rooms',           icon: 'fa-headphones',       kind: 'navigate', keywords: ['relay', 'voice', 'live', 'rooms'],      run: () => onRelayNavigate('live') },
+    { id: 'relay-new-vox',   label: 'New voice message', desc: 'Record and send',      icon: 'fa-microphone',       kind: 'action',   keywords: ['relay', 'record', 'vox', 'voice', 'new'], run: onNewVox },
+  ], [onRelayNavigate, onNewVox]);
+
   // Register navigation as a separate scope from help so registries are
   // organized by intent and easy to debug.
   useRegisterCommands('app:navigation', { commands: navCommands });
+  useRegisterCommands('app:relay',       { commands: relayCommands });
   useRegisterCommands('app:help',       { commands: helpCommands });
   useRegisterCommands('app:create',     { commands: createCommands });
   useRegisterCommands('app:email',       { commands: emailCommands });
@@ -730,6 +752,20 @@ const App: React.FC = () => {
   // already uses.
   const handleVoxContact = useCallback((id: string) => {
     setSelectedContactId(id);
+    setView(AppView.RELAY);
+  }, []);
+  // Relay deep-link intent (palette "Relay: <source>" + "New voice message").
+  // The `key` bump re-fires Relay's intent effect even when it's already
+  // mounted, so a repeat selection still switches source / re-opens the
+  // composer. New voice message reuses the existing RelayComposer (real audio
+  // capture), not the unverified inline recorder.
+  const [relayIntent, setRelayIntent] = useState<{ view?: RelayShortcutView; compose?: boolean; key: number } | null>(null);
+  const handleRelayNavigate = useCallback((view: RelayShortcutView) => {
+    setRelayIntent({ view, key: Date.now() });
+    setView(AppView.RELAY);
+  }, []);
+  const handleNewVox = useCallback(() => {
+    setRelayIntent({ view: 'triage', compose: true, key: Date.now() });
     setView(AppView.RELAY);
   }, []);
   // "Compose email" palette command (Tier D / D1). Two-path bridge mirroring the
@@ -1328,7 +1364,7 @@ const App: React.FC = () => {
                 }}
               />;
             case AppView.RELAY:
-              return <Relay contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} />;
+              return <Relay contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} intent={relayIntent} />;
             case AppView.GLIMPSE:
               return <Glimpse isDarkMode={isDarkMode} />;
             case AppView.SLACK_CHANNELS:
@@ -1490,7 +1526,7 @@ const App: React.FC = () => {
           onVoxContact={handleVoxContact}
         />
       )}
-      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onVoxContact={handleVoxContact} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onSignOut={logout} onTogglePulseAI={() => setShowPulseAI(prev => !prev)} onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)} onSectionAction={handleSectionAction} />
+      <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onVoxContact={handleVoxContact} onRelayNavigate={handleRelayNavigate} onNewVox={handleNewVox} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onSignOut={logout} onTogglePulseAI={() => setShowPulseAI(prev => !prev)} onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)} onSectionAction={handleSectionAction} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
           (g m → Map, g c → Contacts, …) plus a `?` overlay listing them

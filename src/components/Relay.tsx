@@ -83,6 +83,9 @@ interface RelayProps {
   /** Pulse user id to land on inside Direct (e.g. opening a contact's DM). */
   initialContactId?: string;
   isDarkMode?: boolean;
+  /** Command-palette deep-link: jump to a source and/or open the record
+   *  composer. The `key` bump re-applies even when Relay is already mounted. */
+  intent?: { view?: RelayView; compose?: boolean; key: number } | null;
 }
 
 // Top-level views inside Relay. Triage is the default landing experience.
@@ -98,7 +101,7 @@ const RELAY_VIEWS: readonly RelayView[] = [
   'live',
 ] as const;
 
-const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, isDarkMode = false }) => {
+const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, isDarkMode = false, intent }) => {
   // user.id powers the Triage stream's voice-source queries.
   const { user } = useAuth();
 
@@ -154,6 +157,17 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
     setComposerReplyTo(replyTo);
     setComposerOpen(true);
   };
+
+  // Apply a command-palette deep-link intent ("Relay: <source>" / "New voice
+  // message"). Keyed on intent.key so a repeat selection re-fires even when the
+  // value is unchanged and Relay is already mounted.
+  useEffect(() => {
+    if (!intent) return;
+    if (intent.view) setView(intent.view);
+    if (intent.compose) openComposer(null);
+    // openComposer is stable for this purpose; depend only on the intent key.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intent?.key]);
 
   // T/D/C/B/N/L switches the view directly. The active-tab style on the
   // rail already communicates the change, so no toast is fired — repeated
