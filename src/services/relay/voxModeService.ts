@@ -670,6 +670,54 @@ class VoxModeService {
     return true;
   }
 
+  /**
+   * Toggle the current user's like on a broadcast. Persists to broadcast_likes
+   * so it survives reload (was component-state-only). Returns the new liked
+   * state (true = now liked, false = now unliked), or null on error.
+   */
+  async toggleBroadcastLike(broadcastId: string): Promise<boolean | null> {
+    const userId = await this.ensureUserId();
+    if (!userId) return null;
+
+    const { data: existing } = await supabase
+      .from('broadcast_likes')
+      .select('broadcast_id')
+      .eq('broadcast_id', broadcastId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from('broadcast_likes')
+        .delete()
+        .eq('broadcast_id', broadcastId)
+        .eq('user_id', userId);
+      if (error) { console.error('Error removing broadcast like:', error); return null; }
+      return false;
+    }
+
+    const { error } = await supabase
+      .from('broadcast_likes')
+      .insert({ broadcast_id: broadcastId, user_id: userId });
+    if (error) { console.error('Error adding broadcast like:', error); return null; }
+    return true;
+  }
+
+  /** Which of the given broadcasts the current user has liked. */
+  async getLikedBroadcastIds(broadcastIds: string[]): Promise<Set<string>> {
+    if (broadcastIds.length === 0) return new Set();
+    const userId = await this.ensureUserId();
+    if (!userId) return new Set();
+
+    const { data } = await supabase
+      .from('broadcast_likes')
+      .select('broadcast_id')
+      .eq('user_id', userId)
+      .in('broadcast_id', broadcastIds);
+
+    return new Set((data ?? []).map((r: any) => r.broadcast_id as string));
+  }
+
   // ============================================
   // VOICE THREADS
   // ============================================

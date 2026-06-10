@@ -259,21 +259,25 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
     e.stopPropagation();
     e.preventDefault();
 
-    const newLiked = new Set(likedBroadcasts);
-    if (newLiked.has(broadcastId)) {
-      newLiked.delete(broadcastId);
-      toast.success('Removed like');
-    } else {
-      newLiked.add(broadcastId);
-      toast.success('Liked broadcast!');
-    }
-    setLikedBroadcasts(newLiked);
+    const wasLiked = likedBroadcasts.has(broadcastId);
+    // Optimistic toggle — the heart fill is the feedback (no toast noise).
+    setLikedBroadcasts((prev) => {
+      const next = new Set(prev);
+      if (wasLiked) next.delete(broadcastId);
+      else next.add(broadcastId);
+      return next;
+    });
 
-    // Update in database (optional - add your like service here)
-    try {
-      await voxModeService.toggleBroadcastLike?.(broadcastId);
-    } catch (err) {
-      console.error('Failed to toggle like:', err);
+    const result = await voxModeService.toggleBroadcastLike(broadcastId);
+    if (result === null) {
+      // Persist failed — roll the optimistic toggle back.
+      setLikedBroadcasts((prev) => {
+        const next = new Set(prev);
+        if (wasLiked) next.add(broadcastId);
+        else next.delete(broadcastId);
+        return next;
+      });
+      toast.error('Could not update like');
     }
   }, [likedBroadcasts]);
 
@@ -403,6 +407,9 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const loadBroadcasts = async (channelId: string) => {
     const data = await voxModeService.getChannelBroadcasts(channelId);
     setBroadcasts(data);
+    // Hydrate the current user's like state so hearts reflect reality on load.
+    const liked = await voxModeService.getLikedBroadcastIds(data.map((b) => b.id));
+    setLikedBroadcasts(liked);
   };
 
   // Phase 5: AI Enhancement Handlers
