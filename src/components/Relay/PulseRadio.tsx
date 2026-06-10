@@ -112,6 +112,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const [selectedNotifyUsers, setSelectedNotifyUsers] = useState<string[]>([]);
   const [pulseUsers, setPulseUsers] = useState<any[]>([]);
   const [activeBroadcastRoom, setActiveBroadcastRoom] = useState<Broadcast | null>(null);
+  const [discussionResponses, setDiscussionResponses] = useState<Broadcast[]>([]);
   const [likedBroadcasts, setLikedBroadcasts] = useState<Set<string>>(new Set());
   const [editingChannel, setEditingChannel] = useState(false);
   const [editChannelName, setEditChannelName] = useState('');
@@ -333,12 +334,14 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       `Re: ${activeBroadcastRoom.title}`,
       recordingData.blob,
       recordingData.duration,
-      [] // No special notifications for responses
+      [], // No special notifications for responses
+      activeBroadcastRoom.id, // parent => threaded discussion response
     );
 
     if (response) {
-      // Optionally reload broadcasts to show the response
-      loadBroadcasts(activeBroadcastRoom.channelId);
+      // Refresh the thread — responses surface in the room, not the channel feed.
+      const refreshed = await voxModeService.getBroadcastResponses(activeBroadcastRoom.id);
+      setDiscussionResponses(refreshed);
 
       import('../../services/analyticsCollector').then(({ default: ac }) => {
         ac.trackMessageEvent({
@@ -355,7 +358,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       }).catch(() => {});
 
       sendRecording();
-      setActiveBroadcastRoom(null);
+      // Keep the room open so the user sees their response land in the thread.
       toast.success('Response added to discussion!');
     } else {
       toast.error('Failed to send response');
@@ -389,6 +392,16 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [initialBroadcastId, broadcasts]);
+
+  // Load the discussion thread when a broadcast room opens.
+  useEffect(() => {
+    if (!activeBroadcastRoom) { setDiscussionResponses([]); return; }
+    let cancelled = false;
+    voxModeService.getBroadcastResponses(activeBroadcastRoom.id).then((r) => {
+      if (!cancelled) setDiscussionResponses(r);
+    });
+    return () => { cancelled = true; };
+  }, [activeBroadcastRoom]);
 
   const loadPulseUsers = async () => {
     const users = await voxModeService.getAllPulseUsers();
@@ -1276,6 +1289,33 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                 <span>{formatDuration(activeBroadcastRoom.duration)}</span>
               </div>
             </div>
+
+            {/* Discussion thread — the voice responses to this broadcast. */}
+            {discussionResponses.length > 0 && (
+              <div className="mt-3 space-y-2 max-h-52 overflow-y-auto">
+                <div className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400 px-1">
+                  {discussionResponses.length} {discussionResponses.length === 1 ? 'response' : 'responses'}
+                </div>
+                {discussionResponses.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => handlePlayBroadcast(r)}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-lg text-left bg-zinc-100 dark:bg-zinc-800/60 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition"
+                  >
+                    <span className="w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0">
+                      {isBroadcastPlaying(r.id) ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 truncate">{r.authorName}</p>
+                      <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        {formatDuration(r.duration)} · {new Date(r.publishedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {recordingState === 'preview' && recordingData ? (
               <div className="pulse-radio-preview">

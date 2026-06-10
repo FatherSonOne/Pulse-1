@@ -519,7 +519,8 @@ class VoxModeService {
     audioUrl: string,
     duration: number,
     transcript?: string,
-    scheduledFor?: Date
+    scheduledFor?: Date,
+    parentBroadcastId?: string
   ): Promise<Broadcast | null> {
     const userId = await this.ensureUserId();
     if (!userId) return null;
@@ -542,6 +543,7 @@ class VoxModeService {
         published_at: scheduledFor ? null : new Date().toISOString(),
         scheduled_for: scheduledFor?.toISOString(),
         tags: [],
+        parent_broadcast_id: parentBroadcastId ?? null,
       }])
       .select()
       .single();
@@ -551,8 +553,11 @@ class VoxModeService {
       return null;
     }
 
-    // Notify subscribers
-    await this.notifyChannelSubscribers(channelId, data.id, title);
+    // Notify subscribers — but not for discussion responses (a reply shouldn't
+    // ping the whole channel the way a top-level broadcast does).
+    if (!parentBroadcastId) {
+      await this.notifyChannelSubscribers(channelId, data.id, title);
+    }
 
     return this.mapDbToBroadcast(data);
   }
@@ -562,7 +567,8 @@ class VoxModeService {
     title: string,
     audioBlob: Blob,
     duration: number,
-    notifyUserIds?: string[]
+    notifyUserIds?: string[],
+    parentBroadcastId?: string
   ): Promise<Broadcast | null> {
     const userId = await this.ensureUserId();
     if (!userId) {
@@ -595,8 +601,8 @@ class VoxModeService {
 
       const audioUrl = urlData.publicUrl;
 
-      // Create the broadcast
-      const broadcast = await this.createBroadcast(channelId, title, audioUrl, duration);
+      // Create the broadcast (parentBroadcastId set => discussion response)
+      const broadcast = await this.createBroadcast(channelId, title, audioUrl, duration, undefined, undefined, parentBroadcastId);
 
       // If specific users should be notified, send them notifications
       if (broadcast && notifyUserIds && notifyUserIds.length > 0) {
@@ -641,8 +647,23 @@ class VoxModeService {
       .from('broadcasts')
       .select('*')
       .eq('channel_id', channelId)
+      // Top-level broadcasts only; discussion responses surface in their parent's
+      // room, not the channel feed.
+      .is('parent_broadcast_id', null)
       .order('published_at', { ascending: false })
       .range(offset, offset + limit - 1);
+
+    if (error || !data) return [];
+    return data.map(broadcast => this.mapDbToBroadcast(broadcast));
+  }
+
+  /** Discussion responses to a broadcast, oldest first. */
+  async getBroadcastResponses(parentBroadcastId: string): Promise<Broadcast[]> {
+    const { data, error } = await supabase
+      .from('broadcasts')
+      .select('*')
+      .eq('parent_broadcast_id', parentBroadcastId)
+      .order('published_at', { ascending: true });
 
     if (error || !data) return [];
     return data.map(broadcast => this.mapDbToBroadcast(broadcast));
@@ -2635,6 +2656,7 @@ class VoxModeService {
       scheduledFor: db.scheduled_for ? new Date(db.scheduled_for) : undefined,
       tags: db.tags || [],
       episodeNumber: db.episode_number,
+      parentBroadcastId: db.parent_broadcast_id ?? undefined,
     };
   }
 

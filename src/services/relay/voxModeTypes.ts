@@ -242,6 +242,8 @@ export interface Broadcast {
   scheduledFor?: Date;
   tags: string[];
   episodeNumber?: number;
+  /** Set when this broadcast is a discussion response to another broadcast. */
+  parentBroadcastId?: string;
 }
 
 // ============================================
