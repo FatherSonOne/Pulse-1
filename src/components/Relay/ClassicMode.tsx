@@ -50,7 +50,8 @@ import { userContactService } from '../../services/userContactService';
 import { whisperService } from '../../services/relay/whisperService';
 import { audioEnhancementService } from '../../services/relay/audioEnhancementService';
 import { voxModeService } from '../../services/relay/voxModeService';
-import type { EnrichedUserProfile } from '../../types/userContact';
+import { supabase } from '../../services/supabase';
+import type { EnrichedUserProfile, PulseUserProfile } from '../../types/userContact';
 import toast from 'react-hot-toast';
 import './ClassicMode.css';
 
@@ -135,6 +136,13 @@ interface Recording {
   enhanced?: boolean;
   enhancementApplied?: string[];
 }
+
+// A Direct conversation counterparty. voxer_recordings.contact_id points at a
+// CRM contacts.id for existing/seeded DMs but at a pulse_users.id for convos
+// started from the in-app picker, so we resolve from either table and normalize
+// to a shape that's structurally a Partial<PulseUserProfile> — every existing
+// activeContact.* / people-row read keeps working unchanged.
+type DirectParticipant = Partial<PulseUserProfile> & { id: string };
 
 // Quick reactions for Vox messages
 const QUICK_REACTIONS = ['❤️', '👍', '😂', '😮', '🔥', '👏'];
@@ -458,11 +466,50 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [recordings, activeContactId]);
 
-  // Contacts with Vox conversations (Pulse users who have recordings)
-  const contactsWithVoxes = useMemo(() => {
-    const contactIds = new Set(recordings.map(r => r.contactId));
-    return pulseUsers.filter(u => contactIds.has(u.id));
-  }, [pulseUsers, recordings]);
+  // voxer_recordings.contact_id is a CRM contacts.id for existing/seeded DMs
+  // (verified live: 19/19 resolve against contacts, 0 against pulse_users) but a
+  // pulse_users.id for convos started from the picker. Resolve from BOTH so the
+  // people list and header populate either way — the prior pulse_users-only
+  // lookup left every existing voice DM invisible in this surface.
+  const [contactsById, setContactsById] = useState<Map<string, { name: string | null; avatar_url: string | null; phone: string | null }>>(new Map());
+  useEffect(() => {
+    const ids = Array.from(new Set(
+      recordings.map(r => r.contactId).filter((id): id is string => !!id && /^[0-9a-f-]{36}$/i.test(id)),
+    ));
+    if (ids.length === 0) { setContactsById(new Map()); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from('contacts').select('id, name, avatar_url, phone').in('id', ids);
+      if (cancelled) return;
+      const m = new Map<string, { name: string | null; avatar_url: string | null; phone: string | null }>();
+      for (const c of (data ?? []) as any[]) m.set(c.id, { name: c.name, avatar_url: c.avatar_url, phone: c.phone });
+      setContactsById(m);
+    })();
+    return () => { cancelled = true; };
+  }, [recordings]);
+
+  const pulseUserById = useMemo(() => {
+    const m = new Map<string, EnrichedUserProfile>();
+    for (const u of pulseUsers) m.set(u.id, u);
+    return m;
+  }, [pulseUsers]);
+
+  // Resolve a contact_id to a normalized participant from whichever identity
+  // table owns it (pulse_users first for the richer profile, then contacts).
+  const resolveParticipant = useCallback((id: string): DirectParticipant => {
+    const pu = pulseUserById.get(id);
+    if (pu) return pu;
+    const c = contactsById.get(id);
+    if (c) return { id, displayName: c.name ?? undefined, avatarUrl: c.avatar_url ?? undefined, phoneNumber: c.phone ?? undefined };
+    return { id };
+  }, [pulseUserById, contactsById]);
+
+  // Contacts with Vox conversations — one participant per distinct contact_id
+  // that has recordings, resolved from whichever identity table owns it.
+  const contactsWithVoxes = useMemo<DirectParticipant[]>(() => {
+    const ids = Array.from(new Set(recordings.map(r => r.contactId).filter(Boolean)));
+    return ids.map(id => resolveParticipant(id));
+  }, [recordings, resolveParticipant]);
 
   // Filtered contacts for sidebar (only those with recordings)
   const filteredContacts = useMemo(() => {
@@ -506,7 +553,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     return groups;
   }, [activeThreadRecordings]);
 
-  const activeContact = pulseUsers.find(u => u.id === activeContactId);
+  const activeContact = activeContactId ? resolveParticipant(activeContactId) : undefined;
 
   // ============================================
   // PHASE 5: AI ENHANCEMENT HANDLERS
@@ -836,7 +883,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // Download a single Vox message
   const downloadVoxMessage = useCallback(async (recording: Recording) => {
     try {
-      const contact = pulseUsers.find(u => u.id === recording.contactId);
+      const contact = resolveParticipant(recording.contactId);
       const contactName = contact?.displayName || contact?.handle || 'unknown';
       const dateStr = recording.timestamp.toISOString().split('T')[0];
       const timeStr = recording.timestamp.toTimeString().split(' ')[0].replace(/:/g, '-');
@@ -857,7 +904,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       console.error('Download error:', error);
       toast.error('Failed to download message');
     }
-  }, [pulseUsers]);
+  }, [resolveParticipant]);
 
   // Archive a single Vox message via VoxMessageMenu
   const handleArchiveMessage = useCallback(async (recording: Recording) => {
@@ -903,7 +950,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // Archive all messages from a conversation
   const archiveConversation = useCallback(async (contactId: string) => {
     try {
-      const contact = pulseUsers.find(u => u.id === contactId);
+      const contact = resolveParticipant(contactId);
       const contactName = contact?.displayName || contact?.handle || 'unknown';
       const conversationRecordings = recordings.filter(r => r.contactId === contactId);
 
@@ -952,7 +999,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       console.error('Archive error:', error);
       toast.error('Failed to archive conversation');
     }
-  }, [pulseUsers, recordings, downloadVoxMessage]);
+  }, [resolveParticipant, recordings, downloadVoxMessage]);
 
   // Toggle bookmark on a message
   const toggleBookmark = useCallback(async (recordingId: string) => {
