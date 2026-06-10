@@ -52,6 +52,7 @@ import { useRelayStudio } from './studio';
 import { Waveform } from './studio/Waveform';
 import { StudioCard } from './studio/StudioCard';
 import { StudioMasthead } from './studio/StudioMasthead';
+import { avatarColorForId, initials } from './studio/avatarColor';
 
 // Mirrors Relay.tsx's local RelayView (six peers).
 type RelayTriageView =
@@ -216,6 +217,16 @@ const InboxCard: React.FC<{
   const canReply = !!onReply && (hasThreadDestination || has11Destination);
   const canPlay = !!onTogglePlay && !!item.audioUrl;
 
+  // Avatar identity. `resolved` distinguishes a real person/note from the
+  // "Unknown contact" fallback so the unresolved case gets a muted, glyph-less
+  // treatment instead of a confident coloured monogram. Colour seeds off the
+  // per-contact key (avatarSeed) so every voice from one person shares a hue.
+  // Needs-reply is signalled by a small coral dot, never a filled coral disc
+  // (coral budget: signal, not decoration).
+  const resolvedIdentity = !!item.senderName && item.senderName !== 'Unknown contact';
+  const avatarSeed = item.avatarSeed || item.senderId || item.id;
+  const glyphSource = item.senderName.replace(/[^\p{L}\p{N}\s]+/gu, ' ').trim();
+
   // Karaoke split — only while this card is actively playing + has a summary.
   const transcript = item.summary || '';
   const hasKaraoke = active && isPlaying && transcript.length > 2;
@@ -225,15 +236,32 @@ const InboxCard: React.FC<{
     <StudioCard active={active} className="relative group p-4">
       {/* Header row */}
       <div className="flex items-center gap-3 mb-3">
-        <div
-          className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold ${
-            item.needsReply
-              ? 'bg-rose-500 text-white'
-              : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
-          }`}
-          aria-hidden="true"
-        >
-          {(item.senderName || '?').charAt(0).toUpperCase()}
+        <div className="relative shrink-0">
+          {item.avatarUrl ? (
+            <img
+              src={item.avatarUrl}
+              alt=""
+              className="w-9 h-9 rounded-full object-cover"
+              aria-hidden="true"
+            />
+          ) : (
+            <div
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold ${
+                resolvedIdentity
+                  ? `${avatarColorForId(avatarSeed)} text-white`
+                  : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500'
+              }`}
+              aria-hidden="true"
+            >
+              {resolvedIdentity ? initials(glyphSource || item.senderName) : '?'}
+            </div>
+          )}
+          {item.needsReply && (
+            <span
+              className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#080808]"
+              aria-label="Needs reply"
+            />
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">

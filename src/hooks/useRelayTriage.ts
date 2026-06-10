@@ -34,8 +34,16 @@ export interface TriageItem {
   kind: TriageItemKind;
   /** Display name for the sender or note title. */
   senderName: string;
-  /** Optional pulse user ID; used for avatar lookup. */
+  /** Optional pulse user ID; used for reply/open routing. */
   senderId?: string;
+  /** Stable seed for the deterministic avatar colour — per-contact, not per-row.
+   *  Differs from senderId when display identity ≠ routing identity (classic DMs
+   *  draw by contact_id but route by the existing path). */
+  avatarSeed?: string;
+  /** Optional avatar image URL, resolved from the contact. */
+  avatarUrl?: string;
+  /** Optional phone — a fallback identity shown when no name resolves. */
+  phone?: string;
   /** Audience label, e.g. 'DM', 'THREAD', 'BROADCAST', 'NOTE', '#channel'. */
   audienceLabel: string;
   /** Audio duration in seconds. */
@@ -251,23 +259,61 @@ export function useRelayTriage(userId: string | undefined | null): UseRelayTriag
       const broadcastRows = (broadcastResp as any).data ?? [];
       const noteRows = (noteResp as any).data ?? [];
 
+      // Classic sender identity: voxer_recordings stores the counterparty as
+      // contact_id (TEXT) + a denormalised contact_name that is frequently null
+      // on legacy/seed rows. Resolve contact_id → contacts for the live name +
+      // avatar, batched in one round-trip like the quick-vox lookup below.
+      // contacts.id is UUID and contact_id is TEXT, so we guard uuid-shape and
+      // let Supabase cast on the `in` filter.
+      const classicContactIds = Array.from(
+        new Set(
+          classicRows
+            .map((r: any) => r.contact_id)
+            .filter((id: any): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)),
+        ),
+      );
+      const contactById = new Map<string, { name: string | null; avatar_url: string | null; phone: string | null }>();
+      if (classicContactIds.length > 0) {
+        const contactsResp = await supabase
+          .from('contacts')
+          .select('id, name, avatar_url, phone')
+          .in('id', classicContactIds);
+        for (const c of (contactsResp as any).data ?? []) {
+          contactById.set(c.id, { name: c.name, avatar_url: c.avatar_url, phone: c.phone });
+        }
+      }
+
       // 4) Map each row to a TriageItem with the kind-appropriate needsReply
       //    heuristic. For threads we only count the LATEST message per thread
       //    toward needsReply (post-filter), so a 30-message thread doesn't
       //    inflate the banner count.
-      const classicItems: TriageItem[] = classicRows.map((r: any) => ({
-        id: r.id,
-        kind: 'classic' as const,
-        senderName: r.contact_name ?? 'Unknown',
-        senderId: undefined,
-        audienceLabel: 'DM',
-        durationSec: Number(r.duration ?? 0),
-        createdAt: toDate(r.recorded_at ?? r.created_at),
-        needsReply: r.is_outgoing === false && r.played === false,
-        summary: pickSummary(r.transcript),
-        audioUrl: r.audio_url ?? '',
-        raw: r,
-      }));
+      const classicItems: TriageItem[] = classicRows.map((r: any) => {
+        const cid = typeof r.contact_id === 'string' ? r.contact_id : undefined;
+        const c = cid ? contactById.get(cid) : undefined;
+        const resolvedName =
+          (c?.name && c.name.trim()) ||
+          (typeof r.contact_name === 'string' && r.contact_name.trim()) ||
+          (c?.phone && c.phone.trim()) ||
+          'Unknown contact';
+        return {
+          id: r.id,
+          kind: 'classic' as const,
+          senderName: resolvedName,
+          // senderId (reply/open routing) intentionally unchanged from the
+          // prior behaviour; avatarSeed carries the per-contact colour key.
+          senderId: undefined,
+          avatarSeed: cid,
+          avatarUrl: c?.avatar_url ?? undefined,
+          phone: c?.phone ?? undefined,
+          audienceLabel: 'DM',
+          durationSec: Number(r.duration ?? 0),
+          createdAt: toDate(r.recorded_at ?? r.created_at),
+          needsReply: r.is_outgoing === false && r.played === false,
+          summary: pickSummary(r.transcript),
+          audioUrl: r.audio_url ?? '',
+          raw: r,
+        };
+      });
 
       // Thread needs-reply: latest message per thread where sender != me and I
       // haven't read it. We process the rows already sorted DESC by created_at,
