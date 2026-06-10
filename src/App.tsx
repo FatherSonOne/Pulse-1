@@ -1475,16 +1475,21 @@ const App: React.FC = () => {
 
       {/* Global quick-actions FAB — floats on every view, fires real actions
           (Phase 5b). Reuses App's intent handlers; gates the email action on
-          emailEnabled internally. */}
-      <GlobalQuickActions
-        contacts={contacts}
-        setView={setView}
-        onNewTask={handleNewTask}
-        onNewContact={handleNewContact}
-        onComposeEmail={handleComposeEmail}
-        onStartMeeting={handleStartMeeting}
-        onVoxContact={handleVoxContact}
-      />
+          emailEnabled internally. Suppressed inside Relay, which owns its own
+          coral record affordance (FloatingMic) in the same bottom-right corner;
+          two stacked coral circles read as a confused double-primary, and the
+          FAB's "Vox contact" routes into Relay anyway. */}
+      {view !== AppView.RELAY && (
+        <GlobalQuickActions
+          contacts={contacts}
+          setView={setView}
+          onNewTask={handleNewTask}
+          onNewContact={handleNewContact}
+          onComposeEmail={handleComposeEmail}
+          onStartMeeting={handleStartMeeting}
+          onVoxContact={handleVoxContact}
+        />
+      )}
       <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onVoxContact={handleVoxContact} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onSignOut={logout} onTogglePulseAI={() => setShowPulseAI(prev => !prev)} onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)} onSectionAction={handleSectionAction} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
