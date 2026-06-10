@@ -1,23 +1,28 @@
 // Voice Rooms — Relay's Live peer surface.
 //
-// Renders in-flow inside Relay's Live tab (no modal overlay). The left rail
-// organizes channels into four mono-labeled sections (YOU / TEAMS / CONTACTS
-// / AD-HOC); the right pane runs a state machine across no-selection → solo
-// recording → channel-idle → in-call; an opt-in AI sidecar slides in from
-// the right and a pre-join sheet handles getUserMedia (device picker, input
-// level meter, mute-on-join, permission states).
+// Renders in-flow inside Relay's Live tab (no modal overlay). A browse view
+// (shared masthead + an auto-fitting grid of room studio-cards) and a detail
+// view (a state machine across no-selection → solo recording → channel-idle →
+// in-call) share the pane; an opt-in AI sidecar slides in from the right and a
+// pre-join sheet handles getUserMedia (device picker, input level meter,
+// mute-on-join, permission states).
 //
 // Authored under /impeccable across six passes on 2026-05-13: shape, then
 // Phase 1 structural rebuild, then colorize / typeset / clarify / harden /
-// polish. The TEAMS and CONTACTS sections render quiet captions for now —
-// real workspace + contact wiring is a follow-up.
+// polish.
+//
+// Scope honesty: the local media path (mic capture, level meter, speaking
+// detection) is real, but there is no peer-audio transport yet (no
+// RTCPeerConnection / signaling), so the in-call view is a LOCAL PREVIEW —
+// participants don't hear each other until transport lands. Contact/team rooms
+// and solo recording are also not yet wired.
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Contact } from '../../types';
 import { voiceRoomService } from '../../services/voiceRoomService';
 import { useRelayStudio, StudioCard, StudioMasthead } from './studio';
 
-import { Brain, ChevronLeft, Code2, Coffee, Gamepad2, Lock, Mic, MicOff, Monitor, Music, PhoneOff, Plus, Radio, Rocket, Settings, Square, UserPlus, Users, Volume2, VolumeX, X, type LucideIcon } from 'lucide-react';
+import { Brain, ChevronLeft, Code2, Coffee, Gamepad2, Lock, Mic, MicOff, Monitor, Music, PhoneOff, Plus, Radio, Rocket, Square, UserPlus, Users, Volume2, VolumeX, X, type LucideIcon } from 'lucide-react';
 import { VoxEmptyState } from './VoxEmptyState';
 
 // Maps the legacy `fa-*` icon keys stored on voice_rooms rows to their Lucide
@@ -116,7 +121,6 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
   const studio = useRelayStudio();
   const [isMuted, setIsMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   // Pre-join sheet — opens after Go Live, before getUserMedia is requested.
   // Phase 1 scaffold: shows a placeholder confirm; Phase 2d (harden) wires
@@ -625,8 +629,8 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* AI provenance chip — matches the DESIGN.md signature
-                      pattern: mono uppercase, coral dot prefix when active. */}
+                  {/* Opt-in AI sidecar toggle. Labeled honestly — it doesn't
+                      transcribe yet, so it must not claim to be "listening". */}
                   <button
                     onClick={() => setShowAISidecar(v => !v)}
                     className={`px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] transition flex items-center gap-2 ${
@@ -635,23 +639,22 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                         : 'text-[var(--pulse-ink-2)] hover:bg-[var(--pulse-surface-raised)] border border-transparent'
                     }`}
                     aria-pressed={showAISidecar}
-                    title={showAISidecar ? 'Stop AI listening' : 'Start AI listening'}
+                    title={showAISidecar ? 'Hide AI sidecar' : 'Show AI sidecar'}
                   >
-                    {showAISidecar ? (
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" aria-hidden />
-                    ) : (
-                      <Radio className="w-3 h-3" aria-hidden />
-                    )}
-                    {showAISidecar ? 'PULSE · LISTENING' : 'AI SIDECAR'}
-                  </button>
-                  <button
-                    onClick={() => setShowSettings(true)}
-                    className="w-10 h-10 rounded-full hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition"
-                  >
-                    <Settings />
+                    <Radio className="w-3 h-3" aria-hidden />
+                    AI SIDECAR
                   </button>
                 </div>
               </div>
+            </div>
+
+            {/* Honest disclosure — local media works (your mic + speaking
+                ring), but there's no peer-audio transport yet, so others can't
+                actually hear you. Remove once WebRTC transport lands. */}
+            <div className="shrink-0 px-6 py-2 border-b border-[var(--pulse-border)] bg-rose-500/[0.06]">
+              <p className="text-[11px] text-[var(--pulse-ink-2)]">
+                Local preview — your mic and speaking indicator are live, but peer audio isn't connected yet.
+              </p>
             </div>
 
             {/* Participants Grid */}
@@ -737,13 +740,6 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                 </button>
 
                 <button
-                  className="w-14 h-14 rounded-full bg-[var(--pulse-surface-raised)] hover:bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink)] flex items-center justify-center transition"
-                  title="Share screen"
-                >
-                  <Monitor className="text-xl" />
-                </button>
-
-                <button
                   onClick={leaveRoom}
                   className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition"
                   title="Leave call"
@@ -816,7 +812,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
               icon={Radio}
               eyebrow="Live"
               title="No room selected"
-              description="Pick a contact or team to go live, or start a solo recording."
+              description="Create a room to drop in and talk over voice."
             />
           </div>
         )}
@@ -835,9 +831,9 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
         {showAISidecar && (
           <div className="h-full flex flex-col">
             <div className="px-4 py-3 border-b border-[var(--pulse-border)] flex items-center justify-between">
-              <span className="text-[10px] font-mono uppercase tracking-[0.1em] text-[var(--pulse-rose)] flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" aria-hidden />
-                PULSE · LISTENING
+              <span className="text-[10px] font-mono uppercase tracking-[0.1em] text-[var(--pulse-ink-2)] flex items-center gap-2">
+                <Radio className="w-3 h-3" aria-hidden />
+                AI SIDECAR
               </span>
               <button
                 onClick={() => setShowAISidecar(false)}
@@ -849,7 +845,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
             </div>
             <div className="flex-1 overflow-y-auto px-4 py-4">
               <p className="text-xs text-zinc-500 leading-relaxed">
-                Live transcript and summary stream here while listening is on.
+                Live transcript and summary will stream here. Not wired yet — it arrives with peer audio.
               </p>
             </div>
           </div>
