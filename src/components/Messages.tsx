@@ -3703,8 +3703,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     closeDrawer(); // Close drawer after selection on mobile
   };
 
+  // h-full, never h-screen: the root must size to App's padded <main> box
+  // (which reserves the mobile bottom-bar height), not the raw viewport —
+  // h-screen slid the composer under the bottom bar on mobile.
   return (
-    <div className={`${fullPage ? 'h-screen' : 'h-full'} flex bg-[#f8f8f8] dark:bg-black ${fullPage ? '' : 'rounded-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] shadow-xl'} overflow-hidden relative animate-fade-in`}>
+    <div className={`h-full flex bg-[#f8f8f8] dark:bg-black ${fullPage ? '' : 'rounded-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] shadow-xl'} overflow-hidden relative animate-fade-in`}>
       
       <MessagesTopModals
         showNewChatModal={showNewChatModal}

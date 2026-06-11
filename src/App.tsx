@@ -1657,8 +1657,8 @@ const App: React.FC = () => {
             scroll area on every view, so it's outside the overflow-hidden
             Messages/Calendar panes and its dropdown is never clipped. */}
         <CommandBarHeader />
-        <div className={`flex-1 min-h-0 w-full flex flex-col ${view === AppView.MESSAGES || view === AppView.CALENDAR ? 'overflow-hidden' : 'overflow-auto mobile-scroll p-2 sm:p-3 md:p-4 lg:p-6'}`}>
-          <div className={`w-full ${view === AppView.MESSAGES || view === AppView.CALENDAR ? 'h-full min-h-0 flex flex-col' : 'min-h-full max-w-[1600px] mx-auto flex flex-col'} animate-fade-in`}>
+        <div className={`flex-1 min-h-0 w-full flex flex-col ${view === AppView.MESSAGES || view === AppView.CALENDAR || view === AppView.LIVE_AI ? 'overflow-hidden' : 'overflow-auto mobile-scroll p-2 sm:p-3 md:p-4 lg:p-6'}`}>
+          <div className={`w-full ${view === AppView.MESSAGES || view === AppView.CALENDAR || view === AppView.LIVE_AI ? 'h-full min-h-0 flex flex-col' : 'min-h-full max-w-[1600px] mx-auto flex flex-col'} animate-fade-in`}>
             {renderContent()}
           </div>
         </div>

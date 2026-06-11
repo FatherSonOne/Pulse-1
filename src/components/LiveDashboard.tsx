@@ -1630,8 +1630,11 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey = '', userId }) =>
       }
     : undefined;
 
+  // h-full, never h-screen: App mounts LIVE_AI in its full-bleed branch, which
+  // hands this root an exact-fit box (viewport minus chrome and the mobile
+  // bottom bar). h-screen overflowed that box and slid under the bottom bar.
   return (
-    <div className="pulse-studio-container h-screen flex overflow-hidden relative">
+    <div className="pulse-studio-container h-full flex overflow-hidden relative">
       {/* War Room project/session sidebar. On the Notebook path this column is
           folded into the Sources pane (see `notebookNav` → SourcesPane), so the
           standalone sidebar is suppressed there. */}
