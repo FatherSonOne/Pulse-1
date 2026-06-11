@@ -779,7 +779,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                   {/* Recent Decisions */}
                   {data.topDecisions.length > 0 && (
                     <>
-                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 10 }}>
                         Recent Decisions
                       </div>
                       <div className="meetings-decisions-list">
@@ -800,7 +800,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
 
               {activeTab === 'topics' && (
                 <>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 12 }}>
                     Most Discussed Topics
                   </div>
                   {data.topTopics.length === 0 ? (
@@ -820,7 +820,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
 
               {activeTab === 'people' && (
                 <>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 12 }}>
                     Top Attendees
                   </div>
                   {data.topAttendees.length === 0 ? (
@@ -1128,13 +1128,13 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
                     <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {parsed.aiSummary && (
                         <div>
-                          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 6 }}>AI Summary</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 6 }}>AI Summary</div>
                           <div style={{ fontSize: 13, color: 'var(--mtg-text-secondary)', lineHeight: 1.7 }}>{parsed.aiSummary}</div>
                         </div>
                       )}
                       {parsed.keyPoints && parsed.keyPoints.length > 0 && (
                         <div>
-                          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 6 }}>Key Points</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 6 }}>Key Points</div>
                           <ul style={{ margin: 0, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {parsed.keyPoints.map((p, i) => <li key={i} style={{ fontSize: 13, color: 'var(--mtg-text-secondary)' }}>{p}</li>)}
                           </ul>
@@ -1142,7 +1142,7 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
                       )}
                       {parsed.actionItems && parsed.actionItems.length > 0 && (
                         <div>
-                          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 6 }}>Action Items</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 6 }}>Action Items</div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {parsed.actionItems.map((a, i) => (
                               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13 }}>
@@ -1159,7 +1159,7 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
                       )}
                       {parsed.decisions && parsed.decisions.length > 0 && (
                         <div>
-                          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 6 }}>Decisions</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 6 }}>Decisions</div>
                           <ul style={{ margin: 0, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {parsed.decisions.map((d, i) => <li key={i} style={{ fontSize: 13, color: 'var(--mtg-text-secondary)' }}>{d}</li>)}
                           </ul>
@@ -1172,13 +1172,13 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
                 // Plain text summary fallback
                 return (
                   <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 8 }}>Summary</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 8 }}>Summary</div>
                     <div style={{ fontSize: 13, color: 'var(--mtg-text-secondary)', lineHeight: 1.6 }}>{selected.summary}</div>
                   </div>
                 );
               })()}
 
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 8 }}>
                 Transcript
               </div>
               <div className="meetings-transcript-view">{renderTranscript()}</div>
@@ -1894,7 +1894,7 @@ export const BreakoutRoomsModal: React.FC<BreakoutRoomsModalProps> = ({
               <div className="meetings-breakout-controls">
                 {/* Timer picker */}
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 8 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 8 }}>
                     Duration
                   </div>
                   <div className="meetings-pill-btns" style={{ flexWrap: 'wrap' }}>

@@ -683,7 +683,7 @@
 }
 
 .meetings-modal-btn.primary:hover {
-  background: #00bce6;
+  background: var(--mtg-accent-secondary);
 }
 
 .meetings-modal-btn.primary:disabled {
@@ -1029,7 +1029,7 @@
 .meetings-analytics-stat-value {
   font-size: 28px;
   font-weight: 700;
-  color: var(--mtg-accent-primary);
+  color: var(--mtg-text-primary);
   line-height: 1;
   margin-bottom: 4px;
 }
@@ -2944,7 +2944,7 @@
 }
 
 :root:not(.dark) .meetings-modal-btn.primary:hover {
-  background: #0e7490;
+  background: var(--mtg-accent-secondary);
   box-shadow: var(--mtg-shadow-md);
 }
 
