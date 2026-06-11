@@ -697,7 +697,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
             <div className="meetings-analytics-empty">
               <BarChart />
               <div style={{ fontWeight: 600, marginBottom: 6 }}>No meeting analytics yet</div>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>Host a Pulse meeting with recording and transcription enabled — analytics populate from your meeting summaries.</div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>Host a Pulse meeting with recording and transcription enabled. Analytics populate from your meeting summaries.</div>
             </div>
           ) : (
             <>
@@ -1151,7 +1151,7 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
                                 <span style={{ width: 16, height: 16, borderRadius: 4, border: '2px solid var(--mtg-border)', display: 'inline-block', flexShrink: 0, marginTop: 1 }} />
                                 <span style={{ color: 'var(--mtg-text-secondary)', flex: 1 }}>
                                   {a.text}
-                                  {a.owner && <span style={{ color: 'var(--mtg-text-muted)', fontSize: 11 }}> — {a.owner}</span>}
+                                  {a.owner && <span style={{ color: 'var(--mtg-text-muted)', fontSize: 11 }}> · {a.owner}</span>}
                                 </span>
                                 {a.priority === 'high' && <span style={{ fontSize: 10, background: 'rgba(244,63,94,0.15)', color: '#f43f5e', padding: '1px 6px', borderRadius: 4, flexShrink: 0 }}>HIGH</span>}
                               </div>
@@ -1846,7 +1846,7 @@ export const BreakoutRoomsModal: React.FC<BreakoutRoomsModalProps> = ({
             {/* Panel 2: Rooms */}
             <div className="meetings-breakout-panel">
               <div className="meetings-breakout-panel-title">
-                Rooms ({rooms.length}) {selectedParticipant && <span style={{ color: 'var(--mtg-accent-primary)' }}>— click room to assign</span>}
+                Rooms ({rooms.length}) {selectedParticipant && <span style={{ color: 'var(--mtg-accent-primary)' }}>· click room to assign</span>}
               </div>
               {rooms.map(room => (
                 <div
@@ -1869,7 +1869,7 @@ export const BreakoutRoomsModal: React.FC<BreakoutRoomsModalProps> = ({
                   <div className="meetings-breakout-participants">
                     {room.participants.length === 0 ? (
                       <span style={{ fontSize: 11, color: 'var(--mtg-text-muted)', fontStyle: 'italic' }}>
-                        Empty — assign participants
+                        Empty · assign participants
                       </span>
                     ) : room.participants.map(p => (
                       <div key={p.id} className="meetings-breakout-assigned-chip">
