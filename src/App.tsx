@@ -81,7 +81,6 @@ import { PulseAIProvider } from './contexts/PulseAIContext';
 import { CommandPaletteProvider, useRegisterCommands, Command } from './contexts/CommandPaletteContext';
 import type { RelayShortcutView } from './hooks/useRelayKeyboardShortcuts';
 import { CommandBarHeader } from './components/GlobalCommandPalette';
-import { GlobalQuickActions } from './components/GlobalQuickActions';
 import KeyboardChordsLayer from './components/KeyboardChordsLayer';
 import CaptureModal from './components/Capture/CaptureModal';
 import { WorkspaceProvider, useWorkspaceData, useWorkspaceActions } from './contexts/WorkspaceContext';
@@ -1524,23 +1523,6 @@ const App: React.FC = () => {
           single Toaster serves the whole app. */}
       <Toaster position="top-right" gutter={8} />
 
-      {/* Global quick-actions FAB — floats on every view, fires real actions
-          (Phase 5b). Reuses App's intent handlers; gates the email action on
-          emailEnabled internally. Suppressed inside Relay, which owns its own
-          coral record affordance (FloatingMic) in the same bottom-right corner;
-          two stacked coral circles read as a confused double-primary, and the
-          FAB's "Vox contact" routes into Relay anyway. */}
-      {view !== AppView.RELAY && (
-        <GlobalQuickActions
-          contacts={contacts}
-          setView={setView}
-          onNewTask={handleNewTask}
-          onNewContact={handleNewContact}
-          onComposeEmail={handleComposeEmail}
-          onStartMeeting={handleStartMeeting}
-          onVoxContact={handleVoxContact}
-        />
-      )}
       <AppCommandRegistrar view={view} setView={setView} setSettingsSection={setSettingsSection} onNewTask={handleNewTask} onNewContact={handleNewContact} contacts={contacts} onOpenContact={handleOpenContact} onMessageContact={handleMessageContact} onMeetContact={handleMeetContact} onVoxContact={handleVoxContact} onRelayNavigate={handleRelayNavigate} onNewVox={handleNewVox} onComposeEmail={handleComposeEmail} onStartMeeting={handleStartMeeting} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onSignOut={logout} onTogglePulseAI={() => setShowPulseAI(prev => !prev)} onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)} onSectionAction={handleSectionAction} />
 
       {/* Global g-chord keyboard layer. Vim-style 2-key navigation chords
