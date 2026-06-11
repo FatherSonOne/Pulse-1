@@ -703,20 +703,17 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
             <>
               {activeTab === 'overview' && (
                 <>
-                  {/* Stats */}
-                  <div className="meetings-analytics-stats">
-                    <div className="meetings-analytics-stat">
-                      <div className="meetings-analytics-stat-value">{data.totalMeetings}</div>
-                      <div className="meetings-analytics-stat-label">Meetings</div>
-                    </div>
-                    <div className="meetings-analytics-stat">
-                      <div className="meetings-analytics-stat-value">{formatHours(data.totalHours)}</div>
-                      <div className="meetings-analytics-stat-label">Total Time</div>
-                    </div>
-                    <div className="meetings-analytics-stat">
-                      <div className="meetings-analytics-stat-value">{data.avgDuration}m</div>
-                      <div className="meetings-analytics-stat-label">Avg Duration</div>
-                    </div>
+                  {/* Stat line — single body-type sentence replacing the prior
+                      3-equal-card "hero-metric" grid. The .meetings-analytics-stat*
+                      CSS is left in place (now orphaned) so this is reversible. No
+                      time qualifier: these totals are all-time, only the chart below
+                      is the 8-week window. */}
+                  <div style={{ fontSize: 14, color: 'var(--mtg-text-secondary)', marginBottom: 20, lineHeight: 1.6 }}>
+                    <strong style={{ color: 'var(--mtg-text-primary)', fontWeight: 600 }}>{data.totalMeetings}</strong> {data.totalMeetings === 1 ? 'meeting' : 'meetings'}
+                    <span style={{ color: 'var(--mtg-text-muted)' }}> · </span>
+                    <strong style={{ color: 'var(--mtg-text-primary)', fontWeight: 600 }}>{formatHours(data.totalHours)}</strong> total
+                    <span style={{ color: 'var(--mtg-text-muted)' }}> · </span>
+                    <strong style={{ color: 'var(--mtg-text-primary)', fontWeight: 600 }}>{data.avgDuration}m</strong> average
                   </div>
 
                   {/* 8-week trend chart */}
