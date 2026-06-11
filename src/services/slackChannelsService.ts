@@ -54,7 +54,7 @@ export const slackChannelsService = {
       .order('created_at', { ascending: false });
     if (error) {
       console.error('[slackChannels] getThreads error:', error.message);
-      return [];
+      throw new Error(error.message);
     }
     return (data ?? []) as SlackChannelThread[];
   },
@@ -68,7 +68,7 @@ export const slackChannelsService = {
       .order('created_at', { ascending: true });
     if (error) {
       console.error('[slackChannels] getMessages error:', error.message);
-      return [];
+      throw new Error(error.message);
     }
     return (data ?? []) as SlackChannelMessage[];
   },

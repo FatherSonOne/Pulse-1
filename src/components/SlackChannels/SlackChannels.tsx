@@ -10,7 +10,7 @@
 // Gated by the slackChannelsGrounding flag at the App.tsx render seam.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Hash, Lock, RefreshCw, MessageSquare, Send, Slack as SlackIcon, History, Sparkles, X } from 'lucide-react';
+import { Hash, Lock, RefreshCw, MessageSquare, Send, Slack as SlackIcon, History, Sparkles, X, Check, AlertTriangle } from 'lucide-react';
 import { StudioMasthead } from '../Relay/studio';
 import { hasSlackBotToken } from '../../lib/slackToken';
 import { useFeatures } from '../../contexts/FeatureContext';
@@ -178,29 +178,64 @@ const SlackChannels: React.FC = () => {
   const [summary, setSummary] = useState<ConversationSummary | null>(null);
   const [summarizing, setSummarizing] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [sentNote, setSentNote] = useState<string | null>(null);
+  // Channel-name resolution has three states, not two: resolved (real name),
+  // resolving (the resolve promise hasn't settled yet — show a shimmer), and
+  // resolved-but-absent (no token / bot isn't a member / >100 channels — show a
+  // humane fallback, never the raw ID). The name map alone can't tell resolving
+  // from absent, so we track the settled flag separately.
+  const [namesResolved, setNamesResolved] = useState(false);
+  const [threadsError, setThreadsError] = useState(false);
+  const [messagesError, setMessagesError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0); // bump to re-fetch the active thread
 
   const hasToken = hasSlackBotToken();
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Never surface the raw Slack channel ID as a name. Best available human
+  // label, with a typed fallback when the bot can't resolve the channel; the
+  // raw ID stays in a title tooltip on the row/header for support.
   const channelLabel = useCallback(
-    (t: SlackChannelThread): string => nameById.get(t.slack_channel_id) || t.channel_name || t.slack_channel_id,
+    (t: SlackChannelThread): string => {
+      const real = nameById.get(t.slack_channel_id) || t.channel_name;
+      if (real) return real;
+      return t.is_private ? 'Private channel' : 'Unnamed channel';
+    },
     [nameById],
   );
+  const isResolvingName = useCallback(
+    (t: SlackChannelThread): boolean =>
+      !namesResolved && !nameById.get(t.slack_channel_id) && !t.channel_name,
+    [namesResolved, nameById],
+  );
+  const loadNames = useCallback(() => {
+    void slackChannelsService.resolveChannelNames().then((m) => {
+      setNameById(m);
+      setNamesResolved(true);
+    });
+  }, []);
 
   // ── threads: initial load + resolve names + keep the selection valid ──────
   const loadThreads = useCallback(async () => {
-    const rows = await slackChannelsService.getThreads();
-    setThreads(rows);
-    setLoadingThreads(false);
-    setActiveThreadId((prev) => prev ?? (rows[0]?.id ?? null));
+    try {
+      const rows = await slackChannelsService.getThreads();
+      setThreads(rows);
+      setThreadsError(false);
+      setActiveThreadId((prev) => prev ?? (rows[0]?.id ?? null));
+    } catch {
+      setThreadsError(true);
+    } finally {
+      setLoadingThreads(false);
+    }
   }, []);
 
   useEffect(() => {
     void loadThreads();
-    void slackChannelsService.resolveChannelNames().then(setNameById);
+    loadNames();
     const unsub = slackChannelsService.subscribeToThreads(() => { void loadThreads(); });
     return unsub;
-  }, [loadThreads]);
+  }, [loadThreads, loadNames]);
 
   // ── messages: load + subscribe whenever the active thread changes ─────────
   useEffect(() => {
@@ -212,12 +247,20 @@ const SlackChannels: React.FC = () => {
     setBackfillNote(null); // a result note belongs to the channel it was run on
     setSummary(null); // a summary belongs to the channel it was generated from
     setSummaryError(null);
+    setMessagesError(false);
     setLoadingMessages(true);
-    void slackChannelsService.getMessages(activeThreadId).then((rows) => {
-      if (cancelled) return;
-      setMessages(rows);
-      setLoadingMessages(false);
-    });
+    slackChannelsService
+      .getMessages(activeThreadId)
+      .then((rows) => {
+        if (cancelled) return;
+        setMessages(rows);
+        setLoadingMessages(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setMessagesError(true);
+        setLoadingMessages(false);
+      });
     const unsub = slackChannelsService.subscribeToMessages(
       activeThreadId,
       (m) => {
@@ -232,13 +275,16 @@ const SlackChannels: React.FC = () => {
       cancelled = true;
       unsub();
     };
-  }, [activeThreadId]);
+  }, [activeThreadId, reloadKey]);
 
   // keep the thread scrolled to the latest message
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
+
+  // clear any pending "posted" note timer on unmount
+  useEffect(() => () => { if (noteTimer.current) clearTimeout(noteTimer.current); }, []);
 
   // Group the flat mirror into Slack threads at render time. A reply
   // (slack_thread_ts set and ≠ its own ts) nests under the root whose slack_ts it
@@ -274,6 +320,7 @@ const SlackChannels: React.FC = () => {
     if (!text) return;
     setSending(true);
     setSendError(null);
+    setSentNote(null);
     const res = await slackChannelsService.sendChannelMessage(activeThread.slack_channel_id, text);
     setSending(false);
     if (!res.ok) {
@@ -285,6 +332,9 @@ const SlackChannels: React.FC = () => {
       return;
     }
     setDraft('');
+    setSentNote(`Posted to #${isResolvingName(activeThread) ? 'this channel' : channelLabel(activeThread)} as you`);
+    if (noteTimer.current) clearTimeout(noteTimer.current);
+    noteTimer.current = setTimeout(() => setSentNote(null), 3000);
     if (res.message) {
       setMessages((prev) => (prev.some((x) => x.id === res.message!.id) ? prev : [...prev, res.message!]));
     }
@@ -304,8 +354,14 @@ const SlackChannels: React.FC = () => {
       activeThread.is_private,
     );
     if (res.ok) {
-      const rows = await slackChannelsService.getMessages(activeThread.id);
-      setMessages(rows);
+      // The import itself succeeded; a refetch failure shouldn't read as an
+      // import error, so keep the current messages and just note the result.
+      try {
+        const rows = await slackChannelsService.getMessages(activeThread.id);
+        setMessages(rows);
+      } catch {
+        /* keep existing messages */
+      }
       const n = res.inserted ?? 0;
       setBackfillNote(
         n > 0
@@ -374,9 +430,9 @@ const SlackChannels: React.FC = () => {
           subtitle="Mirrored from your Slack workspace"
           right={
             <button
-              onClick={() => { void loadThreads(); void slackChannelsService.resolveChannelNames().then(setNameById); }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
-              style={{ color: 'var(--pulse-ink-2)', border: '1px solid var(--pulse-border)', background: 'var(--pulse-surface)' }}
+              onClick={() => { void loadThreads(); loadNames(); }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors bg-[var(--pulse-surface)] hover:bg-[var(--pulse-surface-raised)] active:scale-[0.98]"
+              style={{ color: 'var(--pulse-ink-2)', border: '1px solid var(--pulse-border)' }}
               title="Refresh"
             >
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
@@ -392,7 +448,28 @@ const SlackChannels: React.FC = () => {
           style={{ width: 280, borderRight: '1px solid var(--pulse-border)', background: 'var(--pulse-surface)' }}
         >
           {loadingThreads ? (
-            <div style={{ padding: 16, color: 'var(--pulse-ink-3)', fontSize: 13 }}>Loading channels…</div>
+            <div className="p-2 space-y-1" aria-hidden="true">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-2.5 px-2 py-2.5 animate-pulse">
+                  <div className="w-4 h-4 rounded bg-zinc-100 dark:bg-zinc-800 shrink-0" />
+                  <div className="h-3.5 flex-1 rounded bg-zinc-100 dark:bg-zinc-800" />
+                  <div className="h-3 w-8 rounded bg-zinc-100 dark:bg-zinc-800 shrink-0" />
+                </div>
+              ))}
+            </div>
+          ) : threadsError ? (
+            <div style={{ padding: '16px', color: 'var(--pulse-ink-3)', fontSize: 13, lineHeight: 1.5 }}>
+              <div className="inline-flex items-center gap-1.5" style={{ color: 'var(--pulse-tone-overdue)', marginBottom: 8 }}>
+                <AlertTriangle className="w-4 h-4" /> Couldn't load channels.
+              </div>
+              <button
+                onClick={() => { setLoadingThreads(true); void loadThreads(); }}
+                className="block rounded-md px-2.5 py-1.5 text-xs transition-colors hover:bg-[var(--pulse-surface-raised)]"
+                style={{ color: 'var(--pulse-ink-2)', border: '1px solid var(--pulse-border)' }}
+              >
+                Retry
+              </button>
+            </div>
           ) : threads.length === 0 ? (
             <div style={{ padding: '16px', color: 'var(--pulse-ink-3)', fontSize: 13, lineHeight: 1.5 }}>
               No channel activity yet. Invite the Slack bot to a channel — new messages will appear here.
@@ -404,20 +481,26 @@ const SlackChannels: React.FC = () => {
                 <button
                   key={t.id}
                   onClick={() => setActiveThreadId(t.id)}
-                  className="w-full text-left flex items-center gap-2.5 px-3.5 py-2.5"
-                  style={{
-                    background: isActive ? 'var(--pulse-surface-raised)' : 'transparent',
-                    borderLeft: isActive ? '2px solid var(--pulse-rose)' : '2px solid transparent',
-                  }}
+                  title={t.slack_channel_id}
+                  aria-label={isResolvingName(t) ? (t.is_private ? 'Private channel, loading name' : 'Channel, loading name') : channelLabel(t)}
+                  className={`w-full text-left flex items-center gap-2.5 px-3.5 py-2.5 border-l-2 transition-colors ${
+                    isActive
+                      ? 'border-[var(--pulse-rose)] bg-[var(--pulse-surface-raised)]'
+                      : 'border-transparent hover:bg-[var(--pulse-surface-raised)]'
+                  }`}
                 >
                   {t.is_private ? (
                     <Lock className="w-4 h-4 shrink-0" style={{ color: 'var(--pulse-ink-3)' }} />
                   ) : (
                     <Hash className="w-4 h-4 shrink-0" style={{ color: 'var(--pulse-ink-3)' }} />
                   )}
-                  <span className="flex-1 min-w-0 truncate" style={{ color: 'var(--pulse-ink)', fontSize: 14, fontWeight: isActive ? 600 : 500 }}>
-                    {channelLabel(t)}
-                  </span>
+                  {isResolvingName(t) ? (
+                    <span className="flex-1 h-3.5 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" aria-hidden="true" />
+                  ) : (
+                    <span className="flex-1 min-w-0 truncate" style={{ color: 'var(--pulse-ink)', fontSize: 14, fontWeight: isActive ? 600 : 500 }}>
+                      {channelLabel(t)}
+                    </span>
+                  )}
                   <span className="shrink-0" style={{ color: 'var(--pulse-ink-3)', fontSize: 11 }}>
                     {fmtRelDay(t.last_message_at)}
                   </span>
@@ -447,19 +530,20 @@ const SlackChannels: React.FC = () => {
                 ) : (
                   <Hash className="w-4 h-4" style={{ color: 'var(--pulse-ink-2)' }} />
                 )}
-                <span style={{ color: 'var(--pulse-ink)', fontWeight: 600, fontSize: 15 }}>{channelLabel(activeThread)}</span>
+                {isResolvingName(activeThread) ? (
+                  <span className="h-4 w-32 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" aria-hidden="true" />
+                ) : (
+                  <span title={activeThread.slack_channel_id} style={{ color: 'var(--pulse-ink)', fontWeight: 600, fontSize: 15 }}>{channelLabel(activeThread)}</span>
+                )}
                 <ViaSlackChip />
                 <div className="ml-auto flex items-center gap-1.5">
                   <button
                     onClick={() => void handleSummarize()}
                     disabled={summarizing || messages.length === 0}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors bg-[var(--pulse-coral-bg-08)] hover:bg-[var(--pulse-coral-bg-12)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[var(--pulse-coral-bg-08)]"
                     style={{
                       color: 'var(--pulse-coral-fg)',
                       border: '1px solid var(--pulse-coral-bg-12)',
-                      background: 'var(--pulse-coral-bg-08)',
-                      cursor: summarizing || messages.length === 0 ? 'default' : 'pointer',
-                      opacity: messages.length === 0 ? 0.5 : 1,
                     }}
                     title="Summarize this channel with AI"
                   >
@@ -469,12 +553,10 @@ const SlackChannels: React.FC = () => {
                   <button
                     onClick={() => void handleBackfill()}
                     disabled={backfilling}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors bg-[var(--pulse-surface)] hover:bg-[var(--pulse-surface-raised)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[var(--pulse-surface)]"
                     style={{
                       color: 'var(--pulse-ink-2)',
                       border: '1px solid var(--pulse-border)',
-                      background: 'var(--pulse-surface)',
-                      cursor: backfilling ? 'default' : 'pointer',
                     }}
                     title="Import this channel's recent history from Slack"
                   >
@@ -513,7 +595,7 @@ const SlackChannels: React.FC = () => {
                     <div className="inline-flex items-center gap-1.5" style={{ color: 'var(--pulse-coral-fg)', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>
                       <Sparkles className="w-3.5 h-3.5" /> AI SUMMARY · via Gemini
                     </div>
-                    <button onClick={() => setSummary(null)} title="Dismiss summary" style={{ color: 'var(--pulse-ink-3)', lineHeight: 0 }}>
+                    <button onClick={() => setSummary(null)} title="Dismiss summary" className="rounded transition-colors text-[var(--pulse-ink-3)] hover:text-[var(--pulse-ink)]" style={{ lineHeight: 0 }}>
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -524,30 +606,56 @@ const SlackChannels: React.FC = () => {
                 </div>
               )}
 
-              <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto" style={{ padding: '16px 20px' }}>
+              <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col" style={{ padding: '16px 20px' }}>
                 {loadingMessages ? (
-                  <div style={{ color: 'var(--pulse-ink-3)', fontSize: 13 }}>Loading messages…</div>
+                  <div className="space-y-5" aria-hidden="true">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className={`flex items-start gap-2.5 animate-pulse ${i % 2 === 1 ? 'flex-row-reverse' : ''}`}>
+                        <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 shrink-0" />
+                        <div className="space-y-2" style={{ width: 320, maxWidth: '70%' }}>
+                          <div className="h-3 w-24 rounded bg-zinc-100 dark:bg-zinc-800" />
+                          <div className="h-3.5 w-full rounded bg-zinc-100 dark:bg-zinc-800" />
+                          <div className="h-3.5 w-3/5 rounded bg-zinc-100 dark:bg-zinc-800" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : messagesError ? (
+                  <div style={{ color: 'var(--pulse-ink-3)', fontSize: 13 }}>
+                    <div className="inline-flex items-center gap-1.5" style={{ color: 'var(--pulse-tone-overdue)', marginBottom: 8 }}>
+                      <AlertTriangle className="w-4 h-4" /> Couldn't load this channel.
+                    </div>
+                    <button
+                      onClick={() => setReloadKey((k) => k + 1)}
+                      className="block rounded-md px-2.5 py-1.5 text-xs transition-colors hover:bg-[var(--pulse-surface-raised)]"
+                      style={{ color: 'var(--pulse-ink-2)', border: '1px solid var(--pulse-border)' }}
+                    >
+                      Retry
+                    </button>
+                  </div>
                 ) : messages.length === 0 ? (
                   <div style={{ color: 'var(--pulse-ink-3)', fontSize: 13 }}>No messages mirrored yet.</div>
                 ) : (
-                  threadGroups.map((g) => (
-                    <div key={g.root.id} style={{ marginBottom: 14 }}>
-                      <MessageRow m={g.root} />
-                      {g.replies.length > 0 && (
-                        <div style={{ marginLeft: 16, paddingLeft: 18, borderLeft: '2px solid var(--pulse-border)', marginTop: 10 }}>
-                          <div className="inline-flex items-center gap-1.5" style={{ color: 'var(--pulse-ink-3)', fontSize: 11, fontWeight: 600, marginBottom: 10 }}>
-                            <MessageSquare className="w-3 h-3" />
-                            {g.replies.length === 1 ? '1 reply' : `${g.replies.length} replies`}
-                          </div>
-                          {g.replies.map((r, i) => (
-                            <div key={r.id} style={{ marginTop: i === 0 ? 0 : 12 }}>
-                              <MessageRow m={r} />
+                  <div className="mt-auto">
+                    {threadGroups.map((g) => (
+                      <div key={g.root.id} style={{ marginBottom: 14 }}>
+                        <MessageRow m={g.root} />
+                        {g.replies.length > 0 && (
+                          <div style={{ marginLeft: 16, paddingLeft: 18, borderLeft: '2px solid var(--pulse-border)', marginTop: 10 }}>
+                            <div className="inline-flex items-center gap-1.5" style={{ color: 'var(--pulse-ink-3)', fontSize: 11, fontWeight: 600, marginBottom: 10 }}>
+                              <MessageSquare className="w-3 h-3" />
+                              {g.replies.length === 1 ? '1 reply' : `${g.replies.length} replies`}
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))
+                            {g.replies.map((r, i) => (
+                              <div key={r.id} style={{ marginTop: i === 0 ? 0 : 12 }}>
+                                <MessageRow m={r} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
@@ -559,6 +667,11 @@ const SlackChannels: React.FC = () => {
                 {sendError && (
                   <div style={{ color: 'var(--pulse-tone-overdue, #ef4444)', fontSize: 12, marginBottom: 6 }}>{sendError}</div>
                 )}
+                {sentNote && !sendError && (
+                  <div className="inline-flex items-center gap-1.5" style={{ color: 'var(--pulse-ink-2)', fontSize: 12, marginBottom: 6 }}>
+                    <Check className="w-3.5 h-3.5" style={{ color: 'var(--pulse-tone-positive)' }} /> {sentNote}
+                  </div>
+                )}
                 <div className="flex items-end gap-2">
                   <textarea
                     value={draft}
@@ -569,7 +682,7 @@ const SlackChannels: React.FC = () => {
                         void handleSend();
                       }
                     }}
-                    placeholder={`Message #${channelLabel(activeThread)} as you…`}
+                    placeholder={`Message #${isResolvingName(activeThread) ? 'this channel' : channelLabel(activeThread)} as you…`}
                     rows={1}
                     className="flex-1 resize-none rounded-lg px-3 py-2"
                     style={{ background: 'var(--pulse-canvas)', border: '1px solid var(--pulse-border)', color: 'var(--pulse-ink)', fontSize: 14, maxHeight: 120 }}
@@ -577,12 +690,8 @@ const SlackChannels: React.FC = () => {
                   <button
                     onClick={() => void handleSend()}
                     disabled={sending || !draft.trim()}
-                    className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium"
-                    style={{
-                      background: sending || !draft.trim() ? 'var(--pulse-surface-raised)' : 'var(--pulse-ink)',
-                      color: sending || !draft.trim() ? 'var(--pulse-ink-3)' : 'var(--pulse-canvas)',
-                      cursor: sending || !draft.trim() ? 'default' : 'pointer',
-                    }}
+                    className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ background: 'var(--pulse-ink)', color: 'var(--pulse-canvas)' }}
                   >
                     <Send className="w-3.5 h-3.5" /> {sending ? 'Sending…' : 'Send'}
                   </button>
