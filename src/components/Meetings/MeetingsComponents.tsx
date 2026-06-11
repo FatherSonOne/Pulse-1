@@ -17,6 +17,8 @@ import {
   DEFAULT_MEETING_SETTINGS,
   ExportStatus,
 } from '../../services/meetingService';
+import { dataService } from '../../services/dataService';
+import toast from 'react-hot-toast';
 
 // ============================================
 // TYPES
@@ -1990,6 +1992,21 @@ export const BreakoutRoomsModal: React.FC<BreakoutRoomsModalProps> = ({
 // MEETING SUMMARY VIEW
 // ============================================
 
+// Gemini-extracted action items can be promoted into the real tasks table via
+// dataService.createTask. Two things persist to localStorage, keyed by a stable
+// `${meetingTitle}::${title}` signature (action-item ids are regenerated per
+// render, so they can't be the key): which items are already in Tasks (so we
+// never double-add and the "In Tasks" state survives back-navigation), and the
+// completion-toggle state (previously lost the moment you navigated back).
+const SUMMARY_ADDED_KEY = 'pulse_meeting_summary_added_v1';
+const SUMMARY_TOGGLE_KEY = 'pulse_meeting_summary_toggles_v1';
+const readSummaryMap = (key: string): Record<string, string> => {
+  try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; }
+};
+const writeSummaryMap = (key: string, map: Record<string, string>) => {
+  try { localStorage.setItem(key, JSON.stringify(map)); } catch { /* ignore quota */ }
+};
+
 interface MeetingSummaryViewProps {
   data: MeetingSummaryData | null;
   loading: boolean;
@@ -2002,9 +2019,24 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
   const [copiedToast, setCopiedToast] = useState(false);
   const [entomateConnected, setEntomateConnected] = useState(false);
   const [entomateExporting, setEntomateExporting] = useState(false);
+  const [addedTaskSigs, setAddedTaskSigs] = useState<Set<string>>(new Set());
+  const [addingAllTasks, setAddingAllTasks] = useState(false);
+
+  const sigFor = (title: string) => `${data?.meetingTitle ?? 'Meeting'}::${title}`;
 
   useEffect(() => {
-    if (data?.actionItems) setActionItems(data.actionItems);
+    if (!data) return;
+    // Hydrate completion toggles + which items are already in Tasks from the
+    // persisted maps, keyed by the stable meeting::title signature.
+    const toggles = readSummaryMap(SUMMARY_TOGGLE_KEY);
+    const meeting = data.meetingTitle ?? 'Meeting';
+    setActionItems((data.actionItems || []).map(a => {
+      const persisted = toggles[`${meeting}::${a.title}`];
+      return persisted === 'completed' || persisted === 'pending'
+        ? { ...a, status: persisted }
+        : a;
+    }));
+    setAddedTaskSigs(new Set(Object.keys(readSummaryMap(SUMMARY_ADDED_KEY))));
   }, [data]);
 
   useEffect(() => {
@@ -2012,9 +2044,68 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
   }, []);
 
   const toggleActionItem = (id: string) => {
-    setActionItems(prev => prev.map(a =>
-      a.id === id ? { ...a, status: a.status === 'completed' ? 'pending' : 'completed' } : a
-    ));
+    setActionItems(prev => prev.map(a => {
+      if (a.id !== id) return a;
+      const nextStatus: ActionItem['status'] = a.status === 'completed' ? 'pending' : 'completed';
+      const map = readSummaryMap(SUMMARY_TOGGLE_KEY);
+      map[sigFor(a.title)] = nextStatus;
+      writeSummaryMap(SUMMARY_TOGGLE_KEY, map);
+      return { ...a, status: nextStatus };
+    }));
+  };
+
+  // Promote a single Gemini-extracted action item into the real tasks table via
+  // the canonical dataService.createTask path (handles the text user_id + RLS).
+  const handleCreateTask = async (item: ActionItem) => {
+    const signature = sigFor(item.title);
+    if (addedTaskSigs.has(signature)) return;
+    const created = await dataService.createTask({
+      title: item.title,
+      completed: item.status === 'completed',
+      listId: 'work',
+    });
+    if (!created) {
+      toast.error('Could not add to Tasks', { duration: 3000, position: 'bottom-right' });
+      return;
+    }
+    setAddedTaskSigs(prev => {
+      const next = new Set(prev).add(signature);
+      const map = readSummaryMap(SUMMARY_ADDED_KEY);
+      map[signature] = '1';
+      writeSummaryMap(SUMMARY_ADDED_KEY, map);
+      return next;
+    });
+    toast.success('Added to Tasks', { duration: 2500, position: 'bottom-right' });
+  };
+
+  const handleAddAllTasks = async () => {
+    const pending = actionItems.filter(a => !addedTaskSigs.has(sigFor(a.title)));
+    if (pending.length === 0) return;
+    setAddingAllTasks(true);
+    const added: string[] = [];
+    for (const item of pending) {
+      const created = await dataService.createTask({
+        title: item.title,
+        completed: item.status === 'completed',
+        listId: 'work',
+      });
+      if (created) added.push(sigFor(item.title));
+    }
+    if (added.length > 0) {
+      setAddedTaskSigs(prev => {
+        const next = new Set(prev);
+        const map = readSummaryMap(SUMMARY_ADDED_KEY);
+        added.forEach(s => { next.add(s); map[s] = '1'; });
+        writeSummaryMap(SUMMARY_ADDED_KEY, map);
+        return next;
+      });
+    }
+    setAddingAllTasks(false);
+    if (added.length > 0) {
+      toast.success(`Added ${added.length} task${added.length === 1 ? '' : 's'} to Tasks`, { duration: 2500, position: 'bottom-right' });
+    } else {
+      toast.error('Could not add tasks', { duration: 3000, position: 'bottom-right' });
+    }
   };
 
   const handleExportToEntomate = async () => {
@@ -2180,6 +2271,17 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
                 <span style={{ fontSize: 11, color: 'var(--mtg-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
                   · {actionItems.length}
                 </span>
+                {actionItems.some(a => !addedTaskSigs.has(sigFor(a.title))) && (
+                  <button
+                    type="button"
+                    onClick={handleAddAllTasks}
+                    disabled={addingAllTasks}
+                    title="Create a task for every action item"
+                    style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-accent-primary)', background: 'transparent', border: 'none', cursor: addingAllTasks ? 'default' : 'pointer', flexShrink: 0, opacity: addingAllTasks ? 0.6 : 1 }}
+                  >
+                    {addingAllTasks ? 'Adding…' : <><Plus size={12} /> Add all</>}
+                  </button>
+                )}
               </div>
               {actionItems.length === 0 ? (
                 <div style={{ fontSize: 12, color: 'var(--mtg-text-muted)' }}>No action items captured.</div>
@@ -2199,6 +2301,23 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
                       </div>
                     )}
                   </div>
+                  {addedTaskSigs.has(sigFor(item.title)) ? (
+                    <span
+                      title="Already added to Tasks"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0, marginTop: 1, fontSize: 10, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-accent-success)' }}
+                    >
+                      <Check size={12} /> In Tasks
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleCreateTask(item)}
+                      title="Create a task from this action item"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0, marginTop: 1, fontSize: 11, color: 'var(--mtg-text-secondary)', background: 'var(--mtg-bg-elevated)', border: '1px solid var(--mtg-border)', borderRadius: 6, padding: '3px 8px', cursor: 'pointer' }}
+                    >
+                      <Plus size={12} /> Task
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
