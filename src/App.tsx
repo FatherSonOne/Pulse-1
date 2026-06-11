@@ -68,6 +68,8 @@ import { usePresence } from './hooks/usePresence';
 import { useAndroidBackButton } from './hooks/useAndroidBackButton';
 import { Sidebar } from './components/Sidebar';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { MobileNavSheet } from './components/MobileChrome/MobileNavSheet';
+import { MobileQuickActionsSheet } from './components/MobileChrome/MobileQuickActionsSheet';
 import { useAuth } from './hooks/useAuth';
 import PulseAssistant from './components/PulseAssistant/PulseAssistant';
 import { PulseAssistantButton } from './components/PulseAssistant/PulseAssistantButton';
@@ -678,7 +680,20 @@ const App: React.FC = () => {
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
 
   const [view, setView] = useState<AppView>(initialMeetingCode ? AppView.MEETINGS : AppView.DASHBOARD);
-  useAndroidBackButton({ view, setView });
+
+  // Mobile slim-bar sheets (bottom ☰ navigation / "+" quick actions). Declared
+  // up here so the Android back handler can close an open sheet before it
+  // falls through to view navigation. The ref keeps the intercept callback
+  // stable across renders.
+  const [mobileSheet, setMobileSheet] = useState<'nav' | 'actions' | null>(null);
+  const mobileSheetRef = useRef(mobileSheet);
+  mobileSheetRef.current = mobileSheet;
+  const interceptMobileSheetBack = useCallback(() => {
+    if (!mobileSheetRef.current) return false;
+    setMobileSheet(null);
+    return true;
+  }, []);
+  useAndroidBackButton({ view, setView, interceptBack: interceptMobileSheetBack });
 
   // In-app SMS is a mock shell, hidden for v1 (issue #100). useFeatureFlag
   // is a synchronous read despite the `use` prefix, so it is safe to call
@@ -1652,7 +1667,7 @@ const App: React.FC = () => {
       />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden relative flex flex-col transition-colors duration-500 w-full safe-area-bottom pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
+      <main className="flex-1 overflow-hidden relative flex flex-col transition-colors duration-500 w-full safe-area-bottom pb-[calc(48px+env(safe-area-inset-bottom))] md:pb-0">
         {/* Persistent global command bar (Phase 6) — pinned above the per-view
             scroll area on every view, so it's outside the overflow-hidden
             Messages/Calendar panes and its dropdown is never clipped. */}
@@ -1664,15 +1679,39 @@ const App: React.FC = () => {
         </div>
       </main>
 
+      {/* Mobile slim bar: ☰ + current-section label open the nav sheet, "+"
+          opens the quick-actions sheet. The top hamburger keeps the Sidebar
+          drawer (workspace switcher, billing, theme, account); this bar owns
+          section navigation and creation. */}
       <MobileBottomNav
         view={view}
-        onNavigate={(next) => {
-          setView(next);
-          setIsMobileMenuOpen(false);
-        }}
-        onOpenMore={() => setIsMobileMenuOpen(true)}
+        onOpenNav={() => setMobileSheet('nav')}
+        onOpenActions={() => setMobileSheet('actions')}
         isDarkMode={isDarkMode}
       />
+      {mobileSheet === 'nav' && (
+        <MobileNavSheet
+          view={view}
+          onNavigate={(next) => {
+            setView(next);
+            setMobileSheet(null);
+            setIsMobileMenuOpen(false);
+          }}
+          onClose={() => setMobileSheet(null)}
+        />
+      )}
+      {mobileSheet === 'actions' && (
+        <MobileQuickActionsSheet
+          contacts={contacts}
+          setView={setView}
+          onNewTask={handleNewTask}
+          onNewContact={handleNewContact}
+          onComposeEmail={handleComposeEmail}
+          onStartMeeting={handleStartMeeting}
+          onVoxContact={handleVoxContact}
+          onClose={() => setMobileSheet(null)}
+        />
+      )}
 
       {/* Logo Preview Modal */}
       {showLogoPreview && (

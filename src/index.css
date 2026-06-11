@@ -2231,6 +2231,22 @@ html, body {
   animation: capture-scrim-enter 180ms ease-out forwards;
 }
 
+/* ─── Mobile bottom sheet entrance ─────────────────────────────────────────
+   The slim bar's nav + quick-actions sheets rise from the bottom edge with
+   the brand curve. The global prefers-reduced-motion rule below covers the
+   transition, but the from-offscreen start would still flash — so this one
+   also gets an explicit animation: none. */
+@keyframes pulse-sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.animate-sheet-up {
+  animation: pulse-sheet-up 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet-up { animation: none; }
+}
+
 /* ─── Live waveform (Relay Pulse tile) ─────────────────────────────────────
    Synthetic animated bars used to signal "you're recording right now". Each
    bar gets a different animation-delay so the row never looks mechanical. */

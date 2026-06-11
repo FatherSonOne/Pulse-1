@@ -9,6 +9,11 @@ interface UseAndroidBackButtonArgs {
   setView: React.Dispatch<React.SetStateAction<AppView>>;
   rootView?: AppView;
   exitToastMs?: number;
+  /** Optional overlay hook: return true to consume the back press (e.g. an
+   *  open bottom sheet closing itself) before any view navigation runs.
+   *  Read through a ref so an unstable callback can't re-register the
+   *  Capacitor listener. */
+  interceptBack?: () => boolean;
 }
 
 export function useAndroidBackButton({
@@ -16,14 +21,20 @@ export function useAndroidBackButton({
   setView,
   rootView = AppView.DASHBOARD,
   exitToastMs = 2000,
+  interceptBack,
 }: UseAndroidBackButtonArgs) {
   const viewRef = useRef(view);
   const exitArmedRef = useRef(false);
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interceptRef = useRef(interceptBack);
 
   useEffect(() => {
     viewRef.current = view;
   }, [view]);
+
+  useEffect(() => {
+    interceptRef.current = interceptBack;
+  }, [interceptBack]);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') {
@@ -33,6 +44,11 @@ export function useAndroidBackButton({
     let handle: PluginListenerHandle | undefined;
 
     CapacitorApp.addListener('backButton', () => {
+      // An open overlay (mobile bottom sheet) consumes the press outright.
+      if (interceptRef.current?.()) {
+        return;
+      }
+
       const current = viewRef.current;
 
       if (current !== rootView) {

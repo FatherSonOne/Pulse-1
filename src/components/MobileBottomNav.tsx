@@ -1,32 +1,33 @@
 import React from 'react';
-import { Home, Mic, MessageSquare, ListChecks, Menu } from 'lucide-react';
+import { Menu, Plus } from 'lucide-react';
 import { AppView } from '../types';
+import { VIEW_LABELS } from './MobileChrome/mobileNavConfig';
 
 interface MobileBottomNavProps {
   view: AppView;
-  onNavigate: (view: AppView) => void;
-  onOpenMore: () => void;
+  onOpenNav: () => void;
+  onOpenActions: () => void;
   isDarkMode?: boolean;
 }
 
-type NavItem =
-  | { kind: 'view'; view: AppView; label: string; icon: React.ComponentType<{ className?: string }> }
-  | { kind: 'more'; label: string; icon: React.ComponentType<{ className?: string }> };
-
-const ITEMS: NavItem[] = [
-  { kind: 'view', view: AppView.DASHBOARD,       label: 'Home',      icon: Home },
-  { kind: 'view', view: AppView.RELAY,           label: 'Relay',     icon: Mic },
-  { kind: 'view', view: AppView.MESSAGES,        label: 'Messages',  icon: MessageSquare },
-  { kind: 'view', view: AppView.DECISIONS_TASKS, label: 'Decisions', icon: ListChecks },
-  { kind: 'more',                                label: 'More',      icon: Menu },
-];
-
+// Slim two-affordance bar (was a 5-tab bar): ☰ opens the navigation sheet,
+// "+" opens the quick-actions sheet, and the center mono label names the
+// current section (rose = you-are-here state signal, the bar's only coral)
+// while doubling as a second, bigger target for the nav sheet. Bar height is
+// 48px + safe area; <main> reserves exactly that via its mobile padding —
+// keep the two in lockstep (App.tsx <main>
+// pb-[calc(48px+env(safe-area-inset-bottom))]).
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   view,
-  onNavigate,
-  onOpenMore,
+  onOpenNav,
+  onOpenActions,
   isDarkMode = false,
 }) => {
+  const label = VIEW_LABELS[view] ?? 'Pulse';
+  const cornerClass = `shrink-0 min-w-[48px] min-h-[48px] px-4 flex items-center justify-center transition-colors ${
+    isDarkMode ? 'text-zinc-400 active:bg-zinc-800' : 'text-zinc-600 active:bg-zinc-100'
+  }`;
+
   return (
     <nav
       role="navigation"
@@ -37,33 +38,35 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           : 'bg-white/95 border-zinc-200'
       } backdrop-blur supports-[backdrop-filter]:bg-opacity-90 pb-[env(safe-area-inset-bottom)]`}
     >
-      {ITEMS.map(item => {
-        const Icon = item.icon;
-        const isActive = item.kind === 'view' && item.view === view;
-        const handleClick = item.kind === 'view'
-          ? () => onNavigate(item.view)
-          : onOpenMore;
-
-        return (
-          <button
-            key={item.kind === 'view' ? item.view : 'more'}
-            type="button"
-            onClick={handleClick}
-            aria-current={isActive ? 'page' : undefined}
-            aria-label={item.label}
-            className={`flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px] active:bg-zinc-100 dark:active:bg-zinc-800 transition-colors ${
-              isActive
-                ? 'text-rose-500'
-                : isDarkMode
-                  ? 'text-zinc-400'
-                  : 'text-zinc-600'
-            }`}
-          >
-            <Icon className="w-5 h-5 shrink-0" />
-            <span className="text-[10px] font-medium truncate max-w-full px-1">{item.label}</span>
-          </button>
-        );
-      })}
+      <button
+        type="button"
+        onClick={onOpenNav}
+        aria-label="Open navigation"
+        aria-haspopup="dialog"
+        className={cornerClass}
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+      <button
+        type="button"
+        onClick={onOpenNav}
+        aria-label={`Current section: ${label}. Open navigation`}
+        aria-haspopup="dialog"
+        className={`flex-1 min-w-0 min-h-[48px] flex items-center justify-center font-mono text-[11px] font-medium tracking-[0.1em] uppercase transition-colors ${
+          isDarkMode ? 'text-rose-400 active:bg-zinc-800' : 'text-rose-600 active:bg-zinc-100'
+        }`}
+      >
+        <span className="truncate">{label}</span>
+      </button>
+      <button
+        type="button"
+        onClick={onOpenActions}
+        aria-label="Quick actions"
+        aria-haspopup="dialog"
+        className={cornerClass}
+      >
+        <Plus className="w-5 h-5" />
+      </button>
     </nav>
   );
 };
