@@ -66,6 +66,23 @@ const getMeetingBaseUrl = (): string => {
   return 'https://pulse.logosvision.org/meeting/';
 };
 
+// Resolve a free-text action-item owner name (from the Gemini structured
+// summary) to a real CRM contact, so a task created from it carries the right
+// assignee. Exact full-name match first, then a forgiving first-name / token
+// match. Returns undefined for empty/placeholder owners or no confident match,
+// so the task is created unassigned rather than mis-assigned.
+const OWNER_NON_NAMES = new Set(['unassigned', 'n/a', 'na', 'none', 'tbd', 'everyone', 'all', 'team', 'me', 'you']);
+const resolveOwnerToContact = (owner: string | undefined, contacts: Contact[]): Contact | undefined => {
+  const q = owner?.trim().toLowerCase();
+  if (!q || OWNER_NON_NAMES.has(q)) return undefined;
+  const exact = contacts.find(c => c.name.trim().toLowerCase() === q);
+  if (exact) return exact;
+  return contacts.find(c => {
+    const name = c.name.trim().toLowerCase();
+    return name.startsWith(q + ' ') || name.split(/\s+/).includes(q);
+  });
+};
+
 const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialContactId, initialMeetingCode, startIntent, onIntentConsumed }) => {
   // ============================================
   // STATE
@@ -839,7 +856,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialConta
                 actionItems: (structured.actionItems ?? []).map(a => ({
                   id: crypto.randomUUID(),
                   title: a.text,
-                  assignee: undefined,
+                  assignee: resolveOwnerToContact(a.owner, contacts),
                   status: 'pending' as const,
                   createdAt: new Date(),
                 })),

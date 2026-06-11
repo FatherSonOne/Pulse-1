@@ -2063,6 +2063,7 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
       title: item.title,
       completed: item.status === 'completed',
       listId: 'work',
+      assigneeId: item.assignee?.id,
     });
     if (!created) {
       toast.error('Could not add to Tasks', { duration: 3000, position: 'bottom-right' });
@@ -2088,6 +2089,7 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
         title: item.title,
         completed: item.status === 'completed',
         listId: 'work',
+        assigneeId: item.assignee?.id,
       });
       if (created) added.push(sigFor(item.title));
     }
