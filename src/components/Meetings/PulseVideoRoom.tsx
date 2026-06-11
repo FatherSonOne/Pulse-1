@@ -8,7 +8,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import DailyIframe, { DailyCall, DailyEventObjectParticipant } from '@daily-co/daily-js';
+import DailyIframe, { DailyCall, DailyEventObjectParticipant, DailyEventObjectTranscriptionMessage, DailyEventObjectTranscriptionError } from '@daily-co/daily-js';
 import {
   DailyProvider,
   useDaily,
@@ -412,9 +412,12 @@ const MeetingRoom: React.FC<{
         }
 
         if (autoTranscribe && isHost) {
+          // Don't optimistically flip the LISTENING indicator here — the
+          // 'transcription-started' event sets it once Deepgram actually
+          // attaches, and 'transcription-error' clears it. Setting it
+          // unconditionally is what made a server-side start failure invisible.
           try { daily.startTranscription({ language: 'en' }); }
           catch (err) { console.warn('[PulseVideoRoom] Auto-transcribe failed:', err); }
-          setTranscriptEnabled(true);
         }
       })
       .catch(err => {
@@ -449,6 +452,25 @@ const MeetingRoom: React.FC<{
     setIsRecording(false);
   }, []));
 
+  // Transcription lifecycle — daily-js delivers start/stop/error via events, not
+  // promise rejection (startTranscription returns void). Without these the
+  // LISTENING indicator lied and a server-side start failure (unprovisioned
+  // Deepgram, billing) was 100% silent. 'transcription-started' is the only
+  // honest signal that Deepgram actually attached.
+  useDailyEvent('transcription-started', useCallback(() => {
+    setTranscriptEnabled(true);
+  }, []));
+
+  useDailyEvent('transcription-stopped', useCallback(() => {
+    setTranscriptEnabled(false);
+  }, []));
+
+  useDailyEvent('transcription-error', useCallback((evt: DailyEventObjectTranscriptionError) => {
+    console.warn('[PulseVideoRoom] transcription-error:', evt?.errorMsg);
+    toast.error('Live transcription could not start.', { duration: 4000, position: 'bottom-right' });
+    setTranscriptEnabled(false);
+  }, []));
+
   useDailyEvent('app-message', useCallback((evt: { data?: { type?: string; text?: string; sender?: string } }) => {
     if (evt?.data?.type === 'chat') {
       setChatMessages(prev => [...prev, {
@@ -461,23 +483,25 @@ const MeetingRoom: React.FC<{
     }
   }, []));
 
-  useDailyEvent('transcription-message', useCallback((evt: { text?: string; is_final?: boolean; session_id?: string }) => {
-    const participant = daily?.participants()?.[evt?.session_id ?? ''];
-    setTranscriptLines(prev => {
-      const last = prev[prev.length - 1];
-      if (last && !last.isFinal) {
-        return [...prev.slice(0, -1), {
-          speaker: participant?.user_name ?? 'Guest',
-          text: evt?.text ?? '',
-          isFinal: evt?.is_final ?? false,
-        }];
-      }
-      return [...prev, {
-        speaker: participant?.user_name ?? 'Guest',
-        text: evt?.text ?? '',
-        isFinal: evt?.is_final ?? false,
-      }];
-    });
+  // daily-js@0.87.0 transcription-message (index.d.ts:1557-1566): each event is a
+  // finalized Deepgram segment carrying { participantId, text, timestamp,
+  // rawResponse } — there is NO top-level is_final and NO session_id. The prior
+  // handler read evt.is_final / evt.session_id (both undefined), so every line was
+  // stored isFinal:false and handleLeave's `.filter(l => l.isFinal)` produced an
+  // empty transcript — the root cause of the empty AI summaries. Speaker key is
+  // participantId (resolve the local speaker via participants().local.session_id).
+  useDailyEvent('transcription-message', useCallback((evt: DailyEventObjectTranscriptionMessage) => {
+    const text = evt?.text?.trim();
+    if (!text) return;
+    const participants = daily?.participants();
+    const speakerP =
+      participants?.[evt?.participantId ?? ''] ??
+      (participants?.local?.session_id === evt?.participantId ? participants?.local : undefined);
+    setTranscriptLines(prev => [...prev, {
+      speaker: speakerP?.user_name?.trim() || 'Speaker',
+      text,
+      isFinal: true,
+    }]);
   }, [daily]));
 
   // ── Controls ────────────────────────────────────────────────────────────────
@@ -556,9 +580,12 @@ const MeetingRoom: React.FC<{
 
       let summary = '';
       try {
-        // Use Gemini to summarize — auth is workspace-derived server-side.
-        const { generateSummary } = await import('../../services/geminiService');
-        summary = (await generateSummary(fullTranscript)) ?? '';
+        // Structured Gemini summary (server-side, workspace-derived auth).
+        // Returns a JSON string matching the daily-webhook shape so the summary
+        // view, analytics, and recordings all parse the same structure whether
+        // or not a cloud recording fired.
+        const { generateMeetingSummary } = await import('../../services/geminiService');
+        summary = (await generateMeetingSummary(fullTranscript, meetingTitle)) ?? '';
       } catch {
         summary = `Meeting lasted ${Math.floor(duration / 60)} minutes with ${allParticipants.length} participant(s).`;
       }

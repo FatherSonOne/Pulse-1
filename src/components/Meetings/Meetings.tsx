@@ -827,11 +827,14 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialConta
           onLeave={(summary?: MeetingEndSummary) => {
             setActiveRoom(null);
             if (summary && (summary.transcript || summary.summary)) {
-              // Parse structured Gemini JSON if available, else treat as plain text
-              let structured: { keyPoints?: string[]; actionItems?: { text: string; owner?: string }[]; decisions?: string[] } = {};
+              // Parse structured Gemini JSON if available, else treat as plain text.
+              // `aiSummary` is the human-readable executive summary inside the
+              // JSON; falling back to the raw string keeps legacy plain-text
+              // summaries working (parse throws → structured stays empty).
+              let structured: { aiSummary?: string; keyPoints?: string[]; actionItems?: { text: string; owner?: string }[]; decisions?: string[] } = {};
               try { structured = JSON.parse(summary.summary); } catch { /* plain text summary */ }
               setSummaryData({
-                aiSummary: summary.summary,
+                aiSummary: structured.aiSummary ?? summary.summary,
                 keyPoints: structured.keyPoints ?? [],
                 actionItems: (structured.actionItems ?? []).map(a => ({
                   id: crypto.randomUUID(),

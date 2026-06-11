@@ -238,6 +238,63 @@ export const generateSummary = async (text: string) => {
   }
 };
 
+/** Structured shape returned by {@link generateMeetingSummary}. Mirrors the
+ *  daily-webhook recording.ready summarizer (supabase/functions/daily-webhook)
+ *  so the Leave path and the recording path emit an identical object. */
+export interface StructuredMeetingSummary {
+  aiSummary: string;
+  keyPoints: string[];
+  actionItems: { text: string; owner?: string; priority?: 'high' | 'medium' | 'low' }[];
+  decisions: string[];
+  topics: string[];
+  sentiment: 'positive' | 'neutral' | 'mixed' | 'tense';
+}
+
+/**
+ * Structured meeting summary for the Pulse video Leave path. Returns a JSON
+ * STRING (the stringified {@link StructuredMeetingSummary}), so it persists into
+ * `pulse_video_rooms.summary` in the exact shape every downstream consumer was
+ * written to parse — the summary view (keyPoints / actionItems / decisions),
+ * `fetchMeetingAnalytics` (sentiment / topics / decisions), and
+ * `getMeetingRecordings` (aiSummary). The prior Leave path used the plain
+ * 3-bullet `generateSummary`, which those parsers could not read, leaving every
+ * structured field empty. Returns null on empty transcript, missing workspace,
+ * or a soft failure (callers fall back to the raw transcript). Gemini stays
+ * server-side via the ai-router (invokeAIJson handles JSON repair).
+ */
+export const generateMeetingSummary = async (
+  transcript: string,
+  title = 'Meeting',
+): Promise<string | null> => {
+  if (!transcript || !transcript.trim()) return null;
+  const prompt = `You are an expert meeting summarizer. Analyze this meeting transcript and return a JSON object.
+
+Meeting title: "${title}"
+
+Transcript:
+${transcript.slice(0, 8000)}
+
+Return ONLY valid JSON with this exact structure:
+{
+  "aiSummary": "2-3 sentence executive summary of the meeting",
+  "keyPoints": ["key point 1", "key point 2"],
+  "actionItems": [{ "text": "action description", "owner": "person name or empty string", "priority": "high|medium|low" }],
+  "decisions": ["decision 1", "decision 2"],
+  "topics": ["topic 1", "topic 2"],
+  "sentiment": "positive|neutral|mixed|tense"
+}`;
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const structured = await invokeAIJson<StructuredMeetingSummary>('meeting_summary', prompt, { workspaceId });
+    return JSON.stringify(structured);
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:generateMeetingSummary] failed', err);
+    return null;
+  }
+};
+
 // ─── Audio transcription — migrated to gemini-audio edge function ────────────
 // Server-side wrapper holds GEMINI_API_KEY and enforces workspace/cap.
 // `apiKey` parameter is ignored (kept for backward compatibility with callers
