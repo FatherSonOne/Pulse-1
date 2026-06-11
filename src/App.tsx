@@ -81,6 +81,7 @@ import { PulseAIProvider } from './contexts/PulseAIContext';
 import { CommandPaletteProvider, useRegisterCommands, Command } from './contexts/CommandPaletteContext';
 import type { RelayShortcutView } from './hooks/useRelayKeyboardShortcuts';
 import { CommandBarHeader } from './components/GlobalCommandPalette';
+import { getRecentCommandIds } from './utils/recentCommands';
 import KeyboardChordsLayer from './components/KeyboardChordsLayer';
 import CaptureModal from './components/Capture/CaptureModal';
 import { WorkspaceProvider, useWorkspaceData, useWorkspaceActions } from './contexts/WorkspaceContext';
@@ -519,12 +520,76 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
   ], [onSectionAction]);
 
   // People entity-jump — typing a name (2+ chars) surfaces matching contacts,
-  // each as an "Open <name>" (their card) plus a "Message <name>" (their
-  // conversation). Dynamic provider so it reflects the live contacts array and
-  // doesn't bloat the empty-query browse. Mirrors the calendar:events provider.
+  // each as Open/Message/Meet/Vox commands. On an EMPTY query the provider
+  // replays the person commands the user actually ran (palette MRU): activate()
+  // has recorded person-* ids all along, but the pinned "Recent" group could
+  // never resolve them because this provider returned nothing on browse —
+  // recently-acted-on people silently vanished. Reconstructing the exact
+  // command per MRU entry (capped at 3) lets the existing Recent pinning do
+  // the rest; no fake "recent contacts" ordering is invented. 1-character
+  // queries still return nothing (noise gate for the browse list).
   const peopleProvider = useCallback((rawQuery: string): Command[] => {
     const q = rawQuery.trim().toLowerCase();
+
+    const commandsFor = (c: Contact): Record<'open' | 'msg' | 'meet' | 'vox', Command> => {
+      const display = c.name || c.email || 'Unknown contact';
+      return {
+        open: {
+          id: `person-open-${c.id}`,
+          label: display,
+          desc: c.company ? `Open contact · ${c.company}` : 'Open contact',
+          icon: 'fa-user',
+          kind: 'navigate',
+          group: 'People',
+          keywords: c.email ? [c.email] : undefined,
+          run: () => onOpenContact(c.id),
+        },
+        msg: {
+          id: `person-msg-${c.id}`,
+          label: `Message ${display}`,
+          desc: 'Open conversation',
+          icon: 'fa-message',
+          kind: 'action',
+          group: 'People',
+          run: () => onMessageContact(c.id),
+        },
+        meet: {
+          id: `person-meet-${c.id}`,
+          label: `Meet ${display}`,
+          desc: 'Start a video meeting',
+          icon: 'fa-video',
+          kind: 'action',
+          group: 'People',
+          run: () => onMeetContact(c.id),
+        },
+        vox: {
+          id: `person-vox-${c.id}`,
+          label: `Vox ${display}`,
+          desc: 'Send a voice message',
+          icon: 'fa-microphone',
+          kind: 'action',
+          group: 'People',
+          run: () => onVoxContact(c.id),
+        },
+      };
+    };
+
+    if (q.length === 0) {
+      const byId = new Map(contacts.map(c => [c.id, c]));
+      const cmds: Command[] = [];
+      for (const rid of getRecentCommandIds()) {
+        const m = rid.match(/^person-(open|msg|meet|vox)-(.+)$/);
+        if (!m) continue;
+        const contact = byId.get(m[2]);
+        if (!contact) continue; // deleted contacts age out of the MRU naturally
+        cmds.push(commandsFor(contact)[m[1] as 'open' | 'msg' | 'meet' | 'vox']);
+        if (cmds.length >= 3) break;
+      }
+      return cmds;
+    }
+
     if (q.length < 2) return [];
+
     const matches = contacts
       .filter(c =>
         c.name?.toLowerCase().includes(q) ||
@@ -534,44 +599,8 @@ const AppCommandRegistrar: React.FC<AppCommandRegistrarProps> = ({
       .slice(0, 5);
     const cmds: Command[] = [];
     for (const c of matches) {
-      const display = c.name || c.email || 'Unknown contact';
-      cmds.push({
-        id: `person-open-${c.id}`,
-        label: display,
-        desc: c.company ? `Open contact · ${c.company}` : 'Open contact',
-        icon: 'fa-user',
-        kind: 'navigate',
-        group: 'People',
-        keywords: c.email ? [c.email] : undefined,
-        run: () => onOpenContact(c.id),
-      });
-      cmds.push({
-        id: `person-msg-${c.id}`,
-        label: `Message ${display}`,
-        desc: 'Open conversation',
-        icon: 'fa-message',
-        kind: 'action',
-        group: 'People',
-        run: () => onMessageContact(c.id),
-      });
-      cmds.push({
-        id: `person-meet-${c.id}`,
-        label: `Meet ${display}`,
-        desc: 'Start a video meeting',
-        icon: 'fa-video',
-        kind: 'action',
-        group: 'People',
-        run: () => onMeetContact(c.id),
-      });
-      cmds.push({
-        id: `person-vox-${c.id}`,
-        label: `Vox ${display}`,
-        desc: 'Send a voice message',
-        icon: 'fa-microphone',
-        kind: 'action',
-        group: 'People',
-        run: () => onVoxContact(c.id),
-      });
+      const all = commandsFor(c);
+      cmds.push(all.open, all.msg, all.meet, all.vox);
     }
     return cmds;
   }, [contacts, onOpenContact, onMessageContact, onMeetContact, onVoxContact]);
