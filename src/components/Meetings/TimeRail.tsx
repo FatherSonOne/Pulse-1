@@ -436,13 +436,17 @@ export const MeetingsToolsMenu: React.FC<MeetingsToolsMenuProps> = ({
   open, onClose, onTemplates, onAgenda, onRecordings, onAnalytics, onBulkInvite, onBreakout, onDeviceTest,
 }) => {
   if (!open) return null;
-  const items: Array<{ icon: React.ReactNode; label: string; desc: string; onClick: () => void }> = [
+  const items: Array<{ icon: React.ReactNode; label: string; desc: string; onClick: () => void; disabled?: boolean; badge?: string }> = [
     { icon: <Copy size={16} />, label: 'TEMPLATES', desc: 'Standups, 1:1s, planning', onClick: () => { onClose(); onTemplates(); } },
     { icon: <ListChecks size={16} />, label: 'AGENDA', desc: 'Build a structured agenda', onClick: () => { onClose(); onAgenda(); } },
     { icon: <PlayCircle size={16} />, label: 'RECORDINGS', desc: 'Past meeting recordings', onClick: () => { onClose(); onRecordings(); } },
     { icon: <BarChart size={16} />, label: 'ANALYTICS', desc: 'Frequency, duration, trends', onClick: () => { onClose(); onAnalytics(); } },
     { icon: <UserPlus size={16} />, label: 'BULK INVITE', desc: 'Invite from contacts', onClick: () => { onClose(); onBulkInvite(); } },
-    { icon: <SplitSquareVertical size={16} />, label: 'BREAKOUT', desc: 'Pre-plan breakout rooms', onClick: () => { onClose(); onBreakout(); } },
+    // Gated for honest-v1: live breakout rooms aren't wired (no Daily SDK; the
+    // modal's Start/Broadcast/Recall buttons are no-ops). Kept disabled + SOON
+    // rather than deleted — re-enable by removing `disabled`/`badge`. The modal
+    // component and onBreakout wiring are preserved intact.
+    { icon: <SplitSquareVertical size={16} />, label: 'BREAKOUT', desc: 'Live breakout rooms', onClick: () => { onClose(); onBreakout(); }, disabled: true, badge: 'SOON' },
     { icon: <Mic size={16} />, label: 'DEVICE TEST', desc: 'Mic + camera check', onClick: () => { onClose(); onDeviceTest(); } },
   ];
   return (
@@ -450,10 +454,23 @@ export const MeetingsToolsMenu: React.FC<MeetingsToolsMenuProps> = ({
       <div className="mtg-tools-backdrop" onClick={onClose} />
       <div className="mtg-tools-menu" role="menu">
         {items.map(item => (
-          <button key={item.label} className="mtg-tools-item" onClick={item.onClick} role="menuitem">
+          <button
+            key={item.label}
+            className="mtg-tools-item"
+            onClick={item.onClick}
+            disabled={item.disabled}
+            aria-disabled={item.disabled || undefined}
+            role="menuitem"
+            style={item.disabled ? { opacity: 0.5, cursor: 'default' } : undefined}
+          >
             <span className="mtg-tools-icon">{item.icon}</span>
             <span className="mtg-tools-text">
-              <span className="mtg-tools-label">{item.label}</span>
+              <span className="mtg-tools-label">
+                {item.label}
+                {item.badge && (
+                  <span style={{ marginLeft: 6, fontSize: 9, fontFamily: 'var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace)', letterSpacing: '0.1em', padding: '1px 5px', borderRadius: 4, background: 'var(--mtg-bg-elevated)', color: 'var(--mtg-text-muted)' }}>{item.badge}</span>
+                )}
+              </span>
               <span className="mtg-tools-desc">{item.desc}</span>
             </span>
           </button>
