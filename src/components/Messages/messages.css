@@ -145,87 +145,6 @@
 }
 
 /* =========================
-   Thread Item Styles
-   ========================= */
-
-.thread-item {
-  position: relative;
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  transition: background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
-              color 150ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Thread item typography */
-.thread-item .thread-name,
-.thread-item .channel-name {
-  font-size: 0.9375rem;               /* 15px */
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--pulse-ink);
-}
-
-.thread-item .thread-preview,
-.thread-item .last-message {
-  font-size: 0.8125rem;               /* 13px */
-  font-weight: 400;
-  color: var(--pulse-ink-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.thread-item .thread-timestamp,
-.thread-item .thread-time {
-  font-size: 0.6875rem;               /* 11px */
-  font-weight: 400;
-  color: var(--pulse-ink-2);
-}
-
-.thread-item .unread-badge {
-  font-size: 0.625rem;                /* 10px */
-  font-weight: 700;
-  background: var(--pulse-rose);
-  color: #ffffff;
-  border-radius: 999px;
-  padding: 1px 5px;
-  min-width: 16px;
-  text-align: center;
-}
-
-.thread-item:hover {
-  background-color: rgba(0, 0, 0, 0.04);
-}
-
-.dark .thread-item:hover {
-  background-color: rgba(255, 255, 255, 0.04);
-}
-
-/* Active thread — coral text + tinted background, no stripe */
-.thread-item.active {
-  background-color: var(--pulse-rose-softer);
-}
-
-.thread-item.active .thread-name,
-.thread-item.active .channel-name {
-  color: var(--pulse-rose);
-}
-
-.dark .thread-item.active {
-  background-color: var(--pulse-rose-soft);
-}
-
-/* Hover actions - show on hover */
-.thread-item .thread-item-actions {
-  opacity: 0;
-  transition: opacity 150ms ease;
-}
-
-.thread-item:hover .thread-item-actions {
-  opacity: 1;
-}
-
-/* =========================
    Conversation Panel Styles
    ========================= */
 
@@ -604,44 +523,18 @@
    ========================= */
 
 /* Focus indicators — rose replaces blue */
-.thread-item:focus-visible,
 .thread-search input:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--pulse-rose);
   outline-offset: 2px;
 }
 
-/* Reduce motion for users who prefer it */
-@media (prefers-reduced-motion: reduce) {
-  .thread-item {
-    animation: none;
-    transition: none;
-  }
-}
-
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-  .thread-item.active {
-    background-color: rgba(244, 63, 94, 0.18);
-    outline: 2px solid var(--pulse-rose);
-    outline-offset: -2px;
-  }
-
   .thread-list-panel,
   .conversation-panel {
     border-width: 2px;
   }
-}
-
-/* =========================
-   Loading States
-   ========================= */
-
-.messages-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
 }
 
 /* =========================
