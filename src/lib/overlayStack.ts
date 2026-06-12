@@ -38,7 +38,13 @@ export function exitOverlay(token: number): void {
  *  bespoke modals that don't register are still seen by the global shortcut
  *  guards. A dialog counts only if it's actually visible (offsetWidth/Height
  *  non-zero) — which ignores conditionally-hidden-but-mounted dialogs and works
- *  for position:fixed modals, where offsetParent would misleadingly be null. */
+ *  for position:fixed modals, where offsetParent would misleadingly be null.
+ *
+ *  INVARIANT: a non-blocking / coexisting surface (e.g. a docked side panel that
+ *  leaves the view interactive beside it) must NOT carry aria-modal="true", or
+ *  it silently suppresses every global shortcut while open. Non-blocking dialogs
+ *  use role="dialog" with NO aria-modal (PulseAssistant) or aria-modal="false"
+ *  (ToolsMenuV2 desktop dock, EmailComposerModal sidecar). */
 export function isOverlayOpen(): boolean {
   if (stack.length > 0) return true;
   if (typeof document === 'undefined') return false;

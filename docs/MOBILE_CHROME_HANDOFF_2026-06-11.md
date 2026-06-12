@@ -18,6 +18,8 @@ Resume point for the next session.
 | `f83bc61` | **U3 + U5** new `src/lib/overlayStack.ts` LIFO stack: topmost-only Escape/Tab (useFocusTrap + CaptureModal) + `isOverlayOpen()` bail-guards in Relay/Glimpse/chords/palette |
 | `35eab9f` | **U4** Relay "Vox <name>" no-op-while-mounted fixed via keyed intent + retarget nonce + onIntentConsumed clear |
 | `72de3d5` | **P3-4** War Room gated behind experimentalEnabled in the "+" sheet (matches nav) |
+| `bb78ce4` | **L5** `isOverlayOpen()` made DOM-authoritative + 10 view-level shortcut handlers guarded + App Cmd+/ /Cmd+J openers |
+| `9740e30` | **L5 regression fixes** (review-caught): PulseAssistant aria-modal drop, chord/Contacts Escape re-order, TrialExpiredBlock + DeleteWorkspaceDialog aria-modal |
 
 Resolution of the 5 UNVERIFIED items: **U1** vox autoFocus — resolved by the
 P1 fix (no longer a limitation). **U2** md-rotate — the P3-8 fix works; only a
@@ -31,23 +33,32 @@ Verification: two adversarial-review workflows (8 + 5 agents) plus full `tsc`
 U4 commit landed.
 
 ### Still open (next session)
-1. **[L5 — broader keyboard-occlusion pass]** The overlay stack only sees the
-   ~10 `useFocusTrap` consumers + CaptureModal. **Bespoke-trap modals**
-   (useDecisionTaskModals, SignalDetailRouter, EventCreationModal,
-   CreateTaskModal/TaskEditModal, DecisionWizard, AccountSettings, …) and
-   **view-level bare-key handlers** (Dashboard j/k, **Messages `e`=archive**,
-   **Calendar Delete/Backspace**, Meetings, Email-hybrid, CockpitHub, Briefing,
-   Map, Contacts, SidebarTabs) still fire under an open overlay. Messages' own
-   `keyboardDisabled` allowlist also misses Capture/MobileSheet/MobileDrawer/
-   palette; App's Cmd+K/J/⁄ openers are unguarded. Plan: make
-   `enterOverlay/exitOverlay` the single source of truth — migrate bespoke
-   traps onto useFocusTrap (or have them call enter/exit) and add
-   `if (isOverlayOpen()) return;` to the view-level handlers (prioritise the
-   destructive `e` / Delete). ~20 files; needs scoping approval.
-2. **Live eyeball** — still not done (mobile narrow-window + real Android;
-   desktop War Room full-bleed).
-3. Optional: ShortcutsHelp / chord `?` overlay should join the stack (also
-   gains a focus trap they currently lack).
+1. **[L5 — keyboard-occlusion pass] DONE 2026-06-11** (commits `f83bc61`,
+   `bb78ce4`, `9740e30`). `overlayStack.isOverlayOpen()` is now DOM-authoritative
+   (any visible `[role=dialog][aria-modal=true]` counts), and the 10 view-level
+   handlers (Dashboard, Messages incl. `e`=archive, Calendar incl. Delete,
+   Meetings, Email-hybrid ×2, Briefing, Contacts, Sidebar, Cockpit, Map) + App
+   Cmd+/ and Cmd+J now bail under an overlay (Cmd+K kept as an escape hatch). A
+   3-lens review caught 3 regressions, all fixed: PulseAssistant dropped a wrong
+   `aria-modal` (the docked panel was killing all view shortcuts + blocking its
+   own Cmd+/ close), and the chord `?` overlay's Escape-close + Contacts' Escape
+   were re-ordered above the guard. TrialExpiredBlock + DeleteWorkspaceDialog
+   gained `aria-modal`.
+   **Residual (smaller follow-up):** these blocking modals still lack
+   `aria-modal` so shortcuts leak under them — `billing/UpgradePrompt`,
+   `contacts/DuplicateDetectionModal`, `contacts/ContactGoalModal`,
+   `Email/TemplateVariablesModal`, `Email/EmailTemplatesModalEnhanced`,
+   `WarRoom/RealtimeVoiceAgent` (one-attribute fix each; verify each is truly
+   full-screen-blocking first). Also: `map/sub/useDialogA11y` doesn't register on
+   the stack (relies on the DOM fallback — fragile if a future map dialog forgets
+   `aria-modal`); `MessageContextMenu`'s desktop popover omits `aria-modal`
+   (asymmetric with its mobile sheet — decide intent).
+2. **Live eyeball** — still not done. Headless authed capture is blocked: the
+   mobile chrome only renders inside the logged-in app at <768px and `e2e/.auth/`
+   is empty (Google OAuth can't be minted headlessly). Refresh the e2e token via
+   the DevTools localStorage export → Downloads (see
+   `reference_pulse_e2e_auth_refresh`), then a Playwright capture at 390px +
+   desktop War Room is straightforward. Otherwise eyeball on real Android.
 
 ---
 
