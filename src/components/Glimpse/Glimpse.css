@@ -136,8 +136,14 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  /* Scroll horizontally instead of overflowing when the tabs don't fit
+     (phone width); a no-op when they fit. */
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.gl-section-tabs::-webkit-scrollbar { display: none; }
 .gl-section-tab {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   gap: 6px;
