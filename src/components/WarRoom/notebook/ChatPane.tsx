@@ -14,6 +14,7 @@ import { settingsService } from '../../../services/settingsService';
 import type { PulseStudioProps } from '../PulseStudio';
 import { KnowledgeDoc } from '../../../services/ragService';
 import { useWarRoomStore } from '../../../store/warRoomStore';
+import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import { MessageList } from './MessageList';
 import { Composer } from './Composer';
 import { DockedVoice } from './DockedVoice';
@@ -78,6 +79,11 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
   const SelectedAgentIcon = AGENT_ICONS[selectedAgent.id];
   const hasMessages = safeMessages.length > 0;
   const activeDocCount = activeContextDocs.size;
+  // Mobile (<768px, matching NotebookShell): stack the masthead so the session
+  // title keeps a full row and the control cluster (layout switcher / agent /
+  // deep-think / export) drops onto its own row instead of crushing the title
+  // to a vertical sliver.
+  const isMobileWR = useMediaQuery('(max-width: 767px)');
 
   // ── Session title for the masthead ───────────────────────────────────────
   const sessions = useWarRoomStore((s) => s.sessions);
@@ -126,9 +132,10 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: isMobileWR ? 'column' : 'row',
+          alignItems: isMobileWR ? 'stretch' : 'center',
           justifyContent: 'space-between',
-          gap: 12,
+          gap: isMobileWR ? 8 : 12,
           padding: '10px 16px',
           borderBottom: '1px solid var(--pulse-border)',
           flexShrink: 0,
