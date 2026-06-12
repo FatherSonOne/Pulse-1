@@ -1640,9 +1640,12 @@ const App: React.FC = () => {
             <button
                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center text-zinc-600 dark:text-zinc-300 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition active:scale-95"
-               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+               aria-label={isMobileMenuOpen ? 'Close account menu' : 'Open account menu'}
             >
-               <i className={`fa-solid ${isMobileMenuOpen ? 'fa-xmark' : 'fa-bars'} text-xl`}></i>
+               {/* Account/workspace drawer trigger — an account icon, not a
+                   hamburger, so it reads distinctly from the bottom-bar nav menu
+                   (the drawer is account/workspace/settings only on mobile). */}
+               <i className={`fa-solid ${isMobileMenuOpen ? 'fa-xmark' : 'fa-circle-user'} text-xl`}></i>
             </button>
           </div>
       </div>
@@ -1706,7 +1709,7 @@ const App: React.FC = () => {
       />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden relative flex flex-col transition-colors duration-500 w-full safe-area-bottom pb-[calc(48px+env(safe-area-inset-bottom))] md:pb-0">
+      <main className="flex-1 overflow-hidden relative flex flex-col transition-colors duration-500 w-full pb-[var(--pulse-bottom-bar)]">
         {/* Persistent global command bar (Phase 6) — pinned above the per-view
             scroll area on every view, so it's outside the overflow-hidden
             Messages/Calendar panes and its dropdown is never clipped. */}
