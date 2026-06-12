@@ -85,7 +85,10 @@ interface RelayProps {
   isDarkMode?: boolean;
   /** Command-palette deep-link: jump to a source and/or open the record
    *  composer. The `key` bump re-applies even when Relay is already mounted. */
-  intent?: { view?: RelayView; compose?: boolean; key: number } | null;
+  intent?: { view?: RelayView; compose?: boolean; contactId?: string; key: number } | null;
+  /** Called once the intent has been applied so the parent can clear it —
+   *  otherwise plain re-entry to Relay replays the stale deep-link. */
+  onIntentConsumed?: () => void;
 }
 
 // Top-level views inside Relay. Triage is the default landing experience.
@@ -101,7 +104,7 @@ const RELAY_VIEWS: readonly RelayView[] = [
   'live',
 ] as const;
 
-const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, isDarkMode = false, intent }) => {
+const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, isDarkMode = false, intent, onIntentConsumed }) => {
   // user.id powers the Triage stream's voice-source queries.
   const { user } = useAuth();
 
@@ -142,6 +145,9 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
   // gives one-shot scroll-to-and-select on next mount without coupling the
   // body's internal selection state to this wrapper.
   const [focusContactId, setFocusContactId] = useState<string | null>(initialContactId ?? null);
+  // Bumped on every contact-bearing intent so ClassicMode remounts even when the
+  // SAME contact is re-picked (its target is read only in mount-time initializers).
+  const [retargetNonce, setRetargetNonce] = useState(0);
   const [focusNoteId, setFocusNoteId] = useState<string | null>(null);
   const [focusBroadcastId, setFocusBroadcastId] = useState<string | null>(null);
   const [focusThreadId, setFocusThreadId] = useState<string | null>(null);
@@ -163,9 +169,21 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
   // value is unchanged and Relay is already mounted.
   useEffect(() => {
     if (!intent) return;
+    // A "Vox <name>" deep-link carries the target contact: focus it and land on
+    // Direct. The retarget nonce bumps so ClassicMode remounts and re-reads its
+    // mount-only initializers even when the SAME contact is re-picked (e.g. after
+    // stepping back to the contact list inside Direct).
+    if (intent.contactId) {
+      setFocusContactId(intent.contactId);
+      setRetargetNonce((n) => n + 1);
+    }
     if (intent.view) setView(intent.view);
     if (intent.compose) openComposer(null);
-    // openComposer is stable for this purpose; depend only on the intent key.
+    // One-shot: let the parent clear the intent so plain re-entry to Relay (via
+    // nav, not a palette command) doesn't replay a stale view / contact target.
+    onIntentConsumed?.();
+    // openComposer / onIntentConsumed are stable for this purpose; depend only
+    // on the intent key.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [intent?.key]);
 
@@ -243,6 +261,11 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
               )}
               {view === 'direct' && (
                 <ClassicMode
+                  // Key on the resolved contact + retarget nonce so an external
+                  // re-target (triage click / "Vox <name>" deep-link) remounts the
+                  // thread — even to the SAME contact — since ClassicMode reads its
+                  // target only in mount-time initializers.
+                  key={`${focusContactId ?? initialContactId ?? 'relay-direct'}:${retargetNonce}`}
                   onBack={() => setView('triage')}
                   apiKey={apiKey}
                   isDarkMode={isDarkMode}

@@ -798,22 +798,23 @@ const App: React.FC = () => {
     setSelectedContactId(id);
     setView(AppView.MEETINGS);
   }, []);
+  // Relay deep-link intent (palette "Relay: <source>" + "New voice message" +
+  // "Vox <name>"). The `key` bump re-fires Relay's intent effect even when it's
+  // already mounted, so a repeat selection still switches source / re-opens the
+  // composer / re-targets the contact. New voice message reuses the existing
+  // RelayComposer (real audio capture), not the unverified inline recorder.
+  const [relayIntent, setRelayIntent] = useState<{ view?: RelayShortcutView; compose?: boolean; contactId?: string; key: number } | null>(null);
   // "Vox <name>" palette command (Tier D / D2). Sets selectedContactId + routes
   // to Relay, which lands on Direct with the contact selected. Direct's recorder
   // arms itself once a contact is the send target (enabled: !!activeContactId),
   // so the FloatingMic is ready and the user clicks to record. No auto-mic — the
-  // click is the consenting gesture. Same path Contacts' handleContactAction('vox')
-  // already uses.
+  // click is the consenting gesture. The keyed intent re-targets even when Relay
+  // is already mounted, where the mount-only initialContactId would drop the pick.
   const handleVoxContact = useCallback((id: string) => {
     setSelectedContactId(id);
+    setRelayIntent({ view: 'direct', contactId: id, key: Date.now() });
     setView(AppView.RELAY);
   }, []);
-  // Relay deep-link intent (palette "Relay: <source>" + "New voice message").
-  // The `key` bump re-fires Relay's intent effect even when it's already
-  // mounted, so a repeat selection still switches source / re-opens the
-  // composer. New voice message reuses the existing RelayComposer (real audio
-  // capture), not the unverified inline recorder.
-  const [relayIntent, setRelayIntent] = useState<{ view?: RelayShortcutView; compose?: boolean; key: number } | null>(null);
   const handleRelayNavigate = useCallback((view: RelayShortcutView) => {
     setRelayIntent({ view, key: Date.now() });
     setView(AppView.RELAY);
@@ -1418,7 +1419,7 @@ const App: React.FC = () => {
                 }}
               />;
             case AppView.RELAY:
-              return <Relay contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} intent={relayIntent} />;
+              return <Relay contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} intent={relayIntent} onIntentConsumed={() => setRelayIntent(null)} />;
             case AppView.GLIMPSE:
               return <Glimpse isDarkMode={isDarkMode} />;
             case AppView.SLACK_CHANNELS:
