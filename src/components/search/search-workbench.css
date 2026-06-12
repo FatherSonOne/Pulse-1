@@ -233,6 +233,10 @@
   .sw-dock.is-hidden {
     display: none;
   }
+  /* Toolbar: the search field takes its own row and the controls wrap below —
+     they don't fit on one line at phone width and were overlapping. */
+  .sw-toolbar { flex-wrap: wrap; }
+  .sw-search-field { flex: 1 1 100%; }
 }
 
 /* Screen-reader-only live region */
