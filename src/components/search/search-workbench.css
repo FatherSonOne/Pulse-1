@@ -212,6 +212,29 @@
   padding: 16px 20px 48px;
 }
 
+/* Mobile (< md): the 3-pane grid doesn't fit a phone, so collapse to a single
+   results column. The facets + Working Set become absolute overlays OVER the
+   results (but below the toolbar, so its filter/clipboard toggles stay reachable
+   to dismiss them). SearchWorkbench defaults both closed on mobile. */
+@media (max-width: 767px) {
+  .sw-body {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .sw-facets:not(.is-hidden),
+  .sw-dock:not(.is-hidden) {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    border: none;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.45);
+  }
+  .sw-facets.is-hidden,
+  .sw-dock.is-hidden {
+    display: none;
+  }
+}
+
 /* Screen-reader-only live region */
 .sw-sr-only {
   position: absolute;

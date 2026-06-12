@@ -13,7 +13,9 @@ import './search-workbench.css';
 // UnifiedSearchRedesign.css in Phase 11. SearchMapView + SaveSearchModal are
 // Tailwind-only and need no sheet.
 import './reused-legacy.css';
+import { useEffect } from 'react';
 import { useUnifiedSearch } from './useUnifiedSearch';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import SearchToolbar from './SearchToolbar';
 import FacetCockpit from './FacetCockpit';
 import ResultsTable from './ResultsTable';
@@ -30,6 +32,19 @@ interface SearchWorkbenchProps {
 
 export default function SearchWorkbench({ isDarkMode = false }: SearchWorkbenchProps = {}) {
   const s = useUnifiedSearch();
+
+  // Mobile: the facet + Working Set panes become absolute overlays (see the CSS)
+  // and start closed so the results column owns the screen; the toolbar toggles
+  // open them on demand.
+  const isMobile = !useMediaQuery('(min-width: 768px)');
+  useEffect(() => {
+    if (isMobile) {
+      s.setShowFilters(false);
+      s.setShowClipboard(false);
+    }
+    // setters are stable; only re-run when the breakpoint flips.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile]);
 
   return (
     <div className="search-workbench">

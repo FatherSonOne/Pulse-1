@@ -13,7 +13,13 @@ import { useEffect, useState } from 'react';
  *   const isDesktop = useMediaQuery('(min-width: 768px)');
  */
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+  // Read synchronously on first render so the value is correct from the start
+  // (no desktop->mobile flash that could mis-fire mount effects keyed on it).
+  const [matches, setMatches] = useState(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia(query).matches
+      : false,
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
