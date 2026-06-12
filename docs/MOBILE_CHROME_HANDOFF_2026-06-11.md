@@ -1,6 +1,57 @@
 # Mobile Chrome Handoff — slim bar + sheets + FAB retirement (2026-06-11)
 
-Resume point for the next session. All work is on `main`, **committed locally, NOT pushed**.
+Resume point for the next session.
+
+> **UPDATE 2026-06-11 (session 2 — RESOLVED + pushed to `origin/main`).**
+> Everything in the original handoff below (P1, both P2s, the full P3 sweep,
+> and all 5 UNVERIFIED items) has been worked and pushed. See "Session 2
+> outcome" immediately below; the original session-1 findings are kept
+> verbatim as the record. Remaining open work is the broader
+> keyboard-occlusion follow-up (L5) and a live visual pass.
+
+## Session 2 outcome (2026-06-11) — shipped to origin/main
+
+| Commit | What |
+|---|---|
+| `c980648` | **P1** focus-trap re-arm fix (useFocusTrap reads onEscape via ref, dropped from deps) + **P2a** arrow-key roving skips inputs + **P2b** nav-sheet contrast bump |
+| `004ce49` | **P3 sweep**: active-row leading mark, focus-visible ring on rows, Email-Off/v2.0 aria, md-breakpoint sheet clear, stale FAB comments |
+| `f83bc61` | **U3 + U5** new `src/lib/overlayStack.ts` LIFO stack: topmost-only Escape/Tab (useFocusTrap + CaptureModal) + `isOverlayOpen()` bail-guards in Relay/Glimpse/chords/palette |
+| `35eab9f` | **U4** Relay "Vox <name>" no-op-while-mounted fixed via keyed intent + retarget nonce + onIntentConsumed clear |
+| `72de3d5` | **P3-4** War Room gated behind experimentalEnabled in the "+" sheet (matches nav) |
+
+Resolution of the 5 UNVERIFIED items: **U1** vox autoFocus — resolved by the
+P1 fix (no longer a limitation). **U2** md-rotate — the P3-8 fix works; only a
+pre-existing Safari<14 `addEventListener` nit remains (repo-wide pattern).
+**U3** stacked Escape — fixed (overlay stack). **U4** Relay vox no-op — fixed.
+**U5** global shortcuts under sheet — fixed for the 4 named handlers.
+
+Verification: two adversarial-review workflows (8 + 5 agents) plus full `tsc`
+(no new errors) across every commit. Two real defects the review caught in U4
+(identical-target no-op remount; uncleared stale intent) were fixed before the
+U4 commit landed.
+
+### Still open (next session)
+1. **[L5 — broader keyboard-occlusion pass]** The overlay stack only sees the
+   ~10 `useFocusTrap` consumers + CaptureModal. **Bespoke-trap modals**
+   (useDecisionTaskModals, SignalDetailRouter, EventCreationModal,
+   CreateTaskModal/TaskEditModal, DecisionWizard, AccountSettings, …) and
+   **view-level bare-key handlers** (Dashboard j/k, **Messages `e`=archive**,
+   **Calendar Delete/Backspace**, Meetings, Email-hybrid, CockpitHub, Briefing,
+   Map, Contacts, SidebarTabs) still fire under an open overlay. Messages' own
+   `keyboardDisabled` allowlist also misses Capture/MobileSheet/MobileDrawer/
+   palette; App's Cmd+K/J/⁄ openers are unguarded. Plan: make
+   `enterOverlay/exitOverlay` the single source of truth — migrate bespoke
+   traps onto useFocusTrap (or have them call enter/exit) and add
+   `if (isOverlayOpen()) return;` to the view-level handlers (prioritise the
+   destructive `e` / Delete). ~20 files; needs scoping approval.
+2. **Live eyeball** — still not done (mobile narrow-window + real Android;
+   desktop War Room full-bleed).
+3. Optional: ShortcutsHelp / chord `?` overlay should join the stack (also
+   gains a focus trap they currently lack).
+
+---
+
+_The original session-1 findings follow, kept verbatim:_
 
 ## What shipped (4 commits, base `949cff9`)
 
