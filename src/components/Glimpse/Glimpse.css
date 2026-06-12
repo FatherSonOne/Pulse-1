@@ -377,6 +377,10 @@
   border-radius: 10px;
   background: var(--gl-surface);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  /* Scale out from the ⋯ trigger (top-right) rather than blink in from center,
+     matching the gl-pop entrance the reaction picker + recipient selector use. */
+  transform-origin: top right;
+  animation: gl-pop 180ms var(--gl-ease);
 }
 .video-vox-mode.dark .gl-thread-menu {
   background: #18181b;
@@ -893,10 +897,16 @@ button.gl-briefing-ai-highlight.is-link:focus-visible {
               box-shadow var(--gl-fast) var(--gl-ease);
 }
 .gl-reel-card:hover {
-  transform: translateY(-2px);
   border-color: var(--gl-border-strong);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
 }
+/* The hover lift is the only motion here. Gate it to real pointers so a tap on
+   touch (where :hover sticks until you tap elsewhere) doesn't leave the card
+   raised. Touch press feedback comes from :active below instead. */
+@media (hover: hover) and (pointer: fine) {
+  .gl-reel-card:hover { transform: translateY(-2px); }
+}
+.gl-reel-card:active { transform: translateY(0) scale(0.99); }
 .video-vox-mode.dark .gl-reel-card:hover { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
 .gl-reel-card:focus-visible {
   outline: 2px solid var(--gl-rose);
@@ -1782,7 +1792,9 @@ button.gl-briefing-ai-highlight.is-link:focus-visible {
   font-weight: 500;
   color: var(--gl-ink-cloth);
   cursor: pointer;
-  transition: all var(--gl-fast) var(--gl-ease);
+  transition: background-color var(--gl-fast) var(--gl-ease),
+              color var(--gl-fast) var(--gl-ease),
+              border-color var(--gl-fast) var(--gl-ease);
 }
 
 .gl-action-pill:hover {
@@ -2021,6 +2033,9 @@ button.gl-briefing-ai-highlight.is-link:focus-visible {
   background: var(--gl-surface);
   border: 1px solid var(--gl-border-strong);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  /* Picker opens upward, anchored bottom-right of the heart trigger — scale
+     from that corner, not center. */
+  transform-origin: bottom right;
   animation: gl-pop 180ms var(--gl-ease);
 }
 
@@ -2147,7 +2162,8 @@ button.gl-briefing-ai-highlight.is-link:focus-visible {
   text-transform: uppercase;
   color: var(--gl-ink-cloth);
   cursor: pointer;
-  transition: all var(--gl-fast) var(--gl-ease);
+  transition: background-color var(--gl-fast) var(--gl-ease),
+              color var(--gl-fast) var(--gl-ease);
 }
 
 .gl-mode-btn[aria-pressed="true"] {
@@ -2637,7 +2653,9 @@ button.gl-briefing-ai-highlight.is-link:focus-visible {
   background: var(--gl-surface);
   color: var(--gl-ink-cloth);
   cursor: pointer;
-  transition: all var(--gl-fast) var(--gl-ease);
+  transition: background-color var(--gl-fast) var(--gl-ease),
+              color var(--gl-fast) var(--gl-ease),
+              border-color var(--gl-fast) var(--gl-ease);
 }
 
 .gl-secondary-btn:hover {
@@ -2890,6 +2908,8 @@ button.gl-briefing-ai-highlight.is-link:focus-visible {
   max-height: 280px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+  /* Drops below the recipient bar — scale down from the top edge. */
+  transform-origin: top;
   animation: gl-pop 180ms var(--gl-ease);
 }
 
@@ -3171,6 +3191,7 @@ button.gl-briefing-ai-highlight.is-link:focus-visible {
   .gl-reel-summary-skel span,
   .gl-card-check,
   .gl-reaction-picker,
+  .vvb-recipient-selector,
   .gl-record-btn,
   .gl-action-btn,
   .gl-card,
@@ -3186,6 +3207,7 @@ button.gl-briefing-ai-highlight.is-link:focus-visible {
   .gl-thread-select,
   .gl-thread-back,
   .gl-thread-more,
+  .gl-thread-menu,
   .gl-section-help,
   .gl-rail-task-check,
   .gl-rail-task-text,
@@ -3201,6 +3223,7 @@ button.gl-briefing-ai-highlight.is-link:focus-visible {
      chevron keeps its static .open rotation (a state indicator, not motion);
      only its transition is removed above. */
   .gl-reel-card:hover,
+  .gl-reel-card:active,
   .gl-thread-reply:hover,
   .gl-thread-reply:active,
   .gl-tc-empty-cta:hover,
