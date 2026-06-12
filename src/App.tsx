@@ -759,6 +759,19 @@ const App: React.FC = () => {
   const [settingsSection, setSettingsSection] = useState<string | undefined>(undefined);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
 
+  // Slack OAuth return bridge: the user-token callback bounces back to
+  // `/?slack=connected` (or `?slack_error=<reason>`). Land the user on Settings →
+  // Integrations so the Slack card (its Connected badge / failure toast) is what
+  // they see, instead of the Dashboard with an unconsumed param. SlackIntegration
+  // reads the same param to toast the result and strip it from the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('slack') || params.has('slack_error')) {
+      setSettingsSection('integrations');
+      setView(AppView.SETTINGS);
+    }
+  }, []);
+
   // Stable handlers backing the global "New task" / "New contact" palette
   // commands (registered in AppCommandRegistrar). They reuse the exact
   // openTaskPanel / openAddContact intent bridge the Dashboard quick-actions and

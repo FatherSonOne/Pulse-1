@@ -16,6 +16,7 @@ import {
   Loader2, Download,
 } from 'lucide-react';
 import { CollapsibleIntegrationCard } from './CollapsibleIntegrationCard';
+import toast from 'react-hot-toast';
 
 interface SlackIntegrationProps {
   user?: User | null;
@@ -37,6 +38,13 @@ export const SlackIntegration: React.FC<SlackIntegrationProps> = ({ user, slackC
   const { features } = useFeatures();
   const [userConn, setUserConn] = useState<SlackUserConnectStatus | null>(null);
   const [userConnBusy, setUserConnBusy] = useState(false);
+  // OAuth return: Slack's user-token callback bounces back to /?slack=connected
+  // (or ?slack_error=<reason>). Capture it at first render so the card lands
+  // expanded; the effect below toasts the outcome and strips the param.
+  const [openFromOAuthReturn] = useState(() => {
+    const p = new URLSearchParams(window.location.search);
+    return p.get('slack') === 'connected' || p.has('slack_error');
+  });
 
   useEffect(() => {
     if (!features.slackMessagesGrounding) return;
@@ -44,6 +52,26 @@ export const SlackIntegration: React.FC<SlackIntegrationProps> = ({ user, slackC
     getSlackUserConnectStatus().then((s) => { if (!cancelled) setUserConn(s); });
     return () => { cancelled = true; };
   }, [features.slackMessagesGrounding]);
+
+  // Consume the Slack OAuth return param once: toast the result, refresh the
+  // grant status so the Connected badge shows, then strip ?slack / ?slack_error
+  // from the URL so a reload doesn't re-toast.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ok = params.get('slack');
+    const err = params.get('slack_error');
+    if (!ok && !err) return;
+    if (ok === 'connected') {
+      toast.success('Slack connected');
+      getSlackUserConnectStatus().then(setUserConn).catch(() => {});
+    } else if (err) {
+      toast.error(`Slack connection failed: ${err.replace(/_/g, ' ')}`);
+    }
+    params.delete('slack');
+    params.delete('slack_error');
+    const qs = params.toString();
+    window.history.replaceState({}, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
+  }, []);
 
   const handleSlackUserConnect = async () => {
     setUserConnBusy(true);
@@ -148,7 +176,7 @@ export const SlackIntegration: React.FC<SlackIntegrationProps> = ({ user, slackC
 
   return (
     <CollapsibleIntegrationCard
-      defaultOpen={false}
+      defaultOpen={openFromOAuthReturn}
       summary={
         <>
           <div className="integration-icon" style={{ background: '#4A154B' }}>
