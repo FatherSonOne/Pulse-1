@@ -33,6 +33,7 @@ import { teamService, Team, TeamWithMembers, TeamMember as TeamMemberType } from
 import { AttentionDashboard } from './attention';
 import { attentionService } from '../services/attentionService';
 import { emailSyncService } from '../services/emailSyncService';
+import { isOverlayOpen } from '../lib/overlayStack';
 
 import { Archive, ArrowRight, BookUser, Calendar, Check, CheckCircle2, CheckSquare, ChevronRight, Copy, Heart, List, Loader2, Mail, MessageSquare, MessagesSquare, Mic, Search, Send, Target, TrendingUp, UserCheck, UserPlus, Users, X } from 'lucide-react';
 
@@ -745,6 +746,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
 
       // The rest only fire when the user isn't typing
       if (isTyping) return;
+
+      // Bail when a modal/sheet/overlay occludes this view — its keys belong to
+      // the overlay, not the dashboard behind it.
+      if (isOverlayOpen()) return;
 
       // ? toggles the shortcut overlay
       if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {

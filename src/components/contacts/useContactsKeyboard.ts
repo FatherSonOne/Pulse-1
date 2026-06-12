@@ -9,6 +9,7 @@
 // ============================================
 
 import { useEffect, useCallback } from 'react';
+import { isOverlayOpen } from '../../lib/overlayStack';
 
 type ContactsMode = 'today' | 'people';
 
@@ -45,6 +46,8 @@ export function useContactsKeyboard({
     }
 
     if (isInput) return; // don't intercept other keys when typing
+
+    if (isOverlayOpen()) return;
 
     // 1/2 — switch tabs
     if (e.key === '1') { e.preventDefault(); onModeChange('today');  return; }

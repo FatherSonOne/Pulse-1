@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { isOverlayOpen } from '../lib/overlayStack';
 
 interface ConversationLike {
   id: string;
@@ -84,6 +85,7 @@ export function useMessagesKeyboardShortcuts<T extends ConversationLike>(
     const handler = (e: KeyboardEvent) => {
       if (disabled) return;
       if (isTypingTarget(e)) return;
+      if (isOverlayOpen()) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       const key = e.key;

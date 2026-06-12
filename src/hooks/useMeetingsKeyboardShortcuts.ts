@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { isOverlayOpen } from '../lib/overlayStack';
 
 interface RailRow {
   id: string;
@@ -73,6 +74,7 @@ export function useMeetingsKeyboardShortcuts(
       }
       if (disabled) return;
       if (isTypingTarget(e)) return;
+      if (isOverlayOpen()) return;
 
       const key = e.key;
       const isMod = e.ctrlKey || e.metaKey;

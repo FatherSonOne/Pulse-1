@@ -8,6 +8,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SidebarTab } from './SidebarTab';
 import { SidebarContent } from './SidebarContent';
+import { isOverlayOpen } from '../../lib/overlayStack';
 import './sidebarTabs.css';
 
 export type SidebarTabType = 'messages' | 'tools' | 'crm' | 'analytics';
@@ -111,6 +112,7 @@ export const SidebarTabs: React.FC<SidebarTabsProps> = ({
   // Keyboard shortcuts - Cmd+B (Mac) or Ctrl+B (Windows/Linux)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isOverlayOpen()) return;
       // Cmd+B / Ctrl+B - Toggle sidebar collapse
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
         e.preventDefault();

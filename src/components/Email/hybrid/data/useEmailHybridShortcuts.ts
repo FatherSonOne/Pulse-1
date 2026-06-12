@@ -17,6 +17,7 @@
 // has its own Esc handling.
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { isOverlayOpen } from '../../../../lib/overlayStack';
 import { useEmailUIStore } from '../../../../store/emailUIStore';
 import { useEmailComposeStore } from '../../../../store/emailComposeStore';
 
@@ -52,6 +53,7 @@ export function useEmailHybridShortcuts({ onCompose, onHelp, onSync, onSnoozeFoc
     if (typeof window === 'undefined') return;
     const handler = (e: KeyboardEvent) => {
       if (isTextInputTarget(e.target)) return;
+      if (isOverlayOpen()) return;
       if (showComposer || showKeyboardShortcuts || showEmailSettings || showReauthModal) return;
 
       const hasCtrl = e.ctrlKey || e.metaKey;
@@ -123,6 +125,7 @@ export function useEmailHybridShortcuts({ onCompose, onHelp, onSync, onSnoozeFoc
 
     const handler = (e: KeyboardEvent) => {
       if (isTextInputTarget(e.target)) return;
+      if (isOverlayOpen()) return;
       if (showComposer || showKeyboardShortcuts || showEmailSettings || showReauthModal) return;
       const hasCtrl = e.ctrlKey || e.metaKey;
       if (hasCtrl) return;

@@ -16,6 +16,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, RefObject } from 'react';
+import { isOverlayOpen } from '../../../lib/overlayStack';
 import type { MapLens, MapViewMode } from '../sub/mapLens';
 
 export interface UseMapKeyboardShortcutsInput {
@@ -69,6 +70,7 @@ export function useMapKeyboardShortcuts(input: UseMapKeyboardShortcutsInput): vo
         return;
       }
       if (inField) return;
+      if (isOverlayOpen()) return;
       if (e.key === '1') { setLens('today'); e.preventDefault(); return; }
       if (e.key === '2') { setLens('week');  e.preventDefault(); return; }
       if (e.key === '3') { setLens('atlas'); e.preventDefault(); return; }

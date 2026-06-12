@@ -53,6 +53,7 @@ import { useWorkspace } from '../../../contexts/WorkspaceContext';
 import { listUserPlaces, getEntityPlaceMap } from '../../../services/locationService';
 import { Place } from '../../../types/placeTypes';
 import { getDismissedNudges } from '../../../utils/dismissedNudgesStorage';
+import { isOverlayOpen } from '../../../lib/overlayStack';
 import '../design-tokens.css';
 import './cockpit.css';
 
@@ -675,6 +676,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
       t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
     const onKeyDown = (e: KeyboardEvent) => {
       if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isOverlayOpen()) return;
       if ((e.key === 'c' || e.key === 'C') && !createMode) {
         e.preventDefault();
         setCreateMode({ mode: 'task' });

@@ -15,6 +15,7 @@ import { BriefingHeader } from './BriefingHeader';
 import { SignalLine } from './SignalLine';
 import { WinsStrip } from './WinsStrip';
 import { SignalDetailRouter } from './SignalDetail/SignalDetailRouter';
+import { isOverlayOpen } from '../../lib/overlayStack';
 import './Briefing.css';
 
 export interface BriefingNavCallbacks {
@@ -120,6 +121,7 @@ export const Briefing: React.FC<BriefingProps> = ({
       if (activeSignal) return;
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+      if (isOverlayOpen()) return;
 
       const list = signalsListRef.current;
       const buttons = list ? Array.from(list.querySelectorAll<HTMLButtonElement>('.briefing-signal-button')) : [];

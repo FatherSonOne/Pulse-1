@@ -26,6 +26,7 @@ import { useRegisterCommands, Command as PaletteCommand } from '../contexts/Comm
 import ShortcutsHelp from './ShortcutsHelp';
 import JumpToDate from './JumpToDate';
 import ConflictResolutionBanner, { EventConflict, detectConflicts } from './ConflictResolutionBanner';
+import { isOverlayOpen } from '../lib/overlayStack';
 import './Calendar.css';
 import { AlignLeft, AlertTriangle, ArrowLeftRight, ArrowRight, Bell, Brain, Calendar as CalendarIcon, CalendarCheck, CalendarDays, CalendarPlus, Car, Check, CheckCircle, ChevronRight, ClipboardList, Clock, Copy, Ellipsis, ExternalLink, FileDown, Grid3X3, HelpCircle, Lightbulb, ListChecks, Loader2, MapPin, Maximize2, Pen, PieChart, Plus, RefreshCw, Repeat, Search, Send, Settings, Sliders, Star, Sun, Trash2, Unplug, UserCog, Users, Video, Wand2, X } from 'lucide-react';
 import { CalendarContextMenu } from './Calendar/CalendarContextMenu';
@@ -778,6 +779,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       // Don't fire remaining shortcuts when typing in an input/textarea
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (isOverlayOpen()) return;
       if (showEventModal || showDayDetail) return;
 
       switch (e.key) {

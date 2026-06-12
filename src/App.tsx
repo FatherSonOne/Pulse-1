@@ -70,6 +70,7 @@ import { Sidebar } from './components/Sidebar';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileNavSheet } from './components/MobileChrome/MobileNavSheet';
 import { MobileQuickActionsSheet } from './components/MobileChrome/MobileQuickActionsSheet';
+import { isOverlayOpen } from './lib/overlayStack';
 import { useAuth } from './hooks/useAuth';
 import PulseAssistant from './components/PulseAssistant/PulseAssistant';
 import { PulseAssistantButton } from './components/PulseAssistant/PulseAssistantButton';
@@ -1204,6 +1205,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        if (isOverlayOpen()) return; // don't toggle the AI panel behind an open overlay
         e.preventDefault();
         setShowPulseAI(prev => !prev);
       }
@@ -1240,6 +1242,7 @@ const App: React.FC = () => {
         if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) {
           return;
         }
+        if (isOverlayOpen()) return; // don't stack Capture over an already-open overlay
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('pulse:capture-open'));
       }

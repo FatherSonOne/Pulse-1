@@ -33,9 +33,21 @@ export function exitOverlay(token: number): void {
   stack = stack.filter((t) => t !== token);
 }
 
-/** True when at least one overlay is active. */
+/** True when at least one overlay is active. Checks the registered stack first
+ *  (focus-trap modals + CaptureModal), then falls back to the DOM so the many
+ *  bespoke modals that don't register are still seen by the global shortcut
+ *  guards. A dialog counts only if it's actually visible (offsetWidth/Height
+ *  non-zero) — which ignores conditionally-hidden-but-mounted dialogs and works
+ *  for position:fixed modals, where offsetParent would misleadingly be null. */
 export function isOverlayOpen(): boolean {
-  return stack.length > 0;
+  if (stack.length > 0) return true;
+  if (typeof document === 'undefined') return false;
+  const dialogs = document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]');
+  for (let i = 0; i < dialogs.length; i++) {
+    const el = dialogs[i];
+    if (el.offsetWidth > 0 || el.offsetHeight > 0) return true;
+  }
+  return false;
 }
 
 /** True when `token` is the overlay currently on top of the stack. */
