@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo, Suspense, lazy } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import {
   Mic,
   MicOff,
@@ -360,6 +361,14 @@ const Summit: React.FC<SummitProps> = ({
   const [notes, setNotes] = useState<VoiceNote[]>([]);
   const [artifacts, setArtifacts] = useState<SessionArtifacts>(() => emptyArtifacts());
   const [artifactsCollapsed, setArtifactsCollapsed] = useState(false);
+  // Mobile (<=680px, matching Summit.css): start the artifact panel collapsed
+  // to a right-edge handle so the voice canvas owns the screen. Tapping the
+  // handle pulls it up as a full-bleed sheet; the sheet header collapses it
+  // back. Desktop keeps the panel open inline.
+  const isMobileSummit = useMediaQuery('(max-width: 680px)');
+  useEffect(() => {
+    if (isMobileSummit) setArtifactsCollapsed(true);
+  }, [isMobileSummit]);
   const [showNotes, setShowNotes] = useState(false);
   const [autoNotes, setAutoNotes] = useState(true);
   const [newNoteText, setNewNoteText] = useState('');

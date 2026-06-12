@@ -3022,3 +3022,46 @@
   }
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   MOBILE ARTIFACT PANEL — authoritative override (<=680px)
+
+   This block lives at the END of the file ON PURPOSE. The responsive section
+   higher up (~L2062-2200) was authored BEFORE the base component rules
+   (.pvc-artifacts at L2531, etc.), so any responsive declaration whose
+   property the base rule also sets lost the cascade on source order — that is
+   why `.pvc-artifacts { display:none }` at L2113 never took effect at 393px
+   even though its media query matched. Re-asserting here (after every base
+   rule) guarantees precedence without moving or deleting any existing rule.
+
+   UX: on phones the panel starts collapsed (Summit.tsx defaults
+   artifactsCollapsed on <=680px) into a thin right-edge handle; tapping it
+   pulls the panel up as a full-bleed sheet over the voice canvas, and the
+   sheet header's chevron collapses it back. The canvas owns the screen the
+   rest of the time. Desktop is untouched.
+   ════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 680px) {
+  /* Don't let the collapsed-grid rule (L227) re-introduce a side column —
+     keep one full-width column whether the panel is collapsed or not. */
+  .pvc-main:has(.pvc-artifacts--collapsed) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  /* Expanded -> full-bleed sheet over the canvas. The <=980px block already
+     pins it absolute with top/right/bottom:0; we only release the left edge
+     and raise it above the canvas content. */
+  .pvc-artifacts {
+    left: 0;
+    width: auto;
+    z-index: 20;
+  }
+  /* Collapsed -> thin handle tab on the right edge to re-open. */
+  .pvc-artifacts--collapsed {
+    left: auto;
+    right: 0;
+    width: 40px;
+    z-index: 9;
+    box-shadow: none;
+    border-left: 1px solid var(--pulse-border);
+  }
+}
+
