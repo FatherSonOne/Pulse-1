@@ -70,8 +70,9 @@ const KeyboardChordsLayer: React.FC = () => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (isTypingTarget(e.target)) return;
       // A sheet/modal is open — its trap owns the keyboard; don't navigate the
-      // occluded view out from under it.
-      if (isOverlayOpen()) return;
+      // occluded view out from under it. Exclude our OWN aria-modal help overlay
+      // (!showOverlay) so its `?`-toggle and Escape-close below still fire.
+      if (isOverlayOpen() && !showOverlay) return;
 
       // `?` opens the overlay. Shift+/ on US keyboards; the browser emits `?`
       // as the key string with shiftKey true.

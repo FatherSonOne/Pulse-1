@@ -373,7 +373,6 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
       className="pulse-assistant"
       role="dialog"
       aria-label="Pulse AI Global Assistant"
-      aria-modal="true"
     >
       {/* ── Header ── */}
       <div className="pa-header">

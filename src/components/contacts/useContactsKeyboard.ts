@@ -47,14 +47,15 @@ export function useContactsKeyboard({
 
     if (isInput) return; // don't intercept other keys when typing
 
+    // Escape closes this surface's own panels — must run even when an overlay
+    // is open, so it sits above the overlay guard.
+    if (e.key === 'Escape') { e.preventDefault(); onEscape?.(); return; }
+
     if (isOverlayOpen()) return;
 
     // 1/2 — switch tabs
     if (e.key === '1') { e.preventDefault(); onModeChange('today');  return; }
     if (e.key === '2') { e.preventDefault(); onModeChange('people'); return; }
-
-    // Escape — close panels
-    if (e.key === 'Escape') { e.preventDefault(); onEscape?.(); return; }
   }, [enabled, onModeChange, onSearchFocus, onEscape]);
 
   useEffect(() => {

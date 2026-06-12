@@ -51,7 +51,7 @@ export const TrialExpiredBlock: React.FC<TrialExpiredBlockProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-xl bg-gradient-to-br from-zinc-950 to-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden">
+      <div role="dialog" aria-modal="true" aria-label="Trial expired" className="relative w-full max-w-xl bg-gradient-to-br from-zinc-950 to-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden">
         {/* Accent bar */}
         <div className="h-1 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500" />
 
