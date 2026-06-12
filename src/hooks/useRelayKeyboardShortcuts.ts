@@ -5,6 +5,7 @@
 // in the 2026-04 brand sweep — the M shortcut was retired alongside it.
 
 import { useEffect, useRef } from 'react';
+import { isOverlayOpen } from '../lib/overlayStack';
 
 /** Top-level Relay view (6 peers). Mirrors Relay.tsx's local RelayView. */
 export type RelayShortcutView =
@@ -65,6 +66,9 @@ export function useRelayKeyboardShortcuts(
     if (!enabled) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // An open sheet/modal owns the keyboard — don't act on the Relay view
+      // hidden behind it. The overlay's own trap handles Escape.
+      if (isOverlayOpen()) return;
       const h = handlersRef.current;
       const target = event.target as HTMLElement;
       const isInInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);

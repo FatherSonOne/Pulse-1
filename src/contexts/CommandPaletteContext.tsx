@@ -7,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { isOverlayOpen } from '../lib/overlayStack';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -259,6 +260,9 @@ export const CommandPaletteProvider: React.FC<{ children: React.ReactNode }> = (
         tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' ||
         target?.isContentEditable;
       if (inField) return;
+      // A focus-trapped overlay (sheet/modal) is open — don't fire command
+      // shortcuts against the surface hidden behind it.
+      if (isOverlayOpen()) return;
 
       const canonical = eventToCanonical(e);
       if (!canonical) return;

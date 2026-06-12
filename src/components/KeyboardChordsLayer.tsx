@@ -24,6 +24,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { AppView } from '../types';
+import { isOverlayOpen } from '../lib/overlayStack';
 
 interface ChordDef {
   key: string;
@@ -68,6 +69,9 @@ const KeyboardChordsLayer: React.FC = () => {
       // Modifiers reserved for OS / browser / app shortcuts; never start a chord.
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (isTypingTarget(e.target)) return;
+      // A sheet/modal is open — its trap owns the keyboard; don't navigate the
+      // occluded view out from under it.
+      if (isOverlayOpen()) return;
 
       // `?` opens the overlay. Shift+/ on US keyboards; the browser emits `?`
       // as the key string with shiftKey true.

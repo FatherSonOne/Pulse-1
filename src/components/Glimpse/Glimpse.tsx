@@ -2,6 +2,7 @@
 // Includes: Recording, Conversations, AI Transcripts, Reactions, Threading, Search
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { isOverlayOpen } from '../../lib/overlayStack';
 import {
   ArrowLeft,
   FlipHorizontal,
@@ -1694,6 +1695,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
     const handler = (e: KeyboardEvent) => {
       if (e.key !== 'j' && e.key !== 'k') return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (isOverlayOpen()) return;
       const target = e.target as HTMLElement;
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) return;
       const cards = Array.from(document.querySelectorAll<HTMLButtonElement>('.gl-reel-card'));

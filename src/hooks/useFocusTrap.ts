@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
+import { enterOverlay, exitOverlay, isTopmostOverlay } from '../lib/overlayStack';
 
 interface UseFocusTrapOptions {
   /** Whether the trap is currently active (e.g. modal is open). */
@@ -53,6 +54,11 @@ export function useFocusTrap<T extends HTMLElement>({
   useEffect(() => {
     if (!active) return;
 
+    // Register on the shared overlay stack: enables topmost-only key handling
+    // (so stacked traps don't all fire Escape) and a global "an overlay is
+    // open" signal that app-wide keyboard shortcuts consult before acting.
+    const token = enterOverlay();
+
     previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
 
     const focusInitial = () => {
@@ -69,6 +75,9 @@ export function useFocusTrap<T extends HTMLElement>({
     const id = window.requestAnimationFrame(focusInitial);
 
     const handleKey = (e: KeyboardEvent) => {
+      // Only the topmost active trap reacts; lower stacked traps stay inert so a
+      // single Escape/Tab doesn't fire across every mounted trap at once.
+      if (!isTopmostOverlay(token)) return;
       if (e.key === 'Escape' && onEscapeRef.current) {
         e.stopPropagation();
         onEscapeRef.current();
@@ -94,6 +103,7 @@ export function useFocusTrap<T extends HTMLElement>({
     document.addEventListener('keydown', handleKey);
 
     return () => {
+      exitOverlay(token);
       window.cancelAnimationFrame(id);
       document.removeEventListener('keydown', handleKey);
       if (restoreFocus && previouslyFocusedRef.current) {

@@ -10,6 +10,7 @@ import {
   type CaptureSourceSection,
 } from '../../services/captureService';
 import { AppView } from '../../types';
+import { enterOverlay, exitOverlay, isTopmostOverlay } from '../../lib/overlayStack';
 
 const DRAFT_KEY = 'pulse_capture_draft';
 
@@ -152,21 +153,34 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ currentView }) => {
     }));
   }, [content, currentWorkspace?.id, sourceSection, overrideId, kind, close]);
 
-  // Keyboard: Esc closes, Cmd+Enter saves.
+  // Keyboard: Esc closes, Cmd+Enter saves. close/save are read through refs so
+  // typing in the textarea (which re-creates them) doesn't churn the overlay
+  // token — it's pushed once per open, not once per keystroke.
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  const saveRef = useRef(save);
+  saveRef.current = save;
   useEffect(() => {
     if (!open) return;
+    // Join the shared overlay stack so a sheet/modal stacked on top of Capture
+    // wins Escape (topmost-only), and global shortcuts bail while Capture is up.
+    const token = enterOverlay();
     const handleKey = (e: KeyboardEvent) => {
+      if (!isTopmostOverlay(token)) return;
       if (e.key === 'Escape') {
         e.preventDefault();
-        close(true);
+        closeRef.current(true);
       } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
-        void save();
+        void saveRef.current();
       }
     };
     window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [open, close, save]);
+    return () => {
+      window.removeEventListener('keydown', handleKey);
+      exitOverlay(token);
+    };
+  }, [open]);
 
   if (!open) return null;
 
