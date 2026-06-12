@@ -51,11 +51,14 @@ export const StudioMasthead: React.FC<StudioMastheadProps> = ({
         {eyebrowIcon}
         <span>{eyebrow}</span>
       </div>
-      <div className="flex items-end justify-between gap-4 mt-1">
+      {/* flex-wrap so the title-baseline controls (Inbox status toggle + source
+          dropdown) drop below the title at phone width instead of overflowing;
+          a no-op on desktop where the row has room. */}
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 mt-1">
         <h1 className="text-3xl font-semibold text-zinc-900 dark:text-zinc-100 leading-tight">
           {title}
         </h1>
-        {right && <div className="flex items-center gap-2 shrink-0">{right}</div>}
+        {right && <div className="flex items-center gap-2 shrink-0 max-w-full overflow-x-auto">{right}</div>}
       </div>
       {subtitle && (
         <div className="text-[12px] text-zinc-500 dark:text-zinc-400 mt-1">{subtitle}</div>
