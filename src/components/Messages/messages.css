@@ -14,12 +14,6 @@
   100% { opacity: 0.4; }
 }
 
-/* ── Message entry animation — brand-aligned (no bounce) ────────── */
-@keyframes msgEnter {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
 /* === TYPOGRAPHY SYSTEM - Applied Globally === */
 .message-text,
 .msg-content {
@@ -319,23 +313,6 @@
    header — no coral side-stripe (#94 task 4.2, DESIGN.md absolute-ban).
    Group siblings (data-grouped) tighten to read as one block. */
 
-.message-bubble-wrapper {
-  margin-bottom: 0.75rem;
-  animation: msgEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: opacity, transform;
-}
-
-/* Consecutive messages from the same sender (within ~3 min) — read as one block */
-.message-bubble-wrapper[data-grouped="true"] {
-  margin-bottom: 2px;
-}
-.message-bubble-wrapper[data-grouped="true"] .msg-sender-header {
-  display: none;
-}
-.message-bubble-wrapper[data-grouped="true"] .msg-receipt {
-  display: none;
-}
-
 /* Pulse DM thread row (Messages.tsx renderer) — uses outer wrapper with
    data-pulse-msg-row + data-grouped. Same-sender stack collapses tight;
    first message of a block keeps a clean breath. Specificity beats the
@@ -350,18 +327,6 @@
 /* First row in the conversation should not have the breath above it */
 [data-pulse-msg-row="true"]:first-of-type {
   margin-top: 0 !important;
-}
-
-/* Stagger first 5 message wrappers — nth-child, no JS needed */
-.messages-area .message-bubble-wrapper:nth-child(1) { animation-delay: 0ms; }
-.messages-area .message-bubble-wrapper:nth-child(2) { animation-delay: 40ms; }
-.messages-area .message-bubble-wrapper:nth-child(3) { animation-delay: 80ms; }
-.messages-area .message-bubble-wrapper:nth-child(4) { animation-delay: 120ms; }
-.messages-area .message-bubble-wrapper:nth-child(5) { animation-delay: 160ms; }
-
-/* Beyond 5 — no GPU promotion needed */
-.messages-area .message-bubble-wrapper:nth-child(n+6) {
-  will-change: auto;
 }
 
 /* Mono section header above a message group — sender · time */
@@ -419,6 +384,7 @@
 
 /* Common bubble body — symmetric corners, no tail */
 .message-bubble {
+  position: relative;          /* positioning context for the arrival-glow ::after */
   padding: 0.5rem 0.875rem;
   border-radius: 12px;
   border: 1px solid transparent;
@@ -451,17 +417,44 @@
   border-color: var(--pulse-msg-sent-border);
 }
 
-/* New-message arrival flourish — coral underglow that fades over 1.6s.
-   Triggered by data-arrival="new", which the component flips off after
-   the animation completes. Single moment of delight per message. */
-@keyframes msgArrivalGlow {
-  0%   { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.45), 0 0 24px 0 rgba(244, 63, 94, 0.25); }
-  60%  { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.20), 0 0 16px 4px rgba(244, 63, 94, 0.10); }
-  100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0), 0 0 0 0 rgba(244, 63, 94, 0); }
+/* ── Message arrival (Messages.tsx `data-fresh`) ─────────────────────────
+   The real renderer uses [data-pulse-msg-row]. The component flags a row
+   data-fresh="true" ONLY for
+   messages created after the conversation was opened (open-time baseline ref),
+   so this never replays as a "loading-in" cascade on thread switch. Two parts:
+     1. a subtle entry on the row (sent + received), and
+     2. a one-shot rose underglow on RECEIVED bubbles only — your own sends
+        slide in quietly without grabbing your own attention.
+   Rose = signal (a new message landed), never coral. */
+@keyframes msgFreshEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+[data-pulse-msg-row="true"][data-fresh="true"] {
+  animation: msgFreshEnter 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.message-bubble[data-arrival="new"] {
-  animation: msgArrivalGlow 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* One-shot arrival glow — animates the OPACITY of a pseudo-element carrying a
+   STATIC box-shadow (rides the GPU; no per-frame shadow repaint). */
+@keyframes msgFreshGlow {
+  0%   { opacity: 1; }
+  60%  { opacity: 0.45; }
+  100% { opacity: 0; }
+}
+[data-fresh="true"] .message-bubble-received::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.30), 0 0 22px 2px rgba(244, 63, 94, 0.22);
+  opacity: 0;
+  animation: msgFreshGlow 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-pulse-msg-row="true"][data-fresh="true"] { animation: none; }
+  [data-fresh="true"] .message-bubble-received::after { animation: none; opacity: 0; }
 }
 
 /* Legacy class — preserved for sub-components that still set it directly.
@@ -532,32 +525,6 @@
   color: var(--pulse-ink-2);
   white-space: nowrap;
   padding: 0;
-}
-
-/* Reaction badges */
-.reaction-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  border: 1px solid var(--pulse-border);
-  background: var(--pulse-surface);
-  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
-  cursor: pointer;
-}
-
-.reaction-badge:hover {
-  border-color: rgba(244, 63, 94, 0.3);
-  background: var(--pulse-rose-soft);
-  transform: translateY(-1px);
-}
-
-.dark .reaction-badge:hover {
-  border-color: rgba(244, 63, 94, 0.4);
-  background: rgba(244, 63, 94, 0.1);
-  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.15);
 }
 
 /* =========================
@@ -633,32 +600,6 @@
 }
 
 /* =========================
-   Thread Switching Animations
-   ========================= */
-
-.thread-transition-enter {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-.thread-transition-enter-active {
-  opacity: 1;
-  transform: translateX(0);
-  transition: opacity 300ms ease, transform 300ms ease;
-}
-
-.thread-transition-exit {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.thread-transition-exit-active {
-  opacity: 0;
-  transform: translateX(-20px);
-  transition: opacity 300ms ease, transform 300ms ease;
-}
-
-/* =========================
    Accessibility
    ========================= */
 
@@ -672,11 +613,7 @@ button:focus-visible {
 
 /* Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
-  .message-bubble-wrapper,
-  .thread-transition-enter-active,
-  .thread-transition-exit-active,
-  .thread-item,
-  .reaction-badge {
+  .thread-item {
     animation: none;
     transition: none;
   }
@@ -705,19 +642,6 @@ button:focus-visible {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-}
-
-.messages-loading-spinner {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* =========================
@@ -757,10 +681,6 @@ button:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.smooth-transition {
-  transition: all 0.3s ease;
 }
 
 /* Ensure full height */

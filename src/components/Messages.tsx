@@ -808,6 +808,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [activePulseConversation, setActivePulseConversation] = useState<string | null>(null);
   const [pulseMessages, setPulseMessages] = useState<PulseMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Open-time baseline for the live message arrival animation (consumed via
+  // the `data-fresh` attribute on each row — see messages.css [data-fresh]).
+  // We stamp the moment a conversation is opened; only messages created AFTER
+  // that stamp get the one-shot entry + arrival glow. The historical backlog
+  // is always older, so the animation never replays as a "loading-in" cascade
+  // on thread switch. Purely presentational: reads msg.created_at, never the
+  // realtime/dedup path.
+  const arrivalBaselineRef = useRef<{ convId: string | null; at: number }>({ convId: null, at: 0 });
   // Removed newChatTab - New Conversation modal now only shows Pulse users
   const [suggestedPulseUsers, setSuggestedPulseUsers] = useState<SearchUserResult[]>([]);
   const [recentPulseContacts, setRecentPulseContacts] = useState<SearchUserResult[]>([]);
@@ -1517,6 +1525,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   // Get active Pulse conversation details
   const activePulseConv = pulseConversations.find(c => c.id === activePulseConversation);
+  // Stamp the arrival baseline the first render after a conversation opens.
+  // Mutating a ref during render is safe here (idempotent per conversation) and
+  // avoids an effect's post-paint lag, so the very first batch is correctly
+  // treated as backlog.
+  if (arrivalBaselineRef.current.convId !== activePulseConversation) {
+    arrivalBaselineRef.current = { convId: activePulseConversation, at: Date.now() };
+  }
   // Slack-grounded Messages: a transport='slack' thread renders the external Slack
   // identity (synthesized as other_user in getConversations) and gates OFF the Pulse-only
   // live signals Slack can't provide (presence, typing, read/delivered receipts).
@@ -3830,7 +3845,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         <div className={`flex-1 flex flex-col min-w-0 bg-[#f8f8f8] dark:bg-black ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
           {/* Pulse Chat Header - Fixed at top */}
           <div className="min-h-16 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex items-center justify-between px-4 py-2 z-10 bg-[#f8f8f8]/95 dark:bg-black/95 flex-shrink-0 mobile-header-safe">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               {/* Mobile Menu Button (visible only on mobile) */}
               <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition" title="Show conversations">
                 <PanelLeftOpen />
@@ -3903,8 +3918,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               </div>
             </div>
 
-            {/* Inline Search Bar */}
-            <div className="flex-1 max-w-md mx-4">
+            {/* Inline Search Bar — md+ floor so the placeholder never truncates
+                ("Search messa…"); left name block now yields via min-w-0. Mobile
+                keeps the old shrink behavior to avoid header overflow. */}
+            <div className="flex-1 md:min-w-[200px] max-w-md mx-3">
               <div className="relative">
                 <input
                   type="text"
@@ -4375,6 +4392,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 const isGrouped = isSameSender && !showDate;
 
                 const showAvatar = !isGrouped;
+
+                // Arrival animation gate: a message is "fresh" only if it was
+                // created after this conversation was opened (see baseline ref).
+                // Backlog is always older → never animates on thread switch.
+                const isFresh = arrivalBaselineRef.current.convId === activePulseConversation
+                  && new Date(msg.created_at).getTime() > arrivalBaselineRef.current.at;
                 const senderLabel = isMe
                   ? 'YOU'
                   : (activePulseConv.other_user?.display_name || activePulseConv.other_user?.handle || 'UNKNOWN').toUpperCase();
@@ -4404,6 +4427,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     <div
                       data-grouped={isGrouped ? 'true' : 'false'}
                       data-pulse-msg-row="true"
+                      data-fresh={isFresh ? 'true' : undefined}
                       className={`flex-1 min-w-0 flex ${isMe ? 'justify-end' : 'justify-start'} group relative ${isGrouped ? 'mb-0.5' : 'mb-3'}`}
                     >
                       {!isMe && showAvatar && (
@@ -4604,7 +4628,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           <div
                             data-message-id={msg.id}
                             tabIndex={-1}
-                            className={`message-bubble ${isMe ? 'message-bubble-sent' : 'message-bubble-received'} cursor-pointer select-none transition-all`}
+                            className={`message-bubble ${isMe ? 'message-bubble-sent' : 'message-bubble-received'} cursor-pointer select-none`}
                             // Right-click and long-press open the
                             // MessageContextMenu (the only message menu).
                             onContextMenu={(e) => {

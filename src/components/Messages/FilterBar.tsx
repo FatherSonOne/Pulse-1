@@ -44,7 +44,7 @@ const FILTERS: FilterDef[] = [
 
 // Shared chip shell. `active` swaps in the rose accent + reveals the label.
 const chipBase =
-  'flex-shrink-0 h-6 px-1.5 inline-flex items-center rounded font-mono uppercase tracking-[0.1em] text-[10px] font-medium transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40';
+  'flex-shrink-0 h-6 px-1.5 inline-flex items-center rounded font-mono uppercase tracking-[0.1em] text-[10px] font-medium transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40';
 const chipInactive =
   'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/[0.04]';
 // Label reveal: collapses to 0 width (icon-only) when inactive; the
@@ -108,7 +108,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         title={showArchived ? 'Hide archived conversations' : 'Show archived conversations'}
         aria-label="Show archived conversations"
         aria-pressed={showArchived}
-        className={`${chipBase} ${showArchived ? 'bg-rose-500/10 text-[var(--pulse-rose-text)]' : chipInactive}`}
+        className={`${chipBase} ${showArchived ? 'bg-rose-500/10 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400' : chipInactive}`}
       >
         <Archive className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
         <span className={`${labelBase} ${showArchived ? 'max-w-[72px] opacity-100 pl-1' : 'max-w-0 opacity-0'}`}>

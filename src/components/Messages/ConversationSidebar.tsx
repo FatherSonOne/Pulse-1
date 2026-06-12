@@ -124,7 +124,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           {/* Invite Team — labeled, always visible per user direction (early-org invite affordance) */}
           <button
             onClick={() => setShowInviteModal(true)}
-            className="h-8 px-2.5 rounded-md inline-flex items-center gap-1.5 text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="h-8 px-2.5 rounded-md inline-flex items-center gap-1.5 text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
             title="Invite a teammate to your workspace"
             aria-label="Invite teammate"
           >
@@ -138,7 +138,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           {/* Keyboard shortcuts — mono ⌘ glyph, also bound to ? */}
           <button
             onClick={() => setShowShortcuts(true)}
-            className="h-8 w-8 rounded-md inline-flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-white/[0.055] hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="h-8 w-8 rounded-md inline-flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-white/[0.055] hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
             title="Keyboard shortcuts (? to open)"
             aria-label="Keyboard shortcuts"
           >
@@ -147,7 +147,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           {/* Compose — ghost coral with ⌘N hint (drops 1 of 3 filled-coral attractors) */}
           <button
             onClick={() => setShowNewChatModal(true)}
-            className="h-8 px-2.5 rounded-md inline-flex items-center gap-1.5 text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="h-8 px-2.5 rounded-md inline-flex items-center gap-1.5 text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
             title="New conversation (⌘N)"
             aria-label="New conversation"
           >
@@ -175,7 +175,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           {searchQuery ? (
             <button
               onClick={() => { setSearchQuery(''); setSearchResults([]); setThreadFilter('all'); }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md inline-flex items-center justify-center text-zinc-400 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-white/[0.055] transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md inline-flex items-center justify-center text-zinc-400 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-white/[0.055] transition-colors active:scale-[0.97] motion-reduce:active:scale-100"
               aria-label="Clear search"
             >
               <X className="w-3 h-3" />
@@ -204,7 +204,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                 onClick={() => { setSearchFilter(f); handleSearch(searchQuery); }}
                 className={`h-6 px-2 rounded font-mono uppercase tracking-[0.1em] text-[10px] font-medium transition-colors ${
                   searchFilter === f
-                    ? 'bg-rose-500 text-white'
+                    ? 'bg-rose-500/10 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400'
                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/[0.04]'
                 }`}
               >
@@ -252,7 +252,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
               return (
                 <div key={conv.id} style={style}>
                   <div
-                    className={`p-3 rounded-xl cursor-pointer transition-colors relative group flex items-center gap-3
+                    className={`p-3 rounded-xl cursor-pointer transition-colors active:scale-[0.99] motion-reduce:active:scale-100 relative group flex items-center gap-3
                       ${activePulseConversation === conv.id
                         ? 'bg-rose-50 dark:bg-rose-500/10 ring-1 ring-rose-500/20'
                         : cursorConvId === conv.id
