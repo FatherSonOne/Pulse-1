@@ -92,6 +92,10 @@ export const MobileQuickActionsSheet: React.FC<MobileQuickActionsSheetProps> = (
   // ArrowUp/Down roving focus across the visible row buttons.
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    // Let the arrows move the caret while the vox search input is focused
+    // rather than hijacking them to rove between rows.
+    const tag = (e.target as HTMLElement).tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     const root = bodyRef.current;
     if (!root) return;
     const rows = Array.from(root.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));

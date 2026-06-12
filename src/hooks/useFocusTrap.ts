@@ -39,6 +39,16 @@ export function useFocusTrap<T extends HTMLElement>({
 }: UseFocusTrapOptions): RefObject<T | null> {
   const containerRef = useRef<T | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const onEscapeRef = useRef(onEscape);
+
+  // Keep the latest Escape handler in a ref so an unstable callback can't
+  // re-register the keydown listener and tear the trap down/up on every render
+  // (the same pattern useAndroidBackButton uses for interceptBack). Without it,
+  // typing in a sheet's input re-creates onEscape, the effect re-runs, and the
+  // rAF initial-focus yanks focus back to the first focusable each keystroke.
+  useEffect(() => {
+    onEscapeRef.current = onEscape;
+  }, [onEscape]);
 
   useEffect(() => {
     if (!active) return;
@@ -59,9 +69,9 @@ export function useFocusTrap<T extends HTMLElement>({
     const id = window.requestAnimationFrame(focusInitial);
 
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && onEscape) {
+      if (e.key === 'Escape' && onEscapeRef.current) {
         e.stopPropagation();
-        onEscape();
+        onEscapeRef.current();
         return;
       }
       if (e.key !== 'Tab' || !containerRef.current) return;
@@ -90,7 +100,7 @@ export function useFocusTrap<T extends HTMLElement>({
         previouslyFocusedRef.current.focus();
       }
     };
-  }, [active, onEscape, initialFocusRef, restoreFocus]);
+  }, [active, initialFocusRef, restoreFocus]);
 
   return containerRef;
 }

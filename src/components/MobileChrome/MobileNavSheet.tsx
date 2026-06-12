@@ -54,7 +54,7 @@ export const MobileNavSheet: React.FC<MobileNavSheetProps> = ({ view, onNavigate
           const locked = !!section.experimental && !features.experimentalEnabled;
           return (
             <div key={section.label}>
-              <div className="px-4 pt-4 pb-1 font-mono text-[10px] font-medium tracking-[0.1em] uppercase text-zinc-400 dark:text-zinc-500">
+              <div className="px-4 pt-4 pb-1 font-mono text-[10px] font-medium tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400">
                 {section.label}
               </div>
               <ul>
@@ -81,12 +81,12 @@ export const MobileNavSheet: React.FC<MobileNavSheetProps> = ({ view, onNavigate
                         />
                         <span className="truncate">{item.label}</span>
                         {emailOff && (
-                          <span className="ml-auto font-mono text-[9px] tracking-[0.1em] uppercase text-zinc-400 dark:text-zinc-500">
+                          <span className="ml-auto font-mono text-[9px] tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400">
                             Off
                           </span>
                         )}
                         {locked && (
-                          <span className="ml-auto font-mono text-[9px] tracking-[0.1em] uppercase text-zinc-400 dark:text-zinc-500">
+                          <span className="ml-auto font-mono text-[9px] tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400">
                             v2.0
                           </span>
                         )}
