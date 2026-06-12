@@ -333,7 +333,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
       
       {/* Panel - positioned after sidebar */}
       <div 
-        className="fixed bottom-0 right-0 z-[9999] animate-slideUp"
+        className="fixed bottom-[var(--pulse-bottom-bar)] right-0 z-[9999] animate-slideUp"
         style={{ left: 'var(--sidebar-width, 0)' }}
       >
         <div className="bg-white dark:bg-zinc-900 rounded-t-3xl shadow-2xl border-t border-zinc-200 dark:border-zinc-800 max-h-[85vh] overflow-hidden">

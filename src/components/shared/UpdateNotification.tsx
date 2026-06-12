@@ -24,7 +24,7 @@ export function UpdateNotification({
 
   return (
     <div
-      className={`fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-50 ${className}`}
+      className={`fixed bottom-[calc(1rem+var(--pulse-bottom-bar))] left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-50 ${className}`}
       style={{ animation: 'slideUp 0.3s ease-out' }}
     >
       <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4">

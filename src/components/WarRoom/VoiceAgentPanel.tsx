@@ -179,7 +179,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
     return (
       <button
         onClick={() => setIsMinimized(false)}
-        className="fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+        className="fixed bottom-[calc(1rem+var(--pulse-bottom-bar))] right-4 z-50 w-14 h-14 rounded-full text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
         style={{
           background: 'linear-gradient(135deg, var(--pulse-rose) 0%, var(--pulse-pink) 100%)',
           boxShadow: '0 4px 16px var(--pulse-rose-glow)',

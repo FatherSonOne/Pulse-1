@@ -218,7 +218,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
     <>
       {/* Selection Toolbar */}
       <div
-        className="fixed bottom-0 left-0 right-0 px-6 py-4"
+        className="fixed bottom-[var(--pulse-bottom-bar)] left-0 right-0 px-6 py-4"
         style={{
           zIndex: 999999,
           background: isDarkMode

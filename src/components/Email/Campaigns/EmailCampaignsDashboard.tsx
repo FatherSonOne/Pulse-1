@@ -530,7 +530,7 @@ const EmptyState: React.FC<{ onNewCampaign: () => void }> = ({ onNewCampaign }) 
 const ToastStack: React.FC<{ toasts: Toast[] }> = ({ toasts }) => {
   if (toasts.length === 0) return null;
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+    <div className="fixed bottom-[calc(1rem+var(--pulse-bottom-bar))] right-4 z-50 flex flex-col gap-2 pointer-events-none">
       {toasts.map((t) => (
         <div
           key={t.id}

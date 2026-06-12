@@ -55,7 +55,7 @@ export function InstallPrompt() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-[9999] max-md:rounded-t-3xl md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:max-w-md md:rounded-2xl"
+            className="fixed bottom-[var(--pulse-bottom-bar)] left-0 right-0 z-[9999] max-md:rounded-t-3xl md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:max-w-md md:rounded-2xl"
           >
             <div className="bg-white dark:bg-zinc-900 shadow-2xl border border-zinc-200 dark:border-zinc-800 max-md:rounded-t-3xl md:rounded-2xl overflow-hidden">
               {/* Header */}

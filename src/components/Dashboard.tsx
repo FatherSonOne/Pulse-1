@@ -1805,7 +1805,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
       {/* Persistent activity badge — bottom-left corner. Shows briefly after any save. */}
       {lastSavedAt && ReactDOM.createPortal(
         <div
-          className="fixed bottom-6 left-6 z-[9998] pulse-label inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 shadow-sm animate-fade-in pointer-events-none"
+          className="fixed bottom-[calc(1.5rem+var(--pulse-bottom-bar))] left-6 z-[9998] pulse-label inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 shadow-sm animate-fade-in pointer-events-none"
           aria-live="polite"
           role="status"
         >

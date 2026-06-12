@@ -2406,7 +2406,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
 
       {/* AI Auto-Chapters Panel */}
       {activeChapters.length > 0 && chapterMessageId && (
-        <div className="fixed bottom-4 left-4 right-4 z-[200] max-w-2xl mx-auto">
+        <div className="fixed bottom-[calc(1rem+var(--pulse-bottom-bar))] left-4 right-4 z-[200] max-w-2xl mx-auto">
           <div className="relative">
             <button
               type="button"

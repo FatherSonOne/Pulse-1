@@ -841,7 +841,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
 
       {/* ── Post-Meeting Follow-Up Prompt ────────────────────────────── */}
       {props.activeFollowUpPrompt && (
-        <div className="fixed bottom-6 right-6 max-w-md z-[100] animate-fade-in">
+        <div className="fixed bottom-[calc(1.5rem+var(--pulse-bottom-bar))] right-6 max-w-md z-[100] animate-fade-in">
           <PostMeetingPrompt
             followUp={props.activeFollowUpPrompt}
             onCreateAction={props.onFollowUpCreateAction}

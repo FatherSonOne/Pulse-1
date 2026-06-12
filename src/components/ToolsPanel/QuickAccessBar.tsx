@@ -104,7 +104,7 @@ export const MobileQuickAccessBar: React.FC<QuickAccessBarProps> = ({
   return (
     <div
       className={`
-        fixed bottom-4 right-4
+        fixed bottom-[calc(1rem+var(--pulse-bottom-bar))] right-4
         flex flex-col gap-2 p-1
         bg-zinc-900/90 backdrop-blur-xl
         border border-zinc-700/50

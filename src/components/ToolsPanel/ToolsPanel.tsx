@@ -122,7 +122,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
         {/* Mobile Bottom Sheet */}
         <div
           className={`
-            fixed inset-x-0 bottom-0
+            fixed inset-x-0 bottom-[var(--pulse-bottom-bar)]
             h-[70vh] rounded-t-3xl
             bg-white dark:bg-zinc-900
             border-t border-zinc-200 dark:border-zinc-800

@@ -3103,7 +3103,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           Coral signal: focus mode IS active state, matches the cal-focus-mode top stripe. */}
       {focusMode && (
         <div
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9996] flex items-center gap-3 px-4 py-2 rounded-full bg-[var(--pulse-rose)] text-white font-mono text-[11px] tracking-[0.1em] uppercase font-semibold shadow-[0_4px_24px_rgba(244,63,94,0.30)]"
+          className="fixed bottom-[calc(1rem+var(--pulse-bottom-bar))] left-1/2 -translate-x-1/2 z-[9996] flex items-center gap-3 px-4 py-2 rounded-full bg-[var(--pulse-rose)] text-white font-mono text-[11px] tracking-[0.1em] uppercase font-semibold shadow-[0_4px_24px_rgba(244,63,94,0.30)]"
           role="status"
           aria-live="polite"
         >

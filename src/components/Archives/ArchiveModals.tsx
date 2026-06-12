@@ -161,7 +161,7 @@ export const ArchiveModals: React.FC = () => {
 
       {/* Share Success Toast */}
       {shareSuccess && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg animate-fade-in z-50 flex items-center gap-2">
+        <div className="fixed bottom-[calc(1.5rem+var(--pulse-bottom-bar))] left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg animate-fade-in z-50 flex items-center gap-2">
           <Check />
           {shareSuccess}
         </div>

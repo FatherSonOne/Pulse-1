@@ -76,7 +76,7 @@ export const ConversationContext: React.FC<ConversationContextProps> = ({
   return (
     <div
       className={`
-        fixed bottom-6 right-6 z-[60] w-80
+        fixed bottom-[calc(1.5rem+var(--pulse-bottom-bar))] right-6 z-[60] w-80
         bg-white dark:bg-zinc-900
         border border-zinc-200 dark:border-zinc-700
         rounded-2xl shadow-2xl
