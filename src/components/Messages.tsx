@@ -161,7 +161,7 @@ import { tagsService, type TagDefinition } from '../services/tagsService';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { trackOnboarding, OnboardingEvent } from '../lib/monitoring/onboardingEvents';
 
-import { Archive, ArrowLeft, ArrowRight, ArrowUp, AtSign, BarChart, Bold, Bot, Check, CheckCheck, CheckCircle, CheckCircle2, Clock, Copy, Crosshair, Download, Ellipsis, Eye, File, FileOutput, FileText, Flag, Gavel, GitFork, GraduationCap, Handshake, Hash, HeartPulse, History, Image, Keyboard, Languages, Layers, LayoutGrid, Lightbulb, Link, ListChecks, Loader2, Lock, LogOut, Mail, Menu, MessageCircle, MessageSquare, MessagesSquare, PanelRightOpen, Pen, PenTool, Play, Plus, Reply, Rocket, Scale, Search, Send, Share, SlidersHorizontal, Smartphone, Smile, Sparkles, Square, SquarePen, Star, Target, Terminal, ThumbsDown, ThumbsUp, Timer, Trash2, TrendingUp, Trophy, UserPlus, UserX, Users, Video, Wand2, Wrench, X, Zap } from 'lucide-react';
+import { Archive, ArrowLeft, ArrowRight, ArrowUp, AtSign, BarChart, Bold, Bot, Check, CheckCheck, CheckCircle, CheckCircle2, Clock, Copy, Crosshair, Download, Ellipsis, Eye, File, FileOutput, FileText, Flag, Gavel, GitFork, GraduationCap, Handshake, Hash, HeartPulse, History, Image, Keyboard, Languages, Layers, LayoutGrid, Lightbulb, Link, ListChecks, Loader2, Lock, LogOut, Mail, MessageCircle, MessageSquare, MessagesSquare, PanelLeftOpen, PanelRightOpen, Pen, PenTool, Play, Plus, Reply, Rocket, Scale, Search, Send, Share, SlidersHorizontal, Smartphone, Smile, Sparkles, Square, SquarePen, Star, Target, Terminal, ThumbsDown, ThumbsUp, Timer, Trash2, TrendingUp, Trophy, UserPlus, UserX, Users, Video, Wand2, Wrench, X, Zap } from 'lucide-react';
 
 // Extracted Modals
 import {
@@ -3832,8 +3832,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="min-h-16 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex items-center justify-between px-4 py-2 z-10 bg-[#f8f8f8]/95 dark:bg-black/95 flex-shrink-0 mobile-header-safe">
             <div className="flex items-center gap-3">
               {/* Mobile Menu Button (visible only on mobile) */}
-              <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition" title="Open menu">
-                <Menu />
+              <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition" title="Show conversations">
+                <PanelLeftOpen />
               </button>
               {/* Desktop Back Button (visible only on mobile when chat is active) */}
               <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition" title="Back to messages">
@@ -5084,8 +5084,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         <div className="min-h-[56px] md:h-16 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex items-center justify-between px-2 sm:px-4 z-10 bg-[#f8f8f8]/95 dark:bg-black/95 flex-shrink-0 gap-2 mobile-header-safe">
           <div className="flex items-center gap-2 min-w-0 flex-shrink">
              {/* Mobile Menu Button (visible only on mobile) */}
-             <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex-shrink-0" title="Open menu">
-               <Menu />
+             <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex-shrink-0" title="Show conversations">
+               <PanelLeftOpen />
              </button>
              {/* Desktop Back Button (visible only on mobile when chat is active) */}
              <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex-shrink-0" title="Back to messages"><ArrowLeft /></button>
