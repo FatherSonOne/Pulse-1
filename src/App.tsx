@@ -723,6 +723,17 @@ const App: React.FC = () => {
   }, []);
   useAndroidBackButton({ view, setView, interceptBack: interceptMobileSheetBack });
 
+  // Crossing into the desktop (md+) layout retires any open mobile sheet. The
+  // sheet panel is `md:hidden`, but the portal stays mounted otherwise — its
+  // focus trap and body scroll-lock would keep running off-screen.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const sync = () => { if (mq.matches) setMobileSheet(null); };
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
   // In-app SMS is a mock shell, hidden for v1 (issue #100). useFeatureFlag
   // is a synchronous read despite the `use` prefix, so it is safe to call
   // here in the component body.

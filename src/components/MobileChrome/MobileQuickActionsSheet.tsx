@@ -35,7 +35,7 @@ interface SheetAction {
 }
 
 const rowClass =
-  'w-full flex items-center gap-3 px-4 min-h-[48px] text-sm text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/[0.04] active:bg-zinc-100 dark:active:bg-white/[0.06] hover:text-rose-600 dark:hover:text-rose-400 focus-visible:outline-none focus-visible:bg-zinc-50 dark:focus-visible:bg-white/[0.04] transition-colors duration-150';
+  'w-full flex items-center gap-3 px-4 min-h-[48px] text-sm text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/[0.04] active:bg-zinc-100 dark:active:bg-white/[0.06] hover:text-rose-600 dark:hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-inset transition-colors duration-150';
 
 export const MobileQuickActionsSheet: React.FC<MobileQuickActionsSheetProps> = ({
   contacts,

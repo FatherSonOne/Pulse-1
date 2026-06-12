@@ -61,6 +61,11 @@ export const MobileNavSheet: React.FC<MobileNavSheetProps> = ({ view, onNavigate
                 {items.map(item => {
                   const active = item.view === view;
                   const emailOff = !!item.showsEmailGate && !features.emailEnabled;
+                  const ariaLabel = locked
+                    ? `${item.label} — coming in a later release`
+                    : emailOff
+                      ? `${item.label} — surface turned off`
+                      : undefined;
                   return (
                     <li key={item.view}>
                       <button
@@ -68,7 +73,8 @@ export const MobileNavSheet: React.FC<MobileNavSheetProps> = ({ view, onNavigate
                         onClick={() => onNavigate(item.view)}
                         disabled={locked}
                         aria-current={active ? 'page' : undefined}
-                        className={`w-full flex items-center gap-3 px-4 min-h-[48px] text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:bg-zinc-50 dark:focus-visible:bg-white/[0.04] ${
+                        aria-label={ariaLabel}
+                        className={`relative w-full flex items-center gap-3 px-4 min-h-[48px] text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-inset ${
                           locked
                             ? 'opacity-40 cursor-not-allowed text-zinc-500 dark:text-zinc-400'
                             : active
@@ -76,17 +82,23 @@ export const MobileNavSheet: React.FC<MobileNavSheetProps> = ({ view, onNavigate
                               : 'text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/[0.04] active:bg-zinc-100 dark:active:bg-white/[0.06]'
                         }`}
                       >
+                        {active && !locked && (
+                          <span
+                            aria-hidden="true"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r-full bg-rose-500"
+                          />
+                        )}
                         <item.icon
                           className={`w-4 h-4 shrink-0 ${active && !locked ? '' : 'text-zinc-400 dark:text-zinc-500'}`}
                         />
                         <span className="truncate">{item.label}</span>
                         {emailOff && (
-                          <span className="ml-auto font-mono text-[9px] tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400">
+                          <span aria-hidden="true" className="ml-auto font-mono text-[9px] tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400">
                             Off
                           </span>
                         )}
                         {locked && (
-                          <span className="ml-auto font-mono text-[9px] tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400">
+                          <span aria-hidden="true" className="ml-auto font-mono text-[9px] tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400">
                             v2.0
                           </span>
                         )}

@@ -1195,11 +1195,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   }, []);
 
-  // Quick Actions moved to the app-level GlobalQuickActions FAB (Phase 5b) so
-  // they're available on every view and fire real actions (open composer,
-  // instant meeting, contact-picked voice message), not navigate-only. The old
-  // 'dashboard:actions' palette scope was redundant with the global app:create /
-  // app:actions / nav commands, so it was retired with the move.
+  // Quick Actions live in the slim bar's "+" sheet (MobileQuickActionsSheet) on
+  // mobile and the command palette / ⌘K on desktop, so they fire real actions
+  // (open composer, instant meeting, contact-picked voice message), not
+  // navigate-only. The old 'dashboard:actions' palette scope was redundant with
+  // the global app:create / app:actions / nav commands, so it was retired.
 
   // Derived: message unread count from threads
   const messageUnreadCount = useMemo(() => threads.filter(t => t.unread).length, [threads]);
@@ -1793,8 +1793,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
       </div>
       )}
 
-      {/* Quick Actions FAB moved to the app-level GlobalQuickActions (Phase 5b);
-          it now floats on every view. The "?" keyboard-help button was dropped —
+      {/* Quick Actions live in the slim bar's "+" sheet at app level (mobile) and
+          the command palette (desktop). The "?" keyboard-help button was dropped —
           the global KeyboardChordsLayer already owns the `?` overlay. */}
 
       {/* Persistent activity badge — bottom-left corner. Shows briefly after any save. */}
