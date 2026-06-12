@@ -34,7 +34,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { UserSearch, Users, UserPlus } from 'lucide-react';
+import { ArrowLeft, Sparkles, UserSearch, Users, UserPlus, X } from 'lucide-react';
 import { Contact } from '../../../types';
 import type { SmartListType } from '../../../types/relationshipTypes';
 import type { ContactCircle } from '../../../types/contactCircleTypes';
@@ -65,6 +65,7 @@ import type { DiscoveredPulseUser } from '../../../services/pulseUserDiscoverySe
 import { BrowseColumn } from './list/BrowseColumn';
 import { FocusColumn } from './detail/FocusColumn';
 import { CopilotRail } from './copilot/CopilotRail';
+import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import { composeEmail } from './channels/actions';
 import {
   filterBrowseContacts,
@@ -115,6 +116,11 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
   // ── Selection + filter state ──────────────────────────────────────────────
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  // Responsive: below md the 3-pane collapses to a single column (master-detail
+  // Browse<->Focus) with the Co-pilot rail behind a toggle. JS check, not Tailwind
+  // responsive variants (unreliable in this tree — see the Co-pilot note below).
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const [copilotOpen, setCopilotOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [filterTag, setFilterTag] = useState<string | null>(null);
@@ -537,10 +543,23 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
     />
   );
 
+  const copilotRail = (
+    <CopilotRail
+      userId={userId ?? undefined}
+      contacts={contacts}
+      emailEnabled={features.emailEnabled}
+      onSelectContact={setSelectedContactId}
+      onAction={onAction}
+    />
+  );
+
   return (
     <div className="flex h-full w-full overflow-hidden" style={{ background: 'var(--pulse-canvas)' }}>
-      {/* Col 1 — Browse */}
+      {/* Col 1 — Browse. Mobile: full-width primary pane, shown only when no
+          contact is selected (master-detail). */}
+      {(isDesktop || !selectedContact) && (
       <BrowseColumn
+        fullWidth={!isDesktop}
         contacts={filteredContacts}
         selectedContactId={selectedContactId}
         onSelectContact={(c) => setSelectedContactId(c.id)}
@@ -585,9 +604,23 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
         bulkToolbar={bulkToolbar}
         onAddContact={() => setShowAddChooser(true)}
       />
+      )}
 
-      {/* Col 2 — Focus */}
-      <div className="flex-1 min-w-0">
+      {/* Col 2 — Focus. Mobile: full-width, shown only when a contact is
+          selected, with a back affordance to return to Browse. */}
+      {(isDesktop || selectedContact) && (
+      <div className="flex-1 min-w-0 flex flex-col">
+        {!isDesktop && selectedContact && (
+          <button
+            type="button"
+            onClick={() => setSelectedContactId(null)}
+            className="flex items-center gap-2 px-4 h-12 shrink-0 text-sm font-medium text-zinc-600 dark:text-zinc-300 border-b"
+            style={{ borderColor: 'var(--pulse-border)' }}
+          >
+            <ArrowLeft className="w-4 h-4" /> Contacts
+          </button>
+        )}
+        <div className="flex-1 min-h-0">
         {selectedContact ? (
           <FocusColumn
             contact={selectedContact}
@@ -615,27 +648,55 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
             </p>
           </div>
         )}
+        </div>
       </div>
+      )}
 
-      {/* Col 3 — Co-pilot rail. Shown via a plain `flex` class + an INLINE width,
-          NOT `hidden md:flex w-[280px]`. Successive responsive/arbitrary Tailwind
-          classes (xl→lg→md→w-[..]) never appeared for the user even on a ~1900px
-          screen — the likely cause is the dev server's Tailwind JIT not
-          regenerating those utilities on HMR, so the rule was simply absent from
-          the CSS. `flex` + inline style sidestep JIT entirely. Responsive
-          mobile hide is Phase 10. */}
-      <div
-        className="flex flex-col shrink-0 border-l p-4 overflow-hidden"
-        style={{ width: 300, borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
-      >
-        <CopilotRail
-          userId={userId ?? undefined}
-          contacts={contacts}
-          emailEnabled={features.emailEnabled}
-          onSelectContact={setSelectedContactId}
-          onAction={onAction}
-        />
-      </div>
+      {/* Col 3 — Co-pilot. Desktop: inline 300px rail (plain flex + inline width
+          to sidestep this tree's flaky Tailwind JIT — responsive variants don't
+          always regenerate on HMR). Mobile: hidden behind a toggle that opens it
+          as a right-side sheet. */}
+      {isDesktop ? (
+        <div
+          className="flex flex-col shrink-0 border-l p-4 overflow-hidden"
+          style={{ width: 300, borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
+        >
+          {copilotRail}
+        </div>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={() => setCopilotOpen(true)}
+            aria-label="Open Pulse AI co-pilot"
+            className="fixed right-4 bottom-[calc(1.25rem+var(--pulse-bottom-bar))] z-[60] w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+            style={{ background: 'var(--pulse-rose)', color: '#fff' }}
+          >
+            <Sparkles className="w-5 h-5" />
+          </button>
+          {copilotOpen && (
+            <div className="fixed inset-0 z-[80] flex justify-end" role="dialog" aria-modal="true" aria-label="Pulse AI co-pilot">
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setCopilotOpen(false)} aria-hidden="true" />
+              <div
+                className="relative w-[88%] max-w-sm h-full flex flex-col border-l p-4 overflow-hidden"
+                style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setCopilotOpen(false)}
+                  aria-label="Close"
+                  className="self-end mb-2 w-9 h-9 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  {copilotRail}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Modals */}
       <NamePromptModal

@@ -55,6 +55,9 @@ interface BrowseColumnProps {
   bulkToolbar?: React.ReactNode;
 
   onAddContact: () => void;
+  /** When true, the column fills its container instead of the fixed 330px rail
+   *  width — used on mobile where Browse is the full-width primary pane. */
+  fullWidth?: boolean;
 }
 
 const StatusChip: React.FC<{ label: string; count?: number; active: boolean; onClick: () => void }> = ({
@@ -105,12 +108,13 @@ export const BrowseColumn: React.FC<BrowseColumnProps> = ({
   onClearSelection,
   bulkToolbar,
   onAddContact,
+  fullWidth = false,
 }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
     <div
-      className="flex flex-col h-full w-[330px] shrink-0 border-r"
+      className={`flex flex-col h-full border-r ${fullWidth ? 'w-full' : 'w-[330px] shrink-0'}`}
       style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
     >
       {/* Bulk action toolbar — replaces nothing; sits above the header when a
