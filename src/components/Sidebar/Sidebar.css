@@ -23,6 +23,10 @@
   --divider-color: var(--pulse-border);
 
   --sidebar-transition: var(--pulse-duration) var(--pulse-ease);
+  /* Hover/color changes want to feel near-instant on a list traversed dozens
+     of times a day — the 220ms layout duration reads as lag on the way in.
+     Collapse (width) keeps --sidebar-transition. */
+  --sidebar-hover-transition: 150ms var(--pulse-ease);
 }
 
 .dark .pulse-sidebar {
@@ -135,13 +139,19 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   outline: none;
-  transition: background var(--sidebar-transition), color var(--sidebar-transition), border-color var(--sidebar-transition);
+  transition: background var(--sidebar-hover-transition), color var(--sidebar-hover-transition), border-color var(--sidebar-hover-transition), transform 120ms var(--pulse-ease);
 }
 
 .sidebar-collapse-btn:hover {
   background: var(--nav-item-bg-hover);
   color: var(--nav-item-text-hover);
   border-color: var(--sidebar-border-strong);
+}
+
+/* Press feedback — confirms the toggle was heard. Instant, so it doesn't
+   slow the interaction; release eases back over 120ms. */
+.sidebar-collapse-btn:active {
+  transform: scale(0.95);
 }
 
 .sidebar-collapse-btn:focus-visible {
@@ -270,7 +280,7 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  transition: background var(--sidebar-transition);
+  transition: background var(--sidebar-hover-transition);
   border-radius: 8px;
   padding: 12px 12px 4px;
   display: flex;
@@ -291,7 +301,15 @@
   font-size: 0.625rem;
   color: var(--nav-item-text);
   opacity: 0.5;
-  transition: opacity var(--sidebar-transition);
+  /* Single chevron that rotates rather than swapping glyphs — a smooth
+     affordance instead of an instant cut. Hover-tier timing (150ms) so the
+     click-toggle rotation feels like a direct response, synced with the
+     section-header hover. */
+  transition: opacity var(--sidebar-hover-transition), transform var(--sidebar-hover-transition);
+}
+
+.sidebar-section-chevron.expanded {
+  transform: rotate(90deg);
 }
 
 .sidebar-section-collapsible:hover .sidebar-section-chevron {
@@ -311,10 +329,26 @@
   background: transparent;
   color: var(--nav-item-text);
   cursor: pointer;
-  transition: background var(--sidebar-transition), color var(--sidebar-transition);
+  transition: background var(--sidebar-hover-transition), color var(--sidebar-hover-transition);
   position: relative;
   text-align: left;
   margin-bottom: 1px;
+}
+
+/* Reveal — collapsible-section items fade up on expand instead of popping in.
+   Scoped to .--reveal (only the Experimental section sets it), so the
+   always-mounted primary nav never re-animates. */
+@keyframes sidebarItemReveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.sidebar-nav-item--reveal {
+  animation: sidebarItemReveal 200ms var(--pulse-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-nav-item--reveal { animation: none; }
 }
 
 /* Hover — color change only, no transform. */
@@ -357,7 +391,7 @@
   flex-shrink: 0;
   background: transparent;
   color: var(--nav-item-text);
-  transition: color var(--sidebar-transition);
+  transition: color var(--sidebar-hover-transition);
 }
 
 .sidebar-nav-icon i,
@@ -422,7 +456,7 @@
   background: transparent;
   color: var(--nav-item-text);
   cursor: pointer;
-  transition: background var(--sidebar-transition), color var(--sidebar-transition);
+  transition: background var(--sidebar-hover-transition), color var(--sidebar-hover-transition);
   text-align: left;
 }
 
@@ -446,7 +480,7 @@
   flex-shrink: 0;
   background: transparent;
   color: var(--nav-item-text);
-  transition: color var(--sidebar-transition);
+  transition: color var(--sidebar-hover-transition);
 }
 
 .sidebar-footer-icon i,

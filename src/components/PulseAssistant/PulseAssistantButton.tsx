@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import './PulseAssistantButton.css';
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/i.test(navigator.platform);
@@ -32,6 +32,9 @@ export const PulseAssistantButton: React.FC<PulseAssistantButtonProps> = ({
   hasProactiveSuggestion = false,
   collapsed,
 }) => {
+  // The ECG sweep dot loops forever via framer-motion JS motion values, which
+  // escape the global CSS reduced-motion guard (index.css). Gate it here.
+  const reduceMotion = useReducedMotion();
   return (
     <button
       type="button"
@@ -44,7 +47,9 @@ export const PulseAssistantButton: React.FC<PulseAssistantButtonProps> = ({
       {/* Icon container */}
       <motion.div
         className="pa-btn-icon"
-        whileHover={{ y: -2, boxShadow: '0 6px 20px rgba(244, 63, 94, 0.55)' }}
+        whileHover={reduceMotion
+          ? { boxShadow: '0 6px 20px rgba(244, 63, 94, 0.55)' }
+          : { y: -2, boxShadow: '0 6px 20px rgba(244, 63, 94, 0.55)' }}
         transition={{ type: 'spring', stiffness: 400, damping: 20 }}
       >
         <svg
@@ -101,24 +106,37 @@ export const PulseAssistantButton: React.FC<PulseAssistantButtonProps> = ({
               resolves cx/cy to undefined during interpolation setup, which
               React stringifies to "undefined" on the DOM attribute and the
               SVG layout engine warns. */}
-          <motion.circle
-            r="3.2"
-            fill="#ff7096"
-            filter="url(#pa-ecg-dot-glow)"
-            initial={{ cx: DOT_KX[0], cy: DOT_KY[0], opacity: DOT_OPAC[0] }}
-            animate={{
-              cx: DOT_KX,
-              cy: DOT_KY,
-              opacity: DOT_OPAC,
-            }}
-            transition={{
-              duration: SWEEP_DURATION,
-              ease: 'linear',
-              times: DOT_T,
-              repeat: Infinity,
-              repeatType: 'loop',
-            }}
-          />
+          {reduceMotion ? (
+            // Reduced motion: park the dot static at the waveform's up-spike
+            // instead of orbiting forever.
+            <circle
+              r="3.2"
+              fill="#ff7096"
+              filter="url(#pa-ecg-dot-glow)"
+              cx={DOT_KX[2]}
+              cy={DOT_KY[2]}
+              opacity={1}
+            />
+          ) : (
+            <motion.circle
+              r="3.2"
+              fill="#ff7096"
+              filter="url(#pa-ecg-dot-glow)"
+              initial={{ cx: DOT_KX[0], cy: DOT_KY[0], opacity: DOT_OPAC[0] }}
+              animate={{
+                cx: DOT_KX,
+                cy: DOT_KY,
+                opacity: DOT_OPAC,
+              }}
+              transition={{
+                duration: SWEEP_DURATION,
+                ease: 'linear',
+                times: DOT_T,
+                repeat: Infinity,
+                repeatType: 'loop',
+              }}
+            />
+          )}
         </svg>
 
         {/* Proactive suggestion badge */}

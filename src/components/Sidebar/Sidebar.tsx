@@ -151,6 +151,12 @@ interface NavItemProps {
   onClick: () => void;
   /** Greyed-out + non-clickable (e.g. Experimental section turned off). */
   disabled?: boolean;
+  /** Fade-up on mount — used for collapsible-section items that reveal on
+   *  expand (the always-mounted primary nav leaves this off so it never
+   *  re-animates). */
+  reveal?: boolean;
+  /** Per-item stagger offset (ms) for the reveal animation. */
+  revealDelay?: number;
 }
 
 const NavItem: React.FC<NavItemProps> = ({
@@ -160,15 +166,20 @@ const NavItem: React.FC<NavItemProps> = ({
   isCollapsed,
   onClick,
   disabled = false,
+  reveal = false,
+  revealDelay = 0,
 }) => {
   return (
     <button
-      className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+      className={`sidebar-nav-item ${isActive ? 'active' : ''} ${reveal ? 'sidebar-nav-item--reveal' : ''}`}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
       aria-disabled={disabled}
       title={isCollapsed ? label : undefined}
-      style={disabled ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+      style={{
+        ...(disabled ? { opacity: 0.4, cursor: 'not-allowed' as const } : null),
+        ...(reveal ? { animationDelay: `${revealDelay}ms` } : null),
+      }}
     >
       <div className="sidebar-nav-icon">
         <Icon size={16} />
@@ -210,7 +221,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
       >
         <div className={`sidebar-section-dot ${color}`} />
         <span className="sidebar-section-label">{label}</span>
-        <i className={`fa-solid ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} sidebar-section-chevron`} />
+        <i className={`fa-solid fa-chevron-right sidebar-section-chevron ${isExpanded ? 'expanded' : ''}`} />
       </button>
     );
   }
@@ -373,8 +384,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* Navigation */}
-        <nav className="sidebar-nav">
+        {/* Navigation — desktop only. On mobile the bottom-bar hamburger sheet
+            owns section navigation, so the drawer is account/workspace/settings
+            only (no duplicate nav). max-md:hidden keeps the full nav on desktop. */}
+        <nav className="sidebar-nav max-md:hidden">
           {navSections.map((section, sectionIdx) => {
             const isSectionExpanded = section.collapsible
               ? expandedSections[section.label] === true
@@ -412,7 +425,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {sectionDisabled ? 'features disabled' : section.note}
                   </div>
                 )}
-                {isSectionExpanded && section.items.map((item) => {
+                {isSectionExpanded && section.items.map((item, itemIdx) => {
                   // Slack Channels is a dark-launch beta — hidden entirely until
                   // the slackChannelsGrounding flag is on (unlike Email below,
                   // which shows-disabled when off).
@@ -431,6 +444,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         isCollapsed={isCollapsed}
                         onClick={() => handleNavClick(item.view)}
                         disabled={sectionDisabled}
+                        reveal={!!section.collapsible}
+                        revealDelay={itemIdx * 40}
                       />
                       {/* Caption — mirrors the Experimental section note's font
                           style (10px italic), indented to sit under the nav
