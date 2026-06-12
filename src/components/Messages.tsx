@@ -4326,7 +4326,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           </React.Suspense>
 
           {/* Pulse Messages - Scrollable area */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          {/* min-h-0: without it a flex-1 child defaults to min-height:auto and
+              grows to its content instead of scrolling, pushing the flex-shrink-0
+              composer below the column box — under the mobile bottom bar. */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6">
             {/* Load More button for pagination */}
             {hasMorePulseMessages && (
               <div className="flex justify-center mb-4">
