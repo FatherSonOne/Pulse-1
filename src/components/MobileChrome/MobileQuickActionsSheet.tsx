@@ -74,10 +74,10 @@ export const MobileQuickActionsSheet: React.FC<MobileQuickActionsSheetProps> = (
         { id: 'email', label: 'Compose email', icon: 'fa-envelope', hidden: !features.emailEnabled, run: () => { onComposeEmail(); onClose(); } },
         { id: 'vox', label: 'Quick Relay', icon: 'fa-microphone', run: () => setVoxPicker(true) },
         { id: 'contact', label: 'New contact', icon: 'fa-user-plus', run: () => { onNewContact(); onClose(); } },
-        { id: 'warroom', label: 'War Room', icon: 'fa-book-open', run: () => { setView(AppView.LIVE_AI); onClose(); } },
+        { id: 'warroom', label: 'War Room', icon: 'fa-book-open', hidden: !features.experimentalEnabled, run: () => { setView(AppView.LIVE_AI); onClose(); } },
         { id: 'search', label: 'Search', icon: 'fa-magnifying-glass', run: () => { setView(AppView.MULTI_MODAL); onClose(); } },
       ].filter(a => !a.hidden),
-    [features.emailEnabled, onNewTask, onStartMeeting, onComposeEmail, onNewContact, setView, onClose]
+    [features.emailEnabled, features.experimentalEnabled, onNewTask, onStartMeeting, onComposeEmail, onNewContact, setView, onClose]
   );
 
   const voxMatches = useMemo(() => {
