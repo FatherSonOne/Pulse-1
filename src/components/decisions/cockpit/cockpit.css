@@ -76,6 +76,16 @@
 .ck-kbar:hover { border-color: var(--pulse-border-strong); }
 .ck-kbar-label { display: inline-flex; align-items: center; gap: 8px; }
 
+/* Mobile: the masthead row doesn't fit a phone — wrap the title and the actions
+   onto separate rows, and let the command-bar trigger take the remaining width
+   with a truncating label so the icon buttons stay reachable. */
+@media (max-width: 767px) {
+  .ck-masthead-row { flex-wrap: wrap; }
+  .ck-actions { width: 100%; }
+  .ck-kbar { flex: 1 1 auto; min-width: 0; gap: 8px; }
+  .ck-kbar-label { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+}
+
 .ck-keycap {
   font-family: var(--pulse-font-mono);
   font-size: 10px;
