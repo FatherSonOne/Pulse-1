@@ -4,7 +4,7 @@
  */
 
 // Service Worker version for cache busting
-const NOTIF_SW_VERSION = '1.0.0';
+const NOTIF_SW_VERSION = '1.1.0';
 const CACHE_NAME = `pulse-notifications-${NOTIF_SW_VERSION}`;
 
 // Install event - cache essential assets
@@ -74,7 +74,27 @@ self.addEventListener('push', (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    (async () => {
+      // Focused-client suppression: for message pushes, if a Pulse window is
+      // actually FOCUSED the user is already in the app — the live message
+      // render + unread-badge update are the in-app signal, so an OS push on
+      // top of that is pure noise. Suppress only in that case. We deliberately
+      // do NOT suppress on mere visibility (a visible-but-unfocused tab, e.g.
+      // on a second monitor or another section) — those should still surface
+      // the push. Non-message pushes (e.g. search alerts) always show.
+      const isMessage = data && data.data && data.data.type === 'message';
+      if (isMessage) {
+        const windowClients = await clients.matchAll({
+          type: 'window',
+          includeUncontrolled: true,
+        });
+        const appFocused = windowClients.some((c) => c.focused === true);
+        if (appFocused) {
+          return; // user is actively in Pulse — live render + unread badge cover it
+        }
+      }
+      return self.registration.showNotification(data.title, options);
+    })()
   );
 });
 

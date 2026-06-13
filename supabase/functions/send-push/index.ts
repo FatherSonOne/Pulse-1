@@ -48,6 +48,12 @@ const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT')
 // to every subscribed device. Mirrors CRON_SECRET in check-search-alerts.
 const PUSH_DISPATCH_SECRET = Deno.env.get('PUSH_DISPATCH_SECRET')
 
+// Also accept CRON_SECRET — the canonical Postgres/cron → edge-function secret
+// (already honored by send-security-alert). This lets DB triggers dispatch a
+// push using the same vault `cron_secret` pattern as trigger_security_alert_email,
+// without minting a new project secret. See notify_on_pulse_message().
+const CRON_SECRET = Deno.env.get('CRON_SECRET')
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-push-secret, x-client-info, apikey, content-type',
@@ -78,14 +84,21 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
-  // ── Auth — require the shared dispatch secret ───────────────────────────
-  if (!PUSH_DISPATCH_SECRET) {
-    return json({ error: 'PUSH_DISPATCH_SECRET not configured' }, 500)
+  // ── Auth — require a shared internal-dispatch secret ────────────────────
+  // Accept EITHER PUSH_DISPATCH_SECRET (push-specific, used by check-search-alerts)
+  // OR CRON_SECRET (the canonical internal Postgres/cron secret). Additive: the
+  // original push-secret path is unchanged; the CRON_SECRET path is what DB
+  // triggers (notify_on_pulse_message) use via the vault `cron_secret`.
+  if (!PUSH_DISPATCH_SECRET && !CRON_SECRET) {
+    return json({ error: 'No dispatch secret configured (PUSH_DISPATCH_SECRET or CRON_SECRET)' }, 500)
   }
   const providedSecret =
     req.headers.get('x-push-secret') ||
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-  if (providedSecret !== PUSH_DISPATCH_SECRET) {
+  const secretOk =
+    (!!PUSH_DISPATCH_SECRET && providedSecret === PUSH_DISPATCH_SECRET) ||
+    (!!CRON_SECRET && providedSecret === CRON_SECRET)
+  if (!secretOk) {
     return json({ error: 'Unauthorized' }, 401)
   }
 
