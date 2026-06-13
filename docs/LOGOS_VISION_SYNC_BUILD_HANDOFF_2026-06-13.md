@@ -63,7 +63,11 @@ The spec's Section 5 was explicitly overridable. Live verification forces these 
 
 **Thinnest end-to-end slice = P0→P1→P2→P3** (Conversation→Case Log genuinely working). P4–P7 layer on.
 
-**Build status:** P0 (connection + flag scaffold) shipped + live-verified 2026-06-13 — `GET /api/logos/health` → `{configured:true, ok:true, rows:1}`, tsc clean (0 errors in P0 files), flag `logosVisionSync` default OFF. **P1 (contact↔Logos mapping) is next.**
+**Build status:** P0 + P1 shipped + verified 2026-06-13.
+- **P0** (connection + flag scaffold): `GET /api/logos/health` → `{configured:true, ok:true, rows:1}`; flag `logosVisionSync` default OFF.
+- **P1** (contact↔Logos mapping): server-side routes `GET /api/logos/clients` + `GET/POST/DELETE /api/logos/mappings` (auth-gated → 401 without a Pulse session; mapping CRUD via the Pulse service-role client since `logos_pulse_mappings` has RLS-on/no-policies); `src/services/logosMappingService.ts`; "Link to Logos client" card on `FocusColumn.tsx` (flag-gated, mirrors the Link-Slack pattern). Verified: DB round-trip (clients read + mapping insert/read/delete/cleanup), 401 guard, tsc clean. In-UI click-through is the live acceptance check.
+
+**P2 (idempotency ledger over `crm_actions`) is next.**
 
 ---
 

@@ -334,6 +334,17 @@ function logosServiceClient() {
   });
 }
 
+// Validate the caller's Pulse session (Bearer JWT). Throws {status:401} when the
+// token is missing or invalid, so /api/logos/* never exposes CRM data anonymously.
+async function requireUser(req) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) { const e = new Error('Missing Authorization token'); e.status = 401; throw e; }
+  const { data, error } = await createClient(SUPABASE_URL, SUPABASE_ANON_KEY).auth.getUser(token);
+  if (error || !data?.user) { const e = new Error('Invalid session'); e.status = 401; throw e; }
+  return data.user;
+}
+
 async function getUserGoogleToken(userId) {
   const { data, error } = await tokenStoreClient()
     .from('user_google_tokens')
@@ -3424,6 +3435,111 @@ app.get('/api/logos/health', async (req, res) => {
     return res.json({ configured: true, ok: !error, rows: data?.length ?? 0, error: error?.message ?? null });
   } catch (err) {
     return res.json({ configured: true, ok: false, error: String(err?.message || err) });
+  }
+});
+
+// ── Logos Vision sync — contact↔client mapping (P1) ──────────────────────────
+// Mapping CRUD runs server-side: logos_pulse_mappings has RLS enabled with NO
+// policies (the browser client is denied), so the Pulse service-role client
+// does the reads/writes here. All routes require a valid Pulse session.
+
+// List/search Logos clients for the picker (Logos service-role read).
+app.get('/api/logos/clients', async (req, res) => {
+  try {
+    await requireUser(req);
+    if (!logosConfigured()) return res.status(503).json({ ok: false, error: 'not_configured' });
+    const q = (req.query.q || '').toString().trim();
+    let query = logosServiceClient()
+      .from('clients')
+      .select('id, name, email, contact_person')
+      .order('name', { ascending: true })
+      .limit(50);
+    if (q) query = query.ilike('name', `%${q}%`);
+    const { data, error } = await query;
+    if (error) return res.status(500).json({ ok: false, error: error.message });
+    return res.json({ ok: true, clients: data || [] });
+  } catch (e) {
+    return res.status(e.status || 500).json({ ok: false, error: e.message });
+  }
+});
+
+// Read all contact→client mappings, enriched with the Logos client name so the
+// UI can show "Linked to «name»" after a reload (Pulse service-role read + a
+// cross-DB name lookup against Logos).
+app.get('/api/logos/mappings', async (req, res) => {
+  try {
+    await requireUser(req);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const { data: maps, error } = await supabase
+      .from('logos_pulse_mappings')
+      .select('id, pulse_entity_id, logos_entity_id, sync_status, last_sync_at')
+      .eq('pulse_entity_type', 'contact')
+      .eq('logos_entity_type', 'client');
+    if (error) return res.status(500).json({ ok: false, error: error.message });
+    let mappings = maps || [];
+    if (mappings.length && logosConfigured()) {
+      const ids = [...new Set(mappings.map((m) => m.logos_entity_id))];
+      const { data: clients } = await logosServiceClient().from('clients').select('id, name').in('id', ids);
+      const nameById = Object.fromEntries((clients || []).map((c) => [c.id, c.name]));
+      mappings = mappings.map((m) => ({ ...m, logos_client_name: nameById[m.logos_entity_id] || null }));
+    }
+    return res.json({ ok: true, mappings });
+  } catch (e) {
+    return res.status(e.status || 500).json({ ok: false, error: e.message });
+  }
+});
+
+// Link a Pulse contact to a Logos client. One mapping per contact: clear any
+// existing contact→client link first (the text `id` PK has no default).
+app.post('/api/logos/mappings', async (req, res) => {
+  try {
+    await requireUser(req);
+    const { pulseContactId, logosClientId } = req.body || {};
+    if (!pulseContactId || !logosClientId) {
+      return res.status(400).json({ ok: false, error: 'pulseContactId and logosClientId are required' });
+    }
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    await supabase
+      .from('logos_pulse_mappings')
+      .delete()
+      .eq('pulse_entity_type', 'contact')
+      .eq('pulse_entity_id', pulseContactId)
+      .eq('logos_entity_type', 'client');
+    const row = {
+      id: `map-${crypto.randomUUID()}`,
+      logos_entity_type: 'client',
+      logos_entity_id: logosClientId,
+      pulse_entity_type: 'contact',
+      pulse_entity_id: pulseContactId,
+      sync_direction: 'bidirectional',
+      sync_status: 'synced',
+      last_sync_at: new Date().toISOString(),
+    };
+    const { data, error } = await supabase.from('logos_pulse_mappings').insert(row).select().single();
+    if (error) return res.status(500).json({ ok: false, error: error.message });
+    return res.json({ ok: true, mapping: data });
+  } catch (e) {
+    return res.status(e.status || 500).json({ ok: false, error: e.message });
+  }
+});
+
+// Unlink a Pulse contact from its Logos client.
+app.delete('/api/logos/mappings', async (req, res) => {
+  try {
+    await requireUser(req);
+    const pulseContactId = (req.body && req.body.pulseContactId) || req.query.pulseContactId;
+    if (!pulseContactId) return res.status(400).json({ ok: false, error: 'pulseContactId is required' });
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const { error } = await supabase
+      .from('logos_pulse_mappings')
+      .delete()
+      .eq('pulse_entity_type', 'contact')
+      .eq('pulse_entity_id', pulseContactId)
+      .eq('logos_entity_type', 'client');
+    if (error) return res.status(500).json({ ok: false, error: error.message });
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(e.status || 500).json({ ok: false, error: e.message });
   }
 });
 

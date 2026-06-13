@@ -25,7 +25,7 @@
 // See docs/CONTACTS_REDESIGN_HANDOFF_2026-06-05.md §4.3 + §4.9.
 // ============================================
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   Cake,
@@ -54,6 +54,14 @@ import { ProvenanceChip, type ContactProvenanceSource } from '../../ProvenanceCh
 import MapPreview from '../../../map/MapPreview';
 import { ChannelRow } from '../channels/ChannelRow';
 import { sendSlackDm, resolveSlackUser } from '../channels/actions';
+import {
+  listLogosClients,
+  getLogosMappings,
+  linkContactToLogos,
+  unlinkContactFromLogos,
+  type LogosClientLite,
+  type LogosContactMapping,
+} from '../../../../services/logosMappingService';
 import { CadenceSpine } from './CadenceSpine';
 import { InteractionTimeline } from './InteractionTimeline';
 import { useFeatures } from '../../../../contexts/FeatureContext';
@@ -130,6 +138,14 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
   const [linkBusy, setLinkBusy] = useState(false);
   const [linkMsg, setLinkMsg] = useState<string | null>(null);
 
+  // P1 — Logos Vision client link (CRM mapping; logosVisionSync-gated).
+  const [logosMapping, setLogosMapping] = useState<LogosContactMapping | null>(null);
+  const [logosPickerOpen, setLogosPickerOpen] = useState(false);
+  const [logosQuery, setLogosQuery] = useState('');
+  const [logosResults, setLogosResults] = useState<LogosClientLite[]>([]);
+  const [logosBusy, setLogosBusy] = useState(false);
+  const [logosErr, setLogosErr] = useState<string | null>(null);
+
   const profile = relationshipProfile;
   const score = profile?.relationshipScore;
   const trend = profile?.relationshipTrend;
@@ -197,6 +213,49 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
     } finally {
       setLinkBusy(false);
     }
+  };
+
+  // Load this contact's Logos mapping when the sync is enabled / contact changes.
+  useEffect(() => {
+    if (!features.logosVisionSync) { setLogosMapping(null); return; }
+    let cancelled = false;
+    getLogosMappings()
+      .then((all) => { if (!cancelled) setLogosMapping(all.find((m) => m.pulse_entity_id === contact.id) ?? null); })
+      .catch(() => { if (!cancelled) setLogosMapping(null); });
+    return () => { cancelled = true; };
+  }, [features.logosVisionSync, contact.id]);
+
+  const openLogosPicker = async () => {
+    setLogosPickerOpen(true); setLogosErr(null); setLogosBusy(true);
+    try { setLogosResults(await listLogosClients('')); }
+    catch (e) { setLogosErr(e instanceof Error ? e.message : 'load failed'); }
+    finally { setLogosBusy(false); }
+  };
+
+  const searchLogos = async (q: string) => {
+    setLogosQuery(q); setLogosBusy(true); setLogosErr(null);
+    try { setLogosResults(await listLogosClients(q)); }
+    catch (e) { setLogosErr(e instanceof Error ? e.message : 'search failed'); }
+    finally { setLogosBusy(false); }
+  };
+
+  const linkLogos = async (client: LogosClientLite) => {
+    setLogosBusy(true); setLogosErr(null);
+    try {
+      const m = await linkContactToLogos(contact.id, client.id);
+      setLogosMapping({ ...m, logos_client_name: client.name });
+      setLogosPickerOpen(false);
+      toast.success(`Linked to ${client.name}`);
+    } catch (e) {
+      setLogosErr(e instanceof Error ? e.message : 'link failed');
+    } finally { setLogosBusy(false); }
+  };
+
+  const unlinkLogos = async () => {
+    setLogosBusy(true); setLogosErr(null);
+    try { await unlinkContactFromLogos(contact.id); setLogosMapping(null); toast.success('Unlinked from Logos'); }
+    catch (e) { setLogosErr(e instanceof Error ? e.message : 'unlink failed'); }
+    finally { setLogosBusy(false); }
   };
 
   return (
@@ -323,6 +382,93 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
               >
                 {linkBusy ? 'Linking…' : 'Link Slack'}
               </button>
+            </div>
+          )}
+
+          {/* P1 · Link to Logos Vision client (CRM bidirectional sync; logosVisionSync-gated) */}
+          {features.logosVisionSync && (
+            <div
+              className="mt-2.5 rounded-xl border p-2.5"
+              style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-surface-raised)' }}
+            >
+              {logosMapping ? (
+                <div className="flex items-center gap-2">
+                  <i className="fa-solid fa-link text-sm" style={{ color: 'var(--pulse-ink-3)' }} aria-hidden="true" />
+                  <span className="text-xs" style={{ color: 'var(--pulse-ink-2)' }}>
+                    Linked to{' '}
+                    <span className="font-medium" style={{ color: 'var(--pulse-ink-1)' }}>
+                      {logosMapping.logos_client_name || logosMapping.logos_entity_id}
+                    </span>{' '}
+                    in Logos
+                  </span>
+                  <button
+                    type="button"
+                    onClick={unlinkLogos}
+                    disabled={logosBusy}
+                    className="ml-auto text-xs font-medium px-2.5 py-1 rounded-lg disabled:opacity-50"
+                    style={{ color: 'var(--pulse-ink-2)' }}
+                  >
+                    {logosBusy ? '…' : 'Unlink'}
+                  </button>
+                </div>
+              ) : logosPickerOpen ? (
+                <div>
+                  <input
+                    autoFocus
+                    value={logosQuery}
+                    onChange={(e) => searchLogos(e.target.value)}
+                    placeholder="Search Logos clients…"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border mb-2"
+                    style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-surface)', color: 'var(--pulse-ink-1)' }}
+                  />
+                  {logosErr && (
+                    <div className="text-xs mb-1" style={{ color: 'var(--pulse-tone-negative, #ef4444)' }}>{logosErr}</div>
+                  )}
+                  <div className="max-h-40 overflow-y-auto flex flex-col gap-1">
+                    {logosBusy && <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>Loading…</div>}
+                    {!logosBusy && logosResults.length === 0 && (
+                      <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>No clients found.</div>
+                    )}
+                    {logosResults.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => linkLogos(c)}
+                        disabled={logosBusy}
+                        className="text-left text-xs px-2.5 py-1.5 rounded-lg hover:opacity-80 disabled:opacity-50"
+                        style={{ background: 'var(--pulse-surface)', color: 'var(--pulse-ink-1)' }}
+                      >
+                        {c.name}
+                        {c.email ? <span style={{ color: 'var(--pulse-ink-3)' }}> · {c.email}</span> : null}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLogosPickerOpen(false)}
+                    className="mt-2 text-xs"
+                    style={{ color: 'var(--pulse-ink-3)' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <i className="fa-solid fa-link text-sm" style={{ color: 'var(--pulse-ink-3)' }} aria-hidden="true" />
+                  <span className="text-xs" style={{ color: 'var(--pulse-ink-2)' }}>
+                    {logosErr ?? 'Link this contact to a Logos Vision client.'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={openLogosPicker}
+                    disabled={logosBusy}
+                    className="ml-auto text-xs font-medium px-2.5 py-1 rounded-lg disabled:opacity-50"
+                    style={{ background: 'var(--pulse-rose)', color: '#fff' }}
+                  >
+                    {logosBusy ? '…' : 'Link to Logos'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
