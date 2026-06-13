@@ -3557,20 +3557,37 @@ app.post('/api/logos/case-log', async (req, res) => {
   try { user = await requireUser(req); }
   catch (e) { return res.status(e.status || 500).json({ ok: false, error: e.message }); }
 
-  const { pulseContactId, kind = 'note', content = '', sourceId } = req.body || {};
-  if (!pulseContactId || !sourceId) {
-    return res.status(400).json({ ok: false, error: 'pulseContactId and sourceId are required' });
+  const { pulseContactId, recipientEmail, kind = 'note', content = '', sourceId } = req.body || {};
+  if (!sourceId || (!pulseContactId && !recipientEmail)) {
+    return res.status(400).json({ ok: false, error: 'sourceId and (pulseContactId or recipientEmail) are required' });
   }
   if (!logosConfigured()) return res.json({ ok: true, skipped: 'not_configured' });
 
   const pulse = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
   try {
+    // 0. Resolve a contact id — directly, or from a recipient email (owner-scoped,
+    //    raw + lowercased variants) when the caller only has the address (email touchpoint).
+    let contactId = pulseContactId;
+    if (!contactId && recipientEmail) {
+      const raw = String(recipientEmail).trim();
+      const variants = [...new Set([raw, raw.toLowerCase()])];
+      const { data: c } = await pulse
+        .from('contacts')
+        .select('id')
+        .eq('user_id', user.id)
+        .in('email', variants)
+        .limit(1)
+        .maybeSingle();
+      if (!c) return res.json({ ok: true, skipped: 'no_contact' });
+      contactId = c.id;
+    }
+
     // 1. Resolve the contact's Logos client mapping.
     const { data: map } = await pulse
       .from('logos_pulse_mappings')
       .select('logos_entity_id')
       .eq('pulse_entity_type', 'contact')
-      .eq('pulse_entity_id', pulseContactId)
+      .eq('pulse_entity_id', contactId)
       .eq('logos_entity_type', 'client')
       .maybeSingle();
     if (!map) return res.json({ ok: true, skipped: 'unmapped' });
@@ -3587,12 +3604,13 @@ app.post('/api/logos/case-log', async (req, res) => {
 
     // 3. Write the Logos activity (org_id NOT NULL; author must be a real team_member).
     const text = String(content || '').trim();
-    const title = text ? text.slice(0, 80) : 'Pulse note';
+    const activityType = kind === 'email' ? 'email' : 'note';
+    const title = text ? text.slice(0, 80) : (kind === 'email' ? 'Pulse email' : 'Pulse note');
     const today = new Date().toISOString().split('T')[0];
     const { data: activity, error: aerr } = await logosServiceClient()
       .from('activities')
       .insert({
-        type: 'note',
+        type: activityType,
         title,
         activity_date: today,
         notes: text || null,
@@ -3612,7 +3630,7 @@ app.post('/api/logos/case-log', async (req, res) => {
     await pulse.from('crm_actions').insert({
       action_type: 'logos.activity',
       target_external_id: activity?.id || null,
-      action_payload: { pulseContactId, logosClientId: map.logos_entity_id, kind, sourceId },
+      action_payload: { pulseContactId: contactId, logosClientId: map.logos_entity_id, kind, sourceId },
       triggered_by_user_id: user?.id || null,
       triggered_by_message_id: sourceId,
       status: aerr ? 'failed' : 'completed',

@@ -204,6 +204,15 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
     try {
       await sendSlackDm(contact, text);
       setSlackSent(true);
+      // P4 · log the Slack DM touchpoint to the linked Logos client (fire-and-forget).
+      if (features.logosVisionSync && logosMapping) {
+        void logToLogos({
+          pulseContactId: contact.id,
+          kind: 'slack',
+          content: text,
+          sourceId: `slack:${contact.id}:${djb2(text)}`,
+        }).catch(() => {});
+      }
       setTimeout(() => { setSlackOpen(false); setSlackSent(false); }, 1600);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'send failed';

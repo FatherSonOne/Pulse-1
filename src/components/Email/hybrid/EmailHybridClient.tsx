@@ -18,6 +18,8 @@ import { startGmailConnect } from '../../../services/google/gmailConnect';
 import { supabase } from '../../../services/supabase';
 import { settingsService } from '../../../services/settingsService';
 import analyticsCollector from '../../../services/analyticsCollector';
+import { logToLogos } from '../../../services/logosMappingService';
+import { isLogosSyncEnabled } from '../../../lib/logosSyncFeature';
 
 import { useEmailStore } from '../../../store/emailStore';
 import { useEmailUIStore } from '../../../store/emailUIStore';
@@ -462,8 +464,18 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     const executeSend = async () => {
       try {
         const gmail = getGmailService();
-        await gmail.sendEmail(params);
+        const sendResult = await gmail.sendEmail(params);
         removePendingSend(sendId);
+        // P4 · log the email touchpoint to the linked Logos client (fire-and-forget;
+        // server resolves to[0] → contact → mapping, no-ops if unmapped or sync off).
+        if (isLogosSyncEnabled() && params.to[0]) {
+          void logToLogos({
+            kind: 'email',
+            recipientEmail: params.to[0],
+            content: params.subject || '(email)',
+            sourceId: `email:${sendResult.id}`,
+          }).catch(() => { /* non-blocking: never affects the email send */ });
+        }
         analyticsCollector
           .trackMessageEvent({
             id: `email-${Date.now()}`,

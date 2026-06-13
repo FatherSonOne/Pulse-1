@@ -64,12 +64,14 @@ The spec's Section 5 was explicitly overridable. Live verification forces these 
 
 **Thinnest end-to-end slice = P0→P1→P2→P3** (Conversation→Case Log genuinely working). P4–P7 layer on.
 
-**Build status:** P0–P3 shipped + verified 2026-06-13.
+**Build status:** P0–P4 shipped + verified 2026-06-13.
 - **P0** (connection + flag scaffold): `GET /api/logos/health` → `{configured:true, ok:true, rows:1}`; flag `logosVisionSync` default OFF.
 - **P1** (contact↔Logos mapping): server-side routes `GET /api/logos/clients` + `GET/POST/DELETE /api/logos/mappings` (auth-gated → 401 without a Pulse session; mapping CRUD via the Pulse service-role client since `logos_pulse_mappings` has RLS-on/no-policies); `src/services/logosMappingService.ts`; "Link to Logos client" card on `FocusColumn.tsx` (flag-gated, mirrors the Link-Slack pattern). Verified: DB round-trip (clients read + mapping insert/read/delete/cleanup), 401 guard, tsc clean. In-UI click-through is the live acceptance check.
 - **P2+P3** (ledger + F1 Conversation→Case Log): `POST /api/logos/case-log` (auth-gated) resolves contact→client mapping, dedups via `crm_actions` on `sourceId`, writes a Logos `activities` row (`type='note'`, org/author constants, `source_*` provenance), records the ledger outcome. Trigger = note-save auto-log + manual "Log to Logos" on `FocusColumn` (NOT the DM hook — Deviation #8). Verified 2026-06-13: DB write+dedup+cleanup smoke, POST 401 guard, tsc clean. In-UI note-save→Logos activity is the live acceptance.
 
-**P4 (F2 Activity Feed Sync) is next.**
+- **P4** (F2 Activity Feed): same `case-log` route extended — `kind→type` (`email`/`note`) + `recipientEmail` server-side resolution (`skipped:'no_contact'` when unknown). Triggers: **email** send (`EmailHybridClient` → `kind:'email'`, the real F2 value for external contacts) + **Slack DM** (`FocusColumn` → `kind:'slack'`, cheap completeness). Verified: email→contact resolve + no-contact skip + `type='email'` write smoke + 401 guard, tsc clean.
+
+**P5 (F3 AI Field Population) is next.**
 
 ---
 
@@ -99,9 +101,12 @@ The spec's Section 5 was explicitly overridable. Live verification forces these 
 - **Accept (spec §7 F1, adapted):** note-save / manual-log on a linked contact → exactly 1 `activities` row (`type='note'`, provenance `source_entity_id=sourceId`); same `sourceId` again → `skipped:'duplicate'`; unmapped contact → 200 no-op, 0 rows; Logos failure → note-save still succeeds. **Verified 2026-06-13** via DB smoke (write + dedup + cleanup) + 401 guard.
 
 ### P4 — F2 Activity Feed Sync
-- Generalize P3 into `mapPulseTouchpointToLogosActivity(touchpoint)` → `activities.type` (call/message/note; unknown → fallback `communication`, no error).
-- Extend hooks to the weaker-identifier voice paths (`sendTeamVoxMessage` `:1291` via `mentions[]`+`channelId`; `sendVoiceThreadMessage` `:859` — thread-scoped, weakest) and any call-log/note-create emitters.
-- **Accept (spec §7 F2):** call→`type='call'`+duration; note→`type='note'`; unknown→`communication`; idempotent per source-event; visible in `getActivities({clientId})`.
+- Extend the **same `/api/logos/case-log` route** to map `kind`→`activities.type` (`email`→`'email'`, else `'note'`) and to accept **`recipientEmail`** as an alternative to `pulseContactId`, resolving it server-side to a contact (owner-scoped `contacts WHERE user_id=<auth> AND email IN [raw,lower]`, mirroring `resolveContactIdsByEmail`). No-op (`skipped:'no_contact'`) when the address isn't a known contact.
+- **Triggers** (the touchpoints that work for external CRM contacts):
+  - **Email** (the substance — clients are emailed, not DM'd): hook the single send funnel `EmailHybridClient.tsx:465` after `gmail.sendEmail` → `logToLogos({ kind:'email', recipientEmail: params.to[0], sourceId:'email:'+gmailMsgId })`. `contact.id` is gone at that seam, hence the server email→contact resolution.
+  - **Slack DM** (cheap completeness; niche for external contacts): hook `FocusColumn.handleSlackSend` → `logToLogos({ kind:'slack', pulseContactId: contact.id, ... })`.
+- Both gated on `logosVisionSync`, fire-and-forget. (Pulse-DM/Vox NOT hooked — Deviation #8.)
+- **Accept (spec §7 F2):** email a linked contact → `type='email'` activity; Slack DM a linked+Slack-linked contact → `type='note'`; email to a non-contact → no-op; dedup per `sourceId`. **Verified 2026-06-13:** email→contact resolution + no-contact skip + `type='email'` write smoke + 401 guard.
 
 ### P5 — F3 AI Field Population
 - Server-side extraction via `invokeAIJson<T>(task, prompt, { workspaceId, systemPrompt })` (`src/services/ai/aiService.ts:192-197`) — **no client-side AI key** (router-enforced). Add an `AITask` value if needed.

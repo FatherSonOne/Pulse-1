@@ -82,8 +82,9 @@ export async function unlinkContactFromLogos(pulseContactId: string): Promise<vo
 }
 
 export interface LogToLogosInput {
-  pulseContactId: string;
-  kind: 'note' | 'manual';
+  pulseContactId?: string; // direct contact id (note / manual / slack)
+  recipientEmail?: string; // resolved server-side to a contact (email touchpoint)
+  kind: 'note' | 'manual' | 'slack' | 'email';
   content: string;
   sourceId: string; // dedup key; identical sourceId logs at most once (server ledger)
 }
