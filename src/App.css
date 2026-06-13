@@ -375,12 +375,9 @@ code {
   background: linear-gradient(135deg, var(--pulse-rose) 0%, var(--pulse-pink) 100%);
 }
 
-.pulse-gradient-text {
-  background: linear-gradient(135deg, var(--pulse-rose) 0%, var(--pulse-pink) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+/* .pulse-gradient-text removed — gradient-text is an absolute ban (impeccable +
+   DESIGN.md) and the class had no consumers. Emphasis via weight/size, color via
+   var(--pulse-rose). */
 
 /* Glow Effects */
 .pulse-glow {

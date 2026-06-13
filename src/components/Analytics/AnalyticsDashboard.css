@@ -247,10 +247,10 @@
   font-weight: 600;
   letter-spacing: -0.02em;
   margin: 0;
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-primary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  /* Solid heading — gradient-text is an absolute ban (impeccable + DESIGN.md).
+     This is the one gradient-text instance that was actually rendered (the
+     "Observatory" heading). Emphasis stays in the weight/size, not a gradient. */
+  color: var(--text-primary);
 }
 
 .brand-sub {

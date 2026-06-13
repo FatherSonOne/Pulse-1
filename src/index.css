@@ -1326,19 +1326,16 @@ html, body {
   border-color: rgba(244, 63, 94, 0.25);
 }
 
-/* Gradient Text Effects */
+/* Solid coral — the gradient-text effect is an absolute ban (impeccable +
+   DESIGN.md). Renders as a single Rose Pulse; emphasis comes from weight/size.
+   The prior global definition only set the gradient, so the landing page's
+   `color` override (LandingPage.tsx) couldn't fully neutralize it in webkit
+   (background-clip:text + text-fill-color:transparent still won). Flattening
+   here makes every consumer render solid as intended. .text-gradient-rose-purple
+   was removed: it had no consumers and resolved to the exact violet AI-startup
+   gradient PRODUCT.md disavows. */
 .text-gradient-rose {
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.text-gradient-rose-purple {
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #a855f7 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--pulse-rose, #f43f5e);
 }
 
 /* Glow Effects */
