@@ -31,11 +31,10 @@ const PULSE_GROWTH_PRICING = {
 const PULSE_TEAM_FEATURES: string[] = [
   'Per-seat billing — $15 / user / mo · min 2 seats',
   '2,000 AI messages / month',
-  '500 SMS / month',
   '50 GB storage',
   '500 Relay minutes / month',
-  'All 6 Relay modes (Quick, Team, Drop, Threads, Radio, Notes)',
-  'Video Vox + Studio RAG',
+  'All 5 Relay peers + Triage stream',
+  'Glimpse async video + Studio RAG',
   'Calendar, messaging, meetings',
   'Advanced analytics + full ecosystem bridge',
 ];
@@ -43,7 +42,6 @@ const PULSE_TEAM_FEATURES: string[] = [
 const PULSE_GROWTH_FEATURES: string[] = [
   'Everything in Team, plus:',
   '10,000 AI messages / month (5×)',
-  '2,500 SMS / month (5×)',
   '500 GB storage (10×)',
   '2,500 Relay minutes / month (5×)',
   'SSO / SAML — coming soon',
@@ -76,9 +74,9 @@ const PULSE_SOLO_FEATURES: string[] = [
   '1,500 AI messages / month',
   '25 GB storage',
   '300 Relay minutes / month',
-  'All Relay modes (Quick, Drop, Threads, Radio, Notes)',
-  'Video Vox + Studio RAG',
-  'Email, calendar, messaging, meetings',
+  'All 5 Relay peers + Triage stream',
+  'Glimpse async video + Studio RAG',
+  'Calendar, messaging, meetings',
 ];
 
 const SOLO_COLORS = {
@@ -421,7 +419,7 @@ export const BillingSettings: React.FC = () => {
       {header}
 
       {/* Near-limit warning — dismissible; appears when any metered resource
-          (AI messages, SMS, storage, Relay minutes) is >= 80% of the cap. */}
+          (AI messages, storage, Relay minutes) is >= 80% of the cap. */}
       <UsageWarningBanner />
 
       {/* Checkout success / canceled toast */}
@@ -1073,11 +1071,6 @@ export const BillingSettings: React.FC = () => {
               label="AI Messages"
               current={entitlements.usage?.ai_messages || 0}
               limit={entitlements.max_ai_messages_mo}
-            />
-            <UsageMeter
-              label="SMS Sent"
-              current={entitlements.usage?.sms_sent || 0}
-              limit={entitlements.max_sms_mo}
             />
             <UsageMeter
               label="Storage"
