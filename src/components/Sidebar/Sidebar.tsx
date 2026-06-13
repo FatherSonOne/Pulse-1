@@ -123,14 +123,18 @@ const getNavSections = (): NavSection[] => {
       note: 'features coming in v2.0',
       items: [
         { icon: MessageSquare, label: 'Summit', view: AppView.LIVE },
-        // Map stack still drives cross-section features (calendar travel
+        // Map stack also drives cross-section features (calendar travel
         // chips, today geo-clusters, war room team radar, decision/task
-        // geofences) but the section itself is mid-refactor (cluster +
-        // spiderfy layer, autopilot stubs) — sit it in Experimental
-        // until the strangler refactor lands on main.
+        // geofences). Cluster + spiderfy shipped (7bff377); the remaining
+        // open work is deeper autopilot (auto-replan) + ETA-arrival alerting.
+        // KEEP-GATED as an opt-in Labs lane (decision 2026-06-13, see
+        // docs/EXPERIMENTAL_TRIO_CUT_OR_KEEP_AUDIT_2026-06-13.md).
         { icon: MapPin, label: 'Map', view: AppView.MAP },
-        // War Room (NotebookLM-style RAG workspace) moved here 2026-06-01:
-        // functional engine but not a core lane; flagged for possible cut.
+        // War Room (NotebookLM-style RAG workspace). Decision 2026-06-13
+        // (docs/EXPERIMENTAL_TRIO_CUT_OR_KEEP_AUDIT_2026-06-13.md): KEEP + invest,
+        // not cut. Strongest differentiator (RAG + citations + GPT-Realtime
+        // voice); the warRoomNotebook redesign is shipped (flag ON). Stays in
+        // the opt-in Experimental Labs lane.
         { icon: BookOpen, label: 'War Room', view: AppView.LIVE_AI },
       ],
     },
