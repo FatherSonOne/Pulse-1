@@ -71,7 +71,7 @@ The spec's Section 5 was explicitly overridable. Live verification forces these 
 
 - **P4** (F2 Activity Feed): same `case-log` route extended — `kind→type` (`email`/`note`) + `recipientEmail` server-side resolution (`skipped:'no_contact'` when unknown). Triggers: **email** send (`EmailHybridClient` → `kind:'email'`, the real F2 value for external contacts) + **Slack DM** (`FocusColumn` → `kind:'slack'`, cheap completeness). Verified: email→contact resolve + no-contact skip + `type='email'` write smoke + 401 guard, tsc clean.
 
-**P5 (F3 AI Field Population) is next.**
+**P5 (F3 AI Field Population) is next — see §10 RESUME for the detailed P5–P7 plan, reusable infra, and open decisions.**
 
 ---
 
@@ -151,3 +151,48 @@ The spec's Section 5 was explicitly overridable. Live verification forces these 
 - `src/services/relationshipIntelligenceService.ts:486-500` — score sum + persistence for P6.
 - Pulse DB: `logos_pulse_mappings` (mapping store), `crm_actions` (dedup), net-new `logos_case_state` (P6).
 - Logos DB: `activities` (write target), `client_journeys` (F4 watch), `clients`/`cases` (read).
+
+---
+
+## 10. RESUME — next session (start at P5)
+
+> This section is the authoritative pick-up point and supersedes the older §4 sketches for P5–P7 where they differ. P0–P4 are shipped; do **not** rebuild the infra below.
+
+### Current state (end of 2026-06-13 session)
+- **Shipped + verified, flag `logosVisionSync` default OFF:** P0 `5cd1b3f` · P1 `a6be73c` · P2+P3 `98810ac` · P4 `b9fd5b7`. (`git log --oneline | grep logos-sync`.)
+- **Env is set** (`LOGOS_VISION_SUPABASE_URL` + `LOGOS_VISION_SERVICE_ROLE_KEY` in `.env`/`.env.local` local + Render prod). `server.js` loads `.env` then `.env.local` (override).
+- **Sanity check before resuming:** `PORT=3099 node server.js` then `GET /api/logos/health` → expect `{configured:true, ok:true, rows:1}` (rows>0 proves service-role).
+
+### Reusable infra already built (REUSE — don't rebuild)
+- **Server routes** (`server.js`, all auth-gated via `requireUser(req)`→401): `GET /api/logos/health`, `GET /api/logos/clients?q=`, `GET|POST|DELETE /api/logos/mappings`, `POST /api/logos/case-log`. Helpers: `logosServiceClient()` (Logos service-role, persistSession off), `logosConfigured()`, `requireUser()`. Constants `LOGOS_ORG_ID` / `LOGOS_AUTHOR_ID`.
+- **Frontend service** `src/services/logosMappingService.ts`: `listLogosClients`, `getLogosMappings`, `linkContactToLogos`, `unlinkContactFromLogos`, `logToLogos`. Pattern = `${BACKEND_URL}/api/logos/*` + Supabase bearer (`authHeaders()`).
+- **Flag**: `logosVisionSync` (FeatureContext, Integrations) + non-React `isLogosSyncEnabled()` (`src/lib/logosSyncFeature.ts`).
+- **Dedup ledger**: `crm_actions`, `action_type='logos.activity'`, dedup on `triggered_by_message_id = sourceId`. (Use the TABLE, never `crmActionsService.createAction`.)
+- **Email→contact resolver** (in the case-log route): `contacts WHERE user_id=<auth> AND email IN [raw,lower]`.
+- **UI home**: the Logos card in `FocusColumn.tsx` (mapped branch: Link/Unlink + "Log to Logos").
+
+### P5 — F3 AI Field Population (heaviest; has an OPEN UX decision)
+Goal: AI reads a linked contact's Pulse signal (notes / recent emails) → proposes updates to the Logos **client/case** fields → user confirms → write. Additive only; coral = AI provenance.
+- **AI seam (server-side mandate, CLAUDE.md §4):** `invokeAIJson<T>(task, prompt, { workspaceId, systemPrompt })` at `src/services/ai/aiService.ts:192` (verify line). Routes through the `ai-router` edge fn — never a client-side key. Add an `AITask` value if needed. Extraction may run client-side (it's just an ai-router call); the field WRITE must be server-side service-role.
+- **Net-new server routes:** `POST /api/logos/client-fields` / `/api/logos/case-fields` → `logosServiceClient().from('clients'|'cases').update({...}).eq('id', id)` echoing `org_id`. Writable `clients` cols (verified live this session): `contact_person, email, phone, location, address, website, notes, donor_stage, employer, communication_notes, preferred_contact_method`. `cases`: `status, priority, category, resolution, due_date`. (Avoid `name`.)
+- **⚠ Additive-only:** never overwrite a non-empty Logos field without explicit "replace". Read current → present `{field, current, suggested, confidence}` → write only accepted fields. Record a `crm_actions` row (`action_type='logos.field_update'`) per write for provenance.
+- **OPEN UX DECISION (resolve first via a quick ask):** where does confirm-before-write live? (a) an "AI suggestions" expandable in the FocusColumn Logos card (mapped branch) — least surface, consistent; (b) a dedicated modal/panel. Recommend (a). Each suggested value → coral provenance chip; accept writes one field, reject writes nothing.
+- **Verify:** invokeAIJson returns a structured set; server field-write smoke (update one `clients` field via service-role → read back → revert); non-empty-field guard; provenance row written.
+
+### P6 — F4 Records Flow Back (heaviest)
+Goal: Logos case-state changes surface in Pulse + adjust the relationship score.
+- **Watch `client_journeys`** (NOT `cases` — Deviation #2): trigger-maintained `updated_at` + `case_status`. New route `GET /api/logos/journey-updates?since=<ISO>` → `client_journeys WHERE updated_at > since`, filtered to mapped clients.
+  - **⚠ VERIFY THE JOIN FIRST:** mappings key on the Logos **client** id (uuid); `client_journeys.client_id` is **text** (verified live). Confirm how journeys join to `clients.id` (text vs uuid — may need a cast or a contact bridge) before building.
+- **Net-new Pulse mirror `logos_case_state`** (additive/reversible). **Schema-first (CLAUDE.md §4):** dry-run the migration in a rolled-back `DO $$ … RAISE EXCEPTION 'rollback' $$` until clean, THEN apply once. Suggested cols: `id, pulse_contact_id, logos_client_id, logos_journey_id, case_status, risk_level, engagement_score, updated_at, synced_at`. A server poller (or a Pulse scheduled fetch) advances a watermark + upserts here; feed/score read the mirror, not a live cross-DB query per render.
+- **Score feed:** `relationshipIntelligenceService.computeRelationshipScore` — sum at `:486-491`, persist at `:494-500` (verify lines). The 5 factors total exactly **100**, so a case-outcome factor REQUIRES **re-weighting** (not `+factor`; the `Math.min(…,100)` clamp at `:491` would silently eat overflow). **⚠ This changes ALL contacts' scores** — surface before shipping.
+- **OPEN DECISIONS:** poll cadence/trigger (manual refresh vs interval — realtime not on `client_journeys`); the documented re-weight direction.
+- **Verify:** journey-updates delta read smoke; `logos_case_state` upsert smoke; score recompute with the factor on a test profile; "last-synced + staleness" (not an error) when Logos unreachable.
+
+### P7 — Re-enable marketing (small)
+- Flip `SHOW_LOGOS_SYNC` (`LandingPage.tsx:61`, verify line) → `true`; restore/adjust the "Know your network." copy (~`:2960`), keeping "bidirectional" honest re: single-tenant.
+- Make the "Connected" badge **real** — drive from `GET /api/logos/health`, never hardcoded.
+- **Honesty gate:** only re-advertise what shipped. F1/F2 are real; gate F3/F4 copy on P5/P6 actually landing.
+
+### Conventions to keep (held all session)
+- Per phase: **investigate seams firsthand → present change-list for approval → build → verify with a real smoke (report ACTUAL output) → commit explicit paths only** (never `git add -A` / `commit -a`; the user holds WIP). Headless smokes: write a temp `_pN_smoke.mjs` loading `.env`+`.env.local`, exercise via the real service clients, **clean up test rows**, delete the temp file. Co-author: `Claude Opus 4.8 (1M context)`.
+- This doc is `*_HANDOFF_*` so it stays git-tracked (`docs/*.md` is otherwise gitignored — `.gitignore:161-173`).
