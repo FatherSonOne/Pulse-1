@@ -27,6 +27,7 @@ import DecisionVelocityTile from './Dashboard/tiles/DecisionVelocityTile';
 import TeamRadarTile from './Dashboard/tiles/TeamRadarTile';
 import RelayQuickRecorderStrip from './Dashboard/RelayQuickRecorderStrip';
 import TodaysCaptureTile from './Dashboard/tiles/TodaysCaptureTile';
+import ActivationCard from './Dashboard/ActivationCard';
 import { pulseService, SearchUserResult } from '../services/pulseService';
 import { calculateTeamHealthMetrics, TeamHealthMetrics } from '../services/teamHealthService';
 import { teamService, Team, TeamWithMembers, TeamMember as TeamMemberType } from '../services/teamService';
@@ -443,6 +444,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
   const [lastBriefingRefresh, setLastBriefingRefresh] = useState<Date | null>(null);
   const [briefingError, setBriefingError] = useState<string | null>(null);
   const briefingRefreshRef = useRef<NodeJS.Timeout | null>(null);
+  // First-run activation card persists its dismissal so "Skip setup" sticks
+  // across reloads/token refreshes (mirrors the permission-modal flag pattern).
+  const [activationDismissed, setActivationDismissed] = useState<boolean>(() => {
+    try { return localStorage.getItem('pulse_activation_dismissed_v1') === '1'; } catch { return false; }
+  });
 
   // Attention Budget State — attentionLoad derived from batchedNotifications
   const [batchedNotifications, setBatchedNotifications] = useState<BatchedNotification[]>([]);
@@ -1430,8 +1436,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                 </div>
               )}
             </div>
-          ) : (
-            // Empty state — primary anchor for the dashboard. Bigger type, larger CTA, START HERE cue.
+          ) : activationDismissed ? (
+            // Minimal empty state — shown after the user skips first-run activation.
+            // Preserves the original Generate-briefing anchor unchanged.
             <div className="py-2 sm:py-4">
               <div className="flex items-center gap-2 mb-4">
                 <ProvenanceChip provider="claude" kind="BRIEFING" />
@@ -1452,6 +1459,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                 {loadingBriefing ? 'Generating briefing' : 'Generate briefing'}
               </button>
             </div>
+          ) : (
+            // First-run: guide a new solo user to connect a real source so the
+            // briefing has something to draw from. The original empty state was a
+            // dead end — pressing "Generate" with nothing connected yields little.
+            <ActivationCard
+              greeting={contextualGreeting.greeting}
+              loadingBriefing={loadingBriefing}
+              onGenerate={handleRefreshBriefing}
+              onSkip={() => {
+                try { localStorage.setItem('pulse_activation_dismissed_v1', '1'); } catch { /* private mode */ }
+                setActivationDismissed(true);
+              }}
+              setView={setView}
+            />
           )}
         </section>
       )}
