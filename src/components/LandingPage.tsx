@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
-import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, MapPin, Mic, Network, Play, Rocket, Search, ShieldHalf, Signal, Smartphone, Users, Video, Wand2, Wifi, X } from 'lucide-react';
+import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, MapPin, Mic, Network, Play, Radar, Rocket, Search, ShieldHalf, Signal, Smartphone, Users, Video, Wand2, Wifi, X } from 'lucide-react';
 import { RELAY_PEERS, FAQ_DATA, SHORTCUT_GROUPS, PULSE_SOLO_FEATURES, PULSE_SOLO_PRICING, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING } from './LandingPage/landingData';
 
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
@@ -52,6 +52,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const [orbitPaused, setOrbitPaused] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pricingCycle, setPricingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  // Email landing section is built (emailAIService / smartCompose / Gmail sync) but Gmail is
+  // currently an owner-scoped grant and emailEnabled defaults off, so it is not yet generally
+  // available to public signups. Hidden from the marketing page for v1; flip to re-show.
+  const SHOW_EMAIL_ON_LANDING = false;
+  // Logos Vision bidirectional-sync panel: the integration is unbuilt (the client lib exists
+  // but has zero call sites). Hidden until built. See docs/LOGOS_VISION_SYNC_HANDOFF_2026-06-13.md.
+  const SHOW_LOGOS_SYNC = false;
+  // Inline "Pulse in Your Pocket" mock consolidated into the closing "Wherever you are" CTA
+  // (avoid two phone mocks on one page). Flip to re-show it beside the shortcuts.
+  const SHOW_INLINE_MOBILE_PREVIEW = false;
   const heroCanvasRef = useRef<HTMLCanvasElement>(null);
   const crmCanvasRef  = useRef<HTMLCanvasElement>(null);
 
@@ -59,7 +69,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const liveTranscriptPhrases = [
     "I'll loop in the design team on the mockups",
     "Can we move the standup to Thursday morning?",
-    "Pushing the release to next sprint — let's align",
+    "Pushing the release to next sprint, let's align",
     "Quick heads-up: client approved the proposal",
     "Flag this for review before EOD please",
   ];
@@ -1114,7 +1124,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               type="button"
               onClick={handleLogoClick}
               className="flex items-center gap-3 cursor-pointer group bg-transparent border-0 p-0"
-              aria-label="Pulse — return to sign in"
+              aria-label="Pulse, return to sign in"
             >
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg border border-zinc-800 group-hover:scale-110 transition-transform duration-300 ${isDarkMode ? 'bg-[#0f172a]' : 'bg-stone-100'}`}>
                 <svg viewBox="0 0 64 64" className="w-6 h-6" aria-hidden="true">
@@ -1136,8 +1146,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-zinc-700/60 bg-zinc-900/60 hover:border-rose-500/40 hover:bg-zinc-800/60 transition-all duration-200 group"
-              title="Quantum Ecosystems — the studio behind Pulse"
-              aria-label="QntmEcos — Quantum Ecosystems, the studio behind Pulse (opens in new tab)"
+              title="Quantum Ecosystems, the studio behind Pulse"
+              aria-label="QntmEcos: Quantum Ecosystems, the studio behind Pulse (opens in new tab)"
             >
               <QntmEcosIcon size={16} />
               <span className="text-[11px] font-medium text-zinc-400 group-hover:text-rose-400 transition-colors">QntmEcos</span>
@@ -1238,7 +1248,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     </span>
                     <div className="text-left">
                       <div className="text-sm font-semibold text-zinc-400">iOS / macOS</div>
-                      <div className="text-[11px] text-zinc-600">App Store — coming soon</div>
+                      <div className="text-[11px] text-zinc-600">App Store, coming soon</div>
                     </div>
                   </div>
 
@@ -1249,7 +1259,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     </span>
                     <div className="text-left">
                       <div className="text-sm font-semibold text-zinc-400">F-Droid</div>
-                      <div className="text-[11px] text-zinc-600">Open source — coming soon</div>
+                      <div className="text-[11px] text-zinc-600">Open source, coming soon</div>
                     </div>
                   </div>
 
@@ -1477,7 +1487,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
             </span>
-            The AI command surface for people drowning in channels
+            Every channel, one surface
           </div>
 
           {/* Headline — hard stop at "Every Decision." */}
@@ -1543,12 +1553,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 Five peers, one stream.
               </h2>
               <p className="text-zinc-400 text-lg max-w-2xl">
-                Voice messaging, reimagined as triage. Direct, Channel, Broadcast, Notes, Live — every Relay message lands in a single Triage stream with AI transcription, summary, and next action attached.
+                Voice messaging, reimagined as triage. Direct, Channel, Broadcast, Notes, Live. Every Relay message lands in a single Triage stream with AI transcription, summary, and next action attached.
               </p>
             </div>
 
-            {/* ── Desktop: radial orbital layout ── */}
-            <div className="relative flex items-center justify-center overflow-visible" style={{ height: '960px' }}>
+            {/* ── Desktop: radial orbital layout (hidden below 768px via .lp-relay-orbit CSS — orbit can't fit a phone) ── */}
+            <div className="relative flex items-center justify-center overflow-visible lp-relay-orbit" style={{ height: '960px' }}>
               {/* Orbital ring decorations — centered via inset-0 m-auto */}
               <div className="absolute inset-0 m-auto rounded-full border border-rose-500/10 pointer-events-none" style={{ width: '860px', height: '860px' }} />
               <div className="absolute inset-0 m-auto rounded-full border border-rose-500/10 pointer-events-none" style={{ width: '560px', height: '560px' }} />
@@ -1563,7 +1573,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
                     </span>
-                    <span className="text-[9px] font-bold text-rose-400 uppercase tracking-widest">Live Recording — Real-Time Transcription</span>
+                    <span className="text-[9px] font-bold text-rose-400 uppercase tracking-widest">Live Recording · Real-Time Transcription</span>
                   </div>
                   <div className="px-4 pt-5 pb-3">
                     <svg viewBox="0 0 280 70" className="w-full" style={{ height: '58px' }}>
@@ -1696,6 +1706,59 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </div>
             </div>
 
+            {/* ── Mobile: stacked layout (Option B) — shown below 768px via .lp-relay-mobile CSS ── */}
+            <div className="lp-relay-mobile flex-col gap-5">
+              {/* Live recording panel — compact, full-width */}
+              <div className="rounded-2xl overflow-hidden border border-zinc-800/80" aria-hidden="true" style={{ background: isDarkMode ? 'rgba(10,10,14,0.98)' : 'rgba(255,255,255,0.97)', boxShadow: '0 0 40px rgba(244,63,94,0.12)' }}>
+                <div className="flex items-center gap-2.5 px-4 py-3 border-b border-zinc-800/50" style={{ background: isDarkMode ? 'rgba(14,14,18,0.99)' : 'rgba(245,244,241,0.99)' }}>
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                  </span>
+                  <span className="text-[9px] font-bold text-rose-400 uppercase tracking-widest">Live Recording · Real-Time Transcription</span>
+                </div>
+                <div className="px-4 py-3.5">
+                  <p className="text-[12px] text-zinc-300 font-medium leading-relaxed min-h-[2.5em]">
+                    {liveTranscriptText}
+                    <span className="inline-block w-0.5 h-3 bg-rose-400 ml-0.5 align-middle lp-rec-dot"></span>
+                  </p>
+                  <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                    {[
+                      { label: 'Noise Reduction', color: '#f43f5e' },
+                      { label: 'AI Analysis',     color: '#8b5cf6' },
+                      { label: '90+ Languages',   color: '#22c55e' },
+                    ].map(tag => (
+                      <span key={tag.label} className="px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wide border" style={{ color: tag.color, borderColor: `${tag.color}40`, background: `${tag.color}0f` }}>
+                        {tag.label} ✓
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Peer cards — single-column stack, no rotation */}
+              <div className="grid grid-cols-1 gap-3">
+                {RELAY_PEERS.map((mode, i) => (
+                  <div
+                    key={mode.name}
+                    className="relative p-4 rounded-2xl border border-zinc-700/60"
+                    style={{ background: isDarkMode ? 'rgba(18,18,26,0.96)' : 'rgba(255,255,255,0.96)' }}
+                  >
+                    <span
+                      className="absolute top-3 right-3 uppercase tracking-widest"
+                      aria-hidden="true"
+                      style={{ padding: '2px 6px', borderRadius: '4px', background: 'rgba(244,63,94,0.12)', color: '#fda4af', fontSize: '10px', letterSpacing: '0.1em', fontWeight: 500, border: '1px solid rgba(244,63,94,0.25)', fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
+                    >{mode.key}</span>
+                    <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center mb-3">
+                      <span className="text-rose-500">{voxSvg(i)}</span>
+                    </div>
+                    <h3 className="text-sm font-bold text-white mb-1.5 leading-tight">{mode.name}</h3>
+                    <p className="text-zinc-400 text-[12px] leading-relaxed pr-10">{mode.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         </section>
 
@@ -1717,7 +1780,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 30-second video replaces a 30-minute call.
               </h2>
               <p className={`text-lg leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
-                Face-cam, screen, or both. AI transcripts make every clip searchable. Reply with another Glimpse — full async video conversation, zero context lost.
+                Face-cam, screen, or both. AI transcripts make every clip searchable. Reply with another Glimpse. Full async video conversation, zero context lost.
               </p>
             </div>
 
@@ -1869,13 +1932,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="max-w-7xl mx-auto relative z-10">
             <div className="mb-12 animate-fade-in">
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-purple-500/10 border border-purple-500/25 text-purple-400' : ' bg-purple-50 border border-purple-200 text-purple-600'}`}>
-                <Wand2 size={12} /> War Room
+                <Radar size={12} /> War Room
               </div>
               <h2 className={`text-4xl sm:text-6xl font-bold mb-4${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
                 Your AI War Room
               </h2>
               <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
-                Eight slash commands, four agent personas, RAG-grounded answers, and a realtime voice agent — research-grade AI for high-stakes decisions.
+                Eight slash commands, four agent personas, RAG-grounded answers, and a realtime voice agent. Research-grade AI for high-stakes decisions.
               </p>
             </div>
 
@@ -2010,7 +2073,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
                   <div className="lp-wr-line mt-4" style={{ '--lp-wr-i': 3 } as React.CSSProperties}>
                     <span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>10:43</span>
-                    <span className="ml-3">EMEA shows net-negative for 2 quarters — flag for review.</span>
+                    <span className="ml-3">EMEA shows net-negative for 2 quarters. Flag for review.</span>
                   </div>
 
                   <div className="lp-wr-line mt-3" style={{ '--lp-wr-i': 4 } as React.CSSProperties}>
@@ -2042,7 +2105,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         <SectionDivider />
 
-        {/* Section B2 — Email (inbox-mock layout, Wave 4.1) */}
+        {/* Section B2 — Email (inbox-mock layout, Wave 4.1) — hidden for v1 via SHOW_EMAIL_ON_LANDING */}
+        {SHOW_EMAIL_ON_LANDING && (<>
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
@@ -2204,6 +2268,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </section>
 
         <SectionDivider />
+        </>)}
 
         {/* Section B3 — Messaging (channel-mock layout, Wave 4.1) */}
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
@@ -2221,7 +2286,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 Conversations that convert.
               </h2>
               <p className={`text-lg leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
-                Channels, threads, and one unified inbox across Slack, Gmail, Outlook. Walk away for an hour. Pulse summarizes the thread before you reopen it.
+                Channels, threads, and Slack, unified in one inbox. Walk away for an hour. Pulse summarizes the thread before you reopen it.
               </p>
             </div>
 
@@ -2255,8 +2320,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <span className="inline-flex items-center gap-1.5">
                   <span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>Unified</span>
                   <i className="fa-brands fa-slack text-[11px]" aria-hidden="true" />
-                  <i className="fa-brands fa-google text-[11px]" aria-hidden="true" />
-                  <i className="fa-brands fa-microsoft text-[11px]" aria-hidden="true" />
                 </span>
                 <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
                 <span className="inline-flex items-center gap-2 flex-wrap">
@@ -2299,9 +2362,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   {/* Messages */}
                   <div className="space-y-4">
                     {[
-                      { name: 'Anya Patel',  color: '#f43f5e', time: '10:42', body: 'Re: hiring revisit — let me know which roles you want me to pull from EMEA pipeline so I can repoint Marcus.', reactions: [['👀', 2], ['🙏', 1]] as Array<[string, number]>, mentions: false, highlight: false },
-                      { name: 'Sarah Lin',   color: '#3b82f6', time: '10:44', body: 'Pulled together a `compare-segments.md` for the campaign rebuild — anyone want to pair on it before EOD?', reactions: [['✅', 3]] as Array<[string, number]>, mentions: false, highlight: false, code: true },
-                      { name: 'Marcus Webb', color: '#10b981', time: '10:46', body: '@you — I can take the contractor coverage answer if you handle the tooling line. Saves a round-trip.', reactions: [] as Array<[string, number]>, mentions: true, highlight: true },
+                      { name: 'Anya Patel',  color: '#f43f5e', time: '10:42', body: 'Re: hiring revisit, let me know which roles you want me to pull from EMEA pipeline so I can repoint Marcus.', reactions: [['👀', 2], ['🙏', 1]] as Array<[string, number]>, mentions: false, highlight: false },
+                      { name: 'Sarah Lin',   color: '#3b82f6', time: '10:44', body: 'Pulled together a `compare-segments.md` for the campaign rebuild. Anyone want to pair on it before EOD?', reactions: [['✅', 3]] as Array<[string, number]>, mentions: false, highlight: false, code: true },
+                      { name: 'Marcus Webb', color: '#10b981', time: '10:46', body: '@you, I can take the contractor coverage answer if you handle the tooling line. Saves a round-trip.', reactions: [] as Array<[string, number]>, mentions: true, highlight: true },
                     ].map((m, i) => (
                       <div key={i} className={`flex gap-3 ${m.highlight ? '-mx-2 px-2 py-2 rounded-lg ' + (isDarkMode ? 'bg-amber-500/[0.05]' : 'bg-amber-50/50') : ''}`}>
                         <span className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-semibold text-white" style={{ background: m.color }} aria-hidden="true">{m.name.split(' ').map(n => n[0]).join('')}</span>
@@ -2315,7 +2378,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                           </div>
                           <p className={`text-[13px] leading-relaxed mb-1.5${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>
                             {m.code ? (
-                              <>Pulled together a <code className={`px-1.5 py-0.5 rounded text-[12px]${isDarkMode ? ' bg-zinc-800 text-rose-300' : ' bg-stone-100 text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>compare-segments.md</code> for the campaign rebuild — anyone want to pair on it before EOD?</>
+                              <>Pulled together a <code className={`px-1.5 py-0.5 rounded text-[12px]${isDarkMode ? ' bg-zinc-800 text-rose-300' : ' bg-stone-100 text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>compare-segments.md</code> for the campaign rebuild. Anyone want to pair on it before EOD?</>
                             ) : (
                               m.body
                             )}
@@ -2900,7 +2963,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 Know your network.
               </h2>
               <p className={`text-lg max-w-2xl mx-auto leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
-                Deep relationship intelligence with 0–100 health scoring, contact circles, and bidirectional sync with Logos Vision — so every conversation in Pulse keeps your case records current.
+                Deep relationship intelligence with 0–100 health scoring, contact circles, and network analytics. Know which relationships need you before they go cold.
               </p>
             </div>
 
@@ -2997,7 +3060,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               ))}
             </div>
 
-            {/* ── Logos Vision sync panel — full width ── */}
+            {/* ── Logos Vision sync panel — hidden via SHOW_LOGOS_SYNC until bidirectional sync is built (docs/LOGOS_VISION_SYNC_HANDOFF_2026-06-13.md) ── */}
+            {SHOW_LOGOS_SYNC && (
             <div
               className="rounded-2xl overflow-hidden"
               style={{
@@ -3014,7 +3078,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </div>
                 <div>
                   <h3 className={`text-sm font-bold${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>Logos Vision</h3>
-                  <span className="text-xs text-indigo-400">Bidirectional sync — live</span>
+                  <span className="text-xs text-indigo-400">Bidirectional sync · live</span>
                 </div>
                 <span className="ml-auto flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
                   <span className="relative flex h-2 w-2">
@@ -3031,7 +3095,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   {
                     color: '#818cf8', bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.12)',
                     label: 'Conversation → Case Log',
-                    desc: 'Send a Relay message in Pulse — a case log entry is automatically created in Logos Vision.',
+                    desc: 'Send a Relay message in Pulse, a case log entry is automatically created in Logos Vision.',
                     icon: (
                       <svg viewBox="0 0 20 20" width={13} height={13} fill="#818cf8" aria-hidden="true">
                         <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H8L5 14v-3H4a2 2 0 01-2-2V4z" />
@@ -3042,7 +3106,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   {
                     color: '#c084fc', bg: 'rgba(168,85,247,0.08)', border: 'rgba(168,85,247,0.12)',
                     label: 'Activity Feed Sync',
-                    desc: 'Every touchpoint — calls, messages, notes — surfaces instantly in the Logos Vision activity timeline.',
+                    desc: 'Every touchpoint (calls, messages, notes) surfaces instantly in the Logos Vision activity timeline.',
                     icon: (
                       <svg viewBox="0 0 20 20" width={13} height={13} fill="#c084fc" aria-hidden="true">
                         <path d="M11 2L4 12h6l-1 6 7-10h-6z" className="lp-flash" />
@@ -3100,6 +3164,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 ))}
               </div>
             </div>
+            )}
 
           </div>
         </section>
@@ -3366,16 +3431,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <section className="py-24 px-6 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 80% 50%, rgba(244,63,94,0.06) 0%, transparent 55%)' }} />
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="max-w-3xl mx-auto">
 
-            {/* G: Mobile App Preview */}
+            {/* G: Mobile App Preview — consolidated into the closing "Wherever you are" CTA; SHOW_INLINE_MOBILE_PREVIEW re-enables */}
+            {SHOW_INLINE_MOBILE_PREVIEW && (
             <div className="flex flex-col items-center">
               <div className="mb-8 text-center">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 text-xs font-bold uppercase tracking-widest mb-4">
                   <Smartphone className="text-zinc-400" /> Mobile App
                 </div>
                 <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Pulse in Your Pocket</h2>
-                <p className="text-zinc-400 text-base max-w-sm mx-auto">The full Pulse experience in your pocket. Voice messages, AI briefings, decisions, and meetings — native on Android.</p>
+                <p className="text-zinc-400 text-base max-w-sm mx-auto">The full Pulse experience in your pocket. Voice messages, AI briefings, decisions, and meetings. Native on Android.</p>
               </div>
               {/* Phone frame */}
               <div className="relative" style={{ width: '260px', height: '540px' }}>
@@ -3455,6 +3521,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </div>
               </div>
             </div>
+            )}
 
             {/* F: Keyboard Shortcuts Quick-Ref */}
             <div>
@@ -3546,12 +3613,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <div className="p-8 flex flex-col flex-grow">
                   <h3 className="text-2xl font-bold mb-4 text-white">Pulse</h3>
                   <div className="text-sm font-bold text-rose-500 tracking-wider uppercase mb-4">Communication and Intelligence</div>
-                  <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organisation. Real-time messaging, 5 Relay peers + Triage stream, Glimpse async video, full email client, calendar, maps, and analytics in one interface.</p>
+                  <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organisation. Real-time messaging, 5 Relay peers + Triage stream, Glimpse async video, calendar, maps, and analytics in one interface.</p>
                   <ul className="space-y-3 text-zinc-300 text-sm">
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> 5 Relay Peers + Glimpse + AI Transcription</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> War Room with 8 Slash Commands</li>
-                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> Full Email, Messaging, Calendar, Maps</li>
-                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 7+ AI Models (Gemini, Claude, GPT)</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> Messaging, Calendar, Maps, Contacts</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 3 AI Providers (Gemini, Claude, OpenAI)</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> Predictive Analytics Dashboard</li>
                   </ul>
                 </div>
@@ -3575,7 +3642,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <div className="p-8 flex flex-col flex-grow">
                   <h3 className="text-2xl font-bold mb-4 text-white">Logos Vision</h3>
                   <div className="text-sm font-bold text-teal-400 tracking-wider uppercase mb-4">CRM and Relationships</div>
-                  <p className="text-zinc-400 mb-6 flex-grow">The memory of your organization. Deep relationship intelligence with health scoring and 4 native CRM integrations that auto-sync every interaction.</p>
+                  <p className="text-zinc-400 mb-6 flex-grow">The memory of your organization. Deep relationship intelligence with health scoring and 4 native CRM integrations you can log interactions to in one click.</p>
                   <ul className="space-y-3 text-zinc-300 text-sm">
                     <li className="flex items-center gap-2"><Check className="text-teal-400" /> 0-100 Relationship Scoring</li>
                     <li className="flex items-center gap-2"><Check className="text-teal-400" /> 4 CRM Integrations</li>
@@ -3800,7 +3867,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <li className="relative">
                 <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">2</span>
                 <strong className="text-white block mb-1">Run the installer</strong>
-                Double-click the downloaded file. If Windows SmartScreen appears, click <em>More info → Run anyway</em>. The app is safe — it's just unsigned during early access.
+                Double-click the downloaded file. If Windows SmartScreen appears, click <em>More info → Run anyway</em>. The app is safe. It's just unsigned during early access.
               </li>
               <li className="relative">
                 <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">3</span>
@@ -3815,7 +3882,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </ol>
             <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-200">
               <Info className="mr-2" />
-              Requires Windows 10 or later (64-bit). Pulse runs in the system tray — closing the window keeps it running in the background.
+              Requires Windows 10 or later (64-bit). Pulse runs in the system tray. Closing the window keeps it running in the background.
             </div>
           </div>
           <p className="mt-8 text-sm text-zinc-500">* macOS and Linux builds coming soon.</p>
@@ -3838,7 +3905,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Pricing that starts with you.</h2>
             <p className="text-zinc-400 text-base max-w-xl mx-auto">
-              Start solo. Add your team when you're ready — $15 per seat, nothing wasted.
+              Start solo. Add your team when you're ready. $15 per seat, nothing wasted.
             </p>
           </div>
 
@@ -4063,7 +4130,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <HelpCircle className="text-zinc-400" /> FAQ
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Common Questions</h2>
-            <p className="text-zinc-500 text-base">Quick answers — full guide available via the Guide button in the nav.</p>
+            <p className="text-zinc-500 text-base">Quick answers. Full guide available via the Guide button in the nav.</p>
           </div>
           <div className="space-y-2">
             {FAQ_DATA.map((item, i) => (
@@ -4128,7 +4195,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 Wherever<br />you are.
               </h2>
               <p className={`text-lg leading-relaxed max-w-xl mb-8${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
-                Every conversation, decision, and signal — synced to the device already in your hand. The full Pulse surface in your pocket. Same Memory, same Relay, same Decisions.
+                Every conversation, decision, and signal. Synced to the device already in your hand. The full Pulse surface in your pocket. Same Memory, same Relay, same Decisions.
               </p>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[11px]" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.2em' }}>
                 <span className={`uppercase font-semibold${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>iOS</span>
@@ -4152,7 +4219,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               >
                 <img
                   src="/screens/pulse-mobile-memory.png"
-                  alt="Pulse on iPhone — Memory tab showing 50 unified items across Email, SMS, Voice, Notes and Live conversations"
+                  alt="Pulse on iPhone: Memory tab showing 50 unified items across Email, SMS, Voice, Notes and Live conversations"
                   className="block w-[260px] sm:w-[300px] lg:w-[340px] h-auto rounded-[44px]"
                   loading="lazy"
                   decoding="async"
@@ -4279,7 +4346,7 @@ const DownloadButton = ({
       rel={href ? 'noopener noreferrer' : undefined}
       disabled={inactive ? true : undefined}
       aria-disabled={inactive ? true : undefined}
-      aria-label={inactive ? `${platform} — coming soon` : platform}
+      aria-label={inactive ? `${platform}, coming soon` : platform}
       className={`group p-6 rounded-2xl border transition duration-300 flex flex-col items-center justify-center gap-4 w-full ${
         active
           ? 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700 hover:border-rose-500/50 cursor-pointer'

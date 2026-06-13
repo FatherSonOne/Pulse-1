@@ -543,18 +543,22 @@ a.duration-300,
   to   { transform: translate(-50%, -50%) rotate(-360deg); }
 }
 .lp-orbit-ring {
-  animation: lp-orbit-rotate 40s linear infinite;
+  animation: lp-orbit-rotate 90s linear infinite;
   transform-origin: center center;
 }
 .lp-orbit-ring.paused {
   animation-play-state: paused;
 }
 .lp-orbit-card {
-  animation: lp-orbit-counter 40s linear infinite;
+  animation: lp-orbit-counter 90s linear infinite;
 }
 .lp-orbit-ring.paused .lp-orbit-card {
   animation-play-state: paused;
 }
+/* Relay desktop orbit vs. mobile stack — explicit toggle (not Tailwind responsive
+   utilities, which weren't resolving for this section). Desktop orbit shows by
+   default; the mobile stack is hidden until the 768px breakpoint below. */
+.lp-relay-mobile { display: none; }
 
 /* ============================================================
    THEME TRANSITION — smooth 220ms crossfade on toggle
@@ -1275,4 +1279,7 @@ a.duration-300,
     bottom: 0;
     opacity: 0.3;
   }
+  /* Relay: hide the desktop orbit, show the stacked layout. */
+  .lp-relay-orbit  { display: none !important; }
+  .lp-relay-mobile { display: flex !important; }
 }

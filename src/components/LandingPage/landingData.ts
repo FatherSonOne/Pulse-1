@@ -39,13 +39,13 @@ export const RELAY_PEERS = [
 ];
 
 export const FAQ_DATA = [
-  { q: "What is Pulse?", a: "Pulse is one screen for every work conversation — messaging, email, voice (Relay), async video (Glimpse), calendar, contacts, and decisions — with one cross-surface AI that reads across all of them, summarizes, drafts, and triages, and labels every word it writes so you always know what's yours. Built for the overloaded solo operator (and the team they pull in)." },
+  { q: "What is Pulse?", a: "Pulse is one screen for every work conversation: messaging, email, voice (Relay), async video (Glimpse), calendar, contacts, and decisions, with one cross-surface AI that reads across all of them, summarizes, drafts, and triages, and labels every word it writes so you always know what's yours. Built for the overloaded solo operator (and the team they pull in)." },
   { q: "What AI models does Pulse support?", a: "Pulse integrates Google Gemini (primary, with built-in web search grounding), Anthropic Claude, and OpenAI. You can switch between models in Settings → AI & Intelligence." },
-  { q: "What is the War Room?", a: "The War Room is your AI command center — a research and strategy workspace with 8 slash commands (/brainstorm, /decide, /analyze, /summarize, /plan, /debrief, /risks, /compare), 4 specialized AI agents, RAG document intelligence, voice agent, and session management. Upload your docs and get context-aware AI responses." },
-  { q: "What are the Relay peers?", a: "Triage (your unified voice-message stream — the default landing view), Direct (one-to-one voice with AI transcription), Channel (voice threads with @mentions), Broadcast (push-to-air for the whole team), Notes (personal voice journaling), and Live (persistent voice rooms, Discord-style). Glimpse — async video messaging with face-cam and screen recording — is a separate top-level section. AI transcription runs on every voice and video message." },
-  { q: "Which CRM platforms does Pulse integrate with?", a: "Pulse offers 4 native CRM integrations: HubSpot, Salesforce, Pipedrive, and Zoho CRM. Additionally, Pulse includes Logos Vision — a built-in relationship intelligence system with 0-100 health scoring and bidirectional sync." },
-  { q: "What platforms are in the Unified Inbox?", a: "Pulse syncs with Gmail, Slack, Microsoft Outlook/Teams, Zoom, and Google Meet. Each platform connects via OAuth in Settings → Integrations." },
-  { q: "Is my data encrypted?", a: "Pulse encrypts your data in transit (TLS) and at rest (AES-256), and isolates every workspace with row-level security. Pulse does not offer end-to-end encryption: to power AI features like summaries, smart compose, and decision extraction, your content is processed server-side at the time of your request. We treat your content as confidential and restrict internal access through access controls and policy — but, unlike an end-to-end-encrypted messenger, there is no cryptographic barrier that makes content unreadable to us. We never use your content to train AI models." },
+  { q: "What is the War Room?", a: "The War Room is your AI command center, a research and strategy workspace with 8 slash commands (/brainstorm, /decide, /analyze, /summarize, /plan, /debrief, /risks, /compare), 4 specialized AI agents, RAG document intelligence, voice agent, and session management. Upload your docs and get context-aware AI responses." },
+  { q: "What are the Relay peers?", a: "Triage (your unified voice-message stream, the default landing view), Direct (one-to-one voice with AI transcription), Channel (voice threads with @mentions), Broadcast (push-to-air for the whole team), Notes (personal voice journaling), and Live (persistent voice rooms, Discord-style). Glimpse, async video messaging with face-cam and screen recording, is a separate top-level section. AI transcription runs on every voice and video message." },
+  { q: "Which CRM platforms does Pulse integrate with?", a: "Pulse offers 4 native CRM integrations: HubSpot, Salesforce, Pipedrive, and Zoho CRM. Additionally, Pulse includes Logos Vision, a built-in relationship intelligence system with 0-100 health scoring and bidirectional sync." },
+  { q: "What platforms are in the Unified Inbox?", a: "Pulse brings Slack into one inbox alongside its own channels and DMs for messaging, and connects Microsoft Outlook, Zoom, and Google Meet for calendar and meetings. Each platform connects via OAuth in Settings → Integrations." },
+  { q: "Is my data encrypted?", a: "Pulse encrypts your data in transit (TLS) and at rest (AES-256), and isolates every workspace with row-level security. Pulse does not offer end-to-end encryption: to power AI features like summaries, smart compose, and decision extraction, your content is processed server-side at the time of your request. We treat your content as confidential and restrict internal access through access controls and policy, but unlike an end-to-end-encrypted messenger, there is no cryptographic barrier that makes content unreadable to us. We never use your content to train AI models." },
   { q: "What devices is Pulse available on?", a: "Pulse is available as a web app (any browser), Windows desktop app (installer or portable), and Android (Google Play Store or direct APK). iOS and macOS apps are coming soon." },
 ];
 
@@ -60,7 +60,6 @@ export const SHORTCUT_GROUPS = [
   { label: 'Navigate', icon: 'fa-solid fa-compass', shortcuts: [
     { keys: ['G', 'D'], desc: 'Dashboard' },
     { keys: ['G', 'M'], desc: 'Messages' },
-    { keys: ['G', 'E'], desc: 'Email' },
     { keys: ['G', 'V'], desc: 'Relay' },
     { keys: ['G', 'C'], desc: 'Calendar' },
     { keys: ['G', 'T'], desc: 'Contacts' },
@@ -72,13 +71,6 @@ export const SHORTCUT_GROUPS = [
     { keys: ['N', 'L'], desc: 'Notes / Live' },
     { keys: ['Ctrl', 'S'], desc: 'AI summarise' },
     { keys: ['Esc'], desc: 'Cancel recording' },
-  ]},
-  { label: 'Email', icon: 'fa-solid fa-envelope', shortcuts: [
-    { keys: ['C'], desc: 'Compose new' },
-    { keys: ['R'], desc: 'Reply' },
-    { keys: ['F'], desc: 'Forward' },
-    { keys: ['E'], desc: 'Archive' },
-    { keys: ['Ctrl', 'Enter'], desc: 'Send' },
   ]},
   { label: 'Messaging', icon: 'fa-solid fa-comment', shortcuts: [
     { keys: ['Enter'], desc: 'Send message' },
@@ -101,7 +93,7 @@ export const SHORTCUT_GROUPS = [
 // the full cross-surface AI moat. TrialExpiredBlock.tsx + the landing pricing
 // section consume these as the single source of truth.
 export const PULSE_SOLO_FEATURES = [
-  'Just you — 1 seat',
+  'Just you, 1 seat',
   'Cross-surface AI: summaries, drafts, triage',
   'Relay voice + Glimpse video',
   'Decisions & tasks, contacts, calendar',
@@ -120,7 +112,7 @@ export const PULSE_SOLO_PRICING = {
 // per-seat annual price. TrialExpiredBlock.tsx imports this list directly —
 // single source of truth.
 export const PULSE_TEAM_FEATURES = [
-  'Per-seat — $15/user/mo, min 2 seats',
+  'Per-seat: $15/user/mo, min 2 seats',
   'All 5 Relay peers + Triage stream',
   'Glimpse async video + Studio RAG',
   'Email, calendar, messaging, meetings',
