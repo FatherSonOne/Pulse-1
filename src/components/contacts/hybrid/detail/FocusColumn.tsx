@@ -59,6 +59,7 @@ import {
   getLogosMappings,
   linkContactToLogos,
   unlinkContactFromLogos,
+  logToLogos,
   type LogosClientLite,
   type LogosContactMapping,
 } from '../../../../services/logosMappingService';
@@ -78,6 +79,14 @@ function ringClassFor(score: number): string {
   if (score >= 70) return 'ring-2 ring-emerald-400 dark:ring-emerald-500';
   if (score >= 40) return 'ring-2 ring-amber-400 dark:ring-amber-500';
   return 'ring-2 ring-rose-400 dark:ring-rose-500';
+}
+
+// Stable short hash for the note auto-log dedup key (same note text → same id,
+// so re-saving identical notes logs at most once).
+function djb2(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
 }
 
 interface FocusColumnProps {
@@ -145,6 +154,10 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
   const [logosResults, setLogosResults] = useState<LogosClientLite[]>([]);
   const [logosBusy, setLogosBusy] = useState(false);
   const [logosErr, setLogosErr] = useState<string | null>(null);
+  // P3 — manual "Log to Logos" inline composer.
+  const [logManualOpen, setLogManualOpen] = useState(false);
+  const [logManualBusy, setLogManualBusy] = useState(false);
+  const logManualRef = useRef<HTMLTextAreaElement>(null);
 
   const profile = relationshipProfile;
   const score = profile?.relationshipScore;
@@ -165,6 +178,16 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
           await supabase.from('contacts').update({ notes: newNotes || null }).eq('id', contact.id);
           onUpdateContact?.({ ...contact, notes: newNotes || undefined });
           toast.success('Notes saved');
+          // P3 · auto-log the note to the linked Logos client's activity timeline
+          // (only for linked contacts, when the sync is on; fire-and-forget).
+          if (features.logosVisionSync && logosMapping && newNotes) {
+            void logToLogos({
+              pulseContactId: contact.id,
+              kind: 'note',
+              content: newNotes,
+              sourceId: `note:${contact.id}:${djb2(newNotes)}`,
+            }).catch(() => { /* non-blocking: a Logos failure never affects note-save */ });
+          }
         } catch {
           toast.error('Failed to save notes');
         }
@@ -256,6 +279,26 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
     try { await unlinkContactFromLogos(contact.id); setLogosMapping(null); toast.success('Unlinked from Logos'); }
     catch (e) { setLogosErr(e instanceof Error ? e.message : 'unlink failed'); }
     finally { setLogosBusy(false); }
+  };
+
+  const submitManualLog = async () => {
+    const text = logManualRef.current?.value.trim() ?? '';
+    if (!text) return;
+    setLogManualBusy(true);
+    try {
+      await logToLogos({
+        pulseContactId: contact.id,
+        kind: 'manual',
+        content: text,
+        sourceId: `manual:${crypto.randomUUID()}`, // unique per click — never dedups
+      });
+      setLogManualOpen(false);
+      toast.success('Logged to Logos');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Log failed');
+    } finally {
+      setLogManualBusy(false);
+    }
   };
 
   return (
@@ -392,24 +435,67 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
               style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-surface-raised)' }}
             >
               {logosMapping ? (
-                <div className="flex items-center gap-2">
-                  <i className="fa-solid fa-link text-sm" style={{ color: 'var(--pulse-ink-3)' }} aria-hidden="true" />
-                  <span className="text-xs" style={{ color: 'var(--pulse-ink-2)' }}>
-                    Linked to{' '}
-                    <span className="font-medium" style={{ color: 'var(--pulse-ink-1)' }}>
-                      {logosMapping.logos_client_name || logosMapping.logos_entity_id}
-                    </span>{' '}
-                    in Logos
-                  </span>
-                  <button
-                    type="button"
-                    onClick={unlinkLogos}
-                    disabled={logosBusy}
-                    className="ml-auto text-xs font-medium px-2.5 py-1 rounded-lg disabled:opacity-50"
-                    style={{ color: 'var(--pulse-ink-2)' }}
-                  >
-                    {logosBusy ? '…' : 'Unlink'}
-                  </button>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <i className="fa-solid fa-link text-sm" style={{ color: 'var(--pulse-ink-3)' }} aria-hidden="true" />
+                    <span className="text-xs" style={{ color: 'var(--pulse-ink-2)' }}>
+                      Linked to{' '}
+                      <span className="font-medium" style={{ color: 'var(--pulse-ink-1)' }}>
+                        {logosMapping.logos_client_name || logosMapping.logos_entity_id}
+                      </span>{' '}
+                      in Logos
+                    </span>
+                    <button
+                      type="button"
+                      onClick={unlinkLogos}
+                      disabled={logosBusy}
+                      className="ml-auto text-xs font-medium px-2.5 py-1 rounded-lg disabled:opacity-50"
+                      style={{ color: 'var(--pulse-ink-2)' }}
+                    >
+                      {logosBusy ? '…' : 'Unlink'}
+                    </button>
+                  </div>
+                  {logManualOpen ? (
+                    <div>
+                      <textarea
+                        ref={logManualRef}
+                        autoFocus
+                        rows={2}
+                        placeholder="Log a note to this client's Logos timeline…"
+                        className="w-full text-xs px-2.5 py-1.5 rounded-lg border resize-none"
+                        style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-surface)', color: 'var(--pulse-ink-1)' }}
+                      />
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <button
+                          type="button"
+                          onClick={submitManualLog}
+                          disabled={logManualBusy}
+                          className="text-xs font-medium px-2.5 py-1 rounded-lg disabled:opacity-50"
+                          style={{ background: 'var(--pulse-rose)', color: '#fff' }}
+                        >
+                          {logManualBusy ? 'Logging…' : 'Log to Logos'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLogManualOpen(false)}
+                          className="text-xs"
+                          style={{ color: 'var(--pulse-ink-3)' }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setLogManualOpen(true)}
+                      className="self-start text-xs font-medium"
+                      style={{ color: 'var(--pulse-ink-2)' }}
+                    >
+                      <i className="fa-solid fa-feather-pointed mr-1.5" aria-hidden="true" />
+                      Log to Logos
+                    </button>
+                  )}
                 </div>
               ) : logosPickerOpen ? (
                 <div>

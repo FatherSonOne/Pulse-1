@@ -80,3 +80,25 @@ export async function unlinkContactFromLogos(pulseContactId: string): Promise<vo
   );
   await parse(res);
 }
+
+export interface LogToLogosInput {
+  pulseContactId: string;
+  kind: 'note' | 'manual';
+  content: string;
+  sourceId: string; // dedup key; identical sourceId logs at most once (server ledger)
+}
+
+/**
+ * Log a Pulse touchpoint to the linked Logos client's activity timeline (P3/F1).
+ * No-ops server-side when the contact is unmapped or the sync is unconfigured.
+ * Fire-and-forget friendly — callers should `void` it and never block on it.
+ */
+export async function logToLogos(input: LogToLogosInput): Promise<{ skipped?: string; activityId?: string }> {
+  const res = await fetch(`${BACKEND_URL}/api/logos/case-log`, {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify(input),
+  });
+  const json = await parse(res);
+  return { skipped: json.skipped as string | undefined, activityId: json.activityId as string | undefined };
+}

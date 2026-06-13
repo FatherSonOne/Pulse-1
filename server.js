@@ -30,6 +30,11 @@ const SUPABASE_SERVICE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_
 // .env.local. .trim() guards the paste footgun (see the Supabase reads above).
 const LOGOS_SUPABASE_URL = (process.env.LOGOS_VISION_SUPABASE_URL || process.env.VITE_LOGOS_VISION_SUPABASE_URL || '').trim();
 const LOGOS_SERVICE_KEY = (process.env.LOGOS_VISION_SERVICE_ROLE_KEY || '').trim();
+// Single-tenant write constants (verified live 2026-06-13 — see the build
+// handoff doc): the owner's Logos tenant org (NOT NULL on every write) + the
+// owner team_members row used as the activity author.
+const LOGOS_ORG_ID = '3815131e-d6e5-45a5-a47f-005c5f4dd17c';    // tenant_organizations (QuantumEcos)
+const LOGOS_AUTHOR_ID = '542536f1-e0ca-44a4-bbe7-109d0c425805'; // team_members (Frank Messana)
 
 // Google OAuth configuration.
 //
@@ -3540,6 +3545,85 @@ app.delete('/api/logos/mappings', async (req, res) => {
     return res.json({ ok: true });
   } catch (e) {
     return res.status(e.status || 500).json({ ok: false, error: e.message });
+  }
+});
+
+// Log a Pulse touchpoint (note / manual entry) to the linked Logos client's
+// activity timeline (P3 / F1). Resolve contact->client mapping, dedup via the
+// crm_actions ledger (P2) on sourceId, write a Logos `activities` row, then
+// record the ledger outcome. Non-blocking: the caller fire-and-forgets.
+app.post('/api/logos/case-log', async (req, res) => {
+  let user;
+  try { user = await requireUser(req); }
+  catch (e) { return res.status(e.status || 500).json({ ok: false, error: e.message }); }
+
+  const { pulseContactId, kind = 'note', content = '', sourceId } = req.body || {};
+  if (!pulseContactId || !sourceId) {
+    return res.status(400).json({ ok: false, error: 'pulseContactId and sourceId are required' });
+  }
+  if (!logosConfigured()) return res.json({ ok: true, skipped: 'not_configured' });
+
+  const pulse = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  try {
+    // 1. Resolve the contact's Logos client mapping.
+    const { data: map } = await pulse
+      .from('logos_pulse_mappings')
+      .select('logos_entity_id')
+      .eq('pulse_entity_type', 'contact')
+      .eq('pulse_entity_id', pulseContactId)
+      .eq('logos_entity_type', 'client')
+      .maybeSingle();
+    if (!map) return res.json({ ok: true, skipped: 'unmapped' });
+
+    // 2. Idempotency — skip if this sourceId already logged successfully.
+    const { data: prior } = await pulse
+      .from('crm_actions')
+      .select('id')
+      .eq('action_type', 'logos.activity')
+      .eq('triggered_by_message_id', sourceId)
+      .eq('status', 'completed')
+      .maybeSingle();
+    if (prior) return res.json({ ok: true, skipped: 'duplicate' });
+
+    // 3. Write the Logos activity (org_id NOT NULL; author must be a real team_member).
+    const text = String(content || '').trim();
+    const title = text ? text.slice(0, 80) : 'Pulse note';
+    const today = new Date().toISOString().split('T')[0];
+    const { data: activity, error: aerr } = await logosServiceClient()
+      .from('activities')
+      .insert({
+        type: 'note',
+        title,
+        activity_date: today,
+        notes: text || null,
+        description: text || null,
+        client_id: map.logos_entity_id,
+        org_id: LOGOS_ORG_ID,
+        created_by_id: LOGOS_AUTHOR_ID,
+        status: 'Completed',
+        source_type: 'pulse_conversation',
+        source_entity_type: `pulse_${kind}`,
+        source_entity_id: sourceId,
+      })
+      .select('id')
+      .single();
+
+    // 4. Record the ledger outcome (completed or failed) for idempotency + visibility.
+    await pulse.from('crm_actions').insert({
+      action_type: 'logos.activity',
+      target_external_id: activity?.id || null,
+      action_payload: { pulseContactId, logosClientId: map.logos_entity_id, kind, sourceId },
+      triggered_by_user_id: user?.id || null,
+      triggered_by_message_id: sourceId,
+      status: aerr ? 'failed' : 'completed',
+      error_message: aerr?.message || null,
+      executed_at: new Date().toISOString(),
+    });
+
+    if (aerr) return res.status(500).json({ ok: false, error: aerr.message });
+    return res.json({ ok: true, activityId: activity.id });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
   }
 });
 

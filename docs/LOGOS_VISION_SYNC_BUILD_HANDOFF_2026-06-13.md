@@ -45,6 +45,7 @@ The spec's Section 5 was explicitly overridable. Live verification forces these 
 5. **`crmActionsService` is NOT a drop-in idempotency ledger.** `createAction` (`crmActionsService.ts:31`) immediately calls `executeAction` which **dispatches by `action_type` to existing per-platform CRM handlers** (HubSpot/etc.) and has **no dedup read on `triggered_by_message_id`**. Reusing it blindly would route Logos writes into the wrong handler. We use the `crm_actions` *table* as a dedup ledger with our own read-before-write guard, not the auto-executing `createAction`. (Also noted: `crm_actions.id` is `uuid` in DB but code inserts a `action-<uuid>` text string, and code writes an `updated_at` the base migration doesn't define — avoid both.)
 6. **Send hooks fire from services, not components** → they can't use the `useFeatures()` React hook. We need a non-React flag read (mirror `lib/emailFeature.ts`'s `isEmailEnabled()`), reading the same `pulse_feature_flags` localStorage key.
 7. **Privileged access is server-side, not a browser client (DECIDED — see §1).** The original scaffold (`logosVisionService.ts`) opens a browser Supabase client via `import.meta.env`; a service-role key there would ship to every visitor. Instead the service-role Logos client lives in `server.js` with `{ auth: { persistSession: false, autoRefreshToken: false } }` (the bare `createClient(url,key)` at `:26-28` defaults both to `true`, which must be disabled for a server client); the frontend calls `/api/logos/*` routes.
+8. **F1 trigger ≠ Pulse-DM send (DECIDED 2026-06-13).** The plan's send-hook (`pulseService.sendMessage`/`sendQuickVox`) targets `auth.users` ids; resolving those to a `contacts` row needs `contacts.pulse_user_id`, which is populated on **0/26 contacts** — and linked CRM contacts are external (no Pulse account), so the DM hook structurally can't reach them. F1 instead triggers from the contact-context surfaces that carry `contact.id`: **note-save auto-log + a manual "Log to Logos" button** on `FocusColumn`.
 
 ---
 
@@ -63,11 +64,12 @@ The spec's Section 5 was explicitly overridable. Live verification forces these 
 
 **Thinnest end-to-end slice = P0→P1→P2→P3** (Conversation→Case Log genuinely working). P4–P7 layer on.
 
-**Build status:** P0 + P1 shipped + verified 2026-06-13.
+**Build status:** P0–P3 shipped + verified 2026-06-13.
 - **P0** (connection + flag scaffold): `GET /api/logos/health` → `{configured:true, ok:true, rows:1}`; flag `logosVisionSync` default OFF.
 - **P1** (contact↔Logos mapping): server-side routes `GET /api/logos/clients` + `GET/POST/DELETE /api/logos/mappings` (auth-gated → 401 without a Pulse session; mapping CRUD via the Pulse service-role client since `logos_pulse_mappings` has RLS-on/no-policies); `src/services/logosMappingService.ts`; "Link to Logos client" card on `FocusColumn.tsx` (flag-gated, mirrors the Link-Slack pattern). Verified: DB round-trip (clients read + mapping insert/read/delete/cleanup), 401 guard, tsc clean. In-UI click-through is the live acceptance check.
+- **P2+P3** (ledger + F1 Conversation→Case Log): `POST /api/logos/case-log` (auth-gated) resolves contact→client mapping, dedups via `crm_actions` on `sourceId`, writes a Logos `activities` row (`type='note'`, org/author constants, `source_*` provenance), records the ledger outcome. Trigger = note-save auto-log + manual "Log to Logos" on `FocusColumn` (NOT the DM hook — Deviation #8). Verified 2026-06-13: DB write+dedup+cleanup smoke, POST 401 guard, tsc clean. In-UI note-save→Logos activity is the live acceptance.
 
-**P2 (idempotency ledger over `crm_actions`) is next.**
+**P4 (F2 Activity Feed Sync) is next.**
 
 ---
 
@@ -90,11 +92,11 @@ The spec's Section 5 was explicitly overridable. Live verification forces these 
 
 ### P3 — F1 Conversation → Case Log
 - **Server write route:** `POST /api/logos/case-log` in `server.js` (server-side Logos client) inserts into `activities` with `org_id` (the constant), `created_by_id` = owner team-member, provenance (`source_type:'pulse_conversation'`, `source_entity_type:'pulse_message'`, `source_entity_id:<messageId>`), `activity_time` unset. Port `createActivity`'s column mapping (`logosVisionService.ts:298-330`) into the handler but **add the missing `org_id`** — without it the live insert 23502s. The route does contact→Logos-client resolution (P1) and dedup (P2) **server-side**, and no-ops with 200 when the secret is unconfigured.
-- **Hook the clean DM/voice send seams** — fire-and-forget `POST /api/logos/case-log` with `{ recipientId, messageId, content, kind }`, mirroring the `messageChannelService.ts:322-326` `void notifyMappedMentions(...)` pattern:
-  - `pulseService.sendMessage` — after the success guard (`pulseService.ts:425`), before `return data` (`:459`). `recipientId` + message id available.
-  - `voxModeService.sendQuickVox` — after the error guard (`voxModeService.ts:2116-2119`), beside the existing `createNotification` (`:2123`). `recipientId` + `data.id`.
-- Each hook: gated on `isLogosSyncEnabled()` (skip the POST when OFF); the **server** resolves contact→Logos client (P1), dedups (P2), and writes; unmapped → server returns 200 no-op. Frontend never blocks or refetches (respect the disappearing-message contract — `sendMessage` only returns the id; the realtime subscription owns the list).
-- **Accept (spec §7 F1):** send to linked contact → exactly 1 `activities` row in ≤5s with body+author+timestamp+messageId ref; retry/re-render → no dup; unlinked contact → 0 rows, 0 errors; Logos write failure → Pulse send still succeeds.
+- **Trigger = contact note-save + manual "Log to Logos" (NOT the DM/Vox send hooks — see Deviation #8).** Both originate in `FocusColumn.tsx` and carry `contact.id` directly, so no recipient→contact resolution is needed:
+  - `saveNotes` (after a successful note change, gated on `features.logosVisionSync` + a present mapping): `void logToLogos({ kind:'note', sourceId:'note:'+contact.id+':'+djb2(content) })` — content-hash dedups identical notes.
+  - A "Log to Logos" affordance in the Logos card (mapped branch): inline textarea → `logToLogos({ kind:'manual', sourceId:'manual:'+crypto.randomUUID() })` — always unique, always logs.
+- The frontend `logToLogos` (in `logosMappingService.ts`) POSTs `{ pulseContactId, kind, content, sourceId }` with the Supabase bearer; the **server** resolves contact→Logos client (P1), dedups (P2), writes the activity, and records the ledger. Fire-and-forget — a Logos failure never affects note-save.
+- **Accept (spec §7 F1, adapted):** note-save / manual-log on a linked contact → exactly 1 `activities` row (`type='note'`, provenance `source_entity_id=sourceId`); same `sourceId` again → `skipped:'duplicate'`; unmapped contact → 200 no-op, 0 rows; Logos failure → note-save still succeeds. **Verified 2026-06-13** via DB smoke (write + dedup + cleanup) + 401 guard.
 
 ### P4 — F2 Activity Feed Sync
 - Generalize P3 into `mapPulseTouchpointToLogosActivity(touchpoint)` → `activities.type` (call/message/note; unknown → fallback `communication`, no error).
