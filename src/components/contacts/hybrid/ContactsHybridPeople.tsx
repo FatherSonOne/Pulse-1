@@ -120,6 +120,11 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
   // Browse<->Focus) with the Co-pilot rail behind a toggle. JS check, not Tailwind
   // responsive variants (unreliable in this tree — see the Co-pilot note below).
   const isDesktop = useMediaQuery('(min-width: 768px)');
+  // Wider gate for the inline Co-pilot rail. Between 768px and 1100px the
+  // Browse + Focus panes already fill the row; adding the 300px rail there
+  // crushes both to unusable widths. Above 1100px there's room for all three;
+  // below it the Co-pilot moves to the FAB + slide-over sheet.
+  const isWide = useMediaQuery('(min-width: 1100px)');
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
@@ -652,11 +657,12 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
       </div>
       )}
 
-      {/* Col 3 — Co-pilot. Desktop: inline 300px rail (plain flex + inline width
-          to sidestep this tree's flaky Tailwind JIT — responsive variants don't
-          always regenerate on HMR). Mobile: hidden behind a toggle that opens it
-          as a right-side sheet. */}
-      {isDesktop ? (
+      {/* Col 3 — Co-pilot. Wide (≥1100px): inline 300px rail (plain flex + inline
+          width to sidestep this tree's flaky Tailwind JIT — responsive variants
+          don't always regenerate on HMR). Below 1100px (incl. the 768–1100 mid
+          range and true mobile): hidden behind a toggle that opens it as a
+          right-side sheet, so Browse + Focus keep their full width. */}
+      {isWide ? (
         <div
           className="flex flex-col shrink-0 border-l p-4 overflow-hidden"
           style={{ width: 300, borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}

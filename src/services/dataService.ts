@@ -41,6 +41,11 @@ export interface DBContact {
   birthday?: string;
   groups?: string[];
   source: 'local' | 'google' | 'vision';
+  // Provenance pair backing the UNIQUE (user_id, platform, external_id) index.
+  // Imported contacts carry both; local contacts mint a unique external_id at
+  // insert time (see createContact) to avoid colliding on the '' default.
+  platform?: string;
+  external_id?: string;
   last_synced?: string;
   created_at: string;
   updated_at: string;
@@ -526,9 +531,19 @@ class DataService {
   }
 
   async createContact(contact: Omit<Contact, 'id'>): Promise<Contact | null> {
+    const row = contactToDb(contact, this.getUserId());
+    // The contacts table has a UNIQUE index on (user_id, platform, external_id).
+    // Locally-created contacts don't carry an external_id, so without one they
+    // all fall back to the column default '' and collide — the first manual add
+    // succeeds, every subsequent one 409s (unique_violation). Mint a unique id
+    // here so each local contact occupies its own slot. (Imported contacts
+    // already arrive with a real external_id, so this only fills the gap.)
+    if (!row.external_id) {
+      row.external_id = crypto.randomUUID();
+    }
     const { data, error } = await supabase
       .from('contacts')
-      .insert([contactToDb(contact, this.getUserId())])
+      .insert([row])
       .select()
       .single();
 
