@@ -1,5 +1,11 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
+  Sparkles, Rocket, Home, MessageSquare, Mail, Smartphone, Mic, Video,
+  Calendar, Users, ListChecks, Bot, Plug, BarChart3, Archive, Wrench,
+  Search, Settings, CreditCard, MonitorSmartphone, Keyboard, LifeBuoy, Radio,
+  Target, Zap, Lightbulb, SearchX, Layers, type LucideIcon,
+} from 'lucide-react';
+import {
   guideSections,
   guideVersion,
   guideUpdated,
@@ -12,6 +18,39 @@ import {
   type Shortcut,
 } from './guideData';
 import './UsersGuide.css';
+
+// ─── Section icon registry ──────────────────────────────────────────────────────
+// guideData stores a Lucide icon name per section; resolve it to a line-icon that
+// inherits currentColor (so it tracks light/dark + active-state color for free).
+
+const SECTION_ICONS: Record<string, LucideIcon> = {
+  Sparkles, Rocket, Home, MessageSquare, Mail, Smartphone, Mic, Video,
+  Calendar, Users, ListChecks, Bot, Plug, BarChart3, Archive, Wrench,
+  Search, Settings, CreditCard, MonitorSmartphone, Keyboard, LifeBuoy, Radio,
+};
+
+const SectionIcon: React.FC<{ name: string; size?: number; className?: string }> = ({
+  name, size = 18, className,
+}) => {
+  const Ico = SECTION_ICONS[name] ?? Sparkles;
+  return <Ico size={size} strokeWidth={1.75} className={className} aria-hidden="true" />;
+};
+
+// ─── Deep-link helpers ──────────────────────────────────────────────────────────
+// Namespaced `#guide/<sectionId>` so the active section is bookmarkable and the
+// guide reopens where you left off. Namespacing keeps it clear of any other hash
+// the app might use (e.g. meeting codes).
+
+const HASH_PREFIX = '#guide/';
+
+/** Returns a valid section id from the current URL hash, or null. */
+function sectionIdFromHash(): string | null {
+  if (typeof window === 'undefined') return null;
+  const hash = window.location.hash;
+  if (!hash.startsWith(HASH_PREFIX)) return null;
+  const id = decodeURIComponent(hash.slice(HASH_PREFIX.length));
+  return guideSections.some(s => s.id === id) ? id : null;
+}
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -129,15 +168,14 @@ const ShortcutTable: React.FC<{ shortcuts: Shortcut[]; query: string; title?: st
 
 const CollapsibleBlock: React.FC<{
   id: string;
-  icon: string;
-  label: string;
+  icon: React.ReactNode;
+  label: React.ReactNode;
   tag?: string;
-  tagColor?: string;
   isOpen: boolean;
   onToggle: () => void;
   children: React.ReactNode;
   variant?: 'usecase' | 'advanced' | 'subsection';
-}> = ({ icon, label, tag, tagColor, isOpen, onToggle, children, variant = 'usecase' }) => (
+}> = ({ icon, label, tag, isOpen, onToggle, children, variant = 'usecase' }) => (
   <div className={`ug-collapsible ug-collapsible--${variant}${isOpen ? ' is-open' : ''}`}>
     <button
       className="ug-collapsible-header"
@@ -147,9 +185,7 @@ const CollapsibleBlock: React.FC<{
       <span className="ug-collapsible-icon">{icon}</span>
       <span className="ug-collapsible-label">{label}</span>
       {tag && (
-        <span className="ug-collapsible-tag" style={{ background: tagColor }}>
-          {tag}
-        </span>
+        <span className="ug-collapsible-tag">{tag}</span>
       )}
       <span className={`ug-collapsible-chevron${isOpen ? ' is-open' : ''}`}>›</span>
     </button>
@@ -171,8 +207,8 @@ const SubSectionBlock: React.FC<{
 }> = ({ sub, query, isOpen, onToggle }) => (
   <CollapsibleBlock
     id={sub.id}
-    icon="▸"
-    label={highlightText(sub.title, query) as string}
+    icon={<Layers size={14} strokeWidth={1.75} aria-hidden="true" />}
+    label={highlightText(sub.title, query)}
     isOpen={isOpen}
     onToggle={onToggle}
     variant="subsection"
@@ -190,7 +226,7 @@ const SubSectionBlock: React.FC<{
     </ol>
     {sub.note && (
       <div className="ug-note">
-        <span className="ug-note-icon">💡</span>
+        <Lightbulb size={14} strokeWidth={1.75} className="ug-note-icon" aria-hidden="true" />
         <span>{highlightText(sub.note, query)}</span>
       </div>
     )}
@@ -207,10 +243,9 @@ const UseCaseBlock: React.FC<{
 }> = ({ uc, query, isOpen, onToggle }) => (
   <CollapsibleBlock
     id={uc.id}
-    icon="🎯"
-    label={highlightText(uc.title, query) as string}
+    icon={<Target size={14} strokeWidth={1.75} aria-hidden="true" />}
+    label={highlightText(uc.title, query)}
     tag="Use Case"
-    tagColor="#7c3aed"
     isOpen={isOpen}
     onToggle={onToggle}
     variant="usecase"
@@ -239,10 +274,9 @@ const AdvancedBlockComp: React.FC<{
 }> = ({ block, query, isOpen, onToggle }) => (
   <CollapsibleBlock
     id={block.id}
-    icon="⚡"
-    label={highlightText(block.title, query) as string}
+    icon={<Zap size={14} strokeWidth={1.75} aria-hidden="true" />}
+    label={highlightText(block.title, query)}
     tag="Advanced"
-    tagColor="#0891b2"
     isOpen={isOpen}
     onToggle={onToggle}
     variant="advanced"
@@ -268,6 +302,7 @@ const SectionDetail: React.FC<{
   const [openSubs, setOpenSubs] = useState<Set<string>>(new Set());
   const [openUCs, setOpenUCs] = useState<Set<string>>(new Set());
   const [openAdvs, setOpenAdvs] = useState<Set<string>>(new Set());
+  const [showAllToc, setShowAllToc] = useState(false);
   const detailRef = useRef<HTMLDivElement>(null);
 
   // Auto-expand items that match the search query
@@ -299,10 +334,17 @@ const SectionDetail: React.FC<{
     setOpenAdvs(newAdvs);
   }, [query, section]);
 
-  // Scroll to top when section changes
+  // Scroll to top + reset the TOC overflow toggle when section changes
   useEffect(() => {
     detailRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    setShowAllToc(false);
   }, [section.id]);
+
+  // Cap the TOC pill row so dense sections don't sprawl into several rows.
+  const TOC_PILL_CAP = 6;
+  const allSubs = section.subsections ?? [];
+  const visibleSubs = showAllToc ? allSubs : allSubs.slice(0, TOC_PILL_CAP);
+  const hiddenSubCount = allSubs.length - visibleSubs.length;
 
   const toggleSub  = (id: string) => setOpenSubs(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const toggleUC   = (id: string) => setOpenUCs(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -324,7 +366,7 @@ const SectionDetail: React.FC<{
     <div className="ug-detail" ref={detailRef}>
       {/* ── Header ── */}
       <div className="ug-detail-header">
-        <div className="ug-detail-icon">{section.icon}</div>
+        <div className="ug-detail-icon"><SectionIcon name={section.icon} size={22} /></div>
         <div className="ug-detail-header-text">
           <h2 className="ug-detail-title">
             {highlightText(section.title, query)}
@@ -338,7 +380,7 @@ const SectionDetail: React.FC<{
       {hasExpandables && (
         <div className="ug-inpage-toc">
           <div className="ug-inpage-toc-items">
-            {section.subsections?.map(s => (
+            {visibleSubs.map(s => (
               <button
                 key={s.id}
                 className="ug-toc-pill"
@@ -352,6 +394,16 @@ const SectionDetail: React.FC<{
                 {s.title}
               </button>
             ))}
+            {hiddenSubCount > 0 && (
+              <button className="ug-toc-pill ug-toc-pill--more" onClick={() => setShowAllToc(true)}>
+                +{hiddenSubCount} more
+              </button>
+            )}
+            {showAllToc && allSubs.length > TOC_PILL_CAP && (
+              <button className="ug-toc-pill ug-toc-pill--more" onClick={() => setShowAllToc(false)}>
+                Show less
+              </button>
+            )}
             {(section.useCases?.length ?? 0) > 0 && (
               <button className="ug-toc-pill" onClick={() => document.getElementById(`ucs-${section.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
                 Use Cases
@@ -480,7 +532,7 @@ const SearchResults: React.FC<{
     return (
       <div className="ug-search-results">
         <div className="ug-empty">
-          <div className="ug-empty-icon">🔍</div>
+          <SearchX size={40} strokeWidth={1.5} className="ug-empty-icon" aria-hidden="true" />
           <p className="ug-empty-title">No results for "{query}"</p>
           <p className="ug-empty-hint">Try a shorter keyword, or browse the sections in the sidebar.</p>
         </div>
@@ -502,10 +554,12 @@ const SearchResults: React.FC<{
             onClick={() => onSelect(section.id)}
             role="button"
             tabIndex={0}
-            onKeyDown={e => e.key === 'Enter' && onSelect(section.id)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(section.id); }
+            }}
           >
             <div className="ug-result-title">
-              <span className="ug-result-icon">{section.icon}</span>
+              <span className="ug-result-icon"><SectionIcon name={section.icon} size={16} /></span>
               <span>{highlightText(section.title, query)}</span>
               <Badge badge={section.badge} />
             </div>
@@ -553,10 +607,12 @@ const Sidebar: React.FC<{
                   onClick={() => onSelect(s.id)}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={e => e.key === 'Enter' && onSelect(s.id)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(s.id); }
+                  }}
                   aria-current={activeId === s.id ? 'page' : undefined}
                 >
-                  <span className="ug-sidebar-icon">{s.icon}</span>
+                  <span className="ug-sidebar-icon"><SectionIcon name={s.icon} size={15} /></span>
                   <span className="ug-sidebar-label">{s.title}</span>
                   {s.badge && <Badge badge={s.badge} />}
                 </div>
@@ -572,7 +628,7 @@ const Sidebar: React.FC<{
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 const UsersGuide: React.FC<UsersGuideProps> = ({ isDarkMode = false }) => {
-  const [activeId, setActiveId] = useState<string>(guideSections[0].id);
+  const [activeId, setActiveId] = useState<string>(() => sectionIdFromHash() ?? guideSections[0].id);
   const [query, setQuery] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -588,11 +644,34 @@ const UsersGuide: React.FC<UsersGuideProps> = ({ isDarkMode = false }) => {
 
   const isSearching = query.trim().length > 0;
 
-  const handleSelectResult = useCallback((id: string) => {
+  // Select a section and reflect it in the URL hash (replaceState — no back-stack
+  // pollution per click). The section becomes bookmarkable and survives a reopen.
+  const selectSection = useCallback((id: string) => {
     setActiveId(id);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', HASH_PREFIX + encodeURIComponent(id));
+    }
+  }, []);
+
+  // Browser back/forward (or an external hash change) re-syncs the active section.
+  useEffect(() => {
+    const onPop = () => {
+      const id = sectionIdFromHash();
+      if (id) setActiveId(id);
+    };
+    window.addEventListener('popstate', onPop);
+    window.addEventListener('hashchange', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      window.removeEventListener('hashchange', onPop);
+    };
+  }, []);
+
+  const handleSelectResult = useCallback((id: string) => {
+    selectSection(id);
     setQuery('');
     searchRef.current?.blur();
-  }, []);
+  }, [selectSection]);
 
   // Ctrl+K to focus search
   useEffect(() => {
@@ -654,7 +733,7 @@ const UsersGuide: React.FC<UsersGuideProps> = ({ isDarkMode = false }) => {
           <SearchResults query={query} results={searchResults} onSelect={handleSelectResult} />
         ) : (
           <>
-            <Sidebar activeId={activeId} onSelect={setActiveId} />
+            <Sidebar activeId={activeId} onSelect={selectSection} />
             <SectionDetail section={activeSection} query={query} />
           </>
         )}

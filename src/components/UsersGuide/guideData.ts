@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.6.0 · June 1, 2026
+// Version 25.6.1 · June 12, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -72,7 +72,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'introduction',
     title: 'Introduction',
-    icon: '✨',
+    icon: 'Sparkles',
     summary: 'What Pulse is, who it is for, and how everything fits together.',
     steps: [
       'Pulse is your all-in-one communication and productivity hub — email, SMS, voice, video, calendar, tasks, decisions, CRM, and AI in a single app.',
@@ -130,7 +130,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'getting-started',
     title: 'Getting Started',
-    icon: '🚀',
+    icon: 'Rocket',
     summary: 'Create your account, connect your apps, set up your profile, and learn how to navigate Pulse.',
     steps: [
       'Open Pulse in your browser or install the Android app from the Google Play Store.',
@@ -195,7 +195,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'dashboard',
     title: 'Dashboard',
-    icon: '🏠',
+    icon: 'Home',
     badge: 'Updated',
     summary: 'Your home screen — an AI Daily Overview briefing, web search, Mini Pulse AI, upcoming events with live countdowns, unread counts at a glance, and smart nudges for what needs your attention.',
     steps: [
@@ -297,7 +297,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'messaging',
     title: 'Unified Messaging',
-    icon: '💬',
+    icon: 'MessageSquare',
     badge: 'Updated',
     summary: 'One inbox for all conversations — internal messages, direct messages, threads, reactions, smart folders, powerful message enhancements, and ecosystem bot messages.',
     steps: [
@@ -434,7 +434,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'email',
     title: 'Email',
-    icon: '📧',
+    icon: 'Mail',
     badge: 'Updated',
     summary: 'A full-featured email client with AI daily briefing, smart compose, templates, scheduling, follow-up reminders, action item extraction, and email campaigns with audience segments.',
     steps: [
@@ -598,7 +598,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'sms',
     title: 'SMS',
-    icon: '📱',
+    icon: 'Smartphone',
     summary: 'Send and receive text messages from inside Pulse — with templates, scheduling, and smart suggestions.',
     steps: [
       'Go to Settings → Connected Accounts → Connect SMS. Follow the steps to verify your phone number.',
@@ -653,7 +653,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'relay',
     title: 'Relay — Voice Messaging',
-    icon: '🎙️',
+    icon: 'Mic',
     summary: 'Eight voice modes for every situation — quick notes to scheduled broadcasts — all with AI transcription, summaries, and smart replies.',
     steps: [
       'Click Relay in the sidebar to open the voice messaging hub.',
@@ -863,7 +863,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'meetings',
     title: 'Meetings Hub',
-    icon: '📹',
+    icon: 'Video',
     badge: 'Updated',
     summary: 'Full video meeting platform — templates, agenda builder, action items, recordings, breakout rooms, analytics, Meeting Intelligence Profiles, briefing cards, and recap cards.',
     steps: [
@@ -1055,7 +1055,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'calendar',
     title: 'Calendar & Scheduling',
-    icon: '📅',
+    icon: 'Calendar',
     badge: 'Updated',
     summary: 'Connect Google or Microsoft Calendar, create recurring events, RSVP with comments, share calendars, publish booking pages, and use Meeting Deflector to protect your focus time.',
     steps: [
@@ -1223,7 +1223,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'contacts',
     title: 'Contacts & Relationships',
-    icon: '👥',
+    icon: 'Users',
     badge: 'Updated',
     summary: 'Full relationship management — AI insights, health scores, contact circles, autopilot reminders, network visualization, interactive Contact Map, and meeting prep cards.',
     steps: [
@@ -1398,7 +1398,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'decisions-tasks',
     title: 'Decisions & Tasks',
-    icon: '✅',
+    icon: 'ListChecks',
     summary: 'Collaborative voting, AI decomposition, Kanban board, workload heatmap, decision-to-task pipeline, proactive nudges, and an in-context AI assistant.',
     steps: [
       'Click Decisions & Tasks in the sidebar.',
@@ -1601,7 +1601,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'ai-features',
     title: 'AI Features',
-    icon: '🤖',
+    icon: 'Bot',
     summary: 'AI woven into every part of Pulse — global assistant, smart compose, translation in 90+ languages, tone analysis, action extraction, and the War Room Notebook: a source-grounded research workspace with cited answers, generators, and a realtime voice agent.',
     badge: 'Updated',
     steps: [
@@ -1786,7 +1786,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'crm',
     title: 'CRM Integrations',
-    icon: '🔗',
+    icon: 'Plug',
     summary: 'Two-way sync with HubSpot, Salesforce, Pipedrive, or Zoho — contacts, deals, tasks, and activities stay in sync automatically.',
     steps: [
       'Go to Settings → Connected Accounts → CRM.',
@@ -1855,7 +1855,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'analytics',
     title: 'Analytics',
-    icon: '📊',
+    icon: 'BarChart3',
     badge: 'Updated',
     summary: 'Communication analytics, relationship health, team health, task completion, AI predictions with burnout indicators, conflict detection, kudos tracking, and exportable reports.',
     steps: [
@@ -1983,7 +1983,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'archives',
     title: 'Archives',
-    icon: '🗄️',
+    icon: 'Archive',
     summary: 'Store and organize completed sessions, transcripts, decisions, meeting notes, documents, and more — fully searchable and restorable.',
     badge: 'New',
     steps: [
@@ -2025,7 +2025,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'tools',
     title: 'Tools Panel',
-    icon: '🛠️',
+    icon: 'Wrench',
     summary: 'Automation rules, bulk operations, and a webhook manager — power features for advanced workflows. (AI research now lives in the War Room — see AI Features.)',
     steps: [
       'Click Tools in the sidebar to access the Tools Panel.',
@@ -2093,7 +2093,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'search',
     title: 'Search',
-    icon: '🔍',
+    icon: 'Search',
     badge: 'Updated',
     summary: 'Unified search across every channel with redesigned results, geo modifiers (near me / near place), Map view, natural language, filters, saved searches, and alerts.',
     steps: [
@@ -2191,7 +2191,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'settings',
     title: 'Settings & Customization',
-    icon: '⚙️',
+    icon: 'Settings',
     badge: 'Updated',
     summary: 'Appearance, accessibility, AI model configuration, War Room (AI workspace), notification preferences, connected accounts, Ecosystem Bridge, Features & Labs, workspace management, billing, API keys, privacy controls, and data export.',
     steps: [
@@ -2431,7 +2431,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'billing',
     title: 'Billing & Plans',
-    icon: '💳',
+    icon: 'CreditCard',
     badge: 'Updated',
     summary: 'One plan — Pulse Team at $100/mo or $1,000/yr. Every new workspace gets a 30-day free trial, no credit card required. Stripe-powered checkout and Customer Portal for self-serve changes.',
     steps: [
@@ -2504,7 +2504,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'mobile',
     title: 'Mobile & Desktop Apps',
-    icon: '📲',
+    icon: 'MonitorSmartphone',
     badge: 'Updated',
     summary: 'Pulse runs on Windows (desktop installer), Android (mobile), and any web browser. Everything syncs instantly across all platforms.',
     steps: [
@@ -2516,6 +2516,20 @@ export const guideSections: GuideSection[] = [
       'Add the Android home screen widget for quick stats and message preview.',
     ],
     subsections: [
+      {
+        id: 'phone-browser',
+        title: 'Using Pulse in a Phone Browser',
+        badge: 'New',
+        description: 'No install required — the full web app now reshapes itself for small screens automatically.',
+        steps: [
+          'Single-column layouts — multi-pane sections (Contacts, Search, Relay, Decisions & Tasks, Glimpse) collapse from three panes into one focused column. Tap an item to open it full-width, then use the back control to return.',
+          'Slim bottom navigation bar — on phones your primary sections move to a compact bar fixed at the bottom of the screen. Composers and other bottom surfaces sit above it so nothing is hidden.',
+          'Scrollable section tabs — rows of tabs (like Glimpse) scroll sideways instead of overflowing or wrapping.',
+          'Mobile sheets — side panels that sit in a column on desktop (the Summit artifact panel, the War Room Notebook chat) slide up as full-width sheets so they are never clipped.',
+          'Account drawer — tap the account icon in the top bar for your profile, settings, and notifications without a desktop sidebar.',
+        ],
+        note: 'The mobile web experience covers the whole app. Install the Android app for native push, biometric login, the widget, and offline mode.',
+      },
       {
         id: 'windows-desktop',
         title: 'Windows Desktop App',
@@ -2588,7 +2602,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'shortcuts',
     title: 'Keyboard Shortcuts',
-    icon: '⌨️',
+    icon: 'Keyboard',
     summary: 'Every keyboard shortcut in Pulse — navigation, messaging, email, calendar, Relay, and search.',
     steps: [
       'Press ? in any section to see context-specific keyboard shortcuts for that section.',
@@ -2686,7 +2700,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'troubleshooting',
     title: 'Troubleshooting & FAQ',
-    icon: '🛟',
+    icon: 'LifeBuoy',
     summary: 'Common issues and fixes — messages, email sync, notifications, Relay audio, calendar, CRM, and account questions.',
     steps: [
       'For any issue: first try refreshing the page (F5), then log out and log back in.',
@@ -2815,7 +2829,7 @@ export const guideSections: GuideSection[] = [
   {
     id: 'summit',
     title: 'Summit — Live Voice',
-    icon: '🎙️',
+    icon: 'Radio',
     badge: 'New',
     summary: 'A real-time voice agent you can speak to naturally. Summit listens, transcribes, summarizes, and extracts decisions and tasks while you talk — solo, with a teammate, or while thinking out loud.',
     steps: [
@@ -2956,5 +2970,5 @@ export const guideSections: GuideSection[] = [
   },
 ];
 
-export const guideVersion = '25.6.0';
-export const guideUpdated = 'June 1, 2026';
+export const guideVersion = '25.6.1';
+export const guideUpdated = 'June 12, 2026';
