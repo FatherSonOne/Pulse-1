@@ -119,10 +119,10 @@ The spec's Section 5 was explicitly overridable. Live verification forces these 
 - **`cases_plan_gate`** requires org plan ∈ {pro,impact}; currently `impact` (satisfied), and service-role bypasses anyway — but a plan downgrade would break authenticated reads of `cases`.
 - **Score re-weight (P6)** changes existing relationship scores for all contacts — call it out before shipping.
 
-## 6. Open decisions for the user (pre-P3)
-1. **Case-log richness:** ship F1 on `activities` (recommended, this plan) and revisit `case_notes` later — or invest in journey-mapping now to write `case_notes` from day one?
-2. **Mapping UX home:** "Link to Logos" on the Contacts co-pilot rail, or a dedicated Settings→Integrations surface?
-3. **P5/P6 scope for v1:** are F3 (AI field write-back) and F4 (records flow back + score change) in the first cut, or is v1 = P0–P4 (outbound only) with F3/F4 fast-followed?
+## 6. Resolved decisions (2026-06-13)
+1. **Case-log target → `activities`.** Conversation→Case Log (F1) and Activity Feed (F2) write to `activities` — lightest path, live/active, built-in provenance columns. `case_notes` (journey-scoped clinical notes) deferred.
+2. **Mapping UX → on the contact.** The "Link to Logos client" affordance lives on the contact's Focus/co-pilot view (contextual). The global on/off stays in Settings (the `logosVisionSync` flag). Exact contacts surface confirmed at P1.
+3. **v1 scope → all four behaviors (P0–P7).** F1–F4 all in v1, including F3 (AI field write-back — confirm-before-write UX required) and F4 (records flow back + the relationship-score re-weight that changes ALL contacts' scores — must be called out before shipping P6). Heaviest path chosen deliberately; every phase still ships flag-OFF and additive (no big-bang).
 
 ---
 
