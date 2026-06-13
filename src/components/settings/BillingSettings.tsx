@@ -36,7 +36,7 @@ const PULSE_TEAM_FEATURES: string[] = [
   '500 Relay minutes / month',
   'All 6 Relay modes (Quick, Team, Drop, Threads, Radio, Notes)',
   'Video Vox + Studio RAG',
-  'Email, calendar, messaging, meetings',
+  'Calendar, messaging, meetings',
   'Advanced analytics + full ecosystem bridge',
 ];
 
@@ -49,8 +49,6 @@ const PULSE_GROWTH_FEATURES: string[] = [
   'SSO / SAML — coming soon',
   'API access with rate-limited keys',
   'Audit log retention: 365 days',
-  'Custom branding on emails & exports',
-  'Advanced AI budget controls (per-user caps)',
   'Priority support — 1 business day SLA',
 ];
 

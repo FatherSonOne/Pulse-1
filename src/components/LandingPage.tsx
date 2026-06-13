@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
-import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, MapPin, Mic, Network, Play, Radar, Rocket, Search, ShieldHalf, Signal, Smartphone, Users, Video, Wand2, Wifi, X } from 'lucide-react';
+import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, MapPin, Mic, Network, Play, Radar, Rocket, Search, ShieldHalf, Signal, Smartphone, Users, Video, Wand2, Wifi, X } from 'lucide-react';
 import { RELAY_PEERS, FAQ_DATA, SHORTCUT_GROUPS, PULSE_SOLO_FEATURES, PULSE_SOLO_PRICING, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING } from './LandingPage/landingData';
 
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
@@ -62,6 +62,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   // Inline "Pulse in Your Pocket" mock consolidated into the closing "Wherever you are" CTA
   // (avoid two phone mocks on one page). Flip to re-show it beside the shortcuts.
   const SHOW_INLINE_MOBILE_PREVIEW = false;
+  // Enterprise scenario describes unbuilt cross-app orchestration (Logos auto-link, Entomate
+  // workflow automation, email). Hidden for v1; Voice-First (all real) is the single scenario.
+  const SHOW_ENTERPRISE_SCENARIO = false;
   const heroCanvasRef = useRef<HTMLCanvasElement>(null);
   const crmCanvasRef  = useRef<HTMLCanvasElement>(null);
 
@@ -1249,17 +1252,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     <div className="text-left">
                       <div className="text-sm font-semibold text-zinc-400">iOS / macOS</div>
                       <div className="text-[11px] text-zinc-600">App Store, coming soon</div>
-                    </div>
-                  </div>
-
-                  {/* F-Droid — Coming soon */}
-                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl opacity-45 cursor-not-allowed">
-                    <span className="w-8 h-8 rounded-lg bg-zinc-700/40 flex items-center justify-center flex-shrink-0">
-                      <Bot className="text-zinc-400 text-sm" />
-                    </span>
-                    <div className="text-left">
-                      <div className="text-sm font-semibold text-zinc-400">F-Droid</div>
-                      <div className="text-[11px] text-zinc-600">Open source, coming soon</div>
                     </div>
                   </div>
 
@@ -3706,7 +3698,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <h2 className="text-3xl sm:text-5xl font-bold mb-6 text-zinc-50">See it in action.</h2>
             <p className="text-zinc-400 text-lg mb-8">Real-world workflows powered by the Pulse ecosystem.</p>
 
-            {/* Scenario toggle */}
+            {/* Scenario toggle — only shown when the Enterprise flow is enabled (SHOW_ENTERPRISE_SCENARIO) */}
+            {SHOW_ENTERPRISE_SCENARIO && (
             <div className="inline-flex bg-zinc-900/50 p-1 rounded-xl border border-zinc-800">
               <button
                 onClick={() => setActiveScenario('enterprise')}
@@ -3723,14 +3716,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 Voice-First Flow
               </button>
             </div>
+            )}
           </div>
 
-          {activeScenario === 'enterprise' ? (
+          {SHOW_ENTERPRISE_SCENARIO && activeScenario === 'enterprise' ? (
             <div className="relative">
               <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-rose-500/50 to-transparent -translate-y-1/2 z-0"></div>
               <div className="grid lg:grid-cols-4 gap-6 relative z-10">
                 {[
-                  { num: '1', system: 'PULSE', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'text-gradient-rose', borderClass: 'hover:border-rose-500/40', title: 'The Signal', body: 'A high-priority email from a key client lands. Pulse flags it "Urgent", extracts requirements, and routes it to the grants channel with an AI summary.' },
+                  { num: '1', system: 'PULSE', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'text-rose-400', borderClass: 'hover:border-rose-500/40', title: 'The Signal', body: 'A high-priority email from a key client lands. Pulse flags it "Urgent", extracts requirements, and routes it to the grants channel with an AI summary.' },
                   { num: '2', system: 'LOGOS VISION', badgeClass: 'from-cyan-500 to-cyan-600', labelClass: 'text-cyan-400', borderClass: 'hover:border-cyan-500/40', title: 'The Context', body: 'The system links the message to the Client Record, pulling past grant history, success rates, and the assigned relationship manager automatically.' },
                   { num: '3', system: 'ENTOMATE', badgeClass: 'from-emerald-500 to-emerald-600', labelClass: 'text-emerald-400', borderClass: 'hover:border-emerald-500/40', title: 'The Action', body: 'An Apply workflow fires. A task is created for the Grant Writer, a kickoff meeting is scheduled based on availability, and an acknowledgment email is drafted.' },
                   { num: '4', system: 'WAR ROOM', badgeClass: 'from-rose-500 to-rose-600', labelClass: 'text-rose-400', borderClass: 'hover:border-rose-500/40', title: 'The Intelligence', body: 'The War Room researches grant requirements, compares past applications using your uploaded sources, and outputs a polished grant proposal draft in minutes.' },
@@ -3749,7 +3743,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-rose-500/50 to-transparent -translate-y-1/2 z-0"></div>
               <div className="grid lg:grid-cols-3 gap-6 relative z-10">
                 {[
-                  { num: '1', system: 'RELAY DIRECT', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'text-gradient-rose', borderClass: 'hover:border-rose-500/40', title: 'Drop and Go', body: "You're driving. One tap and you're recording a Relay Direct, scheduled to deliver when your recipient is most active." },
+                  { num: '1', system: 'RELAY DIRECT', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'text-rose-400', borderClass: 'hover:border-rose-500/40', title: 'Drop and Go', body: "You're driving. One tap and you're recording a Relay Direct, scheduled to deliver when your recipient is most active." },
                   { num: '2', system: 'AI TRANSCRIPTION', badgeClass: 'from-cyan-500 to-cyan-600', labelClass: 'text-cyan-400', borderClass: 'hover:border-cyan-500/40', title: 'Instant Intelligence', body: 'On delivery, Pulse transcribes the message, generates a summary, extracts action items, and scores sentiment, all before the recipient presses play.' },
                   { num: '3', system: 'SMART REPLY', badgeClass: 'from-emerald-500 to-emerald-600', labelClass: 'text-emerald-400', borderClass: 'hover:border-emerald-500/40', title: 'One-tap response', body: 'The recipient sees the transcript and summary, picks a smart reply suggestion, and responds with their own 10-second voice note. Full async conversation, zero context lost.' },
                 ].map((step) => (
@@ -3774,7 +3768,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             Seamlessly sync your team across all devices. Download the app for your preferred platform.
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             <DownloadButton icon="fa-brands fa-windows" platform="Windows PC" subtext="Desktop Installer · x64" active={true} href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.3/Pulse.Setup.25.1.3.exe" />
             <DownloadButton icon="fa-brands fa-apple" platform="macOS / iOS" subtext="Universal" active={false} />
 
@@ -3783,7 +3777,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <Smartphone className="text-4xl text-zinc-300 group-hover:text-white transition" />
               <div className="text-center">
                 <div className="font-bold text-white group-hover:text-rose-400 transition">Android</div>
-                <div className="text-xs text-zinc-500">Play Store and APK</div>
+                <div className="text-xs text-zinc-500">Early access and APK</div>
               </div>
               <div className="flex gap-2 w-full mt-2">
                 <a
@@ -3806,8 +3800,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </a>
               </div>
             </div>
-
-            <DownloadButton icon="fa-solid fa-robot" platform="F-Droid" subtext="Open Source" active={false} />
           </div>
 
           {/* Android Instructions */}
@@ -3818,12 +3810,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </h3>
             <div className="mb-8 p-4 bg-zinc-900 rounded-xl border border-zinc-800">
               <h4 className="font-bold text-white mb-2 flex items-center gap-2">
-                <Play className="text-green-500" /> Recommended: Play Store
+                <Play className="text-green-500" /> Play Store (Early Access)
               </h4>
-              <p className="text-sm text-zinc-400 mb-3">The easiest way to install Pulse. Automatic updates and security checks included.</p>
+              <p className="text-sm text-zinc-400 mb-3">Pulse is in closed testing on Google Play. Opt into the test program first, then updates arrive in-place. Not a public listing yet.</p>
               <a href="https://play.google.com/apps/internaltest/4701381285127016770" target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm text-green-400 hover:text-green-300 font-medium">
-                Go to Play Store <ExternalLink className="text-xs" />
+                Join the test program <ExternalLink className="text-xs" />
               </a>
             </div>
             <h4 className="font-bold text-white mb-4">Manual APK Installation</h4>
@@ -4198,7 +4190,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 Every conversation, decision, and signal. Synced to the device already in your hand. The full Pulse surface in your pocket. Same Memory, same Relay, same Decisions.
               </p>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[11px]" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.2em' }}>
-                <span className={`uppercase font-semibold${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>iOS</span>
                 <span className={`uppercase font-semibold${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>Android</span>
                 <span className={`uppercase font-semibold${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>PWA</span>
                 <span className={`inline-flex items-center gap-2 uppercase font-semibold${isDarkMode ? ' text-rose-400' : ' text-rose-600'}`}>
@@ -4248,7 +4239,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <span className="text-xl font-bold text-white">Pulse</span>
               </div>
               <p className="text-zinc-400 max-w-sm mb-6">
-                AI-powered messaging, email, Relay voice, Glimpse video, calendar, maps, CRM intelligence, research studio, and predictive analytics. One screen for the overloaded solo operator and the team they pull in.
+                AI-powered messaging, Relay voice, Glimpse video, calendar, maps, CRM intelligence, research studio, and predictive analytics. One screen for the overloaded solo operator and the team they pull in.
               </p>
               <div className="flex gap-4 mb-8">
                 <SocialIcon icon="fa-brands fa-github" label="Pulse on GitHub" href="https://github.com/FatherSonOne/Pulse-1" />
