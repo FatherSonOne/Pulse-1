@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
-**Version**: 25.6.0
-**Last Updated**: June 1, 2026
+**Version**: 25.6.1
+**Last Updated**: June 12, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -2986,6 +2986,18 @@ Pulse sends automatic reminder emails during and after the trial:
 ## 20. Mobile & Desktop Apps
 
 Pulse is available on Windows (desktop), Android (mobile), and in any modern web browser. Your workspace, contacts, messages, and settings sync instantly across all platforms.
+
+### Using Pulse in a Phone Browser
+
+You don't need to install anything to use Pulse on your phone — the full web app now adapts to small screens automatically. Open Pulse in your phone's browser and every section reshapes itself to fit:
+
+- **Single-column layouts** — Multi-pane sections (Contacts, Search, Relay, Decisions & Tasks, Glimpse) collapse from their three-pane desktop layout into one focused column. Tap a list item to open it full-width; use the back control to return to the list.
+- **Slim bottom navigation bar** — On phones, your primary sections move to a compact bar fixed at the bottom of the screen, so the most-used views are always one tap away. Composers and other bottom surfaces sit above this bar so nothing is hidden behind it.
+- **Scrollable section tabs** — Where a section has a row of tabs (like Glimpse), the tabs scroll sideways instead of overflowing or wrapping awkwardly.
+- **Mobile sheets** — Side panels that sit in a column on desktop (such as the Summit artifact panel and the War Room Notebook chat) slide up as full-width sheets on a phone, so they're never clipped into an unreadable sliver.
+- **Account drawer in the header** — Tap the account icon in the top bar to open your profile, settings, and notifications without a desktop-width sidebar.
+
+**Tip:** The mobile web experience covers the whole app — there's nothing you can do on desktop that you can't reach on your phone. Install the Android app (below) only if you want native push notifications, biometric login, the home screen widget, and offline mode.
 
 ### Installing the Windows Desktop App
 
