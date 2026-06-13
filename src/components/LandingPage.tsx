@@ -2286,7 +2286,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 Conversations that convert.
               </h2>
               <p className={`text-lg leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
-                Channels, threads, and Slack, unified in one inbox. Walk away for an hour. Pulse summarizes the thread before you reopen it.
+                Pulse channels, threads, and DMs in one surface, with Slack as an opt-in connector. Walk away for an hour. Pulse summarizes the thread before you reopen it.
               </p>
             </div>
 
@@ -4219,7 +4219,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               >
                 <img
                   src="/screens/pulse-mobile-memory.png"
-                  alt="Pulse on iPhone: Memory tab showing 50 unified items across Email, SMS, Voice, Notes and Live conversations"
+                  alt="Pulse on iPhone: Memory tab showing recent Voice, Notes, and Live conversations"
                   className="block w-[260px] sm:w-[300px] lg:w-[340px] h-auto rounded-[44px]"
                   loading="lazy"
                   decoding="async"
