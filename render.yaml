@@ -35,6 +35,12 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY   # sb_secret_* format; used by auth'd routes + auto-sync
         sync: false
 
+      # --- Logos Vision sync (server-side service-role; NEVER VITE_-exposed) ---
+      - key: LOGOS_VISION_SUPABASE_URL
+        sync: false
+      - key: LOGOS_VISION_SERVICE_ROLE_KEY
+        sync: false
+
       # --- Google OAuth: logos-vision integration client (Contacts import) ---
       - key: GOOGLE_CLIENT_ID
         sync: false

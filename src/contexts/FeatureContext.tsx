@@ -74,6 +74,13 @@ export interface FeatureFlags {
   // channel threads in a net-new owner-scoped store, never the DM tables.
   // See docs/SLACK_CHANNELS_GROUNDING_SCOPE_2026-06-08.md (P0–P8).
   slackChannelsGrounding: boolean;
+
+  // Logos Vision sync master switch (CRM bidirectional sync). OFF by default →
+  // no Pulse→Logos case-log/activity writes fire and no Logos→Pulse records flow
+  // back. Privileged Logos access runs server-side (server.js /api/logos/*); this
+  // flag only gates whether the send-side hooks POST. Additive; single-tenant.
+  // See docs/LOGOS_VISION_SYNC_BUILD_HANDOFF_2026-06-13.md (P0–P7).
+  logosVisionSync: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -126,6 +133,9 @@ const DEFAULT_FEATURES: FeatureFlags = {
 
   // Slack Channels grounding OFF by default (dark-launch); P0 = flag scaffold only.
   slackChannelsGrounding: false,
+
+  // Logos Vision sync OFF by default (dark-launch); P0 = connection + flag scaffold.
+  logosVisionSync: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -284,7 +294,8 @@ export const FEATURE_CATEGORIES = {
     description: 'Connect external services into Pulse. Off by default.',
     features: [
       'slackMessagesGrounding',
-      'slackChannelsGrounding'
+      'slackChannelsGrounding',
+      'logosVisionSync'
     ] as (keyof FeatureFlags)[]
   }
   // voiceInput / aiComposer / toneAnalysis removed from this surface 2026-06-05:
@@ -317,6 +328,7 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   slackSend: 'Slack Send (Beta)',
   slackMessagesGrounding: 'Slack in Messages (Beta)',
   slackChannelsGrounding: 'Slack Channels (Beta)',
+  logosVisionSync: 'Logos Vision Sync (Beta)',
 };
 
 /**
@@ -340,4 +352,5 @@ export const FEATURE_DESCRIPTIONS: Partial<Record<keyof FeatureFlags, string>> =
   slackSend: 'Send a Slack DM to a linked contact from the People view (Phase 8).',
   slackMessagesGrounding: 'Bring your Slack DMs into Messages: connect Slack to send as you and mirror 1:1 threads. Backend + inbound still rolling out.',
   slackChannelsGrounding: 'Mirror your Slack channels into Pulse (read-only for now; replying from Pulse arrives soon). Invite the Slack bot to a channel to start.',
+  logosVisionSync: 'Two-way sync with Logos Vision CRM: log Pulse conversations to the case timeline and surface case updates back in Pulse. Single-tenant; backend rolling out.',
 };

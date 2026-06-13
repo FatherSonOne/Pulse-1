@@ -5,8 +5,12 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { google } from 'googleapis';
 
-// Load environment variables from .env.local
-dotenv.config({ path: '.env.local' });
+// Load environment variables. `.env` is the base layer; `.env.local` overrides
+// it (mirrors Vite's own precedence) so secrets are picked up regardless of which
+// file holds them. Previously only `.env.local` was read, so vars placed in `.env`
+// (e.g. LOGOS_VISION_SERVICE_ROLE_KEY) were silently ignored by the server.
+dotenv.config({ path: '.env' });
+dotenv.config({ path: '.env.local', override: true });
 
 const app = express();
 // Hosts like Render/Railway/Fly inject the port to bind via $PORT; fall back to
@@ -19,6 +23,13 @@ const PORT = process.env.PORT || 3003;
 const SUPABASE_URL = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
 const SUPABASE_ANON_KEY = (process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
 const SUPABASE_SERVICE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY || '').trim();
+
+// Logos Vision CRM (separate Supabase project) — server-side service-role client
+// for the bidirectional sync. The service-role key lives ONLY here (never
+// VITE_-exposed); URL falls back to the VITE_LOGOS_VISION_SUPABASE_URL already in
+// .env.local. .trim() guards the paste footgun (see the Supabase reads above).
+const LOGOS_SUPABASE_URL = (process.env.LOGOS_VISION_SUPABASE_URL || process.env.VITE_LOGOS_VISION_SUPABASE_URL || '').trim();
+const LOGOS_SERVICE_KEY = (process.env.LOGOS_VISION_SERVICE_ROLE_KEY || '').trim();
 
 // Google OAuth configuration.
 //
@@ -307,6 +318,20 @@ app.post('/api/twilio/proxy', async (req, res) => {
 // server.
 function tokenStoreClient() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+}
+
+// ── Logos Vision sync — server-side service-role client (P0) ─────────────────
+// persistSession/autoRefreshToken disabled: a server client must never write a
+// session to disk or refresh tokens. Returns null when unconfigured so routes
+// degrade to "not configured" instead of throwing.
+function logosConfigured() {
+  return Boolean(LOGOS_SUPABASE_URL && LOGOS_SERVICE_KEY);
+}
+function logosServiceClient() {
+  if (!logosConfigured()) return null;
+  return createClient(LOGOS_SUPABASE_URL, LOGOS_SERVICE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }
 
 async function getUserGoogleToken(userId) {
@@ -3384,6 +3409,24 @@ app.post('/api/logos-vision/contacts/push-to-google', verifyLogosVisionAuth, asy
 });
 
 // Health check endpoint
+// ── Logos Vision sync — connectivity probe (P0). Reports config + live
+// reachability without leaking row data. `rows` lets the smoke test confirm the
+// key is truly service-role (an anon key returns 0 rows under Logos RLS). ─────
+app.get('/api/logos/health', async (req, res) => {
+  if (!logosConfigured()) {
+    return res.json({ configured: false, ok: false });
+  }
+  try {
+    const { data, error } = await logosServiceClient()
+      .from('clients')
+      .select('id')
+      .limit(1);
+    return res.json({ configured: true, ok: !error, rows: data?.length ?? 0, error: error?.message ?? null });
+  } catch (err) {
+    return res.json({ configured: true, ok: false, error: String(err?.message || err) });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Pulse API Server Running' });
 });

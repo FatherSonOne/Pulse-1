@@ -25,7 +25,7 @@ These are the live values every Pulse→Logos write must carry (single tenant co
 
 **Decision (key placement fork):** privileged Logos access runs **server-side** — never a service-role key in a `VITE_` browser bundle. Mirrors the existing `server.js` `SUPABASE_SERVICE_ROLE_KEY` pattern ([server.js:21](../server.js#L21)) and the refactor note at [render.yaml:77-82](../render.yaml#L77).
 
-- **New server secret (only the user can supply):** `LOGOS_VISION_SERVICE_ROLE_KEY` (Logos project service-role; `sb_secret_*` or legacy JWT). Set in **Render** (`render.yaml`, `sync:false`) for prod, and in local `.env`/`.env.local` for the local `server.js`.
+- **New server secret (only the user can supply):** `LOGOS_VISION_SERVICE_ROLE_KEY` (Logos project service-role; `sb_secret_*` or legacy JWT). Set in **Render** (`render.yaml`, `sync:false`) for prod. Locally, `server.js` loads `.env` **then** `.env.local` (latter overrides; mirrors Vite), so the key may live in either file. **Verified 2026-06-13:** `GET /api/logos/health` → `{configured:true, ok:true, rows:1}` (`rows>0` confirms a true service-role key, not anon).
 - **Server URL:** `LOGOS_VISION_SUPABASE_URL` (`https://psjgmdnrehcwvppbeqjy.supabase.co`) server-side.
 - **Frontend:** keeps the anon key only; calls new `${VITE_BACKEND_URL}/api/logos/*` routes — same transport as Slack/Gmail/Twilio. The browser `logosVisionService` is demoted to a thin fetch wrapper (or retired) for the privileged paths.
 - **Until the secret is set,** `/api/logos/*` returns a clean "not configured" and the feature no-ops (flag OFF).
@@ -62,6 +62,8 @@ The spec's Section 5 was explicitly overridable. Live verification forces these 
 | **P7** | Re-enable marketing surface | flip `SHOW_LOGOS_SYNC`; real "Connected" badge; honest single-tenant copy | S | P3+ |
 
 **Thinnest end-to-end slice = P0→P1→P2→P3** (Conversation→Case Log genuinely working). P4–P7 layer on.
+
+**Build status:** P0 (connection + flag scaffold) shipped + live-verified 2026-06-13 — `GET /api/logos/health` → `{configured:true, ok:true, rows:1}`, tsc clean (0 errors in P0 files), flag `logosVisionSync` default OFF. **P1 (contact↔Logos mapping) is next.**
 
 ---
 
