@@ -708,7 +708,13 @@ const App: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
 
-  const [view, setView] = useState<AppView>(initialMeetingCode ? AppView.MEETINGS : AppView.DASHBOARD);
+  const [view, setView] = useState<AppView>(
+    initialMeetingCode
+      ? AppView.MEETINGS
+      : (typeof window !== 'undefined' && window.location.hash.startsWith('#guide/'))
+        ? AppView.USERS_GUIDE
+        : AppView.DASHBOARD
+  );
 
   // Mobile slim-bar sheets (bottom ☰ navigation / "+" quick actions). Declared
   // up here so the Android back handler can close an open sheet before it

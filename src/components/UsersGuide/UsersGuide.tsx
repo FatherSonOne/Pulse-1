@@ -727,6 +727,23 @@ const UsersGuide: React.FC<UsersGuideProps> = ({ isDarkMode = false }) => {
         </div>
       </div>
 
+      {/* ── Mobile section nav (the sidebar is hidden < 720px) ── */}
+      {!isSearching && (
+        <nav className="ug-mobile-nav" aria-label="Guide sections">
+          {guideSections.map(s => (
+            <button
+              key={s.id}
+              className={`ug-mnav-item${activeId === s.id ? ' is-active' : ''}`}
+              onClick={() => selectSection(s.id)}
+              aria-current={activeId === s.id ? 'page' : undefined}
+            >
+              <SectionIcon name={s.icon} size={14} />
+              <span>{s.title}</span>
+            </button>
+          ))}
+        </nav>
+      )}
+
       {/* ── Body ── */}
       <div className="ug-body">
         {isSearching ? (
