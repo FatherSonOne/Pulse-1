@@ -20,7 +20,7 @@
   one data model — routed server-side through a metered AI router (Gemini + Claude). No client-side
   AI keys. Every AI artifact carries a provenance chip (`CLAUDE · SUMMARY`, `GEMINI · DRAFT`).
 - **Messages.** Real-time Pulse-to-Pulse chat with triage, focus mode, and AI plugins.
-- **Email.** Gmail sync, templates, scheduling, snooze, and inline AI summary/extraction cards.
+- **Email (opt-in connector).** Connect Gmail to sync mail with templates, scheduling, snooze, and inline AI summary/extraction cards. Off by default (enable in Settings, then connect a Gmail grant).
 - **Relay (voice).** Async push-to-talk threads, 1:1 voice, broadcasts, and notes, with transcription.
 - **Glimpse (video).** Async video messages with AI transcripts.
 - **Calendar & Meetings.** Scheduling, recurrence, public booking pages, and Daily.co video rooms
