@@ -435,6 +435,18 @@ verify_jwt = true
 [functions.slack-events]
 verify_jwt = false
 
+# gmail-watch-renew + gmail-push-receiver: the email-push server-to-server pair.
+# renew is CRON_SECRET-guarded (pg_cron daily re-arms Gmail users.watch); receiver
+# is PUSH_RECEIVER_SECRET-guarded (Google Pub/Sub push delivery). Neither receives
+# a Supabase JWT, so verify_jwt MUST be false (declared here so a CLI redeploy does
+# not silently flip them to the verify_jwt=true default). See
+# docs/EMAIL_PUSH_PLAN_HANDOFF_2026-06-13.md.
+[functions.gmail-watch-renew]
+verify_jwt = false
+
+[functions.gmail-push-receiver]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
