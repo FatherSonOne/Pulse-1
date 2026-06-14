@@ -114,6 +114,13 @@ export interface MessageContextMenuProps {
   /** Force mobile (sheet) vs desktop (popover). Defaults to width detection. */
   forceMobile?: boolean;
   isDarkMode?: boolean;
+  /**
+   * True while the menu is playing its exit animation (set by
+   * useMessageContextMenu's deferred close). The component keeps rendering
+   * one extra beat so the popover/sheet can animate out before the parent
+   * unmounts it; swaps entry classes for exit classes when set.
+   */
+  closing?: boolean;
 }
 
 export interface EditedBadgeProps {

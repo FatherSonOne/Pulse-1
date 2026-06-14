@@ -616,9 +616,11 @@ button:focus-visible {
   min-height: 120px;
   max-height: 60vh;
 
-  /* Performance optimization */
+  /* Own GPU layer for the fixed, backdrop-blurred bar. No `will-change`:
+     this container never animates its transform, and a permanent
+     will-change keeps a layer promoted for the life of the page (memory
+     cost with no payoff). translateZ(0) is enough to isolate the layer. */
   transform: translateZ(0);
-  will-change: transform;
 
   color: var(--pulse-ink);
 
@@ -755,10 +757,13 @@ button:focus-visible {
   animation: msg-spine-moment-in 0.5s var(--pulse-ease, cubic-bezier(0.16, 1, 0.3, 1)) both;
 }
 
-/* needs-reply draws the eye with an infinite ring pulse. */
+/* needs-reply draws the eye with a SHORT ring pulse (3×), then settles to the
+   static warning marker. The at-rest node keeps its tone color + 18% ring (see
+   .msg-spine-moment box-shadow), so "needs reply" stays legible without leaving
+   perpetual motion in the peripheral vision of every long-unanswered thread. */
 .msg-spine-moment--pulse {
   animation: msg-spine-moment-in 0.5s var(--pulse-ease, cubic-bezier(0.16, 1, 0.3, 1)) both,
-             msg-spine-node-ring 2s ease-out 0.5s infinite;
+             msg-spine-node-ring 2s ease-out 0.5s 3;
 }
 
 @keyframes msg-spine-dot-in {
@@ -780,6 +785,71 @@ button:focus-visible {
   .msg-spine-dot,
   .msg-spine-moment,
   .msg-spine-moment--pulse {
+    animation: none;
+  }
+}
+
+/* ── Right-click message menu (Surface 2 · MessageContextMenu) ────────
+   Dedicated, deterministic entry/exit. Replaces the contested global
+   `.animate-scale-in` utility — which has FOUR rival definitions across
+   the bundle (index.css 300ms/scale .9, App.css 200ms/plain-ease,
+   MessageEnhancements 200ms, messages.css 200ms), so the menu's signature
+   entrance was decided by import order, not intent. These classes are
+   scoped to the menu and pin Emil's dropdown timing (≤250ms, strong
+   ease-out). transform-origin is set inline by the component to the click
+   point, so the scale grows out of the cursor (origin-aware popover). */
+@keyframes msgCtxPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes msgCtxPopOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.97); }
+}
+.msg-ctx-pop {
+  animation: msgCtxPop 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.msg-ctx-pop-out {
+  animation: msgCtxPopOut 130ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: none;   /* a fading menu must not re-fire actions */
+}
+
+/* Mobile bottom-sheet exit (entry stays on the existing slide-up). Faster
+   than entry per the asymmetric enter/exit rule. */
+@keyframes msgCtxSheetOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(100%); }
+}
+.msg-ctx-sheet-out {
+  animation: msgCtxSheetOut 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: none;
+}
+@keyframes msgCtxFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+.msg-ctx-fade-out {
+  animation: msgCtxFadeOut 160ms ease both;
+  pointer-events: none;
+}
+
+/* MORE-overflow reveal — the newly-shown rows settle in instead of an
+   abrupt pop + height jump when "More" expands. Container-level (not
+   per-child) so it's robust to interleaved separators. */
+@keyframes msgCtxReveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg-ctx-reveal {
+  animation: msgCtxReveal 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-ctx-pop,
+  .msg-ctx-pop-out,
+  .msg-ctx-sheet-out,
+  .msg-ctx-fade-out,
+  .msg-ctx-reveal {
     animation: none;
   }
 }

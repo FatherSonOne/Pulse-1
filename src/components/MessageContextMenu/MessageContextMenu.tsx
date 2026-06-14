@@ -81,6 +81,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
   onOpenMorePicker,
   forceMobile,
   isDarkMode = false,
+  closing = false,
 }) => {
   const isMobile = useIsMobile(forceMobile);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -293,7 +294,10 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         <div
           aria-hidden="true"
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-fade-in"
+          className={[
+            'fixed inset-0 z-40 bg-black/40 backdrop-blur-sm',
+            closing ? 'msg-ctx-fade-out' : 'animate-fade-in',
+          ].join(' ')}
         />
         <div
           ref={containerRef}
@@ -303,7 +307,8 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
           onKeyDown={onMenuKeyDown}
           className={[
             'fixed left-0 right-0 bottom-0 z-50 rounded-t-2xl pb-[env(safe-area-inset-bottom)]',
-            'animate-slide-up shadow-2xl',
+            closing ? 'msg-ctx-sheet-out' : 'animate-slide-up',
+            'shadow-2xl',
             isDarkMode
               ? 'bg-zinc-900 border-t border-white/15 text-zinc-50'
               : 'bg-white border-t border-black/10 text-zinc-900',
@@ -358,7 +363,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
                   <div
                     id="msg-menu-overflow"
                     className={[
-                      'mt-1 pt-1 border-t',
+                      'msg-ctx-reveal mt-1 pt-1 border-t',
                       isDarkMode ? 'border-white/10' : 'border-black/10',
                     ].join(' ')}
                   >
@@ -375,6 +380,14 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
 
   // ─── Desktop popover (240px) ─────────────────────────────────────
   const pos = clampDesktopPosition(anchor.x, anchor.y, popoverHeight);
+  // Origin-aware entry: the popover renders at the (viewport-clamped) pos,
+  // but it should *scale in from the point the user actually clicked*. The
+  // click sits at (anchor.x, anchor.y); express that as an offset inside the
+  // popover's own box so the scale grows out of the cursor, not the center.
+  // When the menu opens unclamped this is (0,0) — its top-left corner; near a
+  // viewport edge the menu shifts and the origin follows the real click.
+  const originX = Math.max(0, Math.min(anchor.x - pos.left, POPOVER_WIDTH));
+  const originY = Math.max(0, Math.min(anchor.y - pos.top, popoverHeight));
   return (
     <div
       ref={containerRef}
@@ -387,9 +400,11 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         left: pos.left,
         width: POPOVER_WIDTH,
         zIndex: 50,
+        transformOrigin: `${originX}px ${originY}px`,
       }}
       className={[
-        'rounded-xl shadow-2xl backdrop-blur-md animate-fade-in',
+        'rounded-xl shadow-2xl backdrop-blur-md',
+        closing ? 'msg-ctx-pop-out' : 'msg-ctx-pop',
         isDarkMode
           ? 'bg-zinc-900/98 border border-white/15 text-zinc-50 shadow-black/60 ring-1 ring-black/40'
           : 'bg-white/98 border border-black/10 text-zinc-900',
@@ -438,7 +453,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
                 <ChevronDown size={14} aria-hidden="true" />
               </button>
             ) : (
-              <div id="msg-menu-overflow-desktop">
+              <div id="msg-menu-overflow-desktop" className="msg-ctx-reveal">
                 {renderItems(overflow, top5.length)}
               </div>
             )}

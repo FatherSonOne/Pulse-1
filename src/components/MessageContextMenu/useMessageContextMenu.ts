@@ -9,9 +9,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ContextMenuAnchor } from './types';
 
+/** Exit-animation hold — must be ≥ the longest msgCtx*Out in messages.css
+ *  (mobile sheet-out is 160ms). Keeps the menu mounted one beat so it can
+ *  animate out before the parent unmounts it. */
+const EXIT_MS = 170;
+
 export interface UseMessageContextMenuReturn {
   openMessageId: string | null;
   anchor: ContextMenuAnchor | null;
+  /** True while the menu is animating out (deferred close in flight). */
+  closing: boolean;
   /** Right-click handler factory for desktop. */
   openFromContextMenu: (
     e: React.MouseEvent<HTMLElement>,
@@ -44,34 +51,75 @@ export function useMessageContextMenu(
 ): UseMessageContextMenuReturn {
   const [openMessageId, setOpenMessageId] = useState<string | null>(null);
   const [anchor, setAnchor] = useState<ContextMenuAnchor | null>(null);
+  // `closing` keeps the menu mounted for one exit-animation beat. The parent
+  // mounts the menu purely off `openMessageId`, so without this the element
+  // would be ripped out of the tree the instant we cleared state — no frame
+  // left to animate out. Matches msgCtx*Out durations in messages.css.
+  const [closing, setClosing] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastFocusedSelectorRef = useRef<string | null>(null);
+
+  const clearCloseTimer = useCallback(() => {
+    if (closeTimerRef.current !== null) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  // Actually tear the menu down + restore focus to the originating bubble.
+  const finalizeClose = useCallback(
+    (messageId: string | null) => {
+      setOpenMessageId(null);
+      setAnchor(null);
+      setClosing(false);
+      if (typeof document === 'undefined') return;
+      if (!messageId) return;
+      const selector = lastFocusedSelectorRef.current ?? focusRestoreSelector(messageId);
+      lastFocusedSelectorRef.current = null;
+      // Defer focus restoration so React's commit completes first.
+      requestAnimationFrame(() => {
+        try {
+          const el = document.querySelector<HTMLElement>(selector);
+          if (el && typeof el.focus === 'function') {
+            // Some bubbles aren't natively focusable; tabIndex={-1} is
+            // enough to receive programmatic focus.
+            el.focus({ preventScroll: true });
+          }
+        } catch {
+          /* no-op */
+        }
+      });
+    },
+    [focusRestoreSelector],
+  );
 
   const close = useCallback(() => {
     const messageId = openMessageId;
-    setOpenMessageId(null);
-    setAnchor(null);
-    if (typeof document === 'undefined') return;
-    if (!messageId) return;
-    const selector = lastFocusedSelectorRef.current ?? focusRestoreSelector(messageId);
-    lastFocusedSelectorRef.current = null;
-    // Defer focus restoration so React's commit completes first.
-    requestAnimationFrame(() => {
-      try {
-        const el = document.querySelector<HTMLElement>(selector);
-        if (el && typeof el.focus === 'function') {
-          // Some bubbles aren't natively focusable; tabIndex={-1} is
-          // enough to receive programmatic focus.
-          el.focus({ preventScroll: true });
-        }
-      } catch {
-        /* no-op */
-      }
-    });
-  }, [openMessageId, focusRestoreSelector]);
+    if (!messageId) return; // nothing open
+    if (closing) return; // already animating out — idempotent
+    // Reduced motion: skip the exit animation (and its delay) entirely.
+    const reduced =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      clearCloseTimer();
+      finalizeClose(messageId);
+      return;
+    }
+    setClosing(true);
+    clearCloseTimer();
+    closeTimerRef.current = setTimeout(() => {
+      closeTimerRef.current = null;
+      finalizeClose(messageId);
+    }, EXIT_MS);
+  }, [openMessageId, closing, clearCloseTimer, finalizeClose]);
 
   const openFromContextMenu = useCallback(
     (e: React.MouseEvent<HTMLElement>, messageId: string) => {
       e.preventDefault();
+      clearCloseTimer();
+      setClosing(false);
       lastFocusedSelectorRef.current = focusRestoreSelector(messageId);
       setOpenMessageId(messageId);
       // Ground the menu at the bubble. Pick the side based on which half
@@ -94,7 +142,7 @@ export function useMessageContextMenu(
         : rect.left;
       setAnchor({ x: anchorX, y: rect.top, source: target });
     },
-    [focusRestoreSelector],
+    [focusRestoreSelector, clearCloseTimer],
   );
 
   const openFromLongPress = useCallback(
@@ -104,15 +152,19 @@ export function useMessageContextMenu(
       target: HTMLElement | null,
       messageId: string,
     ) => {
+      clearCloseTimer();
+      setClosing(false);
       lastFocusedSelectorRef.current = focusRestoreSelector(messageId);
       setOpenMessageId(messageId);
       setAnchor({ x, y, source: target });
     },
-    [focusRestoreSelector],
+    [focusRestoreSelector, clearCloseTimer],
   );
 
   const openFromKeyboard = useCallback(
     (target: HTMLElement, messageId: string) => {
+      clearCloseTimer();
+      setClosing(false);
       lastFocusedSelectorRef.current = focusRestoreSelector(messageId);
       const rect = target.getBoundingClientRect();
       setOpenMessageId(messageId);
@@ -122,16 +174,17 @@ export function useMessageContextMenu(
         source: target,
       });
     },
-    [focusRestoreSelector],
+    [focusRestoreSelector, clearCloseTimer],
   );
 
   // Esc / outside-click close handled by the menu component itself —
   // this hook just owns identity + anchor.
 
-  // Defensive: if the menu's owner unmounts, drop state.
+  // Defensive: if the menu's owner unmounts, drop state + any pending timer.
   useEffect(
     () => () => {
       lastFocusedSelectorRef.current = null;
+      if (closeTimerRef.current !== null) clearTimeout(closeTimerRef.current);
     },
     [],
   );
@@ -139,6 +192,7 @@ export function useMessageContextMenu(
   return {
     openMessageId,
     anchor,
+    closing,
     openFromContextMenu,
     openFromLongPress,
     openFromKeyboard,

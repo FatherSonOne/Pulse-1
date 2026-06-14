@@ -50,7 +50,10 @@ export const ContextMenuItem = forwardRef<HTMLButtonElement, ContextMenuItemProp
           // Touch target — always ≥44px on the row height.
           compact ? 'px-3 py-2 min-h-[44px]' : 'px-3 py-2.5 min-h-[44px]',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
-          'transition-colors',
+          // Ease background AND transform so the press-scale settles back
+          // smoothly; `transition-colors` alone would snap the scale.
+          'transition-[background-color,color,transform] duration-150 ease-out',
+          'active:scale-[0.98] motion-reduce:active:scale-100',
           isDarkMode
             ? item.destructive
               ? 'hover:bg-red-500/15 focus-visible:bg-red-500/15 text-red-300'

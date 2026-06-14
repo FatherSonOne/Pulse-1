@@ -4976,6 +4976,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             return (
               <MessageContextMenu
                 open
+                closing={pulseCtxMenu.closing}
                 anchor={pulseCtxMenu.anchor}
                 viewpoint={viewpoint}
                 myReactions={my}

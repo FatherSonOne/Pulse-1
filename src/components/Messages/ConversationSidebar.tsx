@@ -224,7 +224,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
               <button
                 key={result.message.id}
                 onClick={() => { setActiveThreadId(result.thread.id); setActivePulseConversation(null); setMobileView('chat'); setSearchQuery(''); setSearchResults([]); }}
-                className="w-full text-left p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition"
+                className="w-full text-left p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
               >
                 <div className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">{result.thread.contactName}</div>
                 <div className="text-xs text-zinc-600 dark:text-zinc-400 truncate">{result.message.text}</div>

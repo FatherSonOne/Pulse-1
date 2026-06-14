@@ -194,7 +194,11 @@
 }
 
 .pulse-btn-primary:active:not(:disabled) {
-  transform: translateY(0);
+  /* Scale-down on press so the button registers a tap even on touch
+     devices (where :hover never fires). Replaces the old translateY(0),
+     which only "undid" the hover lift and left touch presses with zero
+     visual feedback. */
+  transform: scale(0.97);
 }
 
 .pulse-btn-primary:focus-visible {
