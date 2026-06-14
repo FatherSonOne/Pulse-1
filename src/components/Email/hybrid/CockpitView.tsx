@@ -14,6 +14,7 @@ import { AwaitingRepliesRail } from './cockpit/AwaitingRepliesRail';
 import type { AwaitingReplyRow } from './data/useCockpitData';
 import { CalendarPeekRail } from './cockpit/CalendarPeekRail';
 import { LanesHelpTip } from './cockpit/LanesHelpTip';
+import { CategoryOverflowHint } from './cockpit/CategoryOverflowHint';
 import { ActiveFiltersStrip } from './chrome/ActiveFiltersStrip';
 import { MOCK_LANES, TRIAGE_QUEUE_IDS } from './data/mockEmails';
 import { useCockpitData } from './data/useCockpitData';
@@ -71,6 +72,8 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
       />
 
       <ActiveFiltersStrip />
+
+      <CategoryOverflowHint />
 
       {loading && (
         <div className="px-6 py-6 md:px-10 md:py-7 space-y-2" aria-busy="true" aria-label="Loading inbox">
