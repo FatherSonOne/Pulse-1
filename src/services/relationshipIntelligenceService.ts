@@ -5,6 +5,8 @@
 
 import { supabase } from './supabase';
 import { askAI } from './unifiedAIService';
+import { isLogosSyncEnabled } from '../lib/logosSyncFeature';
+import { getLogosCaseFactor } from './logosMappingService';
 import {
   RelationshipProfile,
   RelationshipProfileRow,
@@ -429,7 +431,7 @@ export class RelationshipIntelligenceService {
 
   // ==================== SCORE COMPUTATION ====================
 
-  async computeRelationshipScore(profileId: string): Promise<number> {
+  async computeRelationshipScore(profileId: string, caseFactor?: number | null): Promise<number> {
     const profile = await this.getProfile(profileId);
     if (!profile) return 50;
 
@@ -488,7 +490,14 @@ export class RelationshipIntelligenceService {
     );
 
     // Clamp to 0-100
-    const finalScore = Math.min(Math.max(score, 0), 100);
+    let finalScore = Math.min(Math.max(score, 0), 100);
+
+    // F4 · blend in the linked Logos case factor when provided. The daily driver
+    // passes it ONLY with the sync flag ON and ONLY for contacts that are linked +
+    // have a Logos journey; when absent this is byte-for-byte the prior score.
+    if (typeof caseFactor === 'number') {
+      finalScore = Math.round(Math.min(Math.max(0.75 * finalScore + 0.25 * caseFactor, 0), 100));
+    }
 
     // Update the profile with new score
     await supabase
@@ -1045,17 +1054,23 @@ Return JSON with:
   async runDailyAnalysis(): Promise<void> {
     const userId = this.getUserId();
 
-    // Get all profiles
+    // Get all profiles (contact_email needed to resolve the optional Logos case factor)
     const { data: profiles } = await supabase
       .from('relationship_profiles')
-      .select('id')
+      .select('id, contact_email')
       .eq('user_id', userId);
 
     if (!profiles) return;
 
+    // F4 · resolve Logos case factors only when the sync is enabled (else identical to before).
+    const logosOn = isLogosSyncEnabled();
+
     // Update scores for each profile
     for (const profile of profiles) {
-      await this.computeRelationshipScore(profile.id);
+      const caseFactor = logosOn && profile.contact_email
+        ? await getLogosCaseFactor(profile.contact_email)
+        : undefined;
+      await this.computeRelationshipScore(profile.id, caseFactor);
       await this.computeTrend(profile.id);
     }
 

@@ -217,3 +217,18 @@ export async function getLogosCaseState(logosClientId: string): Promise<LogosCas
   const json = await parse(res);
   return (json.state as LogosCaseState) || null;
 }
+
+/**
+ * A 0-100 Logos "case factor" for a contact's email (engagement adjusted by risk),
+ * or null when the contact isn't linked / has no journey. Used by the relationship-
+ * score blend (F4). Swallows errors → null so a Logos hiccup never breaks scoring.
+ */
+export async function getLogosCaseFactor(contactEmail: string): Promise<number | null> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/logos/case-factor?email=${encodeURIComponent(contactEmail)}`, { headers: await authHeaders() });
+    const json = await parse(res);
+    return typeof json.factor === 'number' ? (json.factor as number) : null;
+  } catch {
+    return null;
+  }
+}

@@ -3746,6 +3746,37 @@ app.get('/api/logos/case-state', async (req, res) => {
   }
 });
 
+// Compute a 0-100 "case factor" for a contact's linked Logos journey (P6 / F4
+// score). email -> contact (owner-scoped) -> mapping -> client -> client_journeys.
+// Returns null when not linked / no journey. Reused by the relationship-score blend.
+app.get('/api/logos/case-factor', async (req, res) => {
+  let user;
+  try { user = await requireUser(req); }
+  catch (e) { return res.status(e.status || 500).json({ ok: false, error: e.message }); }
+  if (!logosConfigured()) return res.json({ ok: true, factor: null });
+  const email = (req.query.email || '').toString().trim();
+  if (!email) return res.status(400).json({ ok: false, error: 'email required' });
+  const pulse = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  try {
+    const variants = [...new Set([email, email.toLowerCase()])];
+    const { data: contact } = await pulse.from('contacts').select('id').eq('user_id', user.id).in('email', variants).limit(1).maybeSingle();
+    if (!contact) return res.json({ ok: true, factor: null });
+    const { data: map } = await pulse.from('logos_pulse_mappings').select('logos_entity_id').eq('pulse_entity_type', 'contact').eq('pulse_entity_id', contact.id).eq('logos_entity_type', 'client').maybeSingle();
+    if (!map) return res.json({ ok: true, factor: null });
+    const logos = logosServiceClient();
+    const { data: client } = await logos.from('clients').select('contact_id').eq('id', map.logos_entity_id).maybeSingle();
+    if (!client || !client.contact_id) return res.json({ ok: true, factor: null });
+    const { data: journey } = await logos.from('client_journeys').select('engagement_score, risk_level').eq('client_id', client.contact_id).order('updated_at', { ascending: false }).limit(1).maybeSingle();
+    if (!journey) return res.json({ ok: true, factor: null });
+    const riskAdj = { low: 5, moderate: 0, high: -8, critical: -15 };
+    const base = typeof journey.engagement_score === 'number' ? journey.engagement_score : 50;
+    const factor = Math.min(Math.max(base + (riskAdj[journey.risk_level] || 0), 0), 100);
+    return res.json({ ok: true, factor });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Pulse API Server Running' });
 });
