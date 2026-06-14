@@ -17,14 +17,13 @@
 //   pixel-cluster wedged into one corner — worse than just framing the
 //   markers and trusting the operator to know where they are.
 //
-// Side-effect only; no return value. The caller passes the mapRef (already
-// owned by the host since onMapLoad sets it).
+// Side-effect only; no return value. The caller passes a MapProviderApi (the
+// renderer-agnostic camera adapter) rather than a raw map ref, so the framing
+// math here stays renderer-neutral (P1a of the MapLibre rebrand).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useEffect, RefObject } from 'react';
-import { computeBounds } from '../../../services/mapService';
-
-interface LatLng { lat: number; lng: number }
+import { useEffect } from 'react';
+import type { LatLng, MapProviderApi } from '../provider/types';
 
 // Max distance from the nearest marker beyond which userPosition is excluded
 // from the bounds calculation. 50km roughly = "still in the same metro area";
@@ -53,15 +52,14 @@ function haversineKm(a: LatLng, b: LatLng): number {
 }
 
 export function useFitBounds(
-  mapRef: RefObject<google.maps.Map | null>,
+  camera: MapProviderApi | null,
   isLoaded: boolean,
   visibleMarkers: Array<{ lat: number; lng: number }>,
   meetingMarkers: Array<{ lat: number; lng: number }>,
   userPosition: LatLng | null,
 ): void {
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !isLoaded) return;
+    if (!camera || !isLoaded) return;
 
     const points: Array<LatLng> = [
       ...visibleMarkers.map(m => ({ lat: m.lat, lng: m.lng })),
@@ -69,7 +67,7 @@ export function useFitBounds(
     ];
 
     if (points.length === 0) {
-      if (userPosition) map.panTo(userPosition);
+      if (userPosition) camera.panTo(userPosition);
       return;
     }
 
@@ -86,25 +84,21 @@ export function useFitBounds(
     }
 
     if (points.length === 1) {
-      map.panTo(points[0]);
-      map.setZoom(13);
+      camera.panTo(points[0]);
+      camera.setZoom(13);
       return;
     }
 
-    const bounds = computeBounds(points);
-    if (!bounds) return;
-
-    map.fitBounds(bounds, FIT_PADDING);
+    camera.fitBounds(points, FIT_PADDING);
 
     // Enforce the max-zoom-out floor on the NEXT idle tick. fitBounds is
     // async — its zoom isn't readable until the camera settles — so we ride
     // the one-shot 'idle' to clamp without fighting the in-flight animation.
-    const listener = google.maps.event.addListenerOnce(map, 'idle', () => {
-      const z = map.getZoom();
+    return camera.onIdleOnce(() => {
+      const z = camera.getZoom();
       if (typeof z === 'number' && z < MAX_FIT_ZOOM_OUT) {
-        map.setZoom(MAX_FIT_ZOOM_OUT);
+        camera.setZoom(MAX_FIT_ZOOM_OUT);
       }
     });
-    return () => google.maps.event.removeListener(listener);
-  }, [isLoaded, visibleMarkers, meetingMarkers, userPosition, mapRef]);
+  }, [isLoaded, visibleMarkers, meetingMarkers, userPosition, camera]);
 }

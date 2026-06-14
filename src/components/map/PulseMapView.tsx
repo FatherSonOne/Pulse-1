@@ -35,6 +35,7 @@ import { useMapViewMode } from './hooks/useMapViewMode';
 import { useGoogleMapsLoader } from './hooks/useGoogleMapsLoader';
 import { useSrAnnouncer } from './hooks/useSrAnnouncer';
 import { useFitBounds } from './hooks/useFitBounds';
+import { createGoogleMapAdapter } from './provider/googleAdapter';
 import { useMapKeyboardShortcuts } from './hooks/useMapKeyboardShortcuts';
 import { useMarkerOffsets, type OffsetableMarker } from './hooks/useMarkerOffsets';
 import { useMarkerClusters, type ClusterCentroid } from './hooks/useMarkerClusters';
@@ -194,7 +195,12 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   }, [localContacts, filter, circles, lens, geoSignals]);
 
   const srAnnouncement = useSrAnnouncer(lens, visibleMarkers.length, viewMode);
-  useFitBounds(mapRef, isLoaded, visibleMarkers, meetingMarkers, userPosition);
+
+  // Renderer-agnostic camera adapter (P1a of the MapLibre rebrand). Stable
+  // across the map's load lifecycle — it reads mapRef.current lazily at call
+  // time, so a single instance keeps working once onMapLoad sets the ref.
+  const mapCamera = useMemo(() => createGoogleMapAdapter(() => mapRef.current), []);
+  useFitBounds(mapCamera, isLoaded, visibleMarkers, meetingMarkers, userPosition);
 
   // Stable marker key used by the AI proposal and the accepted-route mapping.
   const markerKey = (contactId: string, locType: 'home' | 'work') => `${contactId}-${locType}`;
