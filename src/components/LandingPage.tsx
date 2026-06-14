@@ -56,8 +56,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   // currently an owner-scoped grant and emailEnabled defaults off, so it is not yet generally
   // available to public signups. Hidden from the marketing page for v1; flip to re-show.
   const SHOW_EMAIL_ON_LANDING = false;
-  // Logos Vision bidirectional-sync panel: the integration is unbuilt (the client lib exists
-  // but has zero call sites). Hidden until built. See docs/LOGOS_VISION_SYNC_HANDOFF_2026-06-13.md.
+  // Logos Vision bidirectional-sync panel — kept HIDDEN intentionally (P7 decision
+  // 2026-06-13). The sync IS built (P0–P6, gated behind the in-app `logosVisionSync`
+  // flag, default OFF) but is SINGLE-TENANT / owner-only (one shared Logos service-role
+  // key), so it is not a public, multi-tenant offering to advertise here. The panel's
+  // copy below is also stale vs. what shipped (triggers are note-save/manual + email/
+  // Slack — NOT "Relay message"/automatic; F3 is confirm-before-write AI client-field
+  // suggestions; F4 is a read-only case-state line, NOT a health-score change). Re-enable
+  // ONLY if this becomes multi-tenant AND the copy + "Connected" badge are corrected.
+  // See docs/LOGOS_VISION_SYNC_BUILD_HANDOFF_2026-06-13.md (§9 + build status).
   const SHOW_LOGOS_SYNC = false;
   // Inline "Pulse in Your Pocket" mock consolidated into the closing "Wherever you are" CTA
   // (avoid two phone mocks on one page). Flip to re-show it beside the shortcuts.
