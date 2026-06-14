@@ -39,6 +39,8 @@ import { createGoogleMapAdapter } from './provider/googleAdapter';
 import { createMapLibreAdapter } from './provider/maplibreAdapter';
 import { useMapLibreRenderer } from './provider/useMapLibreRenderer';
 import { MapLibreAcceptedRoute } from './provider/MapLibreAcceptedRoute';
+import { MapLibreAtlasTerritories } from './provider/MapLibreAtlasTerritories';
+import { MapLibreAtlasHalos } from './provider/MapLibreAtlasHalos';
 import type { Map as MaplibreMap } from 'maplibre-gl';
 import { useMapKeyboardShortcuts } from './hooks/useMapKeyboardShortcuts';
 import { useMarkerOffsets, type OffsetableMarker } from './hooks/useMarkerOffsets';
@@ -650,6 +652,20 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               path={acceptedRoute.path}
               onClick={handleOpenInSystemMaps}
             />
+          )}
+          {/* Atlas-only geometry — halos under territories (matches Google
+              zIndex 0 < 1). Markers/anchors still pending (P2-anchor). */}
+          {lens === 'atlas' && mapLibreReady && (
+            <>
+              <MapLibreAtlasHalos map={mapLibreRef.current} contacts={localContacts} />
+              <MapLibreAtlasTerritories
+                map={mapLibreRef.current}
+                circles={circles}
+                contacts={localContacts}
+                selectedCircleId={selectedCircleId}
+                onSelectCircle={setSelectedCircleId}
+              />
+            </>
           )}
           </>
         ) : (
