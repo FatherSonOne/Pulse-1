@@ -94,7 +94,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
           <button
             type="button"
             onClick={onSearchClear}
-            className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color hover:pulse-surface-raised"
+            className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color hover:pulse-surface-raised transition-transform active:scale-90"
             aria-label="Clear search"
             title="Clear search"
           >
@@ -117,7 +117,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
           type="button"
           onClick={onSync}
           disabled={syncing}
-          className="w-9 h-9 rounded-lg pulse-ink-2-color hover:pulse-surface-raised flex items-center justify-center transition disabled:opacity-40"
+          className="w-9 h-9 rounded-lg pulse-ink-2-color hover:pulse-surface-raised flex items-center justify-center transition active:scale-90 disabled:active:scale-100 disabled:opacity-40"
           title={syncing ? 'Syncing…' : 'Sync emails'}
           aria-label={syncing ? 'Syncing emails' : 'Sync emails'}
           aria-busy={syncing}
@@ -130,7 +130,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
         <button
           type="button"
           onClick={() => setShowEmailSettings(true)}
-          className="w-9 h-9 rounded-lg pulse-ink-2-color hover:pulse-surface-raised flex items-center justify-center transition"
+          className="w-9 h-9 rounded-lg pulse-ink-2-color hover:pulse-surface-raised flex items-center justify-center transition active:scale-90"
           title="Email settings"
           aria-label="Open email settings"
         >

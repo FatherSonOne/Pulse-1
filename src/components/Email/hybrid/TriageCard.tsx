@@ -70,7 +70,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact
           <button
             type="button"
             onClick={handleOpenFullPage}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] uppercase tracking-wide-mono pulse-ink-3-color hover:pulse-rose-color hover:pulse-rose-bg-soft-color border pulse-border-color transition shrink-0"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] uppercase tracking-wide-mono pulse-ink-3-color hover:pulse-rose-color hover:pulse-rose-bg-soft-color border pulse-border-color transition active:scale-[0.97] shrink-0"
             title="Open full page"
             aria-label="Open this email in the full-page reader"
           >
@@ -125,7 +125,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact
         <button
           type="button"
           onClick={() => onAction('Archive')}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface text-[13px] font-medium pulse-ink-color border pulse-border-color hover:pulse-surface-raised"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface text-[13px] font-medium pulse-ink-color border pulse-border-color hover:pulse-surface-raised transition-transform active:scale-[0.97]"
         >
           <Archive className="w-4 h-4" />
           <span>Archive</span>
@@ -134,7 +134,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact
         <button
           type="button"
           onClick={() => onAction('Snooze')}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface text-[13px] font-medium pulse-ink-color border pulse-border-color hover:pulse-surface-raised"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface text-[13px] font-medium pulse-ink-color border pulse-border-color hover:pulse-surface-raised transition-transform active:scale-[0.97]"
         >
           <MoonStar className="w-4 h-4" />
           <span>Snooze</span>
@@ -144,7 +144,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact
           <button
             type="button"
             onClick={() => onAction('→ Task')}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface text-[13px] font-medium pulse-ink-color border pulse-border-color hover:pulse-surface-raised"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg pulse-surface text-[13px] font-medium pulse-ink-color border pulse-border-color hover:pulse-surface-raised transition-transform active:scale-[0.97]"
           >
             <CheckSquare className="w-4 h-4" />
             <span>→ Task</span>
@@ -159,7 +159,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact
               <button
                 type="button"
                 onClick={() => onAction('Send draft')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md pulse-rose-bg-color text-white text-[13px] font-medium"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md pulse-rose-bg-color text-white text-[13px] font-medium transition-transform active:scale-[0.97]"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Send</span>
@@ -172,7 +172,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({ email, onAction, compact
             <button
               type="button"
               onClick={() => onAction('Reply')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg pulse-rose-bg-color text-white text-[13px] font-medium"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg pulse-rose-bg-color text-white text-[13px] font-medium transition-transform active:scale-[0.97]"
             >
               <Reply className="w-4 h-4" />
               <span>Reply</span>

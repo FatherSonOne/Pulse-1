@@ -179,7 +179,7 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
         <button
           type="button"
           onClick={handleOpenFullPage}
-          className="open-full-page-btn ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wide-mono pulse-ink-3-color hover:pulse-rose-color hover:pulse-rose-bg-soft-color transition"
+          className="open-full-page-btn ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wide-mono pulse-ink-3-color hover:pulse-rose-color hover:pulse-rose-bg-soft-color transition active:scale-[0.97]"
           title="Open full page"
           aria-label="Open this email in the full-page reader"
         >
@@ -218,13 +218,13 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
           </div>
           <p className="text-[13px] pulse-ink-2-color leading-relaxed italic mb-2">"{email.draft}"</p>
           <div className="flex items-center gap-2">
-            <button type="button" className="px-3 py-1.5 rounded-md pulse-rose-bg-color text-white text-[12px] font-medium flex items-center gap-1.5">
+            <button type="button" className="px-3 py-1.5 rounded-md pulse-rose-bg-color text-white text-[12px] font-medium flex items-center gap-1.5 transition-transform active:scale-[0.97]">
               <Send className="w-3 h-3" />Send <Keycap>⌘↵</Keycap>
             </button>
-            <button type="button" className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color">
+            <button type="button" className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color transition-transform active:scale-[0.97]">
               Edit
             </button>
-            <button type="button" className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-3-color">
+            <button type="button" className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-3-color transition-transform active:scale-[0.97]">
               Dismiss draft
             </button>
           </div>
@@ -232,16 +232,16 @@ export const InlineReader: React.FC<InlineReaderProps> = ({ email }) => {
       )}
 
       <div className="mt-3 flex items-center gap-2">
-        <button type="button" onClick={handleReplyClick} className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-color flex items-center gap-1.5">
+        <button type="button" onClick={handleReplyClick} className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-color flex items-center gap-1.5 transition-transform active:scale-[0.97]">
           <Reply className="w-3 h-3" />Reply
         </button>
-        <button type="button" onClick={handleArchiveClick} className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5">
+        <button type="button" onClick={handleArchiveClick} className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5 transition-transform active:scale-[0.97]">
           <Archive className="w-3 h-3" />Archive
         </button>
-        <button type="button" onClick={handleSnoozeClick} className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5">
+        <button type="button" onClick={handleSnoozeClick} className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5 transition-transform active:scale-[0.97]">
           <MoonStar className="w-3 h-3" />Snooze
         </button>
-        <button type="button" onClick={handleTaskClick} className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5">
+        <button type="button" onClick={handleTaskClick} className="px-3 py-1.5 rounded-md border pulse-border-color text-[12px] pulse-ink-2-color flex items-center gap-1.5 transition-transform active:scale-[0.97]">
           <CheckSquare className="w-3 h-3" />→ Task
         </button>
       </div>

@@ -37,7 +37,7 @@ export const TriageDone: React.FC<TriageDoneProps> = ({
         <button
           type="button"
           onClick={onDismiss}
-          className="px-4 py-2 rounded-lg pulse-rose-bg-color text-white text-[13px] font-medium"
+          className="px-4 py-2 rounded-lg pulse-rose-bg-color text-white text-[13px] font-medium transition-transform active:scale-[0.97]"
         >
           Back to Cockpit
         </button>
@@ -45,7 +45,7 @@ export const TriageDone: React.FC<TriageDoneProps> = ({
       <button
         type="button"
         onClick={onReset}
-        className="px-4 py-2 rounded-lg border pulse-border-color text-[13px] font-medium pulse-ink-color"
+        className="px-4 py-2 rounded-lg border pulse-border-color text-[13px] font-medium pulse-ink-color transition-transform active:scale-[0.97]"
       >
         Run again
       </button>

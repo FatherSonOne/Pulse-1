@@ -349,6 +349,10 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
   transform: translateY(-1px);
   box-shadow: 0 12px 28px var(--pulse-rose-glow), inset 0 0 0 1px rgba(255, 255, 255, 0.10);
 }
+.email-hybrid-shell .triage-cta:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 120ms;
+}
 .email-hybrid-shell .triage-cta .glow-dot {
   width: 8px; height: 8px; border-radius: 50%; background: white;
   animation: hybridPulseDot 2s ease-in-out infinite;
@@ -366,6 +370,10 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
 .email-hybrid-shell .fab-compose:hover {
   transform: translateY(-2px);
   box-shadow: 0 18px 44px var(--pulse-rose-glow), 0 6px 18px rgba(0, 0, 0, 0.20);
+}
+.email-hybrid-shell .fab-compose:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 120ms;
 }
 @media (min-width: 768px) {
   .email-hybrid-shell .fab-compose { bottom: 20px; right: 20px; }
@@ -457,11 +465,12 @@ html.dark .email-hybrid-shell .reader-panel {
   width: 30px; height: 30px; border-radius: 999px;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
-  transition: background 160ms ease, color 160ms ease;
+  transition: background 160ms ease, color 160ms ease, transform 120ms ease-out;
 }
 .email-hybrid-shell .reader-panel-close:hover {
   background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
 }
+.email-hybrid-shell .reader-panel-close:active { transform: scale(0.97); }
 /* When InlineReader is rendered inside the panel, override its inline-mode
    wrapper so it fills the panel and scrolls instead of looking like an
    accordion drawer with a top border + canvas-soft background. */
@@ -528,6 +537,7 @@ html.dark .email-hybrid-shell .reader-panel {
   transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 .email-hybrid-shell .seg-toggle button:hover:not([data-active='true']) { color: var(--pulse-ink); }
+.email-hybrid-shell .seg-toggle button:active { transform: scale(0.97); transition-duration: 120ms; }
 .email-hybrid-shell .seg-toggle button[data-active='true'] {
   background: var(--pulse-surface); color: var(--pulse-ink);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--pulse-border);
@@ -595,11 +605,12 @@ html.dark .email-hybrid-shell .triage-stage {
   padding: 6px 10px; border-radius: 999px;
   background: var(--pulse-surface); border: 1px solid var(--pulse-border-strong);
   color: var(--pulse-ink-2); font-size: 12px; font-weight: 500;
-  transition: background 180ms, color 180ms, border-color 180ms;
+  transition: background 180ms, color 180ms, border-color 180ms, transform 120ms ease-out;
 }
 .email-hybrid-shell .dismiss-pill:hover {
   background: var(--pulse-rose-soft); color: var(--pulse-coral-fg); border-color: var(--pulse-rose);
 }
+.email-hybrid-shell .dismiss-pill:active { transform: scale(0.97); }
 .email-hybrid-shell .dismiss-pill .x {
   display: inline-flex; align-items: center; justify-content: center;
   width: 16px; height: 16px; border-radius: 999px;
@@ -633,11 +644,12 @@ html.dark .email-hybrid-shell .triage-stage {
   padding: 4px 9px; border-radius: 999px;
   background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
   font-family: var(--pulse-font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
-  transition: background 160ms ease, color 160ms ease;
+  transition: background 160ms ease, color 160ms ease, transform 120ms ease-out;
 }
 .email-hybrid-shell .action-toast .undo-btn:hover {
   background: var(--pulse-rose-soft); color: var(--pulse-coral-fg);
 }
+.email-hybrid-shell .action-toast .undo-btn:active { transform: scale(0.97); }
 
 /* ─── Done state — celebration rings ─── */
 @keyframes hybridRingPulse {

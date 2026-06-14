@@ -148,7 +148,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                 key={a.id}
                 onClick={(e) => handleChipAction(e, a)}
                 type="button"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md pulse-surface-raised text-[12px] pulse-ink-color hover:pulse-rose-bg-soft-color"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md pulse-surface-raised text-[12px] pulse-ink-color hover:pulse-rose-bg-soft-color transition-transform active:scale-[0.97]"
               >
                 <ActionIcon kind={a.kind} />
                 <span>{a.label}</span>
@@ -160,7 +160,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onTriage(); }}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border pulse-border-color text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color hover:pulse-rose-color hover:pulse-rose-border"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border pulse-border-color text-[11px] font-mono-pulse tracking-wide-mono pulse-ink-2-color hover:pulse-rose-color hover:pulse-rose-border transition-transform active:scale-[0.97]"
                   aria-label={`Triage email from ${email.from}`}
                 >
                   <Layers className="w-3 h-3" />TRIAGE
@@ -169,7 +169,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
               <button
                 type="button"
                 onClick={handleChevronClick}
-                className="p-1 rounded hover:pulse-surface-raised pulse-ink-3-color"
+                className="p-1 rounded hover:pulse-surface-raised pulse-ink-3-color transition-transform active:scale-90"
                 aria-label={expanded ? `Collapse email from ${email.from}` : `Expand email from ${email.from}`}
                 title={expanded ? 'Collapse (Esc)' : 'Expand'}
               >

@@ -45,7 +45,7 @@ export const FoldersDropdown: React.FC = () => {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] pulse-ink-color hover:pulse-surface-raised border pulse-border-color"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] pulse-ink-color hover:pulse-surface-raised border pulse-border-color transition-transform active:scale-[0.97]"
         aria-haspopup="listbox"
         aria-expanded={open}
         title="Switch folder"
