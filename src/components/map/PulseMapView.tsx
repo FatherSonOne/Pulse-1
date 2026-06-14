@@ -38,6 +38,7 @@ import { useFitBounds } from './hooks/useFitBounds';
 import { createGoogleMapAdapter } from './provider/googleAdapter';
 import { createMapLibreAdapter } from './provider/maplibreAdapter';
 import { useMapLibreRenderer } from './provider/useMapLibreRenderer';
+import { MapLibreAcceptedRoute } from './provider/MapLibreAcceptedRoute';
 import type { Map as MaplibreMap } from 'maplibre-gl';
 import { useMapKeyboardShortcuts } from './hooks/useMapKeyboardShortcuts';
 import { useMarkerOffsets, type OffsetableMarker } from './hooks/useMarkerOffsets';
@@ -625,8 +626,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           + empty-state card instead, where it carries actual signal. */}
       <div className="relative flex-1 overflow-hidden">
         {mapLibreOn ? (
-          /* P1c spike — bare MapLibre canvas. No markers/overlays yet (P2),
-             no Coral styling yet (P3); proves the renderer + camera adapter. */
+          <>
+          {/* P1c — bare MapLibre canvas. P2 (geometry) — accepted-route line.
+             Markers/anchors + Coral styling still pending (P2-anchor / P3). */}
           <React.Suspense fallback={<div className="w-full h-full" />}>
             <MapLibreCanvas
               center={userPosition ?? DEFAULT_CENTER}
@@ -642,6 +644,14 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               }}
             />
           </React.Suspense>
+          {acceptedRoute && mapLibreReady && (
+            <MapLibreAcceptedRoute
+              map={mapLibreRef.current}
+              path={acceptedRoute.path}
+              onClick={handleOpenInSystemMaps}
+            />
+          )}
+          </>
         ) : (
         <GoogleMap
           mapContainerClassName="w-full h-full"
