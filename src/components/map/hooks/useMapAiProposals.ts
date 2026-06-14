@@ -29,6 +29,7 @@ import {
   proposeRoute,
   proposeWeekPlan,
 } from '../../../services/mapAIService';
+import { buildMultiStopDirectionsUrl } from '../../../services/mapDirectionsUrl';
 import { DAY_MS, type MapLens } from '../sub/mapLens';
 import type { AcceptedRoute, AiState } from '../sub/aiTypes';
 
@@ -279,16 +280,23 @@ export function useMapAiProposals(input: UseMapAiProposalsInput): UseMapAiPropos
     [allStops],
   );
 
-  // Open the first leg in the OS maps app — closest current platform-native
-  // affordance to "tap to start" without bundling Apple/Google Maps SDKs.
+  // Hand the FULL accepted-route sequence to the OS maps app — closest
+  // platform-native affordance to "tap to start" without bundling Apple/Google
+  // Maps SDKs. Routes from the operator's GPS (when known) through every stop
+  // in order. Previously this opened only the first stop, dropping the rest of
+  // the AI-ordered route.
   const handleOpenInSystemMaps = useCallback(() => {
     if (!acceptedRoute) return;
-    const firstStop = allStops.find(s => s.id === acceptedRoute.orderedMarkerKeys[0]);
-    if (!firstStop) return;
-    const destStr = `${firstStop.lat},${firstStop.lng}`;
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destStr)}&travelmode=driving`;
-    window.open(url, '_blank', 'noopener');
-  }, [acceptedRoute, allStops]);
+    const orderedStops = acceptedRoute.orderedMarkerKeys
+      .map(id => allStops.find(s => s.id === id))
+      .filter((s): s is typeof allStops[number] => s != null);
+    if (orderedStops.length === 0) return;
+    const url = buildMultiStopDirectionsUrl(
+      orderedStops.map(s => ({ lat: s.lat, lng: s.lng })),
+      userPosition,
+    );
+    if (url) window.open(url, '_blank', 'noopener');
+  }, [acceptedRoute, allStops, userPosition]);
 
   return {
     aiState,

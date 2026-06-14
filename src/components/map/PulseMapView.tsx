@@ -25,6 +25,7 @@ import { ContactLocationPickerOverlay } from './sub/ContactLocationPickerOverlay
 import { useGeoRelevanceSignals, lensIncludesContact } from './hooks/useGeoRelevanceSignals';
 import { useContactCircles } from './hooks/useContactCircles';
 import { useMeetingMarkers } from './hooks/useMeetingMarkers';
+import { useCalendarTravelBuffers } from '../../hooks/useCalendarTravelBuffers';
 import { useVisitedStops } from './hooks/useVisitedStops';
 import { useUserPosition } from './hooks/useUserPosition';
 import { useContactGeocoding } from './hooks/useContactGeocoding';
@@ -137,6 +138,11 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   });
   const visitedStopIds = useVisitedStops(lens);
   const meetingMarkers = useMeetingMarkers(lens, geoSignals.todayEvents, geoSignals.weekEvents);
+  // Travel-buffer warnings for today's geo-anchored agenda — keyed by the
+  // arriving event id so a meeting marker can flag a tight/late connection
+  // from the previous located event. Content-fingerprinted internally, so a
+  // new todayEvents reference doesn't re-fetch.
+  const travelBuffers = useCalendarTravelBuffers(geoSignals.todayEvents);
   const { resetRequested: resetContactGeocoding } = useContactGeocoding(localContacts, setLocalContacts);
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
@@ -709,6 +715,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                   lng={mm.lng}
                   isSelected={selectedMeetingId === mm.event.id}
                   onClick={handleMeetingSelect}
+                  travelBuffer={lens === 'today' ? travelBuffers.get(mm.event.id) : undefined}
                   sequenceNumber={seqIdx >= 0 ? seqIdx + 1 : undefined}
                   offsetX={offX}
                   offsetY={offY}

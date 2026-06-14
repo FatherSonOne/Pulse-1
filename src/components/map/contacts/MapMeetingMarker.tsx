@@ -11,8 +11,9 @@
 
 import React, { memo, useCallback } from 'react';
 import { OverlayView } from '@react-google-maps/api';
-import { CalendarClock } from 'lucide-react';
+import { AlertTriangle, CalendarClock } from 'lucide-react';
 import { CalendarEvent } from '../../../types';
+import { type BufferInfo, bufferChipCopy } from '../../../hooks/useCalendarTravelBuffers';
 
 interface MapMeetingMarkerProps {
   event: CalendarEvent;
@@ -46,6 +47,10 @@ interface MapMeetingMarkerProps {
   animationPhase?: 'entering' | 'idle' | 'exiting';
   animationDelayMs?: number;
   reducedMotion?: boolean;
+  /** Travel-buffer info for arriving at this meeting from the previous located
+   *  event of the day (from useCalendarTravelBuffers). When severity is 'tight'
+   *  or 'late' a conflict badge renders. Omit / 'comfortable' → no badge. */
+  travelBuffer?: BufferInfo;
 }
 
 function formatTime(d: Date): string {
@@ -66,8 +71,12 @@ const MapMeetingMarker: React.FC<MapMeetingMarkerProps> = ({
   animationPhase,
   animationDelayMs = 0,
   reducedMotion = false,
+  travelBuffer,
 }) => {
   const isSpiderLeg = mode === 'spider-leg';
+  const showBufferBadge = !isSpiderLeg
+    && travelBuffer != null
+    && travelBuffer.severity !== 'comfortable';
   const animationClass = isSpiderLeg && animationPhase === 'entering'
     ? (reducedMotion ? 'spider-leg-fade-in' : 'spider-leg-enter')
     : isSpiderLeg && animationPhase === 'exiting'
@@ -135,6 +144,26 @@ const MapMeetingMarker: React.FC<MapMeetingMarkerProps> = ({
               {sequenceNumber}
             </div>
           )}
+
+          {/* Travel-buffer conflict badge — top-right, opposite the route
+              sequence badge. Amber = tight connection, red = you'll arrive
+              late coming from the previous located event. */}
+          {showBufferBadge && travelBuffer && (
+            <div
+              className="absolute -top-2 -right-2 rounded-full flex items-center justify-center"
+              style={{
+                width: 18,
+                height: 18,
+                backgroundColor: travelBuffer.severity === 'late' ? '#dc2626' : '#f59e0b',
+                border: '2px solid #fafafa',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.30)',
+              }}
+              title={`From ${travelBuffer.fromTitle}: ${bufferChipCopy(travelBuffer)}`}
+              aria-label={`Travel buffer warning, ${bufferChipCopy(travelBuffer)}, coming from ${travelBuffer.fromTitle}`}
+            >
+              <AlertTriangle size={10} color="#fafafa" strokeWidth={2.5} aria-hidden="true" />
+            </div>
+          )}
         </div>
 
         <div
@@ -179,7 +208,8 @@ function areEqual(prev: MapMeetingMarkerProps, next: MapMeetingMarkerProps): boo
     prev.mode === next.mode &&
     prev.animationPhase === next.animationPhase &&
     prev.animationDelayMs === next.animationDelayMs &&
-    prev.reducedMotion === next.reducedMotion
+    prev.reducedMotion === next.reducedMotion &&
+    prev.travelBuffer === next.travelBuffer
   );
 }
 

@@ -24,6 +24,7 @@ import {
   getPlacesForEntity,
   setPlaceGeofence,
 } from '../../../services/locationService';
+import { getTravelTime } from '../../../services/directionsService';
 import LocationEditModal from './LocationEditModal';
 import LocationSharePanel from './LocationSharePanel';
 import EtaShareModal from './EtaShareModal';
@@ -74,6 +75,10 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
   const [activePlaceId, setActivePlaceId] = useState<string | null>(null);
   const [activeRadius, setActiveRadius] = useState<number | null>(null);
   const [geofenceSaving, setGeofenceSaving] = useState(false);
+  // Drive-time ETA from the operator to the active location (vs. the
+  // straight-line distance the readout otherwise shows). null until resolved
+  // or when no GPS / no target coords.
+  const [driveTravelMinutes, setDriveTravelMinutes] = useState<number | null>(null);
   const placeFetchRef = useRef<{ contactId: string; role: 'home' | 'work' } | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +96,24 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
       .catch(() => { /* swallow — toggle hides itself when activePlaceId is null */ });
     return () => { cancelled = true; };
   }, [contact.id, activeLocType]);
+
+  // Resolve the driving ETA from the operator to the active location. Cached
+  // per-day by directionsService, so re-renders cost zero API calls. Collapses
+  // to null (→ readout falls back to straight-line distance) when GPS or the
+  // target coords are missing, or the directions lookup fails.
+  useEffect(() => {
+    const targetLat = activeLocType === 'home' ? contact.homeLat : contact.workLat;
+    const targetLng = activeLocType === 'home' ? contact.homeLng : contact.workLng;
+    if (!userPosition || targetLat == null || targetLng == null) {
+      setDriveTravelMinutes(null);
+      return;
+    }
+    let cancelled = false;
+    getTravelTime(userPosition, { lat: targetLat, lng: targetLng })
+      .then(tt => { if (!cancelled) setDriveTravelMinutes(tt?.minutes ?? null); })
+      .catch(() => { if (!cancelled) setDriveTravelMinutes(null); });
+    return () => { cancelled = true; };
+  }, [userPosition, activeLocType, contact.homeLat, contact.homeLng, contact.workLat, contact.workLng]);
 
   const handleToggleGeofence = async () => {
     if (!activePlaceId || geofenceSaving) return;
@@ -133,8 +156,9 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
     : null;
 
   // Cockpit readout — mono dot-separated string showing the metadata
-  // a fluent operator wants at a glance. ETA wires up in Phase 2 alongside
-  // the AI route engine.
+  // a fluent operator wants at a glance. The distance cell prefers the
+  // driving ETA (from directionsService) and falls back to straight-line
+  // distance when GPS / directions are unavailable.
   const lastSeenLabel = (() => {
     if (liveLocation) return 'LIVE';
     if (!contact.lastSeen) return '—';
@@ -150,7 +174,9 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
   const readoutCells: string[] = [
     contact.name.split(' ')[0].toUpperCase(),
     activeLocType.toUpperCase(),
-    distance ? distance.toUpperCase() : '—',
+    driveTravelMinutes != null
+      ? `ETA ${driveTravelMinutes}M`
+      : (distance ? distance.toUpperCase() : '—'),
     `SEEN ${lastSeenLabel}`,
   ];
 
