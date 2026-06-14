@@ -15,10 +15,27 @@ The **core real-time DM engine is genuinely launch-ready** — send/receive, rob
 The caveats are about **trust polish and honest scope**, not broken plumbing:
 - **SMS is theatrical on web** (honest banner, but no real send) — so the "unified messaging incl. SMS" pitch cannot ship as a live claim.
 - **No delivery/read-receipt ladder** — only an unread count. This is a table-stakes gap for a 1:1 DM product.
-- **AI assist panels can hang blank** (no timeout on edge-function calls) and a couple of error paths fail silently.
+- **Two error paths fail silently** (forward-message, delete-conversation — both CONFIRMED on verification) and **AI assist degrades to a *silent no-op*** on edge-fn failure (no timeout / leaked loading flags — **not** the visible "hanging panel" a first read implied; see Verification Addendum).
+- **Schedule-send is built but unreachable** on the Pulse-DM path — backend + modal fully wired, but no UI trigger renders for a Pulse conversation.
 - **Large dark-launched / dead surface area** — 80+ "MessageEnhancements" components sealed behind `MESSAGES_TOOLS_ENABLED = false`, the entire Slack-into-Messages transport behind an OFF flag, and a `BotMessage` card cluster that is fully orphaned.
 
 Ship the core DM; gate the over-promises; fix the trust gaps within two weeks.
+
+---
+
+## Verification Addendum — 2026-06-14 (post-audit)
+
+The five ⚠️ FRAGILE / "verify" items below were re-checked **read-only** by parallel subagents reading the *actual* code (symbol-grep, not the audit's `~line` numbers), each with an adversarial second pass on any confirmed bug. Verdicts are corrected back into the capability matrix, failsafe table, trust-killers, and roadmap that follow.
+
+| Item | Original status | Verified verdict (2026-06-14) | Real bug? |
+|---|---|---|---|
+| Delete-message restore semantics (Sprint1 #4 / row 7) | ⚠️ FRAGILE — "verify restore" | **REFUTED — code is correct.** On failure it re-inserts the snapshot with a dedup guard + re-sort and the "restored" toast matches reality; success removal is safe (refetch filters `is_deleted=false`, realtime is INSERT-only). | No — **item dropped** |
+| Schedule-send open-trigger (Sprint1 #5 / row 10) | ✅ REAL¹ — "verify trigger surfaced" | **CONFIRMED unreachable.** `PulseComposer` (the only Pulse-DM composer) has no schedule control; both openers (`/schedule` slash + "View" button) live in `MessageInputSection`, which `return null`s for every Pulse conversation (`if (!activeThread \|\| activePulseConversation) return null;`). Backend + modal fully wired → reachable by **zero** gestures. | **Yes — reclassified 🔌 DISCONNECTED** |
+| Forward-message failure (row 8) | ⚠️ FRAGILE | **CONFIRMED.** Catch is `console.error` only; the modal closes identically on success/failure; no `setPulseEditToast`. User believes it sent. | Yes |
+| Delete-conversation failure (row 14) | ⚠️ FRAGILE | **CONFIRMED.** Catch is `console.error` + "no rollback needed"; optimistic removal leaves the conv gone from the UI while the DB row survives; refetch resurrection is **not** guaranteed soon (the sub fires only on INSERT/UPDATE; a failed delete changes no row). | Yes |
+| AI assist "hang blank" (Sprint1 #1) | ⚠️ FRAGILE — "hangs blank forever" | **PARTIAL — symptom overstated.** Mechanical gap is real (no try/catch, no timeout; `invokeAI` never forwards its declared `signal`; `loadingAI`/`loadingContext` leak true). But `loadingAI` is read in **zero render branches** → worst observable symptom is a **silent no-op**, not a visible hung skeleton. | Hygiene only — re-ranked |
+
+**Net:** 1 worry refuted, 3 confirmed bugs (all with trivial pattern-matching fixes — the `setPulseEditToast` infra already exists), 1 reclassified dead feature, 1 severity downgrade. Headline verdict (**LAUNCH WITH CAVEATS**) unchanged.
 
 ---
 
@@ -47,14 +64,14 @@ Ship the core DM; gate the over-promises; fix the trust gaps within two weeks.
 | 4 | Mark read / unread count | effect on conversation open (≈1372) | RPC `mark_messages_read` → `pulse_messages.is_read` | ✅ REAL | Silent on RPC failure (no UI cost) |
 | 5 | Reactions (toggle / picker) | `handlePulseReaction` (1602), `FullEmojiPicker` (5042) | `pulseService.toggleReaction` → `pulse_message_reactions` | ✅ REAL | Optimistic; reloads from server on error |
 | 6 | Edit message | `saveEditPulseMessage` (≈3284) | `pulseService.editMessage` → `.update()` | ✅ REAL | Clears reactions optimistically (locked design); reloads thread on error |
-| 7 | Delete message (soft) | `handlePulseV2Action('delete')` (≈3407), `window.confirm` | `pulseService.deleteMessage` (`is_deleted=true`) | ⚠️ FRAGILE | Error toast says "restored" — **verify the local list is actually restored vs. only the DB soft-delete persisting** (conflicting reads; §Sprint 1) |
-| 8 | Forward message | ForwardMessageModal (≈3374) | `pulseService.forwardMessage` → new `pulse_messages` row | ⚠️ FRAGILE | Forward failure is **logged, not surfaced** — user thinks it sent |
+| 7 | Delete message (soft) | `handlePulseV2Action('delete')` (3414-3429), `window.confirm` | `pulseService.deleteMessage` (`is_deleted=true`) | ✅ REAL | **VERIFIED 2026-06-14:** failure re-inserts the snapshot with dedup + re-sort and the "restored" toast matches reality; success removal is safe (refetch filters `is_deleted=false` at 347-351, realtime is INSERT-only at 744-749). |
+| 8 | Forward message | ForwardMessageModal; `handleForwardPulseMessage` (3465-3476) | `pulseService.forwardMessage` → new `pulse_messages` row | ⚠️ FRAGILE | **CONFIRMED 2026-06-14:** catch is `console.error` only; modal closes identically on success/failure; no `setPulseEditToast`. User thinks it sent. |
 | 9 | Star / save | `toggleStarPulseMessage` (≈1644) | `pulseService.toggleStar` → `pulse_starred_messages` | ✅ REAL | Optimistic; reloads on error |
-| 10 | Schedule send | `handleScheduleMessage` (3078) → ScheduleMessageModal via MessagesTopModals (469) | `pulseService.scheduleMessage` → `pulse_scheduled_messages` (+ server cron) | ✅ REAL¹ | ¹**End-to-end wired** (earlier audit miscalled this disconnected). **Verify the open-trigger is surfaced in the PulseComposer path** — `setShowScheduleModal` is passed to `MessageInputSection` (5885), the legacy composer |
+| 10 | Schedule send | `handleScheduleMessage` (3078-3099) → ScheduleMessageModal via MessagesTopModals (460-462) | `pulseService.scheduleMessage` → `pulse_scheduled_messages` (+ server cron) | 🔌 DISCONNECTED | **CONFIRMED unreachable 2026-06-14:** backend + modal fully wired, but the only openers (`/schedule` slash 165, "View" button 782) live in `MessageInputSection`, which `return null`s for every Pulse conversation (`:126`). `PulseComposer` has no schedule control. Scheduling is Pulse-only by design (`recipientId = activePulseConv?.other_user?.id`, 3087) — so it's reachable by **zero** gestures. |
 | 11 | Attachments (image/video/file) | MessageInputSection attach menu (≈540-630) | `pulseService.uploadAttachment` → Storage `pulse-attachments` → `pulse_messages.media_url` | ✅ REAL | Upload failure blocks send (correct) |
 | 12 | Voice message | MessageInputSection recorder | MediaRecorder → `sendMessageWithAttachment` → `pulse_messages` | ✅ REAL | Recorder cleaned up on unmount |
 | 13 | Copy / Mention / Share / Create-Task / Propose-Decision (context menu) | MessageContextMenu → `handlePulseV2Action` (≈3355-3402) | Clipboard / setInputText / `taskService` / `decisionService` | ✅ REAL | Create-task no-ops silently if no workspace |
-| 14 | Conversation CRUD (open/create, archive, mute, delete) | `getOrCreateConversation` (1328) etc. | RPC `get_or_create_conversation` + `.update()` → `pulse_conversations` | ⚠️ FRAGILE | Get/create + soft-delete-restore are REAL; **delete-conversation failure is silent** (`console.error`, no toast, 3199) |
+| 14 | Conversation CRUD (open/create, archive, mute, delete) | `getOrCreateConversation` (1328); `handleDeletePulseConversation` (3185-3204) | RPC `get_or_create_conversation` + `.update()` → `pulse_conversations` | ⚠️ FRAGILE | Get/create are REAL. **CONFIRMED 2026-06-14:** delete-conversation failure is silent (`console.error` + "no rollback needed", 3200-3202); optimistic removal leaves the conv gone from UI while the DB row survives. |
 | 15 | Search Pulse users (new convo) | debounced effect (1200) | `pulseService.searchUsers` → RPC `search_users` → `user_profiles` | ✅ REAL | Empty on error |
 | 16 | Search within thread | client filter (`filteredMessages`, 2249) | local `.includes()` | ✅ REAL | Substring only; no fuzzy/AI search |
 | 17 | Pagination (older messages) | `loadMoreMessages` (≈1356) | `pulseService.getMessagesPaginated` | ✅ REAL | Cursor + loading guard; virtualized list (`useVirtualList`) |
@@ -62,11 +79,11 @@ Ship the core DM; gate the over-promises; fix the trust gaps within two weeks.
 | 19 | Focus mode digest | (≈2347) | computed from real `last_message_at` deltas | ✅ REAL | Previously a hardcoded fake string; now a real digest |
 | 20 | Drafts | PulseComposer / MessageInput | `localStorage` `pulse_msg_draft_v1:` | ✅ REAL | Survives refresh; **not** synced across devices |
 | 21 | SMS send (non-Pulse contact) | `handleSendSms` (2239) | native: `openSmsApp` (real) · web: honest banner (2246) | 🎭 THEATRICAL | Web has **no real send** by design (W7 deferred — comment 2234-2238); native hands off to device SMS app |
-| 22 | AI Coach / Mediator / Voice Extractor | MessageInputSection BundleAI panels | `geminiService.*` (server-routed) | ⚠️ FRAGILE | Error-boundaried (no crash) but **no timeout** → blank hanging panel on slow/failed edge fn |
+| 22 | AI Coach / Mediator / Voice Extractor | MessageInputSection BundleAI panels | `geminiService.*` (server-routed) | ⚠️ FRAGILE | **CORRECTED 2026-06-14:** real gap is no try/catch + no timeout (`invokeAI` never forwards its declared `signal`), leaking `loadingAI`/`loadingContext`. But `loadingAI` is read in **zero render branches** → worst symptom is a **silent no-op**, not the "blank hanging panel" first claimed. |
 | 23 | Smart Compose / slash-command templates | PulseComposer (`STUB_TEMPLATES`) | stub (hardcoded list) | 🔌 DISCONNECTED | UI present, returns hardcoded suggestions; no real backend |
 | 24 | Voice-to-text (dictation) | `VoiceTextButton` | stub handler | 🎭 THEATRICAL | Button present, dictation not wired |
 
-**Synthesized counts (reachable surface):** ~17 REAL · 5 FRAGILE · 2 DISCONNECTED · 2 THEATRICAL. Plus a **gated-OFF** Slack transport (built & previously LIVE-verified) and a **dead** `BotMessage` cluster (see below).
+**Synthesized counts (reachable surface, post-verification 2026-06-14):** ~17 REAL · 4 FRAGILE · 3 DISCONNECTED · 2 THEATRICAL (delete-message ⚠️→✅; schedule-send ✅→🔌). Plus a **gated-OFF** Slack transport (built & previously LIVE-verified) and a **dead** `BotMessage` cluster (see below).
 
 ### 1d. Data integrity (verified against live `pulse-chat` / `ucaeuszgoihoyrvhewxk` via Supabase MCP)
 
@@ -101,9 +118,9 @@ All six Pulse-DM tables: **RLS ON, participant-scoped, no wide-open `true` polic
 | Mobile / Capacitor keyboard | Safe-area padding (`messages.css:648`), MobileDrawer, responsive collapse <768px | A |
 | Desktop / Electron | No Electron-specific code; **untested** | B |
 | Token expiry mid-work | Relies on Supabase auto-refresh; 401 caught by send error path | B |
-| **AI edge-fn failure / timeout** | `generateSmartReply`/`generateCatchUpSummary` awaited **without try/catch** (≈2283, 2801); panels boundaried but can hang blank | **C** |
-| Delete message | `window.confirm` + toast; restore semantics ambiguous | B |
-| **Delete conversation** | `window.confirm` then **silent `console.error`** on failure (3199) | **C** |
+| **AI edge-fn failure / timeout** | `generateSmartReply`/`generateCatchUpSummary` awaited **without try/catch or timeout** (2797, 2282); `invokeAI` never forwards its `signal`. **CORRECTED 2026-06-14:** leaks loading flags but renders nothing → **silent no-op**, not a visible hang | **B−** |
+| Delete message | `window.confirm` + optimistic remove + **verified rollback** (re-insert snapshot, dedup, re-sort) + matching toast | A |
+| **Delete conversation** | `window.confirm` + optimistic remove; **CONFIRMED 2026-06-14** failure is silent `console.error` + no state restore (3200-3202) — conv vanishes from UI, DB row survives | **C** |
 
 ### 1f. Dead / flagged inventory (built but not reachable today)
 
@@ -125,11 +142,13 @@ All six Pulse-DM tables: **RLS ON, participant-scoped, no wide-open `true` polic
 - **Small-team lead evaluating Pulse Team:** Real-time DM works; but no read receipts, no message export, and the "unified inbox" promise is only half-real (Slack dark-launched, SMS mocked). They'll perceive it as a capable 1:1 messenger, not yet the Front/Missive replacement the marketing implies.
 
 ### 2b. Trust killers (ranked)
-1. **AI assist panel hangs with no feedback** (no timeout, §1e) — looks broken.
-2. **Forward & delete-conversation fail silently** — user believes an action succeeded when it didn't.
+> Re-ranked 2026-06-14 after verification.
+1. **Forward & delete-conversation fail silently** (CONFIRMED) — user believes an action succeeded when it didn't. *Highest real trust risk.*
+2. **Schedule-send is built but unreachable** (CONFIRMED) — a wired feature with no UI entry point on the Pulse-DM path.
 3. **No delivery/read indicator** — users can't tell if a message landed (universal messaging reflex).
 4. **SMS web banner** — honest, but still a dead end where a capability appears to exist.
-5. **Misleading "restored" delete toast** — verify it matches reality.
+5. **AI assist silent no-op on failure** (CORRECTED — *not* a visible hang; downgraded from the original #1) — clicking does nothing, no error.
+6. ~~Misleading "restored" delete toast~~ — **REFUTED:** the toast matches the real rollback.
 
 ### 2c. Stickiness
 | Factor | Rating |
@@ -177,10 +196,10 @@ Message scheduling (**Pulse ✓, wired**), history search (**Pulse ✓ basic**),
 
 | Dimension | Score | Evidence |
 |---|---|---|
-| Core Functionality | 9/10 | DM send/receive/edit/delete/react/forward/voice/attach/schedule all REAL & verified |
+| Core Functionality | 9/10 | DM send/receive/edit/delete/react/forward/voice/attach REAL & verified; **schedule-send backend wired but UI entry unreachable** on the Pulse-DM path (CONFIRMED 2026-06-14 — arguably 8/10) |
 | Data Reliability | 9/10 | Clean RLS schema, robust dedup, optimistic rollback; minor unconstrained `content_type` |
-| Error Resilience | 6/10 | Send path A; **AI calls (C), delete-conversation (C), no offline resend** |
-| User Confidence | 6/10 | Core trustworthy; no receipt ladder, hanging AI panels, silent failures |
+| Error Resilience | 6/10 | Send path A; **AI calls now B− (silent no-op, not a hang — corrected 2026-06-14), delete-conversation (C) CONFIRMED, forward (C) CONFIRMED, no offline resend** |
+| User Confidence | 6/10 | Core trustworthy; no receipt ladder; **CONFIRMED silent failures** (forward, delete-conversation); AI assist is a silent no-op on failure (not a hang — corrected 2026-06-14) |
 | Completeness | 7/10 | Shipping core complete; huge sealed/dark/dead surface area behind it |
 | Performance | 7/10 | Virtualized + paginated; `getConversations` unbounded; reactions sub re-subscribes per message |
 | Competitive Parity | 6/10 | Missing read receipts + offline resend + export; matches most else |
@@ -190,6 +209,8 @@ Message scheduling (**Pulse ✓, wired**), history search (**Pulse ✓ basic**),
 | Polish | 7/10 | Path-D bubbles/rail/spine/context-menu GA; dragged by fragile AI + dead-code clutter |
 | Stickiness | 6/10 | Real voice + cross-section moats; missing export, unified SMS, great search |
 | **Total** | **84/120 (70%)** | **LAUNCH WITH CAVEATS** |
+
+> **Net effect of the 2026-06-14 verification on the 84 total: ≈neutral.** Core Functionality presses down ~1 (schedule-send unreachable); Error Resilience / User Confidence press up ~1 (the AI symptom is a silent no-op, milder than scored). The two offset, so the numeric total is held at 84 and the headline verdict (**LAUNCH WITH CAVEATS**) stands — the verified picture is *more* trustworthy on the AI axis and *less* complete on schedule-send.
 
 ---
 
@@ -202,13 +223,14 @@ Message scheduling (**Pulse ✓, wired**), history search (**Pulse ✓ basic**),
 | 2 | **Decide Slack-grounding flag posture for launch** — either flip `slackMessagesGrounding` ON (it's built + previously LIVE-verified) and re-verify, or keep OFF and exclude from launch messaging. | Decision | S | 4 | 4 |
 
 ### ⚡ Sprint 1 — Core reliability (week 1)
+> Re-prioritized 2026-06-14 after read-only verification (see Verification Addendum). Original #4 (delete-restore) **dropped — verified correct**. All items below are CONFIRMED in code.
+
 | # | Item | Type | Effort | User | Trust |
 |---|---|---|---|---|---|
-| 1 | Wrap AI edge-fn calls (`generateSmartReply` ~2801, `generateCatchUpSummary` ~2283) in try/catch + **timeout with a fallback** ("AI unavailable, try again"). | Bug | S | 4 | 5 |
-| 2 | Surface **delete-conversation failure** (toast instead of silent `console.error`, Messages.tsx:3199). | Bug | S | 3 | 5 |
-| 3 | Surface **forward-message failure** (currently logged only). | Bug | S | 3 | 4 |
-| 4 | **Verify delete-message restore semantics** vs the "restored" toast (3428) — reconcile local list with the soft-delete. | Bug | S | 3 | 4 |
-| 5 | **Verify scheduled-send open-trigger is reachable from the PulseComposer path** (handler & service are wired; the open button lives in `MessageInputSection`). | Gap | S | 3 | 3 |
+| 1 | Surface **forward-message failure** — add `setPulseEditToast(...)` in the `handleForwardPulseMessage` catch (3471-3472) and don't close the modal as if it succeeded. | Bug | S | 3 | 4 |
+| 2 | Surface **delete-conversation failure** — toast + restore the removed conv in the catch (3200-3202), matching the message-delete pattern. | Bug | S | 3 | 5 |
+| 3 | **Add a Schedule-send entry point** to the Pulse-DM/`PulseComposer` branch (5069-5081) that calls `setShowScheduleModal(true)` — backend + modal already wired; feature is currently unreachable. | Gap | S | 3 | 3 |
+| 4 | **AI assist resilience (downgraded):** wrap `generateSmartReply` (2797) / `generateCatchUpSummary` (2282) in try/finally that clears the loading flags + add an `AbortSignal.timeout(...)` forwarded through `invokeAI`'s existing `opts.signal`. Symptom is a silent no-op, not a hang — hygiene, not the original trust-killer. | Bug | S | 2 | 2 |
 
 ### 🔧 Sprint 2 — Completeness (week 2)
 | # | Item | Type | Effort | User | Trust |
@@ -235,19 +257,23 @@ Message scheduling (**Pulse ✓, wired**), history search (**Pulse ✓ basic**),
 | 3 | Surface **AI thread summary + action items** as a headline, server-side, no add-on — directly counter the "AI tax." | Feature | M |
 | 4 | Surface **voice-in-DM** as a first-class differentiator vs Front/Missive. | Feature | M |
 
-### Implementation handoff — Sprint 1 #1 (highest trust impact)
+### Implementation handoff — Sprint 1 (re-ranked 2026-06-14)
+> After verification the **highest-trust-impact** items are the silent-failure pair (forward + delete-conversation toasts), each a one-line `setPulseEditToast` in the existing pattern. The AI item below was the original #1 but is **downgraded** — its corrected handoff is retained for when it's picked up.
 ```
-## Item: AI assist panels hang with no feedback
-Problem: generateSmartReply / generateCatchUpSummary are awaited without try/catch
-         or timeout; on slow/failed edge fn the panel stays blank forever.
-Location: src/components/Messages.tsx ~2283 (generateCatchUpSummary), ~2801
-          (generateSmartReply); panels rendered in MessageInputSection.tsx.
-Fix: wrap each call in try/catch; race against a Promise timeout (~12s); on
-     reject/timeout set an inline error state ("AI unavailable — tap to retry")
-     instead of leaving the loading skeleton. Keep the existing
-     MessageEnhancementErrorBoundary as the crash backstop.
-Verify: temporarily point the edge fn at a 503 / add an artificial delay; confirm
-        the panel shows the error+retry, never an infinite skeleton. Build: npx tsc --noEmit (gate on no NEW errors).
+## Item: AI assist degrades silently on edge-fn failure (no try/catch, no timeout)
+Problem: generateSmartReply (2797) / generateCatchUpSummary (2282) are awaited
+         without try/catch or timeout; invokeAI (aiService.ts:67) never forwards
+         its declared opts.signal. On a hard router error the loading flags
+         (loadingAI/loadingContext) leak true — but they're read in ZERO render
+         branches, so the visible symptom is a SILENT NO-OP (click -> nothing
+         inserts, no error), NOT the "blank hanging panel" first reported.
+Location: src/components/Messages.tsx:2797 (handleSmartReply), 2272-2306
+          (fetchContext / generateCatchUpSummary); root cause src/services/ai/aiService.ts:67.
+Fix: wrap each await in try/catch/finally that clears loadingAI/loadingContext +
+     shows an inline "AI unavailable — tap to retry"; forward AbortSignal.timeout(~20s)
+     into supabase.functions.invoke via the already-declared opts.signal.
+Verify: point the edge fn at a 503 / add an artificial delay; confirm the control
+        re-enables and shows retry, never a stuck flag. Build: npx tsc --noEmit (gate on no NEW errors).
 Dependencies: none.
 Effort: S (half-day).
 ```
@@ -256,6 +282,6 @@ Effort: S (half-day).
 
 ## Phase 6 — Disposition
 
-- **This is an assessment.** No issues filed, no roadmap edits, no code changed (per `CLAUDE.md` — execution is a separate, explicitly-approved act).
-- **Recommended next step:** file Sprint 0 (#1–2) and Sprint 1 (#1–5) as `launch-roadmap` issues under epic **#98**, then hand them to `/launch-prep` one at a time, or hand the Messages section to `/section-deep-dive` to fix-and-build in place.
-- **The good news worth stating plainly:** the Messages *core* is real and verified — no data-loss blocker, clean schema, robust real-time. The work left is trust polish and honest scoping, not a rebuild.
+- **This is an assessment + a read-only verification pass** (2026-06-14, parallel subagents + adversarial recheck). No code changed; the doc was updated to reflect verified findings (Verification Addendum + corrected matrix / failsafe / trust-killers / roadmap).
+- **Recommended next step:** file Sprint 0 (#1–2) and the **corrected** Sprint 1 (now 4 items — forward toast, delete-conversation toast+restore, schedule-send entry point, AI try/finally+timeout) as `launch-roadmap` issues under epic **#98**, then hand them to `/launch-prep` one at a time, or hand the Messages section to `/section-deep-dive` to fix-and-build in place.
+- **The good news worth stating plainly:** the Messages *core* is real and verified — no data-loss blocker, clean schema, robust real-time, and the delete-message rollback + "restored" toast are provably correct. The work left is trust polish and honest scoping, not a rebuild.
