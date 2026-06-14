@@ -1,7 +1,7 @@
 // TriageView — focal-card queue mode.
 // Phase 4 wires actions to live emailStore + emailSyncService and reads the
 // queue via useTriageQueue (frozen at session start by EmailHybridClient).
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Layers, Clock, X } from 'lucide-react';
 import { useEmailStore } from '../../../store/emailStore';
@@ -204,6 +204,27 @@ export const TriageView: React.FC<TriageViewProps> = ({
   const actedLast = triageState.actedLast;
   const hasQueue = total > 0;
 
+  // Keep the confirmation toast mounted for one exit cycle so it fades out the
+  // way it faded in (Emil: an element that animates in but pops out reads as
+  // broken). actedLast clears on undo / navigation.
+  const [shownActed, setShownActed] = useState(actedLast);
+  const [toastLeaving, setToastLeaving] = useState(false);
+  useEffect(() => {
+    if (actedLast) {
+      setShownActed(actedLast);
+      setToastLeaving(false);
+      return;
+    }
+    if (shownActed) {
+      setToastLeaving(true);
+      const t = window.setTimeout(() => {
+        setShownActed(null);
+        setToastLeaving(false);
+      }, 160);
+      return () => window.clearTimeout(t);
+    }
+  }, [actedLast, shownActed]);
+
   return (
     <div className="h-full w-full overflow-hidden flex flex-col fade-up">
       {/* Top bar — counter + dismiss */}
@@ -298,7 +319,9 @@ export const TriageView: React.FC<TriageViewProps> = ({
             </button>
           </>
         )}
-        {actedLast && !isDone && <TriageActionToast acted={actedLast} onUndo={undo} />}
+        {shownActed && !isDone && (
+          <TriageActionToast acted={shownActed} onUndo={undo} leaving={toastLeaving} />
+        )}
 
         {isDone ? (
           <TriageDone onReset={handleReset} onDismiss={onDismiss} />

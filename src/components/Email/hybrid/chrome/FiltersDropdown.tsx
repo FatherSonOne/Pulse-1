@@ -103,7 +103,7 @@ export const FiltersDropdown: React.FC = () => {
         <div
           role="dialog"
           aria-label="Filter emails"
-          className="absolute left-0 top-full mt-1.5 z-30 w-[320px] rounded-xl border pulse-border-color overflow-hidden fade-up"
+          className="absolute left-0 top-full mt-1.5 z-30 w-[320px] rounded-xl border pulse-border-color overflow-hidden hybrid-popover"
           style={{
             background: 'var(--pulse-canvas-soft)',
             boxShadow: '0 22px 60px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30)',

@@ -7,7 +7,7 @@
 // Mounted at EmailHybridClient's view-shell container level so it overlays
 // the active view. Reads readerPanelEmailId + readerPanelMaximized from
 // emailUIStore; Esc / backdrop click / X button → clears the slot.
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Maximize2, Minimize2, UserRound } from 'lucide-react';
 import { useEmailStore } from '../../../store/emailStore';
 import { useEmailUIStore } from '../../../store/emailUIStore';
@@ -28,12 +28,35 @@ export const EmailReaderPanel: React.FC = () => {
   // in maximized; the Contact toggle hides/shows it.
   const [showRelationship, setShowRelationship] = useState(true);
 
-  if (!readerPanelEmailId) return null;
+  // Slide the panel back out the way it slid in (Emil: every entering element
+  // should also exit). When readerPanelEmailId clears — via the X button, the
+  // backdrop, or Esc (handled in EmailHybridClient) — keep the panel mounted
+  // for one exit cycle, play readerPanelOut, then unmount.
+  const [renderId, setRenderId] = useState<string | null>(readerPanelEmailId);
+  const [closing, setClosing] = useState(false);
+  useEffect(() => {
+    if (readerPanelEmailId) {
+      setRenderId(readerPanelEmailId);
+      setClosing(false);
+      return;
+    }
+    if (renderId) {
+      setClosing(true);
+      const t = window.setTimeout(() => {
+        setRenderId(null);
+        setClosing(false);
+      }, 240);
+      return () => window.clearTimeout(t);
+    }
+  }, [readerPanelEmailId, renderId]);
 
-  const email = emails.find((e) => e.id === readerPanelEmailId);
+  if (!renderId) return null;
+
+  const email = emails.find((e) => e.id === renderId);
   if (!email) {
-    // Email was removed from the store (archived/trashed elsewhere). Close.
-    setTimeout(() => setReaderPanelEmailId(null), 0);
+    // Email left the store mid-view (archived/trashed elsewhere) — nothing to
+    // animate an exit for; close immediately.
+    if (readerPanelEmailId) setTimeout(() => setReaderPanelEmailId(null), 0);
     return null;
   }
 
@@ -47,13 +70,13 @@ export const EmailReaderPanel: React.FC = () => {
           covers the entire view-shell and a backdrop is meaningless. */}
       {!maximized && (
         <div
-          className="reader-panel-backdrop"
+          className={`reader-panel-backdrop ${closing ? 'is-closing' : ''}`}
           onClick={onClose}
           aria-hidden="true"
         />
       )}
       <aside
-        className={`reader-panel ${maximized ? 'is-maximized' : ''}`}
+        className={`reader-panel ${maximized ? 'is-maximized' : ''} ${closing ? 'is-closing' : ''}`}
         role="dialog"
         aria-label={`Email from ${row.from}: ${row.subject}`}
       >

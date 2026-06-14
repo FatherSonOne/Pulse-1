@@ -7,10 +7,12 @@ import type { TriageActedLast } from '../../../store/emailUIStore';
 interface TriageActionToastProps {
   acted: TriageActedLast;
   onUndo: () => void;
+  /** When true the toast plays its exit (fade-out) before unmounting. */
+  leaving?: boolean;
 }
 
-export const TriageActionToast: React.FC<TriageActionToastProps> = ({ acted, onUndo }) => (
-  <div className="action-toast" key={acted.idx} role="status" aria-live="polite">
+export const TriageActionToast: React.FC<TriageActionToastProps> = ({ acted, onUndo, leaving = false }) => (
+  <div className={`action-toast${leaving ? ' is-leaving' : ''}`} key={acted.idx} role="status" aria-live="polite">
     <span className="check">
       <Check className="w-3 h-3" />
     </span>

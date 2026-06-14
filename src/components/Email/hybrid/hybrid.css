@@ -56,6 +56,27 @@
 .email-hybrid-shell .fade-up { animation: hybridFadeUp 280ms cubic-bezier(0.16, 1, 0.3, 1); }
 @keyframes hybridPulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.85); } }
 
+/* ─── Trigger-anchored popovers (Folders / Filters / Lanes-help) ───
+   Scale out of the trigger corner instead of sliding in from nowhere, and
+   land inside the 150-250ms popover budget (the 280ms .fade-up is content-
+   panel timing). Left-anchored popovers grow from the top-left; the
+   right-anchored Lanes tip overrides to top-right. */
+@keyframes hybridPopoverIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.email-hybrid-shell .hybrid-popover {
+  transform-origin: top left;
+  animation: hybridPopoverIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.email-hybrid-shell .hybrid-popover.origin-right { transform-origin: top right; }
+
+/* Generic opacity in/out (backdrops + centered modal). A backdrop covers the
+   whole viewport, so it must only fade — never translate. */
+@keyframes hybridBackdropIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hybridBackdropOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes hybridModalIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+
 /* ─── AI provenance chip (reserved for AI-output surfaces only) ─── */
 .email-hybrid-shell .ai-chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px;
@@ -392,8 +413,9 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
   position: absolute; inset: 0; z-index: 35;
   background: rgba(0, 0, 0, 0.62);
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  animation: hybridFadeUp 200ms ease;
+  animation: hybridBackdropIn 200ms ease;
 }
+.email-hybrid-shell .reader-panel-backdrop.is-closing { animation: hybridBackdropOut 200ms ease forwards; }
 html:not(.dark) .email-hybrid-shell .reader-panel-backdrop {
   background: rgba(15, 23, 42, 0.48);
 }
@@ -425,6 +447,17 @@ html.dark .email-hybrid-shell .reader-panel {
 @keyframes readerPanelIn {
   from { transform: translateX(100%); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
+}
+/* Exit mirrors the entrance — the drawer retreats the way it arrived. */
+@keyframes readerPanelOut {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+.email-hybrid-shell .reader-panel.is-closing {
+  animation: readerPanelOut 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.email-hybrid-shell .reader-panel.is-maximized.is-closing {
+  animation: hybridBackdropOut 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 @media (max-width: 767px) {
   .email-hybrid-shell .reader-panel { width: 100%; }
@@ -633,6 +666,10 @@ html.dark .email-hybrid-shell .triage-stage {
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
   font-size: 12px; color: var(--pulse-ink);
   animation: hybridToastIn 120ms ease-out;
+}
+@keyframes hybridToastOut { from { opacity: 1; } to { opacity: 0; } }
+.email-hybrid-shell .action-toast.is-leaving {
+  animation: hybridToastOut 160ms ease-out forwards;
 }
 .email-hybrid-shell .action-toast .check {
   display: inline-flex; align-items: center; justify-content: center;

@@ -97,6 +97,7 @@ export const HybridKeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps>
           background: 'rgba(10, 10, 11, 0.55)',
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
+          animation: 'hybridBackdropIn 160ms ease',
         }}
       />
 
@@ -107,6 +108,7 @@ export const HybridKeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps>
           border: '1px solid var(--pulse-border)',
           borderRadius: 16,
           boxShadow: 'var(--pulse-shadow-md)',
+          animation: 'hybridModalIn 200ms cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
         <div

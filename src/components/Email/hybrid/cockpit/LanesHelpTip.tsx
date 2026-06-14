@@ -40,7 +40,7 @@ export const LanesHelpTip: React.FC = () => {
       {open && (
         <div
           role="dialog"
-          className="absolute right-0 top-full mt-1.5 z-30 w-[340px] rounded-xl border pulse-border-color overflow-hidden fade-up"
+          className="absolute right-0 top-full mt-1.5 z-30 w-[340px] rounded-xl border pulse-border-color overflow-hidden hybrid-popover origin-right"
           style={{
             background: 'var(--pulse-canvas-soft)',
             boxShadow: '0 22px 60px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30)',
