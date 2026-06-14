@@ -81,6 +81,15 @@ export interface FeatureFlags {
   // flag only gates whether the send-side hooks POST. Additive; single-tenant.
   // See docs/LOGOS_VISION_SYNC_BUILD_HANDOFF_2026-06-13.md (P0–P7).
   logosVisionSync: boolean;
+
+  // MapLibre renderer master switch (Path B — fully de-Google'd map). OFF by
+  // default. P0 = flag scaffold only — NO consumer yet (the map still renders
+  // on Google). Later phases branch the renderer/tiles/geocoding on this flag,
+  // keeping the working Google path as the fallback until MapLibre reaches
+  // parity. Note the legal coupling: a non-Google base map may only ship once
+  // the geocoding/directions data layer is also off Google.
+  // See docs/MAP_MAPLIBRE_REBRAND_HANDOFF_2026-06-14.md (P0–P5).
+  mapLibreRenderer: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -136,6 +145,9 @@ const DEFAULT_FEATURES: FeatureFlags = {
 
   // Logos Vision sync OFF by default (dark-launch); P0 = connection + flag scaffold.
   logosVisionSync: false,
+
+  // MapLibre renderer OFF by default (dark-launch); P0 = flag scaffold only, no consumer.
+  mapLibreRenderer: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -329,6 +341,7 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   slackMessagesGrounding: 'Slack in Messages (Beta)',
   slackChannelsGrounding: 'Slack Channels (Beta)',
   logosVisionSync: 'Logos Vision Sync (Beta)',
+  mapLibreRenderer: 'MapLibre Map Renderer (Beta)',
 };
 
 /**

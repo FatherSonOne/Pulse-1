@@ -11,8 +11,9 @@
 // keyboard) without losing the original proposal — Cancel reverts to it.
 //
 // `handleAcceptRoute` is dual-source: it consumes either the fresh
-// proposal's orderedIds or the reorder draft, runs them through Google's
-// DirectionsService for the polyline + arrival-time math, and flips the
+// proposal's orderedIds or the reorder draft, resolves the polyline +
+// arrival-time math through the `maps-route` edge function (server-side
+// Google Directions — no client google.maps dependency), and flips the
 // strip into the Underway state.
 //
 // Re-runs whenever the inputs the proposal depends on change. Skips when a
@@ -30,6 +31,7 @@ import {
   proposeWeekPlan,
 } from '../../../services/mapAIService';
 import { buildMultiStopDirectionsUrl } from '../../../services/mapDirectionsUrl';
+import { getDrivingRoute } from '../../../services/routeService';
 import { DAY_MS, type MapLens } from '../sub/mapLens';
 import type { AcceptedRoute, AiState } from '../sub/aiTypes';
 
@@ -176,10 +178,10 @@ export function useMapAiProposals(input: UseMapAiProposalsInput): UseMapAiPropos
     // arrived stops from the prompt so the AI doesn't re-route to them.
   }, [isLoaded, lens, allStops, userPosition, circles, acceptedRoute, isReordering, visitedStopIds, visibleMarkers]);
 
-  // ─── Route accept — calls the Google Directions JS service for the polyline
-  // and the leg-duration math, then flips the strip into the Underway state.
-  // Accepts from either a fresh ready-route proposal OR a user-reordered draft
-  // (same DirectionsService call, just a different orderedIds source). ─────────
+  // ─── Route accept — fetches the polyline + leg-duration math from the
+  // `maps-route` edge function (server-side Google Directions), then flips the
+  // strip into the Underway state. Accepts from either a fresh ready-route
+  // proposal OR a user-reordered draft (same call, different orderedIds). ──────
   const handleAcceptRoute = useCallback(async () => {
     if (acceptingRoute) return;
     let orderedIds: string[] | null = null;
@@ -206,37 +208,28 @@ export function useMapAiProposals(input: UseMapAiProposalsInput): UseMapAiPropos
       lat: orderedResolved[orderedResolved.length - 1].lat,
       lng: orderedResolved[orderedResolved.length - 1].lng,
     };
-    const waypoints = orderedResolved.slice(0, -1).map(s => ({
-      location: { lat: s.lat, lng: s.lng },
-      stopover: true,
-    }));
+    // Every ordered stop except the final destination becomes a waypoint.
+    // (When the operator's GPS is unknown, origin falls back to the first
+    // stop — which then also appears as the first waypoint, yielding a
+    // zero-length first leg; harmless and identical to the prior behavior.)
+    const waypoints = orderedResolved.slice(0, -1).map(s => ({ lat: s.lat, lng: s.lng }));
 
     setAcceptingRoute(true);
     try {
-      const ds = new google.maps.DirectionsService();
-      const result = await ds.route({
-        origin,
-        destination,
-        waypoints,
-        travelMode: google.maps.TravelMode.DRIVING,
-        optimizeWaypoints: false, // AI already proposed the order
-      });
-      const route = result.routes[0];
-      if (!route) {
+      const route = await getDrivingRoute(origin, destination, waypoints);
+      if (!route || route.path.length === 0) {
+        // No route / edge function failure — leave the strip as-is to retry.
         setAcceptingRoute(false);
         return;
       }
-      const path = route.overview_path.map(p => ({ lat: p.lat(), lng: p.lng() }));
-      const totalSec = route.legs.reduce((acc, leg) => acc + (leg.duration?.value ?? 0), 0);
-      const durationMin = Math.round(totalSec / 60);
       setAcceptedRoute({
         orderedMarkerKeys: orderedResolved.map(s => s.id),
-        path,
-        durationMin,
-        arrivesAt: new Date(Date.now() + totalSec * 1000),
+        path: route.path,
+        durationMin: route.durationMin,
+        arrivesAt: new Date(Date.now() + route.durationSec * 1000),
       });
     } catch {
-      // Directions failed — leave the strip as-is so the user can retry.
+      // Unexpected failure — leave the strip as-is so the user can retry.
     } finally {
       setAcceptingRoute(false);
     }
