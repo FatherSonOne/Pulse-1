@@ -474,15 +474,39 @@ export class GmailService {
   }
 
   /**
+   * Fetch a single message by its Gmail INTERNAL message id — the id returned
+   * by users.history and users.messages.list, NOT the RFC-822 Message-ID
+   * header. Used by the incremental sync path. Returns null if the message no
+   * longer exists (e.g. deleted between the history entry and this fetch).
+   */
+  async getMessageById(id: string): Promise<UnifiedMessage | null> {
+    try {
+      const fullMessage = await this.gmailRequest(`users/me/messages/${id}`, {
+        params: { format: 'full' }
+      });
+      return this.convertToUnifiedMessage(fullMessage);
+    } catch (error) {
+      if ((error as any)?.code !== 'GOOGLE_SESSION_EXPIRED') {
+        console.error(`Error fetching message ${id}:`, error);
+      }
+      return null;
+    }
+  }
+
+  /**
    * Get user's email profile
    */
-  async getProfile(): Promise<{ email: string; messagesTotal: number; threadsTotal: number }> {
+  async getProfile(): Promise<{ email: string; messagesTotal: number; threadsTotal: number; historyId: string | null }> {
     const response = await this.gmailRequest('users/me/profile');
     this.userEmail = response.emailAddress;
     return {
       email: response.emailAddress,
       messagesTotal: response.messagesTotal || 0,
-      threadsTotal: response.threadsTotal || 0
+      threadsTotal: response.threadsTotal || 0,
+      // historyId powers incremental sync (emailSyncService.fullSync). The raw
+      // profile response carries it; surface it so it can be persisted instead
+      // of silently dropped (which left history_id null and incremental dead).
+      historyId: response.historyId || null
     };
   }
 

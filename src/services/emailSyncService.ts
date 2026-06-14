@@ -231,9 +231,13 @@ class EmailSyncService {
             // Fetch full details for changed messages and cache them
             for (const msgId of changedIds) {
               try {
-                const messages = await gmail.getMessages(1, 'INBOX', `rfc822msgid:${msgId}`);
-                if (messages.length > 0) {
-                  await this.cacheEmail(user.id, messages[0]);
+                // Fetch by Gmail internal id directly. The previous
+                // `rfc822msgid:${msgId}` search matched the RFC-822 Message-ID
+                // header — not the internal id — so it returned nothing and
+                // genuinely new mail was never cached on the incremental path.
+                const message = await gmail.getMessageById(msgId);
+                if (message) {
+                  await this.cacheEmail(user.id, message);
                   syncedCount++;
                 }
               } catch {
@@ -324,8 +328,7 @@ class EmailSyncService {
       let historyId: string | null = null;
       try {
         const profile = await gmail.getProfile();
-        // Gmail profile returns historyId as part of response
-        historyId = (profile as any).historyId || null;
+        historyId = profile.historyId || null;
       } catch { /* non-critical */ }
 
       // Update sync state
