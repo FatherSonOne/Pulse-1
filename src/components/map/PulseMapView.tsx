@@ -23,6 +23,7 @@ import { LensEmptyState } from './sub/LensEmptyState';
 import { LiveBroadcastSheet } from './sub/LiveBroadcastSheet';
 import { ContactLocationPickerOverlay } from './sub/ContactLocationPickerOverlay';
 import { useGeoRelevanceSignals, lensIncludesContact } from './hooks/useGeoRelevanceSignals';
+import { useContactCircles } from './hooks/useContactCircles';
 import { useMeetingMarkers } from './hooks/useMeetingMarkers';
 import { useVisitedStops } from './hooks/useVisitedStops';
 import { useUserPosition } from './hooks/useUserPosition';
@@ -72,7 +73,7 @@ type MarkerData = { contact: Contact; locType: 'home' | 'work'; lat: number; lng
 
 const PulseMapView: React.FC<PulseMapViewProps> = ({
   contacts,
-  circles,
+  circles: circlesProp,
   isDarkMode,
   userId,
   onContactAction,
@@ -85,6 +86,11 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   const [showLiveSheet, setShowLiveSheet] = useState(false);
   const { viewMode, changeViewMode } = useMapViewMode();
   const { isLoaded, loadError } = useGoogleMapsLoader();
+
+  // Circle source. App.tsx mounts us with circles={[]}; self-fetch the user's
+  // circles when the prop is empty so the Atlas territories / filter chips /
+  // circle overlays aren't starved. Prop wins when a parent supplies it.
+  const circles = useContactCircles(circlesProp, userId);
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -176,7 +182,10 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
       }
       return markers;
     });
-  }, [localContacts, filter, circles, lens]);
+    // geoSignals drives lensIncludesContact — without it in deps, TODAY/WEEK
+    // membership would not recompute after the async self-fetch resolves real
+    // calendar/message signals (the prior staleness bug).
+  }, [localContacts, filter, circles, lens, geoSignals]);
 
   const srAnnouncement = useSrAnnouncer(lens, visibleMarkers.length, viewMode);
   useFitBounds(mapRef, isLoaded, visibleMarkers, meetingMarkers, userPosition);
@@ -765,10 +774,11 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               setLocalContacts(prev => [...prev]);
             }}
             onPinWhereIAm={() => {
-              if (!userPosition) return;
-              // Open the picker for the first contact without a location,
-              // pre-filling current GPS would need a deeper LocationEditModal
-              // change — Phase 2 polish.
+              // Opens the contact picker → LocationEditModal. Note this does
+              // NOT prefill current GPS (that needs a deeper LocationEditModal
+              // change — tracked as follow-up), so it must not gate on
+              // userPosition: doing so made the button a silent no-op whenever
+              // GPS was off. Honest behaviour is "always opens the picker".
               setShowAddLocationPicker(true);
             }}
             onPickContact={() => setShowAddLocationPicker(true)}

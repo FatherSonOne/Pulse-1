@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React from 'react';
-import { Globe, Home, MapPin, MapPinned, Sparkles, Sun, Upload } from 'lucide-react';
+import { Globe, Home, MapPin, MapPinned, Sparkles, Sun, Users } from 'lucide-react';
 import type { MapLens } from './mapLens';
 
 export interface LensEmptyStateProps {
@@ -77,8 +77,8 @@ export const LensEmptyState: React.FC<LensEmptyStateProps> = ({
                 isDarkMode ? 'border-white/10 text-gray-200 hover:border-rose-500/40 hover:text-rose-300' : 'border-gray-200 text-gray-700 hover:border-rose-500/40 hover:text-rose-600'
               }`}
             >
-              <Upload size={12} />
-              Import addresses from a list
+              <Users size={12} />
+              Pick a contact to place
             </button>
           </div>
         </div>
