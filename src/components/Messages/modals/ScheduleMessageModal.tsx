@@ -19,6 +19,7 @@ interface ScheduleMessageModalProps {
   isOpen: boolean;
   onClose: () => void;
   messageText: string;
+  onMessageTextChange: (text: string) => void;
   scheduleDate: string;
   scheduleTime: string;
   onDateChange: (date: string) => void;
@@ -31,6 +32,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
   isOpen,
   onClose,
   messageText,
+  onMessageTextChange,
   scheduleDate,
   scheduleTime,
   onDateChange,
@@ -81,9 +83,18 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
 
           {/* Content */}
           <div className="p-4 space-y-4">
-            {/* Message Preview */}
-            <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300">
-              {messageText || 'No message to schedule'}
+            {/* Message — typed here (compose-in-modal). The Pulse-DM composer keeps
+                its own text, so scheduling gets its own buffer. */}
+            <div>
+              <label htmlFor="schedule-message-text" className="text-xs text-zinc-500 mb-1 block">Message</label>
+              <textarea
+                id="schedule-message-text"
+                value={messageText}
+                onChange={e => onMessageTextChange(e.target.value)}
+                rows={3}
+                placeholder="Write the message to send later…"
+                className="w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-[rgba(255,255,255,0.055)] dark:border-[rgba(255,255,255,0.10)] dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+              />
             </div>
 
             {/* Date/Time Selection */}

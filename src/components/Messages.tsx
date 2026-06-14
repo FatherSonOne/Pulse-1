@@ -538,6 +538,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   }>>([]);
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
+  /** Compose-in-modal text for Schedule-send. PulseComposer keeps its own text +
+   *  draft, so the schedule flow gets its own buffer rather than the legacy inputText. */
+  const [scheduleText, setScheduleText] = useState('');
 
   // Phase 1: Live Collaboration State
   const [typingCollaborators, setTypingCollaborators] = useState<LiveCollaborator[]>([]);
@@ -2279,30 +2282,43 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
         const history = activeThread.messages.map(m => `${m.sender}: ${m.text}`).join('\n');
 
-        const [catchUp, ctx, health, nudgeRec] = await Promise.all([
-            (activeThread.unread || activeThread.messages.length > 5) ? generateCatchUpSummary(history) : Promise.resolve(null),
-            generateThreadContext(history),
-            analyzeTeamHealth(history),
-            generateNudge(history)
-        ]);
+        try {
+            // Race against a timeout so a stuck ai-router call can't leave
+            // loadingContext pinned true (the awaits had no try/catch/timeout).
+            const [catchUp, ctx, health, nudgeRec] = await Promise.race([
+                Promise.all([
+                    (activeThread.unread || activeThread.messages.length > 5) ? generateCatchUpSummary(history) : Promise.resolve(null),
+                    generateThreadContext(history),
+                    analyzeTeamHealth(history),
+                    generateNudge(history)
+                ]),
+                new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error('Thread context timed out')), 20000)
+                ),
+            ]);
 
-        if (catchUp) setCatchUpSummary(catchUp);
-        if (ctx) setThreadContext(ctx);
-        if (health) setTeamHealth(health);
-        if (nudgeRec) setNudge(nudgeRec);
+            if (catchUp) setCatchUpSummary(catchUp);
+            if (ctx) setThreadContext(ctx);
+            if (health) setTeamHealth(health);
+            if (nudgeRec) setNudge(nudgeRec);
 
-        // Update Outcome Progress if exists
-        if (activeThread.outcome) {
-            const outcomeData = await analyzeOutcomeProgress(history, activeThread.outcome.goal);
-            setThreads(prev => prev.map(t =>
-                t.id === activeThreadId ? {
-                    ...t,
-                    outcome: { ...t.outcome!, ...outcomeData } as any
-                } : t
-            ));
+            // Update Outcome Progress if exists
+            if (activeThread.outcome) {
+                const outcomeData = await analyzeOutcomeProgress(history, activeThread.outcome.goal);
+                setThreads(prev => prev.map(t =>
+                    t.id === activeThreadId ? {
+                        ...t,
+                        outcome: { ...t.outcome!, ...outcomeData } as any
+                    } : t
+                ));
+            }
+        } catch (err) {
+            // Background load — log only (loadingContext isn't rendered, so a toast
+            // here would be noise). The finally guarantees the flag always clears.
+            console.error('[Messages] thread context load failed:', err);
+        } finally {
+            setLoadingContext(false);
         }
-
-        setLoadingContext(false);
     };
 
     fetchContext();
@@ -2797,10 +2813,23 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const handleSmartReply = useCallback(async () => {
     if (isBotChat || !activeThread) return;
     setLoadingAI(true);
-    const history = activeThread.messages.map(m => ({ role: m.sender, text: m.text }));
-    const reply = await generateSmartReply(history);
-    if (reply) setInputText(reply);
-    setLoadingAI(false);
+    try {
+      const history = activeThread.messages.map(m => ({ role: m.sender, text: m.text }));
+      // Race against a timeout so a stuck ai-router call can't leave loadingAI
+      // pinned true forever (the await had no try/catch or timeout before).
+      const reply = await Promise.race([
+        generateSmartReply(history),
+        new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error('Smart reply timed out')), 20000)
+        ),
+      ]);
+      if (reply) setInputText(reply);
+    } catch (err) {
+      console.error('[Messages] smart reply failed:', err);
+      setPulseEditToast('AI unavailable — try again');
+    } finally {
+      setLoadingAI(false);
+    }
   }, [isBotChat, activeThread]);
 
   // --- TTS Handler ---
@@ -3076,7 +3105,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   }, [loadScheduledMessages]);
 
   const handleScheduleMessage = useCallback(async () => {
-    if (!inputText.trim() || !scheduleDate || !scheduleTime) return;
+    if (!scheduleText.trim() || !scheduleDate || !scheduleTime) return;
 
     const scheduledFor = new Date(`${scheduleDate}T${scheduleTime}`);
     if (scheduledFor <= new Date()) {
@@ -3093,9 +3122,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     }
 
     try {
-      await pulseService.scheduleMessage(recipientId, inputText, scheduledFor);
+      await pulseService.scheduleMessage(recipientId, scheduleText, scheduledFor);
       await loadScheduledMessages();
-      setInputText('');
+      setScheduleText('');
       setShowScheduleModal(false);
       setScheduleDate('');
       setScheduleTime('');
@@ -3103,7 +3132,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       console.error('[Messages] schedule failed:', err);
       alert('Failed to schedule message. Please try again.');
     }
-  }, [inputText, scheduleDate, scheduleTime, activePulseConv, loadScheduledMessages]);
+  }, [scheduleText, scheduleDate, scheduleTime, activePulseConv, loadScheduledMessages]);
 
   const handleCancelScheduledMessage = useCallback(async (id: string) => {
     try {
@@ -3185,11 +3214,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const handleDeletePulseConversation = useCallback(async (conversationId: string) => {
     if (!window.confirm('Delete this conversation? This cannot be undone.')) return;
 
+    // Snapshot before the optimistic removal so we can roll back if the DB write
+    // fails — otherwise the conversation vanishes from the UI while the row still
+    // exists, and the user gets no signal until some unrelated refetch resurrects it.
+    const removed = pulseConversations.find(c => c.id === conversationId);
+    const wasActive = activePulseConversation === conversationId;
+
     // Remove from local state immediately
     setPulseConversations(prev => prev.filter(c => c.id !== conversationId));
 
     // Clear active if this was selected
-    if (activePulseConversation === conversationId) {
+    if (wasActive) {
       setActivePulseConversation(null);
       setMobileView('list');
     }
@@ -3199,9 +3234,18 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       await pulseService.deleteConversation(conversationId);
     } catch (error) {
       console.error('Failed to persist conversation delete:', error);
-      // Already removed from UI; no rollback needed
+      // Roll back the optimistic removal and tell the user it didn't stick.
+      if (removed) {
+        setPulseConversations(prev =>
+          prev.some(c => c.id === removed.id) ? prev : [removed, ...prev]
+        );
+      }
+      if (wasActive) {
+        setActivePulseConversation(conversationId);
+      }
+      setPulseEditToast('Could not delete conversation — restored');
     }
-  }, [activePulseConversation]);
+  }, [activePulseConversation, pulseConversations]);
 
   const toggleMuteThread = useCallback((threadId: string) => {
     setMutedThreads(prev =>
@@ -3468,11 +3512,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       // Refresh conversations
       const conversations = await pulseService.getConversations();
       setPulseConversations(conversations);
+      // Success: close the picker and confirm. The forwarded bubble lands in a
+      // thread the user isn't currently viewing, so without this they get no signal.
+      setForwardingMessage(null);
+      setShowForwardModal(false);
+      setPulseEditToast('Message forwarded');
     } catch (error) {
       console.error('Failed to forward message:', error);
+      // Surface the failure instead of closing the modal as if it succeeded.
+      setPulseEditToast('Could not forward message — try again');
     }
-    setForwardingMessage(null);
-    setShowForwardModal(false);
   }, []);
 
   // Use template
@@ -3747,6 +3796,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         showScheduleModal={showScheduleModal}
         setShowScheduleModal={setShowScheduleModal}
         inputText={inputText}
+        scheduleText={scheduleText}
+        setScheduleText={setScheduleText}
         scheduleDate={scheduleDate}
         scheduleTime={scheduleTime}
         setScheduleDate={setScheduleDate}
@@ -3981,6 +4032,18 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     activePulseConv?.last_message_preview ?? undefined
                   }
                 />
+              )}
+              {/* Schedule send — opens the compose-in-modal scheduler. Pulse DMs
+                  only; scheduling needs a real recipient, so Slack shadows are excluded. */}
+              {!isSlackConv && activePulseConv?.other_user?.id && (
+                <button
+                  onClick={() => setShowScheduleModal(true)}
+                  className="w-12 h-12 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                  title="Schedule a message"
+                  aria-label="Schedule a message"
+                >
+                  <Clock className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                </button>
               )}
               {/* Message Settings Button */}
               <button

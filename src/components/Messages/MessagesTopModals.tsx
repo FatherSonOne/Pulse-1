@@ -127,6 +127,8 @@ export interface MessagesTopModalsProps {
   showScheduleModal: boolean;
   setShowScheduleModal: (open: boolean) => void;
   inputText: string;
+  scheduleText: string;
+  setScheduleText: (value: string) => void;
   scheduleDate: string;
   scheduleTime: string;
   setScheduleDate: (value: string) => void;
@@ -460,7 +462,8 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
       <ScheduleMessageModal
         isOpen={props.showScheduleModal}
         onClose={() => props.setShowScheduleModal(false)}
-        messageText={props.inputText}
+        messageText={props.scheduleText}
+        onMessageTextChange={props.setScheduleText}
         scheduleDate={props.scheduleDate}
         scheduleTime={props.scheduleTime}
         onDateChange={props.setScheduleDate}
