@@ -217,10 +217,12 @@ Message scheduling (**Pulse ✓, wired**), history search (**Pulse ✓ basic**),
 ## Phase 5 — Roadmap to Launch-Ready
 
 ### 🚨 Sprint 0 — Launch blockers (positioning/scope, not core code)
+> **RESOLVED 2026-06-14 — both items closed with NO code change** after reading the shipped copy + flags.
+
 | # | Item | Type | Effort | User | Trust |
 |---|---|---|---|---|---|
-| 1 | **Gate the "unified messaging / SMS" claim** to live channels only (real-time DM, + Slack if flag flipped). Do **not** advertise SMS as working. | Positioning | S | 5 | 5 |
-| 2 | **Decide Slack-grounding flag posture for launch** — either flip `slackMessagesGrounding` ON (it's built + previously LIVE-verified) and re-verify, or keep OFF and exclude from launch messaging. | Decision | S | 4 | 4 |
+| 1 | ~~**Gate the "unified messaging / SMS" claim**~~ → **ALREADY HONEST, no change.** No SMS over-claim exists: the Messaging subhead is scoped to *"Pulse channels, threads, and DMs… with Slack as an opt-in connector"* (`LandingPage.tsx:2288`), the FAQ calls Slack an *"opt-in beta"* (`landingData.ts:47`), the "Unified" mock pairs with the **Slack** icon not SMS (`:2320`), and in-app SMS is flag-gated OFF (`inAppSms` default `false`, `App.tsx:248/747`, never advertised). | Positioning | — | 5 | 5 |
+| 2 | ~~Decide Slack-grounding flag posture~~ → **DECIDED: keep status quo (Option A).** `slackMessagesGrounding` stays **default OFF but user-toggleable** in Settings → Integrations (Beta) (`FeatureContext.tsx:141`, category `:304-312`). This *already* matches the landing's "opt-in beta" promise, so no flip + no re-verify needed for launch. (Open follow-up, separate from the claim: confirm the beta actually functions end-to-end when toggled on — a deploy/backend question.) | Decision | — | 4 | 4 |
 
 ### ⚡ Sprint 1 — Core reliability (week 1)
 > Re-prioritized 2026-06-14 after read-only verification (see Verification Addendum). Original #4 (delete-restore) **dropped — verified correct**. All items below are CONFIRMED in code.
@@ -282,6 +284,8 @@ Effort: S (half-day).
 
 ## Phase 6 — Disposition
 
-- **This is an assessment + a read-only verification pass** (2026-06-14, parallel subagents + adversarial recheck). No code changed; the doc was updated to reflect verified findings (Verification Addendum + corrected matrix / failsafe / trust-killers / roadmap).
-- **Recommended next step:** file Sprint 0 (#1–2) and the **corrected** Sprint 1 (now 4 items — forward toast, delete-conversation toast+restore, schedule-send entry point, AI try/finally+timeout) as `launch-roadmap` issues under epic **#98**, then hand them to `/launch-prep` one at a time, or hand the Messages section to `/section-deep-dive` to fix-and-build in place.
+- **Started as an assessment + read-only verification; the verified Sprint 0 + Sprint 1 work was then executed in the same session (2026-06-14).**
+- **Sprint 0 — CLOSED, no code change** (see §Sprint 0): #1 already honest, #2 decided = keep status quo (opt-in beta, default OFF).
+- **Sprint 1 — SHIPPED** (commit `bccbf6f`): forward-failure + delete-conversation feedback/rollback, AI try/finally+timeout, and a reachable Schedule-send entry point (compose-in-modal). tsc-clean (no new type errors); not yet runtime-verified.
+- **Recommended next step:** hand the remaining **Sprint 2/3** items (read-receipt ladder, offline resend, bound `getConversations`, `content_type` CHECK, message export, inline reply-to, reactions-sub churn, dead `BotMessage` cleanup, iOS/Electron smoke) to `/launch-prep` one at a time, and runtime-verify the Sprint 1 flows before relying on them.
 - **The good news worth stating plainly:** the Messages *core* is real and verified — no data-loss blocker, clean schema, robust real-time, and the delete-message rollback + "restored" toast are provably correct. The work left is trust polish and honest scoping, not a rebuild.
