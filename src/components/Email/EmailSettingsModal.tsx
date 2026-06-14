@@ -82,6 +82,14 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
   const [syncState, setSyncState] = useState<SyncState | null>(null);
   const [syncing, setSyncing] = useState(false);
 
+  // Slide-out drawer enter/exit. `shown` drives the transform + opacity; the
+  // panel renders off-screen first, then flips on the next frame to slide in.
+  // On close we slide out, then call onClose AFTER the transition (the parent
+  // mounts us via {showEmailSettings && ...}, so it would otherwise unmount us
+  // instantly and skip the exit animation).
+  const [shown, setShown] = useState(false);
+  const closingRef = React.useRef(false);
+
   useEffect(() => {
     if (!isOpen) return;
     if (activeTab === 'gmail') {
@@ -102,6 +110,26 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
     if (!isOpen) return;
     loadGeneralSettings();
   }, [isOpen]);
+
+  // Drive the enter transition: paint off-screen first (double rAF), then slide in.
+  useEffect(() => {
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setShown(true));
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, []);
+
+  // Slide out, then unmount once the transition finishes.
+  const handleClose = () => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    setShown(false);
+    window.setTimeout(() => onClose(), 300);
+  };
 
   const loadGmailProfile = async () => {
     setLoading(true);
@@ -486,8 +514,11 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-end z-50 animate-fadeIn">
-      <div className="bg-[var(--pulse-surface-modal)] w-full max-w-2xl h-full shadow-2xl flex flex-col animate-drawer-right border-l border-[color:var(--pulse-border)] overflow-hidden">
+    <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-end z-50 transition-opacity duration-300 ${shown ? 'opacity-100' : 'opacity-0'}`}>
+      <div
+        className={`bg-[var(--pulse-surface-modal)] w-full max-w-2xl h-full shadow-2xl flex flex-col border-l border-[color:var(--pulse-border)] overflow-hidden transition-transform duration-300 ${shown ? 'translate-x-0' : 'translate-x-full'}`}
+        style={{ transitionTimingFunction: 'var(--pulse-ease, cubic-bezier(0.16, 1, 0.3, 1))' }}
+      >
         {/* Header — Cockpit-style editorial: meta strip eyebrow + serif headline
             + small user-email caption. No gradient, no logo tile. */}
         <div
@@ -514,7 +545,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
             <p className="text-[12.5px] text-[var(--pulse-ink-2)] truncate">{userEmail}</p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="w-9 h-9 rounded-full hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition shrink-0"
             title="Close"
             aria-label="Close email settings"
@@ -1361,7 +1392,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
         {/* Footer */}
         <div className="px-6 py-4 border-t border-[color:var(--pulse-border)] bg-[var(--pulse-canvas)] flex items-center justify-between">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="px-4 py-2 text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition"
           >
             Close
