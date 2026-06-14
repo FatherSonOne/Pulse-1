@@ -150,7 +150,12 @@ html.dark .email-hybrid-shell .signal-row:hover {
 .email-hybrid-shell .signal-row[data-expanded='true'] .row-actions { opacity: 1; }
 
 /* Keyboard-focused (j/k cursor); subtle so it doesn't fight the expanded state. */
-.email-hybrid-shell .signal-row[data-focused='true']:not([data-expanded='true']) {
+.email-hybrid-shell .signal-row[data-focused='true']:not(:hover):not([data-expanded='true']) {
+  /* j/k cursor focus must be instant — snap the ring, don't fade it. The
+     200ms box-shadow transition above is for mouse hover; :not(:hover) keeps
+     that smooth (hovering also sets data-focused) while the keyboard cursor
+     ring appears immediately. */
+  transition: none;
   box-shadow: 0 0 0 1px var(--pulse-rose-soft), 0 4px 10px rgba(244, 63, 94, 0.05);
 }
 .email-hybrid-shell .signal-row[data-focused='true'] .row-actions { opacity: 1; }
@@ -496,14 +501,18 @@ html.dark .email-hybrid-shell .reader-panel {
 
 /* ─── PHASE 3 marker (mode toggle + triage shell) — additions land here ─── */
 
-/* ─── View shells (cross-fade, no remount) ─── */
+/* ─── View shells (cross-fade, no remount) ───
+   ⌘E toggles Cockpit↔Triage — a keyboard action. Emil: keyboard-initiated
+   view switches should feel instant (Raycast ships zero switch animation).
+   Dropped the translateY slide; a fast opacity-only hand-off keeps the swap
+   from reading as delayed. will-change is scoped to the inactive shell so we
+   don't hold two GPU layers promoted at rest. */
 .email-hybrid-shell .view-shell {
   position: absolute; inset: 0;
-  transition: opacity 280ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
+  transition: opacity 120ms ease;
 }
-.email-hybrid-shell .view-active   { opacity: 1; transform: translateY(0); pointer-events: auto; }
-.email-hybrid-shell .view-inactive { opacity: 0; transform: translateY(6px); pointer-events: none; }
+.email-hybrid-shell .view-active   { opacity: 1; pointer-events: auto; }
+.email-hybrid-shell .view-inactive { opacity: 0; pointer-events: none; will-change: opacity; }
 
 /* ─── Segmented mode toggle (canvas top bar) ─── */
 .email-hybrid-shell .seg-toggle {
@@ -569,12 +578,16 @@ html.dark .email-hybrid-shell .triage-stage {
   transition: width 320ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ─── Stage transition (Triage card swap) ─── */
+/* ─── Stage transition (Triage card swap) ───
+   The focal card swaps on EVERY keyboard advance (E/H/T/⌘↵/←/→) — the most
+   repeated action in the queue. Emil: never animate a keyboard-repeated
+   action. Reduced from a 320ms scale+translate+fade to a sub-perceptual
+   opacity-only flash so the swap reads as instant, never as motion. */
 @keyframes hybridCardIn {
-  from { opacity: 0; transform: scale(0.97) translateY(6px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-.email-hybrid-shell .card-in { animation: hybridCardIn 320ms cubic-bezier(0.16, 1, 0.3, 1); }
+.email-hybrid-shell .card-in { animation: hybridCardIn 90ms ease-out; }
 
 /* ─── Dismiss pill ─── */
 .email-hybrid-shell .dismiss-pill {
@@ -594,9 +607,11 @@ html.dark .email-hybrid-shell .triage-stage {
 }
 
 /* ─── Action toast (Triage feedback banner) ─── */
+/* Enter is opacity-only: the toast re-fires on EVERY Archive/Snooze/Task
+   keypress, so it stays a non-blocking confirmation, never a re-played slide. */
 @keyframes hybridToastIn {
-  from { opacity: 0; transform: translate(-50%, -8px); }
-  to   { opacity: 1; transform: translate(-50%, 0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .email-hybrid-shell .action-toast {
   position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
@@ -606,7 +621,7 @@ html.dark .email-hybrid-shell .triage-stage {
   background: var(--pulse-surface); border: 1px solid var(--pulse-border-strong);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
   font-size: 12px; color: var(--pulse-ink);
-  animation: hybridToastIn 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: hybridToastIn 120ms ease-out;
 }
 .email-hybrid-shell .action-toast .check {
   display: inline-flex; align-items: center; justify-content: center;

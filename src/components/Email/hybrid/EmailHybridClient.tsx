@@ -142,7 +142,7 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
         );
         target?.focus();
       }
-    }, 320); // matches the view-shell cross-fade duration
+    }, 120); // matches the (shortened) view-shell cross-fade duration
     return () => clearTimeout(t);
   }, [mode]);
 
