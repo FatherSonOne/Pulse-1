@@ -487,7 +487,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-      <div className="bg-[var(--pulse-surface)] w-full max-w-2xl max-h-[85vh] rounded-2xl shadow-2xl flex flex-col animate-scaleIn border border-[color:var(--pulse-border)] overflow-hidden">
+      <div className="bg-[var(--pulse-surface-modal)] w-full max-w-2xl max-h-[85vh] rounded-2xl shadow-2xl flex flex-col animate-scaleIn border border-[color:var(--pulse-border)] overflow-hidden">
         {/* Header — Cockpit-style editorial: meta strip eyebrow + serif headline
             + small user-email caption. No gradient, no logo tile. */}
         <div
