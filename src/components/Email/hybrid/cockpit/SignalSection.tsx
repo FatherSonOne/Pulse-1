@@ -115,22 +115,27 @@ export const SignalSection: React.FC<SignalSectionProps> = ({
       </div>
 
       <div className="space-y-2">
-        {signals.map((s) => {
+        {signals.map((s, i) => {
           const idxInQueue = queueIds.indexOf(s.id);
           const cleared = clearedIds.includes(s.id);
           return (
-            <SignalRow
+            <div
               key={s.id}
-              email={s}
-              expanded={expandedId === s.id}
-              focused={focusedId === s.id}
-              onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
-              onFocus={() => setFocusedId(s.id)}
-              onTriage={onTriageOne ? () => onTriageOne(s.id) : undefined}
-              queuePos={idxInQueue >= 0 && !cleared ? idxInQueue + 1 : null}
-              queueTotal={queueIds.length}
-              queueCleared={cleared}
-            />
+              className="fade-up"
+              style={{ animationDelay: `${i * 45}ms`, animationFillMode: 'both' }}
+            >
+              <SignalRow
+                email={s}
+                expanded={expandedId === s.id}
+                focused={focusedId === s.id}
+                onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                onFocus={() => setFocusedId(s.id)}
+                onTriage={onTriageOne ? () => onTriageOne(s.id) : undefined}
+                queuePos={idxInQueue >= 0 && !cleared ? idxInQueue + 1 : null}
+                queueTotal={queueIds.length}
+                queueCleared={cleared}
+              />
+            </div>
           );
         })}
       </div>

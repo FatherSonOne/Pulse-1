@@ -4,7 +4,6 @@
 // clearedIds, triageRemaining) so the briefing CTA and signal-row queue
 // pips reflect the lifted triage state.
 import React from 'react';
-import { Loader2 } from 'lucide-react';
 import { useEmailUIStore } from '../../../store/emailUIStore';
 import { useEmailComposeStore } from '../../../store/emailComposeStore';
 import { BriefingHeader } from './cockpit/BriefingHeader';
@@ -74,9 +73,26 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
       <ActiveFiltersStrip />
 
       {loading && (
-        <div className="px-10 py-20 flex flex-col items-center gap-3 pulse-ink-3-color">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          <div className="text-[12px] font-mono-pulse tracking-wide-mono uppercase">Loading inbox…</div>
+        <div className="px-6 py-6 md:px-10 md:py-7 space-y-2" aria-busy="true" aria-label="Loading inbox">
+          {/* Skeleton in the real signal-row geometry — the briefing header is
+              already painted, so the layout is predictable. A skeleton reads
+              "almost there" and avoids the centered-spinner → list jump. */}
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="border pulse-border-color rounded-[14px] fade-up"
+              style={{ animationDelay: `${i * 45}ms`, animationFillMode: 'both' }}
+            >
+              <div className="flex items-start gap-4 px-4 py-3.5 animate-pulse">
+                <div className="rounded-full pulse-surface-raised shrink-0" style={{ width: 36, height: 36 }} />
+                <div className="flex-1 space-y-2 py-1">
+                  <div className="h-3 w-1/3 rounded pulse-surface-raised" />
+                  <div className="h-4 w-3/4 rounded pulse-surface-raised" />
+                  <div className="h-3 w-2/3 rounded pulse-surface-raised" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -116,12 +132,17 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
                 </div>
               </div>
               <div className="space-y-3">
-                {MOCK_LANES.map((lane) => (
-                  <LaneSection
+                {MOCK_LANES.map((lane, i) => (
+                  <div
                     key={lane.id}
-                    lane={lane}
-                    emails={laneBuckets[lane.id]}
-                  />
+                    className="fade-up"
+                    style={{ animationDelay: `${120 + i * 45}ms`, animationFillMode: 'both' }}
+                  >
+                    <LaneSection
+                      lane={lane}
+                      emails={laneBuckets[lane.id]}
+                    />
+                  </div>
                 ))}
               </div>
             </section>

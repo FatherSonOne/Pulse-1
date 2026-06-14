@@ -720,7 +720,12 @@ html.dark .email-hybrid-shell .triage-stage {
 .email-hybrid-shell .done-halo::after {
   content: ''; position: absolute; inset: 0; border-radius: 50%;
   border: 2px solid var(--pulse-rose);
-  animation: hybridRingPulse 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  /* Celebration fires twice then rests — an infinite loop turns a rare
+     "queue cleared" reward into perpetual ambient motion that fights the
+     editorial register. forwards holds the faded-out end state so the rings
+     vanish, leaving just the check. ease-out loops more evenly than the
+     front-loaded entrance curve. */
+  animation: hybridRingPulse 1.6s ease-out 2 forwards;
 }
-.email-hybrid-shell .done-halo::after { animation-delay: 0.8s; }
+.email-hybrid-shell .done-halo::after { animation-delay: 0.5s; }
 
