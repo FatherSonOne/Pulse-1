@@ -195,3 +195,20 @@ export async function suggestLogosClientUpdates(
     }))
     .filter((s) => s.suggested !== (s.current ?? ''));
 }
+
+// ── P6 · F4 Records Flow Back (read the linked client's case state) ──────────
+
+export interface LogosCaseState {
+  case_status?: string | null;
+  current_stage?: string | null;
+  risk_level?: string | null;
+  engagement_score?: number | null;
+  updated_at?: string | null;
+}
+
+/** Read the linked Logos client's current case/journey state (null if none). */
+export async function getLogosCaseState(logosClientId: string): Promise<LogosCaseState | null> {
+  const res = await fetch(`${BACKEND_URL}/api/logos/case-state?clientId=${encodeURIComponent(logosClientId)}`, { headers: await authHeaders() });
+  const json = await parse(res);
+  return (json.state as LogosCaseState) || null;
+}

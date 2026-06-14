@@ -63,9 +63,11 @@ import {
   getLogosClient,
   updateLogosClientFields,
   suggestLogosClientUpdates,
+  getLogosCaseState,
   type LogosClientLite,
   type LogosContactMapping,
   type LogosFieldSuggestion,
+  type LogosCaseState,
 } from '../../../../services/logosMappingService';
 import { CadenceSpine } from './CadenceSpine';
 import { InteractionTimeline } from './InteractionTimeline';
@@ -167,6 +169,8 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
   const [aiBusy, setAiBusy] = useState(false);
   const [aiErr, setAiErr] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<LogosFieldSuggestion[]>([]);
+  // P6 — Logos case state (records flow back), read-on-demand.
+  const [logosCaseState, setLogosCaseState] = useState<LogosCaseState | null>(null);
 
   const profile = relationshipProfile;
   const score = profile?.relationshipScore;
@@ -265,6 +269,16 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
       .catch(() => { if (!cancelled) setLogosMapping(null); });
     return () => { cancelled = true; };
   }, [features.logosVisionSync, contact.id]);
+
+  // P6 — pull the linked client's Logos case state (records flow back).
+  useEffect(() => {
+    if (!features.logosVisionSync || !logosMapping) { setLogosCaseState(null); return; }
+    let cancelled = false;
+    getLogosCaseState(logosMapping.logos_entity_id)
+      .then((s) => { if (!cancelled) setLogosCaseState(s); })
+      .catch(() => { if (!cancelled) setLogosCaseState(null); });
+    return () => { cancelled = true; };
+  }, [features.logosVisionSync, logosMapping]);
 
   const openLogosPicker = async () => {
     setLogosPickerOpen(true); setLogosErr(null); setLogosBusy(true);
@@ -508,6 +522,18 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
                       {logosBusy ? '…' : 'Unlink'}
                     </button>
                   </div>
+                  {logosCaseState && (logosCaseState.case_status || logosCaseState.current_stage) && (
+                    <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
+                      Logos case:{' '}
+                      <span style={{ color: 'var(--pulse-ink-2)' }}>{logosCaseState.case_status || logosCaseState.current_stage}</span>
+                      {logosCaseState.risk_level ? (
+                        <> · risk <span style={{ color: 'var(--pulse-ink-2)' }}>{logosCaseState.risk_level}</span></>
+                      ) : null}
+                      {typeof logosCaseState.engagement_score === 'number' ? (
+                        <> · engagement <span style={{ color: 'var(--pulse-ink-2)' }}>{logosCaseState.engagement_score}</span></>
+                      ) : null}
+                    </div>
+                  )}
                   {logManualOpen ? (
                     <div>
                       <textarea

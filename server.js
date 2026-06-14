@@ -3722,6 +3722,30 @@ app.post('/api/logos/client-fields', async (req, res) => {
   }
 });
 
+// Read the linked Logos client's case state (P6 / F4 records flow back). Bridge:
+// clients.id -> clients.contact_id -> client_journeys.client_id (= Logos contacts.id).
+app.get('/api/logos/case-state', async (req, res) => {
+  try {
+    await requireUser(req);
+    if (!logosConfigured()) return res.status(503).json({ ok: false, error: 'not_configured' });
+    const clientId = (req.query.clientId || '').toString().trim();
+    if (!clientId) return res.status(400).json({ ok: false, error: 'clientId required' });
+    const logos = logosServiceClient();
+    const { data: client } = await logos.from('clients').select('contact_id').eq('id', clientId).maybeSingle();
+    if (!client || !client.contact_id) return res.json({ ok: true, state: null });
+    const { data: journey } = await logos
+      .from('client_journeys')
+      .select('case_status, current_stage, risk_level, engagement_score, updated_at')
+      .eq('client_id', client.contact_id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return res.json({ ok: true, state: journey || null });
+  } catch (e) {
+    return res.status(e.status || 500).json({ ok: false, error: e.message });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Pulse API Server Running' });
 });
