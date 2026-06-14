@@ -36,6 +36,9 @@ import { useGoogleMapsLoader } from './hooks/useGoogleMapsLoader';
 import { useSrAnnouncer } from './hooks/useSrAnnouncer';
 import { useFitBounds } from './hooks/useFitBounds';
 import { createGoogleMapAdapter } from './provider/googleAdapter';
+import { createMapLibreAdapter } from './provider/maplibreAdapter';
+import { useMapLibreRenderer } from './provider/useMapLibreRenderer';
+import type { Map as MaplibreMap } from 'maplibre-gl';
 import { useMapKeyboardShortcuts } from './hooks/useMapKeyboardShortcuts';
 import { useMarkerOffsets, type OffsetableMarker } from './hooks/useMarkerOffsets';
 import { useMarkerClusters, type ClusterCentroid } from './hooks/useMarkerClusters';
@@ -47,6 +50,12 @@ import SpiderLines from './sub/SpiderLines';
 import { AtlasHalos } from './overlays/AtlasHalos';
 import { AtlasTerritories } from './overlays/AtlasTerritories';
 import { AcceptedRoutePolyline } from './overlays/AcceptedRoutePolyline';
+
+// Lazy so maplibre-gl only loads when the MapLibre renderer flag is ON —
+// keeps it out of the default Google-path bundle entirely. (P1c spike.)
+const MapLibreCanvas = React.lazy(() =>
+  import('./provider/MapLibreCanvas').then(m => ({ default: m.MapLibreCanvas })),
+);
 
 interface PulseMapViewProps {
   contacts: Contact[];
@@ -88,6 +97,8 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   const [showLiveSheet, setShowLiveSheet] = useState(false);
   const { viewMode, changeViewMode } = useMapViewMode();
   const { isLoaded, loadError } = useGoogleMapsLoader();
+  // MapLibre renderer (P1c spike) — flag-gated; default OFF → Google path.
+  const mapLibreOn = useMapLibreRenderer();
 
   // Circle source. App.tsx mounts us with circles={[]}; self-fetch the user's
   // circles when the prop is empty so the Atlas territories / filter chips /
@@ -95,6 +106,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   const circles = useContactCircles(circlesProp, userId);
 
   const mapRef = useRef<google.maps.Map | null>(null);
+  // MapLibre map instance (set on its 'load' event); stays null on the Google path.
+  const mapLibreRef = useRef<MaplibreMap | null>(null);
+  const [mapLibreReady, setMapLibreReady] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedLocType, setSelectedLocType] = useState<'home' | 'work'>('home');
@@ -152,6 +166,15 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
     if (typeof z === 'number') setZoom(z);
   }, []);
 
+  // MapLibre map ready (P1c) — stash the instance and flip ready so useFitBounds
+  // re-runs and frames the camera against the freshly mounted MapLibre map.
+  const handleMapLibreReady = useCallback((map: MaplibreMap) => {
+    mapLibreRef.current = map;
+    const z = map.getZoom();
+    if (typeof z === 'number') setZoom(z);
+    setMapLibreReady(true);
+  }, []);
+
   // Zoom-change handler — gates cluster vs spiderfy vs normal regimes inside
   // useMarkerClusters. The event fires without a payload so we re-read.
   const onZoomChanged = useCallback(() => {
@@ -196,11 +219,16 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 
   const srAnnouncement = useSrAnnouncer(lens, visibleMarkers.length, viewMode);
 
-  // Renderer-agnostic camera adapter (P1a of the MapLibre rebrand). Stable
-  // across the map's load lifecycle — it reads mapRef.current lazily at call
-  // time, so a single instance keeps working once onMapLoad sets the ref.
+  // Renderer-agnostic camera adapters (P1a/P1c). Both are stable — each reads
+  // its own map ref lazily, so a single instance keeps working once the map
+  // loads. The active one is picked by the renderer flag.
   const mapCamera = useMemo(() => createGoogleMapAdapter(() => mapRef.current), []);
-  useFitBounds(mapCamera, isLoaded, visibleMarkers, meetingMarkers, userPosition);
+  const mapLibreCamera = useMemo(() => createMapLibreAdapter(() => mapLibreRef.current), []);
+  const activeCamera = mapLibreOn ? mapLibreCamera : mapCamera;
+  // "Ready" = the ACTIVE renderer's map is mounted: Google → JS API loaded
+  // (mapRef set in onMapLoad); MapLibre → its 'load' fired (mapLibreReady).
+  const cameraReady = mapLibreOn ? mapLibreReady : isLoaded;
+  useFitBounds(activeCamera, cameraReady, visibleMarkers, meetingMarkers, userPosition);
 
   // Stable marker key used by the AI proposal and the accepted-route mapping.
   const markerKey = (contactId: string, locType: 'home' | 'work') => `${contactId}-${locType}`;
@@ -420,7 +448,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
     setShowAddLocationPicker,
   });
 
-  if (loadError) {
+  if (loadError && !mapLibreOn) {
     return (
       <div
         role="alert"
@@ -443,7 +471,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
     );
   }
 
-  if (!isLoaded) {
+  if (!isLoaded && !mapLibreOn) {
     return (
       <div
         role="status"
@@ -596,6 +624,25 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           force a remount. The lens-change fade lives on the AI strip
           + empty-state card instead, where it carries actual signal. */}
       <div className="relative flex-1 overflow-hidden">
+        {mapLibreOn ? (
+          /* P1c spike — bare MapLibre canvas. No markers/overlays yet (P2),
+             no Coral styling yet (P3); proves the renderer + camera adapter. */
+          <React.Suspense fallback={<div className="w-full h-full" />}>
+            <MapLibreCanvas
+              center={userPosition ?? DEFAULT_CENTER}
+              zoom={DEFAULT_ZOOM}
+              className="w-full h-full"
+              onReady={handleMapLibreReady}
+              onZoomChanged={setZoom}
+              onClick={() => {
+                setSelectedContactId(null);
+                setSelectedCircleId(null);
+                setSelectedMeetingId(null);
+                collapseSpiders();
+              }}
+            />
+          </React.Suspense>
+        ) : (
         <GoogleMap
           mapContainerClassName="w-full h-full"
           center={userPosition ?? DEFAULT_CENTER}
@@ -771,6 +818,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 
           {lens === 'atlas' && <AtlasHalos contacts={localContacts} />}
         </GoogleMap>
+        )}
 
         {hasNoLocations && (
           <LensEmptyState

@@ -95,6 +95,16 @@ export default defineConfig(({ mode }) => {
                   return 'office-processors';
                 }
 
+                // MapLibre renderer — heavy (~200KB gz), only reached behind the
+                // mapLibreRenderer flag via the lazy MapLibreCanvas. Keep it OUT
+                // of the always-loaded vendor chunk so the default (Google) map
+                // path doesn't pay for it. NOTE: match only `maplibre-gl` itself,
+                // not its deps — some (e.g. supercluster) are shared with the
+                // Google clustering and must stay in vendor.
+                if (id.includes('/node_modules/maplibre-gl/')) {
+                  return 'maplibre';
+                }
+
                 // Date/time utilities
                 if (id.includes('date-fns') || id.includes('dayjs')) {
                   return 'date-utils';
