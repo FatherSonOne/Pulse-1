@@ -1,0 +1,261 @@
+# Pulse Section Launch Readiness — Messages
+
+**Date:** 2026-06-14
+**Section:** Messages (`src/components/Messages.tsx` + `pulseService` + supporting components)
+**Method:** Forensic capability audit (parallel subagents) + live-schema verification (Supabase MCP) + failsafe inventory + competitive intelligence. **Read-only** — no code was modified. Per `CLAUDE.md`, auditing and executing are separate acts; the Sprint items below are proposals, not approved work.
+
+---
+
+## TL;DR
+
+**Overall score: 84/120 (70%) → LAUNCH WITH CAVEATS.**
+
+The **core real-time DM engine is genuinely launch-ready** — send/receive, robust optimistic-update dedup, reactions, edit, delete, star, forward, real (non-faked) typing indicators, attachments, voice messages, pagination, and conversation CRUD all work end-to-end against a clean, correctly-RLS'd schema. There is **no Sprint-0 data-loss blocker** in the core path, which is a strong result for a 5,915-line surface.
+
+The caveats are about **trust polish and honest scope**, not broken plumbing:
+- **SMS is theatrical on web** (honest banner, but no real send) — so the "unified messaging incl. SMS" pitch cannot ship as a live claim.
+- **No delivery/read-receipt ladder** — only an unread count. This is a table-stakes gap for a 1:1 DM product.
+- **AI assist panels can hang blank** (no timeout on edge-function calls) and a couple of error paths fail silently.
+- **Large dark-launched / dead surface area** — 80+ "MessageEnhancements" components sealed behind `MESSAGES_TOOLS_ENABLED = false`, the entire Slack-into-Messages transport behind an OFF flag, and a `BotMessage` card cluster that is fully orphaned.
+
+Ship the core DM; gate the over-promises; fix the trust gaps within two weeks.
+
+---
+
+## Phase 1 — Forensic Capability Audit
+
+### 1a. Surface topology
+
+| Layer | Files |
+|---|---|
+| **Main surface** | `src/components/Messages.tsx` (5,915 lines — god component), rendered at `src/App.tsx:1452` |
+| **Primary composer** | `src/components/PulseComposer.tsx` — **unconditional** Pulse-DM composer (`Messages.tsx:5081`); the `pulseComposerV2` flag is **vestigial** here (comment `Messages.tsx:5075-5078`) |
+| **Legacy / SMS composer + AI panels** | `src/components/Messages/MessageInputSection.tsx` (787 lines, `Messages.tsx:5826`) → wraps legacy `MessageInput.tsx` (853 lines) + `BundleAI` lazy panels |
+| **Services** | `pulseService.ts` (1,322 lines — DM send/receive/realtime + scheduling), `messageService.ts` (436 lines — **in-app announcements, NOT chat**), `messageChannelService.ts` (workspace channels) |
+| **Supporting (LIVE)** | TriageBrief, ConversationSidebar, RelationshipRail, ConversationSpine, FilterBar, SnoozeMenu/RemindersInbox, FocusMode, MessageContextMenu, MoodBadge, LinkPreviewCard, TypingIndicator |
+| **Tables (Pulse DM)** | `pulse_messages`, `pulse_conversations`, `user_profiles`, `pulse_message_reactions`, `pulse_starred_messages`, `pulse_scheduled_messages` |
+
+### 1b/1c. Capability matrix — **reachable shipping surface**
+
+> Status key: ✅ REAL · ⚠️ FRAGILE · 🔌 DISCONNECTED · 🎭 THEATRICAL · 💀 DEAD. Slack-transport rows are real *code* but **gated OFF** — see §1f.
+
+| # | Capability | UI / Handler (file:line) | Service / Edge Fn → Table | Status | Notes |
+|---|---|---|---|---|---|
+| 1 | Send Pulse DM | `sendPulseMessage` (Messages.tsx:1413) / PulseComposer `onSend` (5082) | `pulseService.sendMessage` → RPC `send_pulse_message` → `pulse_messages` | ✅ REAL | Optimistic add; on error removes bubble + **restores text to composer** + toast (≈1516-1522) |
+| 2 | Receive in real time | `subscribeToMessages` (1081) | Supabase `postgres_changes` INSERT, RLS-filtered | ✅ REAL | **Dedup is robust** — reconcile-by-(sender+content), single-flag, exact-id short-circuit (1088-1112). The old "disappearing message" race is fixed |
+| 3 | Typing indicator (send/receive) | `broadcastPulseTyping` (1183) / `subscribeToTyping` (1171) | Supabase Realtime broadcast (no persistence) | ✅ REAL | **No `Math.random` fakery** — real channel push; 3s auto-clear |
+| 4 | Mark read / unread count | effect on conversation open (≈1372) | RPC `mark_messages_read` → `pulse_messages.is_read` | ✅ REAL | Silent on RPC failure (no UI cost) |
+| 5 | Reactions (toggle / picker) | `handlePulseReaction` (1602), `FullEmojiPicker` (5042) | `pulseService.toggleReaction` → `pulse_message_reactions` | ✅ REAL | Optimistic; reloads from server on error |
+| 6 | Edit message | `saveEditPulseMessage` (≈3284) | `pulseService.editMessage` → `.update()` | ✅ REAL | Clears reactions optimistically (locked design); reloads thread on error |
+| 7 | Delete message (soft) | `handlePulseV2Action('delete')` (≈3407), `window.confirm` | `pulseService.deleteMessage` (`is_deleted=true`) | ⚠️ FRAGILE | Error toast says "restored" — **verify the local list is actually restored vs. only the DB soft-delete persisting** (conflicting reads; §Sprint 1) |
+| 8 | Forward message | ForwardMessageModal (≈3374) | `pulseService.forwardMessage` → new `pulse_messages` row | ⚠️ FRAGILE | Forward failure is **logged, not surfaced** — user thinks it sent |
+| 9 | Star / save | `toggleStarPulseMessage` (≈1644) | `pulseService.toggleStar` → `pulse_starred_messages` | ✅ REAL | Optimistic; reloads on error |
+| 10 | Schedule send | `handleScheduleMessage` (3078) → ScheduleMessageModal via MessagesTopModals (469) | `pulseService.scheduleMessage` → `pulse_scheduled_messages` (+ server cron) | ✅ REAL¹ | ¹**End-to-end wired** (earlier audit miscalled this disconnected). **Verify the open-trigger is surfaced in the PulseComposer path** — `setShowScheduleModal` is passed to `MessageInputSection` (5885), the legacy composer |
+| 11 | Attachments (image/video/file) | MessageInputSection attach menu (≈540-630) | `pulseService.uploadAttachment` → Storage `pulse-attachments` → `pulse_messages.media_url` | ✅ REAL | Upload failure blocks send (correct) |
+| 12 | Voice message | MessageInputSection recorder | MediaRecorder → `sendMessageWithAttachment` → `pulse_messages` | ✅ REAL | Recorder cleaned up on unmount |
+| 13 | Copy / Mention / Share / Create-Task / Propose-Decision (context menu) | MessageContextMenu → `handlePulseV2Action` (≈3355-3402) | Clipboard / setInputText / `taskService` / `decisionService` | ✅ REAL | Create-task no-ops silently if no workspace |
+| 14 | Conversation CRUD (open/create, archive, mute, delete) | `getOrCreateConversation` (1328) etc. | RPC `get_or_create_conversation` + `.update()` → `pulse_conversations` | ⚠️ FRAGILE | Get/create + soft-delete-restore are REAL; **delete-conversation failure is silent** (`console.error`, no toast, 3199) |
+| 15 | Search Pulse users (new convo) | debounced effect (1200) | `pulseService.searchUsers` → RPC `search_users` → `user_profiles` | ✅ REAL | Empty on error |
+| 16 | Search within thread | client filter (`filteredMessages`, 2249) | local `.includes()` | ✅ REAL | Substring only; no fuzzy/AI search |
+| 17 | Pagination (older messages) | `loadMoreMessages` (≈1356) | `pulseService.getMessagesPaginated` | ✅ REAL | Cursor + loading guard; virtualized list (`useVirtualList`) |
+| 18 | Empty state | `renderEmptyChatArea` → TriageBrief (3701, 5104) | derived from real conversations | ✅ REAL | Real triage brief, not a blank screen |
+| 19 | Focus mode digest | (≈2347) | computed from real `last_message_at` deltas | ✅ REAL | Previously a hardcoded fake string; now a real digest |
+| 20 | Drafts | PulseComposer / MessageInput | `localStorage` `pulse_msg_draft_v1:` | ✅ REAL | Survives refresh; **not** synced across devices |
+| 21 | SMS send (non-Pulse contact) | `handleSendSms` (2239) | native: `openSmsApp` (real) · web: honest banner (2246) | 🎭 THEATRICAL | Web has **no real send** by design (W7 deferred — comment 2234-2238); native hands off to device SMS app |
+| 22 | AI Coach / Mediator / Voice Extractor | MessageInputSection BundleAI panels | `geminiService.*` (server-routed) | ⚠️ FRAGILE | Error-boundaried (no crash) but **no timeout** → blank hanging panel on slow/failed edge fn |
+| 23 | Smart Compose / slash-command templates | PulseComposer (`STUB_TEMPLATES`) | stub (hardcoded list) | 🔌 DISCONNECTED | UI present, returns hardcoded suggestions; no real backend |
+| 24 | Voice-to-text (dictation) | `VoiceTextButton` | stub handler | 🎭 THEATRICAL | Button present, dictation not wired |
+
+**Synthesized counts (reachable surface):** ~17 REAL · 5 FRAGILE · 2 DISCONNECTED · 2 THEATRICAL. Plus a **gated-OFF** Slack transport (built & previously LIVE-verified) and a **dead** `BotMessage` cluster (see below).
+
+### 1d. Data integrity (verified against live `pulse-chat` / `ucaeuszgoihoyrvhewxk` via Supabase MCP)
+
+All six Pulse-DM tables: **RLS ON, participant-scoped, no wide-open `true` policies, 0 security-advisor lints.** FKs and constraints confirmed via `pg_constraint`:
+
+- `pulse_messages.sender_id / recipient_id` → `auth.users(id) ON DELETE CASCADE`; `CHECK no_self_message`.
+- `pulse_conversations.user1_id / user2_id` → `auth.users(id) ON DELETE CASCADE`; `CHECK different_users`; **unique-pair index** `idx_pulse_conversations_unique_pair` on `(LEAST,GREATEST)` (symmetric, dup-proof). No INSERT policy by design — writes go only through the `get_or_create_conversation` SECURITY DEFINER RPC (race-safe, same LEAST/GREATEST keying).
+- All RPCs are SECURITY DEFINER with `search_path` pinned and caller-guarded. Signatures match the TS call sites exactly.
+- **Memory claim that all 4 participant cols FK→`auth.users` + CHECKs + unique-pair index — CONFIRMED verbatim.**
+
+**Risks found (none CRITICAL):**
+| Severity | Risk |
+|---|---|
+| IMPORTANT | `pulse_messages.content_type` has **no CHECK constraint** — TS narrows to `text\|image\|voice\|file` but DB/RPC accept any string. Unenforced invariant; low blast radius (first-party sends). |
+| MINOR | `pulse_messages.thread_id` has **no FK** to `pulse_conversations(id)` — orphan messages are schema-permitted (safe today: always set from the RPC). |
+| MINOR | TS↔schema: `PulseMessage.sender/recipient` typed as present `UserProfile` but assigned `|| null`. On a Slack-shadow `auth.users` row there's no `user_profiles` entry → `msg.sender!.x` would NPE. **Mitigated by Slack flag being OFF.** |
+| MINOR | TS `UserProfile` over-strict / omits DB-only cols (`role`, `status`, `online_status`, …); harmless because reads use `select('*')`. |
+
+### 1e. Failsafe inventory
+
+| Scenario | Handling | Grade |
+|---|---|---|
+| Network disconnect mid-send | Optimistic rollback + text restored to composer + toast (1516-1522). **No retry/queue.** | B |
+| Send / Supabase insert failure | Graceful rollback both Pulse + Slack paths | A |
+| Empty / invalid submit | Guarded (`!content.trim()` 1414) | A |
+| Empty state (no convos) | TriageBrief surface | A |
+| Empty thread | No bubbles + composer; no "start" hint | B |
+| Real-time dedup race | **Fixed** (1088-1112, reconcile-by-content) | A |
+| Subscription cleanup | All 4 channels unsubscribed in effect returns (1123/1141/1159/1176) | A |
+| Large message thread | Virtualized + paginated | A |
+| Large conversation list | `getConversations` has **no server-side limit** — loads all | B |
+| Mobile / Capacitor keyboard | Safe-area padding (`messages.css:648`), MobileDrawer, responsive collapse <768px | A |
+| Desktop / Electron | No Electron-specific code; **untested** | B |
+| Token expiry mid-work | Relies on Supabase auto-refresh; 401 caught by send error path | B |
+| **AI edge-fn failure / timeout** | `generateSmartReply`/`generateCatchUpSummary` awaited **without try/catch** (≈2283, 2801); panels boundaried but can hang blank | **C** |
+| Delete message | `window.confirm` + toast; restore semantics ambiguous | B |
+| **Delete conversation** | `window.confirm` then **silent `console.error`** on failure (3199) | **C** |
+
+### 1f. Dead / flagged inventory (built but not reachable today)
+
+| Item | State | Why |
+|---|---|---|
+| **Tools menu + 80+ MessageEnhancements bundle components** (MessageScheduling-UI, MessageEncryption, MessagePinning, MessageVersioning, MessageThreading, MessageBookmarks, MessageStatusTimeline, CollaborativeAnnotations, AnalyticsDashboard, …) | **SEALED** | `MESSAGES_TOOLS_ENABLED = false` (Messages.tsx:425) removes the entry button + nulls `setActiveToolOverlay`. Unreachable even if the per-feature flags flip. |
+| **Slack-into-Messages 1:1 transport** (`sendSlackUserMessage`, graduation prompt) | **DARK-LAUNCHED** | `slackMessagesGrounding` default OFF (gate Messages.tsx:880). Code is real and was LIVE-verified previously, but no user reaches it. |
+| **Slack Channels grounding** | **DARK-LAUNCHED** | `slackChannelsGrounding` OFF; separate nav view, not in Messages surface. |
+| **`pulseComposerV2` / `toolsMenuV2` flags** | **VESTIGIAL / OFF** | PulseComposer now renders unconditionally regardless of `pulseComposerV2`; `toolsMenuV2` gates a placeholder. |
+| **`BotMessage` + `ActionItemsCard` + `MeetingBriefingCard` + `MeetingRecapCard`** | **DEAD CODE** | `BotMessage` is never imported by Messages.tsx; the cards are imported only by `BotMessage`. Fully orphaned. |
+| Classic composer AI (`voiceInput`/`aiComposer`/`toneAnalysis`) | RETIRED | Only gate the legacy `MessageInput`, off the Pulse-DM path. |
+
+---
+
+## Phase 2 — User Trust Assessment
+
+### 2a. The "real user" test
+- **Solo founder consolidating tabs:** Can DM another Pulse user, send/edit/react/forward, attach files, leave a voice note, and come back to a persistent thread — **yes, this works and feels trustworthy.** They will be confused that texting a phone-only contact silently can't send from the web (honest banner helps), and that there's no "delivered/read" confirmation.
+- **Small-team lead evaluating Pulse Team:** Real-time DM works; but no read receipts, no message export, and the "unified inbox" promise is only half-real (Slack dark-launched, SMS mocked). They'll perceive it as a capable 1:1 messenger, not yet the Front/Missive replacement the marketing implies.
+
+### 2b. Trust killers (ranked)
+1. **AI assist panel hangs with no feedback** (no timeout, §1e) — looks broken.
+2. **Forward & delete-conversation fail silently** — user believes an action succeeded when it didn't.
+3. **No delivery/read indicator** — users can't tell if a message landed (universal messaging reflex).
+4. **SMS web banner** — honest, but still a dead end where a capability appears to exist.
+5. **Misleading "restored" delete toast** — verify it matches reality.
+
+### 2c. Stickiness
+| Factor | Rating |
+|---|---|
+| Data in (search users, quick start convo) | **Present** |
+| Data out (export / reports) | **Missing** — no message export found |
+| Faster than the tab pile | **Partial** — for Pulse-to-Pulse only |
+| AI saves time (summary/actions) | **Partial** — real but fragile; not surfaced as headline |
+| Voice-first DM | **Present** (real differentiator vs Front/Missive) |
+| Cross-section context (tasks/decisions/CRM from a message) | **Present** (real moat) |
+| History / recall | **Present** (persistent, paginated) |
+| Collaboration (mentions, shared views) | **Partial / Missing** |
+
+---
+
+## Phase 3 — Competitive Intelligence
+
+Incumbents: Slack, Microsoft Teams, Front, Missive, Spike/Shortwave, OpenPhone (SMS); WhatsApp/Telegram as the consumer baseline.
+
+### Table-stakes (a DM product missing these reads as broken)
+1. Instant delivery + **store-and-forward / resend on reconnect** — **Pulse gap:** no offline send queue; failed sends restore text but don't auto-retry.
+2. **Receipt ladder: sent → delivered → read** — **Pulse gap:** only an unread count.
+3. Typing indicator — **Pulse ✓ (real).**
+4. Voice notes — **Pulse ✓ (a strength).**
+5. Emoji reactions — **Pulse ✓.**
+6. Reply/quote to a specific message — **Pulse partial** (forward yes; verify inline reply-to).
+7. Edit + delete-for-everyone — **Pulse ✓** (and a wedge: SMS can't, email-based rivals don't).
+
+### Expected (missing = feels incomplete)
+Message scheduling (**Pulse ✓, wired**), history search (**Pulse ✓ basic**), inline attachment preview (**✓**), presence/status (**partial — static "Online"**), reliable @mentions (**partial**), **message export (Pulse ✗)**, mobile-at-desktop-parity (**Android ✓, iOS untested**), AI summary/compose (**Pulse ✓ but fragile**).
+
+### Delighters / where Pulse can win (if real)
+1. **Genuinely unified DM + SMS + Slack** in a consumer-grade surface — clear white space (Front/Missive unify *support* channels; Slack/Teams stay in-walls) — **but only if SMS becomes real.**
+2. **AI summary/actions included server-side, no add-on SKU / no BYO-key** — undercuts the category's "AI tax" (Teams Copilot paid, Front $20/seat add-on, Missive BYO-key).
+3. **Edit + unsend on an owned transport** — impossible for SMS, absent in email rivals.
+4. **Voice-in-DM** — Front/Missive have none; Teams mobile-only.
+5. **AI-grounded search** — search is the single most universal complaint across Slack/Teams/Front/Missive; Shortwave's AI search is the lone praised one.
+
+### Moats claimed-but-not-real (trust risk)
+- "Unified messaging incl. SMS" — **SMS is mocked.** Shipping this claim contradicts the very reliability signals (never-lose-a-message, delivery confirmation) users trust. **Gate the claim to live channels only.**
+
+---
+
+## Phase 4 — Launch Readiness Scorecard
+
+| Dimension | Score | Evidence |
+|---|---|---|
+| Core Functionality | 9/10 | DM send/receive/edit/delete/react/forward/voice/attach/schedule all REAL & verified |
+| Data Reliability | 9/10 | Clean RLS schema, robust dedup, optimistic rollback; minor unconstrained `content_type` |
+| Error Resilience | 6/10 | Send path A; **AI calls (C), delete-conversation (C), no offline resend** |
+| User Confidence | 6/10 | Core trustworthy; no receipt ladder, hanging AI panels, silent failures |
+| Completeness | 7/10 | Shipping core complete; huge sealed/dark/dead surface area behind it |
+| Performance | 7/10 | Virtualized + paginated; `getConversations` unbounded; reactions sub re-subscribes per message |
+| Competitive Parity | 6/10 | Missing read receipts + offline resend + export; matches most else |
+| Platform Parity | 7/10 | Web + Android solid; iOS/Electron untested |
+| Theme Parity | 8/10 | Canonical `--pulse-*`; no coral misuse; some consistent hardcoded grays |
+| Onboarding | 6/10 | Good empty state; no first-run teaching for Messages |
+| Polish | 7/10 | Path-D bubbles/rail/spine/context-menu GA; dragged by fragile AI + dead-code clutter |
+| Stickiness | 6/10 | Real voice + cross-section moats; missing export, unified SMS, great search |
+| **Total** | **84/120 (70%)** | **LAUNCH WITH CAVEATS** |
+
+---
+
+## Phase 5 — Roadmap to Launch-Ready
+
+### 🚨 Sprint 0 — Launch blockers (positioning/scope, not core code)
+| # | Item | Type | Effort | User | Trust |
+|---|---|---|---|---|---|
+| 1 | **Gate the "unified messaging / SMS" claim** to live channels only (real-time DM, + Slack if flag flipped). Do **not** advertise SMS as working. | Positioning | S | 5 | 5 |
+| 2 | **Decide Slack-grounding flag posture for launch** — either flip `slackMessagesGrounding` ON (it's built + previously LIVE-verified) and re-verify, or keep OFF and exclude from launch messaging. | Decision | S | 4 | 4 |
+
+### ⚡ Sprint 1 — Core reliability (week 1)
+| # | Item | Type | Effort | User | Trust |
+|---|---|---|---|---|---|
+| 1 | Wrap AI edge-fn calls (`generateSmartReply` ~2801, `generateCatchUpSummary` ~2283) in try/catch + **timeout with a fallback** ("AI unavailable, try again"). | Bug | S | 4 | 5 |
+| 2 | Surface **delete-conversation failure** (toast instead of silent `console.error`, Messages.tsx:3199). | Bug | S | 3 | 5 |
+| 3 | Surface **forward-message failure** (currently logged only). | Bug | S | 3 | 4 |
+| 4 | **Verify delete-message restore semantics** vs the "restored" toast (3428) — reconcile local list with the soft-delete. | Bug | S | 3 | 4 |
+| 5 | **Verify scheduled-send open-trigger is reachable from the PulseComposer path** (handler & service are wired; the open button lives in `MessageInputSection`). | Gap | S | 3 | 3 |
+
+### 🔧 Sprint 2 — Completeness (week 2)
+| # | Item | Type | Effort | User | Trust |
+|---|---|---|---|---|---|
+| 1 | **Delivery/read-receipt ladder** (sent → delivered → read). Schema already tracks `is_read`/`read_at`; surface it. | Feature | M | 5 | 5 |
+| 2 | **Offline send queue + auto-resend on reconnect** (table-stakes; today only restores text). | Feature | M | 4 | 5 |
+| 3 | Bound `getConversations` (server-side limit + lazy load) before any power user hits 1000+ threads. | Perf | S | 2 | 3 |
+| 4 | Add `CHECK` constraint on `pulse_messages.content_type`. | Hardening | S | 1 | 2 |
+
+### ✨ Sprint 3 — Polish & parity (week 3)
+| # | Item | Type | Effort | User | Trust |
+|---|---|---|---|---|---|
+| 1 | **Message export** (per-conversation JSON/CSV) — portability/trust + matches Missive. | Feature | M | 3 | 4 |
+| 2 | Inline **reply-to-specific-message** (quote) if not already present. | Feature | M | 3 | 3 |
+| 3 | Fix reactions subscription churn (depends on `pulseMessages`, re-subscribes per message — 1162). | Perf | S | 2 | 2 |
+| 4 | **Remove dead `BotMessage` cluster** (4 files) — present full pros/cons per `CLAUDE.md` Rule A before deleting. | Cleanup | S | 1 | 2 |
+| 5 | iOS + Electron smoke test of the Messages path. | QA | M | 2 | 3 |
+
+### 🚀 Sprint 4 — Differentiation (post-launch)
+| # | Item | Type | Effort |
+|---|---|---|---|
+| 1 | **Real cross-channel unification** — make SMS real (Twilio integration + server send endpoint, the W7 deferral) so the "unified" claim becomes true. | Feature | XL |
+| 2 | **AI-grounded message search** (the category's universal sore spot). | Feature | L |
+| 3 | Surface **AI thread summary + action items** as a headline, server-side, no add-on — directly counter the "AI tax." | Feature | M |
+| 4 | Surface **voice-in-DM** as a first-class differentiator vs Front/Missive. | Feature | M |
+
+### Implementation handoff — Sprint 1 #1 (highest trust impact)
+```
+## Item: AI assist panels hang with no feedback
+Problem: generateSmartReply / generateCatchUpSummary are awaited without try/catch
+         or timeout; on slow/failed edge fn the panel stays blank forever.
+Location: src/components/Messages.tsx ~2283 (generateCatchUpSummary), ~2801
+          (generateSmartReply); panels rendered in MessageInputSection.tsx.
+Fix: wrap each call in try/catch; race against a Promise timeout (~12s); on
+     reject/timeout set an inline error state ("AI unavailable — tap to retry")
+     instead of leaving the loading skeleton. Keep the existing
+     MessageEnhancementErrorBoundary as the crash backstop.
+Verify: temporarily point the edge fn at a 503 / add an artificial delay; confirm
+        the panel shows the error+retry, never an infinite skeleton. Build: npx tsc --noEmit (gate on no NEW errors).
+Dependencies: none.
+Effort: S (half-day).
+```
+
+---
+
+## Phase 6 — Disposition
+
+- **This is an assessment.** No issues filed, no roadmap edits, no code changed (per `CLAUDE.md` — execution is a separate, explicitly-approved act).
+- **Recommended next step:** file Sprint 0 (#1–2) and Sprint 1 (#1–5) as `launch-roadmap` issues under epic **#98**, then hand them to `/launch-prep` one at a time, or hand the Messages section to `/section-deep-dive` to fix-and-build in place.
+- **The good news worth stating plainly:** the Messages *core* is real and verified — no data-loss blocker, clean schema, robust real-time. The work left is trust polish and honest scoping, not a rebuild.
