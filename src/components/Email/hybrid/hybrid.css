@@ -153,14 +153,18 @@ html.dark .email-hybrid-shell .tone-hot  { color: #fbbf24; }
               box-shadow 200ms ease;
   box-shadow: 0 0 0 0 transparent;
 }
-.email-hybrid-shell .signal-row:hover {
-  background: var(--pulse-surface-raised);
-  border-color: var(--pulse-border-strong);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--pulse-border-strong);
-  transform: translateY(-1px);
-}
-html.dark .email-hybrid-shell .signal-row:hover {
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.08);
+/* Hover lift gated to true hover pointers — on touch, a tap fires :hover and
+   the lift + box-shadow halo latches after the tap, reading as stuck. */
+@media (hover: hover) and (pointer: fine) {
+  .email-hybrid-shell .signal-row:hover {
+    background: var(--pulse-surface-raised);
+    border-color: var(--pulse-border-strong);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--pulse-border-strong);
+    transform: translateY(-1px);
+  }
+  html.dark .email-hybrid-shell .signal-row:hover {
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
 }
 .email-hybrid-shell .signal-row .row-actions { opacity: 0; transition: opacity 200ms ease; }
 .email-hybrid-shell .signal-row:hover .row-actions { opacity: 1; }
@@ -352,9 +356,11 @@ html.dark .email-hybrid-shell .queue-pip.cleared { color: #34d399; }
   border: 1px solid var(--pulse-border);
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
-.email-hybrid-shell .draft-card:hover { transform: translateY(-1px); }
-html:not(.dark) .email-hybrid-shell .draft-card:hover {
-  box-shadow: 0 8px 24px rgba(244, 63, 94, 0.10);
+@media (hover: hover) and (pointer: fine) {
+  .email-hybrid-shell .draft-card:hover { transform: translateY(-1px); }
+  html:not(.dark) .email-hybrid-shell .draft-card:hover {
+    box-shadow: 0 8px 24px rgba(244, 63, 94, 0.10);
+  }
 }
 
 /* ─── Triage CTA (promoted button on Cockpit briefing top) ─── */
@@ -366,9 +372,11 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
   box-shadow: 0 8px 24px var(--pulse-rose-glow), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
-.email-hybrid-shell .triage-cta:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 28px var(--pulse-rose-glow), inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+@media (hover: hover) and (pointer: fine) {
+  .email-hybrid-shell .triage-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px var(--pulse-rose-glow), inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+  }
 }
 .email-hybrid-shell .triage-cta:active {
   transform: translateY(0) scale(0.97);
@@ -388,9 +396,11 @@ html:not(.dark) .email-hybrid-shell .draft-card:hover {
   box-shadow: 0 14px 36px var(--pulse-rose-glow), 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
-.email-hybrid-shell .fab-compose:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 44px var(--pulse-rose-glow), 0 6px 18px rgba(0, 0, 0, 0.20);
+@media (hover: hover) and (pointer: fine) {
+  .email-hybrid-shell .fab-compose:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 44px var(--pulse-rose-glow), 0 6px 18px rgba(0, 0, 0, 0.20);
+  }
 }
 .email-hybrid-shell .fab-compose:active {
   transform: translateY(0) scale(0.97);
@@ -533,11 +543,20 @@ html.dark .email-hybrid-shell .reader-panel {
 
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
+  /* Reduced motion = fewer + gentler, not zero. Kill looping + entrance
+     keyframe animations and transform-based motion (lifts, slides, scale),
+     but keep the opacity / color / background transitions that aid
+     comprehension (hover feedback, the view cross-fade, row-action reveals). */
   .email-hybrid-shell *,
   .email-hybrid-shell *::before,
   .email-hybrid-shell *::after {
     animation: none !important;
-    transition: none !important;
+  }
+  .email-hybrid-shell .signal-row:hover,
+  .email-hybrid-shell .draft-card:hover,
+  .email-hybrid-shell .fab-compose:hover,
+  .email-hybrid-shell .triage-cta:hover {
+    transform: none !important;
   }
 }
 
