@@ -3645,6 +3645,83 @@ app.post('/api/logos/case-log', async (req, res) => {
   }
 });
 
+// ── Logos Vision sync — AI field population (P5 / F3) ────────────────────────
+const LOGOS_CLIENT_EDITABLE = ['contact_person', 'email', 'phone', 'location', 'address', 'website', 'notes', 'employer', 'communication_notes', 'donor_stage', 'preferred_contact_method'];
+
+// Fetch a Logos client's current editable fields (so the UI/AI can compare).
+app.get('/api/logos/client', async (req, res) => {
+  try {
+    await requireUser(req);
+    if (!logosConfigured()) return res.status(503).json({ ok: false, error: 'not_configured' });
+    const id = (req.query.id || '').toString().trim();
+    if (!id) return res.status(400).json({ ok: false, error: 'id required' });
+    const { data, error } = await logosServiceClient()
+      .from('clients')
+      .select('id, name, contact_person, email, phone, location, address, website, notes, employer, communication_notes, donor_stage, preferred_contact_method')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) return res.status(500).json({ ok: false, error: error.message });
+    if (!data) return res.status(404).json({ ok: false, error: 'not_found' });
+    return res.json({ ok: true, client: data });
+  } catch (e) {
+    return res.status(e.status || 500).json({ ok: false, error: e.message });
+  }
+});
+
+// Apply accepted AI field suggestions to a Logos client. Column whitelist; only
+// clients mapped to a contact may be written; skips empties; echoes org_id; ledger.
+app.post('/api/logos/client-fields', async (req, res) => {
+  let user;
+  try { user = await requireUser(req); }
+  catch (e) { return res.status(e.status || 500).json({ ok: false, error: e.message }); }
+  if (!logosConfigured()) return res.status(503).json({ ok: false, error: 'not_configured' });
+  const { logosClientId, fields } = req.body || {};
+  if (!logosClientId || !fields || typeof fields !== 'object') {
+    return res.status(400).json({ ok: false, error: 'logosClientId and fields are required' });
+  }
+  const pulse = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  try {
+    // Guard: only update clients that are actually mapped to a Pulse contact.
+    const { data: mapped } = await pulse
+      .from('logos_pulse_mappings')
+      .select('id')
+      .eq('logos_entity_type', 'client')
+      .eq('logos_entity_id', logosClientId)
+      .limit(1)
+      .maybeSingle();
+    if (!mapped) return res.status(403).json({ ok: false, error: 'client_not_mapped' });
+
+    const patch = {};
+    for (const k of LOGOS_CLIENT_EDITABLE) {
+      if (fields[k] !== undefined && fields[k] !== null && String(fields[k]).trim() !== '') {
+        patch[k] = String(fields[k]).trim();
+      }
+    }
+    if (Object.keys(patch).length === 0) return res.json({ ok: true, updated: 0 });
+
+    const { data: updated, error: uerr } = await logosServiceClient()
+      .from('clients')
+      .update({ ...patch, org_id: LOGOS_ORG_ID })
+      .eq('id', logosClientId)
+      .select('id')
+      .maybeSingle();
+
+    await pulse.from('crm_actions').insert({
+      action_type: 'logos.field_update',
+      target_external_id: logosClientId,
+      action_payload: { fields: patch },
+      triggered_by_user_id: user?.id || null,
+      status: uerr ? 'failed' : 'completed',
+      error_message: uerr?.message || null,
+      executed_at: new Date().toISOString(),
+    });
+    if (uerr) return res.status(500).json({ ok: false, error: uerr.message });
+    return res.json({ ok: true, updated: Object.keys(patch).length, client: updated });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Pulse API Server Running' });
 });

@@ -64,14 +64,16 @@ The spec's Section 5 was explicitly overridable. Live verification forces these 
 
 **Thinnest end-to-end slice = P0→P1→P2→P3** (Conversation→Case Log genuinely working). P4–P7 layer on.
 
-**Build status:** P0–P4 shipped + verified 2026-06-13.
+**Build status:** P0–P5 shipped + verified 2026-06-13.
 - **P0** (connection + flag scaffold): `GET /api/logos/health` → `{configured:true, ok:true, rows:1}`; flag `logosVisionSync` default OFF.
 - **P1** (contact↔Logos mapping): server-side routes `GET /api/logos/clients` + `GET/POST/DELETE /api/logos/mappings` (auth-gated → 401 without a Pulse session; mapping CRUD via the Pulse service-role client since `logos_pulse_mappings` has RLS-on/no-policies); `src/services/logosMappingService.ts`; "Link to Logos client" card on `FocusColumn.tsx` (flag-gated, mirrors the Link-Slack pattern). Verified: DB round-trip (clients read + mapping insert/read/delete/cleanup), 401 guard, tsc clean. In-UI click-through is the live acceptance check.
 - **P2+P3** (ledger + F1 Conversation→Case Log): `POST /api/logos/case-log` (auth-gated) resolves contact→client mapping, dedups via `crm_actions` on `sourceId`, writes a Logos `activities` row (`type='note'`, org/author constants, `source_*` provenance), records the ledger outcome. Trigger = note-save auto-log + manual "Log to Logos" on `FocusColumn` (NOT the DM hook — Deviation #8). Verified 2026-06-13: DB write+dedup+cleanup smoke, POST 401 guard, tsc clean. In-UI note-save→Logos activity is the live acceptance.
 
 - **P4** (F2 Activity Feed): same `case-log` route extended — `kind→type` (`email`/`note`) + `recipientEmail` server-side resolution (`skipped:'no_contact'` when unknown). Triggers: **email** send (`EmailHybridClient` → `kind:'email'`, the real F2 value for external contacts) + **Slack DM** (`FocusColumn` → `kind:'slack'`, cheap completeness). Verified: email→contact resolve + no-contact skip + `type='email'` write smoke + 401 guard, tsc clean.
 
-**P5 (F3 AI Field Population) is next — see §10 RESUME for the detailed P5–P7 plan, reusable infra, and open decisions.**
+- **P5** (F3 AI Field Population): `GET /api/logos/client` + `POST /api/logos/client-fields` (column whitelist + mapped-guard + `crm_actions` `logos.field_update` ledger); `suggestLogosClientUpdates` via `invokeAIJson('contact_enrichment')` (no edge-fn deploy — reused existing task); coral "Suggest updates (AI)" panel on `FocusColumn` (current→suggested + confidence, per-field Accept/Reject; additive — explicit accept required, current value shown, no-ops dropped). Client fields only (no contact→case mapping). Verified: mapped-guard + whitelist-drop + write + **revert** smoke + 401 guards, tsc clean. AI suggestion quality = live acceptance.
+
+**P6 (F4 Records Flow Back) is next — see §10 RESUME.**
 
 ---
 

@@ -60,8 +60,12 @@ import {
   linkContactToLogos,
   unlinkContactFromLogos,
   logToLogos,
+  getLogosClient,
+  updateLogosClientFields,
+  suggestLogosClientUpdates,
   type LogosClientLite,
   type LogosContactMapping,
+  type LogosFieldSuggestion,
 } from '../../../../services/logosMappingService';
 import { CadenceSpine } from './CadenceSpine';
 import { InteractionTimeline } from './InteractionTimeline';
@@ -158,6 +162,11 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
   const [logManualOpen, setLogManualOpen] = useState(false);
   const [logManualBusy, setLogManualBusy] = useState(false);
   const logManualRef = useRef<HTMLTextAreaElement>(null);
+  // P5 — AI field-population suggestions.
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiErr, setAiErr] = useState<string | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<LogosFieldSuggestion[]>([]);
 
   const profile = relationshipProfile;
   const score = profile?.relationshipScore;
@@ -308,6 +317,41 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
     } finally {
       setLogManualBusy(false);
     }
+  };
+
+  const runAiSuggest = async () => {
+    if (!logosMapping) return;
+    setAiOpen(true); setAiBusy(true); setAiErr(null); setAiSuggestions([]);
+    try {
+      const client = await getLogosClient(logosMapping.logos_entity_id);
+      if (!client) { setAiErr('Could not load the Logos client.'); return; }
+      const suggestions = await suggestLogosClientUpdates(
+        { name: contact.name, email: contact.email, phone: contact.phone, company: contact.company, address: contact.address, website: contact.website, notes: contact.notes },
+        client,
+      );
+      setAiSuggestions(suggestions);
+      if (suggestions.length === 0) setAiErr('No updates suggested — Logos looks up to date.');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'AI failed';
+      setAiErr(msg === 'NO_WORKSPACE' ? 'Select a workspace to use AI suggestions.' : `Couldn't get suggestions: ${msg}`);
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const acceptSuggestion = async (s: LogosFieldSuggestion) => {
+    if (!logosMapping) return;
+    try {
+      await updateLogosClientFields(logosMapping.logos_entity_id, { [s.field]: s.suggested });
+      setAiSuggestions((prev) => prev.filter((x) => x.field !== s.field));
+      toast.success(`Updated ${s.field} in Logos`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Update failed');
+    }
+  };
+
+  const rejectSuggestion = (field: string) => {
+    setAiSuggestions((prev) => prev.filter((x) => x.field !== field));
   };
 
   return (
@@ -504,6 +548,61 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
                       <i className="fa-solid fa-feather-pointed mr-1.5" aria-hidden="true" />
                       Log to Logos
                     </button>
+                  )}
+                  {/* P5 · AI field-population suggestions (coral = AI provenance) */}
+                  <button
+                    type="button"
+                    onClick={runAiSuggest}
+                    disabled={aiBusy}
+                    className="self-start text-xs font-medium disabled:opacity-50"
+                    style={{ color: 'var(--pulse-coral-fg)' }}
+                  >
+                    <Sparkles className="w-3 h-3 inline mr-1" />
+                    {aiBusy ? 'Thinking…' : 'Suggest updates (AI)'}
+                  </button>
+                  {aiOpen && (
+                    <div
+                      className="rounded-xl p-2.5 border"
+                      style={{ background: 'var(--pulse-coral-bg-08)', borderColor: 'var(--pulse-rose-soft)' }}
+                    >
+                      <div
+                        className="flex items-center gap-1.5 mb-2 text-[10px] uppercase tracking-[0.1em]"
+                        style={{ color: 'var(--pulse-coral-fg)', fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        AI-suggested Logos updates
+                        <button type="button" onClick={() => setAiOpen(false)} className="ml-auto" style={{ color: 'var(--pulse-ink-3)' }} aria-label="Close">✕</button>
+                      </div>
+                      {aiErr && <div className="text-xs" style={{ color: 'var(--pulse-ink-2)' }}>{aiErr}</div>}
+                      <div className="flex flex-col gap-2.5">
+                        {aiSuggestions.map((s) => (
+                          <div key={s.field} className="text-xs">
+                            <div className="font-medium" style={{ color: 'var(--pulse-ink-1)' }}>
+                              {s.field} <span style={{ color: 'var(--pulse-ink-3)' }}>· {Math.round(s.confidence * 100)}%</span>
+                            </div>
+                            <div style={{ color: 'var(--pulse-ink-3)' }}>
+                              <span className="line-through">{s.current || '∅'}</span>
+                              {' → '}
+                              <span style={{ color: 'var(--pulse-ink-1)' }}>{s.suggested}</span>
+                            </div>
+                            {s.rationale && <div className="italic mt-0.5" style={{ color: 'var(--pulse-ink-3)' }}>{s.rationale}</div>}
+                            <div className="flex gap-3 mt-1">
+                              <button
+                                type="button"
+                                onClick={() => acceptSuggestion(s)}
+                                className="px-2 py-0.5 rounded-lg font-medium"
+                                style={{ background: 'var(--pulse-rose)', color: '#fff' }}
+                              >
+                                Accept
+                              </button>
+                              <button type="button" onClick={() => rejectSuggestion(s.field)} style={{ color: 'var(--pulse-ink-3)' }}>
+                                Reject
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               ) : logosPickerOpen ? (
