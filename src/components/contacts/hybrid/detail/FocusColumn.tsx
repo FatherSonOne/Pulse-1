@@ -171,6 +171,8 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
   const [aiSuggestions, setAiSuggestions] = useState<LogosFieldSuggestion[]>([]);
   // P6 — Logos case state (records flow back), read-on-demand.
   const [logosCaseState, setLogosCaseState] = useState<LogosCaseState | null>(null);
+  const [caseStateError, setCaseStateError] = useState(false); // polish #3: "no case" vs "unreachable"
+  const [logosSyncError, setLogosSyncError] = useState<string | null>(null); // polish #2: surface silent sync failures
 
   const profile = relationshipProfile;
   const score = profile?.relationshipScore;
@@ -199,7 +201,10 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
               kind: 'note',
               content: newNotes,
               sourceId: `note:${contact.id}:${djb2(newNotes)}`,
-            }).catch(() => { /* non-blocking: a Logos failure never affects note-save */ });
+            })
+              .then(() => setLogosSyncError(null))
+              // non-blocking: note-save itself already succeeded; just surface the failed mirror.
+              .catch(() => setLogosSyncError("Last note didn't reach Logos (saved in Pulse)."));
           }
         } catch {
           toast.error('Failed to save notes');
@@ -224,7 +229,9 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
           kind: 'slack',
           content: text,
           sourceId: `slack:${contact.id}:${djb2(text)}`,
-        }).catch(() => {});
+        })
+          .then(() => setLogosSyncError(null))
+          .catch(() => setLogosSyncError("Last Slack DM didn't reach Logos."));
       }
       setTimeout(() => { setSlackOpen(false); setSlackSent(false); }, 1600);
     } catch (e) {
@@ -272,11 +279,11 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
 
   // P6 — pull the linked client's Logos case state (records flow back).
   useEffect(() => {
-    if (!features.logosVisionSync || !logosMapping) { setLogosCaseState(null); return; }
+    if (!features.logosVisionSync || !logosMapping) { setLogosCaseState(null); setCaseStateError(false); return; }
     let cancelled = false;
     getLogosCaseState(logosMapping.logos_entity_id)
-      .then((s) => { if (!cancelled) setLogosCaseState(s); })
-      .catch(() => { if (!cancelled) setLogosCaseState(null); });
+      .then((s) => { if (!cancelled) { setLogosCaseState(s); setCaseStateError(false); } })
+      .catch(() => { if (!cancelled) { setLogosCaseState(null); setCaseStateError(true); } });
     return () => { cancelled = true; };
   }, [features.logosVisionSync, logosMapping]);
 
@@ -522,16 +529,27 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
                       {logosBusy ? '…' : 'Unlink'}
                     </button>
                   </div>
-                  {logosCaseState && (logosCaseState.case_status || logosCaseState.current_stage) && (
+                  {caseStateError ? (
+                    <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
+                      Logos case: <span style={{ color: 'var(--pulse-ink-2)' }}>unavailable</span> (couldn’t reach Logos)
+                    </div>
+                  ) : logosCaseState && (logosCaseState.current_stage || logosCaseState.case_status) ? (
                     <div className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
                       Logos case:{' '}
-                      <span style={{ color: 'var(--pulse-ink-2)' }}>{logosCaseState.case_status || logosCaseState.current_stage}</span>
+                      <span style={{ color: 'var(--pulse-ink-2)' }}>{(logosCaseState.current_stage || logosCaseState.case_status || '').replace(/_/g, ' ')}</span>
                       {logosCaseState.risk_level ? (
                         <> · risk <span style={{ color: 'var(--pulse-ink-2)' }}>{logosCaseState.risk_level}</span></>
                       ) : null}
                       {typeof logosCaseState.engagement_score === 'number' ? (
                         <> · engagement <span style={{ color: 'var(--pulse-ink-2)' }}>{logosCaseState.engagement_score}</span></>
                       ) : null}
+                    </div>
+                  ) : null}
+                  {logosSyncError && (
+                    <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--pulse-tone-negative, #ef4444)' }}>
+                      <i className="fa-solid fa-triangle-exclamation" aria-hidden="true" />
+                      <span>{logosSyncError}</span>
+                      <button type="button" onClick={() => setLogosSyncError(null)} className="ml-auto" style={{ color: 'var(--pulse-ink-3)' }} aria-label="Dismiss">✕</button>
                     </div>
                   )}
                   {logManualOpen ? (
@@ -605,6 +623,15 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
                           <div key={s.field} className="text-xs">
                             <div className="font-medium" style={{ color: 'var(--pulse-ink-1)' }}>
                               {s.field} <span style={{ color: 'var(--pulse-ink-3)' }}>· {Math.round(s.confidence * 100)}%</span>
+                              {s.isReplace && (
+                                <span
+                                  className="ml-1.5 px-1 py-0.5 rounded text-[9px] uppercase tracking-wide font-semibold align-middle"
+                                  style={{ background: 'var(--pulse-tone-negative-bg, rgba(239,68,68,0.12))', color: 'var(--pulse-tone-negative, #ef4444)' }}
+                                  title="This overwrites an existing Logos value — review carefully"
+                                >
+                                  replaces
+                                </span>
+                              )}
                             </div>
                             <div style={{ color: 'var(--pulse-ink-3)' }}>
                               <span className="line-through">{s.current || '∅'}</span>

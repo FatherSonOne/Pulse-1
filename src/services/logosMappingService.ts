@@ -130,6 +130,7 @@ export interface LogosFieldSuggestion {
   suggested: string;
   confidence: number;
   rationale?: string;
+  isReplace: boolean; // true when this overwrites a NON-empty Logos value (vs filling a blank)
 }
 
 const SUGGESTABLE_FIELDS = ['contact_person', 'email', 'phone', 'location', 'address', 'website', 'notes', 'employer'] as const;
@@ -169,7 +170,7 @@ export async function suggestLogosClientUpdates(
     notes: client.notes, employer: client.employer,
   };
   const prompt = [
-    'You help keep a CRM in sync. Compare the Pulse contact to the current Logos client record and suggest field updates ONLY where the Pulse data is clearly more complete or more accurate. Never suggest a change when the Logos value is already correct. Do NOT invent data not present in the Pulse contact.',
+    'You help keep a CRM in sync. Compare the Pulse contact to the current Logos client record. STRONGLY PREFER suggesting a value only for a Logos field that is currently empty/null. Only suggest REPLACING a non-empty Logos value if the Pulse value is clearly a correction of an obvious error (e.g. a typo of the SAME value); never replace a non-empty value just because it differs, and when you do, set confidence at or below 0.4. Be especially conservative with email and phone: do not replace a non-empty email or phone unless it is plainly a typo of the same address/number. Never invent data not present in the Pulse contact.',
     '',
     `Pulse contact: ${JSON.stringify(pulseContact)}`,
     `Current Logos client: ${JSON.stringify(current)}`,
@@ -186,13 +187,17 @@ export async function suggestLogosClientUpdates(
   const allow = new Set<string>(SUGGESTABLE_FIELDS);
   return (list as Array<Record<string, unknown>>)
     .filter((s) => s && typeof s.field === 'string' && allow.has(s.field) && typeof s.suggested === 'string' && String(s.suggested).trim())
-    .map((s) => ({
-      field: s.field as string,
-      current: (client[s.field as keyof LogosClientFields] as string | null | undefined) ?? null,
-      suggested: String(s.suggested).trim(),
-      confidence: typeof s.confidence === 'number' ? s.confidence : 0.5,
-      rationale: s.rationale ? String(s.rationale) : undefined,
-    }))
+    .map((s) => {
+      const current = (client[s.field as keyof LogosClientFields] as string | null | undefined) ?? null;
+      return {
+        field: s.field as string,
+        current,
+        suggested: String(s.suggested).trim(),
+        confidence: typeof s.confidence === 'number' ? s.confidence : 0.5,
+        rationale: s.rationale ? String(s.rationale) : undefined,
+        isReplace: !!(current && String(current).trim()),
+      };
+    })
     .filter((s) => s.suggested !== (s.current ?? ''));
 }
 
