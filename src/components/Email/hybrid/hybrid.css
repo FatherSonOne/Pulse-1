@@ -617,8 +617,11 @@ html.dark .email-hybrid-shell .triage-stage {
   height: 3px; border-radius: 999px; background: var(--pulse-surface-raised); overflow: hidden;
 }
 .email-hybrid-shell .progress-rail > span {
-  display: block; height: 100%; background: var(--pulse-rose); border-radius: 999px;
-  transition: width 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  display: block; height: 100%; width: 100%; background: var(--pulse-rose); border-radius: 999px;
+  /* Animate transform, not width — width re-runs layout+paint on every triage
+     advance; scaleX is compositor-only (Emil: animate transform/opacity only). */
+  transform-origin: left center;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ─── Stage transition (Triage card swap) ───

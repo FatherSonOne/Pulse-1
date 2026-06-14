@@ -256,7 +256,7 @@ export const TriageView: React.FC<TriageViewProps> = ({
             </span>
           </div>
           <div className="progress-rail">
-            <span style={{ width: `${progress}%` }} />
+            <span style={{ transform: `scaleX(${Math.max(0, Math.min(1, progress / 100))})` }} />
           </div>
         </div>
 

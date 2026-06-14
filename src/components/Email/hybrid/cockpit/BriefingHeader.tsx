@@ -49,7 +49,7 @@ export const BriefingHeader: React.FC<BriefingHeaderProps> = ({
         className={`cockpit-headline leading-[1.1] tracking-tight mb-3 ${
           compact ? 'text-[22px] md:text-[24px]' : 'text-[24px] md:text-[34px]'
         } ${nudgeFocused ? 'pulse-rose-color' : 'pulse-ink-color'}`}
-        style={nudgeFocused ? { transition: 'color 1.5s ease' } : undefined}
+        style={nudgeFocused ? { transition: 'color 240ms ease' } : undefined}
       >
         {m.headlineLead}
         <br />
