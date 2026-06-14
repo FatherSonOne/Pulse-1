@@ -1,6 +1,6 @@
 # Email Push for Pulse: Server-Side Gmail watch -> Pub/Sub -> push-receiver
 
-Status: PARTIALLY BUILT (2026-06-13) — foundation + both edge fns deployed dormant; GCP setup + env vars + cron remain (owner-gated).
+Status: LIVE (2026-06-14) — fully wired + server-verified end-to-end; the device-push acceptance test (send yourself an email, tab closed) is the only item left to exercise.
 Date: 2026-06-13
 Owner: solo
 Scope: deliver a Web Push notification when a new email lands in the owner's Gmail, mirroring the inbound-DM push shipped this session.
@@ -11,41 +11,24 @@ Scope: deliver a Web Push notification when a new email lands in the owner's Gma
 
 **Architecture correction vs the original plan (section 4):** the plan put the watch-renewal on the Express backend (server.js). But server.js has NO CRON_SECRET auth wiring, so hosting it there meant adding new auth surface to the deployed backend. Renewal is therefore an EDGE FUNCTION instead (gets CRON_SECRET from Deno.env like check-search-alerts/send-push; does the Gmail token-refresh + users.watch via plain fetch, no googleapis SDK, no backend change). The receiver also uses a pragmatic shared-secret auth (PUSH_RECEIVER_SECRET in the Pub/Sub endpoint URL) rather than Google OIDC verification, because OIDC/JWKS is untestable without the live subscription and this is a single-owner mailbox; swap to OIDC if it ever goes multi-tenant.
 
-**Built + verified now:**
-- Migration `20260613010000_email_watch_state.sql` — APPLIED LIVE. Added `watch_expiration / watch_history_id / watch_topic / watch_last_renewed` to `email_sync_state` (verified the 4 columns landed).
-- Edge fn `gmail-watch-renew` — DEPLOYED (v1, verify_jwt=false). Verified: `200 {skipped:"GMAIL_PUSH_TOPIC not configured"}` on the vault `cron_secret` path; `401` with no secret. Dormant until GMAIL_PUSH_TOPIC is set.
-- Edge fn `gmail-push-receiver` — DEPLOYED (v1, verify_jwt=false). Verified live (`500 {PUSH_RECEIVER_SECRET not configured}` proves it runs); the 401 auth boundary is verifiable once PUSH_RECEIVER_SECRET is set.
-- `config.toml` — both fns declared `verify_jwt=false` so a CLI redeploy can't flip them.
-- `send-push` already accepts CRON_SECRET (shipped earlier this session), which the receiver uses to dispatch.
+**Built + verified — LIVE (2026-06-14):**
+- Migration `20260613010000_email_watch_state.sql` — applied; 4 `watch_*` columns on `email_sync_state`.
+- Edge fn `gmail-watch-renew` (deployed, verify_jwt=false) — refreshes the Gmail token + arms `users.watch`. **Verified live: `{renewed:1}`**; watch armed for the owner grant (`watch_history_id` persisted, `watch_expiration` ~7 days out).
+- Edge fn `gmail-push-receiver` (deployed, verify_jwt=false) — `history.list` + `send-push`. Auth boundary verified (`401` without the secret).
+- `config.toml` — both fns pinned `verify_jwt=false` so a CLI redeploy can't flip them.
+- Renewal cron — `cron.schedule('gmail-watch-renew','0 6 * * *', …)` LIVE (job 14, active); migration `20260614000000_schedule_gmail_watch_renew.sql`.
+- `send-push` accepts `CRON_SECRET` (the receiver dispatches through it).
 
-**NOT yet done (owner-gated — nothing pushes until these are complete):**
+**Live config (this deployment):**
+- Edge secrets set: `GMAIL_OAUTH_CLIENT_ID` = `323300745740-…apps.googleusercontent.com`, `GMAIL_OAUTH_CLIENT_SECRET`, `GMAIL_PUSH_TOPIC` = `projects/pulse-gmail-private-498317/topics/pulse-gmail-push`, `PUSH_RECEIVER_SECRET`.
+- GCP project `pulse-gmail-private-498317`: topic `pulse-gmail-push` + push subscription `pulse-gmail-push-sub` → `…/gmail-push-receiver?secret=<…>`; `gmail-api-push@system.gserviceaccount.com` granted `roles/pubsub.publisher`.
 
-1. **Edge secrets** (Supabase Dashboard → Edge Functions → Secrets):
-   - `GMAIL_OAUTH_CLIENT_ID`, `GMAIL_OAUTH_CLIENT_SECRET` — the same private owner-only Gmail client creds the Render backend uses (the edge fns need their own copy; they are NOT shared from Render).
-   - `GMAIL_PUSH_TOPIC` = `projects/<gcp-project>/topics/pulse-gmail-push`
-   - `PUSH_RECEIVER_SECRET` = a fresh random string (also goes in the Pub/Sub subscription URL, step 3).
-   - (`CRON_SECRET` already set; `SUPABASE_URL`/`SERVICE_ROLE_KEY` always present.)
-2. **Google Cloud Pub/Sub** (in the project that owns the private Gmail client — see `MEMORY` "Google Token Refresh", Testing project):
-   - Enable the Cloud Pub/Sub API.
-   - Create topic `pulse-gmail-push`.
-   - Grant Gmail publish rights: `gcloud pubsub topics add-iam-policy-binding pulse-gmail-push --member=serviceAccount:gmail-api-push@system.gserviceaccount.com --role=roles/pubsub.publisher`
-3. **Pub/Sub PUSH subscription** on that topic, endpoint =
-   `https://ucaeuszgoihoyrvhewxk.supabase.co/functions/v1/gmail-push-receiver?secret=<PUSH_RECEIVER_SECRET>`
-   (the receiver checks `?secret=` against the env value; no OIDC needed for v1).
-4. **Schedule the renewal cron** (after step 1's GMAIL_PUSH_TOPIC is set), via SQL editor:
-   ```sql
-   SELECT cron.schedule('gmail-watch-renew', '0 6 * * *', $$
-     SELECT net.http_post(
-       url     := 'https://ucaeuszgoihoyrvhewxk.supabase.co/functions/v1/gmail-watch-renew',
-       headers := jsonb_build_object('Content-Type','application/json',
-         'Authorization','Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name='cron_secret' LIMIT 1)),
-       body    := '{}'::jsonb);
-   $$);
-   ```
-   Then kick it once manually (same `net.http_post`) so the first `users.watch` is armed immediately rather than waiting for 06:00 UTC.
-5. **Live verify:** send yourself an email with the Pulse tab closed; confirm a push lands. Check `gmail-push-receiver` edge logs for `pushed ... new=N` and `send-push` for `sent:1`. Expect to iterate once on the history-cursor / dedup behavior (the happy path is unverified until this real test).
+**Setup gotchas hit (read this before doing another mailbox / re-setup):**
+1. `gcloud pubsub` wants the **project ID** (`pulse-gmail-private-498317`), not the project number — the number is only the prefix of the client ID.
+2. The edge `GMAIL_OAUTH_CLIENT_ID/SECRET` must be the SAME client that MINTED the grant. Tokens minted under a prior client throw `unauthorized_client` (NOT `invalid_grant`). Fix = **reconnect Gmail** to mint fresh tokens. Rotating/resetting the client secret does NOT invalidate refresh tokens (only deleting the client ID does), so don't chase the secret.
+3. `users.watch` 403 "User not authorized to perform this action" = the `gmail-api-push@system` publisher binding isn't on the topic. If the org enforces **Domain Restricted Sharing** (`constraints/iam.allowedPolicyMemberDomains`), that binding is rejected until you override the policy on the project (Override parent → Replace → Allow all) — needs the **Organization Policy Administrator** role.
 
-**Known boundaries (honest):** the happy-path (real Gmail history.list -> send-push) is NOT verified yet — only deploy + auth + dormancy are. The receiver dedups by advancing the `history_id` cursor and skipping re-delivered/older historyIds; it pushes one notification per Pub/Sub event (newest message's From/Subject, or "N new emails"). The Testing-project 7-day refresh-token death (see Risks) still applies: if the grant dies, renewal can't refresh and watch lapses until reconnect.
+**Only item still pending:** the device-push acceptance test — send yourself an email with the Pulse tab closed and confirm a push lands. Check `gmail-push-receiver` logs for `pushed … new=N` and `send-push` for `sent:1`. The happy path (real `history.list` → push) is the one leg not yet exercised end-to-end. Receiver dedups by advancing the `history_id` cursor and skipping re-delivered/older historyIds; pushes one notification per Pub/Sub event (newest message's From/Subject, or "N new emails").
 
 ## 1. Why email cannot reuse the DM trigger
 
