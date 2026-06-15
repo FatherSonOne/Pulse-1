@@ -18,6 +18,7 @@ const dirs = [
   { btn: 'Cockpit', tag: 'A' },
   { btn: 'Console', tag: 'B' },
   { btn: 'Field',   tag: 'C' },
+  { btn: 'Horizon', tag: 'D' },
 ];
 
 async function dirBtn(name){ return page.locator('button', { hasText: name }).first(); }
@@ -82,6 +83,20 @@ for (const c of ['Dana Brooks','Sarah K.','Arrived']) {
   await page.screenshot({ path: `_shots/maps-C-${c.split(' ')[0].toLowerCase()}.png` });
   console.log(`✓ maps-C-${c.split(' ')[0].toLowerCase()}`);
 }
+
+// D interactions: horizon scrubber steps + Atlas toggle
+await (await dirBtn('Horizon')).click();
+await page.waitForTimeout(400);
+for (const h of ['Now','3 days','Week']) {
+  await page.locator(`button:has-text("${h}")`).first().click();
+  await page.waitForTimeout(350);
+  await page.screenshot({ path: `_shots/maps-D-${h.replace(' ','')}.png` });
+  console.log(`✓ maps-D-${h.replace(' ','')}`);
+}
+await page.locator('button:has-text("Atlas")').first().click();
+await page.waitForTimeout(400);
+await page.screenshot({ path: '_shots/maps-D-atlas.png' });
+console.log('✓ maps-D-atlas');
 
 const stats = await page.evaluate(() => ({
   mapCanvas: document.querySelectorAll('svg').length,

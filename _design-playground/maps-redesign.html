@@ -666,11 +666,103 @@ function FencesPanel(){
   </div>);
 }
 
+/* ═══════════════════════ DIRECTION D — HORIZON ═════════════════════════ */
+/* Rethinks the nav itself: time-horizon scrubber (Now→Week) replaces the
+   3 fixed tabs; Atlas becomes a zoom-out toggle, not a peer tab. */
+const MORE_STOPS = [
+  { id:'s5', name:'Priya Shah', sub:'Quarterly review', t:'Thu 10a', kind:'meeting', x:66, y:46, eta:'21 min', mi:'7.2 mi', state:'planned' },
+  { id:'s6', name:'Tobias Lund', sub:'Coffee follow-up', t:'Fri 1p', kind:'contact', x:38, y:29, eta:'15 min', mi:'4.4 mi', state:'planned' },
+];
+function HorizonScrubber({value,onChange,disabled}){
+  const steps=[['now','Now'],['today','Today'],['3d','3 days'],['week','Week']];
+  const idx=Math.max(0,steps.findIndex(s=>s[0]===value));
+  const frac=idx/(steps.length-1);
+  return (<div className={`inline-flex flex-col gap-1.5 px-3 py-2 rounded-xl surface bd glass ease ${disabled?'opacity-40 pointer-events-none':''}`} style={{boxShadow:'var(--shadow)',minWidth:280}}>
+    <div className="flex items-center gap-1.5"><Icon n="clock" s={11} cn="ink-3"/><span className="text-[10px] mono tracking-mono uppercase ink-3">Horizon</span>
+      <span className="text-[10px] ink-2 font-semibold ml-auto">{steps[idx][1]}</span></div>
+    <div className="relative flex items-center h-5">
+      <div className="absolute left-1.5 right-1.5 h-0.5 rounded" style={{background:'var(--pulse-border-strong)'}}/>
+      <div className="absolute left-1.5 h-0.5 rounded" style={{background:'var(--pulse-ink)',width:`calc((100% - 12px) * ${frac})`}}/>
+      <div className="relative flex items-center justify-between w-full">
+        {steps.map(([id,l],i)=>{const a=value===id;const past=i<=idx;return(
+          <button key={id} onClick={()=>onChange(id)} title={l} aria-label={l} className="focusring rounded-full">
+            <span className="block rounded-full ease" style={{width:a?14:11,height:a?14:11,background:past?'var(--pulse-ink)':'var(--pulse-surface)',border:'2px solid '+(past?'var(--pulse-ink)':'var(--pulse-border-strong)')}}/>
+          </button>);})}
+      </div>
+    </div>
+    <div className="flex items-center justify-between">
+      {steps.map(([id,l])=>(<button key={id} onClick={()=>onChange(id)} className="text-[10px] font-medium ease focusring rounded px-0.5" style={{color:value===id?'var(--pulse-ink)':'var(--pulse-ink-3)'}}>{l}</button>))}
+    </div>
+  </div>);
+}
+function DirHorizon({theme}){
+  const [horizon,setHorizon]=useState('today');
+  const [atlas,setAtlas]=useState(false);
+  const [mapStyle,setMapStyle]=useState(theme==='dark'?'dark':'light');
+  const [density,setDensity]=useState('rich');
+  const [sheet,setSheet]=useState(null);
+  const [imat,setImat]=useState(false);
+  const [sel,setSel]=useState('s1');
+  useEffect(()=>setMapStyle(theme==='dark'?'dark':'light'),[theme]);
+  const stops = atlas?[]:horizon==='now'?STOPS.slice(0,1):horizon==='today'?STOPS:horizon==='3d'?[...STOPS,MORE_STOPS[0]]:[...STOPS,...MORE_STOPS];
+  const showRoute = !atlas && (horizon==='now'||horizon==='today');
+  const aiText={
+    now:<>Next: <b>Marcus Vale</b> · 12 min out. Leave by 9:18a to make 9:30.</>,
+    today:<>4 stops near you. Best loop saves <b className="coral-fg">37 min</b> — Marcus → Dana → Lena → Clinic.</>,
+    '3d':<>5 stops through Friday. 3 cluster near Salem — one trip covers them.</>,
+    week:<>6 stops this week. Wednesday is your density peak (3 near Oakland).</>,
+  }[horizon];
+  return (<div className="relative h-full">
+    <MapCanvas mapStyle={mapStyle} density={density} className="h-full">
+      {!atlas && <YouDot/>}
+      {atlas && [{x:30,y:40,n:8},{x:62,y:35,n:14},{x:48,y:68,n:11},{x:22,y:62,n:9}].map((c,i)=>(
+        <At key={i} x={c.x} y={c.y}><div className="flex items-center justify-center rounded-full" style={{width:42,height:42,background:'var(--pulse-coral-bg-12)',border:'1.5px solid var(--pulse-coral)'}}><span className="text-[12px] font-bold coral-fg mono">{c.n}</span></div></At>))}
+      {showRoute && <RouteLine stops={STOPS.slice(0,3)}/>}
+      {!atlas && stops.map(s=>(<StopMarker key={s.id} s={s} active={sel===s.id} onClick={()=>setSel(s.id)} showLabel={density==='rich'}/>))}
+      {LIVE.map(l=>(<LiveMarker key={l.id} l={l} onClick={()=>setSheet('live')}/>))}
+    </MapCanvas>
+
+    {/* top bar — horizon scrubber + atlas toggle replace the 3 fixed tabs */}
+    <div className="absolute top-3 left-3 right-3 z-30 flex items-start gap-2 flex-wrap">
+      <HorizonScrubber value={horizon} onChange={setHorizon} disabled={atlas}/>
+      <button onClick={()=>setAtlas(a=>!a)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold focusring ease"
+        style={atlas?{background:'var(--pulse-ink)',color:'var(--pulse-canvas)'}:{background:'var(--pulse-surface)',color:'var(--pulse-ink-2)',border:'1px solid var(--pulse-border)',boxShadow:'var(--shadow)'}}>
+        <Icon n={atlas?'target':'globe'} s={15}/>{atlas?'Exit Atlas':'Atlas'}<span className="text-[10px] ink-3 hidden sm:inline" style={{color:atlas?'rgba(255,255,255,.6)':'var(--pulse-ink-3)'}}>{atlas?'· 42 in view':'· zoom out'}</span>
+      </button>
+      <div className="hidden md:block flex-1 max-w-xs"><SearchField/></div>
+      <div className="flex-1"/>
+      <div className="flex items-center gap-1 p-1 rounded-xl surface bd glass" style={{boxShadow:'var(--shadow)'}}>
+        {SURFACES.map(([id,label,ic])=>(<NeutralIconBtn key={id} n={ic} label={label} active={sheet===id} onClick={()=>setSheet(sheet===id?null:id)} badge={id==='live'?LIVE.length:id==='routes'?1:0}/>))}
+      </div>
+    </div>
+
+    {/* AI signal — adapts to the horizon, not a fixed lens */}
+    {!sheet && (<div className="absolute left-3 z-20" style={{top:96}}>
+      <div className="w-[300px] max-w-[80vw]"><AiSignalCard compact
+        title={atlas?'Atlas insight':horizon==='week'||horizon==='3d'?'Plan':'Route'}
+        body={atlas?<>3 contacts in <b>Oakland</b> haven't heard from you in 30+ days.</>:aiText}
+        actions={atlas?<><CoralBtn solid>Plan a loop</CoralBtn></>:<><CoralBtn solid onClick={()=>setSheet('routes')}>{horizon==='week'||horizon==='3d'?'Build plan':'Accept route'}</CoralBtn><GhostBtn>Reorder</GhostBtn></>}/></div>
+    </div>)}
+
+    <div className="absolute z-30" style={{right:12,bottom:84}}>
+      <BaseStyleSwitch value={mapStyle} onChange={setMapStyle} density={density} onDensity={()=>setDensity(d=>d==='rich'?'calm':'rich')}/>
+    </div>
+    <div className="absolute left-3 bottom-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full surface bd glass" style={{boxShadow:'var(--shadow)'}}>
+      {LIVE.length>0 && <span className="flex items-center gap-1.5 text-[12px] font-semibold coral-fg"><span className="w-2 h-2 rounded-full" style={{background:'var(--pulse-coral)'}}/>{LIVE.length} live</span>}
+      <span className="text-[12px] ink-2">{atlas?'42 in network':`${stops.length} stops · ${horizon}`}</span>
+    </div>
+    <div className="absolute right-3 bottom-4 z-30"><ImAtFab onOpen={()=>setImat(true)}/></div>
+    {sheet && <SurfaceDrawer kind={sheet} onClose={()=>setSheet(null)}/>}
+    {imat && <ImAtSheet onClose={()=>setImat(false)}/>}
+  </div>);
+}
+
 /* ═══════════════════════ APP SHELL ═════════════════════════════════════ */
 const DIRS=[
   ['A','Cockpit','Full-bleed map · floating chrome · surfaces as drawers',['Sat/Terr/Hybrid → real base-style','coral=signal only','geosearch I\'m at']],
   ['B','Console','Map + intelligent rail · selection-driven · surfaces as tabs',['Routes/Live/Fences first-class','neutral chrome','ETA + reorder']],
   ['C','Field','Triage feed first · map follows focus · "what needs me now"',['spatial Today','background-fence honesty','one-tap actions']],
+  ['D','Horizon','Rethought nav · time-horizon scrubber + Atlas toggle (no fixed tabs)',['3 tabs → 1 time axis','Week is a window not a mode','Atlas = zoom-out']],
 ];
 function App(){
   const [theme,setTheme]=useState('light');
@@ -705,6 +797,7 @@ function App(){
         {dir==='A' && <DirCockpit theme={theme}/>}
         {dir==='B' && <DirConsole theme={theme}/>}
         {dir==='C' && <DirField theme={theme}/>}
+        {dir==='D' && <DirHorizon theme={theme}/>}
       </div>
     </div>
     {/* prompt bar */}
