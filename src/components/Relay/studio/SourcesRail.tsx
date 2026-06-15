@@ -55,9 +55,12 @@ interface RailItem {
 }
 
 const RAIL_ITEMS: RailItem[] = [
-  { id: 'triage',    label: 'Inbox',     desc: 'Smart playlist', Icon: Inbox,      shortcut: 'T' },
-  { id: 'direct',    label: 'Direct',    desc: '1:1 voice',      Icon: User,       shortcut: 'D' },
-  { id: 'channel',   label: 'Channels',  desc: 'Team voice',     Icon: Hash,       shortcut: 'C' },
+  // 'desc' is the disambiguator (also feeds the collapsed-state tooltip below).
+  // Inbox is the cross-source triage feed, NOT a peer source — 'All sources'
+  // says so, separating it from Direct (one person) / Channels (one team).
+  { id: 'triage',    label: 'Inbox',     desc: 'All sources',    Icon: Inbox,      shortcut: 'T' },
+  { id: 'direct',    label: 'Direct',    desc: 'One person',     Icon: User,       shortcut: 'D' },
+  { id: 'channel',   label: 'Channels',  desc: 'A team',         Icon: Hash,       shortcut: 'C' },
   { id: 'broadcast', label: 'Broadcast', desc: 'One to many',    Icon: Radio,      shortcut: 'B' },
   { id: 'notes',     label: 'Notes',     desc: 'Personal',       Icon: FileText,   shortcut: 'N' },
   { id: 'live',      label: 'Live',      desc: 'Rooms',          Icon: Headphones, shortcut: 'L' },
