@@ -405,6 +405,9 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
           })
         );
         setRecordings(loadedRecordings);
+        // Mark everything I've received as delivered so senders get the receipt
+        // (S1-2). Recipient-scoped RPC; sender-only UPDATE RLS blocks a direct write.
+        voxModeService.markQuickVoxDeliveredAll().catch(() => {});
       } catch (error) {
         console.error('Error loading recordings:', error);
       }
@@ -441,6 +444,39 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
             },
           ];
         });
+        // Tell the sender it was delivered (S1-2).
+        voxModeService.markQuickVoxDeliveredAll().catch(() => {});
+      })
+      .then((sub) => {
+        if (cancelled) {
+          try { if (sub) supabase.removeChannel(sub); } catch { /* noop */ }
+        } else {
+          channel = sub;
+        }
+      });
+    return () => {
+      cancelled = true;
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch { /* noop */ }
+      }
+    };
+  }, []);
+
+  // Realtime receipts (S1-2): when the recipient marks a vox I SENT as
+  // delivered/played, patch that row's status live so my checkmarks update
+  // without a refresh. RLS lets the sender see UPDATEs to their own rows.
+  useEffect(() => {
+    let channel: any = null;
+    let cancelled = false;
+    voxModeService
+      .subscribeToQuickVoxSentStatus((msg) => {
+        setRecordings((prev) =>
+          prev.map((r) =>
+            r.id === msg.id
+              ? { ...r, status: msg.playedAt ? 'read' : msg.deliveredAt ? 'delivered' : r.status }
+              : r,
+          ),
+        );
       })
       .then((sub) => {
         if (cancelled) {
@@ -889,6 +925,14 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       source: 'direct',
       audioUrl: recording.url,
     });
+    // Listened receipt (S1-2): playing a vox I received marks it played so the
+    // sender sees the "listened" state. Reflect it locally too (idempotent RPC).
+    if (recording.sender === 'other' && recording.status !== 'read') {
+      voxModeService.markQuickVoxPlayed(recording.id).catch(() => {});
+      setRecordings((prev) =>
+        prev.map((r) => (r.id === recording.id ? { ...r, status: 'read' } : r)),
+      );
+    }
   }, [studio, activeContact]);
 
   const pausePlayback = useCallback(() => {
@@ -1571,8 +1615,20 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       title={isMe ? 'You' : contactName}
                       meta={`${recording.timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · ${formatDuration(recording.duration)}`}
                       headerExtras={isMe ? (
-                        <span className="classic-status-icon ml-1 text-zinc-400 dark:text-zinc-500">
-                          {recording.status === 'read' ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}
+                        <span
+                          className={`classic-status-icon ml-1 ${
+                            recording.status === 'read'
+                              ? 'text-sky-500 dark:text-sky-400'
+                              : 'text-zinc-400 dark:text-zinc-500'
+                          }`}
+                          title={recording.status === 'read' ? 'Listened' : recording.status === 'delivered' ? 'Delivered' : 'Sent'}
+                        >
+                          {/* sent → single check; delivered/listened → double check;
+                              listened tints sky (read-receipt convention — coral is
+                              reserved for AI surfaces per CLAUDE.md). S1-2. */}
+                          {recording.status === 'sent'
+                            ? <Check className="w-3 h-3" />
+                            : <CheckCheck className="w-3 h-3" />}
                         </span>
                       ) : undefined}
                       selectionCheckbox={isSelectionMode ? (

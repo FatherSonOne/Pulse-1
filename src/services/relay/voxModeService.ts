@@ -1842,12 +1842,11 @@ class VoxModeService {
     if (!pulseUserId) return false;
 
     if (kind === 'quick') {
-      const { error } = await supabase
-        .from('quick_vox_messages')
-        .update({ played_at: new Date().toISOString() })
-        .eq('id', rowId)
-        .eq('recipient_id', pulseUserId)
-        .is('played_at', null);
+      // RLS UPDATE on quick_vox_messages is sender-only, so the recipient (who is
+      // marking-read here) can't UPDATE played_at directly — it would match 0 rows
+      // and silently no-op. Route through the recipient-scoped SECURITY DEFINER
+      // RPC instead (sets played_at + delivered_at + status).
+      const { error } = await supabase.rpc('mark_quick_vox_played', { p_message_id: rowId });
       if (error) {
         console.warn('[markTriageItemRead] quick failed:', error.message);
         return false;
@@ -2194,6 +2193,27 @@ class VoxModeService {
     return true;
   }
 
+  /**
+   * Recipient marks a received quick vox as played (sets played_at +
+   * delivered_at + status='played') via the recipient-scoped SECURITY DEFINER
+   * RPC — the table's UPDATE RLS is sender-only, so a direct update from the
+   * recipient matches 0 rows. Drives the sender's "listened" receipt (S1-2).
+   */
+  async markQuickVoxPlayed(messageId: string): Promise<void> {
+    const { error } = await supabase.rpc('mark_quick_vox_played', { p_message_id: messageId });
+    if (error) console.warn('[markQuickVoxPlayed] failed:', error.message);
+  }
+
+  /**
+   * Recipient marks all as-yet-undelivered received quick voxes as delivered
+   * (drives the sender's "delivered" receipt). Called after the recipient loads
+   * and when a new vox arrives (S1-2).
+   */
+  async markQuickVoxDeliveredAll(): Promise<void> {
+    const { error } = await supabase.rpc('mark_quick_vox_delivered_all');
+    if (error) console.warn('[markQuickVoxDeliveredAll] failed:', error.message);
+  }
+
   async updateQuickVoxStatus(isRecording: boolean): Promise<void> {
     const userId = await this.ensureUserId();
     if (!userId) return;
@@ -2455,6 +2475,35 @@ class VoxModeService {
         schema: 'public',
         table: 'quick_vox_messages',
         filter: `recipient_id=eq.${userId}`,
+      }, (payload) => {
+        callback(this.mapDbToQuickVoxMessage(payload.new));
+      })
+      .subscribe();
+  }
+
+  /**
+   * Subscribe to UPDATEs on quick_vox messages I SENT — i.e. delivery/listened
+   * receipts coming back from the recipient — so the sender's thread reflects
+   * delivered/played live without a refresh (S1-2). The sender can SELECT their
+   * own rows, so RLS lets these UPDATE events through. Returns the channel (or
+   * null if unauthenticated). Requires quick_vox_messages in the realtime
+   * publication (migration 20260614130000).
+   */
+  async subscribeToQuickVoxSentStatus(callback: (message: QuickVoxMessage) => void): Promise<any> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[VoxModeService] Cannot subscribe to QuickVox sent status: user not authenticated');
+      return null;
+    }
+    const userId = this.getUserId();
+    if (!userId) return null;
+    return supabase
+      .channel(`quick_vox_sent:${userId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'quick_vox_messages',
+        filter: `sender_id=eq.${userId}`,
       }, (payload) => {
         callback(this.mapDbToQuickVoxMessage(payload.new));
       })
