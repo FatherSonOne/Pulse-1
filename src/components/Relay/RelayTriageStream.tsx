@@ -43,6 +43,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { VoxEmptyState } from './VoxEmptyState';
+import { RelayColdStartGuide, RELAY_COLDSTART_DISMISS_KEY } from './RelayColdStartGuide';
 import toast from 'react-hot-toast';
 import type { Contact, User } from '../../types';
 import { useRelayTriage, type TriageItem, type TriageItemKind } from '../../hooks/useRelayTriage';
@@ -535,6 +536,15 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
   const sourceMenuRef = useRef<HTMLDivElement | null>(null);
+  // First-run cold-start teaching guide (front-door empty Inbox only). Once
+  // dismissed it stays gone (persisted); the plain empty state takes over.
+  const [coldStartDismissed, setColdStartDismissed] = useState<boolean>(() => {
+    try { return localStorage.getItem(RELAY_COLDSTART_DISMISS_KEY) === '1'; } catch { return false; }
+  });
+  const dismissColdStart = () => {
+    try { localStorage.setItem(RELAY_COLDSTART_DISMISS_KEY, '1'); } catch { /* noop */ }
+    setColdStartDismissed(true);
+  };
   // Keyboard list-drive: which row j/k focuses. Clamped to the filtered length.
   const [focusedIdx, setFocusedIdx] = useState(0);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -869,7 +879,17 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
 
         {isLoading && <SkeletonList />}
 
-        {!isLoading && filtered.length === 0 && <EmptyState source={sourceFilter} onCompose={onCompose} />}
+        {!isLoading && filtered.length === 0 && (
+          sourceFilter === 'all' && !coldStartDismissed ? (
+            <RelayColdStartGuide
+              onSelectView={(v) => onOpenView(v)}
+              onCompose={onCompose}
+              onDismiss={dismissColdStart}
+            />
+          ) : (
+            <EmptyState source={sourceFilter} onCompose={onCompose} />
+          )
+        )}
 
         {!isLoading && filtered.length > 0 && (
           <div ref={listRef} className="space-y-3">
