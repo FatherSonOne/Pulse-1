@@ -90,6 +90,16 @@ export interface FeatureFlags {
   // the geocoding/directions data layer is also off Google.
   // See docs/MAP_MAPLIBRE_REBRAND_HANDOFF_2026-06-14.md (P0–P5).
   mapLibreRenderer: boolean;
+
+  // Relay "Live" (Voice Rooms) master switch. OFF by default → the Live rail
+  // entry is hidden and the Live view renders a "coming soon" placeholder
+  // instead of VoiceRooms. VoiceRooms is a LOCAL mic preview with no WebRTC
+  // peer transport yet (VoiceRooms.tsx header), so users must not be able to
+  // "join" a silent room in GA. Launch blocker S0-2 (relay-launch-readiness
+  // 2026-06-14). Deliberately NOT surfaced in FEATURE_CATEGORIES — flip via
+  // localStorage `pulse_feature_flags` to keep developing VoiceRooms; the real
+  // unlock is WebRTC transport (Sprint 4 S4-1), which re-enables it for users.
+  relayLiveRooms: boolean;
 }
 
 export interface FeatureDiscovery {
@@ -148,6 +158,9 @@ const DEFAULT_FEATURES: FeatureFlags = {
 
   // MapLibre renderer OFF by default (dark-launch); P0 = flag scaffold only, no consumer.
   mapLibreRenderer: false,
+
+  // Relay Live (Voice Rooms) OFF by default — no peer audio transport yet (S0-2).
+  relayLiveRooms: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
@@ -342,6 +355,7 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   slackChannelsGrounding: 'Slack Channels (Beta)',
   logosVisionSync: 'Logos Vision Sync (Beta)',
   mapLibreRenderer: 'MapLibre Map Renderer (Beta)',
+  relayLiveRooms: 'Live Voice Rooms (Coming Soon)',
 };
 
 /**

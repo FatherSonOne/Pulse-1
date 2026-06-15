@@ -26,9 +26,10 @@
 // surface. None of that happens here.
 
 import React, { useEffect, useState } from 'react';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon, Headphones } from 'lucide-react';
 import { Contact } from '../types';
 import { useAuth } from '../hooks/useAuth';
+import { useFeatures } from '../contexts/FeatureContext';
 import { settingsService } from '../services/settingsService';
 
 // Deterministic avatar color from a user id — shared with the Voice Studio
@@ -76,6 +77,34 @@ const StudioLiveSync: React.FC<{ inLive: boolean }> = ({ inLive }) => {
   return null;
 };
 
+// Live (Voice Rooms) is flag-gated OFF for GA — VoiceRooms is a LOCAL mic
+// preview with no WebRTC peer transport yet (see VoiceRooms.tsx header), so
+// rather than let users "join" a silent room we render this honest placeholder
+// (launch blocker S0-2, relay-launch-readiness 2026-06-14). Flip the
+// `relayLiveRooms` flag on — or land WebRTC transport (Sprint 4 S4-1) — to
+// restore the real surface.
+const RelayLiveComingSoon: React.FC<{ onBack: () => void }> = ({ onBack }) => (
+  <div className="h-full flex flex-col items-center justify-center text-center px-6">
+    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 bg-[#f2f2f2] dark:bg-[rgba(255,255,255,0.055)]">
+      <Headphones className="w-7 h-7 text-[#52525b] dark:text-[#b4b4b8]" />
+    </div>
+    <h2 className="text-lg font-semibold text-[#0f0f0f] dark:text-[#fafafa]">
+      Live rooms are coming soon
+    </h2>
+    <p className="mt-1.5 max-w-sm text-sm text-[#52525b] dark:text-[#b4b4b8]">
+      Real-time voice rooms aren't ready yet. In the meantime, use Channels for
+      team voice, Broadcast to reach everyone, or Direct for 1:1.
+    </p>
+    <button
+      type="button"
+      onClick={onBack}
+      className="mt-5 px-4 py-2 rounded-lg text-sm font-medium text-[#0f0f0f] dark:text-[#fafafa] bg-[#f2f2f2] hover:bg-[#e8e8e8] dark:bg-[rgba(255,255,255,0.055)] dark:hover:bg-[rgba(255,255,255,0.09)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f43f5e]"
+    >
+      Back to Inbox
+    </button>
+  </div>
+);
+
 interface RelayProps {
   /** @deprecated no-op — AI routing is server-side via edge functions. */
   apiKey?: string;
@@ -107,6 +136,12 @@ const RELAY_VIEWS: readonly RelayView[] = [
 const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, isDarkMode = false, intent, onIntentConsumed }) => {
   // user.id powers the Triage stream's voice-source queries.
   const { user } = useAuth();
+
+  // Live (Voice Rooms) is gated OFF for GA — no WebRTC peer transport yet, so
+  // the rail entry is hidden and the Live view shows a "coming soon" placeholder
+  // instead of letting users join a silent room (launch blocker S0-2).
+  const { isFeatureEnabled } = useFeatures();
+  const liveEnabled = isFeatureEnabled('relayLiveRooms');
 
   // Measure the Relay pane so the studio shell can lay out off the pane's real
   // width (the global nav + sources rail sit in front of it, so the viewport is
@@ -208,6 +243,8 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
           <SourcesRail
             view={view}
             onSelectView={(v) => setView(v)}
+            // Hide the Live rail entry while Voice Rooms is flag-gated off (S0-2).
+            hiddenViews={liveEnabled ? undefined : ['live']}
             // Unread + playlist counts will wire to real services in Phase 2.
             // For now omit them so the rail doesn't show fabricated numbers.
           />
@@ -295,7 +332,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
                   initialNoteId={focusNoteId ?? undefined}
                 />
               )}
-              {view === 'live' && user && (
+              {view === 'live' && liveEnabled && user && (
                 <VoiceRooms
                   isOpen
                   onClose={() => setView('triage')}
@@ -306,6 +343,12 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
                     avatarColor: avatarColorForId(user.id),
                   }}
                 />
+              )}
+              {/* Gated off: honest placeholder instead of a silent room (S0-2).
+                  Covers any path that lands on 'live' (saved pref, 'L'
+                  shortcut, deep link) while the rail entry is hidden. */}
+              {view === 'live' && !liveEnabled && (
+                <RelayLiveComingSoon onBack={() => setView('triage')} />
               )}
             </div>
 

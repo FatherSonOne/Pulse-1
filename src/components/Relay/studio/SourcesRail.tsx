@@ -31,6 +31,8 @@ export interface SourcesRailProps {
   view: RelayShortcutView;
   /** Switch to a different view. */
   onSelectView: (view: RelayShortcutView) => void;
+  /** Views to omit from the rail entirely (e.g. flag-gated 'live'). */
+  hiddenViews?: RelayShortcutView[];
   /** Unread count per source (optional — when present, shows badge). */
   unreadCounts?: Partial<Record<RelayShortcutView, number>>;
   /** Smart-playlist counts. Optional; the playlist row hides when count is
@@ -79,7 +81,11 @@ export const SourcesRail: React.FC<SourcesRailProps> = ({
   onSelectView,
   unreadCounts,
   playlistCounts,
+  hiddenViews,
 }) => {
+  const railItems = hiddenViews?.length
+    ? RAIL_ITEMS.filter(item => !hiddenViews.includes(item.id))
+    : RAIL_ITEMS;
   // railCollapsed here is the EFFECTIVE state (manual pref OR auto). When the
   // pane forces the collapse (railAutoCollapsed), the manual toggle would be a
   // no-op, so we hide it — widening the pane restores the labelled rail.
@@ -110,7 +116,7 @@ export const SourcesRail: React.FC<SourcesRailProps> = ({
       </div>
 
       <nav className="pulse-rail__items">
-        {RAIL_ITEMS.map(item => {
+        {railItems.map(item => {
           const active = view === item.id;
           const count = unreadCounts?.[item.id] ?? 0;
           return (
