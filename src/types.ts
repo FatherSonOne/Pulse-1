@@ -90,7 +90,7 @@ export interface Contact {
   website?: string;
   birthday?: string;
   groups?: string[];
-  source: 'local' | 'google' | 'vision';
+  source: 'local' | 'google' | 'vision' | 'microsoft';
   lastSynced?: Date;
   contactType?: ContactType; // team, client, volunteer, vendor, other
   isTeamMember?: boolean; // Quick flag for team members

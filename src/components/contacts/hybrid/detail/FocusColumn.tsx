@@ -181,7 +181,7 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
   const trendIcon = trend ? getTrendIcon(trend) : null;
   const trendColor = trend ? getTrendColor(trend) : '#6b7280';
   const provenanceSource = ((contact as Contact & { import_source?: ContactProvenanceSource }).import_source ??
-    (contact.source === 'google' ? 'google' : contact.source === 'local' ? 'manual' : 'legacy')) as ContactProvenanceSource;
+    (contact.source === 'google' ? 'google' : contact.source === 'microsoft' ? 'outlook' : contact.source === 'local' ? 'manual' : 'legacy')) as ContactProvenanceSource;
 
   const aiContext = profile?.aiRelationshipSummary || profile?.aiNextActionSuggestion;
 

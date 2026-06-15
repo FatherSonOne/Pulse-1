@@ -30,7 +30,7 @@ const focusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-const externalIdForContact = (contact: Contact): string => contact.id.replace(/^google_/, '');
+const externalIdForContact = (contact: Contact): string => contact.id.replace(/^(google_|microsoft_)/, '');
 
 const avatarStyleFor = (contact: Contact): CSSProperties | undefined => {
   if (!contact.avatarColor || contact.avatarColor.startsWith('bg-')) return undefined;
@@ -176,11 +176,13 @@ export const TrimWizard: React.FC<TrimWizardProps> = ({
       if (userError) throw userError;
       if (!user) throw new Error('Missing authenticated user');
 
-      const googleExternalIds = skippedContacts
-        .filter(contact => contact.source === 'google' || contact.id.startsWith('google_'))
-        .map(externalIdForContact);
+      const isGoogle = (c: Contact) => c.source === 'google' || c.id.startsWith('google_');
+      const isMicrosoft = (c: Contact) => c.source === 'microsoft' || c.id.startsWith('microsoft_');
+
+      const googleExternalIds = skippedContacts.filter(isGoogle).map(externalIdForContact);
+      const microsoftExternalIds = skippedContacts.filter(isMicrosoft).map(externalIdForContact);
       const directIds = skippedContacts
-        .filter(contact => contact.source !== 'google' && !contact.id.startsWith('google_'))
+        .filter(contact => !isGoogle(contact) && !isMicrosoft(contact))
         .map(contact => contact.id);
 
       if (googleExternalIds.length > 0) {
@@ -193,6 +195,19 @@ export const TrimWizard: React.FC<TrimWizardProps> = ({
         if (error) throw error;
       }
 
+      // Imported-then-skipped Microsoft contacts are keyed by (platform, external_id)
+      // just like Google — the wizard's contact.id is `microsoft_<graphId>`, not the
+      // DB row's uuid, so delete by external_id rather than id.
+      if (microsoftExternalIds.length > 0) {
+        const { error } = await supabase
+          .from('contacts')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('platform', 'microsoft')
+          .in('external_id', microsoftExternalIds);
+        if (error) throw error;
+      }
+
       if (directIds.length > 0) {
         const { error } = await supabase
           .from('contacts')
@@ -202,9 +217,13 @@ export const TrimWizard: React.FC<TrimWizardProps> = ({
         if (error) throw error;
       }
 
+      // rejected_import_labels remembers fully-skipped Google contact-group labels
+      // so a later re-import doesn't re-suggest them. It is Google-folder-specific
+      // (source='google'); only feed Google contacts in so a Microsoft import never
+      // records Outlook folder ids under a google provenance.
       const skippedIds = new Set(skippedContacts.map(contact => contact.id));
       const contactsByLabel = new Map<string, Contact[]>();
-      importedContacts.forEach(contact => {
+      importedContacts.filter(isGoogle).forEach(contact => {
         contact.groups?.forEach(labelId => {
           if (!contactsByLabel.has(labelId)) contactsByLabel.set(labelId, []);
           contactsByLabel.get(labelId)?.push(contact);
