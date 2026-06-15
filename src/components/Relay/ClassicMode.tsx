@@ -21,6 +21,7 @@ import {
   Clock,
   MessageCircle,
   Volume2,
+  MicOff,
   Users,
   Download,
   Archive,
@@ -96,6 +97,7 @@ import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
 import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
+import { describeMicError, type MicErrorInfo } from '../../utils/micErrors';
 
 // How many Direct messages to load per page. The first open loads the most
 // recent page; "Load older" pages further back via the created_at cursor. Caps
@@ -219,6 +221,10 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
+  // Set when mic acquisition fails (denied / no device / in use). A permission
+  // denial surfaces a persistent, actionable banner (Electron-aware) rather
+  // than a vanishing toast — see startRecording's catch + the thread render.
+  const [micError, setMicError] = useState<MicErrorInfo | null>(null);
   // Playback flows through the shared Voice Studio transport so the persistent
   // StudioFooter reflects + controls whatever plays here. "Which row is active"
   // is derived from studio.nowPlaying rather than a local playingId.
@@ -761,6 +767,8 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
         }
       });
 
+      // Acquired — clear any prior mic-failure banner.
+      setMicError(null);
       streamRef.current = stream;
       chunksRef.current = [];
 
@@ -877,7 +885,14 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
 
     } catch (error) {
       console.error('Error starting recording:', error);
-      toast.error('Could not access microphone');
+      const info = describeMicError(error);
+      // Permission denials get a persistent banner (the fix lives outside the
+      // app — OS/browser settings — so a transient toast would vanish before
+      // the user can act). Non-permission errors stay a toast.
+      if (info.isPermission) {
+        setMicError(info);
+      }
+      toast.error(info.detail, { duration: info.isPermission ? 8000 : 5000 });
     }
   }, [apiKey]);
 
@@ -1638,6 +1653,36 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
 
             {/* Messages */}
             <div className="classic-messages" ref={threadScrollRef}>
+              {micError?.isPermission && (
+                <div
+                  className="mb-3 rounded-xl border px-3 py-2.5 flex items-start gap-2.5"
+                  style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-surface)' }}
+                  role="alert"
+                >
+                  <MicOff className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--pulse-ink-3)' }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium" style={{ color: 'var(--pulse-ink)' }}>{micError.title}</p>
+                    <p className="text-xs leading-relaxed mt-0.5" style={{ color: 'var(--pulse-ink-2)' }}>{micError.detail}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => startRecording()}
+                      className="px-2.5 py-1 rounded-md text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                    >
+                      Try again
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMicError(null)}
+                      aria-label="Dismiss"
+                      className="p-1 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
               {hasOlderMessages && activeThreadRecordings.length > 0 && (
                 <div className="flex justify-center pb-1">
                   <button
