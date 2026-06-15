@@ -96,7 +96,7 @@ A continuous axis with four detents:
 
 | Detent | Meaning | Window (proposed) | Reuses |
 |---|---|---|---|
-| **Now** | The next stop only / immediate proximity | events within ~`[now, now + 3h)` (DECISION — see §7) and/or the single nearest un-visited stop | `useGeoRelevanceSignals` + a NEW narrow window |
+| **Now** | The nearest un-visited stop + immediate proximity | **DECIDED 2026-06-15:** events in `[now, now + 3h)` **AND** the single nearest un-visited stop (both) | `useGeoRelevanceSignals` + a NEW narrow window + visited-stops |
 | **Today** | Today's route | `start ∈ [now − DAY_MS, now + DAY_MS)` | `geoSignals.todayEvents` (EXISTS) |
 | **3 days** | Near-term batch | `start ∈ [now − DAY_MS, now + 3·DAY_MS)` | a NEW derivation on `geoSignals.weekEvents` |
 | **Week** | Full week batch-planning | `start ∈ [now − DAY_MS, now + WEEK_MS)` | `geoSignals.weekEvents` (EXISTS) |
@@ -324,7 +324,7 @@ migrations, RLS footguns) are **folded in** and marked **[CRITIC]**.
 | Capability | Backend ref | Layer | Backend status | Horizon surface | UI status | Notes |
 |---|---|---|---|---|---|---|
 | `mapLibreRenderer` flag | `FeatureContext def L92, default TRUE L164`, `FLAGS_VERSION=1` migration L190-194; `useMapLibreRenderer L36-40`; `?ff_mapLibreRenderer` override | flag | real | base-style switch / which renderer | surfaced | DEFAULT ON. Selects MapLibre vs Google. **D builds on the MapLibre path.** Any new D flag graduating OFF→ON must bump `FLAGS_VERSION` + add its key to the migration block, or persisted `false` masks it. |
-| `experimentalEnabled` flag (Map reachability) | `def L54, default FALSE L145`; gates `Sidebar L404` nav; `App.tsx L1465-1480` renders `PulseMapView` WITHOUT re-checking | flag | real | section reachability | surfaced | Gates the Map NAV item only. Direct route to `AppView.MAP` (deep link / command palette) STILL renders the Map when OFF — the gate is nav-only. **DECISION (§7): does Horizon graduate the Map out of Experimental?** |
+| `experimentalEnabled` flag (Map reachability) | `def L54, default FALSE L145`; gates `Sidebar L404` nav; `App.tsx L1465-1480` renders `PulseMapView` WITHOUT re-checking | flag | real | section reachability | surfaced | Gates the Map NAV item only. Direct route to `AppView.MAP` (deep link / command palette) STILL renders the Map when OFF — the gate is nav-only. **DECIDED 2026-06-15: YES — graduate (P13); ungate the Sidebar nav after P7 + a launch-readiness pass.** |
 | `relayLiveRooms` flag | `def L102, default FALSE L167`; NO consumer in `src/components/map/**` | flag | orphaned | none | unsurfaced | NOT a Map flag (Relay voice only). Listed for completeness — the sibling "live" precedent. |
 | Map plan/tier entitlement gating | `useEntitlements` — banner-only consumer `Sidebar L265/271`; NONE in `src/components/map/**` | derived | **stub** | Routes/Live/Geofences (if any go paid) | ui_only_no_backend | **NO plan gate on any Map feature today.** Only indirect cap = AI circuit breaker (usage cap, not feature lock). Paid-tier drawers would be NET-NEW (follow `useEntitlements.canUseFeature`, NOT the FeatureContext flag pattern). |
 | **[CRITIC]** `share_level` down-sampling | enum `{precise,approximate,city_only}` schema-ready; NO coarsening code path | table | stub | Live drawer consent UI | ui_only_no_backend | A consent UI offering "approximate"/"city only" would be a Sat/Terr/Hybrid-style lie (option persists, precise coords still flow). Implement coarsening (net-new) OR flag non-precise levels `ui_only_no_backend`. Do not ship the selector as if it changes what the viewer sees. |
@@ -679,6 +679,42 @@ any replacement.
   by design); coral NOT used for these (they're not signal).
 - **Commit:** `feat(map): plot task places + decision venues on the Map (mapHorizon)`.
 
+### P13 — Graduate the Map out of Experimental (nav change; DECIDED 2026-06-15)
+
+- **Goal:** make the Map a default-visible nav item (remove the
+  `experimentalEnabled` gate on the Map nav entry). **Depends on P7** (live
+  presence working) — do not graduate a Map that advertises Live while
+  `user_locations` is unpublished.
+- **Files (VERIFIED 2026-06-15 — gating is SECTION-level, not per-item):**
+  - `src/components/Sidebar/Sidebar.tsx` — the Map nav item is defined INSIDE the
+    Experimental section (`:132` `{ icon: MapPin, label: 'Map', view: AppView.MAP }`);
+    the section is hidden by the generic `sectionDisabled = section.label ===
+    'Experimental' && !features.experimentalEnabled` (`:403-404`). Graduation =
+    **move the Map item out of the Experimental section array into a default
+    section** (NOT a one-line conditional). Mind the `:126-131` comment that the
+    Map stack also drives cross-section features.
+  - `src/components/MobileChrome/MobileNavSheet.tsx` — same section gating on
+    mobile (`locked = !!section.experimental && !features.experimentalEnabled`
+    `:54`); the Map item must move out of the experimental section here too.
+  - `App.tsx:1465-1480` already renders `PulseMapView` unconditionally (the gate
+    is nav-only), so no render-path change is needed.
+  - Keep consistent with `docs/EXPERIMENTAL_TRIO_CUT_OR_KEEP_AUDIT_2026-06-13.md`
+    (the prior cut-or-keep decision on the Experimental trio).
+  - Consider whether to also flip `mapHorizon` ON by default at graduation
+    (separate flag flip — bump `FLAGS_VERSION`, §6).
+- **New:** none.
+- **Acceptance:** Map nav item visible on BOTH desktop sidebar and mobile nav
+  without Experimental Features on; live presence verified working (post-P7) in a
+  2-browser test; no regression to the remaining Experimental section items.
+- **Pre-reqs / launch-readiness:** P7 applied + soaked; Live/Geofences drawers
+  honest about their dependencies; a deliberate go/no-go (this is the only phase
+  that changes default-user-visible surface area).
+- **Commit:** `feat(map): graduate Map to default nav (post-P7)`.
+
+> **Sequencing note:** P13 is LAST and gated on P7. It is the only phase that
+> changes what a non-Experimental user sees, so it carries its own go/no-go even
+> though the underlying UX shipped flag-gated in P3–P12.
+
 ### Honest-stub phase (folded into P3/P9, called out)
 
 Anything `ui_only_no_backend` ships as a **truthful disabled/"coming soon"
@@ -707,11 +743,16 @@ backend — gate appropriately).
     legacy tabs/picker** (don't render the base-style switch — it's MapLibre-
     only). Treat `mapHorizon && mapLibreOn` as the activation condition for the
     renderer-coupled pieces.
-  - `experimentalEnabled` still gates Map **reachability** (nav). Horizon does
-    NOT change that; the Map stays in the Experimental section unless the user
-    decides to graduate it (§7). Note `App.tsx:1465-1480` renders the Map
-    without re-checking `experimentalEnabled`, so a deep link reaches Horizon
-    too once `mapHorizon` is ON — acceptable for dev/beta.
+  - `experimentalEnabled` gates Map **reachability** (nav) today. **DECIDED
+    2026-06-15: the Map graduates out of Experimental (P13)** — but P13 is LAST
+    and gated on P7 (live presence) + a launch-readiness pass; until then the
+    Map stays Experimental and Horizon ships flag-gated within it. Note
+    `App.tsx:1465-1480` renders the Map without re-checking `experimentalEnabled`
+    (gate is nav-only). P13 graduation = relocate the Map nav item OUT of the
+    Experimental section in BOTH `Sidebar/Sidebar.tsx` (item `:132`, section gate
+    `:403-404`) and `MobileChrome/MobileNavSheet.tsx` (`:54`) — section-level, not
+    a single conditional. Decide at graduation whether to also flip `mapHorizon`
+    ON by default (its own `FLAGS_VERSION` bump).
 - **Graduation (later):** when `mapHorizon` flips OFF→ON by default, you **must
   bump `FLAGS_VERSION`** and add `merged.mapHorizon = DEFAULT_FEATURES.mapHorizon`
   to the migration block (`FeatureContext.tsx:190-195`), or persisted `false`
@@ -725,30 +766,45 @@ backend — gate appropriately).
 
 ---
 
-## 7. Open questions / decisions for the user
+## 7. Decisions (resolved 2026-06-15) + remaining defaults
 
-1. **What does "Now" mean precisely?** Proposed `[now, now + 3h)` for events
-   AND/OR "the single nearest un-visited stop." Pick one or both. (Affects
-   `NOW_MS` and the `lensIncludesContact('now', ...)` branch.)
-2. **Should tasks and decisions plot as stops on the Map?** They're real-but-
-   homeless (P12). Yes = surface a genuine orphaned capability; but it adds
-   marker types and a `tasks`/`decisions` prop to `PulseMapView`. Confirm scope.
-3. **Background/server geofencing is Horizon-2.** Today geofence detection runs
-   ONLY while broadcast is active (client-side). Do we (a) ship the Geofences
-   drawer with an honest "requires Live location ON" banner now, or (b) hold the
-   drawer until server-side detection exists? Recommend (a).
-4. **Does Horizon graduate the Map out of the Experimental section?**
-   (`experimentalEnabled`.) If yes, that's a separate nav change with its own
-   launch-readiness bar (SMS/push/etc. are unrelated, but the Map's live-presence
-   depends on P7).
-5. **`share_level` (approximate / city_only):** implement coordinate
-   coarsening (net-new backend) or disable the non-precise options with a
-   "precise only for now" note? Shipping the selector without coarsening is a
-   privacy lie. Recommend disable-with-note until coarsening is built.
-6. **Density semantics:** which labels/symbols drop at low density? Need a
-   concrete rule before P3 (e.g. low = POI labels off, road labels thinned).
-7. **Provider provenance chip** (Stadia/Photon): worth surfacing? It's free on
-   geosearch but net-new backend on the other four maps fns. Likely DEFER.
+### Resolved by the user (2026-06-15)
+
+1. **"Now" = nearest un-visited stop AND `[now, now + 3h)` events (both).**
+   `NOW_MS = 3h`; the `lensIncludesContact('now', ...)` branch includes (a) the
+   single nearest stop not yet in today's `geofence_events` visited set AND
+   (b) any contact attending an event in `[now, now+3h)`. Framing of the AI
+   card at Now = "go here next" nudge.
+2. **YES — tasks and decisions plot on the main Map (P12 in scope for v1).**
+   Surface the real-but-homeless `entity_places('task'|'decision')` as
+   MapLibre-native markers (static/refetch, not coral). Adds `tasks`/`decisions`
+   props to `PulseMapView` + a cross-entity marker layer.
+4. **YES — Horizon graduates the Map out of the Experimental section.** The Map
+   becomes a default-visible nav item (new phase **P13**). NOTE the dependency:
+   graduation should land **after P7** (live presence) and after a launch-
+   readiness pass, since a default-visible Map that advertises Live presence must
+   actually have it working. `mapHorizon` can still gate the *new UX* while the
+   *nav* graduates — i.e. graduation ungates `experimentalEnabled` on the Map nav
+   item; whether the legacy or Horizon UX shows is still the `mapHorizon` flag's
+   call until Horizon itself graduates.
+
+### Applied defaults (recommendation taken; override anytime)
+
+3. **Geofences drawer ships now with an honest "requires Live location ON"
+   banner** (option a). Server-side detection stays Horizon-2 (§8).
+5. **`share_level` non-precise options disabled-with-note** ("precise only for
+   now") until coordinate coarsening is built (§8). Do not ship a selector that
+   doesn't change what the viewer sees.
+6. **Density default rule:** low density = POI/minor-label symbol layers off +
+   road labels thinned; high density = all labels. Concrete layer list finalized
+   in P3 against the live Coral Cockpit style layers.
+7. **Provider provenance chip DEFERRED** (§8) — free on geosearch, net-new
+   backend on the other four fns; not worth the split for v1.
+
+### Still genuinely open (non-blocking)
+
+- Exact "nearest stop" tiebreak when GPS is stale/denied (fallback to
+  next-by-time?) — settle in P1 with the window unit tests.
 
 ---
 
