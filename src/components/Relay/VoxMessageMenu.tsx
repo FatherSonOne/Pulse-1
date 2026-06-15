@@ -89,7 +89,7 @@ const VoxMessageMenu: React.FC<VoxMessageMenuProps> = ({
       ref={menuRef}
       // eslint-disable-next-line react/forbid-component-props
       style={style}
-      className={`rounded-lg border shadow-xl py-1 min-w-[150px] ${bg}`}
+      className={`rounded-lg border shadow-xl py-1 min-w-[150px] vox-menu-in ${openUpward ? 'origin-bottom-right' : 'origin-top-right'} ${bg}`}
     >
       <button
         type="button"
