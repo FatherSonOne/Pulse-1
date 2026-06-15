@@ -41,6 +41,7 @@ import { useMapLibreRenderer } from './provider/useMapLibreRenderer';
 import { MapLibreAcceptedRoute } from './provider/MapLibreAcceptedRoute';
 import { MapLibreAtlasTerritories } from './provider/MapLibreAtlasTerritories';
 import { MapLibreAtlasHalos } from './provider/MapLibreAtlasHalos';
+import { MapLibreCircleOverlays } from './provider/MapLibreCircleOverlays';
 import { MapMarkerPortal } from './provider/MapMarkerPortal';
 import { MapLibreRadiusRings } from './provider/MapLibreRadiusRings';
 import type { Map as MaplibreMap } from 'maplibre-gl';
@@ -669,6 +670,14 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                 contacts={localContacts}
                 selectedCircleId={selectedCircleId}
                 onSelectCircle={setSelectedCircleId}
+              />
+              <MapLibreCircleOverlays
+                map={mapLibreRef.current}
+                circles={circles}
+                contacts={localContacts}
+                selectedCircleId={selectedCircleId}
+                onSelectCircle={setSelectedCircleId}
+                isDarkMode={isDarkMode}
               />
             </>
           )}
