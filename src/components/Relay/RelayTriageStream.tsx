@@ -782,8 +782,9 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-[#080808]">
-      {/* Masthead — shared StudioMasthead; filters ride the `right` slot. */}
-      <div className="px-7 pt-6">
+      {/* Masthead — shared StudioMasthead; filters ride the `right` slot.
+          px-4 on phones, px-7 from sm up (desktop-identical at ≥640). */}
+      <div className="px-4 sm:px-7 pt-6">
         <StudioMasthead
           eyebrow="Relay · Inbox"
           title="Today's voice"
@@ -852,7 +853,7 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
 
       {/* Needs-reply banner */}
       {needsReplyCount > 0 && (
-        <div className="mx-7 mb-3 px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center gap-3">
+        <div className="mx-4 sm:mx-7 mb-3 px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center gap-3">
           <span className="w-1.5 h-1.5 rounded-full bg-rose-500 pulse-dot-anim" aria-hidden="true" />
           <p className="text-sm font-medium text-rose-700 dark:text-rose-300 flex-1">
             {needsReplyCount} voice {needsReplyCount === 1 ? 'message needs' : 'messages need'} a reply
@@ -870,7 +871,7 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
       )}
 
       {/* Card list */}
-      <div className="flex-1 overflow-y-auto px-7 pb-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-7 pb-6">
         {error && (
           <div className="mb-3 px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-sm text-rose-600 dark:text-rose-400">
             {error}
