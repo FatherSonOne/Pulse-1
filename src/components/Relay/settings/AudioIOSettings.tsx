@@ -145,7 +145,7 @@ export const AudioIOSettings: React.FC<AudioIOSettingsProps> = ({
           </div>
           <button
             onClick={() => requestPermission('audio')}
-            className="w-full px-4 py-2.5 rounded-lg font-medium text-white transition-all"
+            className="w-full px-4 py-2.5 rounded-lg font-medium text-white transition-colors ease-pulse"
             style={{
               background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}cc 100%)`,
               boxShadow: `0 4px 14px ${accentColor}30`,
@@ -167,7 +167,7 @@ export const AudioIOSettings: React.FC<AudioIOSettingsProps> = ({
             value={selectedMic}
             onChange={(e) => handleMicChange(e.target.value)}
             disabled={isLoading || !hasPermission}
-            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2`}
+            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-[box-shadow,border-color] ease-pulse focus:outline-none focus:ring-2`}
             style={{ focusRingColor: accentColor }}
           >
             <option value="">Default Microphone</option>
@@ -192,7 +192,7 @@ export const AudioIOSettings: React.FC<AudioIOSettingsProps> = ({
             value={selectedSpeaker}
             onChange={(e) => handleSpeakerChange(e.target.value)}
             disabled={isLoading || !hasPermission}
-            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2`}
+            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-[box-shadow,border-color] ease-pulse focus:outline-none focus:ring-2`}
           >
             <option value="">Default Speaker</option>
             {audioOutputs.map((device) => (
@@ -269,13 +269,13 @@ export const AudioIOSettings: React.FC<AudioIOSettingsProps> = ({
                 setEchoCancellation(!echoCancellation);
                 saveSetting('voxEchoCancellation', !echoCancellation);
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 echoCancellation ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={echoCancellation ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   echoCancellation ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -293,13 +293,13 @@ export const AudioIOSettings: React.FC<AudioIOSettingsProps> = ({
                 setNoiseReduction(!noiseReduction);
                 saveSetting('voxNoiseReduction', !noiseReduction);
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 noiseReduction ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={noiseReduction ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   noiseReduction ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -317,13 +317,13 @@ export const AudioIOSettings: React.FC<AudioIOSettingsProps> = ({
                 setAutoGain(!autoGain);
                 saveSetting('voxAutoGainControl', !autoGain);
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 autoGain ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={autoGain ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   autoGain ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />

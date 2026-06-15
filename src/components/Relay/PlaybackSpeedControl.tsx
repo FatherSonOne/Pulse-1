@@ -39,7 +39,7 @@ export const PlaybackSpeedControl: React.FC<PlaybackSpeedControlProps> = ({
     return (
       <button
         onClick={cycleSpeed}
-        className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold transition-all hover:scale-110 active:scale-95"
+        className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold transition duration-200 ease-pulse hover:scale-105 active:scale-95"
         style={{
           background: isDarkMode ? '#374151' : '#e5e7eb',
           color: getSpeedColor(speed),
@@ -57,7 +57,7 @@ export const PlaybackSpeedControl: React.FC<PlaybackSpeedControlProps> = ({
     <div className="relative group">
       <button
         onClick={cycleSpeed}
-        className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105 active:scale-95"
+        className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition duration-200 ease-pulse hover:scale-105 active:scale-95"
         style={{
           background: isDarkMode ? '#374151' : '#e5e7eb',
           color: getSpeedColor(speed),
@@ -70,7 +70,7 @@ export const PlaybackSpeedControl: React.FC<PlaybackSpeedControlProps> = ({
 
       {/* Dropdown on hover */}
       <div
-        className="absolute bottom-full left-0 mb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
+        className="absolute bottom-full left-0 mb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition duration-200 ease-pulse origin-bottom-left scale-95 group-hover:scale-100 z-50"
         style={{
           pointerEvents: 'none',
         }}
@@ -89,7 +89,7 @@ export const PlaybackSpeedControl: React.FC<PlaybackSpeedControlProps> = ({
                 e.stopPropagation();
                 onSpeedChange(s);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ease-pulse"
               style={{
                 background: s === speed
                   ? (isDarkMode ? '#374151' : '#f3f4f6')

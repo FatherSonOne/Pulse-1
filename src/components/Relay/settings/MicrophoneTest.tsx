@@ -170,7 +170,7 @@ export const MicrophoneTest: React.FC<MicrophoneTestProps> = ({
 
         <button
           onClick={isActive ? stopTest : startTest}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ease-pulse"
           style={{
             background: isActive
               ? 'rgba(239, 68, 68, 0.15)'
@@ -206,7 +206,7 @@ export const MicrophoneTest: React.FC<MicrophoneTestProps> = ({
               {bars.map((bar, i) => (
                 <div
                   key={i}
-                  className="flex-1 rounded-sm transition-all duration-75"
+                  className="flex-1 rounded-sm transition-[background-color,box-shadow,opacity] duration-75"
                   style={{
                     height: '100%',
                     background: bar.isLit

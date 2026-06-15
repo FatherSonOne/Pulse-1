@@ -163,7 +163,7 @@ export const StorageSettings: React.FC<StorageSettingsProps> = ({
             <button
               onClick={selectDownloadFolder}
               disabled={isSelectingFolder || !hasFileSystemAccess}
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors ease-pulse disabled:opacity-50"
               style={{
                 background: `${accentColor}15`,
                 color: accentColor,
@@ -213,13 +213,13 @@ export const StorageSettings: React.FC<StorageSettingsProps> = ({
               setAutoDownload(!autoDownload);
               saveSetting('voxAutoDownload', !autoDownload);
             }}
-            className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+            className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
               autoDownload ? '' : 'bg-gray-300 dark:bg-gray-600'
             }`}
             style={autoDownload ? { background: accentColor } : undefined}
           >
             <div
-              className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+              className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                 autoDownload ? 'translate-x-5' : 'translate-x-0'
               }`}
             />
@@ -241,7 +241,7 @@ export const StorageSettings: React.FC<StorageSettingsProps> = ({
               setRetentionDays(value);
               saveSetting('voxKeepRecordingsDays', value);
             }}
-            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2`}
+            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-[box-shadow,border-color] ease-pulse focus:outline-none focus:ring-2`}
           >
             {RETENTION_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -271,7 +271,7 @@ export const StorageSettings: React.FC<StorageSettingsProps> = ({
             <div className="mb-3">
               <div className={`h-3 rounded-full overflow-hidden ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
                 <div
-                  className="h-full rounded-full transition-all duration-500"
+                  className="h-full rounded-full transition-[width] duration-500"
                   style={{
                     width: `${Math.min((storageUsage.used / storageUsage.quota) * 100, 100)}%`,
                     background: accentColor,
@@ -298,7 +298,7 @@ export const StorageSettings: React.FC<StorageSettingsProps> = ({
 
             {/* Clear Cache Button */}
             <button
-              className={`w-full mt-4 px-4 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all ${tc.border} border ${tc.hoverBg}`}
+              className={`w-full mt-4 px-4 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors ease-pulse ${tc.border} border ${tc.hoverBg}`}
               onClick={() => {
                 // Clear cached data
                 if ('caches' in window) {

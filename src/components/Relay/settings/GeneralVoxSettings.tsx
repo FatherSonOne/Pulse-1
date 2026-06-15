@@ -92,7 +92,7 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
               setDefaultView(value);
               saveSetting('relayDefaultView', value);
             }}
-            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2`}
+            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-[box-shadow,border-color] ease-pulse focus:outline-none focus:ring-2`}
           >
             {RELAY_VIEW_OPTIONS.map((opt) => (
               <option key={opt.id} value={opt.id}>
@@ -130,13 +130,13 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
                 setNotificationsEnabled(!notificationsEnabled);
                 saveSetting('voxNotificationsEnabled', !notificationsEnabled);
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 notificationsEnabled ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={notificationsEnabled ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   notificationsEnabled ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -161,13 +161,13 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
                 setAutoTranscribe(!autoTranscribe);
                 saveSetting('autoTranscribe', !autoTranscribe);
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 autoTranscribe ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={autoTranscribe ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   autoTranscribe ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -194,13 +194,13 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
                 // Also update localStorage for immediate effect
                 localStorage.setItem('voxer_realtime_transcription', JSON.stringify(!realtimeTranscription));
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 realtimeTranscription ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={realtimeTranscription ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   realtimeTranscription ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -227,13 +227,13 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
                 // Also update localStorage for immediate effect
                 localStorage.setItem('voxer_auto_analyze', JSON.stringify(!autoAnalyze));
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 autoAnalyze ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={autoAnalyze ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   autoAnalyze ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -260,13 +260,13 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
                 // Also update localStorage for immediate effect
                 localStorage.setItem('voxer_auto_feedback', JSON.stringify(!autoFeedback));
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 autoFeedback ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={autoFeedback ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   autoFeedback ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -291,13 +291,13 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
                 setAutoPlayIncoming(!autoPlayIncoming);
                 saveSetting('voxAutoPlayIncoming', !autoPlayIncoming);
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 autoPlayIncoming ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={autoPlayIncoming ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   autoPlayIncoming ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -324,13 +324,13 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
                 // Also update localStorage for immediate effect
                 localStorage.setItem('voxer_auto_enhance', JSON.stringify(!autoEnhance));
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 autoEnhance ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={autoEnhance ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   autoEnhance ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -355,13 +355,13 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
                 setHapticsEnabled(!hapticsEnabled);
                 saveSetting('voxHapticsEnabled', !hapticsEnabled);
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 hapticsEnabled ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={hapticsEnabled ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   hapticsEnabled ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />

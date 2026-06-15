@@ -171,7 +171,7 @@ export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
           </div>
           <button
             onClick={() => requestPermission('video')}
-            className="w-full px-4 py-2.5 rounded-lg font-medium text-white transition-all"
+            className="w-full px-4 py-2.5 rounded-lg font-medium text-white transition-colors ease-pulse"
             style={{
               background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}cc 100%)`,
               boxShadow: `0 4px 14px ${accentColor}30`,
@@ -216,7 +216,7 @@ export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={isPreviewActive ? stopPreview : startPreview}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ease-pulse"
                 style={{
                   background: isPreviewActive ? 'rgba(239, 68, 68, 0.2)' : `${accentColor}30`,
                   color: isPreviewActive ? '#EF4444' : accentColor,
@@ -241,7 +241,7 @@ export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
                     setMirrorPreview(!mirrorPreview);
                     saveSetting('voxVideoMirror', !mirrorPreview);
                   }}
-                  className="p-1.5 rounded-lg transition-all"
+                  className="p-1.5 rounded-lg transition-colors ease-pulse"
                   style={{
                     background: mirrorPreview ? `${accentColor}30` : 'rgba(255,255,255,0.1)',
                     color: mirrorPreview ? accentColor : 'white',
@@ -279,7 +279,7 @@ export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
             value={selectedCamera}
             onChange={(e) => handleCameraChange(e.target.value)}
             disabled={isLoading || !hasPermission}
-            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2`}
+            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-[box-shadow,border-color] ease-pulse focus:outline-none focus:ring-2`}
           >
             <option value="">Default Camera</option>
             {videoInputs.map((device) => (
@@ -354,13 +354,13 @@ export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
                 setPreviewEnabled(!previewEnabled);
                 saveSetting('voxVideoPreviewEnabled', !previewEnabled);
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 previewEnabled ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={previewEnabled ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   previewEnabled ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -378,13 +378,13 @@ export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
                 setMirrorPreview(!mirrorPreview);
                 saveSetting('voxVideoMirror', !mirrorPreview);
               }}
-              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-pulse ${
                 mirrorPreview ? '' : 'bg-gray-300 dark:bg-gray-600'
               }`}
               style={mirrorPreview ? { background: accentColor } : undefined}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-pulse ${
                   mirrorPreview ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />

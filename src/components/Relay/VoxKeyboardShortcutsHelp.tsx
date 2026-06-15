@@ -71,7 +71,7 @@ export const VoxKeyboardShortcutsHelp: React.FC<VoxKeyboardShortcutsHelpProps> =
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl transition-all hover:scale-110 active:scale-95"
+              className="p-2 rounded-xl transition duration-200 ease-pulse hover:scale-105 active:scale-95"
               style={{
                 background: isDarkMode ? '#374151' : '#e5e7eb',
                 color: isDarkMode ? '#f9fafb' : '#111827',
@@ -89,10 +89,9 @@ export const VoxKeyboardShortcutsHelp: React.FC<VoxKeyboardShortcutsHelpProps> =
             {shortcuts.map(([key, description]) => (
               <div
                 key={key}
-                className="flex items-center justify-between gap-4 p-3 rounded-xl transition-all hover:scale-105"
-                style={{
-                  background: isDarkMode ? '#1f293740' : '#f3f4f650',
-                }}
+                className={`flex items-center justify-between gap-4 p-3 rounded-xl transition-colors ease-pulse ${
+                  isDarkMode ? 'bg-[#1f293740] hover:bg-[#1f293780]' : 'bg-[#f3f4f650] hover:bg-[#f3f4f6]'
+                }`}
               >
                 <span
                   className="text-sm flex-1"
