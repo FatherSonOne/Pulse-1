@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Mic, Square, Send, X as XIcon, ChevronDown, Loader2 } from 'lucide-react';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
+import { toastMicError } from '../../utils/micErrors';
 import { voxModeService } from '../../services/relay/voxModeService';
 import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
@@ -225,7 +226,7 @@ const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
       await startRecording();
     } catch (err) {
       console.error('[RelayQuickRecorderStrip] start failed', err);
-      toast.error('Could not access microphone. Check permissions.');
+      toastMicError(err);
     }
   };
 

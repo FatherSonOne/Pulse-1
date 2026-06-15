@@ -15,6 +15,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useRelayStudio } from './RelayStudioContext';
+import { toastMicError } from '../../../utils/micErrors';
 
 export interface RelayModeRecorderApi {
   /** Begin capture (the mode's own getUserMedia + MediaRecorder). */
@@ -45,7 +46,10 @@ export function useRelayModeRecorder({ start, stop, cancel, recording, enabled =
     if (!enabled) return;
     return registerRecorder({
       start: () => {
-        void handlersRef.current.start();
+        // Surface a mic-acquisition failure (denied / no device / in use)
+        // instead of swallowing the rejection. Modes that handle it internally
+        // (ClassicMode) resolve here, so this never double-reports for them.
+        Promise.resolve(handlersRef.current.start()).catch(toastMicError);
       },
       stop: () => handlersRef.current.stop(),
       cancel: () => handlersRef.current.cancel(),

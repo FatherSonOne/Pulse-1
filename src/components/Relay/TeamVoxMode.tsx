@@ -28,6 +28,7 @@ import RecordButton from './RecordButton';
 import VoxRecordArea from './VoxRecordArea';
 import RelayPanelShell from './RelayPanelShell';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
+import { toastMicError } from '../../utils/micErrors';
 import { voxModeService } from '../../services/relay/voxModeService';
 import { supabase } from '../../services/supabase';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
@@ -370,7 +371,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     if (recordingState === 'recording') {
       stopRecording();
     } else if (recordingState === 'idle') {
-      startRecording();
+      startRecording().catch(toastMicError);
     }
   };
 

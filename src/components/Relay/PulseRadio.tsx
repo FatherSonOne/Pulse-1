@@ -34,6 +34,7 @@ import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
+import { toastMicError } from '../../utils/micErrors';
 import { voxModeService } from '../../services/relay/voxModeService';
 import { supabase } from '../../services/supabase';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
@@ -203,7 +204,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   // Phase 6: Keyboard Shortcuts
   useRelayKeyboardShortcuts({
     onToggleRecording: () => {
-      if (recordingState === 'idle') startRecording();
+      if (recordingState === 'idle') startRecording().catch(toastMicError);
       else if (recordingState === 'recording') stopRecording();
     },
     onStopRecording: () => {

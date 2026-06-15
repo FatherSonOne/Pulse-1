@@ -19,6 +19,7 @@ import { Search, X, ArrowLeft, Mail, Link as LinkIcon, MicOff } from 'lucide-rea
 import RecordButton from './RecordButton';
 import RecordingPreview from './RecordingPreview';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
+import { toastMicError } from '../../utils/micErrors';
 import { voxModeService } from '../../services/relay/voxModeService';
 import toast from 'react-hot-toast';
 import type { Contact } from '../../types';
@@ -472,7 +473,7 @@ export const RelayComposer: React.FC<RelayComposerProps> = ({
                   if (recordingState === 'idle') {
                     startRecording().catch((err) => {
                       console.error('startRecording failed', err);
-                      toast.error('Could not access the microphone.');
+                      toastMicError(err);
                     });
                   } else {
                     handlePointerDown();
@@ -483,7 +484,7 @@ export const RelayComposer: React.FC<RelayComposerProps> = ({
                   if (recordingState === 'idle') {
                     startRecording().catch((err) => {
                       console.error('startRecording failed', err);
-                      toast.error('Could not access the microphone.');
+                      toastMicError(err);
                     });
                   } else {
                     handleRecordToggle();

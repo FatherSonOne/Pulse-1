@@ -36,6 +36,7 @@ import RecordButton from './RecordButton';
 import VoxRecordArea from './VoxRecordArea';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
+import { toastMicError } from '../../utils/micErrors';
 import { voxModeService } from '../../services/relay/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
 import { type VoxNote, type LinkedItem } from '../../services/relay/voxModeTypes';
@@ -229,7 +230,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   // Phase 6: Keyboard Shortcuts (after handler functions are defined)
   useRelayKeyboardShortcuts({
     onToggleRecording: () => {
-      if (recordingState === 'idle') startRecording();
+      if (recordingState === 'idle') startRecording().catch(toastMicError);
       else if (recordingState === 'recording') stopRecording();
     },
     onStopRecording: () => {
@@ -321,7 +322,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     if (recordingState === 'recording') {
       stopRecording();
     } else if (recordingState === 'idle') {
-      startRecording();
+      startRecording().catch(toastMicError);
     }
   };
 

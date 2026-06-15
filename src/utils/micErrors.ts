@@ -11,6 +11,13 @@
 //
 // Detection matches the repo's canonical Electron check (window.electronAPI,
 // see Settings.tsx / authService.ts).
+//
+// describeMicError stays pure (no toast import) so surfaces that render their
+// own UI (e.g. ClassicMode's persistent banner) can classify without pulling
+// in react-hot-toast. toastMicError is the convenience for fire-and-forget
+// call sites that just need a transient, actionable message.
+
+import toast from 'react-hot-toast';
 
 const isElectron = (): boolean =>
   typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -79,4 +86,18 @@ export function describeMicError(error: unknown): MicErrorInfo {
     detail: 'Something went wrong reaching your microphone. Check your input device and try again.',
     isPermission: false,
   };
+}
+
+/**
+ * Classify + surface a mic failure as a toast. For fire-and-forget recorders
+ * that only need a transient message (no persistent banner). Permission
+ * denials get a longer duration since the fix lives outside the app (OS /
+ * browser settings). Returns the classification for callers that also want it.
+ *
+ * Usage: `startRecording().catch(toastMicError)`.
+ */
+export function toastMicError(error: unknown): MicErrorInfo {
+  const info = describeMicError(error);
+  toast.error(info.detail, { duration: info.isPermission ? 8000 : 5000 });
+  return info;
 }
