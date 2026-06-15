@@ -40,7 +40,7 @@ export interface DBContact {
   website?: string;
   birthday?: string;
   groups?: string[];
-  source: 'local' | 'google' | 'vision';
+  source: 'local' | 'google' | 'vision' | 'microsoft';
   // Provenance pair backing the UNIQUE (user_id, platform, external_id) index.
   // Imported contacts carry both; local contacts mint a unique external_id at
   // insert time (see createContact) to avoid colliding on the '' default.
