@@ -156,24 +156,44 @@ const DEFAULT_FEATURES: FeatureFlags = {
   // Logos Vision sync OFF by default (dark-launch); P0 = connection + flag scaffold.
   logosVisionSync: false,
 
-  // MapLibre renderer OFF by default (dark-launch); P0 = flag scaffold only, no consumer.
-  mapLibreRenderer: false,
+  // MapLibre renderer ON by default — graduated 2026-06-15 once the legal gate
+  // closed (geocode/route/directions/distance moved off Google to Stadia, so a
+  // non-Google base map no longer shows Google-derived geocodes/routes). The Map
+  // section itself is still gated by experimentalEnabled; this only decides which
+  // renderer the Map uses. Persisted-blob masking is handled by FLAGS_VERSION.
+  mapLibreRenderer: true,
 
   // Relay Live (Voice Rooms) OFF by default — no peer audio transport yet (S0-2).
   relayLiveRooms: false,
 };
 
 const STORAGE_KEY = 'pulse_feature_flags';
+// Bumped when a flag graduates and its new DEFAULT_FEATURES value MUST override a
+// stale persisted value — saved flags otherwise win the merge in the loader, so a
+// bare default flip never reaches a browser that's already run the app. The loader
+// resets the listed flags once per bump.
+const FLAGS_VERSION = 1;
+const FLAGS_VERSION_KEY = 'pulse_feature_flags_version';
 const DISCOVERY_STORAGE_KEY = 'pulse_feature_discovery';
 
 export const FeatureProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [features, setFeatures] = useState<FeatureFlags>(() => {
-    // Load from localStorage
+    // Load from localStorage, then run one-time default-graduation migrations.
+    // A persisted blob would otherwise MASK a changed DEFAULT_FEATURES value
+    // (saved flags win the merge) — the FLAGS_VERSION bump is what lets a flipped
+    // default actually reach a browser that's already persisted the old value.
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        return { ...DEFAULT_FEATURES, ...JSON.parse(saved) };
+      const parsed: Partial<FeatureFlags> = saved ? JSON.parse(saved) : {};
+      const merged: FeatureFlags = { ...DEFAULT_FEATURES, ...parsed };
+      const storedVersion = Number(localStorage.getItem(FLAGS_VERSION_KEY) ?? '0');
+      if (storedVersion < FLAGS_VERSION) {
+        // v1 (2026-06-15): MapLibre renderer graduated to default-ON — force the
+        // new default over any stale persisted `false`.
+        merged.mapLibreRenderer = DEFAULT_FEATURES.mapLibreRenderer;
+        try { localStorage.setItem(FLAGS_VERSION_KEY, String(FLAGS_VERSION)); } catch { /* storage blocked */ }
       }
+      return merged;
     } catch (error) {
       console.error('Failed to load feature flags:', error);
     }
