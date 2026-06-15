@@ -1,8 +1,21 @@
 # Map Rebrand → MapLibre (Path B) — P3 / P4 / P5 Handoff
 
 **Date:** 2026-06-14
-**Status in:** P0, P1, P2 **COMPLETE and pushed to `origin/main`** (live-confirmed in-app). This doc hands off the **remaining** epic: P3 (styling), P4 (geosearch), P5 (parity QA + flag flip), and the **legal-gate data migration** that blocks P5.
+**Status in:** P0, P1, P2 **COMPLETE and pushed to `origin/main`** (live-confirmed in-app). This doc hands off the **remaining** epic: P3 (styling), P4 (geosearch), P5 (parity QA + flag flip), and the **legal-gate data migration** that blocks P5. **→ As of 2026-06-15 all of P3/P4/P5 are shipped and the flag is flipped — see the ✅ UPDATE banner below.**
 **Predecessor doc:** `docs/MAP_MAPLIBRE_REBRAND_HANDOFF_2026-06-14.md` (the original P0–P5 plan + grounded ToS facts). Read that first for the legal background; this doc supersedes its P3–P5 sections with the as-built reality.
+
+> ## ✅ UPDATE 2026-06-15 — P3, P4, P5 ALL SHIPPED; flag flipped to default-ON
+>
+> - **P3** Coral Cockpit style (light + dark; `setStyle` theme-swap with overlay re-key on `styleEpoch`) — `423beb7`. New module `coralCockpitStyle.ts` over OpenFreeMap's `openmaptiles` source (Protomaps remains a clean later swap).
+> - **P4** Non-Google geosearch — new `maps-geosearch` edge fn + `geosearchService.ts` + `GeoSearchInput.tsx` (body-portaled), gating on `useMapLibreRenderer()` in `PlacePicker`/`LocationEditModal` — `e1ac2c0`. **Live-verified** on Stadia.
+> - **⛔→✅ LEGAL GATE CLOSED** — `maps-geocode`/`maps-directions`/`maps-distance`/`maps-route` migrated off Google → **Stadia** (Pelias geocoding + Valhalla `route`/`matrix`), dual-provider with Google preserved as fallback — `a5ca861`. One `STADIA_API_KEY` project secret powers all Stadia calls (geosearch + geocode + routing + matrix).
+> - **P5 FLIP** — `mapLibreRenderer` graduated to **default ON** via a one-time `FLAGS_VERSION` migration in `FeatureContext.tsx` (a persisted flags blob otherwise masks a bare default flip) — `2e0f10a`. The Map section is still `experimentalEnabled`-gated; the Google path stays intact for rollback (`?ff_mapLibreRenderer=off` or the Settings toggle, which sticks).
+> - **Runtime gotcha learned:** a freshly deployed edge fn importing `deno.land/std` (`serve`) or `esm.sh` (`supabase-js`) crashes at cold boot — 502 `EDGE_FUNCTION_ERROR` (gateway-stamped uncaught throw). All maps fns now use runtime-native `Deno.serve` + ZERO remote imports + whole-body try/catch; auth via `verify_jwt` only. **Valhalla encodes polylines at 1e6, not Google's 1e5** — `decodePolyline` takes a precision factor.
+>
+> **Remaining:**
+> 1. **P5d (cleanup, later):** retire the Google JS/deps + the `mapLibreOn` Google branch in `PulseMapView`, `useGoogleMapsLoader`, `googleAdapter.ts`, the `@react-google-maps/api` overlays + deps — after a soak. Google is currently kept as flagged rollback AND as the edge-fn fallback when `STADIA_API_KEY` is absent.
+> 2. **NOT live-verified by Claude:** the Stadia routing/matrix round-trips — especially the Valhalla **1e6** route-line precision on the accepted-route polyline. Needs an in-app eyeball (Map → AI strip → Accept Route).
+> 3. **Maps section UX is functionally incomplete** (user-flagged): no usage/onboarding guidance, some surfaces missing or non-functional. A dedicated usability + finish-wiring pass is queued — **separate** from the renderer rebrand. Tracked in the `project-pulse-maps-section-cleanup` memory.
 
 ---
 
