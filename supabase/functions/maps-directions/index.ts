@@ -1,26 +1,17 @@
-// Supabase Edge Function: Maps Directions
-// Server-side proxy for Google Directions API. Returns travel-time +
-// distance for a single origin → destination, mode=driving.
+// Supabase Edge Function: Maps Directions (single origin -> destination ETA)
+// Dual-provider, hardened (P5 legal-gate migration). STADIA_API_KEY present ->
+// Stadia Route (Valhalla, costing auto); absent -> Google Directions
+// (GOOGLE_MAPS_SERVER_KEY). Response contract unchanged so the client
+// (directionsService) needs no changes.
 //
-// Why server-side: same as maps-geocode — Directions API also rejects
-// referer-restricted keys when called from a browser fetch.
+// Runtime: Deno.serve + ZERO remote imports + whole-body try/catch. Auth via
+// verify_jwt at the platform layer.
 //
-// Request:  POST /functions/v1/maps-directions
-//   body:   { from: {lat, lng}, to: {lat, lng} }
-//
-// Response (200): { result: { minutes: number, distanceMeters: number } | null }
-// Response (401): { error: 'unauthorized' }
-// Response (400): { error: 'invalid_body' | 'invalid_input' }
-// Response (503): { error: 'maps_not_configured' }
-// Response (502): { error: 'upstream_error' | 'request_failed', detail?, status? }
+// Request:  POST { from:{lat,lng}, to:{lat,lng} }
+// Response (200): { result: { minutes, distanceMeters } | null }
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
-
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const MAPS_KEY = Deno.env.get('GOOGLE_MAPS_SERVER_KEY');
-
+const STADIA_API_KEY = Deno.env.get('STADIA_API_KEY');
+const GOOGLE_MAPS_SERVER_KEY = Deno.env.get('GOOGLE_MAPS_SERVER_KEY');
 const UPSTREAM_TIMEOUT_MS = 10_000;
 
 const CORS = {
@@ -28,37 +19,14 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
-
 const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  });
+  new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
-async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs = UPSTREAM_TIMEOUT_MS) {
+async function fetchWithTimeout(url: string, init: RequestInit = {}) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } catch (err) {
-    if ((err as Error).name === 'AbortError') {
-      throw new Error(`upstream timeout after ${timeoutMs}ms`);
-    }
-    throw err;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-interface DirectionsResponse {
-  status: string;
-  error_message?: string;
-  routes?: Array<{
-    legs?: Array<{
-      duration?: { value?: number };
-      distance?: { value?: number };
-    }>;
-  }>;
+  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+  try { return await fetch(url, { ...init, signal: controller.signal }); }
+  finally { clearTimeout(timer); }
 }
 
 function isPoint(v: unknown): v is { lat: number; lng: number } {
@@ -68,60 +36,49 @@ function isPoint(v: unknown): v is { lat: number; lng: number } {
     && o.lat >= -90 && o.lat <= 90 && o.lng >= -180 && o.lng <= 180;
 }
 
-serve(async (req: Request) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
-  if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
-  if (!MAPS_KEY) return json({ error: 'maps_not_configured' }, 503);
-
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) return json({ error: 'unauthorized' }, 401);
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-  const { data: { user }, error: authErr } = await supabase.auth.getUser(
-    authHeader.replace('Bearer ', ''),
-  );
-  if (authErr || !user) return json({ error: 'unauthorized' }, 401);
-
-  let body: { from?: unknown; to?: unknown };
   try {
-    body = await req.json();
-  } catch {
-    return json({ error: 'invalid_body' }, 400);
-  }
-  if (!isPoint(body.from) || !isPoint(body.to)) return json({ error: 'invalid_input' }, 400);
+    if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
-  const url =
-    `https://maps.googleapis.com/maps/api/directions/json?origin=${body.from.lat},${body.from.lng}` +
-    `&destination=${body.to.lat},${body.to.lng}&mode=driving&key=${MAPS_KEY}`;
+    let body: { from?: unknown; to?: unknown };
+    try { body = await req.json(); } catch { return json({ error: 'invalid_body' }, 400); }
+    if (!isPoint(body.from) || !isPoint(body.to)) return json({ error: 'invalid_input' }, 400);
+    const from = body.from, to = body.to;
 
-  try {
+    const provider = STADIA_API_KEY ? 'stadia' : 'google';
+    if (provider === 'google' && !GOOGLE_MAPS_SERVER_KEY) return json({ error: 'maps_not_configured' }, 503);
+
+    if (provider === 'stadia') {
+      const reqBody = JSON.stringify({
+        locations: [{ lat: from.lat, lon: from.lng }, { lat: to.lat, lon: to.lng }],
+        costing: 'auto',
+        directions_options: { units: 'kilometers' },
+      });
+      const url = `https://api.stadiamaps.com/route/v1?api_key=${STADIA_API_KEY}`;
+      const res = await fetchWithTimeout(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
+      if (!res.ok) return json({ error: 'upstream_error', provider, status: res.status }, 502);
+      const data = await res.json();
+      const t = data?.trip?.summary;
+      if (!t || typeof t.time !== 'number' || typeof t.length !== 'number') return json({ result: null });
+      return json({ result: { minutes: Math.round(t.time / 60), distanceMeters: Math.round(t.length * 1000) } });
+    }
+
+    // Google fallback
+    const url =
+      `https://maps.googleapis.com/maps/api/directions/json?origin=${from.lat},${from.lng}` +
+      `&destination=${to.lat},${to.lng}&mode=driving&key=${GOOGLE_MAPS_SERVER_KEY}`;
     const res = await fetchWithTimeout(url);
-    if (!res.ok) {
-      console.error(`[maps-directions] upstream ${res.status}`);
-      return json({ error: 'upstream_error', status: res.status }, 502);
-    }
-    const data = (await res.json()) as DirectionsResponse;
-    if (data.status === 'REQUEST_DENIED') {
-      console.error('[maps-directions] REQUEST_DENIED:', data.error_message);
-      return json({ error: 'upstream_error', detail: data.error_message, status: 403 }, 502);
-    }
-    if (data.status !== 'OK') {
-      return json({ result: null, status: data.status });
-    }
+    if (!res.ok) return json({ error: 'upstream_error', provider, status: res.status }, 502);
+    const data = await res.json();
+    if (data.status === 'REQUEST_DENIED') return json({ error: 'upstream_error', detail: data.error_message, status: 403 }, 502);
+    if (data.status !== 'OK') return json({ result: null, status: data.status });
     const leg = data.routes?.[0]?.legs?.[0];
     const seconds = leg?.duration?.value;
     const meters = leg?.distance?.value;
     if (seconds == null || meters == null) return json({ result: null });
-    return json({
-      result: {
-        minutes: Math.round(seconds / 60),
-        distanceMeters: meters,
-      },
-    });
+    return json({ result: { minutes: Math.round(seconds / 60), distanceMeters: meters } });
   } catch (e) {
-    console.error('[maps-directions] request failed:', e);
-    return json(
-      { error: 'request_failed', detail: e instanceof Error ? e.message : 'unknown' },
-      502,
-    );
+    return json({ error: 'request_failed', detail: e instanceof Error ? e.message : String(e) }, 502);
   }
 });
