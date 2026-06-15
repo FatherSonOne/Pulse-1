@@ -10,7 +10,7 @@ import MapContactMarker, { MapContactMarkerBody } from './contacts/MapContactMar
 import MapRadiusRings from './contacts/MapRadiusRings';
 import MapContactPanel from './contacts/MapContactPanel';
 import MapCircleOverlay from './contacts/MapCircleOverlay';
-import MapMeetingMarker from './contacts/MapMeetingMarker';
+import MapMeetingMarker, { MapMeetingMarkerBody } from './contacts/MapMeetingMarker';
 import LocationEditModal from './contacts/LocationEditModal';
 import ImAtFAB from './sub/ImAtFAB';
 import {
@@ -695,6 +695,26 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               </MapMarkerPortal>
             );
           })}
+          {/* Meeting markers via the same projected portal — TODAY/WEEK only,
+              filtered to located events of the active lens (mirrors Google). */}
+          {mapLibreReady && lens !== 'atlas' && meetingMarkers
+            .filter(mm => (lens === 'today' ? geoSignals.todayEvents : geoSignals.weekEvents)
+              .some(e => e.id === mm.event.id))
+            .map(mm => {
+              const key = meetingKey(mm.event.id);
+              const seqIdx = acceptedRoute ? acceptedRoute.orderedMarkerKeys.indexOf(key) : -1;
+              return (
+                <MapMarkerPortal key={key} map={mapLibreRef.current} lat={mm.lat} lng={mm.lng}>
+                  <MapMeetingMarkerBody
+                    event={mm.event}
+                    isSelected={selectedMeetingId === mm.event.id}
+                    onClick={handleMeetingSelect}
+                    travelBuffer={lens === 'today' ? travelBuffers.get(mm.event.id) : undefined}
+                    sequenceNumber={seqIdx >= 0 ? seqIdx + 1 : undefined}
+                  />
+                </MapMarkerPortal>
+              );
+            })}
           </>
         ) : (
         <GoogleMap

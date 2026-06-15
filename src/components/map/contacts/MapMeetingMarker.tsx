@@ -7,6 +7,10 @@
 // Why separate from MapContactMarker: contact markers carry identity (avatar
 // initials, status ring, live state). Meeting markers carry a *moment*
 // (where you need to be, when). Different semantic, different shape.
+//
+// As with MapContactMarker, the visual body is split out (MapMeetingMarkerBody)
+// so it can be positioned by either Google's OverlayView or the MapLibre
+// MapMarkerPortal — same DOM either way.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { memo, useCallback } from 'react';
@@ -53,14 +57,16 @@ interface MapMeetingMarkerProps {
   travelBuffer?: BufferInfo;
 }
 
+// Body props = everything except the geographic position (lat/lng feed the
+// positioner — OverlayView or MapMarkerPortal — not the body DOM).
+export type MapMeetingMarkerBodyProps = Omit<MapMeetingMarkerProps, 'lat' | 'lng'>;
+
 function formatTime(d: Date): string {
   return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: false });
 }
 
-const MapMeetingMarker: React.FC<MapMeetingMarkerProps> = ({
+const MapMeetingMarkerBodyInner: React.FC<MapMeetingMarkerBodyProps> = ({
   event,
-  lat,
-  lng,
   isSelected,
   onClick,
   sequenceNumber,
@@ -97,98 +103,109 @@ const MapMeetingMarker: React.FC<MapMeetingMarkerProps> = ({
   const size = isSpiderLeg ? (isSelected ? 36 : 28) : (isSelected ? 44 : 36);
 
   return (
-    <OverlayView position={{ lat, lng }} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}>
+    <div
+      className={`group relative cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${animationClass}`}
+      style={{
+        transform: `translate(calc(-50% + ${offsetX}px), calc(-100% + ${offsetY}px))`,
+        transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+        ['--spider-delay' as string]: `${animationDelayMs}ms`,
+      }}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`${event.title} at ${formatTime(event.start)}`}
+    >
       <div
-        className={`group relative cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${animationClass}`}
+        className="relative flex items-center justify-center rounded-full transition-transform duration-150"
         style={{
-          transform: `translate(calc(-50% + ${offsetX}px), calc(-100% + ${offsetY}px))`,
-          transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-          ['--spider-delay' as string]: `${animationDelayMs}ms`,
+          width: size,
+          height: size,
+          backgroundColor: '#fafafa',
+          border: '2px solid #f43f5e',
+          boxShadow: isSelected
+            ? '0 0 0 4px rgba(244, 63, 94, 0.30), 0 4px 16px rgba(0,0,0,0.30)'
+            : '0 2px 8px rgba(0,0,0,0.25)',
         }}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        tabIndex={0}
-        role="button"
-        aria-label={`${event.title} at ${formatTime(event.start)}`}
+      >
+        <CalendarClock size={isSelected ? 20 : 16} color="#f43f5e" strokeWidth={2.2} />
+
+        {typeof sequenceNumber === 'number' && (
+          <div
+            className="absolute -top-2 -left-2 rounded-full flex items-center justify-center font-mono"
+            style={{
+              minWidth: 20,
+              height: 20,
+              padding: '0 6px',
+              backgroundColor: '#f43f5e',
+              color: '#fafafa',
+              fontSize: 11,
+              lineHeight: 1,
+              border: '2px solid #fafafa',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.30)',
+            }}
+            aria-label={`Stop ${sequenceNumber} on accepted route`}
+          >
+            {sequenceNumber}
+          </div>
+        )}
+
+        {/* Travel-buffer conflict badge — top-right, opposite the route
+            sequence badge. Amber = tight connection, red = you'll arrive
+            late coming from the previous located event. */}
+        {showBufferBadge && travelBuffer && (
+          <div
+            className="absolute -top-2 -right-2 rounded-full flex items-center justify-center"
+            style={{
+              width: 18,
+              height: 18,
+              backgroundColor: travelBuffer.severity === 'late' ? '#dc2626' : '#f59e0b',
+              border: '2px solid #fafafa',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.30)',
+            }}
+            title={`From ${travelBuffer.fromTitle}: ${bufferChipCopy(travelBuffer)}`}
+            aria-label={`Travel buffer warning, ${bufferChipCopy(travelBuffer)}, coming from ${travelBuffer.fromTitle}`}
+          >
+            <AlertTriangle size={10} color="#fafafa" strokeWidth={2.5} aria-hidden="true" />
+          </div>
+        )}
+      </div>
+
+      <div
+        className={`absolute top-full mt-1 left-1/2 -translate-x-1/2 pointer-events-none transition-opacity duration-150 ${
+          isSpiderLeg
+            ? (isSelected
+                ? 'opacity-100'
+                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100')
+            : (showLabel || isSelected
+                ? 'opacity-100'
+                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100')
+        }`}
       >
         <div
-          className="relative flex items-center justify-center rounded-full transition-transform duration-150"
+          className="whitespace-nowrap text-[11px] font-semibold px-1.5 py-0.5 rounded shadow"
           style={{
-            width: size,
-            height: size,
-            backgroundColor: '#fafafa',
-            border: '2px solid #f43f5e',
-            boxShadow: isSelected
-              ? '0 0 0 4px rgba(244, 63, 94, 0.30), 0 4px 16px rgba(0,0,0,0.30)'
-              : '0 2px 8px rgba(0,0,0,0.25)',
+            backgroundColor: 'rgba(15, 15, 15, 0.75)',
+            color: '#fafafa',
+            backdropFilter: 'blur(4px)',
           }}
         >
-          <CalendarClock size={isSelected ? 20 : 16} color="#f43f5e" strokeWidth={2.2} />
-
-          {typeof sequenceNumber === 'number' && (
-            <div
-              className="absolute -top-2 -left-2 rounded-full flex items-center justify-center font-mono"
-              style={{
-                minWidth: 20,
-                height: 20,
-                padding: '0 6px',
-                backgroundColor: '#f43f5e',
-                color: '#fafafa',
-                fontSize: 11,
-                lineHeight: 1,
-                border: '2px solid #fafafa',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.30)',
-              }}
-              aria-label={`Stop ${sequenceNumber} on accepted route`}
-            >
-              {sequenceNumber}
-            </div>
-          )}
-
-          {/* Travel-buffer conflict badge — top-right, opposite the route
-              sequence badge. Amber = tight connection, red = you'll arrive
-              late coming from the previous located event. */}
-          {showBufferBadge && travelBuffer && (
-            <div
-              className="absolute -top-2 -right-2 rounded-full flex items-center justify-center"
-              style={{
-                width: 18,
-                height: 18,
-                backgroundColor: travelBuffer.severity === 'late' ? '#dc2626' : '#f59e0b',
-                border: '2px solid #fafafa',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.30)',
-              }}
-              title={`From ${travelBuffer.fromTitle}: ${bufferChipCopy(travelBuffer)}`}
-              aria-label={`Travel buffer warning, ${bufferChipCopy(travelBuffer)}, coming from ${travelBuffer.fromTitle}`}
-            >
-              <AlertTriangle size={10} color="#fafafa" strokeWidth={2.5} aria-hidden="true" />
-            </div>
-          )}
-        </div>
-
-        <div
-          className={`absolute top-full mt-1 left-1/2 -translate-x-1/2 pointer-events-none transition-opacity duration-150 ${
-            isSpiderLeg
-              ? (isSelected
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100')
-              : (showLabel || isSelected
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100')
-          }`}
-        >
-          <div
-            className="whitespace-nowrap text-[11px] font-semibold px-1.5 py-0.5 rounded shadow"
-            style={{
-              backgroundColor: 'rgba(15, 15, 15, 0.75)',
-              color: '#fafafa',
-              backdropFilter: 'blur(4px)',
-            }}
-          >
-            {formatTime(event.start)} · {event.title.length > 24 ? event.title.slice(0, 24) + '…' : event.title}
-          </div>
+          {formatTime(event.start)} · {event.title.length > 24 ? event.title.slice(0, 24) + '…' : event.title}
         </div>
       </div>
+    </div>
+  );
+};
+
+// Memoised for the MapLibre path (rendered directly via MapMarkerPortal). On
+// the Google path the outer MapMeetingMarker memo already gates re-renders.
+export const MapMeetingMarkerBody = memo(MapMeetingMarkerBodyInner);
+
+// Google-renderer marker: positions the shared body via OverlayView.
+const MapMeetingMarker: React.FC<MapMeetingMarkerProps> = ({ lat, lng, ...body }) => {
+  return (
+    <OverlayView position={{ lat, lng }} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}>
+      <MapMeetingMarkerBody {...body} />
     </OverlayView>
   );
 };
