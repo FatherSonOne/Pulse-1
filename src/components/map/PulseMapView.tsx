@@ -116,6 +116,12 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   // MapLibre map instance (set on its 'load' event); stays null on the Google path.
   const mapLibreRef = useRef<MaplibreMap | null>(null);
   const [mapLibreReady, setMapLibreReady] = useState(false);
+  // Bumped each time MapLibreCanvas swaps the style for a theme flip. setStyle()
+  // clears ALL sources/layers, so the overlay layer-managers (route, atlas,
+  // rings, circles) are re-keyed on this to re-add themselves onto the new
+  // style. The projected-DOM markers (MapMarkerPortal) survive a swap untouched
+  // and are deliberately NOT keyed on it.
+  const [styleEpoch, setStyleEpoch] = useState(0);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedLocType, setSelectedLocType] = useState<'home' | 'work'>('home');
@@ -181,6 +187,11 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
     if (typeof z === 'number') setZoom(z);
     setMapLibreReady(true);
   }, []);
+
+  // A theme-driven setStyle() in MapLibreCanvas wiped every overlay source/layer
+  // off the new style — bump the epoch so the layer-managers below re-mount and
+  // re-add onto it.
+  const handleStyleSwapped = useCallback(() => setStyleEpoch(e => e + 1), []);
 
   // Zoom-change handler — gates cluster vs spiderfy vs normal regimes inside
   // useMarkerClusters. The event fires without a payload so we re-read.
@@ -660,8 +671,10 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             <MapLibreCanvas
               center={userPosition ?? DEFAULT_CENTER}
               zoom={DEFAULT_ZOOM}
+              isDarkMode={isDarkMode}
               className="w-full h-full"
               onReady={handleMapLibreReady}
+              onStyleSwapped={handleStyleSwapped}
               onZoomChanged={setZoom}
               onClick={() => {
                 setSelectedContactId(null);
@@ -671,11 +684,16 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               }}
             />
           </React.Suspense>
+          {/* Layer-manager overlays are keyed on styleEpoch: a theme-driven
+              setStyle() clears their sources/layers off the new style, so the
+              epoch bump re-mounts them to re-add. (Portal markers below survive
+              a swap and are NOT keyed.) */}
           {userPosition && mapLibreReady && (
-            <MapLibreRadiusRings map={mapLibreRef.current} center={userPosition} isDarkMode={isDarkMode} />
+            <MapLibreRadiusRings key={`rings-${styleEpoch}`} map={mapLibreRef.current} center={userPosition} isDarkMode={isDarkMode} />
           )}
           {acceptedRoute && mapLibreReady && (
             <MapLibreAcceptedRoute
+              key={`route-${styleEpoch}`}
               map={mapLibreRef.current}
               path={acceptedRoute.path}
               onClick={handleOpenInSystemMaps}
@@ -685,8 +703,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               zIndex 0 < 1). Markers/anchors still pending (P2-anchor). */}
           {lens === 'atlas' && mapLibreReady && (
             <>
-              <MapLibreAtlasHalos map={mapLibreRef.current} contacts={localContacts} />
+              <MapLibreAtlasHalos key={`halos-${styleEpoch}`} map={mapLibreRef.current} contacts={localContacts} />
               <MapLibreAtlasTerritories
+                key={`territories-${styleEpoch}`}
                 map={mapLibreRef.current}
                 circles={circles}
                 contacts={localContacts}
@@ -694,6 +713,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                 onSelectCircle={setSelectedCircleId}
               />
               <MapLibreCircleOverlays
+                key={`circles-${styleEpoch}`}
                 map={mapLibreRef.current}
                 circles={circles}
                 contacts={localContacts}
