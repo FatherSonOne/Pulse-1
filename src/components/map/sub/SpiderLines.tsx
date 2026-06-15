@@ -29,7 +29,9 @@ const LINE_WIDTH = 1.5;
 const ENTER_DURATION_MS = 220;
 const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
-const SpiderLines: React.FC<SpiderLinesProps> = ({ lat, lng, spider }) => {
+// The tether SVG, decoupled from its positioning wrapper — wrapped in
+// OverlayView (Google) or MapMarkerPortal (MapLibre).
+export const SpiderLinesBody: React.FC<{ spider: ActiveSpider }> = ({ spider }) => {
   // Compute the SVG canvas size from the legs' max radius + a small
   // bleed for the line stroke. Diameter is 2 × max-radius so the canvas
   // fully contains every leg endpoint.
@@ -56,12 +58,8 @@ const SpiderLines: React.FC<SpiderLinesProps> = ({ lat, lng, spider }) => {
   const center = canvasSize / 2;
 
   return (
-    <OverlayView
-      position={{ lat, lng }}
-      mapPaneName={OverlayView.OVERLAY_LAYER}
-    >
-      <svg
-        aria-hidden="true"
+    <svg
+      aria-hidden="true"
         width={canvasSize}
         height={canvasSize}
         viewBox={`0 0 ${canvasSize} ${canvasSize}`}
@@ -98,8 +96,14 @@ const SpiderLines: React.FC<SpiderLinesProps> = ({ lat, lng, spider }) => {
           />
         ))}
       </svg>
-    </OverlayView>
   );
 };
+
+// Google-renderer wrapper: positions the tether SVG via OverlayView.
+const SpiderLines: React.FC<SpiderLinesProps> = ({ lat, lng, spider }) => (
+  <OverlayView position={{ lat, lng }} mapPaneName={OverlayView.OVERLAY_LAYER}>
+    <SpiderLinesBody spider={spider} />
+  </OverlayView>
+);
 
 export default SpiderLines;
