@@ -14,6 +14,7 @@
 import { useEffect, useRef } from 'react';
 import maplibregl, { type StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import './maplibre-overrides.css';
 import type { LatLng } from './types';
 
 // OpenFreeMap public instance — free, no API key, no signup. Self-hosted

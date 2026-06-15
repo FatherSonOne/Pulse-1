@@ -1,0 +1,18 @@
+/* MapLibre attribution — force the collapsed "ⓘ" state even on wide screens.
+ *
+ * maplibre-gl keeps the credit EXPANDED whenever it "comfortably fits" (that's
+ * by design — see the attributionControl docs), so `compact: true` alone does
+ * not collapse it on a desktop-width map. These rules revert maplibre's
+ * auto-added `maplibregl-compact-show` styling back to the collapsed look when
+ * the control isn't hovered/focused, leaving just the small ⓘ button. The
+ * legally-required OSM credit is preserved — it reveals on hover/focus (or a
+ * click of the ⓘ). Pairs with `attributionControl: { compact: true }` in
+ * MapLibreCanvas; loaded only with the lazy maplibre chunk.
+ */
+.maplibregl-ctrl-attrib.maplibregl-compact-show:not(:hover):not(:focus-within) {
+  padding: 2px 24px 2px 0;
+}
+
+.maplibregl-ctrl-attrib.maplibregl-compact-show:not(:hover):not(:focus-within) .maplibregl-ctrl-attrib-inner {
+  display: none;
+}
