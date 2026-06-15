@@ -82,6 +82,14 @@ export interface RelayStudioState {
   /** True when the mode body is too narrow to show a master + detail pair side
    *  by side — master-detail modes should show one pane at a time. */
   singlePane: boolean;
+  /** True when the mode body is phone-grade narrow (< MOBILE_PANE_W). Surfaces
+   *  adopt phone chrome — rail-as-sheet, full-bleed, larger touch targets —
+   *  rather than the desktop split. Strictly narrower than `singlePane`. */
+  isMobilePane: boolean;
+  /** True when the sources rail should present as an off-canvas sheet / bottom
+   *  bar instead of the inline 200/64px column. Equals `isMobilePane` today;
+   *  named separately so the rail-shell change keys off intent, not raw width. */
+  railAsSheet: boolean;
 }
 
 /** A mode's recording controller. The studio shell (FloatingMic / SPACE /
@@ -140,6 +148,13 @@ const RAIL_AUTOCOLLAPSE_W = 900;
 const SINGLE_PANE_W = 560;
 const RAIL_W_EXPANDED = 200;
 const RAIL_W_COLLAPSED = 64;
+// Phone-grade body width. Below this the surface should adopt phone chrome
+// (rail-as-sheet / bottom-bar, full-bleed, larger touch targets) rather than
+// the desktop split. Strictly narrower than SINGLE_PANE_W (560, the master +
+// detail cutoff): a portrait tablet can be single-pane yet still want the
+// inline desktop rail. Added for the mobile studio-shell pass — see
+// docs/RELAY_MOBILE_STUDIO_SHELL_HANDOFF_2026-06-15.md.
+const MOBILE_PANE_W = 480;
 // Shared with the legacy usePlaybackSpeed hook so an existing saved preference
 // carries over to the unified studio rate.
 const PLAYBACK_RATE_KEY = 'voxer-playback-speed';
@@ -434,6 +449,11 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, paneWid
   const railWidthPx = effectiveRailCollapsed ? RAIL_W_COLLAPSED : RAIL_W_EXPANDED;
   const bodyWidth = paneWidth > 0 ? Math.max(0, paneWidth - railWidthPx) : 0;
   const singlePane = bodyWidth > 0 && bodyWidth < SINGLE_PANE_W;
+  // Phone-grade signals for the mobile studio-shell pass. Pane-derived (never a
+  // viewport media query) to stay consistent with the rest of Relay. Exposed
+  // for the later phases to consume; nothing reads them yet.
+  const isMobilePane = bodyWidth > 0 && bodyWidth < MOBILE_PANE_W;
+  const railAsSheet = isMobilePane;
 
   const value = useMemo<RelayStudioApi>(() => ({
     nowPlaying,
@@ -450,6 +470,8 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, paneWid
     bodyWidth,
     railAutoCollapsed,
     singlePane,
+    isMobilePane,
+    railAsSheet,
     play,
     togglePlay,
     stop,
@@ -464,7 +486,7 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, paneWid
     toggleRail,
   }), [
     nowPlaying, isPlaying, progress, currentTime, duration, playbackRate, isRecording, recordingSec, hasRecorder,
-    effectiveRailCollapsed, paneWidth, bodyWidth, railAutoCollapsed, singlePane,
+    effectiveRailCollapsed, paneWidth, bodyWidth, railAutoCollapsed, singlePane, isMobilePane, railAsSheet,
     play, togglePlay, stop, seek, setPlaybackRate, cyclePlaybackRate, toggleRecording, cancelRecording, stopAndSendRecording, registerRecorder, notifyRecording, toggleRail,
   ]);
 
