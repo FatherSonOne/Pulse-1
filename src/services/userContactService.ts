@@ -371,9 +371,12 @@ export class UserContactService {
         // Explicit column list — never `select('*')`. The directory is fetched
         // by Relay contact pickers; `*` would re-ship wide/PII columns on every
         // call (and once shipped >1 MB inline base64 avatars, the cause of a
-        // Supabase egress spike). These are exactly the fields mapped below.
+        // Supabase egress spike). NOTE: these are the columns that actually exist
+        // on `user_profiles`. The EnrichedUserProfile fields email/company/
+        // location/birthday are NOT stored here (no such columns) and are mapped
+        // to undefined below; the real phone column is `phone`, not `phone_number`.
         .select(
-          'id, handle, display_name, full_name, email, phone_number, avatar_url, bio, company, role, location, birthday, is_verified, online_status, last_active_at, last_seen_at'
+          'id, handle, display_name, full_name, avatar_url, bio, phone, role, is_verified, online_status, last_active_at, last_seen_at'
         )
         .neq('id', user.id) // Exclude current user
         .order('display_name', { ascending: true });
@@ -413,14 +416,14 @@ export class UserContactService {
           handle: profile.handle,
           displayName: profile.display_name,
           fullName: profile.full_name,
-          email: profile.email,
-          phoneNumber: profile.phone_number,
+          email: undefined, // not a column on user_profiles
+          phoneNumber: profile.phone,
           avatarUrl: profile.avatar_url,
           bio: profile.bio,
-          company: profile.company,
+          company: undefined, // not a column on user_profiles
           role: profile.role,
-          location: profile.location,
-          birthday: profile.birthday ? new Date(profile.birthday) : undefined,
+          location: undefined, // not a column on user_profiles
+          birthday: undefined, // not a column on user_profiles
           isVerified: profile.is_verified || false,
           onlineStatus: (profile.online_status as OnlineStatus) || 'offline',
           lastActiveAt: profile.last_active_at ? new Date(profile.last_active_at) : null,
