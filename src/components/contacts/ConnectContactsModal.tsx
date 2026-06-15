@@ -5,11 +5,57 @@ import { useTranslation } from 'react-i18next';
 import { Contact, ContactType } from '../../types';
 import {
   googleContactsService,
-  importSelectedContacts,
+  importSelectedContacts as importSelectedGoogleContacts,
   ImportSelectedLabelsResult,
   WorkspaceNotBootstrappedError,
+  ContactImportAssignment,
 } from '../../services/googleContactsService';
+import {
+  microsoftContactsService,
+  importSelectedContacts as importSelectedMicrosoftContacts,
+} from '../../services/microsoftContactsService';
+import { supabase } from '../../services/supabase';
+import { loginWithMicrosoft } from '../../services/authService';
 import { showImportErrorToast } from '../../services/toastFactory';
+
+type ImportProvider = 'google' | 'microsoft';
+
+// Both services expose the same contacts-import surface; route by provider.
+interface ContactsImportService {
+  getContactGroups: () => Promise<Array<{ id: string; name: string; memberCount: number }>>;
+  getAllContacts: () => Promise<Contact[]>;
+  invalidateTokenCache: () => void;
+}
+
+const SERVICES: Record<ImportProvider, ContactsImportService> = {
+  google: googleContactsService,
+  microsoft: microsoftContactsService,
+};
+
+const IMPORTERS: Record<
+  ImportProvider,
+  (assignments: ContactImportAssignment[], workspaceId: string) => Promise<ImportSelectedLabelsResult>
+> = {
+  google: importSelectedGoogleContacts,
+  microsoft: importSelectedMicrosoftContacts,
+};
+
+// Which OAuth providers the signed-in user has connected, mapped to import
+// sources. azure -> microsoft. Falls back to Google so the existing reconnect
+// path still works if app_metadata is somehow empty.
+const detectImportProviders = async (): Promise<{ available: ImportProvider[]; preferred: ImportProvider }> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  const meta = session?.user?.app_metadata as { provider?: string; providers?: string[] } | undefined;
+  const connected = new Set<string>(meta?.providers ?? (meta?.provider ? [meta.provider] : []));
+  const available: ImportProvider[] = [];
+  if (connected.has('google')) available.push('google');
+  if (connected.has('azure')) available.push('microsoft');
+  if (available.length === 0) available.push('google');
+  const active: ImportProvider | null =
+    meta?.provider === 'azure' ? 'microsoft' : meta?.provider === 'google' ? 'google' : null;
+  const preferred = active && available.includes(active) ? active : available[0];
+  return { available, preferred };
+};
 
 interface ConnectContactsModalProps {
   isOpen: boolean;
@@ -79,10 +125,45 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [scopeLost, setScopeLost] = useState(false);
+  const [provider, setProvider] = useState<ImportProvider>('google');
+  const [availableProviders, setAvailableProviders] = useState<ImportProvider[]>(['google']);
+  const [providerReady, setProviderReady] = useState(false);
 
-  // Reset all state every time the modal opens, then load groups + contacts.
+  // On open, detect which providers the user has connected and pick a default
+  // (the active session provider when it's a contacts source, else the first
+  // connected one). Gates the load effect so it never fires against the wrong
+  // provider before detection resolves.
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setProviderReady(false);
+      return;
+    }
+    let cancelled = false;
+    setProviderReady(false);
+    detectImportProviders()
+      .then(({ available, preferred }) => {
+        if (cancelled) return;
+        setAvailableProviders(available);
+        setProvider(preferred);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setAvailableProviders(['google']);
+        setProvider('google');
+      })
+      .finally(() => {
+        if (!cancelled) setProviderReady(true);
+      });
+    window.setTimeout(() => closeRef.current?.focus(), 0);
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
+
+  // Reset staging state and load groups + contacts whenever the modal opens
+  // (after provider detection) or the user switches the source provider.
+  useEffect(() => {
+    if (!isOpen || !providerReady) return;
 
     let cancelled = false;
     setStep('stage');
@@ -93,25 +174,21 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
     setScopeLost(false);
     setIsLoading(true);
 
-    Promise.all([
-      googleContactsService.getContactGroups(),
-      googleContactsService.getAllContacts(),
-    ])
+    const service = SERVICES[provider];
+    Promise.all([service.getContactGroups(), service.getAllContacts()])
       .then(([nextGroups, nextContacts]) => {
         if (cancelled) return;
         setGroups(nextGroups);
         setContacts(nextContacts);
-        // Diagnostic: Google's People API doesn't always 403 when the
-        // contacts.readonly scope is missing -- sometimes it returns 200
-        // with empty connections, which makes the wizard look "empty"
-        // for no apparent reason. If both lists are empty and we got
-        // here without throwing, treat it as a likely scope problem
+        // Diagnostic: the People/Graph APIs don't always 403 when the contacts
+        // scope is missing -- sometimes a 200 with zero connections, which makes
+        // the wizard look "empty" for no apparent reason. If both lists are empty
+        // and we got here without throwing, treat it as a likely scope problem
         // and surface the reconnect banner so the user has a fix path.
         if (nextGroups.length === 0 && nextContacts.length === 0) {
           console.warn(
-            '[ConnectContactsModal] Google returned 0 groups and 0 contacts. ' +
-            'Most common cause: the connected Google account is missing the ' +
-            'contacts.readonly scope. Showing reconnect banner.'
+            `[ConnectContactsModal] ${provider} returned 0 groups and 0 contacts. ` +
+            'Most common cause: a missing/expired contacts scope. Showing reconnect banner.'
           );
           setScopeLost(true);
         }
@@ -120,36 +197,39 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
         if (cancelled) return;
         console.error('[ConnectContactsModal] load failed:', error);
         // Anything that looks like a token-expired / scope-revoked /
-        // unauthenticated / no-Google-account response triggers the
-        // in-modal reconnect banner rather than a generic toast the
-        // user often misses.
+        // unauthenticated / not-connected response triggers the in-modal
+        // reconnect banner rather than a generic toast the user often misses.
         const isAuthFailure =
           error?.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED' ||
           error?.code === 'GOOGLE_CONTACTS_NOT_CONNECTED' ||
+          error?.code === 'MICROSOFT_CONTACTS_PERMISSION_DENIED' ||
+          error?.code === 'MICROSOFT_CONTACTS_NOT_CONNECTED' ||
+          error?.code === 'MICROSOFT_CONTACTS_SESSION_EXPIRED' ||
           error?.status === 401 ||
           error?.status === 403 ||
           /401|403|unauthorized|invalid[_ ]grant|expired|permission|not[_ ]connected/i.test(error?.message ?? '');
         if (isAuthFailure) {
           setScopeLost(true);
         } else {
-          showImportErrorToast(t('contacts.connectModal.error_generic'));
+          showImportErrorToast(
+            t(provider === 'microsoft'
+              ? 'contacts.connectModal.error_generic_microsoft'
+              : 'contacts.connectModal.error_generic')
+          );
         }
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
       });
 
-    window.setTimeout(() => closeRef.current?.focus(), 0);
     return () => {
       cancelled = true;
     };
-    // Deliberately depend on isOpen only. Including `t` (i18next's
-    // translator) would cause the effect to re-fire on every parent
-    // re-render (each render produces a fresh `t` reference), which
-    // would reset modal state and re-fetch contacts mid-interaction --
-    // visually "the wizard disappears and returns to the empty state."
+    // Deliberately omit `t`. Including i18next's translator would re-fire the
+    // effect on every parent re-render (fresh `t` reference each render),
+    // resetting modal state and re-fetching mid-interaction.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, provider, providerReady]);
 
   // Auto-focus search on entering the stage step.
   useEffect(() => {
@@ -302,6 +382,17 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
   };
 
   const requestReconnect = () => {
+    if (provider === 'microsoft') {
+      // No silent server refresh is wired for the reconnect *gesture* yet, and
+      // there is no Microsoft reconnect modal — just re-run the OAuth grant,
+      // which re-consents Contacts.Read + offline_access and re-fires SIGNED_IN
+      // (which re-persists the refresh token). Clear the token cache first so
+      // the next fetch picks up the fresh grant.
+      microsoftContactsService.invalidateTokenCache();
+      void loginWithMicrosoft().catch((e) => console.error('[ConnectContactsModal] Microsoft reconnect failed:', e));
+      onClose();
+      return;
+    }
     // Phase D step 23: skip the toast hop. Dispatch a direct event the
     // shell handles by opening ReconnectGoogleModal immediately. The
     // old pulse:contacts:scope-missing path went through a toast the
@@ -338,23 +429,32 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
         contact,
         contactType: assignments.get(contact.id) ?? DEFAULT_CATEGORY,
       }));
-      const result = await importSelectedContacts(items, workspaceId);
+      const result = await IMPORTERS[provider](items, workspaceId);
       onImportComplete({ ...result, keptContactsForTrim: selectedContacts });
     } catch (error) {
       console.error('[ConnectContactsModal] import failed:', error);
-      const e = error as { code?: string; status?: number; message?: string };
+      const e = error as { code?: string; status?: number; message?: string; name?: string };
       const isAuthFailure =
         e?.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED' ||
         e?.code === 'GOOGLE_CONTACTS_NOT_CONNECTED' ||
+        e?.code === 'MICROSOFT_CONTACTS_PERMISSION_DENIED' ||
+        e?.code === 'MICROSOFT_CONTACTS_NOT_CONNECTED' ||
+        e?.code === 'MICROSOFT_CONTACTS_SESSION_EXPIRED' ||
         e?.status === 401 ||
         e?.status === 403 ||
         /401|403|unauthorized|invalid[_ ]grant|expired|permission|not[_ ]connected/i.test(e?.message ?? '');
-      if (error instanceof WorkspaceNotBootstrappedError) {
+      // The two services export distinct WorkspaceNotBootstrappedError classes,
+      // so instanceof (Google's) won't catch the Microsoft one — match by name.
+      if (error instanceof WorkspaceNotBootstrappedError || e?.name === 'WorkspaceNotBootstrappedError') {
         showImportErrorToast(t('contacts.connectModal.error_workspace_not_ready'));
       } else if (isAuthFailure) {
         setScopeLost(true);
       } else {
-        showImportErrorToast(t('contacts.connectModal.error_generic'));
+        showImportErrorToast(
+          t(provider === 'microsoft'
+            ? 'contacts.connectModal.error_generic_microsoft'
+            : 'contacts.connectModal.error_generic')
+        );
       }
     } finally {
       setIsImporting(false);
@@ -479,7 +579,11 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
                 <ShieldAlert className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--pulse-tone-warning)' }} aria-hidden="true" />
                 <div className="flex-1 text-sm leading-5">
                   <div className="font-semibold">{t('contacts.connectModal.scope_lost_title')}</div>
-                  <div style={{ color: 'var(--pulse-ink-2)' }}>{t('contacts.connectModal.scope_lost_body')}</div>
+                  <div style={{ color: 'var(--pulse-ink-2)' }}>
+                    {t(provider === 'microsoft'
+                      ? 'contacts.connectModal.scope_lost_body_microsoft'
+                      : 'contacts.connectModal.scope_lost_body')}
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -487,7 +591,9 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
                   className="min-h-[36px] px-3 py-1.5 rounded-md text-sm font-semibold"
                   style={{ background: 'var(--pulse-rose)', color: '#fff' }}
                 >
-                  {t('contacts.connectModal.scope_lost_cta')}
+                  {t(provider === 'microsoft'
+                    ? 'contacts.connectModal.scope_lost_cta_microsoft'
+                    : 'contacts.connectModal.scope_lost_cta')}
                 </button>
               </div>
             )}
@@ -515,6 +621,9 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
                   toggleContact={toggleContact}
                   toggleGroup={toggleGroup}
                   totalContactCount={contacts.length}
+                  provider={provider}
+                  availableProviders={availableProviders}
+                  onProviderChange={setProvider}
                   t={t}
                 />
               ) : step === 'tag' ? (
@@ -599,6 +708,9 @@ interface StageStepProps {
   toggleContact: (c: Contact) => void;
   toggleGroup: (g: ContactGroup) => void;
   totalContactCount: number;
+  provider: ImportProvider;
+  availableProviders: ImportProvider[];
+  onProviderChange: (p: ImportProvider) => void;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }
 
@@ -613,10 +725,54 @@ const StageStep: React.FC<StageStepProps> = ({
   toggleContact,
   toggleGroup,
   totalContactCount,
+  provider,
+  availableProviders,
+  onProviderChange,
   t,
 }) => {
   return (
     <div className="p-4 space-y-3">
+      {/* Source picker — only when the user has more than one provider connected. */}
+      {availableProviders.length > 1 && (
+        <div className="flex items-center gap-3">
+          <span
+            className="text-[11px] tracking-[0.1em] uppercase"
+            style={{
+              color: 'var(--pulse-ink-3)',
+              fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+            }}
+          >
+            {t('contacts.connectModal.source_picker_label')}
+          </span>
+          <div
+            className="inline-flex rounded-lg border overflow-hidden"
+            style={{ borderColor: 'var(--pulse-border)' }}
+            role="group"
+          >
+            {availableProviders.map(p => {
+              const isActive = p === provider;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => onProviderChange(p)}
+                  aria-pressed={isActive}
+                  className="min-h-[36px] px-3 text-sm font-medium"
+                  style={{
+                    background: isActive ? 'var(--pulse-rose)' : 'var(--pulse-surface)',
+                    color: isActive ? '#fff' : 'var(--pulse-ink-2)',
+                  }}
+                >
+                  {t(p === 'microsoft'
+                    ? 'contacts.connectModal.source_microsoft'
+                    : 'contacts.connectModal.source_google')}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="relative">
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
@@ -677,7 +833,9 @@ const StageStep: React.FC<StageStepProps> = ({
         >
           {search.trim()
             ? `No match for "${search.trim()}" in ${totalContactCount} loaded contact${totalContactCount === 1 ? '' : 's'}.`
-            : t('contacts.connectModal.stage_empty_groups')}
+            : t(provider === 'microsoft'
+                ? 'contacts.connectModal.stage_empty_groups_microsoft'
+                : 'contacts.connectModal.stage_empty_groups')}
         </div>
       ) : (
         filteredGroups.map(group => {

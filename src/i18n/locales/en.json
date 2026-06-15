@@ -263,8 +263,15 @@
       "scope_lost_title": "Reconnect required",
       "scope_lost_body": "Pulse can't refresh your Google session silently. Reconnect once to grant offline access, then it stays refreshed in the background.",
       "scope_lost_cta": "Reconnect Google",
+      "scope_lost_body_microsoft": "Pulse can't refresh your Microsoft session silently. Reconnect once to grant offline access, then it stays refreshed in the background.",
+      "scope_lost_cta_microsoft": "Reconnect Microsoft",
+      "stage_empty_groups_microsoft": "No Outlook categories found. Your contacts are all in the Uncategorized bucket.",
+      "source_picker_label": "Import from",
+      "source_google": "Google",
+      "source_microsoft": "Outlook",
       "error_workspace_not_ready": "Your workspace isn't ready yet. Try again in a moment.",
-      "error_generic": "Couldn't reach Google. Try again in a moment."
+      "error_generic": "Couldn't reach Google. Try again in a moment.",
+      "error_generic_microsoft": "Couldn't reach Microsoft. Try again in a moment."
     },
     "trimWizard": {
       "headline": "One last look.",
