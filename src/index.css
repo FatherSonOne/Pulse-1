@@ -102,7 +102,10 @@
   --anim-slow: 300ms;
 
   /* Easing Functions */
-  --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Strong, honest ease-out — matches --pulse-ease / the `ease-pulse` Tailwind
+     token. Was cubic-bezier(0.4,0,0.2,1), which is the symmetric "standard"
+     curve (doesn't start fast), so the name lied. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.6, 1);
 }
 
@@ -239,7 +242,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
-  transition: all 200ms ease;
+  /* Scoped: only box-shadow + the hover/active translateY actually animate;
+     the gradient background can't interpolate (it snaps, same as under `all`). */
+  transition: box-shadow 200ms ease, transform 200ms ease;
 }
 
 .btn-brand-primary:hover {
