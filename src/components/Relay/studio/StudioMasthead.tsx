@@ -15,7 +15,7 @@ import React from 'react';
 export interface StudioMastheadProps {
   /** Mono eyebrow, e.g. "Relay · Inbox" — rendered uppercase via tracking. */
   eyebrow: React.ReactNode;
-  /** Big section title (text-3xl). */
+  /** Big section title (text-2xl on phones, text-3xl from sm up). */
   title: React.ReactNode;
   /** Optional one-line subtitle under the title. */
   subtitle?: React.ReactNode;
@@ -55,7 +55,7 @@ export const StudioMasthead: React.FC<StudioMastheadProps> = ({
           dropdown) drop below the title at phone width instead of overflowing;
           a no-op on desktop where the row has room. */}
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 mt-1">
-        <h1 className="text-3xl font-semibold text-zinc-900 dark:text-zinc-100 leading-tight">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-100 leading-tight">
           {title}
         </h1>
         {right && <div className="flex items-center gap-2 shrink-0 max-w-full overflow-x-auto">{right}</div>}
