@@ -51,6 +51,13 @@ interface MapContactMarkerProps {
   reducedMotion?: boolean;
 }
 
+// The marker's visual body, decoupled from its positioning wrapper. Under the
+// Google renderer MapContactMarker wraps this in an OverlayView; under MapLibre
+// it's portaled via MapMarkerPortal. Same DOM either way — the body owns the
+// anchoring transform (translate(-50%,-100%) + offset), so the pin tip lands on
+// the geographic point regardless of which projector positions the container.
+export type MapContactMarkerBodyProps = Omit<MapContactMarkerProps, 'lat' | 'lng' | 'liveLocation'>;
+
 function getInitials(name: string): string {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
@@ -61,14 +68,11 @@ function getInitials(name: string): string {
 // from the five-signals-on-a-thumbnail clutter the previous version had.
 // When an accepted route exists, the sequence badge takes the corner slot
 // permanently — route progress is the dominant narrative.
-const MapContactMarker: React.FC<MapContactMarkerProps> = ({
+const MapContactMarkerBodyInner: React.FC<MapContactMarkerBodyProps> = ({
   contact,
   locationType,
-  lat,
-  lng,
   isSelected,
   isLive = false,
-  liveLocation,
   onClick,
   sequenceNumber,
   offsetX = 0,
@@ -79,7 +83,6 @@ const MapContactMarker: React.FC<MapContactMarkerProps> = ({
   animationDelayMs = 0,
   reducedMotion = false,
 }) => {
-  const pos = liveLocation ? { lat: liveLocation.lat, lng: liveLocation.lng } : { lat, lng };
   const initials = getInitials(contact.name);
   const isSpiderLeg = mode === 'spider-leg';
   // Animation class is applied only for spider legs in entering/exiting
@@ -116,130 +119,176 @@ const MapContactMarker: React.FC<MapContactMarkerProps> = ({
   }, [onClick, contact.id, locationType]);
 
   return (
+    <div
+      className={`group relative cursor-pointer select-none rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${animationClass}`}
+      style={{
+        // Offset (when supplied by useMarkerOffsets) fans same-coord
+        // siblings apart in screen space so each is independently
+        // tappable. Hover/focus z-elevates so the active marker rides
+        // on top of its group.
+        transform: `translate(calc(-50% + ${offsetX}px), calc(-100% + ${offsetY}px))`,
+        transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+        // Spider-leg keyframes need a per-leg stagger; passing via CSS
+        // variable keeps the keyframe rules generic and cacheable.
+        ['--spider-delay' as string]: `${animationDelayMs}ms`,
+      }}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`${contact.name}, ${locationType === 'home' ? 'home' : 'work'} location${isLive ? ', live' : ''}`}
+    >
+      {/* Live ring — thin 1.5px stroke so it reads as state, not chrome.
+          The soft 4px outer halo carries the breathing presence; the ring
+          itself is restrained. */}
+      {isLive && (
+        <div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            inset: -3,
+            border: `1.5px solid ${LIVE_LOCATION_COLOR}`,
+            boxShadow: `0 0 0 4px ${LIVE_LOCATION_COLOR_SOFT}`,
+          }}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Avatar — status color forms the ring; selected adds a coral halo. */}
+      <div
+        className="relative flex items-center justify-center text-white font-bold rounded-full transition-transform duration-150"
+        style={{
+          width: size,
+          height: size,
+          fontSize,
+          backgroundColor: contact.avatarColor,
+          boxShadow: isSelected
+            ? `0 0 0 2px ${ringColor}, 0 0 0 5px rgba(244, 63, 94, 0.40), 0 4px 16px rgba(0,0,0,0.30)`
+            : `0 0 0 2px ${ringColor}, 0 2px 8px rgba(0,0,0,0.25)`,
+        }}
+      >
+        {contact.avatarUrl ? (
+          <img src={contact.avatarUrl} alt={contact.name} className="w-full h-full rounded-full object-cover" />
+        ) : (
+          <span>{initials}</span>
+        )}
+
+        {/* Bottom-right corner slot. Route sequence wins permanently when
+            present; otherwise the location-type badge fades in on
+            hover/focus/selected and stays hidden at rest. */}
+        {hasSequence ? (
+          <div
+            className="absolute -bottom-1 -right-1 rounded-full flex items-center justify-center font-mono"
+            style={{
+              minWidth: 20,
+              height: 20,
+              padding: '0 6px',
+              backgroundColor: '#f43f5e',
+              color: '#fafafa',
+              fontSize: 11,
+              lineHeight: 1,
+              border: '2px solid #fafafa',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.30)',
+            }}
+            aria-label={`Stop ${sequenceNumber} on accepted route`}
+          >
+            {sequenceNumber}
+          </div>
+        ) : (
+          <div
+            className={`absolute -bottom-1 -right-1 rounded-full flex items-center justify-center transition-opacity duration-150 ${badgeVisibilityCls}`}
+            style={{
+              width: 18,
+              height: 18,
+              backgroundColor: '#f43f5e',
+              border: '2px solid #fafafa',
+            }}
+            title={locationType === 'home' ? 'Home location' : 'Work location'}
+            aria-hidden={!isSelected}
+          >
+            <LocationIcon size={9} color="#fff" strokeWidth={2.5} />
+          </div>
+        )}
+      </div>
+
+      {/* Name label — first name only at rest. When `showLabel` is false
+          another marker in the same offset group owns the resting label
+          slot; this marker still surfaces the label on hover / focus /
+          selected so the operator can still identify it. Spider legs
+          never show a resting label — the anchor carries identity for
+          the whole fan. */}
+      <div
+        className={`absolute top-full mt-1 left-1/2 -translate-x-1/2 pointer-events-none transition-opacity duration-150 ${
+          isSpiderLeg
+            ? (isSelected
+                ? 'opacity-100'
+                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100')
+            : (showLabel || isSelected
+                ? 'opacity-100'
+                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100')
+        }`}
+      >
+        <div
+          className="whitespace-nowrap text-xs font-semibold px-1.5 py-0.5 rounded shadow"
+          style={{
+            backgroundColor: 'rgba(15, 15, 15, 0.75)',
+            color: '#fafafa',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          {contact.name.split(' ')[0]}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Memoised for the MapLibre path (rendered directly via MapMarkerPortal). On
+// the Google path the outer MapContactMarker memo already gates re-renders, so
+// this is belt-and-suspenders there.
+export const MapContactMarkerBody = memo(MapContactMarkerBodyInner);
+
+// Google-renderer marker: positions the shared body via OverlayView. Computes
+// the geographic position (live location wins when sharing) and hands every
+// visual prop to the body unchanged.
+const MapContactMarker: React.FC<MapContactMarkerProps> = ({
+  contact,
+  locationType,
+  lat,
+  lng,
+  isSelected,
+  isLive = false,
+  liveLocation,
+  onClick,
+  sequenceNumber,
+  offsetX = 0,
+  offsetY = 0,
+  showLabel = true,
+  mode = 'normal',
+  animationPhase,
+  animationDelayMs = 0,
+  reducedMotion = false,
+}) => {
+  const pos = liveLocation ? { lat: liveLocation.lat, lng: liveLocation.lng } : { lat, lng };
+  return (
     <OverlayView
       position={pos}
       mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
     >
-      <div
-        className={`group relative cursor-pointer select-none rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${animationClass}`}
-        style={{
-          // Offset (when supplied by useMarkerOffsets) fans same-coord
-          // siblings apart in screen space so each is independently
-          // tappable. Hover/focus z-elevates so the active marker rides
-          // on top of its group.
-          transform: `translate(calc(-50% + ${offsetX}px), calc(-100% + ${offsetY}px))`,
-          transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-          // Spider-leg keyframes need a per-leg stagger; passing via CSS
-          // variable keeps the keyframe rules generic and cacheable.
-          ['--spider-delay' as string]: `${animationDelayMs}ms`,
-        }}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        tabIndex={0}
-        role="button"
-        aria-label={`${contact.name}, ${locationType === 'home' ? 'home' : 'work'} location${isLive ? ', live' : ''}`}
-      >
-        {/* Live ring — thin 1.5px stroke so it reads as state, not chrome.
-            The soft 4px outer halo carries the breathing presence; the ring
-            itself is restrained. */}
-        {isLive && (
-          <div
-            className="absolute rounded-full pointer-events-none"
-            style={{
-              inset: -3,
-              border: `1.5px solid ${LIVE_LOCATION_COLOR}`,
-              boxShadow: `0 0 0 4px ${LIVE_LOCATION_COLOR_SOFT}`,
-            }}
-            aria-hidden="true"
-          />
-        )}
-
-        {/* Avatar — status color forms the ring; selected adds a coral halo. */}
-        <div
-          className="relative flex items-center justify-center text-white font-bold rounded-full transition-transform duration-150"
-          style={{
-            width: size,
-            height: size,
-            fontSize,
-            backgroundColor: contact.avatarColor,
-            boxShadow: isSelected
-              ? `0 0 0 2px ${ringColor}, 0 0 0 5px rgba(244, 63, 94, 0.40), 0 4px 16px rgba(0,0,0,0.30)`
-              : `0 0 0 2px ${ringColor}, 0 2px 8px rgba(0,0,0,0.25)`,
-          }}
-        >
-          {contact.avatarUrl ? (
-            <img src={contact.avatarUrl} alt={contact.name} className="w-full h-full rounded-full object-cover" />
-          ) : (
-            <span>{initials}</span>
-          )}
-
-          {/* Bottom-right corner slot. Route sequence wins permanently when
-              present; otherwise the location-type badge fades in on
-              hover/focus/selected and stays hidden at rest. */}
-          {hasSequence ? (
-            <div
-              className="absolute -bottom-1 -right-1 rounded-full flex items-center justify-center font-mono"
-              style={{
-                minWidth: 20,
-                height: 20,
-                padding: '0 6px',
-                backgroundColor: '#f43f5e',
-                color: '#fafafa',
-                fontSize: 11,
-                lineHeight: 1,
-                border: '2px solid #fafafa',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.30)',
-              }}
-              aria-label={`Stop ${sequenceNumber} on accepted route`}
-            >
-              {sequenceNumber}
-            </div>
-          ) : (
-            <div
-              className={`absolute -bottom-1 -right-1 rounded-full flex items-center justify-center transition-opacity duration-150 ${badgeVisibilityCls}`}
-              style={{
-                width: 18,
-                height: 18,
-                backgroundColor: '#f43f5e',
-                border: '2px solid #fafafa',
-              }}
-              title={locationType === 'home' ? 'Home location' : 'Work location'}
-              aria-hidden={!isSelected}
-            >
-              <LocationIcon size={9} color="#fff" strokeWidth={2.5} />
-            </div>
-          )}
-        </div>
-
-        {/* Name label — first name only at rest. When `showLabel` is false
-            another marker in the same offset group owns the resting label
-            slot; this marker still surfaces the label on hover / focus /
-            selected so the operator can still identify it. Spider legs
-            never show a resting label — the anchor carries identity for
-            the whole fan. */}
-        <div
-          className={`absolute top-full mt-1 left-1/2 -translate-x-1/2 pointer-events-none transition-opacity duration-150 ${
-            isSpiderLeg
-              ? (isSelected
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100')
-              : (showLabel || isSelected
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100')
-          }`}
-        >
-          <div
-            className="whitespace-nowrap text-xs font-semibold px-1.5 py-0.5 rounded shadow"
-            style={{
-              backgroundColor: 'rgba(15, 15, 15, 0.75)',
-              color: '#fafafa',
-              backdropFilter: 'blur(4px)',
-            }}
-          >
-            {contact.name.split(' ')[0]}
-          </div>
-        </div>
-      </div>
+      <MapContactMarkerBody
+        contact={contact}
+        locationType={locationType}
+        isSelected={isSelected}
+        isLive={isLive}
+        onClick={onClick}
+        sequenceNumber={sequenceNumber}
+        offsetX={offsetX}
+        offsetY={offsetY}
+        showLabel={showLabel}
+        mode={mode}
+        animationPhase={animationPhase}
+        animationDelayMs={animationDelayMs}
+        reducedMotion={reducedMotion}
+      />
     </OverlayView>
   );
 };

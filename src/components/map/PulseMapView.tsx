@@ -6,7 +6,7 @@ import { ContactCircle } from '../../types/contactCircleTypes';
 import { getMapOptions } from '../../services/mapService';
 import { UserLocation } from '../../services/locationService';
 import MapFilterAccessories, { MapFilter, MapFilterControls } from './MapFilterBar';
-import MapContactMarker from './contacts/MapContactMarker';
+import MapContactMarker, { MapContactMarkerBody } from './contacts/MapContactMarker';
 import MapRadiusRings from './contacts/MapRadiusRings';
 import MapContactPanel from './contacts/MapContactPanel';
 import MapCircleOverlay from './contacts/MapCircleOverlay';
@@ -41,6 +41,7 @@ import { useMapLibreRenderer } from './provider/useMapLibreRenderer';
 import { MapLibreAcceptedRoute } from './provider/MapLibreAcceptedRoute';
 import { MapLibreAtlasTerritories } from './provider/MapLibreAtlasTerritories';
 import { MapLibreAtlasHalos } from './provider/MapLibreAtlasHalos';
+import { MapMarkerPortal } from './provider/MapMarkerPortal';
 import type { Map as MaplibreMap } from 'maplibre-gl';
 import { useMapKeyboardShortcuts } from './hooks/useMapKeyboardShortcuts';
 import { useMarkerOffsets, type OffsetableMarker } from './hooks/useMarkerOffsets';
@@ -667,6 +668,33 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               />
             </>
           )}
+          {/* P2 anchor proof — contact markers via projected portal (MapMarkerPortal
+              + the shared MapContactMarkerBody). Clustering / spiderfy / offsets /
+              meeting markers still pending (they need the projection port); each
+              visible contact renders individually here. */}
+          {mapLibreReady && visibleMarkers.map(({ contact, locType, lat, lng }) => {
+            const key = markerKey(contact.id, locType);
+            const live = liveLocations.get(contact.id);
+            const isLiveSharing = !!live && live.isSharing;
+            const seqIdx = acceptedRoute ? acceptedRoute.orderedMarkerKeys.indexOf(key) : -1;
+            return (
+              <MapMarkerPortal
+                key={key}
+                map={mapLibreRef.current}
+                lat={isLiveSharing && live ? live.lat : lat}
+                lng={isLiveSharing && live ? live.lng : lng}
+              >
+                <MapContactMarkerBody
+                  contact={contact}
+                  locationType={locType}
+                  isSelected={selectedContactId === contact.id && selectedLocType === locType}
+                  isLive={isLiveSharing}
+                  onClick={handleContactSelect}
+                  sequenceNumber={seqIdx >= 0 ? seqIdx + 1 : undefined}
+                />
+              </MapMarkerPortal>
+            );
+          })}
           </>
         ) : (
         <GoogleMap
