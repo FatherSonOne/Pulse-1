@@ -361,10 +361,30 @@ export class UserContactService {
     searchQuery?: string;
     limit?: number;
     excludeBlocked?: boolean;
+    /** When set, restrict results to members of this workspace (excluding self).
+     *  The Direct picker passes the active workspace so it only offers people who
+     *  share it and can therefore receive a quick_vox — delivery is workspace-
+     *  scoped via SELECT RLS, so listing non-members would offer undeliverable
+     *  recipients. */
+    workspaceId?: string;
   }): Promise<EnrichedUserProfile[]> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      // When scoping to a workspace, resolve its other members first; an empty
+      // set means there's no one to message in this workspace.
+      let memberIds: string[] | null = null;
+      if (options?.workspaceId) {
+        const { data: members } = await supabase
+          .from('workspace_members')
+          .select('user_id')
+          .eq('workspace_id', options.workspaceId);
+        memberIds = (members ?? [])
+          .map((m) => m.user_id as string)
+          .filter((id) => id !== user.id);
+        if (memberIds.length === 0) return [];
+      }
 
       let query = supabase
         .from('user_profiles')
@@ -380,6 +400,11 @@ export class UserContactService {
         )
         .neq('id', user.id) // Exclude current user
         .order('display_name', { ascending: true });
+
+      // Restrict to workspace members when scoping was requested.
+      if (memberIds) {
+        query = query.in('id', memberIds);
+      }
 
       // Apply search filter if provided
       if (options?.searchQuery && options.searchQuery.trim()) {

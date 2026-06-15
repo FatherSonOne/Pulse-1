@@ -49,6 +49,7 @@ import { userContactService } from '../../services/userContactService';
 import { whisperService } from '../../services/relay/whisperService';
 import { audioEnhancementService } from '../../services/relay/audioEnhancementService';
 import { voxModeService } from '../../services/relay/voxModeService';
+import { getCurrentWorkspaceId } from '../../services/ai/getWorkspaceId';
 import { supabase } from '../../services/supabase';
 import type { EnrichedUserProfile, PulseUserProfile } from '../../types/userContact';
 import toast from 'react-hot-toast';
@@ -264,6 +265,11 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
 
   // Pulse users state
   const [pulseUsers, setPulseUsers] = useState<EnrichedUserProfile[]>([]);
+  // Workspace-scoped pickable users for the "New message" modal — only people in
+  // the active workspace (who can actually receive a quick_vox). Kept separate
+  // from `pulseUsers`, which stays unscoped so resolveParticipant can still name
+  // existing thread counterparties that may live in other workspaces.
+  const [pickableUsers, setPickableUsers] = useState<EnrichedUserProfile[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
   // Recording mode state
@@ -518,9 +524,12 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
           const users = await userContactService.getAllPulseUsers({
             searchQuery: modalSearchQuery || undefined,
             excludeBlocked: true,
-            limit: 50
+            limit: 50,
+            // Scope to the workspace the send will stamp (same source as
+            // sendQuickVox) so the picker only offers deliverable recipients.
+            workspaceId: getCurrentWorkspaceId() ?? undefined,
           });
-          setPulseUsers(users);
+          setPickableUsers(users);
         } catch (error) {
           console.error('Error loading Pulse users:', error);
           toast.error('Failed to load contacts');
@@ -1897,14 +1906,14 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                   <Loader2 className="w-6 h-6 animate-spin" />
                   <span>Loading Pulse users...</span>
                 </div>
-              ) : pulseUsers.length === 0 ? (
+              ) : pickableUsers.length === 0 ? (
                 <div className="classic-modal-empty">
                   <Users className="w-8 h-8" />
-                  <p>No Pulse users found</p>
-                  <span>Invite others to join Pulse</span>
+                  <p>No one else in this workspace</p>
+                  <span>Invite a teammate to message them here</span>
                 </div>
               ) : (
-                pulseUsers.map(user => {
+                pickableUsers.map(user => {
                   const displayName = user.displayName || user.fullName || user.handle || 'Unknown';
                   const initials = displayName.charAt(0).toUpperCase();
                   const subtitle = user.role || (user.handle ? `@${user.handle}` : user.company) || '';
