@@ -1,38 +1,37 @@
-// Supabase Edge Function: Maps Geosearch (Photon / OSM forward autocomplete)
-// Server-side proxy for an OpenStreetMap-based geosearch. Powers the MapLibre-
+// Supabase Edge Function: Maps Geosearch (forward address/place autocomplete)
+// Server-side proxy for an OpenStreetMap-derived geosearch. Powers the MapLibre-
 // path location pickers (P4 of the map rebrand).
 //
 // WHY a separate, non-Google geosearch: the MapLibre (non-Google) base map may
 // NOT legally display Google Places geocodes (Google Maps Service-Specific
-// Terms — "No use with a non-Google map"). Photon returns OSM-derived results,
-// which both pair legally with the MapLibre map AND are storable long-term.
-// When the mapLibreRenderer flag is OFF the client keeps using Google
+// Terms — "No use with a non-Google map"). Both providers below return
+// OSM-derived results, which pair legally with the MapLibre map AND are storable
+// long-term. When the mapLibreRenderer flag is OFF the client keeps using Google
 // Autocomplete directly — this function is only hit on the MapLibre path.
 //
-// RUNTIME NOTES (learned the hard way, 2026-06-15):
-//  - Uses the runtime-native `Deno.serve` and ZERO remote imports. The earlier
-//    version imported `serve` from deno.land/std + `createClient` from esm.sh;
-//    a freshly API-deployed function crashed at boot (502 EDGE_FUNCTION_ERROR,
-//    an UNCAUGHT throw the gateway reports) fetching those. The whole body is
-//    now wrapped in try/catch so any failure returns a clean JSON error instead.
-//  - Auth: with verify_jwt enabled the platform gates this before our code
-//    runs, so a valid user JWT is guaranteed — no in-function token check (and
-//    no supabase-js client) needed.
+// PROVIDERS (chosen at boot by which env is set):
+//   1. Stadia Maps (preferred) — set STADIA_API_KEY. Hosted Pelias geocoder,
+//      free tier, nothing to run. This is the production path.
+//   2. Photon — used when STADIA_API_KEY is absent. PHOTON_URL overrides the
+//      upstream; with neither set it falls back to komoot's PUBLIC demo instance
+//      (DEV-ONLY per komoot's usage policy).
+// So setting STADIA_API_KEY makes Stadia win regardless of any (even broken)
+// PHOTON_URL — no need to unset it.
 //
-// UPSTREAM: Photon (https://github.com/komoot/photon). PHOTON_URL is read from
-// env and defaults to the komoot PUBLIC demo instance for development. That
-// instance is DEV-ONLY (komoot's usage policy bars heavy/production traffic) —
-// point PHOTON_URL at the self-hosted Photon box before any real traffic. The
-// self-host swap is a pure env change; no client or function-code change.
+// RUNTIME NOTES: runtime-native Deno.serve, ZERO remote imports (an earlier
+// version crashed at cold boot fetching deno.land/esm.sh imports), whole body
+// wrapped so failures return a readable JSON error instead of EDGE_FUNCTION_ERROR.
+// Auth is handled by verify_jwt at the platform layer — no in-function check.
 //
 // Request:  POST /functions/v1/maps-geosearch
 //   body:   { query: string, limit?: number, lat?: number, lng?: number }
 //             lat/lng (optional) bias results toward that point.
 //
-// Response (200): { results: Array<{ lat, lng, name, address, type }> }
+// Response (200): { results: Array<{ lat, lng, name, address, type }>, provider }
 // Response (400): { error: 'invalid_body' | 'invalid_input' }
 // Response (500/502): { error: 'request_failed' | 'upstream_error', detail?, status? }
 
+const STADIA_API_KEY = Deno.env.get('STADIA_API_KEY');
 const PHOTON_URL = (Deno.env.get('PHOTON_URL') ?? 'https://photon.komoot.io').replace(/\/$/, '');
 
 const UPSTREAM_TIMEOUT_MS = 10_000;
@@ -52,14 +51,50 @@ const json = (body: unknown, status = 200) =>
     headers: { ...CORS, 'Content-Type': 'application/json' },
   });
 
+type GeoResult = { lat: number; lng: number; name: string | null; address: string; type: string | null };
+
 // Compose a single human-readable address line from Photon's OSM properties.
-function composeAddress(p: Record<string, string | undefined>): string {
+function composePhotonAddress(p: Record<string, string | undefined>): string {
   const street = [p.housenumber, p.street].filter(Boolean).join(' ');
   const locality = p.city || p.town || p.village || p.district || p.county;
   return [street, locality, p.state, p.country]
     .map((s) => (s ?? '').trim())
     .filter(Boolean)
     .join(', ');
+}
+
+// Both providers return a GeoJSON FeatureCollection; only the property names
+// differ. Stadia (Pelias) ships a pre-formatted `label`; Photon needs composing.
+function parseFeatures(data: unknown, provider: 'stadia' | 'photon'): GeoResult[] {
+  const features: Array<Record<string, unknown>> =
+    Array.isArray((data as { features?: unknown })?.features) ? (data as { features: Array<Record<string, unknown>> }).features : [];
+  const out: GeoResult[] = [];
+  for (const f of features) {
+    const coords = (f?.geometry as { coordinates?: [number, number] } | undefined)?.coordinates;
+    if (!coords || coords.length < 2) continue;
+    const [lng, lat] = coords;
+    if (typeof lat !== 'number' || typeof lng !== 'number') continue;
+    const props = (f?.properties ?? {}) as Record<string, string | undefined>;
+    if (provider === 'stadia') {
+      out.push({
+        lat,
+        lng,
+        name: props.name ?? null,
+        address: props.label || props.name || '',
+        type: props.layer ?? null,
+      });
+    } else {
+      const address = composePhotonAddress(props);
+      out.push({
+        lat,
+        lng,
+        name: props.name ?? null,
+        address: address || props.name || '',
+        type: props.osm_value || props.type || null,
+      });
+    }
+  }
+  return out;
 }
 
 Deno.serve(async (req: Request) => {
@@ -80,13 +115,25 @@ Deno.serve(async (req: Request) => {
     const query = (body?.query ?? '').trim();
     if (!query || query.length > MAX_QUERY_LEN) return json({ error: 'invalid_input' }, 400);
     const limit = Math.min(MAX_LIMIT, Math.max(1, Math.floor(body.limit ?? DEFAULT_LIMIT)));
+    const hasBias = typeof body.lat === 'number' && typeof body.lng === 'number'
+      && body.lat >= -90 && body.lat <= 90 && body.lng >= -180 && body.lng <= 180;
 
-    const params = new URLSearchParams({ q: query, limit: String(limit), lang: 'en' });
-    // Optional proximity bias — Photon uses lat/lon.
-    if (typeof body.lat === 'number' && typeof body.lng === 'number'
-      && body.lat >= -90 && body.lat <= 90 && body.lng >= -180 && body.lng <= 180) {
-      params.set('lat', String(body.lat));
-      params.set('lon', String(body.lng));
+    const provider: 'stadia' | 'photon' = STADIA_API_KEY ? 'stadia' : 'photon';
+    let url: string;
+    if (provider === 'stadia') {
+      const params = new URLSearchParams({ text: query, size: String(limit), 'api_key': STADIA_API_KEY! });
+      if (hasBias) {
+        params.set('focus.point.lat', String(body.lat));
+        params.set('focus.point.lon', String(body.lng));
+      }
+      url = `https://api.stadiamaps.com/geocoding/v1/autocomplete?${params.toString()}`;
+    } else {
+      const params = new URLSearchParams({ q: query, limit: String(limit), lang: 'en' });
+      if (hasBias) {
+        params.set('lat', String(body.lat));
+        params.set('lon', String(body.lng));
+      }
+      url = `${PHOTON_URL}/api?${params.toString()}`;
     }
 
     // Fetch with a manual timeout (no helper import).
@@ -94,36 +141,19 @@ Deno.serve(async (req: Request) => {
     const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
     let res: Response;
     try {
-      res = await fetch(`${PHOTON_URL}/api?${params.toString()}`, { signal: controller.signal });
+      res = await fetch(url, { signal: controller.signal });
     } finally {
       clearTimeout(timer);
     }
 
     if (!res.ok) {
       const detail = await res.text();
-      console.error(`[maps-geosearch] upstream ${res.status}:`, detail.slice(0, 300));
-      return json({ error: 'upstream_error', status: res.status }, 502);
+      console.error(`[maps-geosearch] ${provider} upstream ${res.status}:`, detail.slice(0, 300));
+      return json({ error: 'upstream_error', provider, status: res.status }, 502);
     }
 
     const data = await res.json();
-    const features: Array<Record<string, unknown>> = Array.isArray(data?.features) ? data.features : [];
-    const results: Array<{ lat: number; lng: number; name: string | null; address: string; type: string | null }> = [];
-    for (const f of features) {
-      const coords = (f?.geometry as { coordinates?: [number, number] } | undefined)?.coordinates;
-      if (!coords || coords.length < 2) continue;
-      const [lng, lat] = coords;
-      if (typeof lat !== 'number' || typeof lng !== 'number') continue;
-      const props = (f?.properties ?? {}) as Record<string, string | undefined>;
-      const address = composeAddress(props);
-      results.push({
-        lat,
-        lng,
-        name: props.name ?? null,
-        address: address || props.name || '',
-        type: props.osm_value || props.type || null,
-      });
-    }
-    return json({ results });
+    return json({ results: parseFeatures(data, provider), provider });
   } catch (e) {
     console.error('[maps-geosearch] crashed:', e);
     return json(
