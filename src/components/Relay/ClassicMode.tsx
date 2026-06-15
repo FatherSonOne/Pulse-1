@@ -45,7 +45,6 @@ import VoxRecordArea from './VoxRecordArea';
 
 import { blobToBase64 } from '../../services/audioService';
 import { transcribeMedia, processWithModel } from '../../services/geminiService';
-import { dataService } from '../../services/dataService';
 import { userContactService } from '../../services/userContactService';
 import { whisperService } from '../../services/relay/whisperService';
 import { audioEnhancementService } from '../../services/relay/audioEnhancementService';
@@ -349,59 +348,59 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     };
   }, []);
 
-  // Load recordings on mount
+  // Load the Direct thread from the REAL 2-party quick_vox engine (S0-1). The
+  // old voxer_recordings path was a single-user log that never delivered to the
+  // recipient; this loads every quick_vox message I sent or received and derives
+  // the people list + per-contact threads from it. me/them keys off sender_id vs
+  // my id; the counterparty (contactId) is the OTHER participant.
   useEffect(() => {
     const loadRecordings = async () => {
       try {
-        const dbRecordings = await dataService.getVoxerRecordings();
+        const myId = await voxModeService.ensureUserId();
+        const dbMessages = await voxModeService.getAllQuickVoxMessages();
         const loadedRecordings: Recording[] = await Promise.all(
-          dbRecordings.map(async (dbRec: any) => {
+          dbMessages.map(async (msg) => {
             let blob: Blob | null = null;
-            let url = dbRec.audio_url || '';
+            let url = msg.audioUrl || '';
 
             if (url) {
               try {
-                // Check if URL is a data URL (base64)
                 if (url.startsWith('data:')) {
-                  // Data URL - convert to blob and create object URL for playback
                   const response = await fetch(url);
                   blob = await response.blob();
                   url = URL.createObjectURL(blob);
                   blobUrlsRef.current.add(url);
                 } else if (url.startsWith('blob:')) {
-                  // Old blob URL - skip it as it's no longer valid
-                  console.warn('Skipping invalid blob URL:', url);
+                  // Stale in-memory URL from a prior session — not resolvable.
                   url = '';
                 } else {
-                  // Regular URL (Supabase storage) - fetch and create blob URL
+                  // Supabase storage URL — fetch + wrap for local playback/download.
                   const response = await fetch(url);
                   blob = await response.blob();
                   url = URL.createObjectURL(blob);
                   blobUrlsRef.current.add(url);
                 }
               } catch (e) {
-                console.error('Error loading recording from URL:', url, e);
-                url = '';
+                console.error('Error loading recording from URL:', msg.audioUrl, e);
+                // Fall back to the durable remote URL so playback can still try.
+                url = msg.audioUrl || '';
               }
             }
 
+            const isMine = msg.senderId === myId;
             return {
-              id: dbRec.id,
+              id: msg.id,
               blob: blob || new Blob(),
               url: url || '',
-              duration: dbRec.duration || 0,
-              timestamp: new Date(dbRec.recorded_at || dbRec.created_at),
-              transcription: dbRec.transcript || undefined,
+              duration: msg.duration || 0,
+              timestamp: msg.createdAt,
+              transcription: msg.transcript || undefined,
               isTranscribing: false,
-              // voxer_recordings has no `sender` column — me/them is carried by
-              // `is_outgoing` (true = I sent it). The old `dbRec.sender` read was
-              // always undefined, so every message rendered as the contact.
-              sender: dbRec.is_outgoing ? 'me' : 'other',
-              contactId: dbRec.contact_id || '',
-              status: dbRec.status || 'sent',
-              analysis: dbRec.analysis || undefined,
-              starred: dbRec.starred || false,
-              replyToId: dbRec.analysis?.reply_to_id || undefined,
+              sender: (isMine ? 'me' : 'other') as 'me' | 'other',
+              contactId: isMine ? msg.recipientId : msg.senderId,
+              status: (msg.playedAt ? 'read' : msg.status === 'delivered' ? 'delivered' : 'sent') as 'sent' | 'delivered' | 'read',
+              analysis: msg.analysis || undefined,
+              replyToId: msg.analysis?.reply_to_id || undefined,
             };
           })
         );
@@ -411,6 +410,51 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       }
     };
     loadRecordings();
+  }, []);
+
+  // Realtime inbound: new quick_vox messages addressed to me appear live in the
+  // open thread (and feed the people list) without a refresh — the delivery half
+  // of S0-1. Channels already proves this pattern (TeamVoxMode); Direct now
+  // matches it. subscribeToQuickVox filters server-side to recipient_id = me.
+  useEffect(() => {
+    let channel: any = null;
+    let cancelled = false;
+    voxModeService
+      .subscribeToQuickVox((msg) => {
+        setRecordings((prev) => {
+          if (prev.some((r) => r.id === msg.id)) return prev;
+          return [
+            ...prev,
+            {
+              id: msg.id,
+              blob: new Blob(),
+              url: msg.audioUrl || '',
+              duration: msg.duration || 0,
+              timestamp: msg.createdAt,
+              transcription: msg.transcript || undefined,
+              isTranscribing: false,
+              sender: 'other' as const,
+              contactId: msg.senderId,
+              status: 'delivered' as const,
+              analysis: msg.analysis || undefined,
+              replyToId: msg.analysis?.reply_to_id || undefined,
+            },
+          ];
+        });
+      })
+      .then((sub) => {
+        if (cancelled) {
+          try { if (sub) supabase.removeChannel(sub); } catch { /* noop */ }
+        } else {
+          channel = sub;
+        }
+      });
+    return () => {
+      cancelled = true;
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch { /* noop */ }
+      }
+    };
   }, []);
 
   // Load Pulse users on mount (for contacts with existing conversations)
@@ -752,43 +796,58 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     if (!pendingRecording || !activeContactId) return;
 
     const isReply = !!replyingTo;
-    const newRecording: Recording = {
-      id: `rec-${Date.now()}`,
-      blob: pendingRecording.blob,
+    const replyToId = replyingTo?.id || undefined;
+    const analysis = replyToId ? { reply_to_id: replyToId } : undefined;
+    const blob = pendingRecording.blob;
+    const duration = pendingRecording.duration;
+    const transcriptText = transcript || undefined;
+
+    // Optimistic bubble with a temp id; reconciled to the real row id on success,
+    // rolled back on failure so we never show a false "sent" (S0-3).
+    const tempId = `rec-${Date.now()}`;
+    const optimistic: Recording = {
+      id: tempId,
+      blob,
       url: pendingRecording.url,
-      duration: pendingRecording.duration,
+      duration,
       timestamp: new Date(),
-      transcription: transcript || undefined,
+      transcription: transcriptText,
       sender: 'me',
       contactId: activeContactId,
       status: 'sent',
-      replyToId: replyingTo?.id || undefined,
+      replyToId,
     };
+    setRecordings(prev => [...prev, optimistic]);
 
-    setRecordings(prev => [...prev, newRecording]);
+    // Deliver through the real 2-party engine: uploads audio, inserts a
+    // quick_vox_messages row (sender = me, recipient = activeContactId), notifies
+    // the recipient, and fires their realtime sub. activeContactId is a Pulse
+    // user id — the composer + thread only ever surface Pulse users.
+    const sent = await voxModeService.uploadAndSendQuickVox(
+      activeContactId,
+      blob,
+      duration,
+      transcriptText,
+      analysis,
+    );
+
+    if (!sent) {
+      // Honest failure: drop the optimistic bubble, keep the preview so the user
+      // can retry, and surface the error instead of a fake "Message sent!".
+      setRecordings(prev => prev.filter(r => r.id !== tempId));
+      toast.error('Could not send your voice message. Please try again.');
+      return;
+    }
+
+    // Success: swap the temp row for the durable id, clear the composer. Keep the
+    // local blob URL for instant in-session playback (storage holds the copy).
+    setRecordings(prev =>
+      prev.map(r => (r.id === tempId ? { ...r, id: sent.id, status: 'sent' } : r)),
+    );
     setPendingRecording(null);
     setTranscript('');
     setReplyingTo(null);
-
-    // Save to database (don't pass id - let database generate UUID)
-    try {
-      await dataService.saveVoxerRecording({
-        audio_url: newRecording.url,
-        duration: newRecording.duration,
-        contact_id: activeContactId,
-        is_outgoing: true,
-        transcript: transcript,
-        recorded_at: new Date().toISOString(),
-        // Store reply-to association as metadata in analysis JSON
-        // Available for backend reply threading when supported
-        ...(newRecording.replyToId ? {
-          analysis: { reply_to_id: newRecording.replyToId },
-        } : {}),
-      });
-      toast.success(isReply ? 'Reply sent!' : 'Message sent!');
-    } catch (e) {
-      console.error('Error saving recording:', e);
-    }
+    toast.success(isReply ? 'Reply sent!' : 'Message sent!');
   }, [pendingRecording, activeContactId, transcript, replyingTo]);
 
   const retryRecording = useCallback(() => {
@@ -836,15 +895,14 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     studio.togglePlay();
   }, [studio]);
 
-  const toggleStar = useCallback(async (recordingId: string) => {
+  const toggleStar = useCallback((recordingId: string) => {
+    // Local-only for now: quick_vox_messages is a shared 2-party row with
+    // sender-only UPDATE (RLS), so a per-viewer star can't be persisted there.
+    // Keep the optimistic toggle; durable per-viewer flags are a follow-up.
     setRecordings(prev => prev.map(r =>
       r.id === recordingId ? { ...r, starred: !r.starred } : r
     ));
-    const recording = recordings.find(r => r.id === recordingId);
-    if (recording) {
-      await dataService.updateVoxerRecording(recordingId, { starred: !recording.starred });
-    }
-  }, [recordings]);
+  }, []);
 
   const performDelete = useCallback(async (recordingId: string) => {
     // Revoke the blob URL for the deleted recording to free memory
@@ -854,7 +912,9 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       blobUrlsRef.current.delete(recording.url);
     }
     setRecordings(prev => prev.filter(r => r.id !== recordingId));
-    await dataService.deleteVoxerRecording(recordingId);
+    // RLS allows deleting only messages I sent; received ones are removed from my
+    // view locally (the row stays for the sender). deleteQuickVox handles both.
+    await voxModeService.deleteQuickVox(recordingId);
     toast.success('Message deleted');
   }, [recordings]);
 
@@ -1022,15 +1082,14 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   }, [resolveParticipant, recordings, downloadVoxMessage]);
 
   // Toggle bookmark on a message
-  const toggleBookmark = useCallback(async (recordingId: string) => {
+  const toggleBookmark = useCallback((recordingId: string) => {
+    // Local-only persistence (see toggleStar) — quick_vox can't hold a per-viewer
+    // bookmark under sender-only UPDATE RLS.
+    const recording = recordings.find(r => r.id === recordingId);
     setRecordings(prev => prev.map(r =>
       r.id === recordingId ? { ...r, bookmarked: !r.bookmarked } : r
     ));
-    const recording = recordings.find(r => r.id === recordingId);
-    if (recording) {
-      await dataService.updateVoxerRecording(recordingId, { bookmarked: !recording.bookmarked });
-      toast.success(recording.bookmarked ? 'Bookmark removed' : 'Bookmarked!');
-    }
+    toast.success(recording?.bookmarked ? 'Bookmark removed' : 'Bookmarked!');
   }, [recordings]);
 
   // Add reaction to a message

@@ -1691,7 +1691,9 @@ class VoxModeService {
   async uploadAndSendQuickVox(
     recipientId: string,
     audioBlob: Blob,
-    duration: number
+    duration: number,
+    transcript?: string,
+    analysis?: any
   ): Promise<QuickVoxMessage | null> {
     const userId = await this.ensureUserId();
     if (!userId) {
@@ -1729,7 +1731,7 @@ class VoxModeService {
       const audioUrl = urlData.publicUrl;
 
       // Send the message with the uploaded URL
-      return await this.sendQuickVox(recipientId, audioUrl, duration);
+      return await this.sendQuickVox(recipientId, audioUrl, duration, transcript, analysis);
     } catch (error) {
       console.error('Error uploading and sending quick vox:', error);
       return null;
@@ -2080,7 +2082,7 @@ class VoxModeService {
     }
   }
 
-  async sendQuickVox(recipientId: string, audioUrl: string, duration: number): Promise<QuickVoxMessage | null> {
+  async sendQuickVox(recipientId: string, audioUrl: string, duration: number, transcript?: string, analysis?: any): Promise<QuickVoxMessage | null> {
     // RLS on quick_vox_messages: user_has_workspace_access(workspace_id)
     //   AND sender_id = auth.uid(). Both pieces must be supplied — read auth
     // fresh (ensureUserId can return a stale cache / localStorage fallback
@@ -2109,6 +2111,8 @@ class VoxModeService {
         duration: Math.round(duration),
         status: 'sent',
         created_at: new Date().toISOString(),
+        transcript: transcript ?? null,
+        analysis: analysis ?? null,
       }])
       .select()
       .single();
@@ -2146,6 +2150,48 @@ class VoxModeService {
 
     if (error || !data) return [];
     return data.map(message => this.mapDbToQuickVoxMessage(message));
+  }
+
+  /**
+   * All quick_vox messages involving the current user (sent + received), across
+   * every conversation, ascending by time. Relay's Direct surface loads the full
+   * set once and derives its people list + per-contact threads from it (the same
+   * load-all model the old voxer_recordings path used). RLS scopes the result to
+   * rows where the caller is the sender or recipient.
+   */
+  async getAllQuickVoxMessages(): Promise<QuickVoxMessage[]> {
+    const userId = await this.ensureUserId();
+    if (!userId) return [];
+    const { data, error } = await supabase
+      .from('quick_vox_messages')
+      .select('*')
+      .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+      .order('created_at', { ascending: true });
+    if (error || !data) {
+      if (error) console.error('Error loading quick vox messages:', error);
+      return [];
+    }
+    return data.map(message => this.mapDbToQuickVoxMessage(message));
+  }
+
+  /**
+   * Delete a quick vox message. RLS permits deletes only for the sender, so this
+   * succeeds for messages I sent and is a no-op (returns false) for others; the
+   * caller removes it from local view regardless.
+   */
+  async deleteQuickVox(messageId: string): Promise<boolean> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    const { error } = await supabase
+      .from('quick_vox_messages')
+      .delete()
+      .eq('id', messageId)
+      .eq('sender_id', user.id);
+    if (error) {
+      console.error('Error deleting quick vox:', error);
+      return false;
+    }
+    return true;
   }
 
   async updateQuickVoxStatus(isRecording: boolean): Promise<void> {
@@ -2775,6 +2821,8 @@ class VoxModeService {
       createdAt: new Date(db.created_at),
       deliveredAt: db.delivered_at ? new Date(db.delivered_at) : undefined,
       playedAt: db.played_at ? new Date(db.played_at) : undefined,
+      transcript: db.transcript ?? undefined,
+      analysis: db.analysis ?? undefined,
     };
   }
 

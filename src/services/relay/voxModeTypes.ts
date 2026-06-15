@@ -369,6 +369,10 @@ export interface QuickVoxMessage {
   createdAt: Date;
   deliveredAt?: Date;
   playedAt?: Date;
+  /** Sender-authored transcript (set at send time; read by both parties). */
+  transcript?: string;
+  /** Optional sender-authored metadata (e.g. { reply_to_id }, AI analysis). */
+  analysis?: any;
 }
 
 export interface QuickVoxStatus {
