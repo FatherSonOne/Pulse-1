@@ -3,6 +3,7 @@ import { supabase } from '../supabase';
 import { transcribeMedia } from '../geminiService';
 import { usageTracker } from '../usageTracker';
 import { invokeAIPrompt, invokeAIJson } from '../ai/aiService';
+import { captureMessage } from '../../lib/monitoring/sentry';
 import type {
   VoxMode,
   PulseUser,
@@ -2598,7 +2599,8 @@ class VoxModeService {
       );
       const trimmed = summary?.trim();
       if (trimmed) return trimmed;
-    } catch {
+    } catch (error) {
+      captureMessage('Relay AI fallback: summary', 'warning', { error: error instanceof Error ? error.message : String(error) });
       // Fall through to keyword fallback
     }
     return keywordFallback();
@@ -2620,7 +2622,8 @@ class VoxModeService {
         { workspaceId, temperature: 0.2 },
       );
       if (Array.isArray(parsed)) return (parsed as string[]).slice(0, 5);
-    } catch {
+    } catch (error) {
+      captureMessage('Relay AI fallback: action items', 'warning', { error: error instanceof Error ? error.message : String(error) });
       // Fall through to keyword fallback
     }
     return this.extractActionItems(transcript);
@@ -2642,7 +2645,8 @@ class VoxModeService {
         { workspaceId, temperature: 0.2 },
       );
       if (Array.isArray(parsed)) return (parsed as string[]).slice(0, 5);
-    } catch {
+    } catch (error) {
+      captureMessage('Relay AI fallback: tags', 'warning', { error: error instanceof Error ? error.message : String(error) });
       // Fall through to keyword fallback
     }
     return this.extractTagsFromTranscript(transcript);

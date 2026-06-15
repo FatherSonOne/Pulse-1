@@ -16,6 +16,7 @@ import {
 import { withFormattedOutput } from '../aiFormattingService';
 import { invokeAIJson, invokeAIPrompt } from '../ai/aiService';
 import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
+import { captureMessage } from '../../lib/monitoring/sentry';
 
 // ============================================
 // ANALYSIS SERVICE CLASS
@@ -165,6 +166,7 @@ Message: "${transcription.slice(0, 500)}"`;
       }>('sentiment_analysis', prompt, { workspaceId: wsId, temperature: 0.2 });
     } catch (error) {
       console.error('Quick analysis error:', error);
+      captureMessage('Relay AI fallback: quick analysis', 'warning', { error: error instanceof Error ? error.message : String(error) });
     }
 
     return {
@@ -221,6 +223,7 @@ Return ONLY the JSON, no explanations.`;
       }));
     } catch (error) {
       console.error('Extract action items error:', error);
+      captureMessage('Relay AI fallback: extract action items', 'warning', { error: error instanceof Error ? error.message : String(error) });
     }
 
     return [];
@@ -277,6 +280,7 @@ Make responses natural and appropriate. Return ONLY JSON.`;
       }));
     } catch (error) {
       console.error('Generate responses error:', error);
+      captureMessage('Relay AI fallback: generate responses', 'warning', { error: error instanceof Error ? error.message : String(error) });
     }
 
     return [];
@@ -341,6 +345,7 @@ Return JSON:
       };
     } catch (error) {
       console.error('Summarize conversation error:', error);
+      captureMessage('Relay AI fallback: summarize conversation', 'warning', { error: error instanceof Error ? error.message : String(error) });
     }
 
     return {

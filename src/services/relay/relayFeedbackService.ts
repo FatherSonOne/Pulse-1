@@ -13,6 +13,7 @@ import {
   FeedbackCategory,
 } from './relayTypes';
 import { invokeAIJson } from '../ai/aiService';
+import { captureMessage } from '../../lib/monitoring/sentry';
 import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
 
 // ============================================
@@ -175,6 +176,7 @@ Message: "${transcription.slice(0, 500)}"`;
       }>('quick_reply_suggestions', prompt, { workspaceId: wsId, temperature: 0.3 });
     } catch (error) {
       console.error('Quick feedback error:', error);
+      captureMessage('Relay AI fallback: quick feedback', 'warning', { error: error instanceof Error ? error.message : String(error) });
     }
 
     return {
@@ -221,6 +223,7 @@ Return JSON:
       }>('sentiment_analysis', prompt, { workspaceId: wsId, temperature: 0.2 });
     } catch (error) {
       console.error('Tone analysis error:', error);
+      captureMessage('Relay AI fallback: tone analysis', 'warning', { error: error instanceof Error ? error.message : String(error) });
     }
 
     return {
@@ -271,6 +274,7 @@ Return JSON:
       }>('voxer_transcript_summary', prompt, { workspaceId: wsId, temperature: 0.3 });
     } catch (error) {
       console.error('Completeness check error:', error);
+      captureMessage('Relay AI fallback: completeness check', 'warning', { error: error instanceof Error ? error.message : String(error) });
     }
 
     return {
@@ -314,6 +318,7 @@ Keep the speaker's voice and intent, just improve based on the requested areas.`
       );
     } catch (error) {
       console.error('Improve message error:', error);
+      captureMessage('Relay AI fallback: improve message', 'warning', { error: error instanceof Error ? error.message : String(error) });
     }
 
     return {
@@ -351,6 +356,7 @@ Return JSON with a single "options" array:
       }
     } catch (error) {
       console.error('Rephrase error:', error);
+      captureMessage('Relay AI fallback: rephrase', 'warning', { error: error instanceof Error ? error.message : String(error) });
     }
 
     return [text];
