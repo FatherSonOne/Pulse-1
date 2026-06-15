@@ -51,7 +51,7 @@ import { useMarkerClusters, type ClusterCentroid } from './hooks/useMarkerCluste
 import { useSpiderAnimation } from './hooks/useSpiderAnimation';
 import { MapLensRow } from './sub/MapLensRow';
 import { MapViewPicker } from './sub/MapViewPicker';
-import MapClusterMarker from './sub/MapClusterMarker';
+import MapClusterMarker, { MapClusterMarkerBody } from './sub/MapClusterMarker';
 import SpiderLines from './sub/SpiderLines';
 import { AtlasHalos } from './overlays/AtlasHalos';
 import { AtlasTerritories } from './overlays/AtlasTerritories';
@@ -235,6 +235,27 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   // (mapRef set in onMapLoad); MapLibre → its 'load' fired (mapLibreReady).
   const cameraReady = mapLibreOn ? mapLibreReady : isLoaded;
   useFitBounds(activeCamera, cameraReady, visibleMarkers, meetingMarkers, userPosition);
+
+  // MapLibre cluster-disc click — mirrors handleClusterClick but drives the
+  // MapLibre camera adapter (the Google handleClusterClick uses google.maps).
+  const handleClusterClickML = useCallback((cluster: ClusterCentroid) => {
+    if (
+      cluster.bounds.north === cluster.bounds.south &&
+      cluster.bounds.east === cluster.bounds.west
+    ) {
+      mapLibreCamera.panTo({ lat: cluster.lat, lng: cluster.lng });
+      const z = mapLibreCamera.getZoom() ?? 14;
+      mapLibreCamera.setZoom(Math.min(z + 2, 18));
+      return;
+    }
+    mapLibreCamera.fitBounds(
+      [
+        { lat: cluster.bounds.south, lng: cluster.bounds.west },
+        { lat: cluster.bounds.north, lng: cluster.bounds.east },
+      ],
+      { top: 80, right: 80, bottom: 120, left: 80 },
+    );
+  }, [mapLibreCamera]);
 
   // Stable marker key used by the AI proposal and the accepted-route mapping.
   const markerKey = (contactId: string, locType: 'home' | 'work') => `${contactId}-${locType}`;
@@ -687,9 +708,14 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               visible contact renders individually here. */}
           {mapLibreReady && visibleMarkers.map(({ contact, locType, lat, lng }) => {
             const key = markerKey(contact.id, locType);
+            const mode = clusterEntries.get(key)?.mode;
+            // Spiderfy isn't ported to MapLibre yet — collapse dense groups to
+            // their anchor by hiding cluster-members + (expanded) spider-legs.
+            if (mode === 'cluster-member' || mode === 'spider-leg') return null;
             const live = liveLocations.get(contact.id);
             const isLiveSharing = !!live && live.isSharing;
             const seqIdx = acceptedRoute ? acceptedRoute.orderedMarkerKeys.indexOf(key) : -1;
+            const baseOffset = mode === 'spider-anchor' ? undefined : markerOffsets.get(key);
             return (
               <MapMarkerPortal
                 key={key}
@@ -704,6 +730,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                   isLive={isLiveSharing}
                   onClick={handleContactSelect}
                   sequenceNumber={seqIdx >= 0 ? seqIdx + 1 : undefined}
+                  offsetX={baseOffset?.offsetX}
+                  offsetY={baseOffset?.offsetY}
+                  showLabel={baseOffset?.showLabel ?? true}
                 />
               </MapMarkerPortal>
             );
@@ -715,6 +744,8 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               .some(e => e.id === mm.event.id))
             .map(mm => {
               const key = meetingKey(mm.event.id);
+              const mode = clusterEntries.get(key)?.mode;
+              if (mode === 'cluster-member' || mode === 'spider-leg') return null;
               const seqIdx = acceptedRoute ? acceptedRoute.orderedMarkerKeys.indexOf(key) : -1;
               return (
                 <MapMarkerPortal key={key} map={mapLibreRef.current} lat={mm.lat} lng={mm.lng}>
@@ -728,6 +759,13 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                 </MapMarkerPortal>
               );
             })}
+          {/* Cluster discs (zoom <= 15). Click zooms the MapLibre camera to the
+              cluster's bbox. Spiderfy (zoom >= 17 fan-out) is deferred. */}
+          {mapLibreReady && clusters.map(cluster => (
+            <MapMarkerPortal key={cluster.id} map={mapLibreRef.current} lat={cluster.lat} lng={cluster.lng}>
+              <MapClusterMarkerBody cluster={cluster} onClick={handleClusterClickML} />
+            </MapMarkerPortal>
+          ))}
           </>
         ) : (
         <GoogleMap

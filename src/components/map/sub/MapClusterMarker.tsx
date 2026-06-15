@@ -26,7 +26,11 @@ function sizeForCount(count: number): { diameter: number; fontSize: number } {
   return { diameter: 32, fontSize: 12 };
 }
 
-const MapClusterMarker: React.FC<MapClusterMarkerProps> = ({ cluster, onClick }) => {
+// The cluster disc's visual body, decoupled from its positioning wrapper — same
+// pattern as MapContactMarkerBody. Under Google it's wrapped in OverlayView;
+// under MapLibre it's portaled via MapMarkerPortal. The body owns the centering
+// transform so the disc sits over the centroid either way.
+const MapClusterMarkerBodyInner: React.FC<MapClusterMarkerProps> = ({ cluster, onClick }) => {
   const { diameter, fontSize } = sizeForCount(cluster.count);
 
   const handleClick = useCallback(
@@ -48,31 +52,39 @@ const MapClusterMarker: React.FC<MapClusterMarkerProps> = ({ cluster, onClick })
   );
 
   return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Cluster of ${cluster.count} contacts. Click to expand.`}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      className="cursor-pointer select-none rounded-full flex items-center justify-center font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+      style={{
+        width: diameter,
+        height: diameter,
+        fontSize,
+        transform: 'translate(-50%, -50%)',
+        backgroundColor: '#f43f5e',
+        border: '2px solid #fafafa',
+        boxShadow: '0 0 0 4px rgba(244, 63, 94, 0.20), 0 2px 8px rgba(0,0,0,0.30)',
+        lineHeight: 1,
+        fontVariantNumeric: 'tabular-nums',
+      }}
+    >
+      {cluster.count}
+    </div>
+  );
+};
+
+export const MapClusterMarkerBody = memo(MapClusterMarkerBodyInner, areEqual);
+
+const MapClusterMarker: React.FC<MapClusterMarkerProps> = ({ cluster, onClick }) => {
+  return (
     <OverlayView
       position={{ lat: cluster.lat, lng: cluster.lng }}
       mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
     >
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label={`Cluster of ${cluster.count} contacts. Click to expand.`}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        className="cursor-pointer select-none rounded-full flex items-center justify-center font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
-        style={{
-          width: diameter,
-          height: diameter,
-          fontSize,
-          transform: 'translate(-50%, -50%)',
-          backgroundColor: '#f43f5e',
-          border: '2px solid #fafafa',
-          boxShadow: '0 0 0 4px rgba(244, 63, 94, 0.20), 0 2px 8px rgba(0,0,0,0.30)',
-          lineHeight: 1,
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
-        {cluster.count}
-      </div>
+      <MapClusterMarkerBody cluster={cluster} onClick={onClick} />
     </OverlayView>
   );
 };
