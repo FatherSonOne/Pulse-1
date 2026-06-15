@@ -4,6 +4,7 @@ import { transcribeMedia } from '../geminiService';
 import { usageTracker } from '../usageTracker';
 import { invokeAIPrompt, invokeAIJson } from '../ai/aiService';
 import { captureMessage } from '../../lib/monitoring/sentry';
+import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
 import type {
   VoxMode,
   PulseUser,
@@ -2095,7 +2096,13 @@ class VoxModeService {
     }
     this.userId = authUser.id;
 
-    const workspaceId = await this.ensureWorkspaceId();
+    // Stamp the message with the user's ACTIVE workspace (the one shown in the
+    // switcher), not an arbitrary membership. A quick_vox is only readable by a
+    // recipient who shares THIS workspace (SELECT RLS), so for multi-workspace
+    // users ensureWorkspaceId()'s "first membership" pick could land the DM in a
+    // workspace the recipient isn't in → silent non-delivery. Fall back to
+    // ensureWorkspaceId() only when no active workspace is persisted.
+    const workspaceId = getCurrentWorkspaceId() ?? await this.ensureWorkspaceId();
     if (!workspaceId) {
       console.error('sendQuickVox: no workspace for current user');
       return null;
