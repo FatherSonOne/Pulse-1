@@ -42,6 +42,7 @@ import { MapLibreAcceptedRoute } from './provider/MapLibreAcceptedRoute';
 import { MapLibreAtlasTerritories } from './provider/MapLibreAtlasTerritories';
 import { MapLibreAtlasHalos } from './provider/MapLibreAtlasHalos';
 import { MapMarkerPortal } from './provider/MapMarkerPortal';
+import { MapLibreRadiusRings } from './provider/MapLibreRadiusRings';
 import type { Map as MaplibreMap } from 'maplibre-gl';
 import { useMapKeyboardShortcuts } from './hooks/useMapKeyboardShortcuts';
 import { useMarkerOffsets, type OffsetableMarker } from './hooks/useMarkerOffsets';
@@ -647,6 +648,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               }}
             />
           </React.Suspense>
+          {userPosition && mapLibreReady && (
+            <MapLibreRadiusRings map={mapLibreRef.current} center={userPosition} isDarkMode={isDarkMode} />
+          )}
           {acceptedRoute && mapLibreReady && (
             <MapLibreAcceptedRoute
               map={mapLibreRef.current}
