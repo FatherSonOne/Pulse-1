@@ -271,7 +271,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Scoped: hover/active animate transform (scale) + box-shadow only. */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fixed-fab:hover {
@@ -288,7 +289,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: transparent;
   border: 2px solid #f43f5e;
   color: #f43f5e;
-  transition: all 200ms ease;
+  /* Scoped: hover animates background-color + border-color + text color (no transform). */
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
 }
 
 .btn-brand-secondary:hover {
@@ -1628,7 +1630,8 @@ html, body {
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  transition: all var(--anim-fast) var(--ease-out);
+  /* Scoped: only the hover/active scale animates. */
+  transition: transform var(--anim-fast) var(--ease-out);
   cursor: pointer;
 }
 
