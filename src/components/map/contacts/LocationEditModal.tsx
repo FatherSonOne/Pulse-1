@@ -4,6 +4,9 @@ import { Briefcase, Home, Loader2, X } from 'lucide-react';
 import { Contact } from '../../../types';
 import { saveContactLocation, clearContactLocation } from '../../../services/locationService';
 import { useGoogleMapsLoader } from '../hooks/useGoogleMapsLoader';
+import { useMapLibreRenderer } from '../provider/useMapLibreRenderer';
+import GeoSearchInput from '../sub/GeoSearchInput';
+import type { GeoSearchResult } from '../../../services/geosearchService';
 
 interface LocationEditModalProps {
   contact: Contact;
@@ -127,6 +130,9 @@ interface LocationFieldProps {
   loadError?: Error;
   onPlaceChanged: () => void;
   onClear: () => void;
+  /** MapLibre path — use the non-Google geosearch instead of <Autocomplete>. */
+  mapLibreOn: boolean;
+  onGeoSelect: (r: GeoSearchResult) => void;
 }
 
 const LocationField: React.FC<LocationFieldProps> = ({
@@ -140,6 +146,8 @@ const LocationField: React.FC<LocationFieldProps> = ({
   loadError,
   onPlaceChanged,
   onClear,
+  mapLibreOn,
+  onGeoSelect,
 }) => {
   const Icon = type === 'home' ? Home : Briefcase;
   const inputCls = isDarkMode
@@ -166,7 +174,14 @@ const LocationField: React.FC<LocationFieldProps> = ({
           Current: {currentAddress}
         </p>
       )}
-      {isLoaded ? (
+      {mapLibreOn ? (
+        <GeoSearchInput
+          isDarkMode={isDarkMode}
+          placeholder={`Search for ${label.toLowerCase()} address…`}
+          onSelect={onGeoSelect}
+          inputClassName={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${inputCls}`}
+        />
+      ) : isLoaded ? (
         <Autocomplete
           onLoad={a => { autocompleteRef.current = a; }}
           onPlaceChanged={onPlaceChanged}
@@ -207,6 +222,9 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
   // throws on mount. Shares the 'pulse-google-maps' loader id, so this is a
   // no-op join when a map elsewhere already triggered the load.
   const { isLoaded, loadError } = useGoogleMapsLoader();
+  // MapLibre path → non-Google geosearch (the geocodes land on the map, so they
+  // must be OSM-derived, not Google Places). OFF → Google Autocomplete as before.
+  const mapLibreOn = useMapLibreRenderer();
 
   const homeRef = useRef<google.maps.places.Autocomplete | null>(null);
   const workRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -247,6 +265,15 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
       setWorkPending({ lat, lng, address });
       if (workInputRef.current) workInputRef.current.value = address;
     }
+  };
+
+  // MapLibre-path selection — the geosearch result already carries lat/lng +
+  // a composed address, so feed it straight into the same pending state. The
+  // controlled GeoSearchInput shows the chosen label itself (no input ref).
+  const handleGeoSelect = (type: 'home' | 'work', r: GeoSearchResult) => {
+    const pending = { lat: r.lat, lng: r.lng, address: r.address || r.name || '' };
+    if (type === 'home') setHomePending(pending);
+    else setWorkPending(pending);
   };
 
   const handleSave = async () => {
@@ -352,6 +379,8 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
               loadError={loadError}
               onPlaceChanged={() => handlePlaceChanged('home', homeRef)}
               onClear={() => handleClear('home')}
+              mapLibreOn={mapLibreOn}
+              onGeoSelect={(r) => handleGeoSelect('home', r)}
             />
             <GeofenceControl
               kind="home"
@@ -375,6 +404,8 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
               loadError={loadError}
               onPlaceChanged={() => handlePlaceChanged('work', workRef)}
               onClear={() => handleClear('work')}
+              mapLibreOn={mapLibreOn}
+              onGeoSelect={(r) => handleGeoSelect('work', r)}
             />
             <GeofenceControl
               kind="work"

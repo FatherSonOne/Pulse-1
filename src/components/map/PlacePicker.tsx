@@ -24,6 +24,9 @@ import {
   setPlaceGeofence,
 } from '../../services/locationService';
 import { Place, PlaceEntityType, PlaceRole } from '../../types/placeTypes';
+import { useMapLibreRenderer } from './provider/useMapLibreRenderer';
+import GeoSearchInput from './sub/GeoSearchInput';
+import type { GeoSearchResult } from '../../services/geosearchService';
 
 // Default radius per entity type. Tasks fire when you reach the task site
 // (tight); decisions/meetings/events when you enter the venue (looser).
@@ -65,6 +68,11 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
+
+  // On the MapLibre path, place geocodes must come from the non-Google geosearch
+  // (Photon/OSM) — a non-Google base map may not display Google Places geocodes.
+  // When OFF (Google map), the Google Autocomplete below stays the source.
+  const mapLibreOn = useMapLibreRenderer();
 
   const [attached, setAttached] = useState<Place | null>(null);
   const [available, setAvailable] = useState<Place[]>([]);
@@ -203,6 +211,27 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
       setIsOpen(false);
     } catch (err) {
       console.error('[PlacePicker] handlePlaceChanged failed:', err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // MapLibre-path equivalent of handlePlaceChanged: the geosearch result already
+  // carries lat/lng/address/name, so commit it straight into a new Place + attach.
+  const handleGeoSelect = async (r: GeoSearchResult) => {
+    setBusy(true);
+    try {
+      const created = await createPlace({ lat: r.lat, lng: r.lng, address: r.address, name: r.name, type: 'custom' });
+      setAvailable(prev => [created, ...prev]);
+      if (attached) {
+        await detachPlaceFromEntity(entityType, entityId, role);
+      }
+      await attachPlaceToEntity(entityType, entityId, created.id, role);
+      setAttached(created);
+      onChange?.(created);
+      setIsOpen(false);
+    } catch (err) {
+      console.error('[PlacePicker] handleGeoSelect failed:', err);
     } finally {
       setBusy(false);
     }
@@ -413,7 +442,13 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
             >
               <Plus size={10} /> Add new place
             </label>
-            {isLoaded ? (
+            {mapLibreOn ? (
+              <GeoSearchInput
+                isDarkMode={isDarkMode}
+                placeholder="Search address or place…"
+                onSelect={handleGeoSelect}
+              />
+            ) : isLoaded ? (
               <Autocomplete
                 onLoad={a => { autocompleteRef.current = a; }}
                 onPlaceChanged={handlePlaceChanged}
