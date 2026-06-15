@@ -362,6 +362,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .pulse-radio-broadcast { transition: none; }
+  .pulse-radio-play-btn, .pulse-radio-submit-btn { transition: none; }
 }
 
 .pulse-radio-play-btn {
@@ -376,9 +377,11 @@
   color: #ffffff;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background var(--pulse-duration) var(--pulse-ease);
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              transform 140ms var(--pulse-ease);
 }
 .pulse-radio-play-btn:hover { background: var(--pulse-rose-deep); }
+.pulse-radio-play-btn:active { transform: scale(0.97); }
 
 .pulse-radio-broadcast-content { flex: 1; min-width: 0; }
 
@@ -637,9 +640,11 @@
   font-weight: 500;
   color: #ffffff;
   cursor: pointer;
-  transition: background var(--pulse-duration) var(--pulse-ease);
+  transition: background var(--pulse-duration) var(--pulse-ease),
+              transform 140ms var(--pulse-ease);
 }
 .pulse-radio-submit-btn:hover:not(:disabled) { background: var(--pulse-rose-deep); }
+.pulse-radio-submit-btn:active { transform: scale(0.98); }
 .pulse-radio-submit-btn:disabled,
 .pulse-radio-cancel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 

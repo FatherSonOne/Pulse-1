@@ -44,6 +44,7 @@
   transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .pulse-studio-footer__play:hover { transform: scale(1.04); }
+.pulse-studio-footer__play:active { transform: scale(0.97); }
 .pulse-studio-footer__play:focus-visible {
   outline: 2px solid var(--pulse-rose);
   outline-offset: 2px;

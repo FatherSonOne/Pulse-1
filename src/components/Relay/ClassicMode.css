@@ -298,6 +298,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .classic-message-content { transition: none; }
+  .classic-play-btn { transition: none; }
 }
 
 .classic-play-btn {
@@ -313,10 +314,12 @@
   background: var(--pulse-rose);
   color: #ffffff;
   transition: background var(--pulse-duration) var(--pulse-ease),
-              opacity var(--pulse-duration) var(--pulse-ease);
+              opacity var(--pulse-duration) var(--pulse-ease),
+              transform 140ms var(--pulse-ease);
 }
 
 .classic-play-btn:hover { background: var(--pulse-rose-deep); }
+.classic-play-btn:active { transform: scale(0.97); }
 
 .classic-waveform {
   flex: 1;
