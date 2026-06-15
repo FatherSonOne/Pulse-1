@@ -14,20 +14,13 @@ export type { MessageAIPanelProps } from './MessageAIPanel';
 // remains a worthwhile follow-up; for now, the four inline implementations
 // at least no longer have a "canonical" candidate that lies about being the
 // shared component.
-export { LiveVoxSession } from './LiveVoxSession';
 export { VoiceRooms } from './VoiceRooms';
 
-// Advanced Features
-export { VoxReactions, QuickReactionBar } from './VoxReactions';
-export { AIVoiceCoach } from './AIVoiceCoach';
-export { PriorityVoxSelector, PriorityBadge, EmergencyAlert, AcknowledgedList } from './PriorityVox';
-export { VoxThreads, ThreadIndicator } from './VoxThreads';
-export { TimeCapsuleVox, ScheduledCapsuleCard } from './TimeCapsuleVox';
-export { VoiceBookmarks } from './VoiceBookmarks';
-export { SilentModePanel, SilentModeIndicator, DEFAULT_SILENT_MODE_SETTINGS } from './SilentMode';
-// VoxPlaylists is dormant (Relay rework 2026-04-27); export removed to prevent new use.
-export { CollaborativeVox } from './CollaborativeVox';
-export { VoxPreviewPanel } from './VoxPreviewPanel';
+// Advanced Features (PriorityVox, TimeCapsuleVox, VoxReactions, VoxThreads,
+// VoiceBookmarks, SilentMode, CollaborativeVox, VoxPreviewPanel, AIVoiceCoach,
+// VoxPlaylists, VoiceCommandsHub, LiveVoxSession) were never wired into any of
+// the 6 Relay surfaces — removed 2026-06-14 (launch-readiness S2-1). Recoverable
+// from git history if any is revived.
 
 // Phase 5: AI Enhancements
 // VoxConversationSummary, VoxMeetingNotes, VoxAutoChapters, AIAnalysisPanel were
@@ -58,9 +51,8 @@ export { default as ClassicMode } from './ClassicMode';
 
 // Individual Vox Mode Components
 export { default as PulseRadio } from './PulseRadio';           // Broadcast to followers
-export { default as VoiceThreadsMode } from './VoiceThreadsMode'; // Async threaded conversations
 export { default as TeamVoxMode } from './TeamVoxMode';         // Workspace/team focused
 export { default as VoxNotesMode } from './VoxNotesMode';       // Personal voice memos
-export { default as QuickVoxMode } from './QuickVoxMode';       // One-tap instant communication
-export { default as VoxDropMode } from './VoxDropMode';         // Time-capsule scheduled messages
-// VideoVoxMode moved out of Relay in sub-stage 1.5c (2026-04-27); now lives at src/components/Glimpse/.
+// VoiceThreadsMode / QuickVoxMode / VoxDropMode removed 2026-06-14 (S2-1, dead —
+// never rendered). VideoVoxMode moved out of Relay in sub-stage 1.5c (2026-04-27);
+// now lives at src/components/Glimpse/.
