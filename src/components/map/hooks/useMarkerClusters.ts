@@ -33,6 +33,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SuperClusterAlgorithm } from '@googlemaps/markerclusterer';
+import Supercluster from 'supercluster';
 import type { OffsetableMarker } from './useMarkerOffsets';
 
 export type MarkerClusterMode =
@@ -147,6 +148,11 @@ export function useMarkerClusters(
   // initial render without google.maps loaded doesn't crash.
   const algorithm = useRef<SuperClusterAlgorithm | null>(null);
 
+  // Renderer-agnostic clustering index, used when there's no Google map (the
+  // MapLibre path, or a brief Google-not-ready window). Rebuilt only when the
+  // marker set changes — supercluster caches the hierarchy internally.
+  const superclusterRef = useRef<{ markers: OffsetableMarker[]; index: Supercluster<{ key: string }> } | null>(null);
+
   // ─── Step 1: cluster geometry (independent of spider state) ───────────────
   // This memo runs the SuperCluster pass and the zoom-≥17 bucket pass, but
   // does NOT apply spider-anchor / spider-leg tagging — that's per-frame
@@ -166,7 +172,59 @@ export function useMarkerClusters(
     if (zoom <= CLUSTER_ZOOM_MAX) {
       const map = mapRef.current;
       if (!map || typeof google === 'undefined' || !google.maps?.LatLng) {
-        for (const m of markers) baseEntries.set(m.key, { mode: 'normal' });
+        // Renderer-agnostic clustering (no Google map → MapLibre, or Google not
+        // yet ready). Uses raw supercluster — the lib @googlemaps/markerclusterer
+        // wraps — keyed on zoom + a world bbox, so it needs no map projection.
+        // Produces the SAME baseEntries (cluster-member / normal) + clusters
+        // shape the Google path below returns, so PulseMapView renders identically.
+        if (superclusterRef.current?.markers !== markers) {
+          const index = new Supercluster<{ key: string }>({ radius: 60, maxZoom: CLUSTER_ZOOM_MAX });
+          index.load(
+            markers.map(m => ({
+              type: 'Feature' as const,
+              properties: { key: m.key },
+              geometry: { type: 'Point' as const, coordinates: [m.lng, m.lat] },
+            })),
+          );
+          superclusterRef.current = { markers, index };
+        }
+        const index = superclusterRef.current.index;
+        const z = Math.min(CLUSTER_ZOOM_MAX, Math.max(0, Math.floor(zoom)));
+        const features = index.getClusters([-180, -85, 180, 85], z);
+        for (const f of features) {
+          const props = f.properties as {
+            cluster?: boolean; cluster_id?: number; point_count?: number; key?: string;
+          };
+          if (props.cluster) {
+            const leaves = index.getLeaves(props.cluster_id as number, Infinity);
+            const memberKeys = leaves.map(l => l.properties.key).filter(Boolean);
+            const [lng, lat] = f.geometry.coordinates as [number, number];
+            const count = props.point_count ?? memberKeys.length;
+            if (count === 1 || memberKeys.length <= 1) {
+              if (memberKeys[0]) baseEntries.set(memberKeys[0], { mode: 'normal' });
+              continue;
+            }
+            for (const k of memberKeys) baseEntries.set(k, { mode: 'cluster-member' });
+            let north = -90, south = 90, east = -180, west = 180;
+            for (const l of leaves) {
+              const [lo, la] = l.geometry.coordinates;
+              if (la > north) north = la;
+              if (la < south) south = la;
+              if (lo > east) east = lo;
+              if (lo < west) west = lo;
+            }
+            clusters.push({
+              id: 'c:' + memberKeys.slice().sort().join('|'),
+              lat, lng, count, memberKeys,
+              bounds: { north, south, east, west },
+            });
+          } else if (props.key) {
+            baseEntries.set(props.key, { mode: 'normal' });
+          }
+        }
+        for (const m of markers) {
+          if (!baseEntries.has(m.key)) baseEntries.set(m.key, { mode: 'normal' });
+        }
         return { baseEntries, clusters, buckets };
       }
 
