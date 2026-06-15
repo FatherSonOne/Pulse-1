@@ -12,13 +12,38 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useRef } from 'react';
-import maplibregl from 'maplibre-gl';
+import maplibregl, { type StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { LatLng } from './types';
 
 // OpenFreeMap public instance — free, no API key, no signup. Self-hosted
 // Protomaps PMTiles on R2 + the Coral style JSON replace this in P3.
 const OPENFREEMAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+
+// Attribution. The OSM data credit is LEGALLY required (ODbL); OpenMapTiles +
+// OpenFreeMap are courtesy. "MapLibre" (BSD-licensed, NOT required) is dropped.
+// The credit comes from the openmaptiles source's TileJSON, so the only way to
+// edit it is to patch the source's `attribution` in the style object — hence we
+// fetch the style and override it before mounting; any failure falls back to
+// the plain URL (which keeps the full default credit, so we never under-attribute).
+const ATTRIBUTION =
+  '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> ' +
+  '© <a href="https://openmaptiles.org" target="_blank" rel="noopener">OpenMapTiles</a> ' +
+  'Data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
+
+async function buildStyle(): Promise<string | StyleSpecification> {
+  try {
+    const res = await fetch(OPENFREEMAP_STYLE);
+    if (!res.ok) return OPENFREEMAP_STYLE;
+    const style = await res.json();
+    if (style?.sources?.openmaptiles) {
+      style.sources.openmaptiles.attribution = ATTRIBUTION;
+    }
+    return style as StyleSpecification;
+  } catch {
+    return OPENFREEMAP_STYLE; // network/parse failure → safe full-credit fallback
+  }
+}
 
 export interface MapLibreCanvasProps {
   center: LatLng;
@@ -48,18 +73,29 @@ export function MapLibreCanvas({
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: OPENFREEMAP_STYLE,
-      center: [center.lng, center.lat],
-      zoom,
-    });
-    mapRef.current = map;
-    map.on('load', () => cbRef.current.onReady?.(map));
-    map.on('zoomend', () => cbRef.current.onZoomChanged?.(map.getZoom()));
-    map.on('click', () => cbRef.current.onClick?.());
+    const container = containerRef.current;
+    let cancelled = false;
+    (async () => {
+      const style = await buildStyle();
+      if (cancelled || mapRef.current || !container) return;
+      const map = new maplibregl.Map({
+        container,
+        style,
+        center: [center.lng, center.lat],
+        zoom,
+        // Collapse attribution into a small "ⓘ" so it doesn't clutter the
+        // corner (it expands on click). The required OSM credit still ships —
+        // just compact, and de-"MapLibre"'d via buildStyle.
+        attributionControl: { compact: true },
+      });
+      mapRef.current = map;
+      map.on('load', () => cbRef.current.onReady?.(map));
+      map.on('zoomend', () => cbRef.current.onZoomChanged?.(map.getZoom()));
+      map.on('click', () => cbRef.current.onClick?.());
+    })();
     return () => {
-      map.remove();
+      cancelled = true;
+      mapRef.current?.remove();
       mapRef.current = null;
     };
     // Mount-once on purpose — center/zoom are seeds; useFitBounds drives the
