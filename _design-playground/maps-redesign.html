@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Maps Redesign — A/B/C directions</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { darkMode: 'class' };</script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Pulse tokens (mirror of src/styles/pulse-tokens.css) ────────────────── */
+:root{
+  --pulse-rose:#f43f5e; --pulse-rose-deep:#e11d48; --pulse-coral:#fb7185;
+  --pulse-coral-fg:#a8484f; --pulse-coral-bg-12:rgba(251,113,133,.12); --pulse-coral-bg-08:rgba(251,113,133,.08);
+  --pulse-tone-positive:#16a34a; --pulse-tone-warning:#ea580c; --pulse-tone-overdue:#dc2626;
+  --pulse-tone-info:#2563eb; --pulse-tone-neutral:#6b7280;
+  --pulse-canvas:#f6f5f3; --pulse-surface:#ffffff; --pulse-surface-raised:#f2f1ee;
+  --pulse-border:rgba(0,0,0,.08); --pulse-border-strong:rgba(0,0,0,.16);
+  --pulse-ink:#0f0f0f; --pulse-ink-2:#52525b; --pulse-ink-3:#7a7a85;
+  --pulse-ease:cubic-bezier(.16,1,.3,1); --pulse-dur:220ms;
+  --pulse-font:'Inter',system-ui,sans-serif; --pulse-mono:'JetBrains Mono',ui-monospace,monospace;
+  --shadow:0 6px 24px rgba(0,0,0,.08); --shadow-lg:0 18px 50px rgba(0,0,0,.16);
+  /* coral cockpit map canvas (light) */
+  --map-land:#f1ece4; --map-land-2:#e8e1d6; --map-water:#cfe0e3; --map-green:#e1e8d9;
+  --map-road:#ffffff; --map-road-edge:rgba(0,0,0,.05); --map-label:rgba(15,15,15,.32);
+}
+.dark{
+  --pulse-rose:#fb7185; --pulse-rose-deep:#fb7185; --pulse-coral:#fb7185;
+  --pulse-coral-fg:#f6a6ad; --pulse-coral-bg-12:rgba(251,113,133,.14); --pulse-coral-bg-08:rgba(251,113,133,.08);
+  --pulse-tone-positive:#4ade80; --pulse-tone-warning:#fb923c; --pulse-tone-overdue:#f87171;
+  --pulse-tone-info:#60a5fa; --pulse-tone-neutral:#a1a1aa;
+  --pulse-canvas:#000000; --pulse-surface:rgba(255,255,255,.045); --pulse-surface-raised:rgba(255,255,255,.07);
+  --pulse-border:rgba(255,255,255,.10); --pulse-border-strong:rgba(255,255,255,.20);
+  --pulse-ink:#fafafa; --pulse-ink-2:#a1a1aa; --pulse-ink-3:#71717a;
+  --map-land:#14161b; --map-land-2:#191c22; --map-water:#0e242b; --map-green:#15201a;
+  --map-road:#2b313a; --map-road-edge:rgba(255,255,255,.05); --map-label:rgba(255,255,255,.28);
+}
+/* renderer-real map base-style swaps (replacing dead Sat/Terr/Hybrid) */
+.mapstyle-light{ --map-land:#f1ece4; --map-land-2:#e8e1d6; --map-water:#cfe0e3; --map-green:#e1e8d9; --map-road:#fff; --map-road-edge:rgba(0,0,0,.05); --map-label:rgba(15,15,15,.32);}
+.mapstyle-dark{ --map-land:#14161b; --map-land-2:#191c22; --map-water:#0e242b; --map-green:#15201a; --map-road:#2b313a; --map-road-edge:rgba(255,255,255,.05); --map-label:rgba(255,255,255,.28);}
+.mapstyle-contrast{ --map-land:#fbfaf8; --map-land-2:#eceae6; --map-water:#bcd6db; --map-green:#d6e4c6; --map-road:#ffffff; --map-road-edge:rgba(0,0,0,.22); --map-label:rgba(0,0,0,.6);}
+
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{margin:0;font-family:var(--pulse-font);background:#0b0b0c;color:var(--pulse-ink);-webkit-font-smoothing:antialiased}
+.app-bg{background:var(--pulse-canvas);color:var(--pulse-ink)}
+.mono{font-family:var(--pulse-mono)}
+.surface{background:var(--pulse-surface);border:1px solid var(--pulse-border)}
+.raised{background:var(--pulse-surface-raised)}
+.ink{color:var(--pulse-ink)} .ink-2{color:var(--pulse-ink-2)} .ink-3{color:var(--pulse-ink-3)}
+.bd{border-color:var(--pulse-border)} .bd-s{border-color:var(--pulse-border-strong)}
+.coral-fg{color:var(--pulse-coral-fg)} .coral-bg12{background:var(--pulse-coral-bg-12)} .coral-bg08{background:var(--pulse-coral-bg-08)}
+.tone-pos{color:var(--pulse-tone-positive)} .tone-warn{color:var(--pulse-tone-warning)} .tone-over{color:var(--pulse-tone-overdue)} .tone-info{color:var(--pulse-tone-info)}
+.ease{transition:all var(--pulse-dur) var(--pulse-ease)}
+.glass{backdrop-filter:blur(10px) saturate(1.1);-webkit-backdrop-filter:blur(10px) saturate(1.1)}
+.tracking-mono{letter-spacing:.12em}
+.scroll::-webkit-scrollbar{width:8px;height:8px}
+.scroll::-webkit-scrollbar-thumb{background:var(--pulse-border-strong);border-radius:8px}
+.scroll{scrollbar-width:thin}
+.card-hover{transition:transform var(--pulse-dur) var(--pulse-ease),box-shadow var(--pulse-dur) var(--pulse-ease),background var(--pulse-dur) var(--pulse-ease)}
+.card-hover:hover{transform:translateY(-1px)}
+@keyframes pulsering{0%{transform:scale(.7);opacity:.55}70%{transform:scale(2.2);opacity:0}100%{opacity:0}}
+.live-ring::after{content:'';position:absolute;inset:0;border-radius:9999px;background:var(--pulse-coral);animation:pulsering 2.4s var(--pulse-ease) infinite}
+@keyframes dash{to{stroke-dashoffset:-24}}
+.route-flow{stroke-dasharray:6 8;animation:dash 1.4s linear infinite}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.fade-up{animation:fadeUp .35s var(--pulse-ease) both}
+/* playground chrome */
+.pg-pill{transition:background var(--pulse-dur),color var(--pulse-dur),transform 120ms var(--pulse-ease)}
+.pg-pill[data-active="true"]{background:var(--pulse-ink);color:var(--pulse-canvas)}
+.pg-pill:active{transform:scale(.97)}
+.seg{transition:color var(--pulse-dur),background var(--pulse-dur)}
+.focusring:focus-visible{outline:none;box-shadow:0 0 0 2px var(--pulse-canvas),0 0 0 4px var(--pulse-ink-3)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useRef, useEffect } = React;
+
+/* ───────────────────────── Icons (lucide subset, inline) ───────────────── */
+const P = {
+  sun:'M12 17a5 5 0 100-10 5 5 0 000 10zM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4',
+  moon:'M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z',
+  cal:'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2zM8 14h2M14 14h2M8 18h2M14 18h2',
+  globe:'M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20',
+  search:'M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.3-4.3',
+  x:'M18 6L6 18M6 6l12 12',
+  home:'M3 11l9-8 9 8M5 9.5V21h14V9.5',
+  brief:'M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2M3 7h18v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7z',
+  radio:'M4.9 4.9a10 10 0 000 14.2M19.1 4.9a10 10 0 010 14.2M7.8 7.8a6 6 0 000 8.4M16.2 7.8a6 6 0 010 8.4M12 13a1 1 0 100-2 1 1 0 000 2z',
+  pin:'M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11zM12 12a2.5 2.5 0 100-5 2.5 2.5 0 000 5z',
+  nav:'M3 11l19-9-9 19-2-8-8-2z',
+  users:'M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8',
+  shield:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
+  layers:'M12 2l9 5-9 5-9-5 9-5zM3 12l9 5 9-5M3 17l9 5 9-5',
+  contrast:'M12 2a10 10 0 100 20 10 10 0 000-20zM12 2v20',
+  spark:'M12 3l1.6 4.6L18 9l-4.4 1.4L12 15l-1.6-4.6L6 9l4.4-1.4L12 3zM19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14z',
+  chev:'M9 18l6-6-6-6',
+  chevd:'M6 9l6 6 6-6',
+  plus:'M12 5v14M5 12h14',
+  check:'M20 6L9 17l-5-5',
+  clock:'M12 22a10 10 0 100-20 10 10 0 000 20zM12 7v5l3 2',
+  car:'M5 13l1.6-4.5A2 2 0 018.5 7h7a2 2 0 011.9 1.5L19 13M5 13h14v5H5v-5zM7.5 18v1.5M16.5 18v1.5M7 16h.01M17 16h.01',
+  flag:'M4 22V4M4 4s1.5-1 4-1 4 2 7 2 4-1 4-1v9s-1.5 1-4 1-4-2-7-2-4 1-4 1',
+  bell:'M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0',
+  route:'M6 19a3 3 0 100-6 3 3 0 000 6zM18 11a3 3 0 100-6 3 3 0 000 6zM9 16h6a3 3 0 003-3V9',
+  arrow:'M5 12h14M13 6l6 6-6 6',
+  filter:'M22 3H2l8 9.5V19l4 2v-8.5L22 3z',
+  dot:'M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0',
+  cross:'M12 3v18M3 12h18',
+  density:'M3 5h18M3 12h18M3 19h18',
+  eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z',
+  zap:'M13 2L3 14h7l-1 8 10-12h-7l1-8z',
+  more:'M5 12h.01M12 12h.01M19 12h.01',
+  target:'M12 22a10 10 0 100-20 10 10 0 000 20zM12 18a6 6 0 100-12 6 6 0 000 12zM12 14a2 2 0 100-4 2 2 0 000 4z',
+};
+function Icon({n,s=16,cn='',sw=1.8,fill='none'}){
+  return (<svg width={s} height={s} viewBox="0 0 24 24" fill={fill} stroke="currentColor"
+    strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" className={cn} aria-hidden="true">
+    <path d={P[n]} /></svg>);
+}
+
+/* ───────────────────────── Mock geo data ──────────────────────────────── */
+const YOU = { x:43, y:51 };
+// today's stops (real surfaces: meetings + contacts to visit)
+const STOPS = [
+  { id:'s1', name:'Marcus Vale', sub:'Coffee · Sightglass', t:'9:30a', kind:'meeting', x:33, y:40, eta:'12 min', mi:'3.1 mi', state:'next' },
+  { id:'s2', name:'Lena Ortiz', sub:'Home check-in', t:'11:15a', kind:'contact', x:55, y:57, eta:'18 min', mi:'5.4 mi', state:'planned' },
+  { id:'s3', name:'Walhalla Clinic', sub:'Site walk · 3 attendees', t:'2:00p', kind:'meeting', x:47, y:73, eta:'25 min', mi:'8.0 mi', state:'planned' },
+  { id:'s4', name:'Dana Brooks', sub:'Overdue · 34 days', t:'flex', kind:'contact', x:24, y:62, eta:'9 min', mi:'2.2 mi', state:'overdue' },
+];
+const LIVE = [
+  { id:'l1', name:'Sarah K.', x:61, y:33, mi:'0.4 mi', when:'now', heading:'→ Salem' },
+  { id:'l2', name:'Devon R.', x:27, y:58, mi:'2.1 mi', when:'2 min ago', heading:'parked' },
+];
+const FENCES = [
+  { id:'f1', name:'Home', role:'home', r:'250 m', state:'armed', last:'left 8:42a' },
+  { id:'f2', name:'Walhalla Clinic', role:'site', r:'120 m', state:'arrived', last:'arrived 1:58p' },
+  { id:'f3', name:"Lena's place", role:'home', r:'180 m', state:'armed', last:'—' },
+];
+const WEEK = [
+  { day:'MON', n:1, hint:'1 stop · Mission' },
+  { day:'TUE', n:0, hint:'clear' },
+  { day:'WED', n:3, hint:'3 in Oakland — batch it' },
+  { day:'THU', n:1, hint:'1 stop · Salem' },
+  { day:'FRI', n:2, hint:'2 stops · downtown' },
+];
+const PLACE_LABELS = [
+  {t:'Salem',x:57,y:29},{t:'Tamassee',x:50,y:43},{t:'Camp Oak',x:45,y:53},
+  {t:'Whetstone',x:18,y:47},{t:'Mountain Rest',x:30,y:37},{t:'Walhalla',x:44,y:75},
+  {t:'Lake Keowee',x:84,y:60},{t:'Oakmont',x:62,y:78},
+];
+
+/* ───────────────────────── Map canvas (stylized Coral Cockpit) ─────────── */
+function MapCanvas({ mapStyle='light', density='rich', children, className='' }){
+  return (
+    <div className={`relative overflow-hidden mapstyle-${mapStyle} ${className}`}
+         style={{background:'var(--map-land)'}}>
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice">
+        <rect width="1000" height="700" fill="var(--map-land)"/>
+        {/* parks / green */}
+        <ellipse cx="200" cy="540" rx="150" ry="95" fill="var(--map-green)"/>
+        <ellipse cx="620" cy="150" rx="120" ry="80" fill="var(--map-green)"/>
+        <ellipse cx="360" cy="250" rx="80" ry="55" fill="var(--map-green)" opacity=".7"/>
+        {/* water — lake on the right */}
+        <path d="M780 0 C740 70 820 150 790 230 C760 320 840 400 805 480 C775 560 850 640 815 700 L1000 700 L1000 0 Z" fill="var(--map-water)"/>
+        <path d="M610 0 C628 110 572 200 612 320 C648 440 588 560 622 700" fill="none" stroke="var(--map-water)" strokeWidth="10" opacity=".8"/>
+        {/* roads */}
+        <g stroke="var(--map-road-edge)" strokeWidth="9" fill="none">
+          <path d="M0 220 C200 200 380 262 560 232 C700 210 760 250 1000 240"/>
+          <path d="M0 470 C220 446 430 506 600 472 C720 452 800 484 1000 470"/>
+          <path d="M130 0 C150 160 104 320 162 480 C200 600 162 680 182 700"/>
+          <path d="M470 0 C486 150 452 300 486 470 C512 600 470 660 486 700"/>
+        </g>
+        <g stroke="var(--map-road)" strokeWidth="5" fill="none">
+          <path d="M0 220 C200 200 380 262 560 232 C700 210 760 250 1000 240"/>
+          <path d="M0 470 C220 446 430 506 600 472 C720 452 800 484 1000 470"/>
+          <path d="M130 0 C150 160 104 320 162 480 C200 600 162 680 182 700"/>
+          <path d="M470 0 C486 150 452 300 486 470 C512 600 470 660 486 700"/>
+        </g>
+        {density==='rich' && (
+        <g stroke="var(--map-road)" strokeWidth="2.5" fill="none" opacity=".8">
+          <path d="M60 320 H700"/><path d="M260 120 V620"/><path d="M360 60 V640"/>
+          <path d="M40 600 H560"/><path d="M40 120 H560"/><path d="M620 380 H1000"/>
+        </g>)}
+        {density==='rich' && PLACE_LABELS.map((l,i)=>(
+          <text key={i} x={l.x*10} y={l.y*7} fontSize="15" fill="var(--map-label)"
+            fontFamily="Inter, sans-serif" textAnchor="middle">{l.t}</text>
+        ))}
+      </svg>
+      <div className="absolute inset-0">{children}</div>
+    </div>
+  );
+}
+// marker shells (positioned by % via parent)
+function At({x,y,children,z=10}){ return <div className="absolute -translate-x-1/2 -translate-y-1/2" style={{left:x+'%',top:y+'%',zIndex:z}}>{children}</div>; }
+function YouDot({x=YOU.x,y=YOU.y,ring=true}){
+  return (<At x={x} y={y} z={5}>
+    {ring && <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+      style={{width:170,height:170,border:'1px solid var(--pulse-tone-info)',background:'rgba(37,99,235,.06)'}}/>}
+    <div className="relative w-3.5 h-3.5 rounded-full ring-4" style={{background:'var(--pulse-tone-info)',boxShadow:'0 0 0 3px var(--pulse-surface)'}}/>
+  </At>);
+}
+const stopColor = s => s==='next' ? 'var(--pulse-ink)' : s==='overdue' ? 'var(--pulse-tone-overdue)' : 'var(--pulse-ink-2)';
+function StopMarker({s,active,onClick,showLabel}){
+  const isMeeting = s.kind==='meeting';
+  return (<At x={s.x} y={s.y}>
+    <button onClick={onClick} className="group flex flex-col items-center focusring rounded-lg" style={{cursor:'pointer'}}>
+      <div className="flex items-center justify-center rounded-full ease"
+        style={{width:active?30:24,height:active?30:24,background:'var(--pulse-surface)',
+          border:`2px solid ${stopColor(s.state)}`,boxShadow:'var(--shadow)'}}>
+        <Icon n={isMeeting?'cal':'pin'} s={active?15:12} cn="ink" sw={2}/>
+      </div>
+      {(showLabel||active) && <div className="mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium ink surface bd whitespace-nowrap" style={{boxShadow:'var(--shadow)'}}>{s.name}</div>}
+    </button>
+  </At>);
+}
+function LiveMarker({l,onClick}){
+  return (<At x={l.x} y={l.y} z={12}>
+    <button onClick={onClick} className="group flex flex-col items-center focusring rounded-lg" style={{cursor:'pointer'}}>
+      <div className="relative w-4 h-4 rounded-full live-ring">
+        <div className="absolute inset-0 rounded-full" style={{background:'var(--pulse-coral)',boxShadow:'0 0 0 3px var(--pulse-surface)'}}/>
+      </div>
+      <div className="mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold coral-fg coral-bg12 whitespace-nowrap mono tracking-mono">{l.name} · {l.mi}</div>
+    </button>
+  </At>);
+}
+function RouteLine({stops}){
+  // builds an SVG polyline through YOU -> stops (coral signal)
+  const pts = [YOU, ...stops].map(p=>`${p.x*10},${p.y*7}`).join(' ');
+  return (<svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice" style={{zIndex:4}}>
+    <polyline points={pts} fill="none" stroke="var(--pulse-coral)" strokeWidth="3.5" strokeLinecap="round" opacity=".85" className="route-flow"/>
+  </svg>);
+}
+function FenceRing({x,y}){
+  return (<At x={x} y={y} z={3}>
+    <div className="rounded-full" style={{width:120,height:120,border:'1.5px dashed var(--pulse-tone-positive)',background:'rgba(22,163,74,.05)'}}/>
+  </At>);
+}
+
+/* ───────────────────────── Shared chrome bits ─────────────────────────── */
+const LENSES = [['today','Today','sun'],['week','Week','cal'],['atlas','Atlas','globe']];
+const SURFACES = [['routes','Routes','route'],['live','Live','users'],['fences','Fences','shield']];
+
+function SegLens({value,onChange,counts,compact}){
+  return (<div className="inline-flex items-center gap-0.5 p-0.5 rounded-xl surface bd" style={{boxShadow:'var(--shadow)'}}>
+    {LENSES.map(([id,label,ic])=>{
+      const a=value===id;
+      return (<button key={id} onClick={()=>onChange(id)}
+        className="seg flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium focusring"
+        style={{background:a?'var(--pulse-ink)':'transparent',color:a?'var(--pulse-canvas)':'var(--pulse-ink-2)'}}>
+        <Icon n={ic} s={14} sw={2}/>{!compact&&<span>{label}</span>}
+        {counts&&counts[id]>0 && <span className="ml-0.5 px-1.5 rounded-full text-[10px] font-semibold mono"
+          style={{background:a?'rgba(255,255,255,.22)':'var(--pulse-surface-raised)',color:a?'var(--pulse-canvas)':'var(--pulse-ink-3)'}}>{counts[id]}</span>}
+      </button>);
+    })}
+  </div>);
+}
+function SearchField({wide}){
+  return (<div className={`flex items-center gap-2 px-3 py-2 rounded-xl surface bd ${wide?'flex-1':''}`} style={{minWidth:180}}>
+    <Icon n="search" s={15} cn="ink-3"/>
+    <input className="bg-transparent outline-none text-[13px] ink flex-1 placeholder:text-[var(--pulse-ink-3)]" placeholder="Search people, places…  /" />
+  </div>);
+}
+function NeutralIconBtn({n,label,active,onClick,badge}){
+  return (<button onClick={onClick} title={label} aria-label={label}
+    className="relative flex items-center justify-center w-9 h-9 rounded-lg ease focusring"
+    style={{background:active?'var(--pulse-surface-raised)':'transparent',color:active?'var(--pulse-ink)':'var(--pulse-ink-2)',border:'1px solid '+(active?'var(--pulse-border-strong)':'transparent')}}>
+    <Icon n={n} s={17}/>
+    {badge>0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center" style={{background:'var(--pulse-ink)',color:'var(--pulse-canvas)'}}>{badge}</span>}
+  </button>);
+}
+// renderer-real base-style switch (replaces the dead Sat/Terr/Hybrid picker)
+function BaseStyleSwitch({value,onChange,density,onDensity}){
+  const styles=[['light','Light','sun'],['dark','Dark','moon'],['contrast','Contrast','contrast']];
+  return (<div className="flex items-center gap-1 p-1 rounded-xl surface bd glass" style={{boxShadow:'var(--shadow)'}}>
+    {styles.map(([id,l,ic])=>{const a=value===id;return(
+      <button key={id} onClick={()=>onChange(id)} title={l+' base map'}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] mono tracking-mono uppercase focusring ease"
+        style={{background:a?'var(--pulse-surface-raised)':'transparent',color:a?'var(--pulse-ink)':'var(--pulse-ink-3)'}}>
+        <Icon n={ic} s={12}/><span className="hidden sm:inline">{l}</span></button>);})}
+    <div className="w-px h-5 mx-0.5" style={{background:'var(--pulse-border)'}}/>
+    <button onClick={onDensity} title="Detail density" className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] mono tracking-mono uppercase focusring ink-3 ease">
+      <Icon n="density" s={12}/><span className="hidden sm:inline">{density==='rich'?'Rich':'Calm'}</span></button>
+  </div>);
+}
+// AI proposal — the one place coral earns its keep as a signal surface
+function AiSignalCard({title,body,actions,paused,compact}){
+  return (<div className={`rounded-xl coral-bg12 fade-up ${compact?'p-3':'p-3.5'}`}
+    style={{border:'1px solid var(--pulse-coral-bg-12)',boxShadow:'inset 0 0 0 1px rgba(251,113,133,.18)'}}>
+    <div className="flex items-center gap-1.5 mb-1.5">
+      <Icon n="spark" s={13} cn="coral-fg" sw={2}/>
+      <span className="text-[10px] mono tracking-mono uppercase coral-fg font-semibold">Pulse AI · {paused?'Paused':title}</span>
+    </div>
+    <div className="text-[13px] ink leading-snug">{body}</div>
+    {!paused && actions && <div className="flex items-center gap-2 mt-2.5">{actions}</div>}
+  </div>);
+}
+function CoralBtn({children,onClick,solid}){
+  return (<button onClick={onClick} className="px-3 py-1.5 rounded-lg text-[12px] font-semibold focusring ease"
+    style={solid?{background:'var(--pulse-coral)',color:'#fff'}:{color:'var(--pulse-coral-fg)',background:'var(--pulse-surface)',border:'1px solid var(--pulse-coral-bg-12)'}}>{children}</button>);
+}
+function GhostBtn({children,onClick,n}){
+  return (<button onClick={onClick} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium ink-2 surface bd focusring ease card-hover">
+    {n&&<Icon n={n} s={13}/>}{children}</button>);
+}
+// "I'm at…" FAB with live geosearch autocomplete (renderer-real)
+function ImAtFab({onOpen}){
+  return (<button onClick={onOpen} className="flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full focusring ease"
+    style={{background:'var(--pulse-coral)',color:'#fff',boxShadow:'0 8px 24px rgba(251,113,133,.4)'}}>
+    <Icon n="pin" s={16} sw={2.2}/><span className="text-[13px] font-semibold">I'm at…</span></button>);
+}
+function ImAtSheet({onClose}){
+  const [q,setQ]=useState('Sightg');
+  const results=[['Sightglass Coffee','318 7th St · 0.2 mi'],['Sightline Studio','12 Mission · 1.1 mi'],['Sight & Sound','40 Market · 2.4 mi']];
+  return (<div className="absolute inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{background:'rgba(0,0,0,.35)'}} onClick={onClose}>
+    <div onClick={e=>e.stopPropagation()} className="w-full max-w-sm rounded-2xl surface bd fade-up" style={{boxShadow:'var(--shadow-lg)'}}>
+      <div className="flex items-center justify-between p-4 pb-2">
+        <div className="text-[14px] font-semibold ink">Share where you are</div>
+        <button onClick={onClose} className="ink-3 focusring rounded"><Icon n="x" s={18}/></button>
+      </div>
+      <div className="px-4 pb-2">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg raised bd">
+          <Icon n="search" s={15} cn="ink-3"/>
+          <input value={q} onChange={e=>setQ(e.target.value)} className="bg-transparent outline-none text-[13px] ink flex-1" placeholder="Search a place…"/>
+        </div>
+        <div className="text-[10px] mono tracking-mono uppercase ink-3 mt-2 mb-1 px-1">Live results · Stadia geosearch</div>
+        <div className="rounded-lg overflow-hidden bd" style={{border:'1px solid var(--pulse-border)'}}>
+          {results.map(([t,s],i)=>(
+            <button key={i} className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left ease card-hover focusring" style={{borderTop:i?'1px solid var(--pulse-border)':'none'}}>
+              <Icon n="pin" s={15} cn="ink-3"/>
+              <div><div className="text-[13px] ink font-medium">{t}</div><div className="text-[11px] ink-3">{s}</div></div>
+            </button>))}
+        </div>
+      </div>
+      <div className="px-4 pt-1 pb-2 text-[10px] mono tracking-mono uppercase ink-3">Then pick a contact →</div>
+      <div className="flex items-center gap-2 p-4 pt-1">
+        <GhostBtn n="users" onClick={onClose}>Pick contact</GhostBtn>
+        <div className="flex-1"/>
+        <CoralBtn solid onClick={onClose}>Send</CoralBtn>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ───────────────────────── About strip ─────────────────────────────────── */
+function About({tag,name,line,fixes}){
+  return (<div className="px-4 py-2.5 flex items-center gap-3 flex-wrap" style={{borderBottom:'1px solid var(--pulse-border)',background:'var(--pulse-surface)'}}>
+    <span className="px-2 py-0.5 rounded-md text-[10px] mono tracking-mono uppercase font-bold" style={{background:'var(--pulse-ink)',color:'var(--pulse-canvas)'}}>{tag}</span>
+    <span className="text-[13px] font-semibold ink">{name}</span>
+    <span className="text-[12px] ink-3 hidden md:inline">{line}</span>
+    <div className="flex-1"/>
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {fixes.map((f,i)=>(<span key={i} className="px-2 py-0.5 rounded-md text-[10px] tone-pos font-medium" style={{background:'rgba(22,163,74,.10)'}}>✓ {f}</span>))}
+    </div>
+  </div>);
+}
+
+/* ═══════════════════════ DIRECTION A — COCKPIT ═════════════════════════ */
+/* Full-bleed map · smart floating chrome · surfaces as sheets/drawers */
+function DirCockpit({theme}){
+  const [lens,setLens]=useState('today');
+  const [mapStyle,setMapStyle]=useState(theme==='dark'?'dark':'light');
+  const [density,setDensity]=useState('rich');
+  const [sheet,setSheet]=useState(null);      // 'routes'|'live'|'fences'
+  const [imat,setImat]=useState(false);
+  const [sel,setSel]=useState('s1');
+  useEffect(()=>setMapStyle(theme==='dark'?'dark':'light'),[theme]);
+  const counts={today:STOPS.length,week:7,atlas:42};
+  const showRoute = lens==='today';
+  return (<div className="relative h-full">
+    <MapCanvas mapStyle={mapStyle} density={density} className="h-full">
+      {/* radius + you */}
+      {lens!=='atlas' && <YouDot/>}
+      {lens==='atlas' && [{x:30,y:40,n:8},{x:62,y:35,n:14},{x:48,y:68,n:11},{x:22,y:62,n:9}].map((c,i)=>(
+        <At key={i} x={c.x} y={c.y}><div className="flex items-center justify-center rounded-full" style={{width:40,height:40,background:'var(--pulse-coral-bg-12)',border:'1.5px solid var(--pulse-coral)'}}><span className="text-[12px] font-bold coral-fg mono">{c.n}</span></div></At>
+      ))}
+      {showRoute && <RouteLine stops={STOPS.slice(0,3)}/>}
+      {lens!=='atlas' && STOPS.map(s=>(<StopMarker key={s.id} s={s} active={sel===s.id} onClick={()=>setSel(s.id)} showLabel={density==='rich'&&lens==='today'}/>))}
+      {LIVE.map(l=>(<LiveMarker key={l.id} l={l} onClick={()=>setSheet('live')}/>))}
+    </MapCanvas>
+
+    {/* top floating command bar */}
+    <div className="absolute top-3 left-3 right-3 z-30 flex items-start gap-2 flex-wrap">
+      <SegLens value={lens} onChange={setLens} counts={counts}/>
+      <div className="hidden sm:block flex-1 max-w-xs"><SearchField/></div>
+      <div className="flex-1"/>
+      <div className="flex items-center gap-1 p-1 rounded-xl surface bd glass" style={{boxShadow:'var(--shadow)'}}>
+        {SURFACES.map(([id,label,ic])=>(
+          <NeutralIconBtn key={id} n={ic} label={label} active={sheet===id} onClick={()=>setSheet(sheet===id?null:id)}
+            badge={id==='live'?LIVE.length:id==='routes'?1:0}/>
+        ))}
+      </div>
+    </div>
+
+    {/* AI signal card — coral, top-left under the bar (today/week only) */}
+    {lens!=='atlas' && !sheet && (
+      <div className="absolute left-3 z-20" style={{top:62}}>
+        <div className="w-[300px] max-w-[80vw]">
+          <AiSignalCard title={lens==='today'?'Route':'Week plan'} compact
+            body={lens==='today'
+              ? <>4 stops near you. Best loop saves <b className="coral-fg">37 min</b> vs. your order — Marcus → Dana → Lena → Clinic.</>
+              : <>Wednesday clusters 3 stops in Oakland. Batch them and skip a 22-mi backtrack.</>}
+            actions={<><CoralBtn solid onClick={()=>setSheet('routes')}>Accept route</CoralBtn><GhostBtn onClick={()=>{}}>Reorder</GhostBtn></>}/>
+        </div>
+      </div>)}
+
+    {/* atlas insight */}
+    {lens==='atlas' && (
+      <div className="absolute left-3 z-20" style={{top:62}}>
+        <div className="w-[300px] max-w-[80vw]"><AiSignalCard title="Atlas insight" compact
+          body={<>3 contacts in <b>Oakland</b> haven't heard from you in 30+ days. Worth a swing next Wednesday?</>}
+          actions={<><CoralBtn solid>Plan a loop</CoralBtn></>}/></div>
+      </div>)}
+
+    {/* bottom-right: renderer-real base-style + density (replaces dead Sat/Terr/Hybrid) */}
+    <div className="absolute z-30" style={{right:12,bottom:84}}>
+      <BaseStyleSwitch value={mapStyle} onChange={setMapStyle} density={density} onDensity={()=>setDensity(d=>d==='rich'?'calm':'rich')}/>
+    </div>
+    {/* bottom-left count chip */}
+    <div className="absolute left-3 bottom-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full surface bd glass" style={{boxShadow:'var(--shadow)'}}>
+      {LIVE.length>0 && <span className="flex items-center gap-1.5 text-[12px] font-semibold coral-fg"><span className="w-2 h-2 rounded-full" style={{background:'var(--pulse-coral)'}}/>{LIVE.length} live</span>}
+      <span className="text-[12px] ink-2">{STOPS.length} stops · {lens}</span>
+    </div>
+    {/* I'm at FAB */}
+    <div className="absolute right-3 bottom-4 z-30"><ImAtFab onOpen={()=>setImat(true)}/></div>
+
+    {/* right drawer for surfaces */}
+    {sheet && <SurfaceDrawer kind={sheet} onClose={()=>setSheet(null)}/>}
+    {imat && <ImAtSheet onClose={()=>setImat(false)}/>}
+  </div>);
+}
+function SurfaceDrawer({kind,onClose}){
+  return (<div className="absolute inset-0 z-40 flex justify-end" style={{background:'rgba(0,0,0,.18)'}} onClick={onClose}>
+    <div onClick={e=>e.stopPropagation()} className="h-full w-[340px] max-w-[88vw] surface fade-up flex flex-col" style={{borderLeft:'1px solid var(--pulse-border)',boxShadow:'var(--shadow-lg)',animation:'fadeUp .28s var(--pulse-ease) both'}}>
+      <div className="flex items-center justify-between px-4 py-3" style={{borderBottom:'1px solid var(--pulse-border)'}}>
+        <div className="flex items-center gap-2">
+          <Icon n={kind==='routes'?'route':kind==='live'?'users':'shield'} s={16} cn="ink-2"/>
+          <span className="text-[14px] font-semibold ink">{kind==='routes'?'Routes & planning':kind==='live'?'Live team':'Geofences'}</span>
+        </div>
+        <button onClick={onClose} className="ink-3 focusring rounded"><Icon n="x" s={18}/></button>
+      </div>
+      <div className="flex-1 overflow-y-auto scroll p-3">
+        {kind==='routes'&&<RoutesPanel/>}{kind==='live'&&<LivePanel/>}{kind==='fences'&&<FencesPanel/>}
+      </div>
+    </div>
+  </div>);
+}
+
+/* ═══════════════════════ DIRECTION B — CONSOLE ═════════════════════════ */
+/* Persistent left rail · map responds to selection · surfaces as rail tabs */
+function DirConsole({theme}){
+  const [lens,setLens]=useState('today');
+  const [tab,setTab]=useState('stops');     // stops | routes | live | fences
+  const [mapStyle,setMapStyle]=useState(theme==='dark'?'dark':'light');
+  const [density,setDensity]=useState('rich');
+  const [sel,setSel]=useState('s1');
+  const [imat,setImat]=useState(false);
+  useEffect(()=>setMapStyle(theme==='dark'?'dark':'light'),[theme]);
+  const counts={today:STOPS.length,week:7,atlas:42};
+  return (<div className="relative h-full flex">
+    {/* RAIL */}
+    <div className="w-[330px] max-w-[42vw] h-full surface flex flex-col" style={{borderRight:'1px solid var(--pulse-border)'}}>
+      <div className="p-3 pb-2"><SegLens value={lens} onChange={setLens} counts={counts}/></div>
+      <div className="px-3 pb-2"><SearchField wide/></div>
+      {/* rail tabs: stops + the new first-class surfaces */}
+      <div className="flex items-center gap-1 px-3 pb-2">
+        {[['stops','Stops','pin'],...SURFACES].map(([id,l,ic])=>{const a=tab===id;return(
+          <button key={id} onClick={()=>setTab(id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium focusring ease"
+            style={{background:a?'var(--pulse-surface-raised)':'transparent',color:a?'var(--pulse-ink)':'var(--pulse-ink-3)',border:'1px solid '+(a?'var(--pulse-border)':'transparent')}}>
+            <Icon n={ic} s={13}/>{l}{id==='live'&&<span className="w-1.5 h-1.5 rounded-full ml-0.5" style={{background:'var(--pulse-coral)'}}/>}</button>);})}
+      </div>
+      <div className="flex-1 overflow-y-auto scroll px-3 pb-3">
+        {tab==='stops' && <>
+          <AiSignalCard title="Route" compact
+            body={<>Best loop saves <b className="coral-fg">37 min</b>. Marcus → Dana → Lena → Clinic.</>}
+            actions={<><CoralBtn solid onClick={()=>setTab('routes')}>Accept</CoralBtn><GhostBtn>Reorder</GhostBtn></>}/>
+          <div className="text-[10px] mono tracking-mono uppercase ink-3 mt-3 mb-1.5 px-1">{lens==='week'?'This week':lens==='atlas'?'Network':'Today · in order'}</div>
+          {lens==='week' ? <WeekList/> : STOPS.map((s,i)=>(<StopRow key={s.id} s={s} idx={i+1} active={sel===s.id} onClick={()=>setSel(s.id)}/>))}
+        </>}
+        {tab==='routes'&&<RoutesPanel/>}{tab==='live'&&<LivePanel/>}{tab==='fences'&&<FencesPanel/>}
+      </div>
+    </div>
+    {/* MAP */}
+    <div className="relative flex-1 h-full">
+      <MapCanvas mapStyle={mapStyle} density={density} className="h-full">
+        {lens!=='atlas' && <YouDot/>}
+        {(tab==='stops'||tab==='routes') && lens==='today' && <RouteLine stops={STOPS.slice(0,3)}/>}
+        {lens==='atlas' && [{x:30,y:40,n:8},{x:62,y:35,n:14},{x:48,y:68,n:11},{x:22,y:62,n:9}].map((c,i)=>(
+          <At key={i} x={c.x} y={c.y}><div className="flex items-center justify-center rounded-full" style={{width:40,height:40,background:'var(--pulse-coral-bg-12)',border:'1.5px solid var(--pulse-coral)'}}><span className="text-[12px] font-bold coral-fg mono">{c.n}</span></div></At>))}
+        {tab==='fences' && FENCES.map((f,i)=>(<FenceRing key={f.id} x={[28,47,55][i]} y={[42,73,57][i]}/>))}
+        {lens!=='atlas' && tab!=='live' && STOPS.map(s=>(<StopMarker key={s.id} s={s} active={sel===s.id} onClick={()=>setSel(s.id)} showLabel={density==='rich'}/>))}
+        {(tab==='live'||true) && LIVE.map(l=>(<LiveMarker key={l.id} l={l} onClick={()=>setTab('live')}/>))}
+      </MapCanvas>
+      <div className="absolute z-30" style={{right:12,bottom:16}}>
+        <BaseStyleSwitch value={mapStyle} onChange={setMapStyle} density={density} onDensity={()=>setDensity(d=>d==='rich'?'calm':'rich')}/>
+      </div>
+      <div className="absolute right-3 top-3 z-30"><ImAtFab onOpen={()=>setImat(true)}/></div>
+      {imat && <ImAtSheet onClose={()=>setImat(false)}/>}
+    </div>
+  </div>);
+}
+function StopRow({s,idx,active,onClick}){
+  return (<button onClick={onClick} className="w-full flex items-center gap-3 p-2.5 rounded-xl mb-1.5 text-left ease card-hover focusring"
+    style={{background:active?'var(--pulse-surface-raised)':'transparent',border:'1px solid '+(active?'var(--pulse-border)':'transparent')}}>
+    <div className="flex items-center justify-center w-7 h-7 rounded-full mono text-[11px] font-bold shrink-0"
+      style={{background:'var(--pulse-surface)',border:`2px solid ${stopColor(s.state)}`,color:'var(--pulse-ink)'}}>{idx}</div>
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-1.5"><span className="text-[13px] font-semibold ink truncate">{s.name}</span>
+        {s.state==='overdue'&&<span className="text-[9px] mono uppercase tone-over font-bold">overdue</span>}
+        {s.state==='next'&&<span className="text-[9px] mono uppercase font-bold ink-3">next</span>}</div>
+      <div className="text-[11px] ink-3 truncate">{s.sub}</div>
+    </div>
+    <div className="text-right shrink-0">
+      <div className="flex items-center gap-1 text-[12px] ink-2 justify-end"><Icon n="car" s={12}/>{s.eta}</div>
+      <div className="text-[10px] ink-3 mono">{s.t} · {s.mi}</div>
+    </div>
+  </button>);
+}
+function WeekList(){
+  return (<div>{WEEK.map(d=>(
+    <div key={d.day} className="flex items-center gap-3 p-2.5 rounded-xl mb-1.5 ease card-hover" style={{background:d.n>1?'var(--pulse-coral-bg-08)':'transparent'}}>
+      <div className="w-10 text-center"><div className="text-[10px] mono tracking-mono ink-3">{d.day}</div><div className="text-[16px] font-bold ink">{d.n}</div></div>
+      <div className="flex-1"><div className="text-[12px] ink-2">{d.hint}</div></div>
+      {d.n>1 && <Icon n="spark" s={13} cn="coral-fg"/>}
+    </div>))}</div>);
+}
+
+/* ═══════════════════════ DIRECTION C — FIELD ═══════════════════════════ */
+/* Triage feed primary ("what needs me now") · map is the companion that follows focus */
+function DirField({theme}){
+  const [mapStyle,setMapStyle]=useState(theme==='dark'?'dark':'light');
+  const [density,setDensity]=useState('calm');
+  const [focus,setFocus]=useState('route');
+  const [imat,setImat]=useState(false);
+  const [lens,setLens]=useState('today');
+  useEffect(()=>setMapStyle(theme==='dark'?'dark':'light'),[theme]);
+  const feed=[
+    {id:'route',kind:'ai',icon:'route',title:'A faster loop for today',body:<>4 stops near you. Reordering saves <b className="coral-fg">37 min</b> — Marcus → Dana → Lena → Clinic.</>,cta:'Accept route'},
+    {id:'live',kind:'live',icon:'users',title:'Sarah K. is live · 0.4 mi',body:<>Heading toward Salem. You'll cross paths in ~6 min near Camp Oak.</>,cta:'Ping Sarah'},
+    {id:'overdue',kind:'warn',icon:'clock',title:'Dana Brooks — 34 days quiet',body:<>2.2 mi away and right on today's loop. Easy add.</>,cta:'Add to route'},
+    {id:'fence',kind:'pos',icon:'shield',title:'Arrived · Walhalla Clinic',body:<>Geofence fired 1:58p. Want to log the visit or start notes?</>,cta:'Log visit'},
+    {id:'eta',kind:'neutral',icon:'nav',title:'Share live ETA',body:<>Lena's expecting you ~11:15a. Send a tracking link that ends on arrival.</>,cta:'Share ETA'},
+  ];
+  const focusStops = focus==='overdue'?[STOPS[3]]:focus==='fence'?[STOPS[2]]:STOPS.slice(0,3);
+  return (<div className="relative h-full flex flex-col md:flex-row">
+    {/* FEED */}
+    <div className="md:w-[380px] md:max-w-[44vw] w-full md:h-full h-1/2 surface flex flex-col order-2 md:order-1" style={{borderRight:'1px solid var(--pulse-border)'}}>
+      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+        <div><div className="text-[10px] mono tracking-mono uppercase ink-3">Wed · Jun 17 · Walhalla</div>
+          <div className="text-[17px] font-bold ink">What needs you now</div></div>
+        <SegLens value={lens} onChange={setLens} compact/>
+      </div>
+      <div className="flex-1 overflow-y-auto scroll px-3 pb-3 pt-1">
+        {feed.map(f=>(<FeedCard key={f.id} f={f} active={focus===f.id} onClick={()=>setFocus(f.id)}/>))}
+        <div className="text-center text-[11px] ink-3 mt-2 py-2">That's everything on the map today.</div>
+      </div>
+      <div className="p-3 flex items-center gap-2" style={{borderTop:'1px solid var(--pulse-border)'}}>
+        <button onClick={()=>setImat(true)} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-semibold focusring ease" style={{background:'var(--pulse-coral)',color:'#fff'}}>
+          <Icon n="pin" s={15} sw={2.2}/>I'm at…</button>
+        <GhostBtn n="radio">Broadcast</GhostBtn>
+      </div>
+    </div>
+    {/* MAP companion */}
+    <div className="relative flex-1 md:h-full h-1/2 order-1 md:order-2">
+      <MapCanvas mapStyle={mapStyle} density={density} className="h-full">
+        <YouDot/>
+        {(focus==='route'||focus==='overdue') && <RouteLine stops={focusStops}/>}
+        {focus==='fence' && <FenceRing x={47} y={73}/>}
+        {focusStops.map(s=>(<StopMarker key={s.id} s={s} active onClick={()=>{}} showLabel/>))}
+        {(focus==='live'||focus==='route') && LIVE.map(l=>(<LiveMarker key={l.id} l={l} onClick={()=>setFocus('live')}/>))}
+      </MapCanvas>
+      {/* focus pill */}
+      <div className="absolute top-3 left-3 z-20 px-3 py-1.5 rounded-full surface bd glass text-[12px] font-medium ink-2" style={{boxShadow:'var(--shadow)'}}>
+        Map follows: <span className="ink font-semibold">{feed.find(f=>f.id===focus)?.title}</span>
+      </div>
+      <div className="absolute z-30" style={{right:12,bottom:16}}>
+        <BaseStyleSwitch value={mapStyle} onChange={setMapStyle} density={density} onDensity={()=>setDensity(d=>d==='rich'?'calm':'rich')}/>
+      </div>
+      {imat && <ImAtSheet onClose={()=>setImat(false)}/>}
+    </div>
+  </div>);
+}
+const feedAccent={ai:'var(--pulse-coral)',live:'var(--pulse-coral)',warn:'var(--pulse-tone-warning)',pos:'var(--pulse-tone-positive)',neutral:'var(--pulse-ink-3)'};
+function FeedCard({f,active,onClick}){
+  const isSignal=f.kind==='ai'||f.kind==='live';
+  return (<button onClick={onClick} className="w-full text-left p-3 rounded-2xl mb-2 ease card-hover focusring block"
+    style={{background:active?(isSignal?'var(--pulse-coral-bg-12)':'var(--pulse-surface-raised)'):'var(--pulse-surface)',
+      border:'1px solid '+(active?(isSignal?'var(--pulse-coral-bg-12)':'var(--pulse-border-strong)'):'var(--pulse-border)'),
+      boxShadow:active?'var(--shadow)':'none'}}>
+    <div className="flex items-start gap-2.5">
+      <div className="flex items-center justify-center w-8 h-8 rounded-full shrink-0" style={{background:isSignal?'var(--pulse-coral-bg-12)':'var(--pulse-surface-raised)',color:feedAccent[f.kind]}}>
+        <Icon n={f.icon} s={15} sw={2}/></div>
+      <div className="flex-1 min-w-0">
+        {isSignal && <div className="text-[9px] mono tracking-mono uppercase font-bold mb-0.5" style={{color:feedAccent[f.kind]}}>{f.kind==='ai'?'Pulse AI':'Live'}</div>}
+        <div className="text-[13px] font-semibold ink leading-tight">{f.title}</div>
+        <div className="text-[12px] ink-2 leading-snug mt-0.5">{f.body}</div>
+        <div className="mt-2"><span className="inline-flex items-center gap-1 text-[12px] font-semibold" style={{color:isSignal?'var(--pulse-coral-fg)':'var(--pulse-ink)'}}>{f.cta}<Icon n="arrow" s={13}/></span></div>
+      </div>
+    </div>
+  </button>);
+}
+
+/* ───────────────────────── Surface panels (shared) ─────────────────────── */
+function RoutesPanel(){
+  return (<div>
+    <AiSignalCard title="Optimized route" compact
+      body={<>Today's best loop · <b className="coral-fg">37 min saved</b> · 18.7 mi · ends 2:40p.</>}
+      actions={<><CoralBtn solid>Open in Maps</CoralBtn><GhostBtn n="route">Re-optimize</GhostBtn></>}/>
+    <div className="text-[10px] mono tracking-mono uppercase ink-3 mt-3 mb-1.5 px-1">Drag to reorder · AI order locked</div>
+    {[STOPS[0],STOPS[3],STOPS[1],STOPS[2]].map((s,i,a)=>(
+      <div key={s.id}>
+        <div className="flex items-center gap-3 p-2.5 rounded-xl surface bd mb-0">
+          <Icon n="more" s={14} cn="ink-3"/>
+          <div className="flex items-center justify-center w-6 h-6 rounded-full mono text-[10px] font-bold" style={{background:'var(--pulse-surface-raised)',color:'var(--pulse-ink)'}}>{i+1}</div>
+          <div className="flex-1 min-w-0"><div className="text-[13px] font-semibold ink truncate">{s.name}</div><div className="text-[11px] ink-3">{s.sub}</div></div>
+          <div className="text-[11px] mono ink-3">{s.t}</div>
+        </div>
+        {i<a.length-1 && <div className="flex items-center gap-1 pl-6 py-1 text-[10px] ink-3"><Icon n="car" s={11}/> {['9 min · 2.2 mi','14 min · 5.0 mi','11 min · 4.1 mi'][i]}</div>}
+      </div>))}
+    <div className="mt-3 p-3 rounded-xl raised bd text-[11px] ink-3"><Icon n="check" s={12} cn="tone-pos"/> Visited stops auto-drop. Re-plan triggers when a geofence fires.</div>
+  </div>);
+}
+function LivePanel(){
+  return (<div>
+    <div className="p-3 rounded-xl coral-bg12 mb-3" style={{border:'1px solid var(--pulse-coral-bg-12)'}}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{background:'var(--pulse-coral)'}}/><span className="text-[12px] font-semibold coral-fg">You are broadcasting</span></div>
+        <button className="text-[11px] font-semibold ink-2 underline">Stop</button>
+      </div>
+      <div className="text-[11px] ink-3 mt-1">Sharing precise location with 2 people · ends in 1:42</div>
+    </div>
+    <div className="text-[10px] mono tracking-mono uppercase ink-3 mb-1.5 px-1">Live near you · {LIVE.length}</div>
+    {LIVE.map(l=>(
+      <div key={l.id} className="flex items-center gap-3 p-2.5 rounded-xl surface bd mb-1.5 card-hover ease">
+        <div className="relative w-9 h-9 rounded-full flex items-center justify-center" style={{background:'var(--pulse-surface-raised)'}}>
+          <span className="text-[12px] font-bold ink">{l.name[0]}</span>
+          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full live-ring" style={{background:'var(--pulse-coral)',boxShadow:'0 0 0 2px var(--pulse-surface)'}}/>
+        </div>
+        <div className="flex-1"><div className="text-[13px] font-semibold ink">{l.name}</div><div className="text-[11px] ink-3">{l.heading} · {l.when}</div></div>
+        <div className="text-right"><div className="text-[12px] font-semibold coral-fg">{l.mi}</div><button className="text-[10px] ink-2 underline">Ping</button></div>
+      </div>))}
+    <div className="text-[10px] mono tracking-mono uppercase ink-3 mt-3 mb-1.5 px-1">Sharing with you · consent</div>
+    <div className="p-2.5 rounded-xl surface bd text-[11px] ink-2 flex items-center justify-between">Approximate · Sarah K.<span className="tone-pos">●</span></div>
+  </div>);
+}
+function FencesPanel(){
+  return (<div>
+    <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl mb-3 text-[12px] font-semibold ink surface bd card-hover ease focusring"><Icon n="plus" s={14}/>Pin a place + arrival alert</button>
+    <div className="p-2.5 rounded-xl mb-3 text-[11px] ink-3" style={{background:'rgba(234,88,12,.08)',border:'1px solid rgba(234,88,12,.15)'}}>
+      <span className="tone-warn font-semibold">Heads up:</span> arrival alerts only fire while Pulse is open. Background alerts arrive with server-side geofencing (next).</div>
+    <div className="text-[10px] mono tracking-mono uppercase ink-3 mb-1.5 px-1">Your fences · {FENCES.length}</div>
+    {FENCES.map(f=>(
+      <div key={f.id} className="flex items-center gap-3 p-2.5 rounded-xl surface bd mb-1.5 card-hover ease">
+        <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{background:'var(--pulse-surface-raised)',color:f.state==='arrived'?'var(--pulse-tone-positive)':'var(--pulse-ink-2)'}}><Icon n={f.role==='home'?'home':'flag'} s={15}/></div>
+        <div className="flex-1"><div className="text-[13px] font-semibold ink">{f.name}</div><div className="text-[11px] ink-3">{f.r} · {f.last}</div></div>
+        <span className="text-[10px] mono uppercase font-bold" style={{color:f.state==='arrived'?'var(--pulse-tone-positive)':'var(--pulse-ink-3)'}}>{f.state}</span>
+      </div>))}
+    <div className="text-[10px] mono tracking-mono uppercase ink-3 mt-3 mb-1.5 px-1">Recent arrivals</div>
+    <div className="p-2.5 rounded-xl surface bd text-[11px] ink-2 flex items-center gap-2"><Icon n="bell" s={13} cn="tone-pos"/> Arrived Walhalla Clinic · 1:58p</div>
+  </div>);
+}
+
+/* ═══════════════════════ APP SHELL ═════════════════════════════════════ */
+const DIRS=[
+  ['A','Cockpit','Full-bleed map · floating chrome · surfaces as drawers',['Sat/Terr/Hybrid → real base-style','coral=signal only','geosearch I\'m at']],
+  ['B','Console','Map + intelligent rail · selection-driven · surfaces as tabs',['Routes/Live/Fences first-class','neutral chrome','ETA + reorder']],
+  ['C','Field','Triage feed first · map follows focus · "what needs me now"',['spatial Today','background-fence honesty','one-tap actions']],
+];
+function App(){
+  const [theme,setTheme]=useState('light');
+  const [dir,setDir]=useState('A');
+  const meta=DIRS.find(d=>d[0]===dir);
+  const brief=`Pulse Maps — Direction ${dir} (${meta[1]}). ${meta[2]}. Renderer: MapLibre Coral Cockpit (default on). Dead Sat/Terr/Hybrid replaced by Light/Dark/Contrast base-style + density. Coral reserved for signal (AI routes · live presence · accepted route). New first-class surfaces: Routes & planning, Live team, Geofences. "I'm at…" uses live Stadia geosearch. Theme: ${theme}.`;
+  const copy=()=>{ navigator.clipboard && navigator.clipboard.writeText(brief); };
+  return (<div className={(theme==='dark'?'dark ':'')+'app-bg h-full flex flex-col'}>
+    {/* top playground bar */}
+    <div className="flex items-center gap-3 px-4 h-12 shrink-0 glass" style={{borderBottom:'1px solid var(--pulse-border)',background:'var(--pulse-surface)'}}>
+      <div className="flex items-center gap-2">
+        <span className="w-2.5 h-2.5 rounded-full" style={{background:'var(--pulse-rose)'}}/>
+        <span className="text-[14px] font-bold ink">Pulse</span>
+        <span className="text-[12px] ink-3">· Maps redesign</span>
+      </div>
+      <div className="w-px h-5" style={{background:'var(--pulse-border)'}}/>
+      <div className="flex items-center gap-1">
+        {DIRS.map(([id,name])=>(
+          <button key={id} data-active={dir===id} onClick={()=>setDir(id)} className="pg-pill px-3 py-1.5 rounded-lg text-[12px] font-semibold ink-2 focusring">
+            <span className="mono">{id}</span> · {name}</button>))}
+      </div>
+      <div className="flex-1"/>
+      <button onClick={copy} className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium ink-2 surface bd card-hover ease focusring" title="Copy direction brief">
+        <Icon n="check" s={13}/>Copy brief</button>
+      <button id="theme-toggle" onClick={()=>setTheme(t=>t==='dark'?'light':'dark')} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] mono tracking-mono uppercase ink-2 surface bd card-hover ease focusring">
+        <Icon n={theme==='dark'?'sun':'moon'} s={14}/>{theme==='dark'?'Light':'Dark'}</button>
+    </div>
+    <About tag={meta[0]} name={`Direction ${meta[0]} · ${meta[1]}`} line={meta[2]} fixes={meta[3]}/>
+    {/* stage */}
+    <div className="flex-1 min-h-0 p-3">
+      <div className="h-full rounded-2xl overflow-hidden surface" style={{boxShadow:'var(--shadow-lg)',border:'1px solid var(--pulse-border)'}}>
+        {dir==='A' && <DirCockpit theme={theme}/>}
+        {dir==='B' && <DirConsole theme={theme}/>}
+        {dir==='C' && <DirField theme={theme}/>}
+      </div>
+    </div>
+    {/* prompt bar */}
+    <div className="shrink-0 px-4 py-2 flex items-center gap-3" style={{borderTop:'1px solid var(--pulse-border)',background:'var(--pulse-surface)'}}>
+      <span className="text-[10px] mono tracking-mono uppercase ink-3 shrink-0">Brief</span>
+      <span className="text-[11px] ink-2 truncate flex-1">{brief}</span>
+      <button onClick={copy} className="text-[11px] font-semibold coral-fg shrink-0 focusring rounded px-1">Copy</button>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
