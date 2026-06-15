@@ -124,8 +124,8 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
   const textColor = isDarkMode ? 'text-[#fafafa]' : 'text-[#0f0f0f]';
   const subtitleColor = isDarkMode ? 'text-[#b4b4b8]' : 'text-[#52525b]';
   const actionBtnBase = isDarkMode
-    ? 'p-2 rounded-lg text-[#b4b4b8] hover:bg-[rgba(255,255,255,0.055)] hover:text-[#fafafa] transition-all duration-200'
-    : 'p-2 rounded-lg text-[#52525b] hover:bg-[#f2f2f2] hover:text-[#0f0f0f] transition-all duration-200';
+    ? 'p-2 rounded-lg text-[#b4b4b8] hover:bg-[rgba(255,255,255,0.055)] hover:text-[#fafafa] transition-colors duration-200 ease-pulse'
+    : 'p-2 rounded-lg text-[#52525b] hover:bg-[#f2f2f2] hover:text-[#0f0f0f] transition-colors duration-200 ease-pulse';
 
   return (
     <header
@@ -197,7 +197,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               type="button"
               onClick={onSummarize}
               disabled={!hasContent || isSummarizing}
-              className={`group inline-flex items-center gap-1.5 px-1.5 md:px-2 py-1.5 rounded-md font-mono text-[10px] tracking-[0.12em] uppercase font-medium transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-transparent ${
+              className={`group inline-flex items-center gap-1.5 px-1.5 md:px-2 py-1.5 rounded-md font-mono text-[10px] tracking-[0.12em] uppercase font-medium transition-colors duration-200 ease-pulse disabled:opacity-40 disabled:cursor-not-allowed bg-transparent ${
                 isDarkMode
                   ? 'text-rose-300 hover:text-rose-200'
                   : 'text-rose-700 hover:text-rose-900'
@@ -220,7 +220,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               type="button"
               onClick={onSmartReplies}
               disabled={isGeneratingReplies}
-              className={`group inline-flex items-center gap-1.5 px-1.5 md:px-2 py-1.5 rounded-md font-mono text-[10px] tracking-[0.12em] uppercase font-medium transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-transparent ${
+              className={`group inline-flex items-center gap-1.5 px-1.5 md:px-2 py-1.5 rounded-md font-mono text-[10px] tracking-[0.12em] uppercase font-medium transition-colors duration-200 ease-pulse disabled:opacity-40 disabled:cursor-not-allowed bg-transparent ${
                 isDarkMode
                   ? 'text-rose-300 hover:text-rose-200'
                   : 'text-rose-700 hover:text-rose-900'
@@ -243,7 +243,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               type="button"
               onClick={onMeetingNotes}
               disabled={!hasContent || isGeneratingNotes}
-              className={`group inline-flex items-center gap-1.5 px-1.5 md:px-2 py-1.5 rounded-md font-mono text-[10px] tracking-[0.12em] uppercase font-medium transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-transparent ${
+              className={`group inline-flex items-center gap-1.5 px-1.5 md:px-2 py-1.5 rounded-md font-mono text-[10px] tracking-[0.12em] uppercase font-medium transition-colors duration-200 ease-pulse disabled:opacity-40 disabled:cursor-not-allowed bg-transparent ${
                 isDarkMode
                   ? 'text-rose-300 hover:text-rose-200'
                   : 'text-rose-700 hover:text-rose-900'

@@ -498,7 +498,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
           <button
             onClick={onClose}
             disabled={isDownloading}
-            className={`p-2 rounded-lg transition-all ${tc.textMuted} hover:${tc.text} ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} disabled:opacity-40`}
+            className={`p-2 rounded-lg transition-colors ease-pulse ${tc.textMuted} hover:${tc.text} ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} disabled:opacity-40`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -520,7 +520,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
                   key={format.id}
                   onClick={() => !isDownloading && setSelectedFormat(format.id)}
                   disabled={isDownloading}
-                  className={`w-full p-4 rounded-xl border text-left transition-all ${
+                  className={`w-full p-4 rounded-xl border text-left transition-colors ease-pulse ${
                     isSelected
                       ? `border-2`
                       : `${tc.cardBorder} border ${tc.cardBg}`
@@ -581,7 +581,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
               </div>
               <div className={`h-2 rounded-full overflow-hidden ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
                 <div
-                  className="h-full rounded-full transition-all duration-300"
+                  className="h-full rounded-full transition-[width] duration-300 ease-pulse"
                   style={{
                     width: `${progress}%`,
                     background: `linear-gradient(90deg, ${accentColor}, ${accentColor}cc)`,
@@ -605,7 +605,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
               <button
                 onClick={() => !isDownloading && setDownloadAsZip(!downloadAsZip)}
                 disabled={isDownloading}
-                className={`w-full p-3 rounded-xl border text-left transition-all ${
+                className={`w-full p-3 rounded-xl border text-left transition-colors ease-pulse ${
                   downloadAsZip
                     ? 'border-2'
                     : `${tc.cardBorder} border ${tc.cardBg}`
@@ -648,7 +648,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
           <button
             onClick={downloadAsZip ? handleZipDownload : handleDownload}
             disabled={isDownloading || items.length === 0}
-            className="w-full py-3 rounded-xl font-medium text-white flex items-center justify-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full py-3 rounded-xl font-medium text-white flex items-center justify-center gap-2 transition-colors ease-pulse disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
               background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
               boxShadow: !isDownloading ? `0 4px 14px ${accentColor}30` : 'none',

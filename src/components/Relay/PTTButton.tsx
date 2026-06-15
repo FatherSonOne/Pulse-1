@@ -204,7 +204,7 @@ export const PTTButton: React.FC<PTTButtonProps> = ({
           {waveformBars.map((height, i) => (
             <div
               key={i}
-              className="w-[3px] rounded-full transition-all duration-75"
+              className="w-[3px] rounded-full transition-[height] duration-75 ease-pulse"
               style={{
                 height: `${height}%`,
                 backgroundColor: color,
@@ -257,7 +257,7 @@ export const PTTButton: React.FC<PTTButtonProps> = ({
         onTouchMove={handleTouchMove}
         className={`
           relative z-10 rounded-full flex items-center justify-center
-          transition-all duration-200 ease-out
+          transition duration-200 ease-pulse
           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${isRecording ? 'scale-110' : 'hover:scale-105 active:scale-95'}
@@ -361,7 +361,7 @@ export const MiniPTTButton: React.FC<MiniPTTButtonProps> = ({
       disabled={disabled}
       className={`
         w-10 h-10 rounded-xl flex items-center justify-center
-        transition-all duration-200 focus:outline-none
+        transition-colors duration-200 ease-pulse focus:outline-none
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
       `}
       style={{

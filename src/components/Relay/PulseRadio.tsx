@@ -644,7 +644,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                   <button
                     type="button"
                     onClick={() => setMobileView('list')}
-                    className="mb-3 inline-flex items-center gap-1.5 text-sm text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition"
+                    className="mb-3 inline-flex items-center gap-1.5 text-sm text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition ease-pulse"
                     aria-label="Back to channels"
                     title="Back to channels"
                   >
@@ -669,7 +669,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                             type="button"
                             onClick={handleSummarizeChannel}
                             disabled={isSummarizing}
-                            className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition"
+                            className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-40 transition ease-pulse"
                             title="AI summarize"
                           >
                             {isSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <AlignLeft className="w-3 h-3" />}
@@ -680,7 +680,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                             onClick={() => (isSelectionMode ? exitSelectionMode() : enterSelectionMode())}
                             title={isSelectionMode ? 'Exit selection' : 'Select broadcasts'}
                             aria-label={isSelectionMode ? 'Exit selection' : 'Select broadcasts'}
-                            className={`p-2 rounded-md transition ${
+                            className={`p-2 rounded-md transition ease-pulse ${
                               isSelectionMode
                                 ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
                                 : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
@@ -695,7 +695,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                         onClick={() => setShowChannelSettings(true)}
                         title="Channel settings"
                         aria-label="Channel settings"
-                        className="p-2 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                        className="p-2 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition ease-pulse"
                       >
                         <Settings className="w-4 h-4" />
                       </button>

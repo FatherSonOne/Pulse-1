@@ -322,7 +322,7 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
         <button
           type="button"
           onClick={onCancel}
-          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-1 ${
+          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-colors ease-pulse flex-1 ${
             isDarkMode
               ? 'bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.055)] text-[#b4b4b8]'
               : 'bg-[#f2f2f2] hover:bg-[#e8e8e8] text-[#52525b]'
@@ -334,7 +334,7 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
         <button
           type="button"
           onClick={onRetry}
-          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-1 ${
+          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-colors ease-pulse flex-1 ${
             isDarkMode
               ? 'bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.055)] text-[#b4b4b8]'
               : 'bg-[#f2f2f2] hover:bg-[#e8e8e8] text-[#52525b]'

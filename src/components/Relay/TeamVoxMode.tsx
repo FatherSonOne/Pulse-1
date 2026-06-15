@@ -906,7 +906,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               setShowWorkspaceDropdown(false);
               setShowNewWorkspace(true);
             }}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${tc.hoverBg} hover:text-[#f43f5e]`}
+            className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ease-pulse ${tc.hoverBg} hover:text-[#f43f5e]`}
           >
             <Plus className="w-4 h-4" />
             Create New Workspace
@@ -927,7 +927,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 }
                 setShowWorkspaceDropdown(false);
               }}
-              className={`w-full px-3 py-3 flex items-center gap-3 rounded-lg transition-all ${
+              className={`w-full px-3 py-3 flex items-center gap-3 rounded-lg transition-colors ease-pulse ${
                 selectedWorkspace?.id === workspace.id
                   ? `${tc.activeBg} text-[#f43f5e]`
                   : `${tc.hoverBg} ${tc.text}`
@@ -1184,7 +1184,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                     };
                                     toggleSelection(selectionItem);
                                   }}
-                                  className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-all ${
+                                  className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-colors ease-pulse ${
                                     isSelected(message.id)
                                       ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
                                       : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
@@ -1417,7 +1417,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                           key={type}
                           onClick={() => setMessageType(type)}
                           title={tooltips[type]}
-                          className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ease-pulse ${
                             messageType === type
                               ? type === 'announcement'
                                 ? 'bg-red-500/20 text-red-500'
@@ -1433,7 +1433,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                     })}
                     <button
                       onClick={() => setShowMentionPicker(!showMentionPicker)}
-                      className={`ml-1 p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
+                      className={`ml-1 p-2 rounded-xl ${tc.btnGhost} transition-colors duration-200 ease-pulse`}
                       aria-label="Mention someone"
                       title="Mention someone"
                     >
@@ -1515,7 +1515,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   value={workspaceName}
                   onChange={(e) => setWorkspaceName(e.target.value)}
                   placeholder="My Team"
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
                 />
               </div>
               <div>
@@ -1527,7 +1527,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   onChange={(e) => setWorkspaceDesc(e.target.value)}
                   placeholder="What's this workspace for?"
                   rows={3}
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all resize-none`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse resize-none`}
                 />
               </div>
             </div>
@@ -1535,13 +1535,13 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowNewWorkspace(false)}
-                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnSecondary}`}
+                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ease-pulse ${tc.btnSecondary}`}
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateWorkspace}
-                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}
+                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ease-pulse ${tc.btnPrimary}`}
               >
                 Create Workspace
               </button>
@@ -1575,7 +1575,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   value={channelName}
                   onChange={(e) => setChannelName(e.target.value)}
                   placeholder="new-channel"
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
                 />
               </div>
               {/* Channel Type — segmented control replaces the 2×2 icon-card
@@ -1615,13 +1615,13 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowNewChannel(false)}
-                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnSecondary}`}
+                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ease-pulse ${tc.btnSecondary}`}
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateChannel}
-                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}
+                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ease-pulse ${tc.btnPrimary}`}
               >
                 Create Channel
               </button>
@@ -1643,7 +1643,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             placeholder="Search Pulse users..."
             value={memberSearchQuery}
             onChange={(e) => setMemberSearchQuery(e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
+            className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
           />
         </div>
 
@@ -1670,7 +1670,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 }
                 setShowAddMember(false);
               }}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${tc.hoverBg}`}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ease-pulse ${tc.hoverBg}`}
             >
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
@@ -1713,7 +1713,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               }
               setShowNotificationSettings(false);
             }}
-            className={`w-full px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}
+            className={`w-full px-4 py-3 rounded-xl font-medium transition-colors ease-pulse ${tc.btnPrimary}`}
           >
             Save
           </button>
@@ -1727,7 +1727,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
           ].map((option) => (
             <label
               key={option.value}
-              className={`flex items-center justify-between p-4 rounded-xl cursor-pointer ${tc.cardBg} border ${tc.border} ${tc.hoverBg} transition-all`}
+              className={`flex items-center justify-between p-4 rounded-xl cursor-pointer ${tc.cardBg} border ${tc.border} ${tc.hoverBg} transition-colors ease-pulse`}
             >
               <div>
                 <p className={`font-medium ${tc.text}`}>{option.label}</p>
@@ -1755,7 +1755,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
           <div className="flex gap-3">
             <button
               onClick={() => setShowChannelSettings(false)}
-              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnSecondary}`}
+              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ease-pulse ${tc.btnSecondary}`}
             >
               Cancel
             </button>
@@ -1798,7 +1798,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 }
                 setShowChannelSettings(false);
               }}
-              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}
+              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ease-pulse ${tc.btnPrimary}`}
             >
               Save
             </button>
@@ -1814,7 +1814,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 type="text"
                 value={editChannelName}
                 onChange={(e) => setEditChannelName(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
+                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
               />
             </div>
             <div>
@@ -1825,7 +1825,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 onChange={(e) => setEditChannelDesc(e.target.value)}
                 placeholder="What's this channel about?"
                 rows={3}
-                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all resize-none`}
+                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse resize-none`}
               />
             </div>
             <div className={`p-4 rounded-xl ${tc.cardBg} border ${tc.border}`}>
@@ -1854,7 +1854,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 setMentionSearchQuery('');
                 setShowMentionPicker(false);
               }}
-              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnSecondary}`}
+              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ease-pulse ${tc.btnSecondary}`}
             >
               Clear all
             </button>
@@ -1863,7 +1863,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 setMentionSearchQuery('');
                 setShowMentionPicker(false);
               }}
-              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}
+              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ease-pulse ${tc.btnPrimary}`}
             >
               Done ({selectedMentions.length})
             </button>
@@ -1876,7 +1876,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             placeholder="Search team members..."
             value={mentionSearchQuery}
             onChange={(e) => setMentionSearchQuery(e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
+            className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
           />
         </div>
 
@@ -1913,7 +1913,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               onClick={() => {
                 setSelectedMentions([...selectedMentions, contact.id]);
               }}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${tc.hoverBg}`}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ease-pulse ${tc.hoverBg}`}
             >
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"

@@ -1791,7 +1791,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                             };
                             toggleSelection(selectionItem);
                           }}
-                          className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-all ${
+                          className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-colors ease-pulse ${
                             isSelected(recording.id)
                               ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
                               : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'

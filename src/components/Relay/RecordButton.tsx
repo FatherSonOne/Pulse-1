@@ -107,7 +107,7 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
           disabled={disabled || state === 'recording'}
           className={`
             flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium
-            transition-all duration-200 focus:outline-none focus-visible:ring-2
+            transition duration-200 ease-pulse focus:outline-none focus-visible:ring-2
             ${disabled || state === 'recording' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}
             ${isDarkMode
               ? 'bg-white/5 hover:bg-white/10 text-gray-300'

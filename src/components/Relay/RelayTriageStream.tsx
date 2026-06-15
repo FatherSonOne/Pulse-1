@@ -318,8 +318,8 @@ const InboxCard: React.FC<{
             aria-label={active && isPlaying ? `Pause ${item.senderName}` : `Play ${item.senderName}`}
           >
             <span className="relative w-4 h-4 block">
-              <Pause className={`absolute inset-0 w-4 h-4 transition-opacity duration-150 ${active && isPlaying ? 'opacity-100' : 'opacity-0'}`} />
-              <Play className={`absolute inset-0 w-4 h-4 transition-opacity duration-150 ${active && isPlaying ? 'opacity-0' : 'opacity-100'}`} />
+              <Pause className={`absolute inset-0 w-4 h-4 transition-opacity duration-150 ease-pulse ${active && isPlaying ? 'opacity-100' : 'opacity-0'}`} />
+              <Play className={`absolute inset-0 w-4 h-4 transition-opacity duration-150 ease-pulse ${active && isPlaying ? 'opacity-0' : 'opacity-100'}`} />
             </span>
           </button>
         ) : (
@@ -415,7 +415,7 @@ const InboxCard: React.FC<{
               >
                 <Clock className="w-3 h-3" />
                 <span className="font-mono text-[10px] uppercase tracking-[0.1em]">Snooze</span>
-                <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${snoozeMenuOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3 h-3 transition-transform duration-150 ease-pulse ${snoozeMenuOpen ? 'rotate-180' : ''}`} />
               </button>
               {snoozeMenuOpen && (
                 <div role="menu" className="absolute right-0 top-full mt-1.5 w-44 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-[#0a0a0a] py-1 z-20 shadow-md">

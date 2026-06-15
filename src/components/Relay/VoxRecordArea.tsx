@@ -68,7 +68,7 @@ const VoxRecordArea: React.FC<VoxRecordAreaProps> = ({
 
   return (
     <div
-      className="relative p-6 rounded-2xl border transition-all duration-300"
+      className="relative p-6 rounded-2xl border transition-colors duration-300 ease-pulse"
       style={{
         borderColor: 'var(--pulse-border)',
         // Resting surface consumes the studio token; while recording the

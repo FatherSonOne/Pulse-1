@@ -83,7 +83,7 @@ export const VoxSmartReplies: React.FC<VoxSmartRepliesProps> = ({
           <button
             key={index}
             onClick={() => onSelectReply(reply.text)}
-            className={`w-full text-left p-3 rounded-lg border transition-all ${tc.border} ${tc.cardBg} ${tc.hoverBg}`}
+            className={`w-full text-left p-3 rounded-lg border transition-colors ease-pulse ${tc.border} ${tc.cardBg} ${tc.hoverBg}`}
             style={{
               borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
             }}

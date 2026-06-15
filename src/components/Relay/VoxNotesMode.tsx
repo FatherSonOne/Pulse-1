@@ -642,7 +642,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
             placeholder="Search notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full pl-10 pr-4 py-2.5 rounded-xl ${tc.inputBg} ${tc.text} text-sm border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-all`}
+            className={`w-full pl-10 pr-4 py-2.5 rounded-xl ${tc.inputBg} ${tc.text} text-sm border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
           />
         </div>
 
@@ -732,7 +732,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                             };
                             toggleSelection(selectionItem);
                           }}
-                          className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-all ${
+                          className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-colors ease-pulse ${
                             isSelected(note.id)
                               ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
                               : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
@@ -954,7 +954,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                   <div className="flex items-center gap-1 md:gap-2 shrink-0">
                     <button
                       onClick={() => handleToggleFavorite(selectedNote)}
-                      className={`p-2 rounded-xl transition-all duration-200 ${
+                      className={`p-2 rounded-xl transition-colors duration-200 ease-pulse ${
                         selectedNote.isFavorite
                           ? 'text-yellow-400'
                           : `${tc.btnGhost}`
@@ -986,7 +986,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                 <div className="flex items-center gap-3 md:gap-4">
                   <button
                     onClick={handlePlayNote}
-                    className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200 bg-rose-500 hover:bg-rose-600"
+                    className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200 ease-pulse bg-rose-500 hover:bg-rose-600"
                     aria-label={notePlaying ? 'Pause' : 'Play'}
                   >
                     {notePlaying ? (
@@ -1087,7 +1087,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                       />
                       <button
                         onClick={() => handleAddTag(selectedNote)}
-                        className="p-1 rounded-lg transition-all"
+                        className="p-1 rounded-lg transition-colors ease-pulse"
                         style={{ color: MODE_COLOR }}
                         aria-label="Confirm tag"
                       >
@@ -1095,7 +1095,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                       </button>
                       <button
                         onClick={() => { setShowTagInput(false); setNewTagText(''); }}
-                        className={`p-1 rounded-lg transition-all ${tc.textMuted}`}
+                        className={`p-1 rounded-lg transition-colors ease-pulse ${tc.textMuted}`}
                         aria-label="Cancel"
                       >
                         <X className="w-4 h-4" />
@@ -1125,7 +1125,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
 
                     <button
                       onClick={() => setShowLinkModal(true)}
-                      className={`w-full p-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2 ${tc.cardBg} border ${tc.border} ${tc.textSecondary} ${tc.hoverBg} hover:text-[#f43f5e]`}
+                      className={`w-full p-3 rounded-xl text-sm transition-colors ease-pulse flex items-center justify-center gap-2 ${tc.cardBg} border ${tc.border} ${tc.textSecondary} ${tc.hoverBg} hover:text-[#f43f5e]`}
                     >
                       <Link2 className="w-4 h-4" />
                       Link a contact

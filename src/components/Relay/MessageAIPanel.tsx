@@ -767,7 +767,7 @@ const ChaptersSection: React.FC<ChaptersSectionProps> = ({
                   type="button"
                   onClick={() => onSeek && onSeek(chapter.startTime)}
                   disabled={!isClickable}
-                  className={`w-full text-left p-3 rounded-lg transition-all ${
+                  className={`w-full text-left p-3 rounded-lg transition-colors ease-pulse ${
                     isActive
                       ? isDarkMode
                         ? 'bg-zinc-700'
@@ -841,7 +841,7 @@ const ChaptersSection: React.FC<ChaptersSectionProps> = ({
                   {isActive && (
                     <div className="mt-2 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
                       <div
-                        className="h-full rounded-full transition-all"
+                        className="h-full rounded-full transition-[width] ease-pulse"
                         style={{
                           background: accentColor,
                           width: `${
@@ -1087,7 +1087,7 @@ const MeetingNotesSection: React.FC<MeetingNotesSectionProps> = ({
                 type="button"
                 onClick={handleArchive}
                 disabled={isArchiving || archived}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-70"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ease-pulse disabled:opacity-70"
                 style={{
                   background: archived
                     ? '#22c55e'
@@ -1113,7 +1113,7 @@ const MeetingNotesSection: React.FC<MeetingNotesSectionProps> = ({
             <button
               type="button"
               onClick={handleCopy}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors ease-pulse"
               style={{ color: copied ? '#22c55e' : undefined }}
               title="Copy notes as plain text"
             >

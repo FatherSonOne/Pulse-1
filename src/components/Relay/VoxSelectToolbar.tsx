@@ -250,7 +250,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
               {/* Close Selection Button */}
               <button
                 onClick={onExitSelection}
-                className="p-2.5 rounded-xl transition-all hover:scale-110 active:scale-95"
+                className="p-2.5 rounded-xl transition duration-200 ease-pulse hover:scale-105 active:scale-95"
                 style={{
                   background: isDarkMode ? '#374151' : '#e5e7eb',
                   color: isDarkMode ? '#f9fafb' : '#111827',
@@ -263,7 +263,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
               {/* Select All/None Toggle */}
               <button
                 onClick={allSelected ? onDeselectAll : onSelectAll}
-                className="p-2.5 rounded-xl transition-all hover:scale-110 active:scale-95"
+                className="p-2.5 rounded-xl transition duration-200 ease-pulse hover:scale-105 active:scale-95"
                 style={{
                   background: allSelected ? `${accentColor}20` : (isDarkMode ? '#374151' : '#e5e7eb'),
                   color: allSelected ? accentColor : (isDarkMode ? '#f9fafb' : '#111827'),
@@ -298,7 +298,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
             <button
               onClick={() => setShowDownloadModal(true)}
               disabled={selectionCount === 0}
-              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl active:scale-95`}
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition duration-200 ease-pulse disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl active:scale-95`}
               style={{
                 background: selectionCount > 0
                   ? `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)`
@@ -315,7 +315,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
             <button
               onClick={handleArchive}
               disabled={selectionCount === 0 || isArchiving}
-              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl active:scale-95`}
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition duration-200 ease-pulse disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl active:scale-95`}
               style={{
                 background: selectionCount > 0
                   ? isDarkMode ? '#374151' : '#e5e7eb'
@@ -335,7 +335,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
               <button
                 onClick={handleDelete}
                 disabled={selectionCount === 0 || isDeleting}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${tc.buttonDanger} disabled:opacity-40 disabled:cursor-not-allowed`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors ease-pulse ${tc.buttonDanger} disabled:opacity-40 disabled:cursor-not-allowed`}
               >
                 <Trash2 className={`w-4 h-4 ${isDeleting ? 'animate-pulse' : ''}`} />
                 <span className="hidden sm:inline">
