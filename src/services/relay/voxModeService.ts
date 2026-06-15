@@ -2217,19 +2217,38 @@ class VoxModeService {
    * load-all model the old voxer_recordings path used). RLS scopes the result to
    * rows where the caller is the sender or recipient.
    */
-  async getAllQuickVoxMessages(): Promise<QuickVoxMessage[]> {
+  /**
+   * Load the user's Direct (quick_vox) history. Capped to the most recent
+   * `limit` (default 500) so a long-running account doesn't load — and fetch a
+   * blob for — thousands of rows on every Direct open (S3 launch-readiness:
+   * the prior unbounded load was the real "histories lag", not DOM count).
+   *
+   * Pass `before` (an ISO timestamp) to page further back: it returns the
+   * `limit` messages immediately OLDER than that cursor. Results always come
+   * back ascending (oldest→newest) so the display/grouping code is unchanged;
+   * we just query newest-first to take the cap off the recent end.
+   */
+  async getAllQuickVoxMessages(
+    options?: { limit?: number; before?: string },
+  ): Promise<QuickVoxMessage[]> {
     const userId = await this.ensureUserId();
     if (!userId) return [];
-    const { data, error } = await supabase
+    const limit = options?.limit ?? 500;
+    let query = supabase
       .from('quick_vox_messages')
       .select('*')
       .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (options?.before) {
+      query = query.lt('created_at', options.before);
+    }
+    const { data, error } = await query;
     if (error || !data) {
       if (error) console.error('Error loading quick vox messages:', error);
       return [];
     }
-    return data.map(message => this.mapDbToQuickVoxMessage(message));
+    return data.map(message => this.mapDbToQuickVoxMessage(message)).reverse();
   }
 
   /**

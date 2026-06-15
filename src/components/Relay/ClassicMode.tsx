@@ -97,6 +97,11 @@ import VoxDownloadModal from './VoxDownloadModal';
 import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 
+// How many Direct messages to load per page. The first open loads the most
+// recent page; "Load older" pages further back via the created_at cursor. Caps
+// the prior unbounded load (which also fetched an audio blob per row).
+const DIRECT_PAGE_SIZE = 500;
+
 // ============================================
 // TYPES
 // ============================================
@@ -199,6 +204,12 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // State
   const [activeContactId, setActiveContactId] = useState<string>(initialContactId ?? '');
   const [recordings, setRecordings] = useState<Recording[]>([]);
+  // Direct history is capped to the most recent DIRECT_PAGE_SIZE on open (S3);
+  // `hasOlderMessages` exposes a "Load older" control, `oldestLoadedAt` is the
+  // pagination cursor (ISO ts of the oldest loaded message).
+  const [hasOlderMessages, setHasOlderMessages] = useState(false);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [oldestLoadedAt, setOldestLoadedAt] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalSearchQuery, setModalSearchQuery] = useState('');
   // 'list' shows the contacts column, 'thread' the conversation. Drives the
@@ -334,6 +345,9 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   const startTimeRef = useRef<number>(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // The scrollable thread container (.classic-messages). Used to anchor the
+  // viewport when prepending older messages so the view doesn't jump.
+  const threadScrollRef = useRef<HTMLDivElement>(null);
 
   // Track all blob URLs created via URL.createObjectURL() so they can be
   // revoked on component unmount or when no longer needed, preventing memory leaks.
@@ -354,63 +368,81 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     };
   }, []);
 
+  // Map quick_vox rows → Recordings, resolving each audio URL to a local blob
+  // URL for playback/download. Shared by the initial load and "Load older" so
+  // the (heavy, blob-fetching) transform lives in one place.
+  const mapMessagesToRecordings = useCallback(
+    async (
+      dbMessages: Awaited<ReturnType<typeof voxModeService.getAllQuickVoxMessages>>,
+      myId: string,
+    ): Promise<Recording[]> => {
+      return Promise.all(
+        dbMessages.map(async (msg) => {
+          let blob: Blob | null = null;
+          let url = msg.audioUrl || '';
+
+          if (url) {
+            try {
+              if (url.startsWith('data:')) {
+                const response = await fetch(url);
+                blob = await response.blob();
+                url = URL.createObjectURL(blob);
+                blobUrlsRef.current.add(url);
+              } else if (url.startsWith('blob:')) {
+                // Stale in-memory URL from a prior session — not resolvable.
+                url = '';
+              } else {
+                // Supabase storage URL — fetch + wrap for local playback/download.
+                const response = await fetch(url);
+                blob = await response.blob();
+                url = URL.createObjectURL(blob);
+                blobUrlsRef.current.add(url);
+              }
+            } catch (e) {
+              console.error('Error loading recording from URL:', msg.audioUrl, e);
+              // Fall back to the durable remote URL so playback can still try.
+              url = msg.audioUrl || '';
+            }
+          }
+
+          const isMine = msg.senderId === myId;
+          return {
+            id: msg.id,
+            blob: blob || new Blob(),
+            url: url || '',
+            duration: msg.duration || 0,
+            timestamp: msg.createdAt,
+            transcription: msg.transcript || undefined,
+            isTranscribing: false,
+            sender: (isMine ? 'me' : 'other') as 'me' | 'other',
+            contactId: isMine ? msg.recipientId : msg.senderId,
+            status: (msg.playedAt ? 'read' : msg.status === 'delivered' ? 'delivered' : 'sent') as 'sent' | 'delivered' | 'read',
+            analysis: msg.analysis || undefined,
+            replyToId: msg.analysis?.reply_to_id || undefined,
+          };
+        }),
+      );
+    },
+    [],
+  );
+
   // Load the Direct thread from the REAL 2-party quick_vox engine (S0-1). The
   // old voxer_recordings path was a single-user log that never delivered to the
-  // recipient; this loads every quick_vox message I sent or received and derives
-  // the people list + per-contact threads from it. me/them keys off sender_id vs
-  // my id; the counterparty (contactId) is the OTHER participant.
+  // recipient; this loads the most recent DIRECT_PAGE_SIZE quick_vox messages I
+  // sent or received (S3 cap) and derives the people list + per-contact threads
+  // from them. me/them keys off sender_id vs my id; the counterparty (contactId)
+  // is the OTHER participant. Older history is paged in via loadOlderMessages.
   useEffect(() => {
     const loadRecordings = async () => {
       try {
         const myId = await voxModeService.ensureUserId();
-        const dbMessages = await voxModeService.getAllQuickVoxMessages();
-        const loadedRecordings: Recording[] = await Promise.all(
-          dbMessages.map(async (msg) => {
-            let blob: Blob | null = null;
-            let url = msg.audioUrl || '';
-
-            if (url) {
-              try {
-                if (url.startsWith('data:')) {
-                  const response = await fetch(url);
-                  blob = await response.blob();
-                  url = URL.createObjectURL(blob);
-                  blobUrlsRef.current.add(url);
-                } else if (url.startsWith('blob:')) {
-                  // Stale in-memory URL from a prior session — not resolvable.
-                  url = '';
-                } else {
-                  // Supabase storage URL — fetch + wrap for local playback/download.
-                  const response = await fetch(url);
-                  blob = await response.blob();
-                  url = URL.createObjectURL(blob);
-                  blobUrlsRef.current.add(url);
-                }
-              } catch (e) {
-                console.error('Error loading recording from URL:', msg.audioUrl, e);
-                // Fall back to the durable remote URL so playback can still try.
-                url = msg.audioUrl || '';
-              }
-            }
-
-            const isMine = msg.senderId === myId;
-            return {
-              id: msg.id,
-              blob: blob || new Blob(),
-              url: url || '',
-              duration: msg.duration || 0,
-              timestamp: msg.createdAt,
-              transcription: msg.transcript || undefined,
-              isTranscribing: false,
-              sender: (isMine ? 'me' : 'other') as 'me' | 'other',
-              contactId: isMine ? msg.recipientId : msg.senderId,
-              status: (msg.playedAt ? 'read' : msg.status === 'delivered' ? 'delivered' : 'sent') as 'sent' | 'delivered' | 'read',
-              analysis: msg.analysis || undefined,
-              replyToId: msg.analysis?.reply_to_id || undefined,
-            };
-          })
-        );
+        const dbMessages = await voxModeService.getAllQuickVoxMessages({ limit: DIRECT_PAGE_SIZE });
+        const loadedRecordings = await mapMessagesToRecordings(dbMessages, myId);
         setRecordings(loadedRecordings);
+        // A full page back implies there may be older history to page in.
+        setHasOlderMessages(dbMessages.length >= DIRECT_PAGE_SIZE);
+        // dbMessages is ascending, so [0] is the oldest loaded — the cursor.
+        setOldestLoadedAt(dbMessages.length > 0 ? dbMessages[0].createdAt.toISOString() : null);
         // Mark everything I've received as delivered so senders get the receipt
         // (S1-2). Recipient-scoped RPC; sender-only UPDATE RLS blocks a direct write.
         voxModeService.markQuickVoxDeliveredAll().catch(() => {});
@@ -419,7 +451,45 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       }
     };
     loadRecordings();
-  }, []);
+  }, [mapMessagesToRecordings]);
+
+  // Page in the next-older window of Direct history. Prepends to `recordings`
+  // (de-duped) and anchors the viewport so the view stays put rather than
+  // jumping — the auto-scroll effect below ignores prepends (newest id unchanged).
+  const loadOlderMessages = useCallback(async () => {
+    if (isLoadingOlder || !oldestLoadedAt) return;
+    setIsLoadingOlder(true);
+    const scrollEl = threadScrollRef.current;
+    const prevHeight = scrollEl?.scrollHeight ?? 0;
+    const prevTop = scrollEl?.scrollTop ?? 0;
+    try {
+      const myId = await voxModeService.ensureUserId();
+      const older = await voxModeService.getAllQuickVoxMessages({
+        limit: DIRECT_PAGE_SIZE,
+        before: oldestLoadedAt,
+      });
+      if (older.length === 0) {
+        setHasOlderMessages(false);
+        return;
+      }
+      const olderRecordings = await mapMessagesToRecordings(older, myId);
+      setRecordings((prev) => {
+        const existing = new Set(prev.map((r) => r.id));
+        const fresh = olderRecordings.filter((r) => !existing.has(r.id));
+        return [...fresh, ...prev];
+      });
+      setOldestLoadedAt(older[0].createdAt.toISOString());
+      setHasOlderMessages(older.length >= DIRECT_PAGE_SIZE);
+      requestAnimationFrame(() => {
+        const el = threadScrollRef.current;
+        if (el) el.scrollTop = el.scrollHeight - prevHeight + prevTop;
+      });
+    } catch (e) {
+      console.error('Error loading older messages:', e);
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  }, [isLoadingOlder, oldestLoadedAt, mapMessagesToRecordings]);
 
   // Realtime inbound: new quick_vox messages addressed to me appear live in the
   // open thread (and feed the people list) without a refresh — the delivery half
@@ -544,10 +614,14 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     }
   }, [showNewVoxModal, modalSearchQuery]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when a NEW (newest) message arrives or the contact
+  // changes. Keyed on the newest message id rather than the whole `recordings`
+  // array so paging in OLDER history (prepend) doesn't yank the view to the
+  // bottom — and incidental status-only mutations no longer re-scroll either.
+  const newestRecordingId = recordings.length > 0 ? recordings[recordings.length - 1].id : null;
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [recordings, activeContactId]);
+  }, [newestRecordingId, activeContactId]);
 
   // voxer_recordings.contact_id is a CRM contacts.id for existing/seeded DMs
   // (verified live: 19/19 resolve against contacts, 0 against pulse_users) but a
@@ -1563,7 +1637,20 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
             })()}
 
             {/* Messages */}
-            <div className="classic-messages">
+            <div className="classic-messages" ref={threadScrollRef}>
+              {hasOlderMessages && activeThreadRecordings.length > 0 && (
+                <div className="flex justify-center pb-1">
+                  <button
+                    type="button"
+                    onClick={loadOlderMessages}
+                    disabled={isLoadingOlder}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400 border border-[var(--pulse-border)] hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 transition"
+                  >
+                    {isLoadingOlder ? <Loader2 className="w-3 h-3 animate-spin" /> : <Clock className="w-3 h-3" />}
+                    {isLoadingOlder ? 'Loading…' : 'Load older messages'}
+                  </button>
+                </div>
+              )}
               {activeThreadRecordings.length === 0 ? (
                 <VoxEmptyState
                   {...emptyConfig}
