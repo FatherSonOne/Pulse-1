@@ -1884,15 +1884,20 @@ class VoxModeService {
   }
 
   // ─────────────────────────────────────────────────────────────────────
-  // Triage dismissal — local-only "hide from triage" flag.
+  // Triage dismissal — durable "hide from triage" flag (cross-device).
   //
-  // Stage 2.1d.5 lands archive-from-triage without a schema migration. We
-  // keep a per-user Set of `${kind}:${id}` strings in localStorage; the
-  // useRelayTriage hook filters them out client-side. This means the
-  // dismissal does NOT sync across devices — a deliberate trade-off so
-  // we can ship today instead of waiting on a `relay_triage_dismissals`
-  // migration. When that migration lands, swap the storage backend; the
-  // public surface here doesn't change.
+  // Stage 2.1d.5 originally shipped this local-only (per-user Set of
+  // `${kind}:${id}` strings in localStorage) so it could land without a
+  // migration. Launch-readiness S2-2 added the durable backend the comment
+  // promised — table `relay_triage_dismissals` (migration 20260614150000),
+  // RLS own-row, keyed on auth.uid(). The public surface below is unchanged.
+  //
+  // Storage strategy: localStorage stays as the instant + offline cache; the
+  // DB is the cross-device source of truth. Writes hit both; reads UNION both
+  // so a just-made (maybe not-yet-synced) local dismissal AND dismissals made
+  // on other devices both hide. If the DB call fails (offline / RLS), every
+  // method degrades to the prior localStorage-only behaviour rather than
+  // throwing — the hide still works locally and reconciles on the next sync.
   // ─────────────────────────────────────────────────────────────────────
 
   private triageDismissStorageKey(authUserId: string): string {
@@ -1928,9 +1933,22 @@ class VoxModeService {
   ): Promise<boolean> {
     const authUserId = await this.ensureUserId();
     if (!authUserId) return false;
+    // localStorage first — instant render + offline resilience.
     const set = this.readDismissedSet(authUserId);
     set.add(`${kind}:${rowId}`);
     this.writeDismissedSet(authUserId, set);
+    // Durable, cross-device. Failure here keeps the local hide in place.
+    try {
+      const { error } = await supabase
+        .from('relay_triage_dismissals')
+        .upsert(
+          { user_id: authUserId, kind, row_id: rowId },
+          { onConflict: 'user_id,kind,row_id' },
+        );
+      if (error) console.warn('[voxModeService] triage dismiss DB upsert failed (kept local):', error.message);
+    } catch (err) {
+      console.warn('[voxModeService] triage dismiss DB upsert threw (kept local):', err);
+    }
     return true;
   }
 
@@ -1944,14 +1962,47 @@ class VoxModeService {
     const set = this.readDismissedSet(authUserId);
     set.delete(`${kind}:${rowId}`);
     this.writeDismissedSet(authUserId, set);
+    try {
+      const { error } = await supabase
+        .from('relay_triage_dismissals')
+        .delete()
+        .eq('user_id', authUserId)
+        .eq('kind', kind)
+        .eq('row_id', rowId);
+      if (error) console.warn('[voxModeService] triage undismiss DB delete failed (kept local):', error.message);
+    } catch (err) {
+      console.warn('[voxModeService] triage undismiss DB delete threw (kept local):', err);
+    }
     return true;
   }
 
-  /** Snapshot the dismissed set as `${kind}:${id}` strings. */
+  /** Snapshot the dismissed set as `${kind}:${id}` strings (DB ∪ local). */
   async getDismissedTriageIds(): Promise<Set<string>> {
     const authUserId = await this.ensureUserId();
     if (!authUserId) return new Set();
-    return this.readDismissedSet(authUserId);
+    // localStorage = instant + offline; DB = cross-device source of truth.
+    // Union both, then warm the local cache to the union. On DB error, degrade
+    // to localStorage only (prior behaviour) rather than losing the feed.
+    const local = this.readDismissedSet(authUserId);
+    try {
+      const { data, error } = await supabase
+        .from('relay_triage_dismissals')
+        .select('kind, row_id')
+        .eq('user_id', authUserId);
+      if (error) {
+        console.warn('[voxModeService] triage dismissed DB read failed (using local):', error.message);
+        return local;
+      }
+      const merged = new Set(local);
+      for (const r of (data ?? []) as Array<{ kind: string; row_id: string }>) {
+        merged.add(`${r.kind}:${r.row_id}`);
+      }
+      this.writeDismissedSet(authUserId, merged);
+      return merged;
+    } catch (err) {
+      console.warn('[voxModeService] triage dismissed DB read threw (using local):', err);
+      return local;
+    }
   }
 
   /**
