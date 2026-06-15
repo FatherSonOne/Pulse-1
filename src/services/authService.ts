@@ -647,17 +647,28 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
       import('./googleCalendarService')
         .then(m => m.resetGoogleCalendarTokenCache?.())
         .catch(() => {});
-      // Persist the Google provider_refresh_token to the backend now, while it
-      // is guaranteed present (Pulse forces consent + offline access on login).
+      // Persist the provider_refresh_token to the backend now, while it is
+      // guaranteed present (Pulse forces consent + offline access on login).
       // Supabase drops it from the session after its first JWT refresh, so the
       // stored copy is what lets the backend keep refreshing provider tokens
-      // past the ~1h mark without forcing a re-login (Tier 3b).
+      // past the ~1h mark without forcing a re-login (Tier 3b). The token
+      // belongs to whichever provider THIS sign-in used, so route by the active
+      // provider: azure -> user_microsoft_tokens, otherwise the Google store.
+      // (Previously every sign-in stored to Google, so a Microsoft login wrote
+      // a Graph refresh token into user_google_tokens — harmless but wrong.)
       const providerRefreshToken = (session as { provider_refresh_token?: string } | null)
         ?.provider_refresh_token;
+      const activeProvider = (session?.user?.app_metadata as { provider?: string } | undefined)?.provider;
       if (providerRefreshToken) {
-        import('./google/googleTokenRefresh')
-          .then(m => m.storeGoogleRefreshToken(providerRefreshToken))
-          .catch(() => {});
+        if (activeProvider === 'azure') {
+          import('./microsoft/microsoftTokenRefresh')
+            .then(m => m.storeMicrosoftRefreshToken(providerRefreshToken))
+            .catch(() => {});
+        } else {
+          import('./google/googleTokenRefresh')
+            .then(m => m.storeGoogleRefreshToken(providerRefreshToken))
+            .catch(() => {});
+        }
       }
       dispatchContactsScopeMissingIfNeeded(session);
     }
