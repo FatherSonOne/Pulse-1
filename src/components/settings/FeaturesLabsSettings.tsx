@@ -27,6 +27,23 @@ export const FeaturesLabsSettings: React.FC = () => {
         />
       </SettingsCard>
 
+      {/* MapLibre renderer on/off. OFF (default) → the Map section uses the
+          existing Google renderer. ON → the Map renders with the new MapLibre
+          engine (parity with Google across every overlay). Requires Experimental
+          Features on to reach the Map. Mirror of the ?ff_mapLibreRenderer dev
+          override, but per-browser via Settings instead of a URL param.
+          NOTE: a non-Google base map showing Google-geocoded pins/routes is a
+          Google ToS issue — keep this for testing until the geocode/directions
+          data layer moves off Google. See the P3–P5 handoff (⛔ THE LEGAL GATE). */}
+      <SettingsCard>
+        <ToggleItem
+          label="MapLibre Map Renderer (Beta)"
+          desc="When on, the Map section renders with the new MapLibre engine instead of Google Maps (light theme only for now). Requires Experimental Features on to open the Map. Off keeps the existing Google map. For testing & development."
+          active={features.mapLibreRenderer}
+          onToggle={() => toggleFeature('mapLibreRenderer')}
+        />
+      </SettingsCard>
+
       {/* Email section on/off. OFF (default) shows a red "feature not available"
           caption under Email in the sidebar and disables all Gmail fetch/token
           use. Turn ON for testing/development. */}
