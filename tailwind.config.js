@@ -38,6 +38,13 @@ export default {
         'rose-md': '0 0 20px rgba(244, 63, 94, 0.20)',
         'rose-lg': '0 0 30px rgba(244, 63, 94, 0.25)',
       },
+      transitionTimingFunction: {
+        // House strong ease-out — matches the Studio/token CSS layer
+        // (--pulse-ease) so inline Tailwind transitions share one motion
+        // personality with studio-card/footer/rail instead of falling back
+        // to Tailwind's weaker default cubic-bezier(0.4,0,0.2,1).
+        pulse: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      },
       animation: {
         'pulse-glow-rose': 'pulse-glow-rose 2s ease-in-out infinite',
       },
