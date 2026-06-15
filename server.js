@@ -60,6 +60,21 @@ const GOOGLE_LOGIN_CLIENT_ID =
   process.env.GOOGLE_LOGIN_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
 const GOOGLE_LOGIN_CLIENT_SECRET = process.env.GOOGLE_LOGIN_CLIENT_SECRET;
 
+// Microsoft (Azure AD) provider — the SAME app registration the Supabase
+// dashboard Azure provider is configured with. A Microsoft refresh token can
+// only be refreshed by the client that minted it, so /api/microsoft/refresh-token
+// MUST use that app's id + secret. MICROSOFT_CLIENT_ID falls back to
+// VITE_MICROSOFT_CLIENT_ID (same value). MICROSOFT_CLIENT_SECRET must be set
+// server-side: register a "Web" platform + client secret on the Azure app
+// (portal.azure.com → App registrations → Certificates & secrets) and configure
+// that same secret in Supabase → Auth → Providers → Azure. NEVER VITE_-prefix
+// the secret. .trim() guards the trailing-newline paste footgun (see Gmail note).
+const MICROSOFT_CLIENT_ID =
+  (process.env.MICROSOFT_CLIENT_ID || process.env.VITE_MICROSOFT_CLIENT_ID)?.trim();
+const MICROSOFT_CLIENT_SECRET = process.env.MICROSOFT_CLIENT_SECRET?.trim();
+const MICROSOFT_TENANT_ID =
+  (process.env.MICROSOFT_TENANT_ID || process.env.VITE_MICROSOFT_TENANT_ID || 'common').trim();
+
 // Gmail private client — a THIRD OAuth client in its OWN GCP project kept in
 // "Testing" so the restricted Gmail scopes work for the owner (test user) with
 // no CASA. Used only by the owner-only Gmail connect flow (/api/gmail/auth/*);
@@ -519,6 +534,163 @@ app.post('/api/google/refresh-token', async (req, res) => {
       error: error.message || 'Internal server error',
       code: 'SERVER_ERROR'
     });
+  }
+});
+
+// ── Per-user Microsoft (Azure) token store (public.user_microsoft_tokens) ────
+// Mirror of the Google login token store above. Service-role client bypasses
+// RLS (deny-all to browsers); the refresh_token never leaves the server.
+async function getUserMicrosoftToken(userId) {
+  const { data, error } = await tokenStoreClient()
+    .from('user_microsoft_tokens')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) {
+    console.error('[MS Token] getUserMicrosoftToken error:', error);
+    return null;
+  }
+  return data;
+}
+
+async function upsertUserMicrosoftToken(userId, fields) {
+  const { error } = await tokenStoreClient()
+    .from('user_microsoft_tokens')
+    .upsert(
+      { user_id: userId, ...fields, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+  if (error) console.error('[MS Token] upsertUserMicrosoftToken error:', error);
+}
+
+async function deleteUserMicrosoftToken(userId) {
+  const { error } = await tokenStoreClient()
+    .from('user_microsoft_tokens')
+    .delete()
+    .eq('user_id', userId);
+  if (error) console.error('[MS Token] deleteUserMicrosoftToken error:', error);
+}
+
+// POST /api/microsoft/store-refresh-token
+// Called by the client on SIGNED_IN (azure provider) to persist the Microsoft
+// provider_refresh_token so it survives Supabase dropping it from the session.
+app.post('/api/microsoft/store-refresh-token', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+    }
+
+    const { refresh_token, scope } = req.body || {};
+    if (!refresh_token) {
+      return res.status(400).json({ error: 'Missing refresh_token', code: 'MISSING_REFRESH_TOKEN' });
+    }
+
+    await upsertUserMicrosoftToken(userId, {
+      refresh_token,
+      ...(scope ? { scope } : {}),
+    });
+
+    res.json({ stored: true });
+  } catch (error) {
+    console.error('[MS Token Store] Server error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error', code: 'SERVER_ERROR' });
+  }
+});
+
+// POST /api/microsoft/refresh-token
+// Refreshes the Microsoft (Graph) provider access token using the Azure app's
+// id + secret — the same app Supabase's azure provider is configured with, since
+// a refresh token can only be refreshed by its minting client. Refresh token
+// comes from the request body when the session still has it, otherwise from the
+// per-user stored token (user_microsoft_tokens). NOTE: Azure ROTATES refresh
+// tokens on every grant, so the freshest refresh_token from the response is
+// persisted (unlike Google, which omits it on refresh).
+app.post('/api/microsoft/refresh-token', async (req, res) => {
+  try {
+    const userId = await resolveUserId(req);
+
+    let refreshToken = req.body?.refresh_token || null;
+    if (!refreshToken && userId) {
+      const stored = await getUserMicrosoftToken(userId);
+      refreshToken = stored?.refresh_token || null;
+    }
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        error: 'No refresh token available (none sent and none stored). Please reconnect Microsoft.',
+        code: 'MISSING_REFRESH_TOKEN',
+        requiresReauth: true,
+      });
+    }
+
+    if (!MICROSOFT_CLIENT_ID || !MICROSOFT_CLIENT_SECRET) {
+      console.error('[MS Token Refresh] Missing credentials - clientId:', !!MICROSOFT_CLIENT_ID, 'clientSecret:', !!MICROSOFT_CLIENT_SECRET);
+      return res.status(500).json({
+        error: 'Server configuration error: MICROSOFT_CLIENT_ID / MICROSOFT_CLIENT_SECRET not set',
+        code: 'MISSING_CREDENTIALS',
+      });
+    }
+
+    console.log('[MS Token Refresh] Attempting refresh…');
+
+    const tokenUrl = `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/oauth2/v2.0/token`;
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: MICROSOFT_CLIENT_ID,
+        client_secret: MICROSOFT_CLIENT_SECRET,
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        // Request the Graph scopes the contacts import needs (a subset of what
+        // the user consented to at login). offline_access keeps a refresh token.
+        scope: 'offline_access openid profile email User.Read Contacts.Read',
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('[MS Token Refresh] Failed:', errorData);
+
+      if (errorData.error === 'invalid_grant') {
+        if (userId) await deleteUserMicrosoftToken(userId);
+        return res.status(401).json({
+          error: 'Refresh token expired or revoked. Please re-authenticate.',
+          code: 'INVALID_GRANT',
+          requiresReauth: true,
+        });
+      }
+
+      return res.status(response.status).json({
+        error: errorData.error_description || 'Token refresh failed',
+        code: errorData.error || 'REFRESH_FAILED',
+      });
+    }
+
+    const data = await response.json();
+    console.log('[MS Token Refresh] Success - token expires in', data.expires_in, 'seconds');
+
+    // Persist the rotated refresh token + fresh access token so the next call
+    // works even without a session-carried refresh token.
+    if (userId) {
+      await upsertUserMicrosoftToken(userId, {
+        refresh_token: data.refresh_token || refreshToken,
+        access_token: data.access_token,
+        expiry_date: data.expires_in ? Date.now() + data.expires_in * 1000 : null,
+        ...(data.scope ? { scope: data.scope } : {}),
+      });
+    }
+
+    res.json({
+      access_token: data.access_token,
+      expires_in: data.expires_in,
+      token_type: data.token_type,
+      scope: data.scope,
+    });
+  } catch (error) {
+    console.error('[MS Token Refresh] Server error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error', code: 'SERVER_ERROR' });
   }
 });
 
