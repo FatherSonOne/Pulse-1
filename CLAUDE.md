@@ -362,6 +362,91 @@ spawns — the fix was to verify and commit after each step.
 
 ---
 
+## 7. Token & usage efficiency (read before heavy operations)
+
+Usage telemetry (2026-06-16) showed the real cost drivers on this
+project: **90% subagent-heavy sessions, 66% of usage at >150k context,
+30% from the Supabase MCP connector.** The rules below target exactly
+those three. They are about cost, not correctness — Rules A/B and the
+schema-first/verify rules always win when they conflict.
+
+### 7.1 Announce-before-heavy (the alert rule)
+
+Before invoking a **token-heavy operation**, STOP and tell the user in
+one line what you're about to run and the cheaper alternative you
+considered, then proceed (no need to wait unless the user is watching
+cost). "Heavy" means any of:
+
+- **`list_tables` / `list_migrations` / `generate_typescript_types`**
+  on the Supabase MCP — the schema is 338 tables; these dump the whole
+  thing into context and it stays there all session.
+- **`get_logs` / `get_advisors`** — large, only justified mid-debug.
+- **Spawning 2+ subagents**, or any Workflow/`/team-plan`/Nexus fan-out.
+- **`Grep` with `output_mode:"content"` and a high/zero `head_limit`**,
+  or reading a file >1500 lines in full.
+- A **full-repo `tsc --noEmit`** (also OOMs — see the tsc memory note).
+
+The point is not to ask permission for routine work — it's to make the
+expensive moves visible so they're a choice, not an accident.
+
+### 7.2 MCP is sticky — prefer local, narrow, and disposable
+
+**Every MCP tool result stays in context for the rest of the session.**
+That is why Supabase alone was 30% of usage. Order of preference for
+schema/data work:
+
+1. **Read a local file** — `supabase/migrations/*.sql`, generated types,
+   or service code. File reads are cheap and can be flushed with
+   `/compact`; MCP results can't be selectively removed.
+2. **Narrow `execute_sql`** — `SELECT specific_cols ... LIMIT n`, or
+   query `information_schema.columns WHERE table_name = 'one_table'`.
+   Never `list_tables` when you need one table's shape.
+3. **Full introspection (`list_tables`) only as a last resort**, and
+   per 7.1 announce it first.
+
+After a necessary heavy MCP pull, suggest `/compact` to the user to
+flush the result once you've extracted what you need.
+
+### 7.3 Subagents — the 90% line item
+
+Subagents each run their own model requests in their own context, so
+they multiply cost. Before spawning:
+
+- **Don't spawn for work you can do inline.** A single file read, a
+  targeted Grep, a known-location edit — just do it. Subagents earn
+  their cost on genuine fan-out (many files, parallel independent work)
+  or read-heavy sweeps whose intermediate file-dumps you don't want in
+  the main context.
+- **Match the model to the task.** Simple search/format/lookup agents
+  should run on **Haiku or Sonnet**, not Opus — pass `model: "haiku"`
+  / `"sonnet"` to the Agent tool. Reserve Opus subagents for genuine
+  reasoning.
+- **Prefer `Explore`** (read-only, reads excerpts not whole files) for
+  "where/does X exist" questions over `general-purpose`.
+- **Tell the agent to return only the conclusion**, not file contents
+  or transcripts — its final message is the only thing that should come
+  back into your context.
+- **Workflows / `/team-plan` / Nexus are opt-in.** They can spawn dozens
+  of agents. Only run them when the user explicitly asked for that
+  scale; otherwise describe what one would do and let the user decide.
+
+### 7.4 Session length
+
+66% of usage was at >150k context — long sessions are expensive even
+when cached. **`/clear` when switching to an unrelated task; `/compact`
+mid-task** when a thread has accumulated large tool outputs you no
+longer need.
+
+### 7.5 Baseline MCP servers
+
+`.mcp.json` registers **stitch, blender, @21st-dev/magic** — none are
+used in normal Pulse work, so they're pure baseline overhead. If you
+notice them unused, suggest the user disable them via `/mcp` or trim
+`.mcp.json` (also: their API keys are committed in plaintext there —
+flag that for rotation).
+
+---
+
 **When in doubt, ask the user before making destructive or
 branch-affecting changes.** The cost of a clarifying question is one
 turn; the cost of a silent branch swap is hours of lost work.
