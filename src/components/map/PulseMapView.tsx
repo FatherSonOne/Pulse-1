@@ -61,6 +61,8 @@ import { useMarkerClusters, type ClusterCentroid } from './hooks/useMarkerCluste
 import { useSpiderAnimation } from './hooks/useSpiderAnimation';
 import { MapLensRow } from './sub/MapLensRow';
 import { HorizonScrubber } from './horizon/HorizonScrubber';
+import { HorizonScrubberPill } from './horizon/HorizonScrubberPill';
+import { AtlasModeToggle } from './horizon/AtlasModeToggle';
 import { MapViewPicker } from './sub/MapViewPicker';
 import { BaseStyleSwitch } from './horizon/BaseStyleSwitch';
 import MapClusterMarker, { MapClusterMarkerBody } from './sub/MapClusterMarker';
@@ -1122,6 +1124,28 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 
           {lens === 'atlas' && <AtlasHalos contacts={localContacts} />}
         </GoogleMap>
+        )}
+
+        {/* ─── Floating chrome (Tier-3 §8B, mapHorizonFloat) ───────────────────
+            Absolute islands over the full-bleed map, replacing the suppressed
+            top-chrome bands. F1: scrubber pill + Atlas toggle. F2 adds the
+            search field + Routes/Live/Fences surfaces cluster to this top bar.
+            pointer-events-none on the bar + auto on its children so map drags
+            still work in the gaps between islands. */}
+        {mapHorizonFloat && (
+          <div className="absolute top-3 left-3 right-3 z-30 flex items-start gap-2 flex-wrap pointer-events-none [&>*]:pointer-events-auto">
+            <HorizonScrubberPill
+              horizon={horizon}
+              onHorizonChange={setHorizon}
+              atlasMode={atlasMode}
+              isDarkMode={isDarkMode}
+            />
+            <AtlasModeToggle
+              atlasMode={atlasMode}
+              onChange={setAtlasMode}
+              isDarkMode={isDarkMode}
+            />
+          </div>
         )}
 
         {hasNoLocations && (
