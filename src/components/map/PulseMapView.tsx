@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleMap } from '@react-google-maps/api';
-import { AlertTriangle, LocateFixed, MapPinned, Radar, Users } from 'lucide-react';
+import { AlertTriangle, LocateFixed, MapPinned, Radar, Users, X } from 'lucide-react';
 import { AppView, CalendarEvent, Contact } from '../../types';
 import { ContactCircle } from '../../types/contactCircleTypes';
 import { Place } from '../../types/placeTypes';
@@ -201,6 +201,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   const [showGeofences, setShowGeofences] = useState(false);
   // F5 (Tier-3 §8B / P10) — Routes & planning drawer (Horizon float only).
   const [showRoutes, setShowRoutes] = useState(false);
+  // Float-chrome filter strip (geo banner + circle chips) — session-dismissible
+  // so it never permanently covers the map / controls (eyeball fix 2026-06-16).
+  const [floatFiltersDismissed, setFloatFiltersDismissed] = useState(false);
   const [geofenceRingsVisible, setGeofenceRingsVisible] = useState(true);
   const [geofencedPlaces, setGeofencedPlaces] = useState<Place[]>([]);
   const refreshGeofencedPlaces = useCallback(async () => {
@@ -1403,20 +1406,50 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           </div>
         )}
 
-        {/* F4 — geo-blocked banner + circle filter chips, floated under Horizon
-            float (they lived in the suppressed band's MapFilterAccessories). Renders
-            nothing when neither geo-blocked nor any circles apply. */}
-        {mapHorizonFloat && (
-          <div className="absolute bottom-16 left-3 right-3 z-20 pointer-events-none [&>*]:pointer-events-auto">
-            <MapFilterAccessories
-              filter={filter}
-              circles={circles}
-              isDarkMode={isDarkMode}
-              onFilterChange={setFilter}
-              geoBlocked={geoBlocked && !geoBannerDismissed}
-              onDismissGeoBanner={dismissGeoBanner}
-              neutralChrome={mapHorizonOn}
-            />
+        {/* F4 (eyeball-fixed 2026-06-16) — geo banner + circle filter chips, floated
+            under Horizon float. Was a full-width bottom-16 strip that COVERED the
+            center FAB + bottom-right base-style/recenter controls and had no dismiss.
+            Now: capped width, anchored bottom-LEFT (above the count chip, clear of
+            the center + right controls), with a session dismiss badge. Renders
+            nothing when neither geo-blocked nor any circles apply. The geo banner's
+            inline X is suppressed here (onDismissGeoBanner omitted) — the corner
+            badge dismisses the whole strip so there's a single, obvious control. */}
+        {mapHorizonFloat && !floatFiltersDismissed && (
+          <div className="absolute bottom-20 left-3 z-20 max-w-[55vw] sm:max-w-xs pointer-events-auto">
+            <div className="relative">
+              <div
+                className="rounded-xl overflow-hidden backdrop-blur-md"
+                style={{ border: '1px solid var(--pulse-border)', boxShadow: '0 6px 24px rgba(0,0,0,0.08)' }}
+              >
+                <MapFilterAccessories
+                  filter={filter}
+                  circles={circles}
+                  isDarkMode={isDarkMode}
+                  onFilterChange={setFilter}
+                  geoBlocked={geoBlocked && !geoBannerDismissed}
+                  neutralChrome={mapHorizonOn}
+                />
+              </div>
+              {(circles.length > 0 || (geoBlocked && !geoBannerDismissed)) && (
+                <button
+                  type="button"
+                  onClick={() => setFloatFiltersDismissed(true)}
+                  aria-label="Hide filters"
+                  title="Hide filters"
+                  className={`absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                    isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
+                  }`}
+                  style={{
+                    background: 'var(--pulse-surface)',
+                    border: '1px solid var(--pulse-border)',
+                    color: 'var(--pulse-ink-2)',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                  }}
+                >
+                  <X size={11} aria-hidden="true" />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
