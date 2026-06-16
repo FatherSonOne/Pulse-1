@@ -66,6 +66,7 @@ import { HorizonScrubberPill } from './horizon/HorizonScrubberPill';
 import { AtlasModeToggle } from './horizon/AtlasModeToggle';
 import { SurfacesCluster } from './horizon/SurfacesCluster';
 import { FloatingFilterIsland } from './horizon/FloatingFilterIsland';
+import { RoutesDrawer } from './horizon/RoutesDrawer';
 import { MapViewPicker } from './sub/MapViewPicker';
 import { BaseStyleSwitch } from './horizon/BaseStyleSwitch';
 import MapClusterMarker, { MapClusterMarkerBody } from './sub/MapClusterMarker';
@@ -198,6 +199,8 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   // and the drawer list, kept in sync by refetching after a drawer edit. Fetched
   // only under Horizon so the OFF path makes no extra query.
   const [showGeofences, setShowGeofences] = useState(false);
+  // F5 (Tier-3 §8B / P10) — Routes & planning drawer (Horizon float only).
+  const [showRoutes, setShowRoutes] = useState(false);
   const [geofenceRingsVisible, setGeofenceRingsVisible] = useState(true);
   const [geofencedPlaces, setGeofencedPlaces] = useState<Place[]>([]);
   const refreshGeofencedPlaces = useCallback(async () => {
@@ -629,6 +632,40 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   // A TODAY view with only a meeting still wants the map visible.
   const hasNoLocations = visibleMarkers.length === 0 && meetingMarkers.length === 0;
   const atlasHasAnyPinned = localContacts.some(c => c.homeLat != null || c.workLat != null);
+
+  // Direction-D §8B (F3/F5) — the floating AI card element, computed once and used
+  // in EITHER the floating top-left card OR (when the Routes drawer is open) inside
+  // the drawer, never both at once. Reuses the SAME aiState + handlers as the band
+  // AiStrip — accept / reorder / dismiss / open-in-maps stay one implementation.
+  const aiCard = (
+    <AiStrip
+      layout="card"
+      lens={lens}
+      horizon={horizon}
+      markerCount={visibleMarkers.length}
+      aiState={aiState}
+      acceptedRoute={acceptedRoute}
+      acceptingRoute={acceptingRoute}
+      isDarkMode={isDarkMode}
+      stops={reorderableStops}
+      onAccept={handleAcceptRoute}
+      onDismissRoute={handleDismissRoute}
+      onOpenInSystemMaps={handleOpenInSystemMaps}
+      onReorderStart={handleStartReorder}
+      onReorderChange={handleReorderChange}
+      onReorderCancel={handleReorderCancel}
+      onFocusEntity={handleFocusEntity}
+      onJumpToDate={handleJumpToDate}
+    />
+  );
+  // Whether the embedded engine would render anything — drives the Routes-drawer
+  // empty state (mirrors AiStrip's own branch gates).
+  const hasRouteContent =
+    !!acceptedRoute ||
+    aiState.status === 'ready' ||
+    aiState.status === 'reordering' ||
+    ((aiState.status === 'fetching' || aiState.status === 'paused') && lens === 'today' && visibleMarkers.length >= 2) ||
+    (lens === 'today' && visibleMarkers.length === 1);
 
   return (
     <div className={`pulse-map-section flex flex-col w-full h-full rounded-xl overflow-hidden border ${
@@ -1159,6 +1196,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             <div className="flex-1" />
             <SurfacesCluster
               isDarkMode={isDarkMode}
+              onOpenRoutes={() => setShowRoutes(true)}
+              routesActive={showRoutes}
+              routesBadge={acceptedRoute ? 1 : 0}
               onOpenLive={() => setShowLiveSheet(true)}
               liveActive={showLiveSheet}
               liveBadge={liveBroadcasters.length}
@@ -1174,27 +1214,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             (mirrors the mockup's `!sheet` gate) and reuses the SAME aiState +
             handlers as the band path — no behaviour change, only layout. mapHorizonOn
             is implied by mapHorizonFloat, so the Horizon affordances wire directly. */}
-        {mapHorizonFloat && (lens !== 'atlas' || atlasHasAnyPinned) && !hasNoLocations && !showLiveSheet && !showGeofences && (
+        {mapHorizonFloat && (lens !== 'atlas' || atlasHasAnyPinned) && !hasNoLocations && !showLiveSheet && !showGeofences && !showRoutes && (
           <div className="absolute left-3 top-24 z-20 w-[300px] max-w-[80vw] pointer-events-auto">
-            <AiStrip
-              layout="card"
-              lens={lens}
-              horizon={horizon}
-              markerCount={visibleMarkers.length}
-              aiState={aiState}
-              acceptedRoute={acceptedRoute}
-              acceptingRoute={acceptingRoute}
-              isDarkMode={isDarkMode}
-              stops={reorderableStops}
-              onAccept={handleAcceptRoute}
-              onDismissRoute={handleDismissRoute}
-              onOpenInSystemMaps={handleOpenInSystemMaps}
-              onReorderStart={handleStartReorder}
-              onReorderChange={handleReorderChange}
-              onReorderCancel={handleReorderCancel}
-              onFocusEntity={handleFocusEntity}
-              onJumpToDate={handleJumpToDate}
-            />
+            {aiCard}
           </div>
         )}
 
@@ -1454,6 +1476,19 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             onPlacesChanged={refreshGeofencedPlaces}
             onClose={() => setShowGeofences(false)}
           />
+        )}
+
+        {/* F5 (P10) — Routes & planning drawer. Embeds the same aiCard engine
+            (accept / reorder / dismiss / open-in-maps) the floating card uses; the
+            card is hidden while this is open, so AiStrip renders in one place. */}
+        {showRoutes && mapHorizonFloat && (
+          <RoutesDrawer
+            isDarkMode={isDarkMode}
+            hasRouteContent={hasRouteContent}
+            onClose={() => setShowRoutes(false)}
+          >
+            {aiCard}
+          </RoutesDrawer>
         )}
       </div>
     </div>
