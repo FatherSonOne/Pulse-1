@@ -818,6 +818,12 @@ export function startLocationBroadcast(
 
     if (broadcastDebounceTimer) clearTimeout(broadcastDebounceTimer);
     broadcastDebounceTimer = setTimeout(async () => {
+      // Resolve a human-readable label for this position (P8). Rides the same
+      // 15s debounce as the upsert, so it adds no extra geocode quota pressure.
+      // Null-tolerant: a denied / zero-result geocode must never block the
+      // position write — readers (subscribeToUserLocation, teamRadarService)
+      // already treat location_label as nullable.
+      const label = await reverseGeocode(pos.coords.latitude, pos.coords.longitude).catch(() => null);
       await supabase.from('user_locations').upsert({
         user_id: userId,
         lat: pos.coords.latitude,
@@ -825,6 +831,7 @@ export function startLocationBroadcast(
         accuracy_m: pos.coords.accuracy,
         heading: pos.coords.heading ?? null,
         speed_kmh: pos.coords.speed != null ? pos.coords.speed * 3.6 : null,
+        location_label: label,
         is_sharing: true,
         updated_at: new Date().toISOString(),
       });

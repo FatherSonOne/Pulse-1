@@ -10,9 +10,12 @@
 
 import React from 'react';
 import { Polyline } from '@react-google-maps/api';
+import type { LatLng } from '../provider/types';
 
 export interface AcceptedRoutePolylineProps {
-  path: google.maps.LatLngLiteral[];
+  // Renderer-neutral (P8) — LatLng is structurally compatible with
+  // google.maps.LatLngLiteral, which is what <Polyline> consumes internally.
+  path: LatLng[];
   onClick: () => void;
 }
 

@@ -8,6 +8,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { AtlasProposal, RouteProposal, WeekProposal } from '../../../services/mapAIService';
+import type { LatLng } from '../provider/types';
 
 export type AiProposal =
   | { kind: 'route';   proposal: RouteProposal }
@@ -27,7 +28,11 @@ export type AiState =
 
 export interface AcceptedRoute {
   orderedMarkerKeys: string[];
-  path: google.maps.LatLngLiteral[];
+  // Renderer-neutral (P8): was google.maps.LatLngLiteral[]. The shape is
+  // structurally identical, so every consumer (the Google <Polyline> overlay
+  // and the MapLibre GeoJSON layer) still typechecks — this only removes the
+  // hard google.maps dependency from the shared route type.
+  path: LatLng[];
   durationMin: number;
   arrivesAt: Date;
 }

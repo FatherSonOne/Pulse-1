@@ -15,19 +15,10 @@
 // Broadcast and the lens chips — DESIGN.md's Mono-Label Rule.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
+import React from 'react';
 import { Briefcase, Globe, Home, Radio, Search, X } from 'lucide-react';
-import { Contact } from '../../types';
 import { ContactCircle } from '../../types/contactCircleTypes';
-import {
-  startLocationBroadcast,
-  stopLocationBroadcast,
-  setBroadcastRecipients,
-  endBroadcastRecipients,
-  getActiveBroadcastRecipientIds,
-} from '../../services/locationService';
-import BroadcastRecipientPicker from './sub/BroadcastRecipientPicker';
+import type { BroadcastControl } from './horizon/useBroadcastControl';
 
 export interface MapFilter {
   circles: string[];
@@ -46,13 +37,16 @@ interface CommonProps {
 }
 
 interface MapFilterControlsProps extends CommonProps {
-  /** Logged-in user id — drives the personal Live Location broadcast toggle. */
-  userId: string;
   /** Optional ref so the parent can focus the search input via `/`. */
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
-  /** Contacts the broadcaster can pick from. Filtered to Pulse-linked
-   *  contacts inside the picker. */
-  contacts: Contact[];
+  /** Shared broadcast state machine (P8). Owned by PulseMapView via
+   *  useBroadcastControl so the filter-bar pill and the LiveTeamDrawer drive
+   *  ONE broadcast; this component is a pure consumer. */
+  broadcast: BroadcastControl;
+  /** Horizon path only: when provided, the Broadcast pill opens the first-class
+   *  LiveTeamDrawer instead of toggling directly (the drawer owns the master
+   *  switch + recipient flow). Undefined ⇒ legacy OFF path: the pill toggles. */
+  onOpenLiveDrawer?: () => void;
 }
 
 interface MapFilterAccessoriesProps extends CommonProps {
@@ -60,9 +54,6 @@ interface MapFilterAccessoriesProps extends CommonProps {
   geoBlocked?: boolean;
   onDismissGeoBanner?: () => void;
 }
-
-// Cached so the broadcast resumes on reload if the user had it enabled.
-const LIVE_LOCATION_LS_KEY = 'pulse:map:live-location-on';
 
 const LOCATION_OPTIONS = [
   { value: 'all'  as const, label: 'All',  Icon: Globe     },
@@ -72,7 +63,7 @@ const LOCATION_OPTIONS = [
 
 // ─── Inline controls — embedded into MapLensRow's right slot ──────────────
 export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
-  filter, isDarkMode, onFilterChange, userId, searchInputRef, contacts, neutralChrome,
+  filter, isDarkMode, onFilterChange, searchInputRef, neutralChrome, broadcast, onOpenLiveDrawer,
 }) => {
   // Coral=signal-only chrome (P6): neutral focus ring + neutral active fill for the
   // filter chrome when under Horizon; legacy rose otherwise. The broadcast pill is
@@ -83,73 +74,6 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
   const toggleActiveCls = neutralChrome
     ? (isDarkMode ? 'bg-white/15 text-white' : 'bg-gray-200 text-gray-900')
     : 'bg-rose-500 text-white';
-  const [liveOn, setLiveOn] = useState<boolean>(() => {
-    if (typeof localStorage === 'undefined') return false;
-    return localStorage.getItem(LIVE_LOCATION_LS_KEY) === '1';
-  });
-
-  const [showRecipientPicker, setShowRecipientPicker] = useState(false);
-  const [viewerCount, setViewerCount] = useState<number>(() => getActiveBroadcastRecipientIds().length);
-
-  useEffect(() => {
-    if (!userId) return;
-    if (liveOn) {
-      startLocationBroadcast(userId, err => {
-        if (err.code === err.PERMISSION_DENIED) {
-          toast.error('Location permission denied. Enable it to broadcast.');
-          setLiveOn(false);
-        }
-      });
-    } else {
-      stopLocationBroadcast();
-    }
-    return () => { stopLocationBroadcast(); };
-  }, [liveOn, userId]);
-
-  const handleToggleLive = () => {
-    if (!liveOn) {
-      setShowRecipientPicker(true);
-      return;
-    }
-    void endBroadcastRecipients(userId).catch(() => { /* best effort */ });
-    setViewerCount(0);
-    setLiveOn(false);
-    try { localStorage.setItem(LIVE_LOCATION_LS_KEY, '0'); } catch { /* ignore */ }
-    toast('Broadcast off', { icon: '⏸', duration: 2000 });
-  };
-
-  const handleRecipientConfirm = async (recipientUserIds: string[]) => {
-    setShowRecipientPicker(false);
-    try {
-      await setBroadcastRecipients(userId, recipientUserIds);
-    } catch (e) {
-      toast.error('Could not grant viewer access. Try again.');
-      return;
-    }
-    setViewerCount(recipientUserIds.length);
-    setLiveOn(true);
-    try { localStorage.setItem(LIVE_LOCATION_LS_KEY, '1'); } catch { /* ignore */ }
-    toast(`Broadcasting to ${recipientUserIds.length}`, { icon: '📡', duration: 3000 });
-  };
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const inField = target && (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      );
-      if (inField) return;
-      if (e.key === 'b' || e.key === 'B') {
-        handleToggleLive();
-        e.preventDefault();
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveOn]);
 
   const monoStyle: React.CSSProperties = { fontFamily: "'JetBrains Mono', monospace" };
   const text = isDarkMode ? 'text-white' : 'text-gray-900';
@@ -214,17 +138,24 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
         })}
       </div>
 
-      {/* Broadcast — mono uppercase pill, coral when live. Routes through the
-          recipient picker on OFF→ON so the operator declares an audience
-          before the broadcast starts. Visible kbd hint matches the lens
-          chips' pattern — keyboard shortcut shouldn't live only in title. */}
+      {/* Broadcast — mono uppercase pill, coral when live. OFF path: toggles the
+          broadcast directly (recipient picker on OFF→ON), B keyboard shortcut.
+          Horizon path (onOpenLiveDrawer): opens the first-class LiveTeamDrawer,
+          which owns the master switch + recipient flow. The recipient picker is
+          rendered once by PulseMapView (always mounted) so either surface can
+          summon it without owning the broadcast state. */}
       <button
-        onClick={handleToggleLive}
-        aria-pressed={liveOn}
-        aria-keyshortcuts="b"
-        title={liveOn ? 'Broadcast on · press B to stop' : 'Press B to broadcast your location'}
+        onClick={onOpenLiveDrawer ?? broadcast.handleToggleLive}
+        aria-pressed={onOpenLiveDrawer ? undefined : broadcast.liveOn}
+        aria-haspopup={onOpenLiveDrawer ? 'dialog' : undefined}
+        aria-keyshortcuts={onOpenLiveDrawer ? undefined : 'b'}
+        title={
+          onOpenLiveDrawer
+            ? 'Open live team'
+            : broadcast.liveOn ? 'Broadcast on · press B to stop' : 'Press B to broadcast your location'
+        }
         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] tracking-[0.1em] uppercase transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
-          liveOn
+          broadcast.liveOn
             ? 'bg-rose-500 text-white'
             : isDarkMode
               ? 'bg-white/[0.04] text-gray-300 hover:bg-white/10'
@@ -232,7 +163,7 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
         }`}
         style={monoStyle}
       >
-        {liveOn ? (
+        {broadcast.liveOn ? (
           <span className="relative inline-flex h-2 w-2" aria-hidden="true">
             <span className="absolute inline-flex h-full w-full rounded-full bg-white/70 motion-safe:animate-ping" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
@@ -241,29 +172,23 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
           <Radio size={11} aria-hidden="true" />
         )}
         <span className="hidden md:inline">
-          {liveOn ? (viewerCount > 0 ? `Live · ${viewerCount}` : 'Live') : 'Broadcast'}
+          {broadcast.liveOn
+            ? (broadcast.viewerCount > 0 ? `Live · ${broadcast.viewerCount}` : 'Live')
+            : (onOpenLiveDrawer ? 'Live team' : 'Broadcast')}
         </span>
-        <kbd
-          aria-hidden="true"
-          className={`ml-0.5 px-1 rounded text-[9px] leading-none font-normal ${
-            liveOn
-              ? 'bg-white/25 text-white'
-              : isDarkMode ? 'bg-white/5 text-gray-500' : 'bg-gray-200 text-gray-500'
-          }`}
-        >
-          B
-        </kbd>
+        {!onOpenLiveDrawer && (
+          <kbd
+            aria-hidden="true"
+            className={`ml-0.5 px-1 rounded text-[9px] leading-none font-normal ${
+              broadcast.liveOn
+                ? 'bg-white/25 text-white'
+                : isDarkMode ? 'bg-white/5 text-gray-500' : 'bg-gray-200 text-gray-500'
+            }`}
+          >
+            B
+          </kbd>
+        )}
       </button>
-
-      {showRecipientPicker && (
-        <BroadcastRecipientPicker
-          contacts={contacts}
-          initialSelectedUserIds={getActiveBroadcastRecipientIds()}
-          isDarkMode={isDarkMode}
-          onCancel={() => setShowRecipientPicker(false)}
-          onConfirm={handleRecipientConfirm}
-        />
-      )}
     </>
   );
 };

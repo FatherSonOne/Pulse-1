@@ -4,7 +4,7 @@ import { AlertTriangle, MapPinned, Users } from 'lucide-react';
 import { AppView, CalendarEvent, Contact } from '../../types';
 import { ContactCircle } from '../../types/contactCircleTypes';
 import { getMapOptions } from '../../services/mapService';
-import { UserLocation } from '../../services/locationService';
+import { UserLocation, getActiveBroadcastRecipientIds } from '../../services/locationService';
 import MapFilterAccessories, { MapFilter, MapFilterControls } from './MapFilterBar';
 import MapContactMarker, { MapContactMarkerBody } from './contacts/MapContactMarker';
 import MapRadiusRings from './contacts/MapRadiusRings';
@@ -23,6 +23,9 @@ import {
 import { AiStrip } from './sub/AiStrip';
 import { LensEmptyState } from './sub/LensEmptyState';
 import { LiveBroadcastSheet } from './sub/LiveBroadcastSheet';
+import { LiveTeamDrawer } from './horizon/LiveTeamDrawer';
+import BroadcastRecipientPicker from './sub/BroadcastRecipientPicker';
+import { useBroadcastControl } from './horizon/useBroadcastControl';
 import { ContactLocationPickerOverlay } from './sub/ContactLocationPickerOverlay';
 import { useGeoRelevanceSignals, lensIncludesContact } from './hooks/useGeoRelevanceSignals';
 import { useContactCircles } from './hooks/useContactCircles';
@@ -172,6 +175,11 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 
   const { userPosition, geoBlocked } = useUserPosition();
   const liveLocations = useLivePresence(localContacts);
+  // Single owner of the live-location broadcast state machine (P8). Lives here
+  // (always mounted) so the filter-bar pill and the LiveTeamDrawer drive ONE
+  // broadcast and it persists while panels open/close. Instantiating it inside
+  // either child would double the keyboard listener + start/stop effect.
+  const broadcast = useBroadcastControl(userId);
   const [geoBannerDismissed, setGeoBannerDismissed] = useState<boolean>(() => {
     if (typeof localStorage === 'undefined') return false;
     return localStorage.getItem('pulse:map:geo-banner-dismissed') === '1';
@@ -692,10 +700,10 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               filter={filter}
               isDarkMode={isDarkMode}
               onFilterChange={setFilter}
-              userId={userId}
               searchInputRef={searchInputRef}
-              contacts={localContacts}
               neutralChrome={mapHorizonOn}
+              broadcast={broadcast}
+              onOpenLiveDrawer={() => setShowLiveSheet(true)}
             />
           }
         />
@@ -709,10 +717,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               filter={filter}
               isDarkMode={isDarkMode}
               onFilterChange={setFilter}
-              userId={userId}
               searchInputRef={searchInputRef}
-              contacts={localContacts}
               neutralChrome={mapHorizonOn}
+              broadcast={broadcast}
             />
           }
         />
@@ -1216,12 +1223,38 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
         )}
 
         {showLiveSheet && (
-          <LiveBroadcastSheet
+          mapHorizonOn ? (
+            <LiveTeamDrawer
+              contacts={localContacts}
+              liveLocations={liveLocations}
+              isDarkMode={isDarkMode}
+              userId={userId}
+              broadcast={broadcast}
+              onClose={() => setShowLiveSheet(false)}
+              onContactAction={onContactAction}
+            />
+          ) : (
+            <LiveBroadcastSheet
+              contacts={localContacts}
+              liveLocations={liveLocations}
+              isDarkMode={isDarkMode}
+              onClose={() => setShowLiveSheet(false)}
+              onContactAction={onContactAction}
+            />
+          )
+        )}
+
+        {/* Recipient picker — rendered once here (always-mounted host) so both
+            the filter-bar pill (OFF path) and the LiveTeamDrawer master switch
+            (Horizon path) summon the SAME picker over the shared broadcast
+            state. Moved out of MapFilterControls when the state was lifted. */}
+        {broadcast.showRecipientPicker && (
+          <BroadcastRecipientPicker
             contacts={localContacts}
-            liveLocations={liveLocations}
+            initialSelectedUserIds={getActiveBroadcastRecipientIds()}
             isDarkMode={isDarkMode}
-            onClose={() => setShowLiveSheet(false)}
-            onContactAction={onContactAction}
+            onCancel={() => broadcast.setShowRecipientPicker(false)}
+            onConfirm={broadcast.handleRecipientConfirm}
           />
         )}
       </div>
