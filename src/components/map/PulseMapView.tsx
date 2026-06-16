@@ -14,6 +14,7 @@ import MapMeetingMarker, { MapMeetingMarkerBody } from './contacts/MapMeetingMar
 import LocationEditModal from './contacts/LocationEditModal';
 import ImAtFAB from './sub/ImAtFAB';
 import {
+  DAY_MS,
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
   type MapLens,
@@ -277,6 +278,36 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   // (mapRef set in onMapLoad); MapLibre → its 'load' fired (mapLibreReady).
   const cameraReady = mapLibreOn ? mapLibreReady : isLoaded;
   useFitBounds(activeCamera, cameraReady, visibleMarkers, meetingMarkers, userPosition);
+
+  // Direction D (P4) — AI "focus / jump" affordances on previously-dead fields.
+  // focusId (AtlasProposal): select + pan to a contact, or select a circle.
+  const handleFocusEntity = useCallback((id: string) => {
+    const c = localContacts.find(x => x.id === id);
+    if (c) {
+      setSelectedCircleId(null);
+      setSelectedContactId(id);
+      const lat = c.homeLat ?? c.workLat ?? null;
+      const lng = c.homeLng ?? c.workLng ?? null;
+      if (lat != null && lng != null) activeCamera?.panTo({ lat, lng });
+      return;
+    }
+    if (circles.some(x => x.id === id)) {
+      setSelectedContactId(null);
+      setSelectedCircleId(id);
+    }
+  }, [localContacts, circles, activeCamera]);
+
+  // focusDate (WeekProposal, YYYY-MM-DD): narrow the scrubber toward that day —
+  // today / within 3 days / else the week. No-op on the legacy path (only wired
+  // into AiStrip when mapHorizonOn). 'now' (3h) is never a whole-day target.
+  const handleJumpToDate = useCallback((iso: string) => {
+    const target = new Date(`${iso}T00:00:00`).getTime();
+    if (Number.isNaN(target)) return;
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const days = Math.round((target - startOfToday.getTime()) / DAY_MS);
+    setHorizon(days <= 0 ? 'today' : days <= 3 ? '3d' : 'week');
+  }, []);
 
   // MapLibre cluster-disc click — mirrors handleClusterClick but drives the
   // MapLibre camera adapter (the Google handleClusterClick uses google.maps).
@@ -699,6 +730,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
       {(lens !== 'atlas' || atlasHasAnyPinned) && !hasNoLocations && (
         <AiStrip
           lens={lens}
+          horizon={mapHorizonOn ? horizon : undefined}
           markerCount={visibleMarkers.length}
           aiState={aiState}
           acceptedRoute={acceptedRoute}
@@ -711,6 +743,8 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           onReorderStart={handleStartReorder}
           onReorderChange={handleReorderChange}
           onReorderCancel={handleReorderCancel}
+          onFocusEntity={mapHorizonOn ? handleFocusEntity : undefined}
+          onJumpToDate={mapHorizonOn ? handleJumpToDate : undefined}
         />
       )}
 

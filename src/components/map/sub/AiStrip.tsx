@@ -12,14 +12,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowUpDown,
+  CalendarDays,
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  Crosshair,
   Navigation,
   Sparkles,
   X,
 } from 'lucide-react';
-import type { MapLens } from './mapLens';
+import type { MapHorizon, MapLens } from './mapLens';
 import type { AcceptedRoute, AiState } from './aiTypes';
 
 export interface AiStripProps {
@@ -38,10 +40,24 @@ export interface AiStripProps {
   onReorderStart: () => void;
   onReorderChange: (orderedIds: string[]) => void;
   onReorderCancel: () => void;
+  // Direction D (Horizon, P4) — optional. Present only when mapHorizon is ON.
+  /** Precise scrubber detent; reframes the route strip as "NEXT STOP" at 'now'. */
+  horizon?: MapHorizon;
+  /** Focus a contact/circle (AtlasProposal.focusId) on the map. */
+  onFocusEntity?: (id: string) => void;
+  /** Jump the scrubber toward a week-plan's focus date (WeekProposal.focusDate). */
+  onJumpToDate?: (isoDate: string) => void;
 }
 
 function formatArrivalTime(d: Date): string {
   return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+// Short, locale-aware label for a YYYY-MM-DD focus date ("Thu, Jun 18").
+function formatFocusDate(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 export const AiStrip: React.FC<AiStripProps> = ({
@@ -58,6 +74,9 @@ export const AiStrip: React.FC<AiStripProps> = ({
   onReorderStart,
   onReorderChange,
   onReorderCancel,
+  horizon,
+  onFocusEntity,
+  onJumpToDate,
 }) => {
   // Local UI state — collapsed by default. Rationale expansion is per-mount
   // (reset whenever the proposal swaps) so a fresh proposal doesn't surprise
@@ -80,6 +99,10 @@ export const AiStrip: React.FC<AiStripProps> = ({
   }`;
   const wrapperBorderCls = isDarkMode ? 'border-b border-rose-500/15' : 'border-b border-rose-500/20';
   const monoStyle = { fontFamily: "'JetBrains Mono', monospace" } as const;
+  // Direction D (P4): at the 'now' detent the route strip is framed as a
+  // next-stop nudge rather than a full route. (Only meaningful under Horizon —
+  // `horizon` is undefined on the legacy path, so this stays 'ROUTE' there.)
+  const routeLabel = horizon === 'now' ? 'PULSE AI · NEXT STOP' : 'PULSE AI · ROUTE';
 
   // Reset the Why? expansion when the underlying proposal changes (a new
   // route arrives or we leave reorder mode). Otherwise the toggle would
@@ -329,7 +352,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
           <div className={stripCls} role="status" aria-live="polite">
             <Sparkles size={14} className="text-rose-500 flex-shrink-0" />
             <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0" style={monoStyle}>
-              PULSE AI · ROUTE
+              {routeLabel}
             </span>
             <span
               className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}
@@ -405,6 +428,13 @@ export const AiStrip: React.FC<AiStripProps> = ({
     }
     if (data.kind === 'plan' || data.kind === 'insight') {
       const label = data.kind === 'plan' ? 'PULSE AI · PLAN' : 'PULSE AI · INSIGHT';
+      const focusDate = data.kind === 'plan' ? data.proposal.focusDate : undefined;
+      const focusId = data.kind === 'insight' ? data.proposal.focusId : undefined;
+      // Direction D (P4): focusDate / focusId were returned by the model but never
+      // rendered. Surface them as affordances — only when the host wired a handler
+      // (mapHorizon ON). Coral here is legit (AI band, CLAUDE.md §4).
+      const affordanceCls =
+        'inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium flex-shrink-0 transition-colors text-rose-500 hover:bg-rose-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1';
       return (
         <div className={`${stripCls} ${wrapperBorderCls}`} role="status" aria-live="polite">
           <Sparkles size={14} className="text-rose-500 flex-shrink-0" />
@@ -414,6 +444,28 @@ export const AiStrip: React.FC<AiStripProps> = ({
           <span className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
             {data.proposal.summary}
           </span>
+          {focusDate && onJumpToDate && (
+            <button
+              type="button"
+              onClick={() => onJumpToDate(focusDate)}
+              title={`Focus the plan on ${formatFocusDate(focusDate)}`}
+              className={affordanceCls}
+            >
+              <CalendarDays size={11} aria-hidden="true" />
+              {formatFocusDate(focusDate)}
+            </button>
+          )}
+          {focusId && onFocusEntity && (
+            <button
+              type="button"
+              onClick={() => onFocusEntity(focusId)}
+              title="Focus this on the map"
+              className={affordanceCls}
+            >
+              <Crosshair size={11} aria-hidden="true" />
+              Focus
+            </button>
+          )}
         </div>
       );
     }
@@ -456,10 +508,10 @@ export const AiStrip: React.FC<AiStripProps> = ({
       <div className={`${stripCls} ${wrapperBorderCls}`} role="status" aria-live="polite">
         <Sparkles size={14} className="text-rose-500/70 flex-shrink-0" />
         <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500/70 flex-shrink-0" style={monoStyle}>
-          PULSE AI · ROUTE
+          {routeLabel}
         </span>
         <span className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          No route today, just one stop.
+          {horizon === 'now' ? 'Just one stop coming up.' : 'No route today, just one stop.'}
         </span>
       </div>
     );
