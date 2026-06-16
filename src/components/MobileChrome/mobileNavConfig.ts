@@ -73,6 +73,7 @@ export const NAV_SECTIONS: MobileNavSection[] = [
       { view: AppView.CALENDAR, label: 'Calendar', icon: Calendar },
       { view: AppView.MEETINGS, label: 'Meetings', icon: Video },
       { view: AppView.CONTACTS, label: 'Contacts', icon: Users },
+      { view: AppView.MAP, label: 'Map', icon: MapPin },
     ],
   },
   {
@@ -88,8 +89,9 @@ export const NAV_SECTIONS: MobileNavSection[] = [
     label: 'Experimental',
     experimental: true,
     items: [
+      // Map graduated OUT of Experimental on 2026-06-16 (P13) → moved to the
+      // 'Work & People' section above (keep in sync with Sidebar.tsx ground truth).
       { view: AppView.LIVE, label: 'Summit', icon: MessageSquare },
-      { view: AppView.MAP, label: 'Map', icon: MapPin },
       { view: AppView.LIVE_AI, label: 'War Room', icon: BookOpen },
     ],
   },

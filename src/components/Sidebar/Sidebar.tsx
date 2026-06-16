@@ -103,6 +103,7 @@ const getNavSections = (): NavSection[] => {
         { icon: Calendar, label: 'Calendar', view: AppView.CALENDAR },
         { icon: Video, label: 'Meetings', view: AppView.MEETINGS },
         { icon: Users, label: 'Contacts', view: AppView.CONTACTS },
+        { icon: MapPin, label: 'Map', view: AppView.MAP },
         { icon: ClipboardCheck, label: 'Decisions & Tasks', view: AppView.DECISIONS_TASKS },
       ],
     },
@@ -123,13 +124,9 @@ const getNavSections = (): NavSection[] => {
       note: 'features coming in v2.0',
       items: [
         { icon: MessageSquare, label: 'Summit', view: AppView.LIVE },
-        // Map stack also drives cross-section features (calendar travel
-        // chips, today geo-clusters, war room team radar, decision/task
-        // geofences). Cluster + spiderfy shipped (7bff377); the remaining
-        // open work is deeper autopilot (auto-replan) + ETA-arrival alerting.
-        // KEEP-GATED as an opt-in Labs lane (decision 2026-06-13, see
-        // docs/EXPERIMENTAL_TRIO_CUT_OR_KEEP_AUDIT_2026-06-13.md).
-        { icon: MapPin, label: 'Map', view: AppView.MAP },
+        // Map graduated OUT of Experimental on 2026-06-16 (P13) → it now lives in
+        // the 'Work & People' section, and the Horizon redesign is the default Map
+        // (mapHorizon flag flipped default-ON, FeatureContext FLAGS_VERSION v2).
         // War Room (NotebookLM-style RAG workspace). Decision 2026-06-13
         // (docs/EXPERIMENTAL_TRIO_CUT_OR_KEEP_AUDIT_2026-06-13.md): KEEP + invest,
         // not cut. Strongest differentiator (RAG + citations + GPT-Realtime

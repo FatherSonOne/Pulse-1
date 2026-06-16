@@ -174,11 +174,12 @@ const DEFAULT_FEATURES: FeatureFlags = {
   // renderer the Map uses. Persisted-blob masking is handled by FLAGS_VERSION.
   mapLibreRenderer: true,
 
-  // Map Horizon redesign OFF by default (dark-launch); P0 = flag scaffold only —
-  // no consumer yet (the Map renders identically). Later phases gate the Horizon
-  // UX on this flag. Graduating ON requires a FLAGS_VERSION bump + a line in the
-  // migration block, or a persisted `false` masks the flip.
-  mapHorizon: false,
+  // Map Horizon redesign ON by default — graduated 2026-06-16 (P13). The Horizon
+  // UX (time-horizon scrubber + Atlas mode, base-style switch, neutral chrome,
+  // Live/Geofences drawers) is now the default Map. Rides the MapLibre branch
+  // (mapLibreRenderer already default-ON). Per-user opt-out remains in Settings →
+  // Features & Labs. Persisted-blob masking is handled by the FLAGS_VERSION bump.
+  mapHorizon: true,
 
   // Relay Live (Voice Rooms) OFF by default — no peer audio transport yet (S0-2).
   relayLiveRooms: false,
@@ -189,7 +190,7 @@ const STORAGE_KEY = 'pulse_feature_flags';
 // stale persisted value — saved flags otherwise win the merge in the loader, so a
 // bare default flip never reaches a browser that's already run the app. The loader
 // resets the listed flags once per bump.
-const FLAGS_VERSION = 1;
+const FLAGS_VERSION = 2;
 const FLAGS_VERSION_KEY = 'pulse_feature_flags_version';
 const DISCOVERY_STORAGE_KEY = 'pulse_feature_discovery';
 
@@ -208,6 +209,9 @@ export const FeatureProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // v1 (2026-06-15): MapLibre renderer graduated to default-ON — force the
         // new default over any stale persisted `false`.
         merged.mapLibreRenderer = DEFAULT_FEATURES.mapLibreRenderer;
+        // v2 (2026-06-16): Map Horizon redesign (P13) graduated to default-ON —
+        // force the new default over any stale persisted `false`.
+        merged.mapHorizon = DEFAULT_FEATURES.mapHorizon;
         try { localStorage.setItem(FLAGS_VERSION_KEY, String(FLAGS_VERSION)); } catch { /* storage blocked */ }
       }
       return merged;

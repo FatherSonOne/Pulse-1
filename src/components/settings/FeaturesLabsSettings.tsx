@@ -44,18 +44,16 @@ export const FeaturesLabsSettings: React.FC = () => {
         />
       </SettingsCard>
 
-      {/* Map "Horizon" redesign (Direction D) on/off. OFF (default) → the Map
-          renders exactly as today (TODAY/WEEK/ATLAS tabs, Sat/Terr/Hybrid picker,
-          sheets/pills). ON → the new Horizon UX (time-horizon scrubber + Atlas
-          mode, base-style switch, neutral chrome, Routes/Live/Geofences drawers,
-          geosearch "I'm at…", cross-entity markers). Targets the MapLibre branch;
-          on the Google fallback it stays on the legacy tabs. Requires Experimental
-          Features on to reach the Map. P0 = scaffold only (no behavior change).
+      {/* Map "Horizon" redesign (Direction D) on/off. ON by default since
+          2026-06-16 (P13 graduation) → the Map uses the Horizon UX (time-horizon
+          scrubber + Atlas mode, base-style switch, neutral chrome, Live/Geofences
+          drawers). Turn OFF to fall back to the classic Map (TODAY/WEEK/ATLAS tabs,
+          Sat/Terr/Hybrid picker). Rides the MapLibre branch.
           See docs/MAP_HORIZON_REDESIGN_HANDOFF_2026-06-15.md (P0–P13). */}
       <SettingsCard>
         <ToggleItem
-          label="Map Horizon Redesign (Alpha)"
-          desc="When on, the Map section uses the new Horizon UX: a time-horizon scrubber + Atlas mode, base-style switch, and Routes/Live/Geofences drawers. Off keeps the current Map. Best with the MapLibre renderer on. For testing & development."
+          label="Map Horizon Redesign"
+          desc="On by default. The Map uses the Horizon UX: a time-horizon scrubber + Atlas mode, base-style switch, and Live/Geofences drawers. Turn off to use the classic Map (TODAY/WEEK/ATLAS tabs + Sat/Terr/Hybrid picker)."
           active={features.mapHorizon}
           onToggle={() => toggleFeature('mapHorizon')}
         />
