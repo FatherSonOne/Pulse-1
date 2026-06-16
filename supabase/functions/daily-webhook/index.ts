@@ -1,15 +1,15 @@
 // Supabase Edge Function: daily-webhook
 // Receives Daily.co webhook events and processes them:
-//   recording.ready   → stores recording URL in pulse_video_rooms
-//   recording.error   → logs the error to the room record
+//   recording.ready-to-download → stores recording URL in pulse_video_rooms
+//   recording.error             → logs the error to the room record
 //
 // Setup:
 //   1. config.toml declares [functions.daily-webhook] verify_jwt = false —
 //      Daily sends NO Supabase JWT, so the gateway would 401 otherwise.
 //   2. Create the webhook via Daily's REST API (POST /v1/webhooks) for events
-//      ['recording.ready','recording.error'] → this URL. Daily returns an `hmac`
-//      (base64) secret; store it as DAILY_WEBHOOK_SECRET (or pass your own
-//      base64 secret on creation).
+//      ['recording.ready-to-download','recording.error'] → this URL. Daily
+//      returns an `hmac` (base64) secret; store it as DAILY_WEBHOOK_SECRET (or
+//      pass your own base64 secret on creation).
 //   3. Auth is the HMAC-SHA256 of `${X-Webhook-Timestamp}.${rawBody}` using the
 //      base64-DECODED secret, base64-encoded and matched against the
 //      X-Webhook-Signature header (verified inside this fn below).
@@ -114,8 +114,10 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
-    // ── recording.ready ────────────────────────────────────────────────────
-    if (type === 'recording.ready') {
+    // ── recording.ready-to-download ──────────────────────────────────────────
+    // Daily's event type is 'recording.ready-to-download' (not 'recording.ready')
+    // — see docs.daily.co/reference/rest-api/webhooks/events.
+    if (type === 'recording.ready-to-download') {
       const {
         room_name,
         recording_id,

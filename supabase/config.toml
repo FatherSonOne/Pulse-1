@@ -435,7 +435,7 @@ verify_jwt = true
 [functions.slack-events]
 verify_jwt = false
 
-# daily-webhook: Daily.co recording.ready/error receiver (Meetings 0.1 Path A).
+# daily-webhook: Daily.co recording.ready-to-download/error receiver (Meetings 0.1 Path A).
 # Daily sends NO Supabase JWT, so verify_jwt MUST be off or the gateway 401s
 # before the function's own auth runs. Auth is the Daily X-Webhook-Signature
 # HMAC over `${X-Webhook-Timestamp}.${rawBody}`, verified inside the function via
