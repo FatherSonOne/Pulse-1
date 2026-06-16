@@ -1574,11 +1574,76 @@ const Summit: React.FC<SummitProps> = ({
     [handleConnect]
   );
 
+  // Pending session deletes awaiting their undo window. Maps session id →
+  // setTimeout handle for the deferred remote hard-delete. Deferring the
+  // remote delete keeps Undo a pure local restore (no re-upsert needed).
+  const pendingSessionDeletesRef = useRef<Map<string, number>>(new Map());
+
+  // On unmount, honor any still-pending deletes (user navigated away without
+  // undoing) by flushing them to the server immediately.
+  useEffect(() => {
+    const pending = pendingSessionDeletesRef.current;
+    return () => {
+      pending.forEach((timer, id) => {
+        window.clearTimeout(timer);
+        void deleteVoiceSessionRemote(id);
+      });
+      pending.clear();
+    };
+  }, []);
+
   const handleSessionDelete = useCallback((id: string) => {
-    const next = deleteVoiceSession(id);
-    setRecentSessions(next);
-    void deleteVoiceSessionRemote(id);
-    toast.success('Session removed');
+    // Capture the full record from the cache so Undo can restore it locally.
+    const record = loadVoiceSessions().find((s) => s.id === id);
+
+    // Optimistic local removal — the grid updates instantly.
+    setRecentSessions(deleteVoiceSession(id));
+
+    // Defer the irreversible remote hard-delete behind the undo window.
+    const UNDO_MS = 6000;
+    const timer = window.setTimeout(() => {
+      pendingSessionDeletesRef.current.delete(id);
+      void deleteVoiceSessionRemote(id);
+    }, UNDO_MS);
+    pendingSessionDeletesRef.current.set(id, timer);
+
+    if (!record) {
+      // No cached record to restore — keep the prior behavior, still deferred.
+      toast.success('Session removed');
+      return;
+    }
+
+    toast(
+      (t) => (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+          Session removed
+          <button
+            type="button"
+            onClick={() => {
+              const timerHandle = pendingSessionDeletesRef.current.get(id);
+              if (timerHandle !== undefined) {
+                window.clearTimeout(timerHandle);
+                pendingSessionDeletesRef.current.delete(id);
+              }
+              setRecentSessions(saveVoiceSession(record));
+              toast.dismiss(t.id);
+            }}
+            style={{
+              border: 'none',
+              background: 'none',
+              padding: 0,
+              color: 'var(--pulse-accent, #f43f5e)',
+              font: 'inherit',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Undo
+          </button>
+        </span>
+      ),
+      { duration: UNDO_MS },
+    );
   }, []);
 
   /* ── Past-session re-export ───────────────────────────────── */
