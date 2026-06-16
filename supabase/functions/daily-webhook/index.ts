@@ -3,17 +3,72 @@
 //   recording.ready   → stores recording URL in pulse_video_rooms
 //   recording.error   → logs the error to the room record
 //
-// Setup in Daily dashboard:
-//   URL: https://ucaeuszgoihoyrvhewxk.supabase.co/functions/v1/daily-webhook
-//   Events: recording.ready, recording.error
-//   Secret: set DAILY_WEBHOOK_SECRET env var + configure in Daily dashboard
+// Setup:
+//   1. config.toml declares [functions.daily-webhook] verify_jwt = false —
+//      Daily sends NO Supabase JWT, so the gateway would 401 otherwise.
+//   2. Create the webhook via Daily's REST API (POST /v1/webhooks) for events
+//      ['recording.ready','recording.error'] → this URL. Daily returns an `hmac`
+//      (base64) secret; store it as DAILY_WEBHOOK_SECRET (or pass your own
+//      base64 secret on creation).
+//   3. Auth is the HMAC-SHA256 of `${X-Webhook-Timestamp}.${rawBody}` using the
+//      base64-DECODED secret, base64-encoded and matched against the
+//      X-Webhook-Signature header (verified inside this fn below).
+//
+// Note: summarization is intentionally NOT done here — the client handleLeave
+// path generates the meeting summary via ai-router (metered, CLAUDE.md §4). This
+// fn only persists recording_url so recordings become playable.
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
+// ── Daily HMAC signature verification (Web Crypto, no extra deps) ─────────────
+function b64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function bytesToB64(bytes: Uint8Array): string {
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
+
+// Daily signs `${timestamp}.${rawBody}` with HMAC-SHA256 using the base64-decoded
+// secret, then base64-encodes the result. See docs.daily.co/reference/rest-api/webhooks.
+async function verifyDailySignature(
+  secretB64: string,
+  timestamp: string,
+  rawBody: string,
+  signatureB64: string,
+): Promise<boolean> {
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      b64ToBytes(secretB64),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign'],
+    );
+    const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${timestamp}.${rawBody}`));
+    return timingSafeEqual(bytesToB64(new Uint8Array(mac)), signatureB64);
+  } catch (e) {
+    console.error('[daily-webhook] signature verification threw:', e);
+    return false;
+  }
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-daily-signature',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-signature, x-webhook-timestamp',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -28,7 +83,27 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const body = await req.json();
+    // Read the raw body FIRST — the signature is computed over the exact bytes
+    // Daily sent, so we must verify before JSON.parse (a re-stringify can differ).
+    const rawBody = await req.text();
+
+    // ── Verify Daily's HMAC signature ────────────────────────────────────────
+    const secret = Deno.env.get('DAILY_WEBHOOK_SECRET');
+    if (!secret) {
+      console.error('[daily-webhook] DAILY_WEBHOOK_SECRET not configured — refusing unverified webhook');
+      return json({ error: 'webhook secret not configured' }, 500);
+    }
+    const signature = req.headers.get('X-Webhook-Signature');
+    const timestamp = req.headers.get('X-Webhook-Timestamp');
+    if (!signature || !timestamp) {
+      return json({ error: 'missing signature headers' }, 401);
+    }
+    if (!(await verifyDailySignature(secret, timestamp, rawBody, signature))) {
+      console.warn('[daily-webhook] invalid signature — rejecting');
+      return json({ error: 'invalid signature' }, 401);
+    }
+
+    const body = JSON.parse(rawBody);
     const { type, payload } = body;
 
     console.log(`[daily-webhook] Received event: ${type}`);
@@ -98,50 +173,9 @@ serve(async (req) => {
 
       console.log(`[daily-webhook] Recording ready for room ${room_name}: ${recording_id}`);
 
-      // ── Trigger AI summary if transcript exists ──────────────────────────
-      // Fetch the room to check for existing transcript
-      const { data: room } = await supabase
-        .from('pulse_video_rooms')
-        .select('transcript, summary, title, created_by')
-        .eq('room_name', room_name)
-        .single();
-
-      if (room?.transcript && !room?.summary) {
-        console.log(`[daily-webhook] Generating AI summary for ${room_name}`);
-        const geminiKey = Deno.env.get('GEMINI_API_KEY');
-
-        if (geminiKey) {
-          try {
-            const prompt = buildSummaryPrompt(room.transcript, room.title ?? 'Meeting');
-            const geminiRes = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  contents: [{ parts: [{ text: prompt }] }],
-                  generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
-                }),
-              },
-            );
-
-            if (geminiRes.ok) {
-              const geminiData = await geminiRes.json();
-              const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-              const structured = parseStructuredSummary(rawText);
-
-              await supabase
-                .from('pulse_video_rooms')
-                .update({ summary: JSON.stringify(structured) })
-                .eq('room_name', room_name);
-
-              console.log(`[daily-webhook] AI summary saved for ${room_name}`);
-            }
-          } catch (e) {
-            console.error('[daily-webhook] Gemini summary failed:', e);
-          }
-        }
-      }
+      // Summarization is intentionally NOT done here — see header note. The
+      // client handleLeave path already produces the summary via ai-router
+      // (metered, CLAUDE.md §4). This fn only persists recording_url.
 
       return json({ success: true, recording_id });
     }
@@ -172,42 +206,3 @@ serve(async (req) => {
     return json({ error: err.message ?? 'Internal server error' }, 500);
   }
 });
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function buildSummaryPrompt(transcript: string, title: string): string {
-  return `You are an expert meeting summarizer. Analyze this meeting transcript and return a JSON object.
-
-Meeting title: "${title}"
-
-Transcript:
-${transcript.slice(0, 8000)}
-
-Return ONLY valid JSON with this exact structure:
-{
-  "aiSummary": "2-3 sentence executive summary of the meeting",
-  "keyPoints": ["key point 1", "key point 2", "..."],
-  "actionItems": [
-    { "text": "action description", "owner": "person name or empty string", "priority": "high|medium|low" }
-  ],
-  "decisions": ["decision 1", "decision 2", "..."],
-  "topics": ["topic 1", "topic 2", "..."],
-  "sentiment": "positive|neutral|mixed|tense"
-}`;
-}
-
-function parseStructuredSummary(raw: string): Record<string, unknown> {
-  // Strip markdown code fences if present
-  const cleaned = raw
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/\s*```$/i, '')
-    .trim();
-
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    // Fallback: return raw text as summary
-    return { aiSummary: raw, keyPoints: [], actionItems: [], decisions: [], topics: [], sentiment: 'neutral' };
-  }
-}

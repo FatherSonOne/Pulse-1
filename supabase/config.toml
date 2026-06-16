@@ -435,6 +435,14 @@ verify_jwt = true
 [functions.slack-events]
 verify_jwt = false
 
+# daily-webhook: Daily.co recording.ready/error receiver (Meetings 0.1 Path A).
+# Daily sends NO Supabase JWT, so verify_jwt MUST be off or the gateway 401s
+# before the function's own auth runs. Auth is the Daily X-Webhook-Signature
+# HMAC over `${X-Webhook-Timestamp}.${rawBody}`, verified inside the function via
+# the base64 DAILY_WEBHOOK_SECRET. See docs.daily.co/reference/rest-api/webhooks.
+[functions.daily-webhook]
+verify_jwt = false
+
 # gmail-watch-renew + gmail-push-receiver: the email-push server-to-server pair.
 # renew is CRON_SECRET-guarded (pg_cron daily re-arms Gmail users.watch); receiver
 # is PUSH_RECEIVER_SECRET-guarded (Google Pub/Sub push delivery). Neither receives
