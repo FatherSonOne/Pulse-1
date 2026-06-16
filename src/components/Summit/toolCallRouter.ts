@@ -47,9 +47,13 @@ const TOOL_MAP: Record<string, ToolMapping> = {
   create_decision: {
     kind: 'decision',
     formatContent: (args) => {
+      // The realtime tool schema (warRoomToolsService create_decision) emits
+      // `decision` + `context`; keep title/description as legacy fallbacks.
+      const decision = typeof args.decision === 'string' ? args.decision : '';
+      const context = typeof args.context === 'string' ? args.context : '';
       const title = typeof args.title === 'string' ? args.title : '';
       const description = typeof args.description === 'string' ? args.description : '';
-      return title || description || 'Decision recorded';
+      return decision || title || context || description || 'Decision recorded';
     },
     buildMeta: (_args, output) => {
       const parsed = safeParseJSON(output);
@@ -78,7 +82,11 @@ const TOOL_MAP: Record<string, ToolMapping> = {
         ['low', 'medium', 'high', 'urgent'].includes(args.priority)
           ? (args.priority as 'low' | 'medium' | 'high' | 'urgent')
           : undefined;
-      const dueDate = typeof args.deadline === 'string' ? args.deadline : undefined;
+      // Tool schema emits `dueDate`; keep `deadline` as a legacy fallback.
+      const dueDate =
+        typeof args.dueDate === 'string' ? args.dueDate
+        : typeof args.deadline === 'string' ? args.deadline
+        : undefined;
       return {
         toolName: 'create_task',
         refSection: 'tasks',
