@@ -298,24 +298,32 @@ export async function pollForRecording(
  * Call this when the user opens the Recordings modal so stale rooms catch up.
  */
 export async function syncPendingRecordings(): Promise<void> {
+  // Catch any recently-ended room missing a recording_url. We intentionally do
+  // NOT require recording_id here: in the client-poll (Path B) flow recording_id
+  // stays null until pollForRecording resolves it, so the old
+  // `recording_id IS NOT NULL` filter never matched Path-B rooms. pollForRecording
+  // queries Daily by room_name, so a non-recorded room is just one cheap
+  // get-recordings call that finds nothing and no-ops.
   const { data: pendingRooms } = await supabase
     .from('pulse_video_rooms')
     .select('room_name, ended_at')
     .eq('status', 'ended')
-    .is('recording_url', null)
-    .not('recording_id', 'is', null); // Has a recording_id but no URL yet
+    .is('recording_url', null);
 
   if (!pendingRooms?.length) return;
 
-  // Only retry rooms that ended within the last 30 minutes
+  // Only retry rooms that ended within the last 30 minutes — beyond that the
+  // user can reopen Recordings to retry, and we avoid sweeping stale rooms.
   const cutoff = Date.now() - 30 * 60 * 1000;
   const recentRooms = pendingRooms.filter(r =>
     r.ended_at && new Date(r.ended_at).getTime() > cutoff
   );
 
-  // Poll each room in background (non-blocking)
+  // One lightweight Daily check per room in background (non-blocking). A single
+  // attempt keeps non-recorded rooms to a single API call; rooms still
+  // processing on Daily's side self-heal on the next modal open.
   for (const room of recentRooms) {
-    pollForRecording(room.room_name, 3, 10000).catch(() => {});
+    pollForRecording(room.room_name, 1, 0).catch(() => {});
   }
 }
 

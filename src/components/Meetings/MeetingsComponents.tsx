@@ -17,6 +17,7 @@ import {
   DEFAULT_MEETING_SETTINGS,
   ExportStatus,
 } from '../../services/meetingService';
+import { syncPendingRecordings } from '../../services/pulseVideoService';
 import { dataService } from '../../services/dataService';
 import toast from 'react-hot-toast';
 
@@ -893,6 +894,11 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
     setSelected(null);
     setSearch('');
     setExportStatuses({});
+    // 0.1 Path B catch-up: kick off background polling for any recently-ended
+    // recorded room whose recording_url hasn't landed yet (e.g. the host closed
+    // the tab before the in-call poll resolved). Fire-and-forget — results
+    // surface on the next modal open.
+    syncPendingRecordings().catch(() => {});
     getMeetingRecordings().then(r => {
       setRecordings(r);
       setLoading(false);

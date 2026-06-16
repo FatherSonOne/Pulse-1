@@ -31,6 +31,7 @@ import {
   markRoomEnded,
   notifyRecordingStarted,
   notifyRecordingStopped,
+  pollForRecording,
   saveTranscript,
 } from '../../services/pulseVideoService';
 import { supabase } from '../../services/supabaseClient';
@@ -572,6 +573,7 @@ const MeetingRoom: React.FC<{
   const handleLeave = async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+    const wasRecording = isRecording;
 
     if (transcriptLines.length > 0) {
       setIsSummarizing(true);
@@ -617,6 +619,17 @@ const MeetingRoom: React.FC<{
       try { await markRoomEnded(roomName, duration); }
       catch (err) { console.error('[PulseVideoRoom] markRoomEnded failed:', err); }
       onLeave({ durationSeconds: duration, participantCount: allParticipants.length, transcript: '', summary: '', recordingStarted: isRecording });
+    }
+
+    // 0.1 Path B persistence — if this meeting was recording, poll Daily for
+    // the finished cloud recording and persist recording_url to the room.
+    // Fire-and-forget (≈6 min window inside pollForRecording): onLeave has
+    // already handed the user back to the post-call view, and the poll only
+    // writes to Supabase, so it's safe to outlive this component. Non-recorded
+    // meetings never poll, so we don't hammer Daily for nothing.
+    if (wasRecording) {
+      pollForRecording(roomName).catch(err =>
+        console.warn('[PulseVideoRoom] recording poll failed:', err));
     }
   };
 
