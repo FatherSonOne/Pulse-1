@@ -547,8 +547,10 @@ const MeetingRoom: React.FC<{
       daily.stopTranscription();
       setTranscriptEnabled(false);
     } else {
+      // Don't optimistically flip on — let the 'transcription-started' event
+      // (the only honest signal that Deepgram actually attached) own the flip.
+      // Otherwise a server-side start failure flashes a false "LISTENING".
       daily.startTranscription({ language: 'en' });
-      setTranscriptEnabled(true);
     }
   };
 
