@@ -309,26 +309,42 @@ client-captured meetings). If Path B is chosen for 0.1, the webhook stays dead �
 Each lands as its own conventional commit on `main` (`fix(meetings): …` / `feat(meetings):
 …` / `refactor(meetings): …`), `Co-Authored-By` per harness convention.
 
-## 6. End-to-end verification checklist
-- [ ] **Transcript fix proof (pre-existing fix, unverified live):** run a real meeting
-      with transcription on; confirm `pulse_video_rooms.transcript` persists **non-empty**
-      and a summary is generated from it.
-- [ ] **0.1:** recorded meeting → `recording_url` populates within 2–5 min → Recordings
-      modal plays it + download works.
-- [ ] **0.1 copy:** empty Recordings state shows accurate copy (no false Auto-Recording
-      promise).
-- [ ] **0.2:** non-owner cannot SELECT another room's transcript/summary/recording_url;
-      deep-link join still resolves `room_url`.
-- [ ] **1.2:** denying the screen-share picker shows a toast and leaves state consistent.
-- [ ] **1.3:** Recordings-modal summary detail shows the coral provenance chip.
-- [ ] `npx tsc --noEmit` shows **no NEW** errors (repo has ~1234 pre-existing; gate on
-      delta, use `NODE_OPTIONS=--max-old-space-size=8192`).
+## 6. End-to-end verification checklist — RESULTS (live, 2026-06-16 evening)
+Implemented + verified end-to-end against the live project. Test meeting:
+room `pulse-ace34af35e8d4f22` (23:36 UTC), recorded + transcribed.
 
-## 7. Open decisions for the user
-1. **0.1 path:** Path B (recommended) vs Path A vs both?
-2. **0.2:** approve the drop-`authenticated_read` + RPC plan (Rule A)?
-3. **1.4:** reroute vs delete the webhook summarizer (only relevant if 0.1 Path A)?
-4. **1.3 copy:** add an explicit "verify" nudge, or provenance chip alone?
+- [x] **Transcript fix proof:** transcript persisted **non-empty** (`has_transcript=true`,
+      23s). ⚠️ The *summary* did **not** generate — `ai-router` returned **402** (quota/
+      entitlement), a separate billing issue, **not** the transcript/recording pipeline.
+- [x] **0.1 recording_url:** `recording_url` populated for the first time in the table's
+      history (every prior room was NULL). The webhook fired on the signed delivery:
+      `daily-webhook → 200` at 23:36:41 (so the HMAC verified). _Not yet eyeballed:_ the
+      Recordings-modal audio element actually playing + download click.
+- [x] **0.1 copy:** accurate empty-state copy shipped (commit `38ff4a1`). _Not separately
+      eyeballed_ (trivial string).
+- [~] **0.2:** verified `owner_all` is the **sole** policy on `pulse_video_rooms` (broad
+      `authenticated_read` dropped). _Not yet exercised_ with a real second-user session /
+      deep-link join by a non-owner — the RLS logic guarantees zero non-owner rows, but a
+      live 2-user pass is still worth doing.
+- [ ] **1.2 screen-share:** **DEFERRED this session** (user chose 1.1 only). Not implemented.
+- [ ] **1.3 provenance chip:** **DEFERRED this session.** Not implemented.
+- [x] **1.1 transcription optimism:** shipped (commit `74d6eb1`).
+- [x] **1.4 webhook summarizer:** **deleted** (commit `d06ee98`, Rule A approved) — §4
+      compliance restored, one summary path.
+- [x] `tsc` delta: no **new** errors in any touched file (the 2 `App.tsx` errors are
+      pre-existing/unrelated; repo has ~1234 pre-existing).
+
+**Remaining live eyeballs (non-blocking):** modal playback/download; a 2-user 0.2 pass.
+**Separate issues surfaced (out of scope here):** `ai-router` 402 blocking meeting
+summaries; `gmail-push-receiver` flooding 500s (and leaking `?secret=` into logs).
+
+## 7. Open decisions — RESOLVED (2026-06-16)
+1. **0.1 path:** ✅ **Both** — Path B shipped (`8a2b320`) + Path A shipped & deployed
+   (`d06ee98`, `d64dd83`); Daily webhook registered (uuid `0d229050-…`), signature verifies.
+2. **0.2:** ✅ **Approved & applied** (migration `20260616000002`, live). One deviation: the
+   defense-in-depth column REVOKE is a no-op (table-wide grant masks it; RLS is the boundary).
+3. **1.4:** ✅ **Delete** the webhook summarizer (done).
+4. **1.3 copy:** ⏸️ moot — 1.3 deferred this session.
 
 ## 8. Wire-in
 - **0.1, 0.2** are launch-blocker candidates for
