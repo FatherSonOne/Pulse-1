@@ -129,6 +129,11 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   // surface below falls back to the legacy control (P3: BaseStyleSwitch ↔ MapViewPicker).
   const { features } = useFeatures();
   const mapHorizonOn = features.mapHorizon && mapLibreOn;
+  // F0 (Tier-3 §8B) — Floating Chrome rebuild. Double-gated on mapHorizonOn so it
+  // only activates on the MapLibre Horizon branch; OFF keeps the banded Horizon
+  // byte-identical. When ON, the top-chrome bands are suppressed and the chrome
+  // re-renders as absolute floating islands over the full-bleed map.
+  const mapHorizonFloat = features.mapHorizonFloat && mapHorizonOn;
   const { baseStyle, density, changeBaseStyle, changeDensity } = useMapBaseStyle(isDarkMode);
 
   // The whole existing pipeline keys off a MapLens. Under Horizon we PROJECT the
@@ -704,7 +709,13 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           when they have something to say. */}
       {/* Chrome band: under Horizon the scrubber + Atlas-mode toggle replace the
           TODAY/WEEK/ATLAS tabs (same band, same right slot); the legacy MapLensRow
-          stays for the OFF path. Additive — no deletion. */}
+          stays for the OFF path. Additive — no deletion.
+          F0 (mapHorizonFloat): the whole top-chrome band stack (scrubber +
+          accessories + AI strip) is suppressed under the floating-chrome rebuild;
+          those surfaces re-appear as absolute floating islands over the full-bleed
+          map (see the floating-chrome layer inside the map wrapper below). */}
+      {!mapHorizonFloat && (
+      <>
       {mapHorizonOn ? (
         <HorizonScrubber
           horizon={horizon}
@@ -773,6 +784,8 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           onFocusEntity={mapHorizonOn ? handleFocusEntity : undefined}
           onJumpToDate={mapHorizonOn ? handleJumpToDate : undefined}
         />
+      )}
+      </>
       )}
 
       {/* Wrapper does NOT remount on lens change — the map camera state is

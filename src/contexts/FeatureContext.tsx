@@ -102,6 +102,12 @@ export interface FeatureFlags {
   // See docs/MAP_HORIZON_REDESIGN_HANDOFF_2026-06-15.md (P0–P13).
   mapHorizon: boolean;
 
+  // Map Horizon — Floating Chrome (Tier-3 §8B rebuild). OFF by default
+  // (dark-launch); double-gated on mapHorizon. ON → the Map chrome becomes
+  // floating glass islands over a full-bleed map (the Direction-D mockup)
+  // instead of the stacked bands; OFF keeps the banded Horizon byte-identical.
+  mapHorizonFloat: boolean;
+
   // Relay "Live" (Voice Rooms) master switch. OFF by default → the Live rail
   // entry is hidden and the Live view renders a "coming soon" placeholder
   // instead of VoiceRooms. VoiceRooms is a LOCAL mic preview with no WebRTC
@@ -180,6 +186,11 @@ const DEFAULT_FEATURES: FeatureFlags = {
   // (mapLibreRenderer already default-ON). Per-user opt-out remains in Settings →
   // Features & Labs. Persisted-blob masking is handled by the FLAGS_VERSION bump.
   mapHorizon: true,
+
+  // Map Horizon Floating Chrome OFF by default (dark-launch) — the Tier-3 §8B
+  // floating-islands rebuild behind a sub-flag, double-gated on mapHorizon.
+  // Graduating ON later requires a FLAGS_VERSION bump + a migration line.
+  mapHorizonFloat: false,
 
   // Relay Live (Voice Rooms) OFF by default — no peer audio transport yet (S0-2).
   relayLiveRooms: false,
@@ -397,6 +408,7 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   logosVisionSync: 'Logos Vision Sync (Beta)',
   mapLibreRenderer: 'MapLibre Map Renderer (Beta)',
   mapHorizon: 'Map Horizon Redesign (Alpha)',
+  mapHorizonFloat: 'Map Horizon — Floating Chrome (Alpha)',
   relayLiveRooms: 'Live Voice Rooms (Coming Soon)',
 };
 

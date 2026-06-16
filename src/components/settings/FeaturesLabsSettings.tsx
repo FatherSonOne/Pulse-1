@@ -59,6 +59,20 @@ export const FeaturesLabsSettings: React.FC = () => {
         />
       </SettingsCard>
 
+      {/* Map "Horizon" Floating Chrome (Tier-3 §8B rebuild) on/off. OFF (default)
+          → the Map keeps the stacked-band Horizon chrome. ON → the chrome becomes
+          floating glass islands over a full-bleed map (the Direction-D mockup:
+          floating scrubber pill, AI card, Routes/Live/Fences surfaces cluster).
+          Double-gated on Map Horizon Redesign. For testing & development. */}
+      <SettingsCard>
+        <ToggleItem
+          label="Map Horizon — Floating Chrome (Alpha)"
+          desc="When on, the Map chrome floats as glass islands over a full-bleed map (the Direction-D mockup) instead of stacked bands. Requires Map Horizon Redesign on. Off keeps the current banded Map. For testing & development."
+          active={features.mapHorizonFloat}
+          onToggle={() => toggleFeature('mapHorizonFloat')}
+        />
+      </SettingsCard>
+
       {/* Email section on/off. OFF (default) shows a red "feature not available"
           caption under Email in the sidebar and disables all Gmail fetch/token
           use. Turn ON for testing/development. */}
