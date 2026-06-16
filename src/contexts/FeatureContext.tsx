@@ -91,6 +91,17 @@ export interface FeatureFlags {
   // See docs/MAP_MAPLIBRE_REBRAND_HANDOFF_2026-06-14.md (P0–P5).
   mapLibreRenderer: boolean;
 
+  // Map "Horizon" redesign master switch (Direction D). OFF by default → the
+  // Map renders exactly as today (TODAY/WEEK/ATLAS tabs, Sat/Terr/Hybrid picker,
+  // AiStrip band, sheets/pills). ON → the new Horizon UX: time-horizon scrubber
+  // + Atlas-mode toggle, renderer-real base-style switch, neutral chrome, the
+  // Routes/Live/Geofences drawers, geosearch "I'm at…", and cross-entity markers.
+  // Assumes mapLibreRenderer ON (the renderer-coupled pieces target the MapLibre
+  // branch); on the Google fallback it falls back to the legacy tabs/picker.
+  // Graduating OFF→ON later REQUIRES a FLAGS_VERSION bump (see migration block).
+  // See docs/MAP_HORIZON_REDESIGN_HANDOFF_2026-06-15.md (P0–P13).
+  mapHorizon: boolean;
+
   // Relay "Live" (Voice Rooms) master switch. OFF by default → the Live rail
   // entry is hidden and the Live view renders a "coming soon" placeholder
   // instead of VoiceRooms. VoiceRooms is a LOCAL mic preview with no WebRTC
@@ -162,6 +173,12 @@ const DEFAULT_FEATURES: FeatureFlags = {
   // section itself is still gated by experimentalEnabled; this only decides which
   // renderer the Map uses. Persisted-blob masking is handled by FLAGS_VERSION.
   mapLibreRenderer: true,
+
+  // Map Horizon redesign OFF by default (dark-launch); P0 = flag scaffold only —
+  // no consumer yet (the Map renders identically). Later phases gate the Horizon
+  // UX on this flag. Graduating ON requires a FLAGS_VERSION bump + a line in the
+  // migration block, or a persisted `false` masks the flip.
+  mapHorizon: false,
 
   // Relay Live (Voice Rooms) OFF by default — no peer audio transport yet (S0-2).
   relayLiveRooms: false,
@@ -375,6 +392,7 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   slackChannelsGrounding: 'Slack Channels (Beta)',
   logosVisionSync: 'Logos Vision Sync (Beta)',
   mapLibreRenderer: 'MapLibre Map Renderer (Beta)',
+  mapHorizon: 'Map Horizon Redesign (Alpha)',
   relayLiveRooms: 'Live Voice Rooms (Coming Soon)',
 };
 
