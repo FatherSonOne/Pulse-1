@@ -17,6 +17,7 @@ import {
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
   type MapLens,
+  type MapHorizon,
 } from './sub/mapLens';
 import { AiStrip } from './sub/AiStrip';
 import { LensEmptyState } from './sub/LensEmptyState';
@@ -52,6 +53,7 @@ import { useMarkerOffsets, type OffsetableMarker } from './hooks/useMarkerOffset
 import { useMarkerClusters, type ClusterCentroid } from './hooks/useMarkerClusters';
 import { useSpiderAnimation } from './hooks/useSpiderAnimation';
 import { MapLensRow } from './sub/MapLensRow';
+import { HorizonScrubber } from './horizon/HorizonScrubber';
 import { MapViewPicker } from './sub/MapViewPicker';
 import { BaseStyleSwitch } from './horizon/BaseStyleSwitch';
 import MapClusterMarker, { MapClusterMarkerBody } from './sub/MapClusterMarker';
@@ -103,7 +105,13 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   weekEvents: weekEventsProp,
   recentMessageContactIds: recentMessageContactIdsProp,
 }) => {
-  const [lens, setLens] = useState<MapLens>('today');
+  // Legacy lens (OFF path — the TODAY/WEEK/ATLAS tabs). Under Horizon the derived
+  // `lens` below replaces it; this state only drives the legacy MapLensRow.
+  const [legacyLens, setLegacyLens] = useState<MapLens>('today');
+  // Direction D (Horizon, P5) — the scrubber's time detent + the orthogonal Atlas
+  // boolean. Independent of legacyLens; only consumed when mapHorizonOn.
+  const [horizon, setHorizon] = useState<MapHorizon>('today');
+  const [atlasMode, setAtlasMode] = useState(false);
   const [showLiveSheet, setShowLiveSheet] = useState(false);
   const { viewMode, changeViewMode } = useMapViewMode();
   const { isLoaded, loadError } = useGoogleMapsLoader();
@@ -115,6 +123,19 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   const { features } = useFeatures();
   const mapHorizonOn = features.mapHorizon && mapLibreOn;
   const { baseStyle, density, changeBaseStyle, changeDensity } = useMapBaseStyle(isDarkMode);
+
+  // The whole existing pipeline keys off a MapLens. Under Horizon we PROJECT the
+  // scrubber state onto it (now/today → 'today', 3d/week → 'week', atlasMode →
+  // 'atlas') so every downstream consumer (AI proposal kind, meeting markers,
+  // atlas-render branches, SR announcer, empty state) is untouched. The marker-
+  // window predicate gets the PRECISE horizon instead (markerLens) — only
+  // lensIncludesContact distinguishes now/3d (P1). OFF path: both are the legacy lens.
+  const lens: MapLens = mapHorizonOn
+    ? (atlasMode ? 'atlas' : horizon === 'now' || horizon === 'today' ? 'today' : 'week')
+    : legacyLens;
+  const markerLens: MapLens | MapHorizon = mapHorizonOn
+    ? (atlasMode ? 'atlas' : horizon)
+    : legacyLens;
 
   // Circle source. App.tsx mounts us with circles={[]}; self-fetch the user's
   // circles when the prop is empty so the Atlas territories / filter chips /
@@ -216,7 +237,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
     const now = Date.now();
     return localContacts.flatMap(c => {
       if (q && !c.name.toLowerCase().includes(q)) return [];
-      if (!lensIncludesContact(c, lens, now, geoSignals)) return [];
+      if (!lensIncludesContact(c, markerLens, now, geoSignals)) return [];
       if (filter.circles.length > 0) {
         const inCircle = circles.some(
           circle => filter.circles.includes(circle.id) && circle.memberContactIds.includes(c.id)
@@ -242,9 +263,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
     // geoSignals drives lensIncludesContact — without it in deps, TODAY/WEEK
     // membership would not recompute after the async self-fetch resolves real
     // calendar/message signals (the prior staleness bug).
-  }, [localContacts, filter, circles, lens, geoSignals]);
+  }, [localContacts, filter, circles, markerLens, geoSignals]);
 
-  const srAnnouncement = useSrAnnouncer(lens, visibleMarkers.length, viewMode);
+  const srAnnouncement = useSrAnnouncer(markerLens, visibleMarkers.length, viewMode);
 
   // Renderer-agnostic camera adapters (P1a/P1c). Both are stable — each reads
   // its own map ref lazily, so a single instance keeps working once the map
@@ -481,8 +502,11 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   );
 
   useMapKeyboardShortcuts({
-    setLens,
+    setLens: setLegacyLens,
     changeViewMode,
+    mapHorizonOn,
+    setHorizon,
+    toggleAtlasMode: () => setAtlasMode(a => !a),
     searchInputRef,
     showLiveSheet,
     setShowLiveSheet,
@@ -622,21 +646,44 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           map's bottom-right (see MapViewPicker below). The geo-blocked
           banner and circle filter chips appear as accessory rows beneath
           when they have something to say. */}
-      <MapLensRow
-        lens={lens}
-        isDarkMode={isDarkMode}
-        onLensChange={setLens}
-        right={
-          <MapFilterControls
-            filter={filter}
-            isDarkMode={isDarkMode}
-            onFilterChange={setFilter}
-            userId={userId}
-            searchInputRef={searchInputRef}
-            contacts={localContacts}
-          />
-        }
-      />
+      {/* Chrome band: under Horizon the scrubber + Atlas-mode toggle replace the
+          TODAY/WEEK/ATLAS tabs (same band, same right slot); the legacy MapLensRow
+          stays for the OFF path. Additive — no deletion. */}
+      {mapHorizonOn ? (
+        <HorizonScrubber
+          horizon={horizon}
+          onHorizonChange={setHorizon}
+          atlasMode={atlasMode}
+          onAtlasModeChange={setAtlasMode}
+          isDarkMode={isDarkMode}
+          right={
+            <MapFilterControls
+              filter={filter}
+              isDarkMode={isDarkMode}
+              onFilterChange={setFilter}
+              userId={userId}
+              searchInputRef={searchInputRef}
+              contacts={localContacts}
+            />
+          }
+        />
+      ) : (
+        <MapLensRow
+          lens={legacyLens}
+          isDarkMode={isDarkMode}
+          onLensChange={setLegacyLens}
+          right={
+            <MapFilterControls
+              filter={filter}
+              isDarkMode={isDarkMode}
+              onFilterChange={setFilter}
+              userId={userId}
+              searchInputRef={searchInputRef}
+              contacts={localContacts}
+            />
+          }
+        />
+      )}
       <MapFilterAccessories
         filter={filter}
         circles={circles}
@@ -998,7 +1045,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             atlasHasAnyPinned={atlasHasAnyPinned}
             hasGeocodingInFlight={contactsWithAddressText.length > 0}
             canAddLocation={contactsWithoutLocations.length > 0}
-            onOpenAtlas={() => setLens('atlas')}
+            onOpenAtlas={() => { if (mapHorizonOn) setAtlasMode(true); else setLegacyLens('atlas'); }}
             onAutoGeocode={() => {
               // Force a re-run: clear the in-flight cache and trigger the
               // useContactGeocoding effect by handing it a fresh array ref.

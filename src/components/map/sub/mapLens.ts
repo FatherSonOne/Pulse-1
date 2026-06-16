@@ -9,7 +9,7 @@
 // and the geo-relevance helper (lensIncludesContact).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { CalendarRange, Contrast, Globe, Layers, Map as MapIcon, Minimize2, Moon, Mountain, Satellite, Sun, Type } from 'lucide-react';
+import { CalendarDays, CalendarRange, Clock, Contrast, Globe, Layers, Map as MapIcon, Minimize2, Moon, Mountain, Satellite, Sun, Type } from 'lucide-react';
 
 export type MapLens = 'today' | 'week' | 'atlas';
 
@@ -19,6 +19,16 @@ export type MapLens = 'today' | 'week' | 'atlas';
 // stay TODAY/WEEK/ATLAS until P5 replaces them, so adding 'now'/'3d' here neither
 // implies new tabs nor touches LENS_OPTIONS. The lens predicate accepts both.
 export type MapHorizon = 'now' | 'today' | '3d' | 'week';
+
+// The scrubber's four time detents (Direction D / P5). Atlas is NOT here — it's
+// the orthogonal boolean mode (isAtlasMode / AtlasModeToggle). Hotkeys 1–4 drive
+// these under mapHorizon; the legacy 1/2/3 lens hotkeys apply on the OFF path.
+export const MAP_HORIZON_OPTIONS: { id: MapHorizon; label: string; Icon: typeof Sun; hotkey: string }[] = [
+  { id: 'now',   label: 'Now',    Icon: Clock,         hotkey: '1' },
+  { id: 'today', label: 'Today',  Icon: Sun,           hotkey: '2' },
+  { id: '3d',    label: '3 Days', Icon: CalendarDays,  hotkey: '3' },
+  { id: 'week',  label: 'Week',   Icon: CalendarRange, hotkey: '4' },
+];
 
 // Atlas as a decoupled boolean MODE (Direction D / P5). Today Atlas is the
 // 'atlas' MapLens value; the scrubber will make it orthogonal so a time-horizon
