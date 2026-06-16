@@ -57,14 +57,30 @@ const SEED_STOPS = [
 
 const SEED_USER_POSITION = { lat: 37.7749, lng: -122.4194 };
 
-type HarnessMode = 'picker' | 'imat' | 'live' | 'reorder';
+type HarnessMode = 'picker' | 'imat' | 'live' | 'reorder' | 'ai';
 
 function getMode(): HarnessMode {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('mode');
-  if (raw === 'picker' || raw === 'imat' || raw === 'live' || raw === 'reorder') return raw;
+  if (raw === 'picker' || raw === 'imat' || raw === 'live' || raw === 'reorder' || raw === 'ai') return raw;
   return 'picker';
 }
+
+// Direction D (P4) deterministic AI proposals — seeds the three strip kinds with
+// the previously-dead focusDate / focusId fields populated + horizon='now' so the
+// affordances + NEXT-STOP framing render without a live model or pinned contacts.
+const AI_ROUTE_NOW: AiState = {
+  status: 'ready',
+  data: { kind: 'route', proposal: { orderedIds: ['c1-home', 'c2-work'], summary: 'Ada now, then Grace, 12 min.', rationale: 'Tighter loop from your position.' } },
+};
+const AI_PLAN_FOCUSDATE: AiState = {
+  status: 'ready',
+  data: { kind: 'plan', proposal: { summary: 'Wednesday has 3 in Berkeley, batch them.', focusDate: '2026-06-17' } },
+};
+const AI_INSIGHT_FOCUSID: AiState = {
+  status: 'ready',
+  data: { kind: 'insight', proposal: { summary: '3 in Oakland you have not talked to in 30+ days.', focusId: 'c3' } },
+};
 
 const MapTestHarness: React.FC = () => {
   const mode = getMode();
@@ -80,6 +96,8 @@ const MapTestHarness: React.FC = () => {
       : { status: 'idle' },
   );
   const [accepted, setAccepted] = useState(false);
+  // P4 affordance result — proves the focus/jump handlers actually fire.
+  const [aiResult, setAiResult] = useState<string | null>(null);
 
   return (
     <div className="pulse-map-section" style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
@@ -151,6 +169,44 @@ const MapTestHarness: React.FC = () => {
             }}
             onReorderCancel={() => setAiState({ status: 'idle' })}
           />
+        </div>
+      )}
+
+      {/* Direction D (P4) AI affordances — three seeded strips proving the
+          NEXT-STOP framing (horizon='now') + the focusDate / focusId affordances
+          render and their handlers fire. Deterministic; no live model. */}
+      {mode === 'ai' && (
+        <div data-testid="ai-affordances" style={{ position: 'absolute', top: 80, left: 0, right: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div data-testid="ai-route-now">
+            <AiStrip
+              lens="today" horizon="now" markerCount={2}
+              aiState={AI_ROUTE_NOW} acceptedRoute={null} acceptingRoute={false}
+              isDarkMode={false} stops={SEED_STOPS}
+              onAccept={() => {}} onDismissRoute={() => {}} onOpenInSystemMaps={() => {}}
+              onReorderStart={() => {}} onReorderChange={() => {}} onReorderCancel={() => {}}
+            />
+          </div>
+          <div data-testid="ai-plan-focusdate">
+            <AiStrip
+              lens="week" markerCount={3}
+              aiState={AI_PLAN_FOCUSDATE} acceptedRoute={null} acceptingRoute={false}
+              isDarkMode={false} stops={SEED_STOPS}
+              onAccept={() => {}} onDismissRoute={() => {}} onOpenInSystemMaps={() => {}}
+              onReorderStart={() => {}} onReorderChange={() => {}} onReorderCancel={() => {}}
+              onJumpToDate={(d) => setAiResult('jump:' + d)}
+            />
+          </div>
+          <div data-testid="ai-insight-focusid">
+            <AiStrip
+              lens="atlas" markerCount={3}
+              aiState={AI_INSIGHT_FOCUSID} acceptedRoute={null} acceptingRoute={false}
+              isDarkMode={false} stops={SEED_STOPS}
+              onAccept={() => {}} onDismissRoute={() => {}} onOpenInSystemMaps={() => {}}
+              onReorderStart={() => {}} onReorderChange={() => {}} onReorderCancel={() => {}}
+              onFocusEntity={(id) => setAiResult('focus:' + id)}
+            />
+          </div>
+          {aiResult && <pre data-testid="ai-affordance-result" style={{ fontSize: 12, padding: 8 }}>{aiResult}</pre>}
         </div>
       )}
 
