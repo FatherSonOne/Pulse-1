@@ -389,6 +389,61 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
     };
   }, []);
 
+  // ============= LIVE PROP SYNC (mid-session) =============
+  // connect() applies aiMode / contextFiles / voice settings at connect time.
+  // These effects push *later* changes to the LIVE session so the user never
+  // has to reconnect for a setting to take effect. They depend on the PROPS
+  // (not `session`) and read the session through a ref, so establishing a
+  // connection does NOT re-fire them — re-running setContextDocuments on
+  // connect would double-inject context. The session-class methods each no-op
+  // unless connected, and pre-connect changes are picked up by connect().
+  const liveSessionRef = useRef<RealtimeVoiceSession | null>(null);
+  useEffect(() => {
+    liveSessionRef.current = session;
+  }, [session]);
+
+  // AI participant mode (active ↔ observer)
+  useEffect(() => {
+    liveSessionRef.current?.setParticipantMode(aiMode);
+  }, [aiMode]);
+
+  // Context documents (add/remove a source mid-conversation)
+  useEffect(() => {
+    liveSessionRef.current?.setContextDocuments(
+      contextFiles.map((f) => ({ name: f.name, content: f.content, type: f.type })),
+    );
+  }, [contextFiles]);
+
+  // Voice / turn-detection / transcription config. Mirrors the session.update
+  // the agent-switch path already sends. NOTE: OpenAI Realtime locks the VOICE
+  // once audio has played, so a mid-session voice change won't hot-swap (it
+  // applies on the next connect); language + turn-detection DO update live.
+  useEffect(() => {
+    liveSessionRef.current?.updateConfig({
+      voice: effectiveSettings.voice as any,
+      turnDetection: {
+        type: effectiveSettings.turnDetection,
+        eagerness: 'medium',
+        interruptResponse: false,
+        createResponse: true,
+        threshold: 0.7,
+        silenceDurationMs: 2500,
+      },
+      noiseReduction: effectiveSettings.noiseReduction,
+      preferredLanguage: effectiveSettings.language || 'en',
+      inputAudioTranscription: {
+        model: 'gpt-4o-transcribe',
+        language: effectiveSettings.language || 'en',
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    effectiveSettings.voice,
+    effectiveSettings.turnDetection,
+    effectiveSettings.noiseReduction,
+    effectiveSettings.language,
+  ]);
+
   const setupEventListeners = (session: RealtimeVoiceSession) => {
     session.on('connected', () => {
       console.log('🎤 Voice session connected');
