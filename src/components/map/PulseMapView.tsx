@@ -18,6 +18,7 @@ import {
   DAY_MS,
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
+  MAP_HORIZON_OPTIONS,
   type MapLens,
   type MapHorizon,
 } from './sub/mapLens';
@@ -1305,8 +1306,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 
         {/* Marker count badge — bottom-left when no broadcasters, otherwise
             tucked right of the live chip. Mono uppercase to match the lens
-            row + view picker + broadcast pill. */}
-        {liveBroadcasters.length === 0 && (
+            row + view picker + broadcast pill. Suppressed under mapHorizonFloat —
+            the float layout uses the combined count chip below. */}
+        {liveBroadcasters.length === 0 && !mapHorizonFloat && (
           <div
             className={`absolute bottom-4 left-4 px-2.5 py-1 rounded-md text-[10px] tracking-[0.1em] uppercase shadow-md backdrop-blur-sm flex items-center gap-1.5 ${
               isDarkMode ? 'bg-zinc-900/85 text-gray-300 border border-white/10' : 'bg-white/90 text-gray-600 border border-gray-200'
@@ -1315,6 +1317,52 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           >
             <Users size={11} className="text-rose-500" aria-hidden="true" />
             {visibleMarkers.length} pinned
+          </div>
+        )}
+
+        {/* F4 — floating count chip (Horizon float): combines the live + stops/
+            network counts mockup-style, bottom-left. Replaces both the band-era
+            "N pinned" badge (gated above) and the suppressed bottom-left live chip. */}
+        {mapHorizonFloat && (
+          <div
+            className="absolute bottom-4 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md"
+            style={{ background: 'var(--pulse-surface)', border: '1px solid var(--pulse-border)', boxShadow: '0 6px 24px rgba(0,0,0,0.08)' }}
+          >
+            {liveBroadcasters.length > 0 && (
+              <span className="flex items-center gap-1.5">
+                <span className="relative inline-flex h-2 w-2" aria-hidden="true">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-rose-500/70 motion-safe:animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
+                </span>
+                <span className="text-[11px] font-medium" style={{ color: 'var(--pulse-ink-2)' }}>
+                  {liveBroadcasters.length} live
+                </span>
+              </span>
+            )}
+            <span className="text-[11px]" style={{ color: 'var(--pulse-ink-2)' }}>
+              {atlasMode
+                ? `${visibleMarkers.length} in network`
+                : `${visibleMarkers.length} ${visibleMarkers.length === 1 ? 'stop' : 'stops'} · ${
+                    MAP_HORIZON_OPTIONS.find(o => o.id === horizon)?.label.toLowerCase() ?? horizon
+                  }`}
+            </span>
+          </div>
+        )}
+
+        {/* F4 — geo-blocked banner + circle filter chips, floated under Horizon
+            float (they lived in the suppressed band's MapFilterAccessories). Renders
+            nothing when neither geo-blocked nor any circles apply. */}
+        {mapHorizonFloat && (
+          <div className="absolute bottom-16 left-3 right-3 z-20 pointer-events-none [&>*]:pointer-events-auto">
+            <MapFilterAccessories
+              filter={filter}
+              circles={circles}
+              isDarkMode={isDarkMode}
+              onFilterChange={setFilter}
+              geoBlocked={geoBlocked && !geoBannerDismissed}
+              onDismissGeoBanner={dismissGeoBanner}
+              neutralChrome={mapHorizonOn}
+            />
           </div>
         )}
 
