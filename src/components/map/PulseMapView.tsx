@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleMap } from '@react-google-maps/api';
-import { AlertTriangle, MapPinned, Users } from 'lucide-react';
+import { AlertTriangle, MapPinned, Radar, Users } from 'lucide-react';
 import { AppView, CalendarEvent, Contact } from '../../types';
 import { ContactCircle } from '../../types/contactCircleTypes';
+import { Place } from '../../types/placeTypes';
 import { getMapOptions } from '../../services/mapService';
-import { UserLocation, getActiveBroadcastRecipientIds } from '../../services/locationService';
+import { UserLocation, getActiveBroadcastRecipientIds, listUserPlaces } from '../../services/locationService';
 import MapFilterAccessories, { MapFilter, MapFilterControls } from './MapFilterBar';
 import MapContactMarker, { MapContactMarkerBody } from './contacts/MapContactMarker';
 import MapRadiusRings from './contacts/MapRadiusRings';
@@ -26,6 +27,8 @@ import { LiveBroadcastSheet } from './sub/LiveBroadcastSheet';
 import { LiveTeamDrawer } from './horizon/LiveTeamDrawer';
 import BroadcastRecipientPicker from './sub/BroadcastRecipientPicker';
 import { useBroadcastControl } from './horizon/useBroadcastControl';
+import { GeofencesDrawer } from './horizon/GeofencesDrawer';
+import { MapLibreGeofenceRings } from './provider/MapLibreGeofenceRings';
 import { ContactLocationPickerOverlay } from './sub/ContactLocationPickerOverlay';
 import { useGeoRelevanceSignals, lensIncludesContact } from './hooks/useGeoRelevanceSignals';
 import { useContactCircles } from './hooks/useContactCircles';
@@ -180,6 +183,20 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   // broadcast and it persists while panels open/close. Instantiating it inside
   // either child would double the keyboard listener + start/stop effect.
   const broadcast = useBroadcastControl(userId);
+
+  // Geofences (P9, Horizon-only). geofencedPlaces drives BOTH the ring overlay
+  // and the drawer list, kept in sync by refetching after a drawer edit. Fetched
+  // only under Horizon so the OFF path makes no extra query.
+  const [showGeofences, setShowGeofences] = useState(false);
+  const [geofenceRingsVisible, setGeofenceRingsVisible] = useState(true);
+  const [geofencedPlaces, setGeofencedPlaces] = useState<Place[]>([]);
+  const refreshGeofencedPlaces = useCallback(async () => {
+    const all = await listUserPlaces();
+    setGeofencedPlaces(all.filter(p => p.geofenceRadiusM != null));
+  }, []);
+  useEffect(() => {
+    if (mapHorizonOn) void refreshGeofencedPlaces();
+  }, [mapHorizonOn, refreshGeofencedPlaces]);
   const [geoBannerDismissed, setGeoBannerDismissed] = useState<boolean>(() => {
     if (typeof localStorage === 'undefined') return false;
     return localStorage.getItem('pulse:map:geo-banner-dismissed') === '1';
@@ -793,6 +810,18 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           {userPosition && mapLibreReady && (
             <MapLibreRadiusRings key={`rings-${styleEpoch}`} map={mapLibreRef.current} center={userPosition} isDarkMode={isDarkMode} />
           )}
+          {/* P9 — all-geofences ring overlay (lens-independent; flag + drawer
+              visibility toggle gate it). Real place geometry — renders whether or
+              not Live detection is running. */}
+          {mapHorizonOn && mapLibreReady && geofenceRingsVisible && geofencedPlaces.length > 0 && (
+            <MapLibreGeofenceRings
+              key={`geofences-${styleEpoch}`}
+              map={mapLibreRef.current}
+              places={geofencedPlaces.map(p => ({
+                id: p.id, lat: p.lat, lng: p.lng, geofenceRadiusM: p.geofenceRadiusM ?? 0, name: p.name,
+              }))}
+            />
+          )}
           {acceptedRoute && mapLibreReady && (
             <MapLibreAcceptedRoute
               key={`route-${styleEpoch}`}
@@ -1145,6 +1174,26 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           />
         )}
 
+        {/* Geofences entry (Horizon) — bottom-left, above the live/pinned cluster.
+            Opens the first-class GeofencesDrawer; always available under Horizon so
+            the operator can manage geofences + read the honest detection note even
+            with zero live broadcasters. */}
+        {mapHorizonOn && (
+          <button
+            type="button"
+            onClick={() => setShowGeofences(true)}
+            aria-haspopup="dialog"
+            aria-label={`Geofences${geofencedPlaces.length > 0 ? ` — ${geofencedPlaces.length}` : ''}`}
+            className={`absolute bottom-14 left-4 px-2.5 py-1 rounded-md text-[10px] tracking-[0.1em] uppercase shadow-md backdrop-blur-sm flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 transition-colors ${
+              isDarkMode ? 'bg-zinc-900/85 text-gray-200 hover:bg-zinc-900 border border-white/10 focus-visible:ring-zinc-400' : 'bg-white/90 text-gray-700 hover:bg-white border border-gray-200 focus-visible:ring-zinc-500'
+            }`}
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          >
+            <Radar size={11} aria-hidden="true" />
+            <span>Geofences{geofencedPlaces.length > 0 ? ` · ${geofencedPlaces.length}` : ''}</span>
+          </button>
+        )}
+
         {/* Live presence chip — bottom-left. Replaces the old peer-lens
             LiveTeamView entry point. Tap opens the sheet. */}
         {liveBroadcasters.length > 0 && (
@@ -1255,6 +1304,18 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             isDarkMode={isDarkMode}
             onCancel={() => broadcast.setShowRecipientPicker(false)}
             onConfirm={broadcast.handleRecipientConfirm}
+          />
+        )}
+
+        {showGeofences && mapHorizonOn && (
+          <GeofencesDrawer
+            places={geofencedPlaces}
+            isDarkMode={isDarkMode}
+            isLiveOn={broadcast.liveOn}
+            ringsVisible={geofenceRingsVisible}
+            onToggleRings={setGeofenceRingsVisible}
+            onPlacesChanged={refreshGeofencedPlaces}
+            onClose={() => setShowGeofences(false)}
           />
         )}
       </div>

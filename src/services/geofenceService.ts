@@ -285,4 +285,72 @@ export async function getTodayVisitedContactStops(): Promise<Set<string>> {
   return ids;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// P9 — Geofences drawer read + mutate API.
+//
+// listRecentGeofenceEvents feeds the drawer's transition history;
+// markGeofenceEventSurfaced is the FIRST producer of the previously-dead
+// surfaced / surfaced_at columns (RLS geofence_events_update_surfaced permits an
+// owner to UPDATE their own rows — verified live). The insert producer
+// (persistAndDispatch) is left untouched.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface GeofenceEvent {
+  id: string;
+  placeId: string;
+  eventType: 'enter' | 'exit' | 'approach';
+  lat: number;
+  lng: number;
+  distanceM: number | null;
+  entityType: string | null;
+  entityId: string | null;
+  payload: Record<string, unknown>;
+  occurredAt: string;
+  surfaced: boolean;
+  surfacedAt: string | null;
+}
+
+function rowToGeofenceEvent(row: Record<string, unknown>): GeofenceEvent {
+  return {
+    id: String(row.id),
+    placeId: String(row.place_id),
+    eventType: row.event_type as GeofenceEvent['eventType'],
+    lat: Number(row.lat),
+    lng: Number(row.lng),
+    distanceM: row.distance_m == null ? null : Number(row.distance_m),
+    entityType: (row.entity_type ?? null) as string | null,
+    entityId: (row.entity_id ?? null) as string | null,
+    payload: (row.payload ?? {}) as Record<string, unknown>,
+    occurredAt: String(row.occurred_at),
+    surfaced: Boolean(row.surfaced),
+    surfacedAt: (row.surfaced_at ?? null) as string | null,
+  };
+}
+
+/** List the operator's recent geofence events, newest first. RLS
+ *  (geofence_events_select: user_id = auth.uid()) scopes to the operator. */
+export async function listRecentGeofenceEvents(limit = 50): Promise<GeofenceEvent[]> {
+  const { data, error } = await supabase
+    .from('geofence_events')
+    .select('*')
+    .order('occurred_at', { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error('[geofenceService] listRecentGeofenceEvents error:', error.message);
+    return [];
+  }
+  return (data ?? []).map(r => rowToGeofenceEvent(r as Record<string, unknown>));
+}
+
+/** Mark a geofence event reviewed. Writes BOTH surfaced + surfaced_at (the
+ *  column has no DB default). RLS geofence_events_update_surfaced permits the
+ *  owner to UPDATE their own rows. */
+export async function markGeofenceEventSurfaced(eventId: string): Promise<void> {
+  const { error } = await supabase
+    .from('geofence_events')
+    .update({ surfaced: true, surfaced_at: new Date().toISOString() })
+    .eq('id', eventId);
+  if (error) throw error;
+}
+
 export type { GeofenceTransition, GeofencedPlace };
