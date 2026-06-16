@@ -1017,7 +1017,7 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
                   <div style={{ fontWeight: 600, marginBottom: 6 }}>No recordings found</div>
                   <div style={{ fontSize: 12, opacity: 0.7 }}>
                     {recordings.length === 0
-                      ? 'Enable Auto-Recording in Meeting Settings to save recordings.'
+                      ? 'Recordings appear here a few minutes after a recorded meeting ends. Start a meeting and turn on recording to capture one.'
                       : 'No results match your search.'}
                   </div>
                 </div>
