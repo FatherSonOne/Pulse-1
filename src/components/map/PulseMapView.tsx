@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleMap } from '@react-google-maps/api';
-import { AlertTriangle, MapPinned, Radar, Users } from 'lucide-react';
+import { AlertTriangle, LocateFixed, MapPinned, Radar, Users } from 'lucide-react';
 import { AppView, CalendarEvent, Contact } from '../../types';
 import { ContactCircle } from '../../types/contactCircleTypes';
 import { Place } from '../../types/placeTypes';
@@ -334,6 +334,15 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
       setSelectedCircleId(id);
     }
   }, [localContacts, circles, activeCamera]);
+
+  // "My location" — recenter the active map on the user's GPS dot. panTo + a
+  // street-level zoom so it works from any lens/zoom (including Atlas zoomed-out).
+  // Renderer-agnostic via activeCamera (Google + MapLibre both implement panTo/setZoom).
+  const handleRecenter = useCallback(() => {
+    if (!userPosition) return;
+    activeCamera?.panTo(userPosition);
+    activeCamera?.setZoom(14);
+  }, [userPosition, activeCamera]);
 
   // focusDate (WeekProposal, YYYY-MM-DD): narrow the scrubber toward that day —
   // today / within 3 days / else the week. No-op on the legacy path (only wired
@@ -1281,6 +1290,29 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             isDarkMode={isDarkMode}
             onViewModeChange={changeViewMode}
           />
+        )}
+
+        {/* "My location" recenter — bottom-right, above the base-style switch and
+            clear of the attribution corner. Recenters the active map on the GPS dot
+            (panTo + street zoom). Only when GPS is available. Default Horizon Map. */}
+        {mapHorizonOn && userPosition && (
+          <button
+            type="button"
+            onClick={handleRecenter}
+            aria-label="Recenter on my location"
+            title="My location"
+            className={`absolute bottom-9 right-4 z-20 w-9 h-9 rounded-lg flex items-center justify-center backdrop-blur-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+              isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
+            }`}
+            style={{
+              background: 'var(--pulse-surface)',
+              border: '1px solid var(--pulse-border)',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.08)',
+              color: 'var(--pulse-ink-2)',
+            }}
+          >
+            <LocateFixed size={17} aria-hidden="true" />
+          </button>
         )}
 
         {/* Geofences entry (Horizon) — bottom-left, above the live/pinned cluster.
