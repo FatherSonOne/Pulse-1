@@ -90,6 +90,54 @@ const HOSTED_SENTINEL = '__pulse_hosted__';
 
 const SUMMIT_INTRO_KEY = 'summit_intro_seen_v1';
 
+/* ── Crash-resilient Summit metering ──────────────────────────
+ * A dropped session-end report (network error, crash, tab close) used to lose
+ * the hosted minutes silently. We stamp a pending marker in localStorage
+ * before each report and replay un-cleared markers on next mount; the server
+ * dedups on session_id (record_summit_minutes), so replays never double-count. */
+const PENDING_METER_KEY = 'pulse_summit_pending_meter';
+interface PendingMeter {
+  sessionId: string;
+  workspaceId: string;
+  durationSec: number;
+}
+function readPendingMeters(): PendingMeter[] {
+  try {
+    const raw = localStorage.getItem(PENDING_METER_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? (parsed as PendingMeter[]) : [];
+  } catch {
+    return [];
+  }
+}
+function writePendingMeters(list: PendingMeter[]): void {
+  try {
+    localStorage.setItem(PENDING_METER_KEY, JSON.stringify(list.slice(0, 20)));
+  } catch {
+    /* quota / private mode — non-fatal */
+  }
+}
+function addPendingMeter(m: PendingMeter): void {
+  if (!m.sessionId || !m.workspaceId) return;
+  writePendingMeters([m, ...readPendingMeters().filter((x) => x.sessionId !== m.sessionId)]);
+}
+function clearPendingMeter(sessionId: string): void {
+  writePendingMeters(readPendingMeters().filter((x) => x.sessionId !== sessionId));
+}
+async function flushPendingMeter(m: PendingMeter): Promise<boolean> {
+  try {
+    const { supabase } = await import('../../services/supabase');
+    const { error } = await supabase.functions.invoke('summit-session-end', {
+      body: { workspace_id: m.workspaceId, duration_sec: m.durationSec, session_id: m.sessionId },
+    });
+    if (error) return false;
+    clearPendingMeter(m.sessionId);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const RealtimeVoiceAgent = lazy(() =>
   import('../WarRoom/RealtimeVoiceAgent').then((m) => ({ default: m.RealtimeVoiceAgent }))
 );
@@ -1005,12 +1053,20 @@ const Summit: React.FC<SummitProps> = ({
       // Hosted-minutes meter — only increment if this session was on the
       // hosted path. BYO sessions don't count against any Pulse quota.
       if (!isByoSession && record.durationSec > 0) {
+        // Stamp a pending marker BEFORE the call so a dropped/failed report
+        // (network error, crash, tab close) is replayed on next load. The
+        // server dedups on session_id, so the replay is a safe no-op if the
+        // original call already landed — increment_usage is additive, so the
+        // dedup is what prevents a double-count, NOT idempotency of the RPC.
+        addPendingMeter({ sessionId: record.id, workspaceId, durationSec: record.durationSec });
         void (async () => {
           try {
             const { supabase } = await import('../../services/supabase');
-            const { data } = await supabase.functions.invoke('summit-session-end', {
-              body: { workspace_id: workspaceId, duration_sec: record.durationSec },
+            const { data, error } = await supabase.functions.invoke('summit-session-end', {
+              body: { workspace_id: workspaceId, duration_sec: record.durationSec, session_id: record.id },
             });
+            if (error) throw error;
+            clearPendingMeter(record.id);
             if (data && typeof data.total_minutes === 'number') {
               // Optimistic local override — paints the meter immediately
               // while the entitlements hook re-fetches in the background.
@@ -1018,11 +1074,8 @@ const Summit: React.FC<SummitProps> = ({
               void summitEnt.refresh();
             }
           } catch (err) {
-            // Non-fatal — the next page load will re-read entitlements. The
-            // server-side increment is idempotent on (workspace_id, metric,
-            // period_start) so a missed call only loses a single session,
-            // not a cumulative count.
-            console.warn('[Summit] summit-session-end failed:', err);
+            // Non-fatal — the pending marker above replays on next load.
+            console.warn('[Summit] summit-session-end failed (will retry on next load):', err);
           }
         })();
       }
@@ -1311,6 +1364,62 @@ const Summit: React.FC<SummitProps> = ({
       persistSession();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ── Crash-resilient metering: replay + tab-close marker ──── */
+  // Mirror live-session metering inputs into refs so a pagehide / tab-close
+  // (where React cleanup may not run) can still stamp a pending meter.
+  const sessionElapsedRef = useRef(0);
+  useEffect(() => {
+    sessionElapsedRef.current = sessionElapsed;
+  }, [sessionElapsed]);
+
+  const liveMeterRef = useRef<{ sessionId: string; workspaceId: string } | null>(null);
+  useEffect(() => {
+    liveMeterRef.current =
+      isConnected && sessionIdRef.current && !isByoSession && workspaceId
+        ? { sessionId: sessionIdRef.current, workspaceId }
+        : null;
+  }, [isConnected, isByoSession, workspaceId]);
+
+  // Replay any metering reports that never confirmed (prior crash / offline).
+  // Dedup on session_id makes each replay a safe no-op if it already landed.
+  useEffect(() => {
+    const pending = readPendingMeters();
+    if (pending.length === 0) return;
+    void (async () => {
+      let landed = false;
+      for (const m of pending) {
+        if (await flushPendingMeter(m)) landed = true;
+      }
+      if (landed) void summitEnt.refresh();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Tab-close / background while a hosted session is live: stamp a pending
+  // marker (synchronous localStorage write) so the minutes are reported on
+  // next load even if the clean session-end path never runs. Dedup on
+  // session_id prevents double-counting against the normal end report.
+  useEffect(() => {
+    const stampLiveMeter = () => {
+      const live = liveMeterRef.current;
+      if (!live) return;
+      addPendingMeter({
+        sessionId: live.sessionId,
+        workspaceId: live.workspaceId,
+        durationSec: Math.max(1, sessionElapsedRef.current),
+      });
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') stampLiveMeter();
+    };
+    window.addEventListener('pagehide', stampLiveMeter);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('pagehide', stampLiveMeter);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   /* ── Auto-scroll history (notes panel) ───────────────────── */
