@@ -1661,7 +1661,11 @@
   width: min(560px, calc(100% - 32px));
   max-height: calc(100% - 32px);
   overflow-y: auto;
-  background: var(--pulse-surface, #ffffff);
+  /* Floating panel that overlaps arbitrary content — must be opaque.
+     --pulse-surface is intentionally 3%-translucent on dark (correct on the
+     canvas, but it let the prompt cards bleed through here). The canonical
+     --pulse-surface-modal token is solid in both themes. */
+  background: var(--pulse-surface-modal, #ffffff);
   color: var(--pulse-text, #111827);
   border: 1px solid var(--pulse-border, rgba(0, 0, 0, 0.1));
   border-radius: 16px;
