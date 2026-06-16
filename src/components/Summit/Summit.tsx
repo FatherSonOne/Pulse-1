@@ -339,8 +339,14 @@ const Summit: React.FC<SummitProps> = ({
             setOpenaiApiKey(byoKey);
             return;
           }
-          // Hook said BYO but plaintext came back null — fall through to
-          // hosted and let the entitlement check below handle it.
+          // Hook said BYO but the plaintext key came back null (deleted, vault
+          // decrypt failed, …). Tell the user instead of silently switching
+          // them onto the metered hosted path. Fixed toast id = never stacks
+          // across effect re-runs. Then fall through to hosted.
+          toast.error(
+            "Couldn't load your saved OpenAI key — using Pulse-hosted minutes instead. Re-check it in Settings → AI.",
+            { id: 'summit-byo-failed', duration: 6000 },
+          );
         }
 
         // Priority 3: hosted, gated by tier + monthly cap.
