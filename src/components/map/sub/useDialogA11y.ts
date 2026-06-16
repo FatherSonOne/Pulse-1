@@ -21,6 +21,10 @@ interface UseDialogA11yArgs {
   containerRef: RefObject<HTMLElement>;
   onClose: () => void;
   initialFocusRef?: RefObject<HTMLElement>;
+  /** When false the hook is inert — no focus trap, Escape, initial-focus, or
+   *  restore. For rendering the same dialog content INLINE (non-modal, e.g.
+   *  embedded in a drawer section) where trapping focus would be wrong. Default true. */
+  enabled?: boolean;
 }
 
 const FOCUSABLE_SELECTOR =
@@ -30,8 +34,9 @@ function getFocusables(root: HTMLElement): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
 }
 
-export function useDialogA11y({ containerRef, onClose, initialFocusRef }: UseDialogA11yArgs): void {
+export function useDialogA11y({ containerRef, onClose, initialFocusRef, enabled = true }: UseDialogA11yArgs): void {
   useEffect(() => {
+    if (!enabled) return;
     // Stash whoever owns focus right now (usually the trigger button) so we
     // can return to it on unmount. Capture-once via the effect closure.
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -83,5 +88,5 @@ export function useDialogA11y({ containerRef, onClose, initialFocusRef }: UseDia
         try { previouslyFocused.focus({ preventScroll: true }); } catch { /* noop */ }
       }
     };
-  }, [containerRef, onClose, initialFocusRef]);
+  }, [containerRef, onClose, initialFocusRef, enabled]);
 }

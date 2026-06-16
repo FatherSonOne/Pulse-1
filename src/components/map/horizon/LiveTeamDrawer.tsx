@@ -20,7 +20,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MapPin, MessageCircle, Mic, Navigation, Radio, Video, X } from 'lucide-react';
 import { Contact } from '../../../types';
-import { UserLocation, setLocationSharing, stopLocationBroadcast } from '../../../services/locationService';
+import { UserLocation, setLocationSharing, stopLocationBroadcast, getActiveBroadcastRecipientIds } from '../../../services/locationService';
 import {
   EtaShare,
   listActiveShares,
@@ -29,6 +29,7 @@ import {
 } from '../../../services/etaShareService';
 import type { BroadcastControl } from './useBroadcastControl';
 import { useDialogA11y } from '../sub/useDialogA11y';
+import BroadcastRecipientPicker from '../sub/BroadcastRecipientPicker';
 
 export interface LiveTeamDrawerProps {
   contacts: Contact[];
@@ -73,6 +74,11 @@ export const LiveTeamDrawer: React.FC<LiveTeamDrawerProps> = ({
   const panelRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   useDialogA11y({ containerRef: panelRef, onClose, initialFocusRef: closeBtnRef });
+
+  // Inline recipient picker — expands within the Share-my-location section so
+  // choosing who can see you is one flow in one place, not a separate modal.
+  // Opened on toggle-ON and via "Change who can see you".
+  const [picking, setPicking] = useState(false);
 
   // ─── ETA shares — eta_shares is NOT in supabase_realtime (verified P7/P8), so
   // poll on a light 30s cadence. listActiveShares filters status='active', so a
@@ -138,10 +144,15 @@ export const LiveTeamDrawer: React.FC<LiveTeamDrawerProps> = ({
     if (broadcast.liveOn) {
       stopLocationBroadcast();
       broadcast.handleToggleLive();
+      setPicking(false);
       try { await setLocationSharing(userId, false); } catch { /* best effort */ }
     } else {
+      // ON → grant consent, then EXPAND the inline recipient picker (not the
+      // separate modal). The picker's confirm calls broadcast.handleRecipientConfirm
+      // (flips liveOn true); Cancel just collapses it (sharing stays granted with
+      // no recipients — cleaned on the next OFF, same benign orphan as before).
       try { await setLocationSharing(userId, true); } catch { /* best effort */ }
-      broadcast.handleToggleLive();
+      setPicking(true);
     }
   };
 
@@ -224,10 +235,10 @@ export const LiveTeamDrawer: React.FC<LiveTeamDrawerProps> = ({
               </button>
             </div>
 
-            {broadcast.liveOn && (
+            {broadcast.liveOn && !picking && (
               <button
                 type="button"
-                onClick={() => broadcast.setShowRecipientPicker(true)}
+                onClick={() => setPicking(true)}
                 className={`mt-3 inline-flex items-center gap-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:underline ${
                   isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'
                 }`}
@@ -235,6 +246,21 @@ export const LiveTeamDrawer: React.FC<LiveTeamDrawerProps> = ({
                 <Radio size={12} aria-hidden="true" />
                 Change who can see you
               </button>
+            )}
+
+            {/* Inline recipient picker — the expandable section that replaces the
+                separate modal: search + select + Broadcast, all in this drawer. */}
+            {picking && (
+              <div className="mt-3">
+                <BroadcastRecipientPicker
+                  inline
+                  contacts={contacts}
+                  initialSelectedUserIds={getActiveBroadcastRecipientIds()}
+                  isDarkMode={isDarkMode}
+                  onCancel={() => setPicking(false)}
+                  onConfirm={(ids) => { void broadcast.handleRecipientConfirm(ids); setPicking(false); }}
+                />
+              </div>
             )}
           </section>
 
