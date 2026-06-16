@@ -169,6 +169,9 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
       await pulseService.updateProfile({ avatar_url: url });
       setProfileImageUrl(url);
       setPulseProfile(prev => (prev ? { ...prev, avatar_url: url } : null));
+      // Let the nav account chip (GoogleAccountSelector) reflect the new avatar
+      // live, without a reload. Uses the established `pulse:*` CustomEvent pattern.
+      window.dispatchEvent(new CustomEvent('pulse:profile-updated', { detail: { avatarUrl: url } }));
     } catch (error) {
       console.error('Error uploading image:', error);
       toast.error('Could not upload image. Try again.');
@@ -214,6 +217,8 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
       const updated = await pulseService.updateProfile(updates);
       setPulseProfile(updated);
       if (updated.avatar_url) setProfileImageUrl(updated.avatar_url);
+      // Keep the nav account chip in sync with any avatar change saved here.
+      window.dispatchEvent(new CustomEvent('pulse:profile-updated', { detail: { avatarUrl: updated.avatar_url ?? null } }));
       setProfileSaveSuccess(true);
       setTimeout(() => setProfileSaveSuccess(false), 3000);
     } catch (error: any) {

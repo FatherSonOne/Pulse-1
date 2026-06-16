@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { User } from '../types';
 import { loginWithGoogle, logoutUser, revokeGoogleAccess, disconnectGoogleAccount } from '../services/authService';
+import { pulseService } from '../services/pulseService';
 import { AccountSettingsModal, PrivacyDashboard, HelpSupportModal } from './Account';
 import './GoogleAccountSelector.css';
 
@@ -86,6 +87,12 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
   const [isInitialized, setIsInitialized] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [imageError, setImageError] = useState(false);
+  // Avatar set on the Pulse profile (Settings → My Account). When present this
+  // takes priority over the OAuth provider picture so the image the user
+  // uploads in Pulse actually shows on the account chip. Null until loaded /
+  // when the user has never set one — then we fall back to user.avatarUrl
+  // (Google `picture` / Microsoft `avatar_url` / ui-avatars generated fallback).
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Modal states
@@ -148,6 +155,45 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
       setTimeout(() => clearInterval(checkInterval), 10000);
     }
   }, [GOOGLE_CLIENT_ID]);
+
+  // Prefer the Pulse profile avatar (Settings → My Account) over the OAuth
+  // provider picture. Fetched once per signed-in account; re-fetched on account
+  // switch via the user.id dependency. A `pulse:profile-updated` CustomEvent
+  // (dispatched by AccountSettings on upload/save) keeps the chip live without a
+  // reload. Failures are swallowed — we simply fall back to user.avatarUrl.
+  useEffect(() => {
+    if (!user) {
+      setProfileAvatarUrl(null);
+      return;
+    }
+
+    let cancelled = false;
+    const applyAvatar = (url: string | null) => {
+      if (cancelled) return;
+      if (url) {
+        setImageError(false);
+        setProfileAvatarUrl(url);
+      } else {
+        setProfileAvatarUrl(null);
+      }
+    };
+
+    pulseService
+      .getCurrentProfile()
+      .then((profile) => applyAvatar(profile?.avatar_url || null))
+      .catch((error) => console.error('Error loading Pulse profile avatar:', error));
+
+    const handleProfileUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ avatarUrl?: string | null }>).detail;
+      if (detail && 'avatarUrl' in detail) applyAvatar(detail.avatarUrl ?? null);
+    };
+    window.addEventListener('pulse:profile-updated', handleProfileUpdated);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('pulse:profile-updated', handleProfileUpdated);
+    };
+  }, [user?.id]);
 
   const handleCredentialResponse = async (response: { credential: string }) => {
     try {
@@ -443,6 +489,8 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
   }
 
   const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  // Pulse profile avatar wins; OAuth picture / ui-avatars fallback is the backstop.
+  const displayAvatarUrl = profileAvatarUrl || user.avatarUrl;
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.platform);
   const hotkeyHint = isMac ? '⌘,' : 'Ctrl+,';
 
@@ -464,9 +512,9 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
           title="Account menu"
         >
           <div className="pulse-account-menu__trigger-avatar">
-            {user.avatarUrl && !imageError ? (
+            {displayAvatarUrl && !imageError ? (
               <img
-                src={user.avatarUrl}
+                src={displayAvatarUrl}
                 alt=""
                 className="w-full h-full object-cover"
                 onError={() => setImageError(true)}
@@ -506,9 +554,9 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
             {/* Header — the signature coral moment */}
             <div className="pulse-account-menu__header">
               <div className="pulse-account-menu__header-avatar">
-                {user.avatarUrl && !imageError ? (
+                {displayAvatarUrl && !imageError ? (
                   <img
-                    src={user.avatarUrl}
+                    src={displayAvatarUrl}
                     alt=""
                     className="w-full h-full object-cover"
                     onError={() => setImageError(true)}
@@ -670,7 +718,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
             onClose={() => setShowAccountSettings(false)}
             userName={user.name}
             userEmail={user.email}
-            avatarUrl={user.avatarUrl}
+            avatarUrl={displayAvatarUrl}
             isDarkMode={isDarkMode}
             onToggleTheme={onToggleTheme}
             onOpenFullSettings={(section) => {
