@@ -63,6 +63,8 @@ import { MapLensRow } from './sub/MapLensRow';
 import { HorizonScrubber } from './horizon/HorizonScrubber';
 import { HorizonScrubberPill } from './horizon/HorizonScrubberPill';
 import { AtlasModeToggle } from './horizon/AtlasModeToggle';
+import { SurfacesCluster } from './horizon/SurfacesCluster';
+import { FloatingFilterIsland } from './horizon/FloatingFilterIsland';
 import { MapViewPicker } from './sub/MapViewPicker';
 import { BaseStyleSwitch } from './horizon/BaseStyleSwitch';
 import MapClusterMarker, { MapClusterMarkerBody } from './sub/MapClusterMarker';
@@ -1128,10 +1130,10 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 
         {/* ─── Floating chrome (Tier-3 §8B, mapHorizonFloat) ───────────────────
             Absolute islands over the full-bleed map, replacing the suppressed
-            top-chrome bands. F1: scrubber pill + Atlas toggle. F2 adds the
-            search field + Routes/Live/Fences surfaces cluster to this top bar.
-            pointer-events-none on the bar + auto on its children so map drags
-            still work in the gaps between islands. */}
+            top-chrome bands. F1: scrubber pill + Atlas toggle. F2: floating filter
+            island (search + location type) + Routes/Live/Fences surfaces cluster.
+            (Routes button appears in F5 once its drawer exists.) pointer-events-none
+            on the bar + auto on its children so map drags still work in the gaps. */}
         {mapHorizonFloat && (
           <div className="absolute top-3 left-3 right-3 z-30 flex items-start gap-2 flex-wrap pointer-events-none [&>*]:pointer-events-auto">
             <HorizonScrubberPill
@@ -1144,6 +1146,24 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               atlasMode={atlasMode}
               onChange={setAtlasMode}
               isDarkMode={isDarkMode}
+            />
+            <div className="hidden md:block flex-1 max-w-xs">
+              <FloatingFilterIsland
+                filter={filter}
+                isDarkMode={isDarkMode}
+                onFilterChange={setFilter}
+                searchInputRef={searchInputRef}
+              />
+            </div>
+            <div className="flex-1" />
+            <SurfacesCluster
+              isDarkMode={isDarkMode}
+              onOpenLive={() => setShowLiveSheet(true)}
+              liveActive={showLiveSheet}
+              liveBadge={liveBroadcasters.length}
+              onOpenFences={() => setShowGeofences(true)}
+              fencesActive={showGeofences}
+              fencesBadge={geofencedPlaces.length}
             />
           </div>
         )}
@@ -1214,8 +1234,9 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
         {/* Geofences entry (Horizon) — bottom-left, above the live/pinned cluster.
             Opens the first-class GeofencesDrawer; always available under Horizon so
             the operator can manage geofences + read the honest detection note even
-            with zero live broadcasters. */}
-        {mapHorizonOn && (
+            with zero live broadcasters. Suppressed under mapHorizonFloat — the
+            float layout reaches Geofences via the top-right SurfacesCluster. */}
+        {mapHorizonOn && !mapHorizonFloat && (
           <button
             type="button"
             onClick={() => setShowGeofences(true)}
@@ -1232,8 +1253,10 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
         )}
 
         {/* Live presence chip — bottom-left. Replaces the old peer-lens
-            LiveTeamView entry point. Tap opens the sheet. */}
-        {liveBroadcasters.length > 0 && (
+            LiveTeamView entry point. Tap opens the sheet. Suppressed under
+            mapHorizonFloat — the float layout reaches Live via the SurfacesCluster
+            (whose badge carries the same broadcaster count). */}
+        {liveBroadcasters.length > 0 && !mapHorizonFloat && (
           <button
             type="button"
             onClick={() => setShowLiveSheet(true)}
