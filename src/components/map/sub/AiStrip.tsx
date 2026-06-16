@@ -47,6 +47,11 @@ export interface AiStripProps {
   onFocusEntity?: (id: string) => void;
   /** Jump the scrubber toward a week-plan's focus date (WeekProposal.focusDate). */
   onJumpToDate?: (isoDate: string) => void;
+  /** Direction-D §8B float layout. 'band' (default) = the legacy full-width strip;
+   *  'card' = a floating vertical coral card (header / body / actions stacked).
+   *  Only container + grouping classes change — every branch's content and handlers
+   *  (reorder, keyboard, rationale drawer, a11y, ≥2-stop guards) are identical. */
+  layout?: 'band' | 'card';
 }
 
 function formatArrivalTime(d: Date): string {
@@ -77,6 +82,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
   horizon,
   onFocusEntity,
   onJumpToDate,
+  layout = 'band',
 }) => {
   // Local UI state — collapsed by default. Rationale expansion is per-mount
   // (reset whenever the proposal swaps) so a fresh proposal doesn't surprise
@@ -92,12 +98,30 @@ export const AiStrip: React.FC<AiStripProps> = ({
   // keep moving the SAME stop instead of whoever ends up at that position.
   const reorderListRef = useRef<HTMLUListElement>(null);
 
-  const stripCls = `flex items-center gap-3 px-3 py-2 ${
-    isDarkMode
-      ? 'bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent'
-      : 'bg-gradient-to-r from-rose-50 via-rose-50/40 to-transparent'
-  }`;
-  const wrapperBorderCls = isDarkMode ? 'border-b border-rose-500/15' : 'border-b border-rose-500/20';
+  // Direction-D §8B: 'card' reflows the SAME content into a floating vertical
+  // coral card; 'band' stays byte-identical to the legacy strip. Only the
+  // container / grouping classes differ — branch content + handlers are unchanged.
+  const isCard = layout === 'card';
+  const stripCls = isCard
+    ? 'flex flex-col gap-1.5 p-3'
+    : `flex items-center gap-3 px-3 py-2 ${
+        isDarkMode
+          ? 'bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent'
+          : 'bg-gradient-to-r from-rose-50 via-rose-50/40 to-transparent'
+      }`;
+  // In 'card' this is the floating card SHELL (rounded coral panel); in 'band' it
+  // is the bottom rule. (Single-div branches combine stripCls + this; two-div
+  // branches use this as the outer shell wrapping the strip + reorder ul / rationale.)
+  const wrapperBorderCls = isCard
+    ? `rounded-xl shadow-lg ${isDarkMode ? 'bg-rose-500/10 border border-rose-500/20' : 'bg-rose-50 border border-rose-200'}`
+    : isDarkMode ? 'border-b border-rose-500/15' : 'border-b border-rose-500/20';
+  // icon+eyebrow: a real header row in 'card'; transparent (display:contents) in
+  // 'band' so the strip's flat sibling layout renders exactly as before.
+  const headerCls = isCard ? 'flex items-center gap-1.5' : 'contents';
+  // body: wraps full-width in the card; flex-1 + truncate in the band.
+  const bodyBase = isCard ? 'text-[13px] leading-snug' : 'text-xs flex-1 truncate';
+  // actions: own row in the card; inline (no shrink) in the band.
+  const actionsCls = isCard ? 'flex items-center gap-2 mt-1 flex-wrap' : 'flex items-center gap-1 flex-shrink-0';
   const monoStyle = { fontFamily: "'JetBrains Mono', monospace" } as const;
   // Direction D (P4): at the 'now' detent the route strip is framed as a
   // next-stop nudge rather than a full route. (Only meaningful under Horizon —
@@ -119,17 +143,19 @@ export const AiStrip: React.FC<AiStripProps> = ({
     const arriving = formatArrivalTime(acceptedRoute.arrivesAt);
     return (
       <div className={`${stripCls} ${wrapperBorderCls}`} role="status" aria-live="polite">
-        <Navigation size={14} className="text-rose-500 flex-shrink-0" />
-        <span
-          className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0"
-          style={monoStyle}
-        >
-          PULSE AI · UNDERWAY
-        </span>
-        <span className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+        <div className={headerCls}>
+          <Navigation size={14} className="text-rose-500 flex-shrink-0" />
+          <span
+            className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0"
+            style={monoStyle}
+          >
+            PULSE AI · UNDERWAY
+          </span>
+        </div>
+        <span className={`${bodyBase} ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
           {acceptedRoute.orderedMarkerKeys.length} stops · {acceptedRoute.durationMin} min · arriving {arriving}
         </span>
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className={actionsCls}>
           <button
             type="button"
             onClick={onOpenInSystemMaps}
@@ -186,17 +212,19 @@ export const AiStrip: React.FC<AiStripProps> = ({
     return (
       <div className={wrapperBorderCls}>
         <div className={stripCls} role="status" aria-live="polite">
-          <ArrowUpDown size={14} className="text-rose-500 flex-shrink-0" aria-hidden="true" />
-          <span
-            className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0"
-            style={monoStyle}
-          >
-            PULSE AI · REORDER
-          </span>
-          <span className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          <div className={headerCls}>
+            <ArrowUpDown size={14} className="text-rose-500 flex-shrink-0" aria-hidden="true" />
+            <span
+              className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0"
+              style={monoStyle}
+            >
+              PULSE AI · REORDER
+            </span>
+          </div>
+          <span className={`${bodyBase} ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
             Drag or use arrow keys, then Accept.
           </span>
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className={actionsCls}>
             <button
               type="button"
               onClick={onReorderCancel}
@@ -350,17 +378,19 @@ export const AiStrip: React.FC<AiStripProps> = ({
       return (
         <div className={wrapperBorderCls}>
           <div className={stripCls} role="status" aria-live="polite">
-            <Sparkles size={14} className="text-rose-500 flex-shrink-0" />
-            <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0" style={monoStyle}>
-              {routeLabel}
-            </span>
+            <div className={headerCls}>
+              <Sparkles size={14} className="text-rose-500 flex-shrink-0" />
+              <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0" style={monoStyle}>
+                {routeLabel}
+              </span>
+            </div>
             <span
-              className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}
+              className={`${bodyBase} ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}
               title={rationale ?? summary}
             >
               {summary}
             </span>
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className={actionsCls}>
               {rationale && (
                 <button
                   type="button"
@@ -437,11 +467,13 @@ export const AiStrip: React.FC<AiStripProps> = ({
         'inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium flex-shrink-0 transition-colors text-rose-500 hover:bg-rose-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1';
       return (
         <div className={`${stripCls} ${wrapperBorderCls}`} role="status" aria-live="polite">
-          <Sparkles size={14} className="text-rose-500 flex-shrink-0" />
-          <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0" style={monoStyle}>
-            {label}
-          </span>
-          <span className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+          <div className={headerCls}>
+            <Sparkles size={14} className="text-rose-500 flex-shrink-0" />
+            <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0" style={monoStyle}>
+              {label}
+            </span>
+          </div>
+          <span className={`${bodyBase} ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
             {data.proposal.summary}
           </span>
           {focusDate && onJumpToDate && (
@@ -476,11 +508,13 @@ export const AiStrip: React.FC<AiStripProps> = ({
   if (aiState.status === 'fetching' && lens === 'today' && markerCount >= 2) {
     return (
       <div className={`${stripCls} ${wrapperBorderCls}`} role="status" aria-live="polite">
-        <Sparkles size={14} className={`flex-shrink-0 ${isDarkMode ? 'text-rose-500/70' : 'text-rose-500/80'}`} />
-        <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500/70 flex-shrink-0" style={monoStyle}>
-          PULSE AI · ROUTE
-        </span>
-        <span className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className={headerCls}>
+          <Sparkles size={14} className={`flex-shrink-0 ${isDarkMode ? 'text-rose-500/70' : 'text-rose-500/80'}`} />
+          <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500/70 flex-shrink-0" style={monoStyle}>
+            PULSE AI · ROUTE
+          </span>
+        </div>
+        <span className={`${bodyBase} ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           {markerCount} stops on the map.
         </span>
       </div>
@@ -491,11 +525,13 @@ export const AiStrip: React.FC<AiStripProps> = ({
   if (aiState.status === 'paused' && lens === 'today' && markerCount >= 2) {
     return (
       <div className={`${stripCls} ${wrapperBorderCls}`} role="status" aria-live="polite">
-        <Sparkles size={14} className="text-rose-500/60 flex-shrink-0" />
-        <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500/60 flex-shrink-0" style={monoStyle}>
-          PULSE AI · PAUSED
-        </span>
-        <span className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className={headerCls}>
+          <Sparkles size={14} className="text-rose-500/60 flex-shrink-0" />
+          <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500/60 flex-shrink-0" style={monoStyle}>
+            PULSE AI · PAUSED
+          </span>
+        </div>
+        <span className={`${bodyBase} ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           Route proposals on a short break. Resuming after the workspace cap clears.
         </span>
       </div>
@@ -506,11 +542,13 @@ export const AiStrip: React.FC<AiStripProps> = ({
   if (lens === 'today' && markerCount === 1) {
     return (
       <div className={`${stripCls} ${wrapperBorderCls}`} role="status" aria-live="polite">
-        <Sparkles size={14} className="text-rose-500/70 flex-shrink-0" />
-        <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500/70 flex-shrink-0" style={monoStyle}>
-          {routeLabel}
-        </span>
-        <span className={`text-xs flex-1 truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className={headerCls}>
+          <Sparkles size={14} className="text-rose-500/70 flex-shrink-0" />
+          <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500/70 flex-shrink-0" style={monoStyle}>
+            {routeLabel}
+          </span>
+        </div>
+        <span className={`${bodyBase} ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           {horizon === 'now' ? 'Just one stop coming up.' : 'No route today, just one stop.'}
         </span>
       </div>

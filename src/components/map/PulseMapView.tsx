@@ -1168,6 +1168,35 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           </div>
         )}
 
+        {/* F3 — floating AI card: AiStrip in `card` layout (vertical coral panel),
+            top-left under the scrubber. Hidden while a surface drawer is open
+            (mirrors the mockup's `!sheet` gate) and reuses the SAME aiState +
+            handlers as the band path — no behaviour change, only layout. mapHorizonOn
+            is implied by mapHorizonFloat, so the Horizon affordances wire directly. */}
+        {mapHorizonFloat && (lens !== 'atlas' || atlasHasAnyPinned) && !hasNoLocations && !showLiveSheet && !showGeofences && (
+          <div className="absolute left-3 top-24 z-20 w-[300px] max-w-[80vw] pointer-events-auto">
+            <AiStrip
+              layout="card"
+              lens={lens}
+              horizon={horizon}
+              markerCount={visibleMarkers.length}
+              aiState={aiState}
+              acceptedRoute={acceptedRoute}
+              acceptingRoute={acceptingRoute}
+              isDarkMode={isDarkMode}
+              stops={reorderableStops}
+              onAccept={handleAcceptRoute}
+              onDismissRoute={handleDismissRoute}
+              onOpenInSystemMaps={handleOpenInSystemMaps}
+              onReorderStart={handleStartReorder}
+              onReorderChange={handleReorderChange}
+              onReorderCancel={handleReorderCancel}
+              onFocusEntity={handleFocusEntity}
+              onJumpToDate={handleJumpToDate}
+            />
+          </div>
+        )}
+
         {hasNoLocations && (
           <LensEmptyState
             lens={lens}
