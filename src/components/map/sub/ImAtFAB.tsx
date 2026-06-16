@@ -149,7 +149,13 @@ const ImAtFAB: React.FC<ImAtFABProps> = ({ userPosition, contacts, isDarkMode, o
         onClick={() => setOpen(true)}
         aria-label="Send your location to a contact"
         title="I'm at…"
-        className={`absolute bottom-4 right-4 z-20 flex items-center gap-2 px-3.5 py-2 rounded-full shadow-lg text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 bg-rose-500 text-white hover:bg-rose-600 hover:-translate-y-px ${
+        /* Bottom-CENTER, not bottom-right: the map renderer's attribution credit
+           (MapLibre's legally-required OSM/ODbL "ⓘ", or Google's links) lives in
+           the bottom-right corner, and a bottom-right FAB covered it. Centering
+           keeps the FAB prominent + easily reachable while leaving the credit
+           visible/clickable. (-translate-x-1/2 centers; hover -translate-y-px
+           composes via Tailwind's shared transform vars.) */
+        className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3.5 py-2 rounded-full shadow-lg text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 bg-rose-500 text-white hover:bg-rose-600 hover:-translate-y-px ${
           isDarkMode ? 'focus-visible:ring-offset-zinc-950' : 'focus-visible:ring-offset-white'
         }`}
         style={{ boxShadow: '0 4px 16px rgba(244,63,94,0.30)' }}
