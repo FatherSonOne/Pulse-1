@@ -6,11 +6,19 @@
 // member of the workspace they're reporting against (RLS-style check)
 // so a hijacked session can't burn an unrelated workspace's cap.
 //
+// Idempotency: metering goes through record_summit_minutes(), which dedupes
+// on session_id (ON CONFLICT DO NOTHING) before calling increment_usage().
+// That makes client retries / page-hide beacons / next-load replays of the
+// SAME session safe no-ops, so the client can report aggressively without
+// double-billing. `session_id` is OPTIONAL for backward compatibility — an
+// older client that omits it gets a fresh server-generated id (still one
+// increment, since those clients report exactly once).
+//
 // Why a dedicated function (not billing-usage):
 //   billing-usage is gateway-secret-only — clients can't call it directly.
 //   This function is the client-facing wrapper for the Summit-specific
-//   metric. It calls increment_usage() via service-role, after verifying
-//   workspace membership.
+//   metric. It calls record_summit_minutes() via service-role, after
+//   verifying workspace membership.
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
@@ -48,6 +56,10 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const workspace_id = String(body.workspace_id ?? '');
     const duration_sec = Number(body.duration_sec ?? 0);
+    // Stable per-session id enables dedup across retries/beacons/replays.
+    // Optional for backward compatibility — older clients omit it and get a
+    // fresh id (still a single increment, since they report exactly once).
+    const session_id = String(body.session_id ?? '') || crypto.randomUUID();
 
     if (!workspace_id) return json({ error: 'workspace_id required' }, 400);
     if (!Number.isFinite(duration_sec) || duration_sec <= 0) {
@@ -58,8 +70,8 @@ serve(async (req) => {
     const clamped_sec = Math.min(Math.floor(duration_sec), 3600);
     const minutes = Math.max(1, Math.ceil(clamped_sec / 60));
 
-    // Service-role client for the membership check + increment_usage call.
-    // increment_usage itself is SECURITY DEFINER but we hop to service role
+    // Service-role client for the membership check + record_summit_minutes call.
+    // record_summit_minutes itself is SECURITY DEFINER but we hop to service role
     // so we can read workspace_members without RLS friction.
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -82,16 +94,18 @@ serve(async (req) => {
     const periodEndDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
     const periodEnd = periodEndDate.toISOString().slice(0, 10);
 
-    const { error: incError } = await adminClient.rpc('increment_usage', {
+    // Dedup-aware increment. Returns true if this session_id was newly billed,
+    // false if it was a duplicate (already counted) and therefore skipped.
+    const { data: applied, error: incError } = await adminClient.rpc('record_summit_minutes', {
+      p_session_id: session_id,
       p_workspace_id: workspace_id,
-      p_metric: 'summit_minutes',
       p_quantity: minutes,
       p_period_start: periodStart,
       p_period_end: periodEnd,
     });
 
     if (incError) {
-      console.error('[summit-session-end] increment_usage failed:', incError.message);
+      console.error('[summit-session-end] record_summit_minutes failed:', incError.message);
       return json({ error: 'Failed to record usage', detail: incError.message }, 500);
     }
 
@@ -107,7 +121,8 @@ serve(async (req) => {
 
     return json({
       ok: true,
-      minutes_added: minutes,
+      deduped: applied === false,
+      minutes_added: applied === false ? 0 : minutes,
       total_minutes: Number(usageRow?.quantity ?? minutes),
     });
   } catch (error) {
