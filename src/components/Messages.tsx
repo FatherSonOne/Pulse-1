@@ -339,7 +339,8 @@ const EMPTY_PALETTE_COMMANDS: PaletteCommand[] = [];
 const KEYBOARD_SHORTCUTS = {
   'Ctrl+Enter': 'Send message',
   'Ctrl+Shift+E': 'Toggle emoji picker',
-  'Ctrl+Shift+F': 'Focus search',
+  'Ctrl+Shift+F': 'Enter focus mode',
+  'Ctrl+Shift+G': 'Focus search',
   'Ctrl+Shift+P': 'Toggle proposal mode',
   'Ctrl+Shift+T': 'Toggle templates',
   'Escape': 'Close modals/panels',
@@ -480,6 +481,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   // Focus Mode State (Phase 5)
   const [isFocusModeActive, setIsFocusModeActive] = useState(false);
+  // Ref so the static-deps keyboard handler reads the current value (the
+  // Ctrl+Shift+F shortcut only *enters* focus mode; the FocusMode overlay
+  // owns *exit* — incl. its active-session confirmation — so the handler
+  // must no-op when already active rather than blindly toggle it off).
+  const isFocusModeActiveRef = useRef(isFocusModeActive);
+  useEffect(() => {
+    isFocusModeActiveRef.current = isFocusModeActive;
+  }, [isFocusModeActive]);
 
   // --- NEW: Decision & Outcome State ---
   const [isProposalMode, setIsProposalMode] = useState(false);
@@ -3556,8 +3565,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         setShowEmojiPicker(prev => !prev);
         return;
       }
-      // Ctrl+Shift+F for search
-      if (e.ctrlKey && e.shiftKey && e.key === 'F') {
+      // Ctrl+Shift+G for in-thread search (moved off Ctrl+Shift+F, which now
+      // toggles Focus Mode — see below; G keeps a Find-style "next" mnemonic)
+      if (e.ctrlKey && e.shiftKey && (e.key === 'G' || e.key === 'g')) {
         e.preventDefault();
         setIsSearchOpen(true);
         searchInputRef.current?.focus();
@@ -3577,10 +3587,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         setShowTemplates(prev => !prev);
         return;
       }
-      // Shift+F to toggle focus mode
-      if (e.shiftKey && e.key === 'F') {
+      // Ctrl+Shift+F to enter Focus Mode (was a bare Shift+F, which collided
+      // with typing any capital "F" in the composer). This branch only ENTERS;
+      // the FocusMode overlay's own Ctrl+Shift+F handler owns exit (with its
+      // active-session confirmation), so we no-op when already active to avoid
+      // a double-fire that would bypass that confirmation.
+      if (e.ctrlKey && e.shiftKey && (e.key === 'F' || e.key === 'f')) {
         e.preventDefault();
-        setIsFocusModeActive(prev => !prev);
+        if (!isFocusModeActiveRef.current) {
+          setIsFocusModeActive(true);
+        }
         return;
       }
       // Escape to close modals
