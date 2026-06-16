@@ -27,6 +27,11 @@ import {
   type VoiceSessionRecord,
 } from './voiceSessionStore';
 
+/** Display label for the live model. The Summit realtime stack runs OpenAI's
+ *  `gpt-realtime` (see realtimeAgentService connect()), NOT GPT-4o — keep this
+ *  the single source so the masthead, rail, and empty-hero never drift apart. */
+export const REALTIME_MODEL_LABEL = 'GPT-REALTIME';
+
 export interface LiveCapture {
   id: string;
   content: string;
@@ -334,7 +339,7 @@ const SessionsCanvas: React.FC<SessionsCanvasProps> = ({
           <p className="pvc-empty-meta" aria-label="Voice session details">
             <span>LIVE VOICE</span>
             <span aria-hidden="true">·</span>
-            <span>GPT-4O REALTIME</span>
+            <span>{REALTIME_MODEL_LABEL}</span>
             <span aria-hidden="true">·</span>
             <span>AUDIO NOT STORED</span>
           </p>

@@ -44,7 +44,7 @@ import {
 } from '../WarRoom/RealtimeVoiceAgent';
 import { RealtimeHistoryItem } from '../../services/realtimeAgentService';
 import TranscriptBreathing, { type RailLine, type VoiceState } from './TranscriptBreathing';
-import SessionsCanvas, { type LiveSessionView, type SessionExportTarget, type SummitMeterView } from './SessionsCanvas';
+import SessionsCanvas, { REALTIME_MODEL_LABEL, type LiveSessionView, type SessionExportTarget, type SummitMeterView } from './SessionsCanvas';
 import {
   loadVoiceSessions,
   loadVoiceSessionsRemote,
@@ -1621,7 +1621,7 @@ const Summit: React.FC<SummitProps> = ({
   const modelLabel = useMemo(() => {
     const v = (voiceSettings.voice ?? 'alloy').toUpperCase();
     const lang = (voiceSettings.language ?? 'en').toUpperCase();
-    return `GPT-4O · ${v} · ${lang}`;
+    return `${REALTIME_MODEL_LABEL} · ${v} · ${lang}`;
   }, [voiceSettings.voice, voiceSettings.language]);
 
   const liveSession: LiveSessionView | undefined = useMemo(() => {
