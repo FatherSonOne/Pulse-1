@@ -125,9 +125,14 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [scopeLost, setScopeLost] = useState(false);
+  const [emptyAccount, setEmptyAccount] = useState(false);
   const [provider, setProvider] = useState<ImportProvider>('google');
   const [availableProviders, setAvailableProviders] = useState<ImportProvider[]>(['google']);
   const [providerReady, setProviderReady] = useState(false);
+  // Bumped by the empty-state "Refresh" button to re-run the load effect and
+  // re-fetch contacts after the user adds some. fetchAllRaw clears its in-flight
+  // cache on resolve, so a re-run genuinely re-hits Graph (not a stale list).
+  const [reloadNonce, setReloadNonce] = useState(0);
 
   // On open, detect which providers the user has connected and pick a default
   // (the active session provider when it's a contacts source, else the first
@@ -172,6 +177,7 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
     setBulkCategory(DEFAULT_CATEGORY);
     setSearch('');
     setScopeLost(false);
+    setEmptyAccount(false);
     setIsLoading(true);
 
     const service = SERVICES[provider];
@@ -180,17 +186,26 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
         if (cancelled) return;
         setGroups(nextGroups);
         setContacts(nextContacts);
-        // Diagnostic: the People/Graph APIs don't always 403 when the contacts
-        // scope is missing -- sometimes a 200 with zero connections, which makes
-        // the wizard look "empty" for no apparent reason. If both lists are empty
-        // and we got here without throwing, treat it as a likely scope problem
-        // and surface the reconnect banner so the user has a fix path.
-        if (nextGroups.length === 0 && nextContacts.length === 0) {
-          console.warn(
-            `[ConnectContactsModal] ${provider} returned 0 groups and 0 contacts. ` +
-            'Most common cause: a missing/expired contacts scope. Showing reconnect banner.'
-          );
-          setScopeLost(true);
+        // 0 contacts after a successful (200) load means one of two things,
+        // and the provider tells us which:
+        //   - Google's People API returns 200-with-empty when the contacts
+        //     scope is missing, so 0 groups + 0 contacts is AMBIGUOUS -- keep
+        //     offering reconnect as the fix path (unchanged behavior).
+        //   - Microsoft Graph 403s cleanly on a missing scope (handled in the
+        //     catch below as MICROSOFT_CONTACTS_PERMISSION_DENIED), so a 200
+        //     with 0 contacts is a genuinely EMPTY account, not a broken token.
+        //     Show a clear empty state instead of a misleading reconnect loop.
+        if (nextContacts.length === 0) {
+          if (provider === 'google' && nextGroups.length === 0) {
+            console.warn(
+              '[ConnectContactsModal] google returned 0 groups and 0 contacts. ' +
+              'Most common cause: a missing/expired contacts scope. Showing reconnect banner.'
+            );
+            setScopeLost(true);
+          } else {
+            console.info(`[ConnectContactsModal] ${provider} returned 0 contacts -- empty account.`);
+            setEmptyAccount(true);
+          }
         }
       })
       .catch((error: { code?: string; status?: number; message?: string }) => {
@@ -229,7 +244,7 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
     // effect on every parent re-render (fresh `t` reference each render),
     // resetting modal state and re-fetching mid-interaction.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, provider, providerReady]);
+  }, [isOpen, provider, providerReady, reloadNonce]);
 
   // Auto-focus search on entering the stage step.
   useEffect(() => {
@@ -609,6 +624,12 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
                     />
                   ))}
                 </div>
+              ) : emptyAccount ? (
+                <EmptyAccountState
+                  provider={provider}
+                  onRefresh={() => setReloadNonce((n) => n + 1)}
+                  t={t}
+                />
               ) : step === 'stage' ? (
                 <StageStep
                   search={search}
@@ -696,6 +717,41 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
     </AnimatePresence>
   );
 };
+
+interface EmptyAccountStateProps {
+  provider: ImportProvider;
+  onRefresh: () => void;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+}
+
+// Shown when a provider returns 0 contacts on a successful (200) load -- a
+// genuinely empty address book, distinct from the scope-loss reconnect banner.
+const EmptyAccountState: React.FC<EmptyAccountStateProps> = ({ provider, onRefresh, t }) => (
+  <div className="flex flex-col items-center justify-center text-center gap-3 p-10">
+    <div
+      className="w-12 h-12 rounded-full flex items-center justify-center"
+      style={{ background: 'var(--pulse-surface-raised)' }}
+    >
+      <UsersRound className="w-6 h-6" style={{ color: 'var(--pulse-ink-3)' }} aria-hidden="true" />
+    </div>
+    <div>
+      <h3 className="text-base font-semibold">{t('contacts.connectModal.empty_account_title')}</h3>
+      <p className="mt-1 text-sm max-w-sm" style={{ color: 'var(--pulse-ink-2)' }}>
+        {t(provider === 'microsoft'
+          ? 'contacts.connectModal.empty_account_body_microsoft'
+          : 'contacts.connectModal.empty_account_body')}
+      </p>
+    </div>
+    <button
+      type="button"
+      onClick={onRefresh}
+      className="min-h-[40px] px-4 py-2 rounded-lg text-sm font-semibold"
+      style={{ border: '1px solid var(--pulse-border)', color: 'var(--pulse-ink)' }}
+    >
+      {t('contacts.connectModal.empty_account_refresh')}
+    </button>
+  </div>
+);
 
 interface StageStepProps {
   search: string;
